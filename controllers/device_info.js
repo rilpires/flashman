@@ -177,7 +177,7 @@ deviceInfoController.syncDate = function(req, res) {
 deviceInfoController.updateDevicesInfo = function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
-      console.log('Error in SYN: Secret not martch!');
+      console.log('Error in SYN: Secret not match!');
       return res.status(404).end(); ;
     }
   }
@@ -283,6 +283,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
           'blocked_devices': serializeBlocked(matchedDevice.blocked_devices),
           'named_devices': serializeNamed(matchedDevice.named_devices),
+          'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
         });
       }
     }
@@ -644,7 +645,7 @@ deviceInfoController.receiveLog = function(req, res) {
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
-      console.log('Error Receiving Log: Secret not martch!');
+      console.log('Error Receiving Log: Secret not match!');
       return res.status(404).json({processed: 0});
     }
   }
@@ -681,6 +682,34 @@ deviceInfoController.receiveLog = function(req, res) {
 
     return res.status(200).json({processed: 1});
   });
+};
+
+deviceInfoController.getPortForward = function(req, res) {
+  if (req.body.secret == req.app.locals.secret) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+      if (err) {
+        console.log('Router '+req.body.id+' Get Port Forwards ' +
+          'failed: Cant get device profile.');
+        return res.status(400).json({success: false});
+      }
+      if (!matchedDevice) {
+        console.log('Router '+req.body.id+' Get Port Forwards ' +
+          'failed: No device found.');
+        return res.status(404).json({success: false});
+      }
+      if (matchedDevice.forward_index) {
+        return res.status(200).json({
+          'success': true,
+          'forward_index': matchedDevice.forward_index,
+          'forward_rules': matchedDevice.forward_rules,
+        });
+      }
+    });
+  } else {
+    console.log('Router '+req.body.id+' Get Port Forwards ' +
+      'failed: Client Secret not match!');
+    return res.status(401).json({success: false});
+  }
 };
 
 module.exports = deviceInfoController;

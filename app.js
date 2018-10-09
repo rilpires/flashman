@@ -81,9 +81,9 @@ if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = process.env.FLM_COMPANY_SECRET;
 } else {
   // check secret file and load if available
-  var companySecret = {};
+  let companySecret = {};
   try {
-    var fileContents = fs.readFileSync('./secret.json', 'utf8');
+    let fileContents = fs.readFileSync('./secret.json', 'utf8');
     companySecret = JSON.parse(fileContents);
   } catch (err) {
     if (err.code === 'ENOENT') {
@@ -112,14 +112,14 @@ app.use(logger(':req[x-forwarded-for] - :method :url HTTP/:http-version :status 
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-var sess_param = session({
+let sessParam = session({
   secret: app.locals.secret,
   resave: false,
   saveUninitialized: false,
 });
 
-app.use(sess_param);
-sio.anlix_bindsession(sess_param);
+app.use(sessParam);
+sio.anlix_bindsession(sessParam);
 
 // create static routes for public libraries
 app.use('/scripts/jquery',

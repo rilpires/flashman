@@ -781,4 +781,80 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
+deviceListController.setPortForward = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+
+//    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+//    if (!permissions.grantResetDevices) {
+//      return res.status(200).json({
+//        success: false,
+//        message: 'Roteador não possui essa função!',
+//      });
+//    }
+
+    console.log('Updating Port Forward for '+matchedDevice._id);
+    if (isJSONObject(req.body)) {
+      let content = req.body;
+
+      let newRules = [];
+      content.forEach((r)=>{
+        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+        if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
+            r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
+            !newRule.some((p)=>( p.mac == r.mac.toUpperCase() )) &&
+            Array.isArray(r.port) &&
+            r.port.map((p)=>parseInt(p)).every((p)=>( p>1 && p<65534 ))) {
+          newRules.push({
+            mac: r.mac.toUpperCase(),
+            port: r.port.map((p)=>parseInt(p)),
+            dmz: r.dmz,
+          });
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Dados invalidos no JSON',
+          });
+        }
+      });
+
+      matchedDevice.forward_rules = newRules;
+      matchedDevice.forward_index = Date.now();
+
+      matchedDevice.save(function(err) {
+        if (err) {
+          console.log('Error Saving Port Forward: '+err);
+          return res.status(200).json({
+            success: false,
+            message: 'Erro salvando regras no servidor',
+          });
+        }
+        mqtt.anlix_message_router_update(matchedDevice._id);
+
+        return res.status(200).json({
+          success: true,
+          message: '',
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro ao tratar JSON',
+      });
+    }
+  });
+};
+
 module.exports = deviceListController;
