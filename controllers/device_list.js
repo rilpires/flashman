@@ -814,7 +814,7 @@ deviceListController.setPortForward = function(req, res) {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
         if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
             r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
-            !newRule.some((p)=>( p.mac == r.mac.toUpperCase() )) &&
+            !newRules.some((p)=>( p.mac == r.mac.toUpperCase() )) &&
             Array.isArray(r.port) &&
             r.port.map((p)=>parseInt(p)).every((p)=>( p>1 && p<65534 ))) {
           newRules.push({
