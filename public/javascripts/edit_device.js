@@ -44,6 +44,46 @@ socket.on('LIVELOG', function(macaddr, data) {
   }
 });
 
+const selectizeOptionsMacs = {
+  create: true,
+  valueField: 'value',
+  labelField: 'label',
+  render: {
+    option_create: function(data, escape) {
+      return '<div class="create">Novo MAC: <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+    },
+  },
+};
+const selectizeOptionsPorts = {
+  create: true,
+  valueField: 'value',
+  labelField: 'label',
+  render: {
+    option_create: function(data, escape) {
+      return '<div class="create">Nova Porta: <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+    },
+  },
+};
+
+socket.on('ONLINEDEV', function(macaddr, data) {
+  if (($('#open-firewall-ports').data('bs.modal') || {})._isShown) {
+    let id = $('#openfirewallRouterid_label').text();
+    if (id == macaddr) {
+      let buttonRefresh = $('#btnAnimSyncOnlineDevs');
+      let inputDevs = $('#openFirewallPortsMac')[0].selectize;
+      buttonRefresh.removeClass('animated rotateOut infinite');
+      macoptions=[];
+      $.each(data.Devices, function(key, value) {
+        datanew={};
+        datanew.value=key;
+        datanew.label=key;
+        macoptions.push(datanew);
+      });
+      inputDevs.addOption(macoptions);
+    }
+  }
+});
+
 let printLogData = function(url) {
   let textarea = $('#logArea');
   let id = $('#logRouterid_label').text();
@@ -344,6 +384,36 @@ $(document).ready(function() {
 
     $('#logRouterid_label').text(id);
     $('#analyse-logs').modal('show');
+  });
+
+  $('.btn-openFirewallPorts-modal').click(function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+
+    $('#openfirewallRouterid_label').text(id);
+    $('#open-firewall-ports').modal('show');
+    $('.btn-syncOnlineDevs').trigger('click');
+  });
+
+  $('.btn-syncOnlineDevs').click(function(event) {
+    let buttonRefresh = $('#btnAnimSyncOnlineDevs');
+    let textRefresh = $('#btnTextSyncOnlineDevs');
+    let id = $('#openfirewallRouterid_label').text();
+    $.ajax({
+      url: '/devicelist/command/' + id + '/onlinedevs',
+      type: 'post',
+      dataType: 'json',
+      success: function(res) {
+        if (res.success) {
+          buttonRefresh.addClass('animated rotateOut infinite');
+        } else {
+          textRefresh.text(res.message);
+        }
+      },
+      error: function(xhr, status, error) {
+        textRefresh.text(status+': '+error);
+      },
+    });
   });
 
   $('.btn-log-live').click(function(event) {

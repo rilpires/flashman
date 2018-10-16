@@ -52,6 +52,7 @@ sio.removeOldNotification = function(timer) {
 };
 
 const SIO_NOTIFICATION_LIVELOG = 0;
+const SIO_NOTIFICATION_ONLINEDEVS = 1;
 
 sio.anlix_wait_for_livelog_notification = function(session, macaddr, timeout) {
   if (!session) {
@@ -106,6 +107,73 @@ sio.anlix_send_livelog_notifications = function(macaddr, logdata) {
           console.log('SIO: Send LIVELOG of ' + macaddr +
                       ' information for ' + item.session);
           sio.anlix_connections[item.session].emit('LIVELOG', macaddr, logdata);
+          found = true;
+          return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  if (!found) {
+    console.log('SIO: NO Session found for ' +
+                macaddr + '! Discating message...');
+  }
+};
+
+sio.anlix_wait_for_onlinedev_notification = function(session, macaddr, timeout) {
+  if (!session) {
+    console.log('ERROR: SIO: ' +
+                'Try to add onlinedev notification with an invalid session!');
+    return false;
+  }
+
+  if (!macaddr) {
+    console.log('ERROR: SIO: ' +
+                'Try to add onlinedev notification with an invalid mac address!');
+    return false;
+  }
+
+  if (!timeout || timeout == 0) {
+    timeout = 5000;
+  } // 5s default
+
+  parameters = {};
+  parameters.type = SIO_NOTIFICATION_ONLINEDEVS;
+  parameters.timer = Date.now();
+  parameters.session = session;
+  parameters.macaddr = macaddr;
+  sio.anlix_notifications.push(parameters);
+
+  // set a timer to remove the notification if it takes too long
+  // set a 100ms error (to only remove AFTER timeout)
+  const timelimit = Date.now() + timeout;
+  setTimeout(function() {
+    sio.removeOldNotification(timelimit);
+  }, timeout + 100);
+  console.log('SIO: Notification added to ONLINEDEVS of ' +
+              macaddr + ' for ' + session);
+
+  return true;
+};
+
+sio.anlix_send_onlinedev_notifications = function(macaddr, devsdata) {
+  if (!macaddr) {
+    console.log('ERROR: SIO: ' +
+                'Try to send onlinedev notification to an invalid mac address!');
+    return false;
+  }
+
+  found = false;
+
+  // get who is waiting for this notification
+  sio.anlix_notifications = sio.anlix_notifications.filter((item) => {
+    if (item.type == SIO_NOTIFICATION_ONLINEDEVS) {
+      if (item.macaddr == macaddr) {
+        if (sio.anlix_connections[item.session]) {
+          console.log('SIO: Send ONLINEDEV of ' + macaddr +
+                      ' information for ' + item.session);
+          sio.anlix_connections[item.session].emit('ONLINEDEV', macaddr, devsdata);
           found = true;
           return false;
         }

@@ -362,13 +362,6 @@ deviceListController.sendMqttMsg = function(req, res) {
     let permissions = DeviceVersion.findByVersion(device.version);
 
     switch (msgtype) {
-      case 'boot':
-        if (!mqtt.clients[req.params.id.toUpperCase()]) {
-          return res.status(200).json({success: false,
-                                     message: 'Roteador não esta online!'});
-        }
-        mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
-        break;
       case 'rstapp':
         if (device) {
           device.app_password = undefined;
@@ -377,39 +370,52 @@ deviceListController.sendMqttMsg = function(req, res) {
         mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
         break;
       case 'rstdevices':
-        if (device) {
-          device.blocked_devices = undefined;
-          device.save();
-        }
-        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
-        break;
-      case 'rstmqtt':
         if (!permissions.grantResetDevices) {
           return res.status(200).json({
             success: false,
             message: 'Roteador não possui essa função!',
           });
         } else if (device) {
+          device.blocked_devices = undefined;
+          device.save();
+        }
+        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
+        break;
+      case 'rstmqtt':
+        if (device) {
           device.mqtt_secret = undefined;
           device.save();
         }
         mqtt.anlix_message_router_resetmqtt(req.params.id.toUpperCase());
         break;
       case 'log':
+      case 'boot':
+      case 'onlinedevs':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
-        // This message is only valid if we have a socket to send response to
-        if (sio.anlix_connections[req.sessionID]) {
-          sio.anlix_wait_for_livelog_notification(
-            req.sessionID, req.params.id.toUpperCase(), 5000);
-          mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+        if (msgtype == 'boot') {
+          mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
         } else {
-          return res.status(200).json({
-            success: false,
-            message: 'Esse comando somente funciona em uma sessão!',
-          });
+          // This message is only valid if we have a socket to send response to
+          if (sio.anlix_connections[req.sessionID]) {
+            if (msgtype == 'log') {
+              sio.anlix_wait_for_livelog_notification(
+                req.sessionID, req.params.id.toUpperCase(), 5000);
+              mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+            } else
+            if (msgtype == 'onlinedevs') {
+              sio.anlix_wait_for_onlinedev_notification(
+                req.sessionID, req.params.id.toUpperCase(), 5000);
+              mqtt.anlix_message_router_onlinedev(req.params.id.toUpperCase());
+            }
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: 'Esse comando somente funciona em uma sessão!',
+            });
+          }
         }
         break;
       default:

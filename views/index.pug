@@ -66,6 +66,65 @@ block content
               button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
                 span &nbsp Ao Vivo
 
+  #open-firewall-ports.modal.fade(tabindex="-1", role="dialog")
+    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+      .modal-content
+        .modal-header
+          p.heading.lead
+            span.fas.fa-lock-open.fa-lg
+            strong &nbsp; Abertura de Portas no Roteador &nbsp;
+              label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
+
+          button.close(type="button", data-dismiss="modal")
+            span.white-text &times;
+        .modal-body
+            .row
+              .col-10
+                .row
+                  .col-6 
+                    span Dispositivos &nbsp
+                    span#btnTextSyncOnlineDevs
+                    a.badge.teal.lighten-2.btn-syncOnlineDevs
+                      .fas.fa-sync-alt#btnAnimSyncOnlineDevs
+                  .col-4
+                    span Portas Disponiveis
+
+                  .col-2
+                    span DMZ
+
+                .row
+                  .col-6
+                    select.form-control#openFirewallPortsMac
+
+                  .col-4
+                    select.form-control#openFirewallPortsPorts(Multiple)
+                      option(value="20") FTP Dados
+                      option(value="21") FTP Controle 
+                      option(value="22") Secure Shell (SSH) 
+                  .col-2
+                    label.switch
+                        input.checkbox(type="checkbox" checked=true)
+                        .slider.round
+              .col-1.mt-3
+                button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSaveRule(type="button")
+                  span Adicionar
+
+            .row
+              ul.list-group
+                li.list-group-item.justify-content-between.align-items-center
+                  span TESTE &nbsp
+                  a.badge.teal.lighten-2
+                    | del
+                li.list-group-item.justify-content-between.align-items-center
+                  span TESTE &nbsp
+                  a.badge.teal.lighten-2
+                    | del
+
+        .modal-footer 
+          .btn-group.btn-group-sm(role="group")
+              button.btn.teal.lighten-2.btn-sm.btn-openFirewallPorts(type="button")
+                span &nbsp Aplicar
+
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
       form(action="/devicelist/search")
@@ -314,7 +373,7 @@ block content
                       if (superuser || role.grantFirmwareUpgrade)
                         td.text-center.col-xs-1
                           label.switch
-                            input.checkbox(
+                            input.checkbox.firmwareUpdateCheckbox(
                               type="checkbox",
                               name="do_update",
                               checked=device.do_update
@@ -392,6 +451,11 @@ block content
                                       a.dropdown-item.btn-reset-blocked
                                         .fas.fa-ban
                                         span &nbsp Desbloquear Dispositivos
+                                    .dropdown-divider
+                                    a.dropdown-item.btn-openFirewallPorts-modal
+                                      .fas.fa-lock-open
+                                      span &nbsp Abertura de Portas
+
                                 br
                                 span.badge.badge-success.bounceIn(style="display: none;") Sucesso
                                 span.badge.badge-warning.bounceIn(style="display: none;") Falha
@@ -552,6 +616,9 @@ block scripts
   script.
     (function() {
       'use strict';
+
+      $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
+      $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
 
       window.addEventListener('load', function() {
         var forms = document.getElementsByClassName('needs-validation');

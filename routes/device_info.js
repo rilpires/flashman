@@ -10,6 +10,7 @@ router.route('/logs').post(deviceInfoController.receiveLog);
 router.route('/ntp').post(deviceInfoController.syncDate);
 router.route('/mqtt/add').post(deviceInfoController.registerMqtt);
 router.route('/get/portforward').post(deviceInfoController.getPortForward);
+router.route('/receive/devices').post(deviceInfoController.receiveDevices);
 router.route('/app/add').post(deviceInfoController.registerApp);
 router.route('/app/del').post(deviceInfoController.removeApp);
 router.route('/app/addpass').post(deviceInfoController.registerPassword);

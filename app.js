@@ -143,6 +143,12 @@ app.use('/scripts/bootstrap',
 app.use('/scripts/mdbootstrap',
   express.static(path.join(__dirname, 'node_modules/mdbootstrap'))
 );
+app.use('/scripts/selectize',
+  express.static(path.join(__dirname, 'node_modules/selectize/dist'))
+);
+app.use('/scripts/selectize-bootstrap',
+  express.static(path.join(__dirname, 'node_modules/selectize-bootstrap4-theme/dist'))
+);
 app.use('/scripts/sweetalert2',
   express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))
 );
