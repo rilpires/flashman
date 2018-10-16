@@ -11,8 +11,9 @@ let deviceListController = {};
 const fs = require('fs');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
-const getReleases = function() {
+const getReleases = function(modelAsArray=false) {
   let releases = [];
+  let releaseIds = [];
   fs.readdirSync(imageReleasesDir).forEach((filename) => {
     // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.bin
     let fnameSubStrings = filename.split('_');
@@ -23,8 +24,25 @@ const getReleases = function() {
     if (fnameSubStrings.length == 4) {
       releaseModel += fnameSubStrings[2];
     }
-    let release = {id: releaseId, model: releaseModel};
-    releases.push(release);
+    // Always make comparison using upper case
+    releaseModel = releaseModel.toUpperCase();
+    if (modelAsArray) {
+      if (releaseIds.includes(releaseId)) {
+        for (let i=0; i < releases.length; i++) {
+          if (releases[i].id == releaseId) {
+            releases[i].model.push(releaseModel);
+            break;
+          }
+        }
+      } else {
+        let release = {id: releaseId, model: [releaseModel]};
+        releases.push(release);
+        releaseIds.push(releaseId);
+      }
+    } else {
+      let release = {id: releaseId, model: releaseModel};
+      releases.push(release);
+    }
   });
   return releases;
 };
@@ -116,11 +134,13 @@ deviceListController.index = function(req, res) {
       return res.render('error', indexContent);
     }
     let releases = getReleases();
+    let singleReleases = getReleases(true);
     status.devices = getStatus(devices.docs);
     indexContent.username = req.user.name;
     indexContent.elementsperpage = req.user.maxElementsPerPage;
     indexContent.devices = devices.docs;
     indexContent.releases = releases;
+    indexContent.singlereleases = singleReleases;
     indexContent.status = status;
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
@@ -198,14 +218,16 @@ deviceListController.changeAllUpdates = function(req, res) {
       return res.render('error', indexContent);
     }
 
+    let scheduledDevices = [];
     for (let idx = 0; idx < matchedDevices.length; idx++) {
       matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
       matchedDevices[idx].do_update = form.do_update;
       matchedDevices[idx].save();
       mqtt.anlix_message_router_update(matchedDevices[idx]._id);
+      scheduledDevices.push(matchedDevices[idx]._id);
     }
 
-    return res.status(200).json({'success': true});
+    return res.status(200).json({'success': true, 'devices': scheduledDevices});
   });
 };
 
@@ -287,11 +309,13 @@ deviceListController.searchDeviceReg = function(req, res) {
       return res.render('error', indexContent);
     }
     let releases = getReleases();
+    let singleReleases = getReleases(true);
     status.devices = getStatus(matchedDevices.docs);
     indexContent.username = req.user.name;
     indexContent.elementsperpage = req.user.maxElementsPerPage;
     indexContent.devices = matchedDevices.docs;
     indexContent.releases = releases;
+    indexContent.singlereleases = singleReleases;
     indexContent.status = status;
     indexContent.page = matchedDevices.page;
     indexContent.pages = matchedDevices.pages;
