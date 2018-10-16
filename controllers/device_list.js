@@ -1,6 +1,7 @@
 const Validator = require('../public/javascripts/device_validator');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
+const DeviceVersion = require('../models/device_version');
 const Config = require('../models/config');
 const Role = require('../models/role');
 const mqtt = require('../mqtts');
@@ -143,6 +144,9 @@ deviceListController.index = function(req, res) {
     indexContent.status = status;
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
+    indexContent.devicesPermissions = devices.docs.map((device)=>{
+      return DeviceVersion.findByVersion(device.version);
+    });
 
     User.findOne({name: req.user.name}, function(err, user) {
       if (err || !user) {
@@ -316,6 +320,9 @@ deviceListController.searchDeviceReg = function(req, res) {
     indexContent.page = matchedDevices.page;
     indexContent.pages = matchedDevices.pages;
     indexContent.lastquery = req.query.content;
+    indexContent.devicesPermissions = matchedDevices.docs.map((device)=>{
+      return DeviceVersion.findByVersion(device.version);
+    });
 
     User.findOne({name: req.user.name}, function(err, user) {
       if (err || !user) {
@@ -364,85 +371,80 @@ deviceListController.delDeviceReg = function(req, res) {
 
 deviceListController.sendMqttMsg = function(req, res) {
   msgtype = req.params.msg.toLowerCase();
-  if (msgtype == 'boot') {
-    mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
-    return res.status(200).json({success: true});
-  } else if (msgtype == 'rstapp') {
-    DeviceModel.findById(req.params.id.toUpperCase(),
-    function(err, matchedDevice) {
-      if (err) {
-        return res.status(500).json({success: false,
-                                     message: 'Erro interno do servidor'});
-      }
-      if (matchedDevice == null) {
-        return res.status(404).json({success: false,
-                                     message: 'Roteador não encontrado'});
-      }
-      matchedDevice.app_password = undefined;
-      matchedDevice.save();
-      mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
-      return res.status(200).json({success: true});
-    });
-  } else if (msgtype == 'rstmqtt') {
-    DeviceModel.findById(req.params.id.toUpperCase(),
-    function(err, matchedDevice) {
-      if (err) {
-        return res.status(200).json({success: false,
-                                     message: 'Erro interno do servidor'});
-      }
-      if (matchedDevice == null) {
-        return res.status(200).json({success: false,
-                                     message: 'Roteador não encontrado'});
-      }
 
-      // if we have a secret, remove it to allow a new one
-      if (matchedDevice.mqtt_secret) {
-        matchedDevice.mqtt_secret = null;
-        matchedDevice.save();
-      }
-
-      mqtt.anlix_message_router_resetmqtt(req.params.id.toUpperCase());
-      return res.status(200).json({success: true});
-    });
-
-    // can we get to here?
-    return res.status(200).json({success: false,
-                                 message: 'Erro interno do servidor'});
-  }
-
-  if (!mqtt.clients[req.params.id.toUpperCase()]) {
-    return res.status(200).json({success: false,
-                                 message: 'Roteador não esta online!'});
-  }
-
-  switch (msgtype) {
-    case 'boot':
-      mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
-      break;
-    case 'rstapp':
-      mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
-      break;
-    case 'log':
-      // This message is only valid if we have a socket to send response to
-      if (sio.anlix_connections[req.sessionID]) {
-        sio.anlix_wait_for_livelog_notification(
-          req.sessionID, req.params.id.toUpperCase(), 5000);
-        mqtt.anlix_message_router_log(req.params.id.toUpperCase());
-      } else {
-        return res.status(200).json({
-          success: false,
-          message: 'Esse comando somente funciona em uma sessão!',
-        });
-      }
-      break;
-    default:
-      // Message not implemented
-      console.log('REST API MQTT Message not recognized (' + msgtype + ')');
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
       return res.status(200).json({success: false,
-                                   message: 'Esse comando não existe'});
-  }
+                                   message: 'Erro interno do servidor'});
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({success: false,
+                                   message: 'Roteador não encontrado'});
+    }
+    let device = matchedDevice;
+    let permissions = DeviceVersion.findByVersion(device.version);
 
-  return res.status(200).json({success: true});
+    switch (msgtype) {
+      case 'boot':
+        if (!mqtt.clients[req.params.id.toUpperCase()]) {
+          return res.status(200).json({success: false,
+                                     message: 'Roteador não esta online!'});
+        }
+        mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
+        break;
+      case 'rstapp':
+        if (device) {
+          device.app_password = undefined;
+          device.save();
+        }
+        mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
+        break;
+      case 'rstdevices':
+        if (device) {
+          device.blocked_devices = undefined;
+          device.save();
+        }
+        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
+        break;
+      case 'rstmqtt':
+        if (!permissions.grantResetDevices) {
+          return res.status(200).json({
+            success: false,
+            message: 'Roteador não possui essa função!',
+          });
+        } else if (device) {
+          device.mqtt_secret = undefined;
+          device.save();
+        }
+        mqtt.anlix_message_router_resetmqtt(req.params.id.toUpperCase());
+        break;
+      case 'log':
+        if (!mqtt.clients[req.params.id.toUpperCase()]) {
+          return res.status(200).json({success: false,
+                                     message: 'Roteador não esta online!'});
+        }
+        // This message is only valid if we have a socket to send response to
+        if (sio.anlix_connections[req.sessionID]) {
+          sio.anlix_wait_for_livelog_notification(
+            req.sessionID, req.params.id.toUpperCase(), 5000);
+          mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Esse comando somente funciona em uma sessão!',
+          });
+        }
+        break;
+      default:
+        // Message not implemented
+        console.log('REST API MQTT Message not recognized (' + msgtype + ')');
+        return res.status(200).json({success: false,
+                                     message: 'Esse comando não existe'});
+    }
+
+    return res.status(200).json({success: true});
+  });
 };
 
 deviceListController.getFirstBootLog = function(req, res) {
