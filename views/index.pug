@@ -1,130 +1,9 @@
 extends layout
 
 block content
-  #special-search-terms.modal.fade(tabindex="-1", role="dialog")
-    .modal-dialog.modal-notify.modal-teal(role="document")
-      .modal-content
-        .modal-header
-          p.heading.lead
-            span.fas.fa-search.fa-lg
-            strong &nbsp; Termos de Busca Especiais
-
-          button.close(type="button", data-dismiss="modal")
-            span.white-text &times;
-        .modal-body
-            .row
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text online
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text offline
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos online ou offline
-            .row.mt-2
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text upgrade on
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text update on
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos marcados para atualização
-            .row.mt-2
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text upgrade off
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text update off
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos não marcados para atualização
-
-  #analyse-logs.modal.fade(tabindex="-1", role="dialog")
-    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
-      .modal-content
-        .modal-header
-          p.heading.lead
-            span.fas.fa-file-alt.fa-lg
-            strong &nbsp; Logs do Roteador &nbsp;
-              label(name="logRouterid_label" id="logRouterid_label")
-
-          button.close(type="button", data-dismiss="modal")
-            span.white-text &times;
-        .modal-body
-            .row
-              pre.pre-scrollable#logArea 
-        .modal-footer 
-          .btn-group.btn-group-sm(role="group")
-              button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
-                span &nbsp Upgrade
-              button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
-                span &nbsp Inicianização
-              button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
-                span &nbsp Ao Vivo
-
-  #open-firewall-ports.modal.fade(tabindex="-1", role="dialog")
-    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
-      .modal-content
-        .modal-header
-          p.heading.lead
-            span.fas.fa-lock-open.fa-lg
-            strong &nbsp; Abertura de Portas no Roteador &nbsp;
-              label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
-
-          button.close(type="button", data-dismiss="modal")
-            span.white-text &times;
-        .modal-body
-            .row
-              .col-10
-                .row
-                  .col-6 
-                    span Dispositivos &nbsp
-                    a.badge.teal.lighten-2.btn-syncOnlineDevs(
-                        title="Recupera os dispositivos online\ndo roteador em tempo real.",
-                      )
-                      .fas.fa-sync-alt#btnAnimSyncOnlineDevs
-                  .col-4
-                    span Portas Disponiveis
-
-                  .col-2
-                    span DMZ
-
-                .row
-                  .col-6
-                    select.form-control#openFirewallPortsMac
-
-                  .col-4
-                    select.form-control#openFirewallPortsPorts(Multiple)
-                      option(value="20") FTP Dados
-                      option(value="21") FTP Controle 
-                      option(value="22") Secure Shell (SSH) 
-                  .col-2
-                    label.switch
-                        input.checkbox#openFirewallPortsDMZ(type="checkbox" checked=true)
-                        .slider.round
-              .col-1.mt-3
-                button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSaveRule(type="button")
-                  span Adicionar
-
-            .row
-              .col-12
-                ul.list-group#openFirewallPortsRules
-                  li.list-group-item.d-flex.justify-content-between
-                    span TESTE Mais teste
-                    span.pull-right.button-group
-                      a.badge.teal.lighten-2.openFirewallPortsRemoveRule
-                        span del
-
-            input#openFirewallPortsFinalRules(type="hidden")
-            input#openFirewallPortsFinalRulesChanged(type="hidden")
-        .modal-footer 
-          .btn-group.btn-group-sm(role="group")
-              button.btn.teal.lighten-2.btn-sm.btn-openFirewallPorts(type="button")
-                span &nbsp Aplicar
+  include includes/showsearchterms
+  include includes/showdevicelogs
+  include includes/configdevicefirewall
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
@@ -622,20 +501,20 @@ block content
 block scripts
   script(src='/scripts/tags-input/tags-input.js')
   script(src='/socket.io/socket.io.js')
+  script.
+    let socket = io()
   script(src='/scripts/jquery-highlight/jquery.highlight.js')
   script(src='/scripts/pako/pako.js')
   script(src='/javascripts/device_validator.js')
   script(src='/javascripts/new_device.js')
   script(src='/javascripts/edit_device.js')
+  script(src='/javascripts/edit_device_firewall.js')
+  script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
   script.
     (function() {
       'use strict';
-
-      $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
-      $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
-
       window.addEventListener('load', function() {
         var forms = document.getElementsByClassName('needs-validation');
         // Loop over them and prevent submission
