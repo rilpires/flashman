@@ -311,7 +311,7 @@ block content
                           disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
                         )
                           span.selected Selecionar
-                        .dropdown-menu
+                        .dropdown-menu.refresh-selected
                           each release, idx in singlereleases
                             a.dropdown-item.text-center #{release.id}
 
@@ -375,7 +375,7 @@ block content
                             disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
                           )
                             span.selected #{device.release}
-                          .dropdown-menu
+                          .dropdown-menu.refresh-selected
                             a.dropdown-item.text-center.active.teal.lighten-2 #{device.release}
                             each release, idx in releases
                               if (device.release !== release.id)
