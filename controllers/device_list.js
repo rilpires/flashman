@@ -863,4 +863,26 @@ deviceListController.setPortForward = function(req, res) {
   });
 };
 
+deviceListController.getPortForward = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      Devices: matchedDevice.forward_rules,
+    });
+  });
+};
+
 module.exports = deviceListController;

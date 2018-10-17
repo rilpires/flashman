@@ -97,6 +97,8 @@ router.route('/command/:id/:msg')
 
 // REST API - Set Port forward
 router.route('/portforward/:id')
+  .get(authController.ensureLogin(),
+        deviceListController.getPortForward)
   .post(authController.ensureLogin(),
         deviceListController.setPortForward)
   .post(authController.ensureAPIAccess,

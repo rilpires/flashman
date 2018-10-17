@@ -83,8 +83,9 @@ block content
                 .row
                   .col-6 
                     span Dispositivos &nbsp
-                    span#btnTextSyncOnlineDevs
-                    a.badge.teal.lighten-2.btn-syncOnlineDevs
+                    a.badge.teal.lighten-2.btn-syncOnlineDevs(
+                        title="Recupera os dispositivos online\ndo roteador em tempo real.",
+                      )
                       .fas.fa-sync-alt#btnAnimSyncOnlineDevs
                   .col-4
                     span Portas Disponiveis
@@ -103,23 +104,23 @@ block content
                       option(value="22") Secure Shell (SSH) 
                   .col-2
                     label.switch
-                        input.checkbox(type="checkbox" checked=true)
+                        input.checkbox#openFirewallPortsDMZ(type="checkbox" checked=true)
                         .slider.round
               .col-1.mt-3
                 button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSaveRule(type="button")
                   span Adicionar
 
             .row
-              ul.list-group
-                li.list-group-item.justify-content-between.align-items-center
-                  span TESTE &nbsp
-                  a.badge.teal.lighten-2
-                    | del
-                li.list-group-item.justify-content-between.align-items-center
-                  span TESTE &nbsp
-                  a.badge.teal.lighten-2
-                    | del
+              .col-12
+                ul.list-group#openFirewallPortsRules
+                  li.list-group-item.d-flex.justify-content-between
+                    span TESTE Mais teste
+                    span.pull-right.button-group
+                      a.badge.teal.lighten-2.openFirewallPortsRemoveRule
+                        span del
 
+            input#openFirewallPortsFinalRules(type="hidden")
+            input#openFirewallPortsFinalRulesChanged(type="hidden")
         .modal-footer 
           .btn-group.btn-group-sm(role="group")
               button.btn.teal.lighten-2.btn-sm.btn-openFirewallPorts(type="button")
