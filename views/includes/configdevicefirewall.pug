@@ -5,37 +5,41 @@
       .modal-header
         p.heading.lead
           span.fas.fa-lock-open.fa-lg
-          strong &nbsp; Abertura de Portas no Roteador &nbsp;
+          strong &nbsp; Abertura de portas no roteador &nbsp;
             label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
         .row
-          .col-10
+          .col
             .row
               .col-6 
-                span Dispositivos &nbsp
-                a.badge.teal.lighten-2.btn-syncOnlineDevs
-                  .fas.fa-sync-alt#btnAnimSyncOnlineDevs
-              .col-4
-                span Portas Disponiveis
-              .col-2
+                span Dispositivo
+              .col-3
+                span Portas Disponíveis
+              .col-1
                 span DMZ
+              .col-2
+                span &nbsp
             .row
               .col-6
-                select.form-control#openFirewallPortsMac
-              .col-4
+                .input-group
+                  select.form-control#openFirewallPortsMac
+                  .input-group-append
+                    button.btn.btn-sm.my-0.teal.lighten-2.btn-syncOnlineDevs(type="button")
+                      .fas.fa-sync-alt.fa-lg
+              .col-3
                 select.form-control#openFirewallPortsPorts(Multiple)
                   option(value="20") FTP Dados
                   option(value="21") FTP Controle 
                   option(value="22") Secure Shell (SSH) 
-              .col-2
+              .col-1
                 label.switch
                   input.checkbox#openFirewallPortsDMZ(type="checkbox" checked=true)
                   .slider.round
-          .col-1.mt-3
-            button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSaveRule(type="button")
-              span Adicionar
+              .col-2.text-right
+                button.btn.btn-sm.my-0.teal.lighten-2.btn-openFirewallPortsSaveRule(type="button")
+                  .fas.fa-plus.fa-lg
         .row
           .col-12
             ul.list-group#openFirewallPortsRules
