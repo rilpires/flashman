@@ -35,22 +35,24 @@
                   option(value="22") Secure Shell (SSH) 
               .col-1
                 label.switch
-                  input.checkbox#openFirewallPortsDMZ(type="checkbox" checked=true)
+                  input.checkbox#openFirewallPortsDMZ(type="checkbox")
                   .slider.round
               .col-2.text-right
-                button.btn.btn-sm.my-0.teal.lighten-2.btn-openFirewallPortsSaveRule(type="button")
+                button.btn.btn-sm.mr-0.my-0.teal.lighten-2.btn-openFirewallPortsSaveRule(type="button")
                   .fas.fa-plus.fa-lg
-        .row
-          .col-12
-            ul.list-group#openFirewallPortsRules
-              li.list-group-item.d-flex.justify-content-between
-                span TESTE Mais teste
-                span.pull-right.button-group
-                  a.badge.teal.lighten-2.openFirewallPortsRemoveRule
-                    span del
+        .row.mt-3
+          .col
+            .table-responsive
+              table.table
+                thead
+                  tr
+                    th.text-left Dispositivo
+                    th.text-center Portas abertas
+                    th.text-center DMZ
+                    th &nbsp;
+                tbody#openFirewallPortsRules
         input#openFirewallPortsFinalRules(type="hidden")
-        input#openFirewallPortsFinalRulesChanged(type="hidden")
       .modal-footer 
         .btn-group.btn-group-sm(role="group")
-            button.btn.teal.lighten-2.btn-sm.btn-openFirewallPorts(type="button")
+            button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSubmit(type="button")
               span &nbsp Aplicar

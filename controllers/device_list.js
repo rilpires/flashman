@@ -835,9 +835,10 @@ deviceListController.setPortForward = function(req, res) {
 //      });
 //    }
 
-    console.log('Updating Port Forward for '+matchedDevice._id);
+    console.log('Updating Port Forward for ' + matchedDevice._id);
+    console.log(req.body.rules);
     if (isJSONObject(req.body)) {
-      let content = req.body;
+      let content = req.body.rules;
 
       let newRules = [];
       content.forEach((r)=>{
