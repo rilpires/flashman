@@ -23,6 +23,56 @@ const selectizeOptionsPorts = {
   },
 };
 
+let removeByKey = function(array, params) {
+  array.some(function(item, index) {
+    if (array[index][params.key] === params.value) {
+      array.splice(index, 1);
+      return true;
+    }
+    return false;
+  });
+  return array;
+};
+
+let insertOpenFirewallDoorRule = function(deviceEntry) {
+  // Prepare badge list of ports
+  let portListBadges = $('<td></td>').addClass('text-center');
+  $.each(deviceEntry.port, function(idx, portValue) {
+    portListBadges.append(
+      $('<span></span>').addClass('badge badge-primary mr-1').html(portValue)
+    );
+  });
+  // Prepare DMZ string
+  let dmzString = deviceEntry.dmz ? 'Sim':'Não';
+  // Create table entries
+  let rulesTable = $('#openFirewallPortsRules');
+  rulesTable.append(
+    $('<tr></tr>').append(
+      $('<td></td>').addClass('text-left').html(deviceEntry.mac),
+      portListBadges,
+      $('<td></td>').addClass('text-center').html(dmzString),
+      $('<td></td>').addClass('text-right').append(
+        $('<button></button>').append(
+          $('<div></div>').addClass('fas fa-times fa-lg')
+        ).addClass('btn btn-sm btn-danger my-0 openFirewallPortsRemoveRule')
+        .attr('type', 'button')
+      )
+    ).attr('data-device', deviceEntry.mac)
+  );
+  // Populate rules list
+  let rules = $('#openFirewallPortsFinalRules');
+  let portsFinal = [];
+  let newport = {};
+  if (rules.val() != '') {
+    portsFinal = JSON.parse(rules.val());
+  }
+  newport.mac = deviceEntry.mac;
+  newport.port = deviceEntry.port;
+  newport.dmz = deviceEntry.dmz;
+  portsFinal.push(newport);
+  rules.val(JSON.stringify(portsFinal));
+};
+
 // Important: include and initialize socket.io first using socket var
 socket.on('ONLINEDEV', function(macaddr, data) {
   if (($('#open-firewall-ports').data('bs.modal') || {})._isShown) {
@@ -43,30 +93,6 @@ socket.on('ONLINEDEV', function(macaddr, data) {
   }
 });
 
-let insertOpenFirewallDoorRule = function(value) {
-  let ulr = $('#openFirewallPortsRules');
-  let rules = $('#openFirewallPortsFinalRules');
-
-  let textinfo = '<span>' + value.mac + '</span>';
-  let butdel = '<span class="pull-right button-group">' +
-               '<a class="badge teal lighten-2 openFirewallPortsRemoveRule"' +
-               '<span>del</span></a></span>';
-  ulr.append('<li class="list-group-item d-flex' +
-             ' justify-content-between">' + textinfo + butdel + '</li>');
-
-  portsFinal = [];
-  if (rules.val() != '') {
-    portsFinal = JSON.parse(rules.val());
-  }
-
-  newport = {};
-  newport.mac = value.mac;
-  newport.port = value.port;
-  newport.dmz = value.dmz;
-  portsFinal.push(newport);
-  rules.val(JSON.stringify(portsFinal));
-};
-
 $(document).ready(function() {
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
@@ -81,12 +107,10 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          let ulr = $('#openFirewallPortsRules');
+          let rulesTable = $('#openFirewallPortsRules');
           let rules = $('#openFirewallPortsFinalRules');
-          let hasChanged = $('#openFirewallPortsFinalRulesChanged');
-          hasChanged.text = 'false';
           rules.val('');
-          ulr.empty();
+          rulesTable.empty();
           $.each(res.Devices, function(idx, value) {
             insertOpenFirewallDoorRule(value);
           });
@@ -141,16 +165,27 @@ $(document).ready(function() {
     });
   });
 
-  $('#openFirewallPortsRules').on('click', 'a', function(event) {
-    // Delete rule
-    console.log('FIRED!');
-    console.log($(this).index());
+  // Use this format when adding button with AJAX
+  $(document).on('click', '.openFirewallPortsRemoveRule', function(event) {
+    let row = $(event.target).parents('tr');
+    let mac = row.data('device');
+    // Delete row form table
+    let rulesTable = $('#openFirewallPortsRules');
+    rulesTable.find('[data-device="' + mac + '"]').remove();
+    // Delete rule from list
+    let rules = $('#openFirewallPortsFinalRules');
+    let portsFinal = [];
+    if (rules.val() != '') {
+      portsFinal = JSON.parse(rules.val());
+      portsFinal = removeByKey(portsFinal, {key: 'mac', value: mac});
+      rules.val(JSON.stringify(portsFinal));
+    }
   });
 
   $('.btn-openFirewallPortsSaveRule').click(function(event) {
     let mac = $('#openFirewallPortsMac').val();
-    let ports = $('#openFirewallPortsPorts').val();
-    let dmz = $('#openFirewallPortsDMZ').val();
+    let ports = $('#openFirewallPortsPorts')[0].selectize.getValue();
+    let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (mac == '') {
       swal({
         title: 'Falha na Inclução da Regra',
@@ -169,11 +204,26 @@ $(document).ready(function() {
       });
       return;
     }
+    insertOpenFirewallDoorRule({mac: mac, port: ports, dmz: dmz});
+  });
 
-    insertOpenFirewallDoorRule({
-      mac: mac,
-      port: ports,
-      dmz: dmz,
+  $('.btn-openFirewallPortsSubmit').click(function(event) {
+    let id = $('#openfirewallRouterid_label').text();
+    $.ajax({
+      url: '/devicelist/portforward/' + id,
+      type: 'post',
+      traditional: true,
+      data: {rules: $('#openFirewallPortsFinalRules').val()},
+      success: function(res) {
+        if (res.success) {
+          console.log('yes');
+        } else {
+          console.log(res.message);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.log(error);
+      },
     });
   });
 });
