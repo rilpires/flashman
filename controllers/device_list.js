@@ -100,6 +100,15 @@ const isJSONObject = function(val) {
   return val instanceof Object ? true : false;
 };
 
+const isJsonString = function(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
 const returnObjOrEmptyStr = function(query) {
   if (typeof query !== 'undefined' && query) {
     return query;
@@ -836,9 +845,8 @@ deviceListController.setPortForward = function(req, res) {
 //    }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
-    console.log(req.body.rules);
-    if (isJSONObject(req.body)) {
-      let content = req.body.rules;
+    if (isJsonString(req.body.content)) {
+      let content = JSON.parse(req.body.content);
 
       let newRules = [];
       content.forEach((r)=>{
@@ -905,7 +913,7 @@ deviceListController.getPortForward = function(req, res) {
     }
     return res.status(200).json({
       success: true,
-      Devices: matchedDevice.forward_rules,
+      landevices: matchedDevice.forward_rules,
     });
   });
 };

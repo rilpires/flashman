@@ -1,11 +1,10 @@
 
 const selectizeOptionsMacs = {
   create: true,
-  valueField: 'value',
-  labelField: 'label',
+  createFilter: RegExp('^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$'),
   render: {
     option_create: function(data, escape) {
-      return '<div class="create">Novo MAC: <strong>' + escape(data.input) +
+      return '<div class="create">Adicionar: <strong>' + escape(data.input) +
              '</strong>&hellip;</div>';
     },
   },
@@ -13,11 +12,18 @@ const selectizeOptionsMacs = {
 
 const selectizeOptionsPorts = {
   create: true,
-  valueField: 'value',
-  labelField: 'label',
+  createFilter: function(input) {
+    if (!isNaN(parseInt(input))) {
+      let intPort = parseInt(input);
+      if (intPort >= 0 && intPort <= 65535) {
+        return true;
+      }
+    }
+    return false;
+  },
   render: {
     option_create: function(data, escape) {
-      return '<div class="create">Nova Porta: <strong>' + escape(data.input) +
+      return '<div class="create">Adicionar: <strong>' + escape(data.input) +
              '</strong>&hellip;</div>';
     },
   },
@@ -94,6 +100,7 @@ socket.on('ONLINEDEV', function(macaddr, data) {
 });
 
 $(document).ready(function() {
+  // Init selectize fields
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
 
@@ -102,8 +109,8 @@ $(document).ready(function() {
     let id = row.data('deviceid');
 
     $.ajax({
+      type: 'GET',
       url: '/devicelist/portforward/' + id,
-      type: 'get',
       dataType: 'json',
       success: function(res) {
         if (res.success) {
@@ -111,7 +118,7 @@ $(document).ready(function() {
           let rules = $('#openFirewallPortsFinalRules');
           rules.val('');
           rulesTable.empty();
-          $.each(res.Devices, function(idx, value) {
+          $.each(res.landevices, function(idx, value) {
             insertOpenFirewallDoorRule(value);
           });
 
@@ -120,7 +127,7 @@ $(document).ready(function() {
           $('.btn-syncOnlineDevs').trigger('click');
         } else {
           badge = $(event.target).closest('.actions-opts')
-                                     .find('.badge-warning');
+                                 .find('.badge-warning');
           if (res.message) {
             badge.text(res.message);
           }
@@ -132,7 +139,7 @@ $(document).ready(function() {
       },
       error: function(xhr, status, error) {
         badge = $(event.target).closest('.actions-opts')
-                                     .find('.badge-warning');
+                               .find('.badge-warning');
         if (res.message) {
           badge.text(status + ': ' + error);
         }
@@ -189,7 +196,7 @@ $(document).ready(function() {
     if (mac == '') {
       swal({
         title: 'Falha na Inclução da Regra',
-        text: 'Endereço MAC deve ser informado!',
+        text: 'O dispositivo deve ser informado!',
         type: 'error',
         confirmButtonColor: '#4db6ac',
       });
@@ -210,10 +217,13 @@ $(document).ready(function() {
   $('.btn-openFirewallPortsSubmit').click(function(event) {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
+      type: 'POST',
       url: '/devicelist/portforward/' + id,
-      type: 'post',
-      traditional: true,
-      data: {rules: $('#openFirewallPortsFinalRules').val()},
+      dataType: 'json',
+      data: JSON.stringify({
+        'content': $('#openFirewallPortsFinalRules').val(),
+      }),
+      contentType: 'application/json',
       success: function(res) {
         if (res.success) {
           console.log('yes');

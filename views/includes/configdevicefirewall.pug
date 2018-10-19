@@ -30,9 +30,11 @@
                       .fas.fa-sync-alt.fa-lg
               .col-3
                 select.form-control#openFirewallPortsPorts(Multiple)
-                  option(value="20") FTP Dados
-                  option(value="21") FTP Controle 
-                  option(value="22") Secure Shell (SSH) 
+                  option(value="20")  FTP Dados
+                  option(value="21")  FTP Controle 
+                  option(value="22")  SSH
+                  option(value="80")  HTTP
+                  option(value="443") HTTPS 
               .col-1
                 label.switch
                   input.checkbox#openFirewallPortsDMZ(type="checkbox")
@@ -53,6 +55,6 @@
                 tbody#openFirewallPortsRules
         input#openFirewallPortsFinalRules(type="hidden")
       .modal-footer 
-        .btn-group.btn-group-sm(role="group")
-            button.btn.teal.lighten-2.btn-sm.btn-openFirewallPortsSubmit(type="button")
-              span &nbsp Aplicar
+        button.btn.btn-primary.btn-openFirewallPortsSubmit(type="button")
+          .fas.fa-check.fa-lg
+          span &nbsp Aplicar
