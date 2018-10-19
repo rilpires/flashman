@@ -737,7 +737,7 @@ deviceInfoController.receiveDevices = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlix_send_onlinedev_notifications(id, req.body);
+    sio.anlix_send_onlinedev_notifications(matchedDevice, req.body);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

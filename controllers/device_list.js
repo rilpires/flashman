@@ -849,16 +849,18 @@ deviceListController.setPortForward = function(req, res) {
       let content = JSON.parse(req.body.content);
 
       let newRules = [];
-      content.forEach((r)=>{
+      content.forEach((r) => {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+
         if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
             r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
-            !newRules.some((p)=>( p.mac == r.mac.toUpperCase() )) &&
+            !newRules.some((p) => (p.mac == r.mac.toUpperCase())) &&
             Array.isArray(r.port) &&
-            r.port.map((p)=>parseInt(p)).every((p)=>( p>1 && p<65534 ))) {
+            r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+        {
           newRules.push({
             mac: r.mac.toUpperCase(),
-            port: r.port.map((p)=>parseInt(p)),
+            port: r.port.map((p) => parseInt(p)),
             dmz: r.dmz,
           });
         } else {

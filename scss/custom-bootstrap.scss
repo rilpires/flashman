@@ -1,8 +1,33 @@
 
-$primary: #4db6ac;
-$primary-color: #4db6ac;
-$roboto-font-path: "/scripts/mdbootstrap/font/roboto/";
+// Override bootstrap related variables
+@import 'variables';
 
-@import "../node_modules/bootstrap/scss/bootstrap";
-@import "../node_modules/mdbootstrap/scss/mdb";
-@import "../node_modules/selectize-bootstrap4-theme/scss/selectize.bootstrap4";
+@import '../node_modules/bootstrap/scss/bootstrap';
+@import '../node_modules/mdbootstrap/scss/mdb';
+@import '../node_modules/selectize-bootstrap4-theme/scss/selectize.bootstrap4';
+
+// Extend selectize bootstrap theme
+.selectize-control {
+  @extend .selectize-control;
+
+  .option {
+    .description {
+      color: $gray-600;
+      display: block;
+      font-size: $font-size-sm;
+    }
+
+    &:hover {
+      .description {
+        color: $selectize-dropdown-option-color-active;
+      }
+    }
+
+    &.active,
+    &:active {
+      .description {
+        color: $selectize-dropdown-option-color-active;
+      }
+    }
+  }
+}

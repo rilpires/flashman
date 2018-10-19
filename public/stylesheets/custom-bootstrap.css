@@ -16697,6 +16697,7 @@ table.table-sm td {
   white-space: nowrap;
 }
 
+
 .form-control.selectize-control .selectize-dropdown .selectize-dropdown-content .create {
   cursor: pointer;
 }
@@ -16744,7 +16745,7 @@ table.table-sm td {
   white-space: nowrap;
 }
 
-.form-control.selectize-control.single:after {
+.form-control.single.selectize-control:after {
   border-color: #212529 transparent transparent transparent;
   border-style: solid;
   border-width: 0.541266rem 0.3125rem 0 0.3125rem;
@@ -16758,27 +16759,26 @@ table.table-sm td {
   width: 0;
 }
 
-.form-control.selectize-control.single .selectize-input {
+.form-control.single.selectize-control .selectize-input {
   padding-right: calc(0.75rem + 0.625rem + 0.375rem);
 }
 
-.form-control.selectize-control.multi {
+.form-control.multi.selectize-control {
   height: auto;
   min-height: calc(2.25rem + 2px);
 }
 
-.form-control.selectize-control.multi .selectize-input {
+.form-control.multi.selectize-control .selectize-input {
   height: auto;
   min-height: 100%;
   overflow: auto;
 }
 
-.form-control.selectize-control.multi .selectize-input .item {
+.form-control.multi.selectize-control .selectize-input .item {
   margin: 0 3px 0 0;
 }
 
-.form-control.selectize-control .selectize-dropdown-content .create strong,
-.form-control.selectize-control.multi .selectize-input .item {
+.form-control.selectize-control .selectize-dropdown-content .create strong, .form-control.multi.selectize-control .selectize-input .item {
   background-color: #4db6ac;
   color: #fff;
   display: inline-block;
@@ -16792,50 +16792,50 @@ table.table-sm td {
   border-radius: 0.25rem;
 }
 
-.form-control.selectize-control.rtl {
+.form-control.rtl.selectize-control {
   direction: rtl;
 }
 
-.form-control.selectize-control.rtl .selectize-input {
+.form-control.rtl.selectize-control .selectize-input {
   text-align: right;
 }
 
-.form-control.selectize-control.rtl .selectize-input input {
+.form-control.rtl.selectize-control .selectize-input input {
   margin: 0 0 0 2px !important;
 }
 
-.form-control.selectize-control.rtl .selectize-dropdown .selectize-dropdown-content {
+.form-control.rtl.selectize-control .selectize-dropdown .selectize-dropdown-content {
   text-align: right !important;
 }
 
-.form-control.selectize-control.rtl.single:after {
+.form-control.rtl.single.selectize-control:after {
   left: 0.75rem;
   right: auto;
 }
 
-.form-control.selectize-control.rtl.single .selectize-input {
+.form-control.rtl.single.selectize-control .selectize-input {
   padding-left: calc(0.75rem + 0.625rem + 0.375rem);
   padding-right: 0.75rem;
 }
 
-.form-control.selectize-control.rtl.multi .selectize-input .item {
+.form-control.rtl.multi.selectize-control .selectize-input .item {
   margin: 0 0 0 3px;
 }
 
-.form-control.selectize-control.is-valid .selectize-input {
+.form-control.is-valid.selectize-control .selectize-input {
   border-color: #28a745;
 }
 
-.form-control.selectize-control.is-valid .selectize-input:focus {
+.form-control.is-valid.selectize-control .selectize-input:focus {
   border-color: #28a745;
   box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }
 
-.form-control.selectize-control.is-invalid .selectize-input {
+.form-control.is-invalid.selectize-control .selectize-input {
   border-color: #dc3545;
 }
 
-.form-control.selectize-control.is-invalid .selectize-input:focus {
+.form-control.is-invalid.selectize-control .selectize-input:focus {
   border-color: #dc3545;
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
@@ -16851,16 +16851,16 @@ table.table-sm td {
   border-radius: 0.3rem;
 }
 
-.form-control-lg.selectize-control.single .selectize-input {
+.form-control-lg.single.selectize-control .selectize-input {
   padding-right: calc(1rem + 0.625rem + 0.5rem);
 }
 
-.form-control-lg.selectize-control.single.rtl .selectize-input {
+.form-control-lg.single.rtl.selectize-control .selectize-input {
   padding-left: calc(1rem + 0.625rem + 0.5rem);
   padding-right: 1rem;
 }
 
-.form-control-lg.selectize-control.multi {
+.form-control-lg.multi.selectize-control {
   min-height: calc(2.875rem + 2px);
 }
 
@@ -16875,31 +16875,45 @@ table.table-sm td {
   border-radius: 0.2rem;
 }
 
-.form-control-sm.selectize-control.single .selectize-input {
+.form-control-sm.single.selectize-control .selectize-input {
   padding-right: calc(0.5rem + 0.625rem + 0.25rem);
 }
 
-.form-control-sm.selectize-control.single.rtl .selectize-input {
+.form-control-sm.single.rtl.selectize-control .selectize-input {
   padding-left: calc(0.5rem + 0.625rem + 0.25rem);
   padding-right: 0.5rem;
 }
 
-.form-control-sm.selectize-control.multi {
+.form-control-sm.multi.selectize-control {
   min-height: calc(1.8125rem + 2px);
 }
 
-.input-group > .form-control.selectize-control.multi {
+.input-group > .form-control.multi.selectize-control {
   height: calc(2.25rem + 2px);
 }
 
-.input-group > .form-control:not(:first-child).selectize-control .selectize-input {
+.input-group > .form-control.selectize-control:not(:first-child) .selectize-input {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-.input-group > .form-control:not(:last-child).selectize-control .selectize-input {
+.input-group > .form-control.selectize-control:not(:last-child) .selectize-input {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.selectize-control .option .description {
+  color: #6c757d;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.selectize-control .option:hover .description {
+  color: #fff;
+}
+
+.selectize-control .option.active .description, .selectize-control .option:active .description {
+  color: #fff;
 }
 
 /*# sourceMappingURL=custom-bootstrap.css.map */

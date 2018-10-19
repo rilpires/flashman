@@ -2,10 +2,21 @@
 const selectizeOptionsMacs = {
   create: true,
   createFilter: RegExp('^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$'),
+  labelField: 'label',
   render: {
     option_create: function(data, escape) {
-      return '<div class="create">Adicionar: <strong>' + escape(data.input) +
-             '</strong>&hellip;</div>';
+      return $('<div></div>').addClass('create').append(
+        'Adicionar: ',
+        $('<strong></strong>').html(escape(data.input))
+      );
+    },
+    option: function(data, escape) {
+      return $('<div></div>').addClass('option').append(
+        $('<span></span>').addClass('title').html(escape(data.label)),
+        $('<span></span>').addClass('description').html(
+          escape(JSON.parse(data.value)[0])
+        )
+      );
     },
   },
 };
@@ -15,7 +26,7 @@ const selectizeOptionsPorts = {
   createFilter: function(input) {
     if (!isNaN(parseInt(input))) {
       let intPort = parseInt(input);
-      if (intPort >= 0 && intPort <= 65535) {
+      if (intPort >= 1 && intPort <= 65535) {
         return true;
       }
     }
@@ -23,13 +34,15 @@ const selectizeOptionsPorts = {
   },
   render: {
     option_create: function(data, escape) {
-      return '<div class="create">Adicionar: <strong>' + escape(data.input) +
-             '</strong>&hellip;</div>';
+      return $('<div></div>').addClass('create').append(
+        'Adicionar: ',
+        $('<strong></strong>').html(escape(data.input))
+      );
     },
   },
 };
 
-let removeByKey = function(array, params) {
+const removeByKey = function(array, params) {
   array.some(function(item, index) {
     if (array[index][params.key] === params.value) {
       array.splice(index, 1);
@@ -40,7 +53,16 @@ let removeByKey = function(array, params) {
   return array;
 };
 
-let insertOpenFirewallDoorRule = function(deviceEntry) {
+const isJsonString = function(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
+const insertOpenFirewallDoorRule = function(deviceEntry) {
   // Prepare badge list of ports
   let portListBadges = $('<td></td>').addClass('text-center');
   $.each(deviceEntry.port, function(idx, portValue) {
@@ -50,11 +72,18 @@ let insertOpenFirewallDoorRule = function(deviceEntry) {
   });
   // Prepare DMZ string
   let dmzString = deviceEntry.dmz ? 'Sim':'Não';
-  // Create table entries
+  // Delete rule if MAC already exists
   let rulesTable = $('#openFirewallPortsRules');
+  rulesTable.find('[data-device="' + deviceEntry.mac + '"]').remove();
+  // Create table entries
   rulesTable.append(
     $('<tr></tr>').append(
-      $('<td></td>').addClass('text-left').html(deviceEntry.mac),
+      $('<td></td>').addClass('text-left').append(
+        $('<span></span>').css('display', 'block').append(
+          $('<strong></strong>').html(deviceEntry.label)
+        ),
+        $('<span></span>').css('display', 'block').html(deviceEntry.mac)
+      ),
       portListBadges,
       $('<td></td>').addClass('text-center').html(dmzString),
       $('<td></td>').addClass('text-right').append(
@@ -63,15 +92,18 @@ let insertOpenFirewallDoorRule = function(deviceEntry) {
         ).addClass('btn btn-sm btn-danger my-0 openFirewallPortsRemoveRule')
         .attr('type', 'button')
       )
-    ).attr('data-device', deviceEntry.mac)
+    ).addClass('bounceIn')
+    .attr('data-device', deviceEntry.mac)
   );
-  // Populate rules list
+  // Delete rule from list if MAC already exists
   let rules = $('#openFirewallPortsFinalRules');
   let portsFinal = [];
-  let newport = {};
   if (rules.val() != '') {
     portsFinal = JSON.parse(rules.val());
+    portsFinal = removeByKey(portsFinal, {key: 'mac', value: deviceEntry.mac});
   }
+  // Populate rules list
+  let newport = {};
   newport.mac = deviceEntry.mac;
   newport.port = deviceEntry.port;
   newport.dmz = deviceEntry.dmz;
@@ -89,9 +121,13 @@ socket.on('ONLINEDEV', function(macaddr, data) {
                               .removeClass('animated rotateOut infinite');
       macoptions = [];
       $.each(data.Devices, function(key, value) {
-        datanew = {};
-        datanew.value = key;
-        datanew.label = key;
+        let datanew = {};
+        let deviceMac = key.toUpperCase();
+        let deviceName = value.hostname.toUpperCase();
+        // Check which label to display
+        let deviceLabel = value.hostname == '!' ? deviceMac : deviceName;
+        datanew.value = JSON.stringify([deviceMac, deviceLabel]);
+        datanew.label = deviceLabel;
         macoptions.push(datanew);
       });
       inputDevs.addOption(macoptions);
@@ -190,10 +226,10 @@ $(document).ready(function() {
   });
 
   $('.btn-openFirewallPortsSaveRule').click(function(event) {
-    let mac = $('#openFirewallPortsMac').val();
+    let deviceId = $('#openFirewallPortsMac')[0].selectize.getValue();
     let ports = $('#openFirewallPortsPorts')[0].selectize.getValue();
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
-    if (mac == '') {
+    if (deviceId == '') {
       swal({
         title: 'Falha na Inclução da Regra',
         text: 'O dispositivo deve ser informado!',
@@ -211,7 +247,20 @@ $(document).ready(function() {
       });
       return;
     }
-    insertOpenFirewallDoorRule({mac: mac, port: ports, dmz: dmz});
+
+    // Check if id has only a MAC or contains also a device name
+    let deviceMac;
+    let deviceLabel;
+    if (isJsonString(deviceId)) {
+      deviceMac = JSON.parse(deviceId)[0];
+      deviceLabel = JSON.parse(deviceId)[1];
+    } else {
+      deviceMac = deviceId;
+      deviceLabel = deviceId;
+    }
+    insertOpenFirewallDoorRule({
+      mac: deviceMac, port: ports, dmz: dmz, label: deviceLabel,
+    });
   });
 
   $('.btn-openFirewallPortsSubmit').click(function(event) {

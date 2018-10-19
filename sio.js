@@ -96,10 +96,9 @@ sio.anlix_send_livelog_notifications = function(macaddr, logdata) {
                 'Try to send livelog notification to an invalid mac address!');
     return false;
   }
+  let found = false;
 
-  found = false;
-
-  // get who is waiting for this notification
+  // Get who is waiting for this notification
   sio.anlix_notifications = sio.anlix_notifications.filter((item) => {
     if (item.type == SIO_NOTIFICATION_LIVELOG) {
       if (item.macaddr == macaddr) {
@@ -157,23 +156,41 @@ sio.anlix_wait_for_onlinedev_notification = function(session, macaddr, timeout) 
   return true;
 };
 
-sio.anlix_send_onlinedev_notifications = function(macaddr, devsdata) {
-  if (!macaddr) {
-    console.log('ERROR: SIO: ' +
-                'Try to send onlinedev notification to an invalid mac address!');
+sio.anlix_send_onlinedev_notifications = function(matchedDevice, devsData) {
+  if (!matchedDevice) {
+    console.log(
+      'ERROR: SIO: ' +
+      'Try to send onlinedev notification to an invalid mac address!'
+    );
     return false;
   }
+  let found = false;
 
-  found = false;
+  // Enrich information about connected devices
+  for (let connDeviceMac in devsData.Devices) {
+    if (devsData.Devices.hasOwnProperty(connDeviceMac)) {
+      let upConnDevMac = connDeviceMac.toUpperCase();
+      let namedDevice = matchedDevice.named_devices.filter(function(namedDev) {
+        return namedDev.mac == upConnDevMac;
+      });
+      if (namedDevice[0]) {
+        devsData.Devices[connDeviceMac].hostname = namedDevice[0].name;
+      }
+    }
+  }
 
-  // get who is waiting for this notification
+  // Get who is waiting for this notification
   sio.anlix_notifications = sio.anlix_notifications.filter((item) => {
     if (item.type == SIO_NOTIFICATION_ONLINEDEVS) {
-      if (item.macaddr == macaddr) {
+      if (item.macaddr == matchedDevice._id) {
         if (sio.anlix_connections[item.session]) {
-          console.log('SIO: Send ONLINEDEV of ' + macaddr +
+          console.log('SIO: Send ONLINEDEV of ' + matchedDevice._id +
                       ' information for ' + item.session);
-          sio.anlix_connections[item.session].emit('ONLINEDEV', macaddr, devsdata);
+          sio.anlix_connections[item.session].emit(
+            'ONLINEDEV',
+            matchedDevice._id,
+            devsData
+          );
           found = true;
           return false;
         }
@@ -184,7 +201,7 @@ sio.anlix_send_onlinedev_notifications = function(macaddr, devsdata) {
 
   if (!found) {
     console.log('SIO: NO Session found for ' +
-                macaddr + '! Discating message...');
+                matchedDevice._id + '! Discating message...');
   }
 };
 
