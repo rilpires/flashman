@@ -81,6 +81,7 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
       $('<td></td>').addClass('text-left').append(
         $('<span></span>').css('display', 'block').append(
           $('<strong></strong>').html(deviceEntry.label)
+                                .addClass('conn-device-label')
         ),
         $('<span></span>').css('display', 'block').html(deviceEntry.mac)
       ),
@@ -119,7 +120,7 @@ socket.on('ONLINEDEV', function(macaddr, data) {
       let inputDevs = $('#openFirewallPortsMac')[0].selectize;
       $('.btn-syncOnlineDevs').children()
                               .removeClass('animated rotateOut infinite');
-      macoptions = [];
+      let macoptions = [];
       $.each(data.Devices, function(key, value) {
         let datanew = {};
         let deviceMac = key.toUpperCase();
@@ -128,7 +129,12 @@ socket.on('ONLINEDEV', function(macaddr, data) {
         let deviceLabel = value.hostname == '!' ? deviceMac : deviceName;
         datanew.value = JSON.stringify([deviceMac, deviceLabel]);
         datanew.label = deviceLabel;
+        // Populate connected devices dropdown options
         macoptions.push(datanew);
+        // Change rendered table entries to include label information
+        let rulesTable = $('#openFirewallPortsRules');
+        rulesTable.find('[data-device="' + deviceMac + '"] .conn-device-label')
+                  .html(deviceLabel);
       });
       inputDevs.addOption(macoptions);
     }
@@ -231,7 +237,7 @@ $(document).ready(function() {
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (deviceId == '') {
       swal({
-        title: 'Falha na Inclução da Regra',
+        title: 'Falha na inclução da regra',
         text: 'O dispositivo deve ser informado!',
         type: 'error',
         confirmButtonColor: '#4db6ac',
@@ -240,7 +246,7 @@ $(document).ready(function() {
     }
     if (ports == '') {
       swal({
-        title: 'Falha na Inclução da Regra',
+        title: 'Falha na inclução da regra',
         text: 'Informe, no mínimo, uma porta para liberar acesso!',
         type: 'error',
         confirmButtonColor: '#4db6ac',
@@ -275,13 +281,27 @@ $(document).ready(function() {
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
-          console.log('yes');
+          swal({
+            title: 'Regras aplicadas com sucesso',
+            type: 'success',
+            confirmButtonColor: '#4db6ac',
+          });
         } else {
-          console.log(res.message);
+          swal({
+            title: 'Falha ao aplicar regras',
+            text: res.message,
+            type: 'error',
+            confirmButtonColor: '#4db6ac',
+          });
         }
       },
       error: function(xhr, status, error) {
-        console.log(error);
+        swal({
+          title: 'Falha ao aplicar regras',
+          text: error,
+          type: 'error',
+          confirmButtonColor: '#4db6ac',
+        });
       },
     });
   });
