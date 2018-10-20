@@ -835,14 +835,13 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-
-//    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
-//    if (!permissions.grantResetDevices) {
-//      return res.status(200).json({
-//        success: false,
-//        message: 'Roteador não possui essa função!',
-//      });
-//    }
+    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    if (!permissions.grantPortForward) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não possui essa função',
+      });
+    }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
     if (isJsonString(req.body.content)) {
@@ -911,6 +910,13 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: false,
         message: 'Roteador não encontrado',
+      });
+    }
+    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    if (!permissions.grantPortForward) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não possui essa função',
       });
     }
     return res.status(200).json({

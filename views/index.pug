@@ -346,10 +346,11 @@ block content
                                       a.dropdown-item.btn-reset-blocked
                                         .fas.fa-ban
                                         span &nbsp Desbloquear Dispositivos
-                                    .dropdown-divider
-                                    a.dropdown-item.btn-openFirewallPorts-modal
-                                      .fas.fa-lock-open
-                                      span &nbsp Abertura de Portas
+                                    if (devicesPermissions[index].grantPortForward)
+                                      .dropdown-divider
+                                      a.dropdown-item.btn-openFirewallPorts-modal
+                                        .fas.fa-lock-open
+                                        span &nbsp Abertura de Portas
 
                                 br
                                 span.badge.badge-success.bounceIn(style="display: none;") Sucesso
