@@ -1,0 +1,67 @@
+
+#open-firewall-ports.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-lock-open.fa-lg
+          strong &nbsp; Abertura de portas no roteador &nbsp;
+            label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          .col
+            .row
+              .col-6 
+                span Dispositivo &nbsp;
+                a.fas.fa-question-circle(
+                  href="#",
+                  data-toggle="tooltip",
+                  title="É possível também digitar o endereço MAC do dispositivo",
+                )
+              .col-3
+                span Abrir portas
+              .col-1.px-0
+                span DMZ &nbsp;
+                a.fas.fa-question-circle(
+                  href="#",
+                  data-toggle="tooltip",
+                  title="Ao ativar a DMZ, o dispositivo ficará em uma rede " +
+                        "isolada da rede LAN. Os dispositivos da rede LAN " +
+                        "ainda poderão se comunicar com os dispositivos na DMZ",
+                )
+              .col-2.p
+                span &nbsp
+            .row
+              .col-6
+                .input-group
+                  select.form-control#openFirewallPortsMac
+                  .input-group-append
+                    button.btn.btn-sm.my-0.teal.lighten-2.btn-syncOnlineDevs(type="button")
+                      .fas.fa-sync-alt.fa-lg
+              .col-3
+                select.form-control#openFirewallPortsPorts(Multiple)
+              .col-1.px-0
+                label.switch
+                  input.checkbox#openFirewallPortsDMZ(type="checkbox")
+                  .slider.round
+              .col-2.text-right
+                button.btn.btn-sm.mr-0.my-0.teal.lighten-2.btn-openFirewallPortsSaveRule(type="button")
+                  .fas.fa-plus.fa-lg
+        .row.mt-3
+          .col
+            .table-responsive
+              table.table
+                thead
+                  tr
+                    th.text-left Dispositivo
+                    th.text-center Portas abertas
+                    th.text-center DMZ
+                    th &nbsp;
+                tbody#openFirewallPortsRules
+        input#openFirewallPortsFinalRules(type="hidden")
+      .modal-footer 
+        button.btn.btn-primary.btn-openFirewallPortsSubmit(type="button")
+          .fas.fa-check.fa-lg
+          span &nbsp Aplicar

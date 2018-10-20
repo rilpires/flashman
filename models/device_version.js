@@ -31,10 +31,20 @@ const grantResetDevices = function(version) {
   }
 };
 
+const grantPortForward = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.10.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
+  result.grantPortForward = grantPortForward(version);
   return result;
 };
 

@@ -77,7 +77,7 @@ let refreshRelease = function(event) {
 };
 
 $(function() {
-  $('.dropdown-menu a').on('click', refreshRelease);
-  $('.checkbox').not('#all-devices').change(updateDevice);
+  $('.dropdown-menu.refresh-selected a').on('click', refreshRelease);
+  $('.firmwareUpdateCheckbox').change(updateDevice);
   $('#all-devices').change(updateAllDevices);
 });

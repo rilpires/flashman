@@ -100,6 +100,15 @@ const isJSONObject = function(val) {
   return val instanceof Object ? true : false;
 };
 
+const isJsonString = function(str) {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
 const returnObjOrEmptyStr = function(query) {
   if (typeof query !== 'undefined' && query) {
     return query;
@@ -386,13 +395,6 @@ deviceListController.sendMqttMsg = function(req, res) {
     let permissions = DeviceVersion.findByVersion(device.version);
 
     switch (msgtype) {
-      case 'boot':
-        if (!mqtt.clients[req.params.id.toUpperCase()]) {
-          return res.status(200).json({success: false,
-                                     message: 'Roteador não esta online!'});
-        }
-        mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
-        break;
       case 'rstapp':
         if (device) {
           device.app_password = undefined;
@@ -401,39 +403,52 @@ deviceListController.sendMqttMsg = function(req, res) {
         mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
         break;
       case 'rstdevices':
-        if (device) {
-          device.blocked_devices = undefined;
-          device.save();
-        }
-        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
-        break;
-      case 'rstmqtt':
         if (!permissions.grantResetDevices) {
           return res.status(200).json({
             success: false,
             message: 'Roteador não possui essa função!',
           });
         } else if (device) {
+          device.blocked_devices = undefined;
+          device.save();
+        }
+        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
+        break;
+      case 'rstmqtt':
+        if (device) {
           device.mqtt_secret = undefined;
           device.save();
         }
         mqtt.anlix_message_router_resetmqtt(req.params.id.toUpperCase());
         break;
       case 'log':
+      case 'boot':
+      case 'onlinedevs':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
-        // This message is only valid if we have a socket to send response to
-        if (sio.anlix_connections[req.sessionID]) {
-          sio.anlix_wait_for_livelog_notification(
-            req.sessionID, req.params.id.toUpperCase(), 5000);
-          mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+        if (msgtype == 'boot') {
+          mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
         } else {
-          return res.status(200).json({
-            success: false,
-            message: 'Esse comando somente funciona em uma sessão!',
-          });
+          // This message is only valid if we have a socket to send response to
+          if (sio.anlix_connections[req.sessionID]) {
+            if (msgtype == 'log') {
+              sio.anlix_wait_for_livelog_notification(
+                req.sessionID, req.params.id.toUpperCase(), 5000);
+              mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+            } else
+            if (msgtype == 'onlinedevs') {
+              sio.anlix_wait_for_onlinedev_notification(
+                req.sessionID, req.params.id.toUpperCase(), 5000);
+              mqtt.anlix_message_router_onlinedev(req.params.id.toUpperCase());
+            }
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: 'Esse comando somente funciona em uma sessão!',
+            });
+          }
         }
         break;
       default:
@@ -803,6 +818,112 @@ deviceListController.createDeviceReg = function(req, res) {
       errors: [],
     });
   }
+};
+
+deviceListController.setPortForward = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    if (!permissions.grantPortForward) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não possui essa função',
+      });
+    }
+
+    console.log('Updating Port Forward for ' + matchedDevice._id);
+    if (isJsonString(req.body.content)) {
+      let content = JSON.parse(req.body.content);
+
+      let newRules = [];
+      content.forEach((r) => {
+        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+
+        if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
+            r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
+            !newRules.some((p) => (p.mac == r.mac.toUpperCase())) &&
+            Array.isArray(r.port) &&
+            r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+        {
+          newRules.push({
+            mac: r.mac.toUpperCase(),
+            port: r.port.map((p) => parseInt(p)),
+            dmz: r.dmz,
+          });
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Dados invalidos no JSON',
+          });
+        }
+      });
+
+      matchedDevice.forward_rules = newRules;
+      matchedDevice.forward_index = Date.now();
+
+      matchedDevice.save(function(err) {
+        if (err) {
+          console.log('Error Saving Port Forward: '+err);
+          return res.status(200).json({
+            success: false,
+            message: 'Erro salvando regras no servidor',
+          });
+        }
+        mqtt.anlix_message_router_update(matchedDevice._id);
+
+        return res.status(200).json({
+          success: true,
+          message: '',
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro ao tratar JSON',
+      });
+    }
+  });
+};
+
+deviceListController.getPortForward = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    if (!permissions.grantPortForward) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não possui essa função',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      landevices: matchedDevice.forward_rules,
+    });
+  });
 };
 
 module.exports = deviceListController;

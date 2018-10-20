@@ -31,6 +31,9 @@ let deviceSchema = new Schema({
   lastboot_log: Buffer,
   lastboot_date: Date,
   apps: [{id: String, secret: String}],
+  // For port forward
+  forward_index: String,
+  forward_rules: [{mac: String, port: [Number], dmz: Boolean}],
 });
 
 deviceSchema.plugin(mongoosePaginate);
