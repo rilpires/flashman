@@ -11,10 +11,12 @@ const selectizeOptionsMacs = {
       );
     },
     option: function(data, escape) {
+      let dataVal =
+        isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
       return $('<div></div>').addClass('option').append(
         $('<span></span>').addClass('title').html(escape(data.label)),
         $('<span></span>').addClass('description').html(
-          escape(JSON.parse(data.value)[0])
+          escape(dataVal)
         )
       );
     },
@@ -253,7 +255,30 @@ $(document).ready(function() {
       });
       return;
     }
-
+    // Check for ports already in use
+    let reservedPorts = [36022];
+    let hasPortInUse = false;
+    let rules = $('#openFirewallPortsFinalRules');
+    if (rules.val() != '') {
+      let rulesJson = JSON.parse(rules.val());
+      $.each(rulesJson, function(idx, ruleEntry) {
+        reservedPorts = reservedPorts.concat(parseInt(ruleEntry.port));
+      });
+    }
+    $.each(ports, function(idx, portValue) {
+      if (reservedPorts.indexOf(parseInt(portValue)) != -1) {
+        swal({
+          title: 'Falha na inclução da regra',
+          text: 'Porta já utilizada!',
+          type: 'error',
+          confirmButtonColor: '#4db6ac',
+        });
+        hasPortInUse = true;
+      }
+    });
+    if (hasPortInUse) {
+      return;
+    }
     // Check if id has only a MAC or contains also a device name
     let deviceMac;
     let deviceLabel;
@@ -282,7 +307,7 @@ $(document).ready(function() {
       success: function(res) {
         if (res.success) {
           swal({
-            title: 'Regras aplicadas com sucesso',
+            title: 'Sucesso! Reinicie o dispositivo alterado',
             type: 'success',
             confirmButtonColor: '#4db6ac',
           });

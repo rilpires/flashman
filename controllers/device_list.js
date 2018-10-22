@@ -848,6 +848,8 @@ deviceListController.setPortForward = function(req, res) {
       let content = JSON.parse(req.body.content);
 
       let newRules = [];
+      let usedPorts = [];
+      let hasInvalidRules = false;
       content.forEach((r) => {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
 
@@ -857,18 +859,30 @@ deviceListController.setPortForward = function(req, res) {
             Array.isArray(r.port) &&
             r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
         {
-          newRules.push({
-            mac: r.mac.toUpperCase(),
-            port: r.port.map((p) => parseInt(p)),
-            dmz: r.dmz,
-          });
+          let portsArray = r.port.map((p) => parseInt(p));
+          // Filter duplicate ports inside new ports array
+          portsArray = [...new Set(portsArray)];
+          // Include new rules only if there are only unique ports
+          if (portsArray.every((p) => (!usedPorts.includes(p)))) {
+            newRules.push({
+              mac: r.mac.toUpperCase(),
+              port: portsArray,
+              dmz: r.dmz,
+            });
+            usedPorts = usedPorts.concat(portsArray);
+          } else {
+            hasInvalidRules = true;
+          }
         } else {
-          return res.status(200).json({
-            success: false,
-            message: 'Dados invalidos no JSON',
-          });
+          hasInvalidRules = true;
         }
       });
+      if (hasInvalidRules) {
+        return res.status(200).json({
+          success: false,
+          message: 'Dados invalidos no JSON',
+        });
+      }
 
       matchedDevice.forward_rules = newRules;
       matchedDevice.forward_index = Date.now();
