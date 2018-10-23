@@ -127,17 +127,13 @@ socket.on('ONLINEDEV', function(macaddr, data) {
       $.each(data.Devices, function(key, value) {
         let datanew = {};
         let deviceMac = key;
-        let deviceName = value.hostname;
-        // Check which label to display
-        let deviceLabel = value.hostname == '!' ? deviceMac : deviceName;
-        datanew.value = JSON.stringify([deviceMac, deviceLabel]);
-        datanew.label = deviceLabel;
+        let deviceName = deviceMac;
+        deviceName = ('hostname' in value && value.hostname != '!') ?
+          value.hostname : deviceName;
+        datanew.value = JSON.stringify([deviceMac, deviceName]);
+        datanew.label = deviceName;
         // Populate connected devices dropdown options
         macoptions.push(datanew);
-        // Change rendered table entries to include label information
-        let rulesTable = $('#openFirewallPortsRules');
-        rulesTable.find('[data-device="' + deviceMac + '"] .conn-device-label')
-                  .html(deviceLabel);
       });
       inputDevs.addOption(macoptions);
     }
@@ -164,7 +160,13 @@ $(document).ready(function() {
           rules.val('');
           rulesTable.empty();
           $.each(res.landevices, function(idx, value) {
-            insertOpenFirewallDoorRule(value);
+            let deviceLabel = value.mac;
+            deviceLabel = value.dhcp_name ? value.dhcp_name : deviceLabel;
+            deviceLabel = value.name ? value.name : deviceLabel;
+            insertOpenFirewallDoorRule({
+              mac: value.mac, port: value.port,
+              dmz: value.dmz, label: deviceLabel,
+            });
           });
 
           $('#openfirewallRouterid_label').text(id);
@@ -224,12 +226,18 @@ $(document).ready(function() {
     // Delete row form table
     let rulesTable = $('#openFirewallPortsRules');
     rulesTable.find('[data-device="' + mac + '"]').remove();
-    // Delete rule from list
+    // Remove rule
     let rules = $('#openFirewallPortsFinalRules');
     let portsFinal = [];
     if (rules.val() != '') {
       portsFinal = JSON.parse(rules.val());
-      portsFinal = removeByKey(portsFinal, {key: 'mac', value: mac});
+      for (let idx = 0; idx < portsFinal.length; idx++) {
+        // Erase ports will remove rule
+        if (portsFinal[idx].mac == mac) {
+          portsFinal[idx].port = [];
+          portsFinal[idx].dmz = false;
+        }
+      }
       rules.val(JSON.stringify(portsFinal));
     }
   });

@@ -173,8 +173,11 @@ sio.anlix_send_onlinedev_notifications = function(matchedDevice, devsData) {
       let lanDevice = matchedDevice.lan_devices.filter(function(lanDev) {
         return lanDev.mac.toLowerCase() == upConnDevMac;
       });
-      if (lanDevice[0]) {
+      if (lanDevice[0] && ('name' in lanDevice[0]) && lanDevice[0].name != '') {
         devsData.Devices[connDeviceMac].hostname = lanDevice[0].name;
+      } else if (lanDevice[0] && ('dhcp_name' in lanDevice[0]) &&
+                 lanDevice[0].dhcp_name != '') {
+        devsData.Devices[connDeviceMac].hostname = lanDevice[0].dhcp_name;
       }
     }
   }
