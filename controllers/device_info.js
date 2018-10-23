@@ -271,6 +271,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         matchedDevice.save();
+        let blockedDevices = matchedDevice.lan_devices.map((lanDevice) => {
+          if (lanDevice.is_blocked) {
+            return lanDevice;
+          }
+        });
         return res.status(200).json({
           'do_update': matchedDevice.do_update,
           'do_newprobe': false,
@@ -283,7 +288,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
-          'blocked_devices': serializeBlocked(matchedDevice.lan_devices),
+          'blocked_devices': serializeBlocked(blockedDevices),
           'named_devices': serializeNamed(matchedDevice.lan_devices),
           'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
         });
