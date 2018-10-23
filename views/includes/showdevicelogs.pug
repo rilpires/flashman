@@ -1,0 +1,22 @@
+
+#analyse-logs.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-file-alt.fa-lg
+          strong &nbsp; Logs do Roteador &nbsp;
+            label(name="logRouterid_label" id="logRouterid_label")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          pre.pre-scrollable#logArea
+      .modal-footer 
+        .btn-group.btn-group-sm(role="group")
+            button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
+              span &nbsp Upgrade
+            button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
+              span &nbsp Inicianização
+            button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
+              span &nbsp Ao Vivo

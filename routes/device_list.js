@@ -40,18 +40,20 @@ router.route('/delete/:id').post(
   deviceListController.delDeviceReg);
 
 // REST API - GET device registry
-router.route('/update/:id').get(authController.ensureAPIAccess,
-                                authController.ensurePermission('grantAPIAccess'),
-                                deviceListController.getDeviceReg);
+router.route('/update/:id')
+  .get(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.getDeviceReg);
 // REST API - POST or PUT change device registry
-router.route('/update/:id').post(authController.ensureLogin(),
-                                 deviceListController.setDeviceReg)
-                           .post(authController.ensureAPIAccess,
-                                 authController.ensurePermission('grantAPIAccess'),
-                                 deviceListController.setDeviceReg)
-                           .put(authController.ensureAPIAccess,
-                                authController.ensurePermission('grantAPIAccess'),
-                                deviceListController.setDeviceReg);
+router.route('/update/:id')
+  .post(authController.ensureLogin(),
+        deviceListController.setDeviceReg)
+  .post(authController.ensureAPIAccess,
+        authController.ensurePermission('grantAPIAccess'),
+        deviceListController.setDeviceReg)
+  .put(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.setDeviceReg);
 
 // REST API - PUT create device registry
 router.route('/create').post(
@@ -64,30 +66,46 @@ router.route('/create').post(
   deviceListController.createDeviceReg);
 
 // REST API - GET first boot logs
-router.route('/firstlog/:id').get(authController.ensureAPIAccess,
-                                  authController.ensurePermission('grantAPIAccess'),
-                                  deviceListController.getFirstBootLog);
+router.route('/firstlog/:id')
+  .get(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.getFirstBootLog);
 // from user interface
-router.route('/uifirstlog/:id').get(authController.ensureLogin(),
-                                  authController.ensurePermission('grantLOGAccess'),
-                                  deviceListController.getFirstBootLog);
+router.route('/uifirstlog/:id')
+  .get(authController.ensureLogin(),
+       authController.ensurePermission('grantLOGAccess'),
+       deviceListController.getFirstBootLog);
 // REST API - GET last boot logs
-router.route('/lastlog/:id').get(authController.ensureAPIAccess,
-                                 authController.ensurePermission('grantAPIAccess'),
-                                 deviceListController.getLastBootLog);
+router.route('/lastlog/:id')
+  .get(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.getLastBootLog);
 // from user interface
-router.route('/uilastlog/:id').get(authController.ensureLogin(),
-                                  authController.ensurePermission('grantLOGAccess'),
-                                  deviceListController.getLastBootLog);
+router.route('/uilastlog/:id')
+  .get(authController.ensureLogin(),
+       authController.ensurePermission('grantLOGAccess'),
+       deviceListController.getLastBootLog);
 
 // REST API - Send a message using MQTT
-router.route('/command/:id/:msg').post(
-  authController.ensureLogin(),
-  authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendMqttMsg)
-                                 .put(
-  authController.ensureAPIAccess,
-  authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendMqttMsg);
+router.route('/command/:id/:msg')
+  .post(authController.ensureLogin(),
+        authController.ensurePermission('grantDeviceActions'),
+        deviceListController.sendMqttMsg)
+  .put(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.sendMqttMsg);
+
+// REST API - Set/Get Port forward
+router.route('/portforward/:id')
+  .get(authController.ensureLogin(),
+       deviceListController.getPortForward)
+  .post(authController.ensureLogin(),
+        deviceListController.setPortForward)
+  .post(authController.ensureAPIAccess,
+        authController.ensurePermission('grantAPIAccess'),
+        deviceListController.setPortForward)
+  .put(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.setPortForward);
 
 module.exports = router;

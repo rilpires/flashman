@@ -1,9 +1,12 @@
 {
   "name": "flashman",
-  "version": "1.11.1",
+  "version": "1.12.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "css:compile": "node-sass --output-style expanded --source-map true --source-map-contents true --precision 6 scss/custom-bootstrap.scss public/stylesheets/custom-bootstrap.css",
+    "css:minify": "cleancss --level 1 --source-map --source-map-inline-sources --output public/stylesheets/custom-bootstrap.min.css public/stylesheets/custom-bootstrap.css",
+    "css": "npm run css:compile && npm run css:minify"
   },
   "updater": {
     "jsonHost": "raw.githubusercontent.com",
@@ -47,6 +50,8 @@
     "pug": "^2.0.3",
     "request": "^2.88.0",
     "rimraf": "^2.6.2",
+    "selectize": "^0.12.6",
+    "selectize-bootstrap4-theme": "^2.0.2",
     "serve-favicon": "~2.4.2",
     "socket.io": "^2.1.1",
     "sweetalert2": "~7.19.3",
@@ -54,6 +59,9 @@
     "unzip": "^0.1.11"
   },
   "devDependencies": {
-    "eslint-config-google": "^0.9.1"
+    "clean-css-cli": "^4.2.1",
+    "eslint-config-google": "^0.9.1",
+    "node-sass": "^4.9.4",
+    "nodemon": "^1.18.4"
   }
 }

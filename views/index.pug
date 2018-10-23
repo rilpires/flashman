@@ -1,70 +1,9 @@
 extends layout
 
 block content
-  #special-search-terms.modal.fade(tabindex="-1", role="dialog")
-    .modal-dialog.modal-notify.modal-teal(role="document")
-      .modal-content
-        .modal-header
-          p.heading.lead
-            span.fas.fa-search.fa-lg
-            strong &nbsp; Termos de Busca Especiais
-
-          button.close(type="button", data-dismiss="modal")
-            span.white-text &times;
-        .modal-body
-            .row
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text online
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text offline
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos online ou offline
-            .row.mt-2
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text upgrade on
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text update on
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos marcados para atualização
-            .row.mt-2
-              .col-7
-                h4
-                  span.badge.grey.lighten-2.bounceIn.mr-2
-                    .black-text upgrade off
-                  span.badge.grey.lighten-2.bounceIn
-                    .black-text update off
-              .col-5
-                p
-                  strong Use um desses termos para filtrar somente os dispositivos não marcados para atualização
-
-  #analyse-logs.modal.fade(tabindex="-1", role="dialog")
-    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
-      .modal-content
-        .modal-header
-          p.heading.lead
-            span.fas.fa-file-alt.fa-lg
-            strong &nbsp; Logs do Roteador &nbsp;
-              label(name="logRouterid_label" id="logRouterid_label")
-
-          button.close(type="button", data-dismiss="modal")
-            span.white-text &times;
-        .modal-body
-            .row
-              pre.pre-scrollable#logArea 
-        .modal-footer 
-          .btn-group.btn-group-sm(role="group")
-              button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
-                span &nbsp Upgrade
-              button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
-                span &nbsp Inicianização
-              button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
-                span &nbsp Ao Vivo
+  include includes/showsearchterms
+  include includes/showdevicelogs
+  include includes/configdevicefirewall
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
@@ -240,12 +179,27 @@ block content
                     td.text-center *
                     td.text-center *
                     td.text-center *
-                    td.text-center *
+                    td.text-center
+                      .btn-group
+                        button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
+                          type="button",
+                          id="all-releases",
+                          data-toggle="dropdown",
+                          aria-haspopup="true",
+                          aria-expanded="true",
+                          disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
+                        )
+                          span.selected Selecionar
+                        .dropdown-menu.refresh-selected
+                          each release, idx in singlereleases
+                            a.dropdown-item.text-center #{release.id}
+
                     if (superuser || role.grantFirmwareUpgrade)
                       td.text-center
                         label.switch
                           input.checkbox(
                             id="all-devices",
+                            data-singlereleases=singlereleases
                             type="checkbox",
                             name="do_update",
                             checked=false
@@ -300,7 +254,7 @@ block content
                             disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
                           )
                             span.selected #{device.release}
-                          .dropdown-menu
+                          .dropdown-menu.refresh-selected
                             a.dropdown-item.text-center.active.teal.lighten-2 #{device.release}
                             each release, idx in releases
                               if (device.release !== release.id)
@@ -314,7 +268,7 @@ block content
                       if (superuser || role.grantFirmwareUpgrade)
                         td.text-center.col-xs-1
                           label.switch
-                            input.checkbox(
+                            input.checkbox.firmwareUpdateCheckbox(
                               type="checkbox",
                               name="do_update",
                               checked=device.do_update
@@ -382,10 +336,22 @@ block content
                                       .fas.fa-mobile-alt
                                       span &nbsp Resetar senha App
                                     if (superuser || role.grantLOGAccess)
+                                      if (devicesPermissions[index].grantViewLogs)
+                                        .dropdown-divider
+                                        a.dropdown-item.btn-log-modal
+                                          .fas.fa-file-alt
+                                          span &nbsp Logs do Roteador
+                                    if (devicesPermissions[index].grantResetDevices)
                                       .dropdown-divider
-                                      a.dropdown-item.btn-log-modal 
-                                        .fas.fa-file-alt
-                                        span &nbsp Logs do Roteador
+                                      a.dropdown-item.btn-reset-blocked
+                                        .fas.fa-ban
+                                        span &nbsp Desbloquear Dispositivos
+                                    if (devicesPermissions[index].grantPortForward)
+                                      .dropdown-divider
+                                      a.dropdown-item.btn-openFirewallPorts-modal
+                                        .fas.fa-lock-open
+                                        span &nbsp Abertura de Portas
+
                                 br
                                 span.badge.badge-success.bounceIn(style="display: none;") Sucesso
                                 span.badge.badge-warning.bounceIn(style="display: none;") Falha
@@ -536,17 +502,20 @@ block content
 block scripts
   script(src='/scripts/tags-input/tags-input.js')
   script(src='/socket.io/socket.io.js')
+  script.
+    let socket = io()
   script(src='/scripts/jquery-highlight/jquery.highlight.js')
   script(src='/scripts/pako/pako.js')
   script(src='/javascripts/device_validator.js')
   script(src='/javascripts/new_device.js')
   script(src='/javascripts/edit_device.js')
+  script(src='/javascripts/edit_device_firewall.js')
+  script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
   script.
     (function() {
       'use strict';
-
       window.addEventListener('load', function() {
         var forms = document.getElementsByClassName('needs-validation');
         // Loop over them and prevent submission

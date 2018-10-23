@@ -4,41 +4,41 @@ const DeviceModel = require('./models/device');
 
 let mqtts = aedes();
 
-mqtts.on('client', function (client, err) {
+mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: '+client.id);
 });
 
-mqtts.on('clientDisconnect', function (client, err) {
-  console.log('Router disconnected on MQTT: '+client.id)
+mqtts.on('clientDisconnect', function(client, err) {
+  console.log('Router disconnected on MQTT: '+client.id);
 });
 
-mqtts.on('ack', function (packet, client, err) {
+mqtts.on('ack', function(packet, client, err) {
 // packet is always undefined... maybe a bug?
-  if(client.id)
+  if (client.id) {
     console.log('MQTT Message Delivered successfully for '+client.id);
+  }
 });
 
 mqtts.authenticate = function(client, username, password, cb) {
-  var needauth = true;
-  if(process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
+  let needauth = true;
+  if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
     // Temporary disabled auth for old routers
-    if(client.id) {
-      if(client.id.startsWith("mosqsub")) {
+    if (client.id) {
+      if (client.id.startsWith('mosqsub')) {
         console.log('MQTT AUTH on INSECURE SERVER: Device '+client.id);
         cb(null, true);
         needauth = false;
       }
     }
-  } 
+  }
 
-  if(needauth) {
-    var error = new Error('Auth error');
-    if(!username) {
+  if (needauth) {
+    let error = new Error('Auth error');
+    if (!username) {
       console.log('MQTT AUTH ERROR - Username not specified: Device '+client.id);
       error.returnCode = 2;
       cb(error, null);
     } else {
-
       DeviceModel.findById(username, function(err, matchedDevice) {
         if (err) {
           console.log('MQTT AUTH ERROR: Device '+username+' internal error: ' + err);
@@ -50,11 +50,11 @@ mqtts.authenticate = function(client, username, password, cb) {
             error.returnCode = 2;
             cb(error, null);
           } else {
-            if(password == matchedDevice.mqtt_secret) {
+            if (password == matchedDevice.mqtt_secret) {
               console.log("MQTT AUTH OK: id "+username);
               cb(null, true);
             } else {
-              if(process.env.FLM_BYPASS_MQTTS_PASSWD) {
+              if (process.env.FLM_BYPASS_MQTTS_PASSWD) {
                 console.log('MQTT AUTH WARNING: Device '+username+' wrong password! Bypass allowed...');
                 cb(null, true);
               } else {
@@ -68,7 +68,7 @@ mqtts.authenticate = function(client, username, password, cb) {
       });
     }
   }
-}
+};
 
 mqtts.anlix_message_router_update = function(id, hashSuffix) {
   mqtts.publish({
@@ -86,7 +86,7 @@ mqtts.anlix_message_router_reset = function(id) {
       cmd: 'publish',
       retain: true,
       topic: 'flashman/update/' + id,
-      payload: null
+      payload: null,
     });
   console.log('MQTT Clean Messages for router '+id);
 };
@@ -97,7 +97,7 @@ mqtts.anlix_message_router_reboot = function(id) {
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'boot'
+      payload: 'boot',
     });
   console.log('MQTT SEND Message REBOOT to '+id);
 };
@@ -108,7 +108,7 @@ mqtts.anlix_message_router_resetapp = function(id) {
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'rstapp'
+      payload: 'rstapp',
     });
   console.log('MQTT SEND Message RSTAPP to '+id);
 };
@@ -119,7 +119,7 @@ mqtts.anlix_message_router_resetmqtt = function(id) {
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'rstmqtt'
+      payload: 'rstmqtt',
     });
   console.log('MQTT SEND Message RSTMQTT to '+id);
 };
@@ -130,9 +130,20 @@ mqtts.anlix_message_router_log = function(id) {
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'log'
+      payload: 'log',
     });
   console.log('MQTT SEND Message LOG to '+id);
+};
+
+mqtts.anlix_message_router_onlinedev = function(id) {
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'onlinedev',
+    });
+  console.log('MQTT SEND Message ONLINEDEV to '+id);
 };
 
 module.exports = mqtts;
