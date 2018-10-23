@@ -271,11 +271,15 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         matchedDevice.save();
-        let blockedDevices = matchedDevice.lan_devices.map((lanDevice) => {
-          if (lanDevice.is_blocked) {
-            return lanDevice;
+        let blockedDevices = matchedDevice.lan_devices.filter(
+          function(lanDevice) {
+            if (lanDevice.is_blocked) {
+              return true;
+            } else {
+              return false;
+            }
           }
-        });
+        );
         return res.status(200).json({
           'do_update': matchedDevice.do_update,
           'do_newprobe': false,
@@ -722,12 +726,14 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.lan_devices.map((lanDevice) => {
+          'forward_rules': matchedDevice.lan_devices.filter(function(lanDevice) {
             if (
               typeof lanDevice.port !== 'undefined' &&
               lanDevice.port.length > 0
             ) {
-              return lanDevice;
+              return true;
+            } else {
+              return false;
             }
           }),
         });

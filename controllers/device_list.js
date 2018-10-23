@@ -946,12 +946,14 @@ deviceListController.getPortForward = function(req, res) {
     }
     return res.status(200).json({
       success: true,
-      landevices: matchedDevice.lan_devices.map((lanDevice) => {
+      landevices: matchedDevice.lan_devices.filter(function(lanDevice) {
         if (
           typeof lanDevice.port !== 'undefined' &&
           lanDevice.port.length > 0
         ) {
-          return lanDevice;
+          return true;
+        } else {
+          return false;
         }
       }),
     });
