@@ -169,9 +169,9 @@ sio.anlix_send_onlinedev_notifications = function(matchedDevice, devsData) {
   // Enrich information about connected devices
   for (let connDeviceMac in devsData.Devices) {
     if (devsData.Devices.hasOwnProperty(connDeviceMac)) {
-      let upConnDevMac = connDeviceMac.toUpperCase();
+      let upConnDevMac = connDeviceMac.toLowerCase();
       let lanDevice = matchedDevice.lan_devices.filter(function(lanDev) {
-        return lanDev.mac.toUpperCase() == upConnDevMac;
+        return lanDev.mac.toLowerCase() == upConnDevMac;
       });
       if (lanDevice[0]) {
         devsData.Devices[connDeviceMac].hostname = lanDevice[0].name;

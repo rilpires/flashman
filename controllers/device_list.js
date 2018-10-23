@@ -854,7 +854,7 @@ deviceListController.setPortForward = function(req, res) {
       let hasInvalidRules = false;
       content.forEach((r) => {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-        let newRuleMac = r.mac.toUpperCase();
+        let newRuleMac = r.mac.toLowerCase();
 
         if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
             r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
@@ -946,7 +946,14 @@ deviceListController.getPortForward = function(req, res) {
     }
     return res.status(200).json({
       success: true,
-      landevices: matchedDevice.lan_devices,
+      landevices: matchedDevice.lan_devices.map((lanDevice) => {
+        if (
+          typeof lanDevice.port !== 'undefined' &&
+          lanDevice.port.length > 0
+        ) {
+          return lanDevice;
+        }
+      }),
     });
   });
 };

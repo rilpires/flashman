@@ -14,9 +14,9 @@ const selectizeOptionsMacs = {
       let dataVal =
         isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
       return $('<div></div>').addClass('option').append(
-        $('<span></span>').addClass('title').html(escape(data.label)),
+        $('<span></span>').addClass('title').html(escape(data.label.toUpperCase())),
         $('<span></span>').addClass('description').html(
-          escape(dataVal)
+          escape(dataVal.toUpperCase())
         )
       );
     },
@@ -82,10 +82,11 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
     $('<tr></tr>').append(
       $('<td></td>').addClass('text-left').append(
         $('<span></span>').css('display', 'block').append(
-          $('<strong></strong>').html(deviceEntry.label)
+          $('<strong></strong>').html(deviceEntry.label.toUpperCase())
                                 .addClass('conn-device-label')
         ),
-        $('<span></span>').css('display', 'block').html(deviceEntry.mac)
+        $('<span></span>').css('display', 'block')
+                          .html(deviceEntry.mac.toUpperCase())
       ),
       portListBadges,
       $('<td></td>').addClass('text-center').html(dmzString),
@@ -125,8 +126,8 @@ socket.on('ONLINEDEV', function(macaddr, data) {
       let macoptions = [];
       $.each(data.Devices, function(key, value) {
         let datanew = {};
-        let deviceMac = key.toUpperCase();
-        let deviceName = value.hostname.toUpperCase();
+        let deviceMac = key;
+        let deviceName = value.hostname;
         // Check which label to display
         let deviceLabel = value.hostname == '!' ? deviceMac : deviceName;
         datanew.value = JSON.stringify([deviceMac, deviceLabel]);

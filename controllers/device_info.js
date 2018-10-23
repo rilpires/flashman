@@ -574,7 +574,7 @@ deviceInfoController.appSetBlacklist = function(req, res) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
       // Search blocked device
-      let blackMacDevice = content.blacklist_device.mac.toUpperCase();
+      let blackMacDevice = content.blacklist_device.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == blackMacDevice) {
           if (device.lan_devices[idx].is_blocked) {
@@ -607,7 +607,7 @@ deviceInfoController.appSetWhitelist = function(req, res) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
       // Search device to unblock
-      let whiteMacDevice = content.whitelist_device.mac.toUpperCase();
+      let whiteMacDevice = content.whitelist_device.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == whiteMacDevice) {
           if (device.lan_devices[idx].is_blocked) {
@@ -634,7 +634,7 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
       let newLanDevice = true;
-      let macDevice = content.device_configs.mac.toUpperCase();
+      let macDevice = content.device_configs.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == macDevice) {
           device.lan_devices[idx].name = content.device_configs.name;
@@ -717,7 +717,14 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.lan_devices,
+          'forward_rules': matchedDevice.lan_devices.map((lanDevice) => {
+            if (
+              typeof lanDevice.port !== 'undefined' &&
+              lanDevice.port.length > 0
+            ) {
+              return lanDevice;
+            }
+          }),
         });
       }
     });
