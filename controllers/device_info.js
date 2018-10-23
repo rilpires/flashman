@@ -271,9 +271,18 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         matchedDevice.save();
-        let blockedDevices = matchedDevice.lan_devices.filter(
+        let blockedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
+              return true;
+            } else {
+              return false;
+            }
+          }
+        );
+        let namedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
+          function(lanDevice) {
+            if ('name' in lanDevice && lanDevice.name != '') {
               return true;
             } else {
               return false;
@@ -293,7 +302,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
           'blocked_devices': serializeBlocked(blockedDevices),
-          'named_devices': serializeNamed(matchedDevice.lan_devices),
+          'named_devices': serializeNamed(namedDevices),
           'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
         });
       }
