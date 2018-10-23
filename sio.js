@@ -170,11 +170,11 @@ sio.anlix_send_onlinedev_notifications = function(matchedDevice, devsData) {
   for (let connDeviceMac in devsData.Devices) {
     if (devsData.Devices.hasOwnProperty(connDeviceMac)) {
       let upConnDevMac = connDeviceMac.toUpperCase();
-      let namedDevice = matchedDevice.named_devices.filter(function(namedDev) {
-        return namedDev.mac.toUpperCase() == upConnDevMac;
+      let lanDevice = matchedDevice.lan_devices.filter(function(lanDev) {
+        return lanDev.mac.toUpperCase() == upConnDevMac;
       });
-      if (namedDevice[0]) {
-        devsData.Devices[connDeviceMac].hostname = namedDevice[0].name;
+      if (lanDevice[0]) {
+        devsData.Devices[connDeviceMac].hostname = lanDevice[0].name;
       }
     }
   }

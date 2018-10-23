@@ -16,8 +16,14 @@ let deviceSchema = new Schema({
   wifi_password: String,
   wifi_channel: String,
   app_password: String,
-  blocked_devices: [{id: String, mac: String}],
-  named_devices: [{name: String, mac: String}],
+  lan_devices: [{
+    mac: String,
+    dhcp_name: String,
+    is_blocked: {type: Boolean, default: false},
+    name: String,
+    port: [Number],
+    dmz: {type: Boolean, default: false},
+  }],
   wan_ip: String,
   ip: String,
   ntp_status: String,
@@ -33,7 +39,6 @@ let deviceSchema = new Schema({
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
-  forward_rules: [{mac: String, port: [Number], dmz: Boolean}],
 });
 
 deviceSchema.plugin(mongoosePaginate);

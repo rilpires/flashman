@@ -409,7 +409,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             message: 'Roteador não possui essa função!',
           });
         } else if (device) {
-          device.blocked_devices = undefined;
+          device.lan_devices = device.lan_devices.map((lanDevice) => {
+            lanDevice.is_blocked = false;
+            return lanDevice;
+          });
           device.save();
         }
         mqtt.anlix_message_router_update(req.params.id.toUpperCase());
@@ -847,28 +850,38 @@ deviceListController.setPortForward = function(req, res) {
     if (isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
 
-      let newRules = [];
       let usedPorts = [];
       let hasInvalidRules = false;
       content.forEach((r) => {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+        let newRuleMac = r.mac.toUpperCase();
 
         if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
             r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
-            !newRules.some((p) => (p.mac == r.mac.toUpperCase())) &&
             Array.isArray(r.port) &&
             r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
         {
           let portsArray = r.port.map((p) => parseInt(p));
           // Filter duplicate ports inside new ports array
           portsArray = [...new Set(portsArray)];
-          // Include new rules only if there are only unique ports
+          // Include new rules only if they have unique ports
           if (portsArray.every((p) => (!usedPorts.includes(p)))) {
-            newRules.push({
-              mac: r.mac.toUpperCase(),
-              port: portsArray,
-              dmz: r.dmz,
-            });
+            let newLanDevice = true;
+            for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+              if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
+                matchedDevice.lan_devices[idx].port = portsArray;
+                matchedDevice.lan_devices[idx].dmz = r.dmz;
+                newLanDevice = false;
+                break;
+              }
+            }
+            if (newLanDevice) {
+              matchedDevice.lan_devices.push({
+                mac: newRuleMac,
+                port: portsArray,
+                dmz: r.dmz,
+              });
+            }
             usedPorts = usedPorts.concat(portsArray);
           } else {
             hasInvalidRules = true;
@@ -883,8 +896,6 @@ deviceListController.setPortForward = function(req, res) {
           message: 'Dados invalidos no JSON',
         });
       }
-
-      matchedDevice.forward_rules = newRules;
       matchedDevice.forward_index = Date.now();
 
       matchedDevice.save(function(err) {
@@ -935,7 +946,7 @@ deviceListController.getPortForward = function(req, res) {
     }
     return res.status(200).json({
       success: true,
-      landevices: matchedDevice.forward_rules,
+      landevices: matchedDevice.lan_devices,
     });
   });
 };

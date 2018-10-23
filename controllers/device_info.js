@@ -112,7 +112,7 @@ const isJSONObject = function(val) {
 
 const serializeBlocked = function(devices) {
   if (!devices) return [];
-  return devices.map((device)=>device.mac + '|' + device.id);
+  return devices.map((device)=>device.mac + '|' + device.dhcp_name);
 };
 
 const serializeNamed = function(devices) {
@@ -283,8 +283,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
-          'blocked_devices': serializeBlocked(matchedDevice.blocked_devices),
-          'named_devices': serializeNamed(matchedDevice.named_devices),
+          'blocked_devices': serializeBlocked(matchedDevice.lan_devices),
+          'named_devices': serializeNamed(matchedDevice.lan_devices),
           'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
         });
       }
@@ -571,18 +571,27 @@ deviceInfoController.appSetBlacklist = function(req, res) {
     if (content.hasOwnProperty('blacklist_device') &&
         content.blacklist_device.hasOwnProperty('mac') &&
         content.blacklist_device.mac.match(macRegex)) {
-      // Deep copy blocked devices for rollback
-      rollback.blocked_devices = deepCopyObject(device.blocked_devices);
-      let containsMac = device.blocked_devices.reduce((acc, val)=>{
-        return acc || (val.mac === content.blacklist_device.mac);
-      }, false);
-      if (!containsMac) {
-        device.blocked_devices.push({
-          id: content.blacklist_device.id,
-          mac: content.blacklist_device.mac,
-        });
-        return true;
+      // Deep copy lan devices for rollback
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      // Search blocked device
+      let blackMacDevice = content.blacklist_device.mac.toUpperCase();
+      for (let idx = 0; idx < device.lan_devices.length; idx++) {
+        if (device.lan_devices[idx].mac == blackMacDevice) {
+          if (device.lan_devices[idx].is_blocked) {
+            return false;
+          } else {
+            device.lan_devices[idx].is_blocked = true;
+            return true;
+          }
+        }
       }
+      // Mac address not found
+      device.lan_devices.push({
+        mac: blackMacDevice,
+        dhcp_name: content.blacklist_device.id,
+        is_blocked: true,
+      });
+      return true;
     }
     return false;
   };
@@ -595,16 +604,22 @@ deviceInfoController.appSetWhitelist = function(req, res) {
     if (content.hasOwnProperty('whitelist_device') &&
         content.whitelist_device.hasOwnProperty('mac') &&
         content.whitelist_device.mac.match(macRegex)) {
-      // Deep copy blocked devices for rollback
-      rollback.blocked_devices = deepCopyObject(device.blocked_devices);
-      let filteredDevices = device.blocked_devices.filter((device)=>{
-        return device.mac !== content.whitelist_device.mac;
-      });
-      if (device.blocked_devices.length !== filteredDevices.length) {
-        device.blocked_devices = filteredDevices;
-        return true;
+      // Deep copy lan devices for rollback
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      // Search device to unblock
+      let whiteMacDevice = content.whitelist_device.mac.toUpperCase();
+      for (let idx = 0; idx < device.lan_devices.length; idx++) {
+        if (device.lan_devices[idx].mac == whiteMacDevice) {
+          if (device.lan_devices[idx].is_blocked) {
+            device.lan_devices[idx].is_blocked = false;
+            return true;
+          } else {
+            return false;
+          }
+        }
       }
     }
+    // Mac address not found or error parsing content
     return false;
   };
   appSet(req, res, processFunction);
@@ -616,23 +631,22 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
     if (content.hasOwnProperty('device_configs') &&
         content.device_configs.hasOwnProperty('mac') &&
         content.device_configs.mac.match(macRegex)) {
-      // Deep copy named devices for rollback
-      rollback.named_devices = deepCopyObject(device.named_devices);
-      let namedDevices = device.named_devices;
-      let newMac = true;
-      namedDevices = namedDevices.map((namedDevice)=>{
-        if (namedDevice.mac !== content.device_configs.mac) return namedDevice;
-        newMac = false;
-        namedDevice.name = content.device_configs.name;
-        return namedDevice;
-      });
-      if (newMac) {
-        namedDevices.push({
+      // Deep copy lan devices for rollback
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      let newLanDevice = true;
+      let macDevice = content.device_configs.mac.toUpperCase();
+      for (let idx = 0; idx < device.lan_devices.length; idx++) {
+        if (device.lan_devices[idx].mac == macDevice) {
+          device.lan_devices[idx].name = content.device_configs.name;
+          newLanDevice = false;
+        }
+      }
+      if (newLanDevice) {
+        device.lan_devices.push({
+          mac: macDevice,
           name: content.device_configs.name,
-          mac: content.device_configs.mac,
         });
       }
-      device.named_devices = namedDevices;
       return true;
     }
     return false;
@@ -703,7 +717,7 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.forward_rules,
+          'forward_rules': matchedDevice.lan_devices,
         });
       }
     });
