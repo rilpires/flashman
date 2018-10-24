@@ -258,10 +258,11 @@ block content
                             a.dropdown-item.text-center.active.teal.lighten-2 #{device.release}
                             each release, idx in releases
                               if (device.release !== release.id)
-                                if device.model.includes('/')
-                                  if (device.model.replace('N/', '') === release.model)
+                                if device.model.includes('TL-WR2543')
+                                  if (device.model.replace('N/ND', '') === release.model)
                                     a.dropdown-item.text-center #{release.id}
-                                  else if (device.model.replace('/ND', '') === release.model)
+                                else if device.model.includes('N/')
+                                  if (device.model.replace('N/', '') === release.model)
                                     a.dropdown-item.text-center #{release.id}
                                 if (device.model === release.model)
                                   a.dropdown-item.text-center #{release.id}
