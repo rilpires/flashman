@@ -36,11 +36,19 @@ let updateAllDevices = function(event) {
   }
 
   rows.each(function(idx) {
-    if ($(this).prop('id') !== undefined && $(this).prop('id').length > 0 &&
-        selectedModels.includes($(this).data('deviceModel'))) {
-      let id = $(this).prop('id');
-      let rel = selectedRelease;
-      idsObj[id] = rel;
+    let deviceModel = $(this).data('deviceModel');
+    if (deviceModel) {
+      if (deviceModel.includes('TL-WR2543')) {
+        deviceModel = deviceModel.replace('N/ND', '');
+      } else if (deviceModel.includes('N/')) {
+        deviceModel = deviceModel.replace('N/', '');
+      }
+      if ($(this).prop('id') !== undefined && $(this).prop('id').length > 0 &&
+          selectedModels.includes(deviceModel)) {
+        let id = $(this).prop('id');
+        let rel = selectedRelease;
+        idsObj[id] = rel;
+      }
     }
   });
   $(event.target).prop('disabled', true);
