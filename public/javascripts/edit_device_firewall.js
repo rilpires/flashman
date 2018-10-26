@@ -121,6 +121,8 @@ socket.on('ONLINEDEV', function(macaddr, data) {
     let id = $('#openfirewallRouterid_label').text();
     if (id == macaddr) {
       let inputDevs = $('#openFirewallPortsMac')[0].selectize;
+      // Clear old data
+      inputDevs.clearOptions();
       $('.btn-syncOnlineDevs').children()
                               .removeClass('animated rotateOut infinite');
       let macoptions = [];
