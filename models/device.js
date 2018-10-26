@@ -7,7 +7,7 @@ let deviceSchema = new Schema({
   _id: String,
   external_reference: {kind: String, data: String},
   model: String,
-  version: String,
+  version: {type: String, default: '0.0.0'},
   release: String,
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
