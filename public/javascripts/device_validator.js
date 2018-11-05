@@ -40,7 +40,7 @@
       const messages = [
         'Este campo é obrigatório',
         'Este campo não pode ter mais de 64 caracteres',
-        'Somente são aceitos: caracteres alfanuméricos, espaços, - e _',
+        'Somente são aceitos: caracteres alfanuméricos, espaços, @, _, - e .',
       ];
       let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@\.\-\_\#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
