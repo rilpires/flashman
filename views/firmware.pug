@@ -26,8 +26,8 @@ block content
           form(method="post", action="/firmware/upload", name="firmwareform")
             .col
               .input-group
-                label.input-group-btn
-                  label.btn.teal.lighten-2.btn-file
+                .input-group-prepend
+                  label.btn.btn-md.btn-primary.btn-file.my-0
                     | Arquivo...
                     input.form-control(type="file", name="firmwarefile",
                                        style="display:none;")
@@ -79,62 +79,16 @@ block content
       .fas.fa-hdd.fa-lg
       span &nbsp Firmwares
     .card-body
-      if ! firmwares || firmwares.length == 0
-        h3.text-center Nenhum upload de firmware realizado
-      else
-        .text-right
-          .btn-group(role="group")
-            button.btn.btn-danger(type="button" id="btn-firmware-trash")
-              .fas.fa-trash.fa-lg
-        
-        .table-responsive.mt-4
-          table#firmware-table.table.devices-table
-            thead
-              tr
-                th.col-xs-1
-                  input.checkbox(type="checkbox" id="checkall")
-                th.text-center Fabricante
-                th.text-center Modelo
-                th.text-center Versão
-                th.text-center Release
-            tbody
-              each firmware, index in firmwares
-                tr
-                  td.col-xs-1
-                    input.checkbox(type="checkbox" id=firmware.id)
-                  td.text-center #{firmware.vendor}
-                  td.text-center #{firmware.model}
-                  td.text-center #{firmware.version}
-                  td.text-center #{firmware.release}
-        .row.justify-content-center.mt-2
-          nav
-            ul.pagination.pagination-lg
-              - let cPage = parseInt(page);
-              - let delta = 2;
-              - for (var i=1; i<=pages; i++) {
-              -   if (i == 1 || i == pages || ((i >= cPage-delta) && (i <= cPage+delta))) {
-              -     if (i == page)
-                      li.page-item.active
-                        a.page-link.teal.lighten-2(href="#") #{i}
-              -     else {
-              -       if (i == pages && (cPage+delta <= pages-delta)) {
-                        li.page-item
-                          h3.page-link.disabled ...
-              -       }
-              -       if (lastquery) {
-                        li.page-item
-                          a.page-link(href="?content=" + lastquery + "&page=" + i) #{i}
-              -       } else {
-                        li.page-item
-                          a.page-link(href="?page=" + i) #{i}
-              -       }
-              -       if (i == 1 && (cPage-delta > delta)) {
-                        li.page-item
-                          h3.page-link.disabled ...
-              -       }
-              -     }
-              -   }
-              - }
+      .table-responsive.mt-2
+        table#firmware-table.table
+          thead
+            tr
+              th
+                input.checkbox(type="checkbox" id="checkall")
+              th.text-center Fabricante
+              th.text-center Modelo
+              th.text-center Versão
+              th.text-center Release
 
 block scripts
   script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
