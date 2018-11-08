@@ -37,6 +37,7 @@ $(document).ready(function() {
       'searchPlaceholder': 'Buscar...',
     },
     'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
+    'columnDefs': [{className: 'text-center', targets: ['_all']}],
     'dom': '<"row" <"col-sm-12 col-md-6 dt-firm-table-btns">' +
            '       <"col-sm-12 col-md-6"f>               >' +
            '<"row" t>                                     ' +
@@ -57,11 +58,9 @@ $(document).ready(function() {
       traditional: true,
       data: {ids: selectedItens},
       success: function(res) {
+        displayAlertMsg(res);
         if (res.type == 'success') {
-          displayAlertMsg(res);
           fetchLocalFirmwares(firmwaresTable);
-        } else {
-          displayAlertMsg(res);
         }
       },
     });
@@ -118,8 +117,6 @@ $(document).ready(function() {
     if (itemId == 'checkall') {
       $('.checkbox').not(this).prop('checked', this.checked).change();
     } else {
-      let row = $(event.target).parents('tr');
-
       let itemIdx = selectedItens.indexOf(itemId);
       if ($(this).is(':checked')) {
         if (itemIdx == -1) {
@@ -217,6 +214,7 @@ $(document).ready(function() {
             'lengthMenu': 'Exibir _MENU_',
           },
           'order': [[0, 'asc'], [1, 'asc'], [2, 'asc'], [3, 'desc']],
+          'columnDefs': [{className: 'text-center', targets: ['_all']}],
           'dom': '<"row" <"col-sm-12 col-md-6">' +
                  '       <"col-sm-12 col-md-6"f>               >' +
                  '<"row" t>                                     ' +
