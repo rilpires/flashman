@@ -65,20 +65,15 @@ block content
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
       #users-table-wrapper.table-responsive(style="display: none;")
-        .text-right.mb-4
-          .btn-group(role="group")
-            button.btn.btn-danger(type="button" id="btn-user-trash")
-              .fas.fa-trash.fa-lg
         table#users-table.table
           thead
             tr
-              th.col-xs-1
+              th.text-center
                 input.checkbox(type="checkbox" id="checkall")
               th.text-center Usuário
               th.text-center Classe de permissões
               th.text-center Data de Criação
               th.text-center
-          tbody#users-table-content
 
 block scripts
   script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')

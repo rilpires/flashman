@@ -88,6 +88,9 @@ let configFlashman = function(event) {
           function() {
             displayAlertMsg(res);
             $('#config-flashman-menu').off('hidden.bs.modal');
+            setTimeout(function() {
+              window.location.reload();
+            }, 1000);
           }
         );
       })

@@ -31,3 +31,54 @@
     }
   }
 }
+
+// Search input on DataTable
+.dataTables_filter input {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid $input-border-color;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: content-box;
+  color: $input-color;
+  font-family: inherit;
+  font-size: $input-label-font-size;
+  outline: none;
+
+  // Focused input style
+  &:focus:not([readonly]) {
+    border-bottom: 1px solid $input-md-focus-color;
+    box-shadow: 0 1px 0 0 $input-md-focus-color;
+    // Focused label style
+    + label {
+      color: $input-md-focus-color;
+    }
+  }
+}
+
+// Length select on DataTable
+.dataTables_length {
+  border: 0;
+  position: relative;
+
+  .custom-select {
+    // Remove arrow on Firefox
+    -moz-appearance: none;
+    // Remove arrow on Chrome
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid $input-border-color;
+    color: $input-color;
+
+    // Remove arrow on IE10
+    &::-ms-expand {
+      display: none;
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+}

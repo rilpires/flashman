@@ -16916,4 +16916,49 @@ table.table-sm td {
   color: #fff;
 }
 
+.dataTables_filter input {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid #ced4da;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: content-box;
+  color: #495057;
+  font-family: inherit;
+  font-size: 1rem;
+  outline: none;
+}
+
+.dataTables_filter input:focus:not([readonly]) {
+  border-bottom: 1px solid #4db6ac;
+  box-shadow: 0 1px 0 0 #4db6ac;
+}
+
+.dataTables_filter input:focus:not([readonly]) + label {
+  color: #4db6ac;
+}
+
+.dataTables_length {
+  border: 0;
+  position: relative;
+}
+
+.dataTables_length .custom-select {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #ced4da;
+  color: #495057;
+}
+
+.dataTables_length .custom-select::-ms-expand {
+  display: none;
+}
+
+.dataTables_length .custom-select:focus {
+  outline: none;
+}
+
 /*# sourceMappingURL=custom-bootstrap.css.map */

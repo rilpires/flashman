@@ -7,8 +7,75 @@ let check = function(input) {
   }
 };
 
+const fetchUsers = function(usersTable) {
+  usersTable.clear().draw();
+  $.get('/user/get/all', function(res) {
+    if (res.type == 'success') {
+      $('#loading-users').hide();
+      $('#users-table-wrapper').show();
+
+      res.users.forEach(function(userObj) {
+        let userRow = $('<tr></tr>').append(
+          (userObj.is_superuser ?
+            $('<td></td>') :
+            $('<td></td>').addClass('col-xs-1').append(
+              $('<input></input>').addClass('checkbox')
+              .attr('type', 'checkbox')
+              .attr('id', userObj._id)
+            )
+          ),
+          $('<td></td>').html(userObj.name),
+          $('<td></td>').html(userObj.role),
+          $('<td></td>').html(new Date(userObj.createdAt).toLocaleString()),
+          $('<td></td>').append(
+            $('<button></button>').append(
+              $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
+              $('<span></span>').html('&nbsp Editar')
+            ).addClass('btn btn-sm btn-primary my-0 btn-usr-edit')
+            .attr('data-userid', userObj._id)
+            .attr('type', 'button')
+          )
+        );
+        usersTable.row.add(userRow).draw();
+      });
+    } else {
+      displayAlertMsg(res);
+    }
+  }, 'json');
+};
+
 $(document).ready(function() {
   let selectedItens = [];
+
+  let usersTable = $('#users-table').DataTable({
+    'destroy': true,
+    'paging': true,
+    'info': false,
+    'pagingType': 'numbers',
+    'language': {
+      'zeroRecords': 'Nenhum usuário encontrado',
+      'infoEmpty': 'Nenhum usuário encontrado',
+      'search': '',
+      'searchPlaceholder': 'Buscar...',
+      'lengthMenu': 'Exibir _MENU_',
+    },
+    'order': [[1, 'asc'], [2, 'asc']],
+    'columnDefs': [{className: 'text-center', targets: ['_all']}],
+    'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">' +
+           '       <"col-sm-12 col-md-6"f>               >' +
+           '<"row" t>                                     ' +
+           '<"row" <"col-sm-12 col-md-6"l>                ' +
+           '       <"col-sm-12 col-md-6"p>               >',
+  });
+  // Initialize custom options on dataTable
+  $('.dt-users-table-btns').append(
+    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button></button>').addClass('btn btn-danger btn-trash').append(
+        $('<div></div>').addClass('fas fa-trash fa-lg'))
+    )
+  );
+  // Load table content
+  fetchUsers(usersTable);
 
   $('#card-header').click(function() {
     let plus = $(this).find('.fa-plus');
@@ -17,20 +84,16 @@ $(document).ready(function() {
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $('#btn-user-trash').click(function(event) {
+  $(document).on('click', '.btn-trash', function(event) {
     $.ajax({
       type: 'POST',
       url: '/user/del',
       traditional: true,
       data: {ids: selectedItens},
       success: function(res) {
+        displayAlertMsg(res);
         if (res.type == 'success') {
-          displayAlertMsg(res);
-          setTimeout(function() {
-            window.location.reload();
-          }, 1000);
-        } else {
-          displayAlertMsg(res);
+          fetchUsers(usersTable);
         }
       },
     });
@@ -66,9 +129,7 @@ $(document).ready(function() {
       $.post($(this).attr('action'), $(this).serialize(), function(res) {
         displayAlertMsg(res);
         if (res.type == 'success') {
-          setTimeout(function() {
-            window.location.reload();
-          }, 2000);
+          fetchUsers(usersTable);
         }
       }, 'json');
     } else {
@@ -78,57 +139,4 @@ $(document).ready(function() {
     $(this).addClass('was-validated');
     return false;
   });
-
-  $.get('/user/get/all', function(res) {
-    if (res.type == 'success') {
-      $('#loading-users').hide();
-      $('#users-table-wrapper').show();
-
-      res.users.forEach(function(userObj) {
-        $('#users-table-content').append(
-          $('<tr></tr>').append(
-            (userObj.is_superuser ?
-              $('<td></td>') :
-              $('<td></td>').addClass('col-xs-1').append(
-                $('<input></input>').addClass('checkbox')
-                .attr('type', 'checkbox')
-                .attr('id', userObj._id)
-              )
-            ),
-            $('<td></td>').addClass('text-center').html(userObj.name),
-            $('<td></td>').addClass('text-center').html(userObj.role),
-            $('<td></td>').addClass('text-center').html(
-              new Date(userObj.createdAt).toLocaleString()),
-            $('<td></td>').addClass('text-center').append(
-              $('<button></button>').append(
-                $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
-                $('<span></span>').html('&nbsp Editar')
-              ).addClass('btn btn-sm my-0 teal lighten-2 btn-usr-edit')
-              .attr('data-userid', userObj._id)
-              .attr('type', 'button')
-            )
-          )
-        );
-      });
-
-      $('#users-table').DataTable({
-        'destroy': true,
-        'paging': true,
-        'info': false,
-        'pagingType': 'numbers',
-        'language': {
-          'zeroRecords': 'Nenhum usuário encontrado',
-          'infoEmpty': 'Nenhum usuário encontrado',
-          'search': 'Buscar',
-          'lengthMenu': 'Exibir _MENU_ usuários',
-        },
-        'order': [[1, 'asc'], [2, 'asc']],
-      });
-    } else {
-      displayAlertMsg({
-        type: res.type,
-        message: res.message,
-      });
-    }
-  }, 'json');
 });

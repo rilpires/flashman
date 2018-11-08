@@ -38,9 +38,7 @@ let updateAllDevices = function(event) {
   rows.each(function(idx) {
     let deviceModel = $(this).data('deviceModel');
     if (deviceModel) {
-      if (deviceModel.includes('TL-WR2543')) {
-        deviceModel = deviceModel.replace('N/ND', '');
-      } else if (deviceModel.includes('N/')) {
+      if (deviceModel.includes('N/')) {
         deviceModel = deviceModel.replace('N/', '');
       }
       if ($(this).prop('id') !== undefined && $(this).prop('id').length > 0 &&

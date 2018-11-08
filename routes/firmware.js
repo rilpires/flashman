@@ -8,7 +8,11 @@ let router = express.Router();
 
 router.route('/').get(authController.ensureLogin(),
                       authController.ensurePermission(permission),
-                      firmwareController.firmwares);
+                      firmwareController.index);
+
+router.route('/fetch').get(authController.ensureLogin(),
+                           authController.ensurePermission(permission),
+                           firmwareController.fetchFirmwares);
 
 router.route('/del').post(authController.ensureLogin(),
                           authController.ensurePermission(permission),

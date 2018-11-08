@@ -1,51 +1,87 @@
 
-$(document).on('change', ':file', function() {
-  let input = $(this);
-  let numFiles = input.get(0).files ? input.get(0).files.length : 1;
-  let label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
-
-  input.trigger('fileselect', [numFiles, label]);
-});
+const fetchLocalFirmwares = function(firmwaresTable) {
+  firmwaresTable.clear().draw();
+  $.get('/firmware/fetch', function(res) {
+    if (res.success) {
+      res.firmwares.forEach(function(firmware) {
+        let firmwareRow = $('<tr></tr>').append(
+          $('<td></td>').append(
+            $('<input></input>').addClass('checkbox')
+                                .attr('id', firmware._id)
+                                .attr('type', 'checkbox')),
+          $('<td></td>').html(firmware.vendor),
+          $('<td></td>').html(firmware.model),
+          $('<td></td>').html(firmware.version),
+          $('<td></td>').html(firmware.release)
+        );
+        firmwaresTable.row.add(firmwareRow).draw();
+      });
+    } else {
+      displayAlertMsg(res);
+    }
+  }, 'json');
+};
 
 $(document).ready(function() {
   let selectedItens = [];
 
-  $('#firmware-table').DataTable({
-    'paging': false,
+  let firmwaresTable = $('#firmware-table').DataTable({
+    'paging': true,
     'info': false,
+    'lengthChange': false,
+    'pagingType': 'numbers',
     'language': {
       'zeroRecords': 'Nenhum registro encontrado',
       'infoEmpty': 'Nenhum firmware disponível',
-      'search': 'Buscar',
+      'search': '',
+      'searchPlaceholder': 'Buscar...',
     },
     'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
+    'columnDefs': [{className: 'text-center', targets: ['_all']}],
+    'dom': '<"row" <"col-sm-12 col-md-6 dt-firm-table-btns">' +
+           '       <"col-sm-12 col-md-6"f>               >' +
+           '<"row" t>                                     ' +
+           '<"row" <"col-sm-12 col-md-6"l>                ' +
+           '       <"col-sm-12 col-md-6"p>               >',
   });
-
-  $(':file').on('fileselect', function(event, numFiles, label) {
-    let input = $(this).parents('.input-group').find(':text');
-
-    if (input.length) {
-      input.val(label);
-    }
-  });
-
-  $('#btn-firmware-trash').click(function(event) {
+  // Initialize custom options on dataTable
+  $('.dt-firm-table-btns').append(
+    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button></button>').addClass('btn btn-danger btn-trash').append(
+        $('<div></div>').addClass('fas fa-trash fa-lg'))
+    )
+  );
+  $('.btn-trash').click(function(event) {
     $.ajax({
       type: 'POST',
       url: '/firmware/del',
       traditional: true,
       data: {ids: selectedItens},
       success: function(res) {
+        displayAlertMsg(res);
         if (res.type == 'success') {
-          displayAlertMsg(res);
-          setTimeout(function() {
-            window.location.reload();
-          }, 1000);
-        } else {
-          displayAlertMsg(res);
+          fetchLocalFirmwares(firmwaresTable);
         }
       },
     });
+  });
+  // Load local firmwares table
+  fetchLocalFirmwares(firmwaresTable);
+
+  // Firmware file upload
+  $(document).on('change', ':file', function() {
+    let input = $(this);
+    let numFiles = input.get(0).files ? input.get(0).files.length : 1;
+    let label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+
+    input.trigger('fileselect', [numFiles, label]);
+  });
+  $(':file').on('fileselect', function(event, numFiles, label) {
+    let input = $(this).parents('.input-group').find(':text');
+
+    if (input.length) {
+      input.val(label);
+    }
   });
 
   // Use this format when adding button with AJAX
@@ -70,18 +106,17 @@ $(document).ready(function() {
           .removeClass('fa-spinner fa-pulse')
           .addClass('fa-check');
         displayAlertMsg(res);
+        fetchLocalFirmwares(firmwaresTable);
       },
     });
   });
 
-  $('.checkbox').change(function(event) {
+  $(document).on('change', '.checkbox', function(event) {
     let itemId = $(this).prop('id');
 
     if (itemId == 'checkall') {
       $('.checkbox').not(this).prop('checked', this.checked).change();
     } else {
-      let row = $(event.target).parents('tr');
-
       let itemIdx = selectedItens.indexOf(itemId);
       if ($(this).is(':checked')) {
         if (itemIdx == -1) {
@@ -116,11 +151,7 @@ $(document).ready(function() {
             .addClass('fa-upload')
             .removeClass('fa-spinner fa-pulse');
           displayAlertMsg(res);
-          if (res.type == 'success') {
-            setTimeout(function() {
-              window.location.reload();
-            }, 2000);
-          }
+          fetchLocalFirmwares(firmwaresTable);
         },
       });
     } else {
@@ -178,10 +209,17 @@ $(document).ready(function() {
           'language': {
             'zeroRecords': 'Nenhum registro encontrado',
             'infoEmpty': 'Nenhum firmware disponível',
-            'search': 'Buscar',
-            'lengthMenu': 'Exibir _MENU_ firmwares',
+            'search': '',
+            'searchPlaceholder': 'Buscar...',
+            'lengthMenu': 'Exibir _MENU_',
           },
           'order': [[0, 'asc'], [1, 'asc'], [2, 'asc'], [3, 'desc']],
+          'columnDefs': [{className: 'text-center', targets: ['_all']}],
+          'dom': '<"row" <"col-sm-12 col-md-6">' +
+                 '       <"col-sm-12 col-md-6"f>               >' +
+                 '<"row" t>                                     ' +
+                 '<"row" <"col-sm-12 col-md-6"l>                ' +
+                 '       <"col-sm-12 col-md-6"p>               >',
         });
       } else {
         displayAlertMsg({

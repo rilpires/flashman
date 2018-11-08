@@ -44,8 +44,7 @@ let removeFirmware = function(firmware) {
   });
 };
 
-firmwareController.firmwares = function(req, res) {
-  let reqPage = 1;
+firmwareController.index = function(req, res) {
   let indexContent = {};
   indexContent.username = req.user.name;
   User.findOne({name: req.user.name}, function(err, user) {
@@ -54,43 +53,34 @@ firmwareController.firmwares = function(req, res) {
     } else {
       indexContent.superuser = user.is_superuser;
     }
-
     Config.findOne({is_default: true}, function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
       }
-
-      if (req.query.page) {
-        reqPage = req.query.page;
-      }
-
-      Firmware.paginate({}, {page: reqPage,
-                             limit: 10,
-                             sort: {_id: 1}}, function(err, firmwares) {
+      Role.findOne({name: req.user.role}, function(err, role) {
         if (err) {
+          console.log(err);
           indexContent.type = 'danger';
           indexContent.message = err.message;
           return res.render('error', indexContent);
         }
-
-        Role.findOne({name: req.user.role}, function(err, role) {
-          if (err) {
-            console.log(err);
-            indexContent.type = 'danger';
-            indexContent.message = err.message;
-            return res.render('error', indexContent);
-          }
-          indexContent.role = role;
-          indexContent.firmwares = firmwares.docs;
-          indexContent.page = firmwares.page;
-          indexContent.pages = firmwares.pages;
-
-          return res.render('firmware', indexContent);
-        });
+        indexContent.role = role;
+        return res.render('firmware', indexContent);
       });
     });
+  });
+};
+
+firmwareController.fetchFirmwares = function(req, res) {
+  Firmware.find({}, function(err, firmwares) {
+    if (err) {
+      console.log(err);
+      return res.json({success: false, type: 'danger',
+                       message: 'Erro ao buscar firmwares'});
+    }
+    return res.json({success: true, type: 'success', firmwares: firmwares});
   });
 };
 
