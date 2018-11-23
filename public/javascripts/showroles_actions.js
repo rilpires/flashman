@@ -203,6 +203,15 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
+                      .text('Monitorar as Medições de Dispositivos'),
+                      $('<select></select>').addClass('form-control')
+                      .attr('name', 'grant-monitor-manage').append(
+                        $('<option></option>').val(false).text('Bloquear'),
+                        $('<option></option>').val(true).text('Permitir')
+                      )
+                    ),
+                    $('<div></div>').addClass('input-entry').append(
+                      $('<label></label>')
                       .text('Controle de Gerência de Firmwares'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-firmware-manage').append(
@@ -267,6 +276,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-add] option[value=' +
           roleObj.grantDeviceAdd + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-monitor-manage] option[value=' +
+          roleObj.grantMonitorManage + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-manage] option[value=' +
           roleObj.grantFirmwareManage + ']')
