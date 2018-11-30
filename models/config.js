@@ -5,6 +5,11 @@ let configSchema = new mongoose.Schema({
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   pppoePassLength: {type: Number, default: 8},
+  measure_configs: {
+    is_active: {type: Boolean, default: false},
+    controller_fqdn: String,
+    measurer_fqdn: String,
+  },
 });
 
 let config = mongoose.model('config', configSchema);
