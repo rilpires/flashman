@@ -6,6 +6,7 @@ let router = express.Router();
 router.use('/login', require('./login'));
 router.use('/devicelist', require('./device_list'));
 router.use('/deviceinfo', require('./device_info'));
+router.use('/measure', require('./measure'));
 router.use('/user', require('./user'));
 router.use('/firmware', require('./firmware'));
 router.use('/upgrade', require('./upgrade'));
