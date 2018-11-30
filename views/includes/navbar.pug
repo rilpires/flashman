@@ -21,10 +21,6 @@ nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
               a.dropdown-item(href="/firmware")
                 .fas.fa-hdd.fa-lg
                 span &nbsp Firmwares
-            if (superuser || role.grantMonitorManage)
-              a.dropdown-item(href='/measure')
-                .fas.fa-chart-bar.fa-lg
-                span &nbsp Monitorar dispositivos
             if (superuser)
               a.dropdown-item(href="/user/showall")
                 .fas.fa-users.fa-lg
