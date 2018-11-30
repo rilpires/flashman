@@ -7,6 +7,7 @@ let configSchema = new mongoose.Schema({
   pppoePassLength: {type: Number, default: 8},
   measure_configs: {
     is_active: {type: Boolean, default: false},
+    auth_token: {type: String},
     controller_fqdn: String,
     measurer_fqdn: String,
   },

@@ -34,11 +34,11 @@
                 label.custom-control-label(for="autoupdate")
                   | Deixar que o Flashman se atualize automaticamente
                 .invalid-feedback
-              if (superuser || role.grantMonitorManage)
+              if (superuser || role && role.grantMonitorManage)
                 br
                 .input-entry
                   label(for="measure-token") Token de ativação da ferramenta de medição
-                  input.form-control(type="text", name="measure-token" id="measure-token")
+                  input.form-control(type="text", value=measure.token, name="measure-token", id="measure-token")
           .row.mt-3
             .col.text-center
               button.btn.teal.lighten-2(type="submit")

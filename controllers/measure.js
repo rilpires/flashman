@@ -154,26 +154,4 @@ measureController.deactivateDevices = async(function(req, res) {
   return res.status(200).end();
 });
 
-measureController.renderIndex = async(function(req, res) {
-  let indexContent = {};
-  try {
-    indexContent.username = req.user.name;
-    let config = await(ConfigModel.findOne({is_default: true}));
-    let user = await(UserModel.findOne({name: req.user.name}));
-    let role = await(RoleModel.findOne({name: req.user.role}));
-    if (!config || !user || (!user.is_superuser && !role)) {
-      throw {message: 'Erro interno do flashman'};
-    }
-    indexContent.superuser = user.is_superuser;
-    indexContent.role = role;
-    indexContent.config_active = config.is_active;
-    res.render('measure', indexContent);
-  } catch (err) {
-    console.log(err);
-    indexContent.type = 'danger';
-    indexContent.message = err.message;
-    res.render('error', indexContent);
-  }
-});
-
 module.exports = measureController;
