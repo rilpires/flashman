@@ -437,12 +437,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           // This message is only valid if we have a socket to send response to
           if (sio.anlix_connections[req.sessionID]) {
             if (msgtype == 'log') {
-              sio.anlix_wait_for_livelog_notification(
+              sio.anlixWaitForLiveLogNotification(
                 req.sessionID, req.params.id.toUpperCase(), 5000);
               mqtt.anlix_message_router_log(req.params.id.toUpperCase());
             } else
             if (msgtype == 'onlinedevs') {
-              sio.anlix_wait_for_onlinedev_notification(
+              sio.anlixWaitForOnlineDevNotification(
                 req.sessionID, req.params.id.toUpperCase(), 5000);
               mqtt.anlix_message_router_onlinedev(req.params.id.toUpperCase());
             }

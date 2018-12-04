@@ -119,7 +119,7 @@ let sessParam = session({
 });
 
 app.use(sessParam);
-sio.anlix_bindsession(sessParam);
+sio.anlixBindSession(sessParam);
 
 // create static routes for public libraries
 app.use('/scripts/jquery',

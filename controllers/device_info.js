@@ -709,7 +709,7 @@ deviceInfoController.receiveLog = function(req, res) {
       console.log('Log Receiving for device ' +
         id + ' successfully. LAST BOOT');
     } else if (bootType == 'LIVE') {
-      sio.anlix_send_livelog_notifications(id, req.body);
+      sio.anlixSendLiveLogNotifications(id, req.body);
       console.log('Log Receiving for device ' +
         id + ' successfully. LIVE');
     }
@@ -778,7 +778,7 @@ deviceInfoController.receiveDevices = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlix_send_onlinedev_notifications(matchedDevice, req.body);
+    sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

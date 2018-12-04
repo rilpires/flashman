@@ -6,7 +6,7 @@ let sio = socketio();
 sio.anlix_connections = {};
 sio.anlix_notifications = [];
 
-sio.anlix_bindsession = function(session) {
+sio.anlixBindSession = function(session) {
   sio.use(sharedsession(session, {
     autoSave: true,
   }));
@@ -54,7 +54,7 @@ sio.removeOldNotification = function(timer) {
 const SIO_NOTIFICATION_LIVELOG = 0;
 const SIO_NOTIFICATION_ONLINEDEVS = 1;
 
-sio.anlix_wait_for_livelog_notification = function(session, macaddr, timeout) {
+sio.anlixWaitForLiveLogNotification = function(session, macaddr, timeout) {
   if (!session) {
     console.log('ERROR: SIO: ' +
                 'Try to add livelog notification with an invalid session!');
@@ -90,7 +90,7 @@ sio.anlix_wait_for_livelog_notification = function(session, macaddr, timeout) {
   return true;
 };
 
-sio.anlix_send_livelog_notifications = function(macaddr, logdata) {
+sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
   if (!macaddr) {
     console.log('ERROR: SIO: ' +
                 'Try to send livelog notification to an invalid mac address!');
@@ -120,7 +120,7 @@ sio.anlix_send_livelog_notifications = function(macaddr, logdata) {
   }
 };
 
-sio.anlix_wait_for_onlinedev_notification = function(session, macaddr, timeout) {
+sio.anlixWaitForOnlineDevNotification = function(session, macaddr, timeout) {
   if (!session) {
     console.log('ERROR: SIO: ' +
                 'Try to add onlinedev notification with an invalid session!');
@@ -156,7 +156,7 @@ sio.anlix_wait_for_onlinedev_notification = function(session, macaddr, timeout) 
   return true;
 };
 
-sio.anlix_send_onlinedev_notifications = function(matchedDevice, devsData) {
+sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
   if (!matchedDevice) {
     console.log(
       'ERROR: SIO: ' +
