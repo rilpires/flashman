@@ -70,7 +70,7 @@ mqtts.authenticate = function(client, username, password, cb) {
   }
 };
 
-mqtts.anlix_message_router_update = function(id, hashSuffix) {
+mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
@@ -81,7 +81,7 @@ mqtts.anlix_message_router_update = function(id, hashSuffix) {
   console.log('MQTT SEND Message UPDATE to '+id);
 };
 
-mqtts.anlix_message_router_reset = function(id) {
+mqtts.anlixMessageRouterReset = function(id) {
   mqtts.publish({
       cmd: 'publish',
       retain: true,
@@ -91,7 +91,7 @@ mqtts.anlix_message_router_reset = function(id) {
   console.log('MQTT Clean Messages for router '+id);
 };
 
-mqtts.anlix_message_router_reboot = function(id) {
+mqtts.anlixMessageRouterReboot = function(id) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
@@ -102,7 +102,7 @@ mqtts.anlix_message_router_reboot = function(id) {
   console.log('MQTT SEND Message REBOOT to '+id);
 };
 
-mqtts.anlix_message_router_resetapp = function(id) {
+mqtts.anlixMessageRouterResetApp = function(id) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
@@ -113,7 +113,7 @@ mqtts.anlix_message_router_resetapp = function(id) {
   console.log('MQTT SEND Message RSTAPP to '+id);
 };
 
-mqtts.anlix_message_router_resetmqtt = function(id) {
+mqtts.anlixMessageRouterResetMqtt = function(id) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
@@ -124,7 +124,7 @@ mqtts.anlix_message_router_resetmqtt = function(id) {
   console.log('MQTT SEND Message RSTMQTT to '+id);
 };
 
-mqtts.anlix_message_router_log = function(id) {
+mqtts.anlixMessageRouterLog = function(id) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
@@ -135,7 +135,7 @@ mqtts.anlix_message_router_log = function(id) {
   console.log('MQTT SEND Message LOG to '+id);
 };
 
-mqtts.anlix_message_router_onlinedev = function(id) {
+mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   mqtts.publish({
       cmd: 'publish',
       qos: 2,

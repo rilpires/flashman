@@ -267,7 +267,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.do_update_parameters = false;
 
           // Remove notification to device using MQTT
-          mqtt.anlix_message_router_reset(matchedDevice._id);
+          mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
         matchedDevice.save();
@@ -519,7 +519,7 @@ let appSet = function(req, res, processFunction) {
 
       matchedDevice.save();
 
-      mqtt.anlix_message_router_update(matchedDevice._id, hashSuffix);
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
       .then((done)=>{
