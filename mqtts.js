@@ -5,14 +5,35 @@ const DeviceModel = require('./models/device');
 
 let mqtts = aedes();
 
+const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
+
+const anlixSendDeviceStatusNotification = function(mac) {
+  if (!mac) {
+    console.log(
+      'ERROR: SIO: ' +
+      'Try to send status notification to an invalid mac address!'
+    );
+    return false;
+  }
+  let status = 'red-text';
+  if (mqtts.clients[mac.toUpperCase()]) {
+    status = 'green-text';
+  }
+  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, status);
+  if (!found) {
+    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
+  }
+  return found;
+};
+
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
-  sio.anlixSendDeviceStatusNotification(client.id);
+  anlixSendDeviceStatusNotification(client.id);
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
   console.log('Router disconnected on MQTT: ' + client.id);
-  sio.anlixSendDeviceStatusNotification(client.id);
+  anlixSendDeviceStatusNotification(client.id);
 });
 
 mqtts.on('ack', function(packet, client, err) {

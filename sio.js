@@ -1,6 +1,5 @@
 const socketio = require('socket.io');
 const sharedsession = require('express-socket.io-session');
-const mqtt = require('./mqtts');
 
 let sio = socketio();
 
@@ -68,7 +67,7 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   }
 };
 
-const emitNotification = function(type, macaddr,
+sio.emitNotification = function(type, macaddr,
                                   data, removeMeKey=null) {
   let found = false;
   // Get who is waiting for this notification
@@ -133,7 +132,7 @@ sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
                 'Try to send livelog notification to an invalid mac address!');
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_LIVELOG,
+  let found = sio.emitNotification(SIO_NOTIFICATION_LIVELOG,
                                macaddr, logdata, macaddr);
   if (!found) {
     console.log('SIO: NO Session found for ' +
@@ -181,7 +180,7 @@ sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
       }
     }
   }
-  let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
+  let found = sio.emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
                                matchedDevice._id, devsData, matchedDevice._id);
   if (!found) {
     console.log('SIO: NO Session found for ' +
@@ -200,25 +199,6 @@ sio.anlixWaitDeviceStatusNotification = function(session) {
   // Debug
   // console.log('SIO: Notification added to DEVICESTATUS of for ' + session);
   return true;
-};
-
-sio.anlixSendDeviceStatusNotification = function(mac) {
-  if (!mac) {
-    console.log(
-      'ERROR: SIO: ' +
-      'Try to send status notification to an invalid mac address!'
-    );
-    return false;
-  }
-  let status = 'red-text';
-  if (mqtt.clients[mac.toUpperCase()]) {
-    status = 'green-text';
-  }
-  let found = emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, status);
-  if (!found) {
-    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
-  }
-  return found;
 };
 
 module.exports = sio;
