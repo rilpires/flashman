@@ -4,18 +4,12 @@ const mqtt = require('./mqtts');
 
 let sio = socketio();
 
-const SIO_NOTIFICATION_LIVELOG = 0;
-const SIO_NOTIFICATION_ONLINEDEVS = 1;
-const SIO_NOTIFICATION_DEVICE_STATUS = 2;
+const SIO_NOTIFICATION_LIVELOG = 'LIVELOG';
+const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
+const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 
 sio.anlixConnections = {};
-sio.anlixNotifications = [];
-
-sio.anlixBindSession = function(session) {
-  sio.use(sharedsession(session, {
-    autoSave: true,
-  }));
-};
+sio.anlixNotifications = {};
 
 sio.on('connection', function(socket) {
   console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
@@ -26,11 +20,14 @@ sio.on('connection', function(socket) {
     if (sio.anlixConnections[socket.handshake.sessionID]) {
       oldsock = sio.anlixConnections[socket.handshake.sessionID];
       oldsock.disconnect(true);
+      if (sio.anlixNotifications[socket.handshake.sessionID]) {
+        delete sio.anlixNotifications[socket.handshake.sessionID];
+      }
       console.log(oldsock.handshake.address + ' (' +
                   oldsock.handshake.sessionID +
                   ') disconnect from Notification Broker: Overwrite');
     }
-    sio.anlixConnections[socket.handshake.sessionID]=socket;
+    sio.anlixConnections[socket.handshake.sessionID] = socket;
   } else {
     socket.disconnect(true);
     console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
@@ -41,10 +38,69 @@ sio.on('connection', function(socket) {
     if (sio.anlixConnections[socket.handshake.sessionID]) {
       delete sio.anlixConnections[socket.handshake.sessionID];
     }
+    if (sio.anlixNotifications[socket.handshake.sessionID]) {
+      delete sio.anlixNotifications[socket.handshake.sessionID];
+    }
     console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
                 ') disconnect from Notification Broker: '+ reason);
   });
 });
+
+const registerNotification = function(sessionId, type, macaddr=null) {
+  let notification = {};
+  notification.type = type;
+  notification.timer = Date.now();
+  if (macaddr) {
+    notification.macaddr = macaddr;
+  }
+  if (!sio.anlixNotifications[sessionId]) {
+    sio.anlixNotifications[sessionId] = [];
+  }
+  sio.anlixNotifications[sessionId].push(notification);
+};
+
+const emitNotification = function(type, macaddr,
+                                  data, removeMeKey=null) {
+  let found = false;
+  // Get who is waiting for this notification
+  for (let sessionId in sio.anlixNotifications) {
+    if (sio.anlixNotifications.hasOwnProperty(sessionId)) {
+      let notifications = sio.anlixNotifications[sessionId];
+      for (let nIdx = 0; nIdx < notifications.length; nIdx++) {
+        let notification = notifications[nIdx];
+        if (notification.type == type) {
+          if (removeMeKey) {
+            if (notification.macaddr == removeMeKey) {
+              console.log('SIO: Send ' + type +' of ' + macaddr +
+                          ' information for ' + sessionId);
+              sio.anlixConnections[sessionId].emit(type, macaddr, data);
+              found = true;
+              // Remove from notifications array
+              notifications.splice(nIdx, 1);
+              break;
+            }
+          } else {
+            console.log('SIO: Send ' + type +' of ' + macaddr +
+                        ' information for ' + sessionId);
+            sio.anlixConnections[sessionId].emit(type, macaddr, data);
+            found = true;
+            break;
+          }
+        }
+      }
+      if (found) {
+        break;
+      }
+    }
+  }
+  return found;
+};
+
+sio.anlixBindSession = function(session) {
+  sio.use(sharedsession(session, {
+    autoSave: true,
+  }));
+};
 
 sio.removeOldNotification = function(timer) {
   sio.anlixNotifications = sio.anlixNotifications.filter((item) => {
@@ -62,23 +118,16 @@ sio.anlixWaitForLiveLogNotification = function(session, macaddr, timeout) {
                 'Try to add livelog notification with an invalid session!');
     return false;
   }
-
   if (!macaddr) {
     console.log('ERROR: SIO: ' +
                 'Try to add livelog notification with an invalid mac address!');
     return false;
   }
-
   if (!timeout || timeout == 0) {
     timeout = 5000;
   } // 5s default
 
-  parameters = {};
-  parameters.type = SIO_NOTIFICATION_LIVELOG;
-  parameters.timer = Date.now();
-  parameters.session = session;
-  parameters.macaddr = macaddr;
-  sio.anlixNotifications.push(parameters);
+  registerNotification(session, SIO_NOTIFICATION_LIVELOG, macaddr);
 
   // set a timer to remove the notification if it takes too long
   // set a 100ms error (to only remove AFTER timeout)
@@ -98,28 +147,13 @@ sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
                 'Try to send livelog notification to an invalid mac address!');
     return false;
   }
-  let found = false;
-
-  // Get who is waiting for this notification
-  sio.anlixNotifications = sio.anlixNotifications.filter((item) => {
-    if (item.type == SIO_NOTIFICATION_LIVELOG) {
-      if (item.macaddr == macaddr) {
-        if (sio.anlixConnections[item.session]) {
-          console.log('SIO: Send LIVELOG of ' + macaddr +
-                      ' information for ' + item.session);
-          sio.anlixConnections[item.session].emit('LIVELOG', macaddr, logdata);
-          found = true;
-          return false;
-        }
-      }
-    }
-    return true;
-  });
-
+  let found = emitNotification(SIO_NOTIFICATION_LIVELOG,
+                               macaddr, logdata, macaddr);
   if (!found) {
     console.log('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
+  return found;
 };
 
 sio.anlixWaitForOnlineDevNotification = function(session, macaddr, timeout) {
@@ -128,23 +162,16 @@ sio.anlixWaitForOnlineDevNotification = function(session, macaddr, timeout) {
                 'Try to add onlinedev notification with an invalid session!');
     return false;
   }
-
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
-                'Try to add onlinedev notification with an invalid mac address!');
+    console.log('ERROR: SIO: Try to add onlinedev ' +
+                'notification with an invalid mac address!');
     return false;
   }
-
   if (!timeout || timeout == 0) {
     timeout = 5000;
   } // 5s default
 
-  parameters = {};
-  parameters.type = SIO_NOTIFICATION_ONLINEDEVS;
-  parameters.timer = Date.now();
-  parameters.session = session;
-  parameters.macaddr = macaddr;
-  sio.anlixNotifications.push(parameters);
+  registerNotification(session, SIO_NOTIFICATION_ONLINEDEVS, macaddr);
 
   // set a timer to remove the notification if it takes too long
   // set a 100ms error (to only remove AFTER timeout)
@@ -166,8 +193,6 @@ sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
     );
     return false;
   }
-  let found = false;
-
   // Enrich information about connected devices
   for (let connDeviceMac in devsData.Devices) {
     if (devsData.Devices.hasOwnProperty(connDeviceMac)) {
@@ -183,31 +208,13 @@ sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
       }
     }
   }
-
-  // Get who is waiting for this notification
-  sio.anlixNotifications = sio.anlixNotifications.filter((item) => {
-    if (item.type == SIO_NOTIFICATION_ONLINEDEVS) {
-      if (item.macaddr == matchedDevice._id) {
-        if (sio.anlixConnections[item.session]) {
-          console.log('SIO: Send ONLINEDEV of ' + matchedDevice._id +
-                      ' information for ' + item.session);
-          sio.anlixConnections[item.session].emit(
-            'ONLINEDEV',
-            matchedDevice._id,
-            devsData
-          );
-          found = true;
-          return false;
-        }
-      }
-    }
-    return true;
-  });
-
+  let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
+                               matchedDevice._id, devsData, matchedDevice._id);
   if (!found) {
     console.log('SIO: NO Session found for ' +
                 matchedDevice._id + '! Discarding message...');
   }
+  return found;
 };
 
 sio.anlixWaitDeviceStatusNotification = function(session) {
@@ -216,13 +223,7 @@ sio.anlixWaitDeviceStatusNotification = function(session) {
                 'notification with an invalid session!');
     return false;
   }
-
-  parameters = {};
-  parameters.type = SIO_NOTIFICATION_DEVICE_STATUS;
-  parameters.timer = Date.now();
-  parameters.session = session;
-  sio.anlixNotifications.push(parameters);
-
+  registerNotification(session, SIO_NOTIFICATION_DEVICE_STATUS);
   console.log('SIO: Notification added to DEVICESTATUS of for ' + session);
   return true;
 };
@@ -235,34 +236,15 @@ sio.anlixSendDeviceStatusNotification = function(mac) {
     );
     return false;
   }
-  let found = false;
-
   let status = 'red-text';
   if (mqtt.clients[mac.toUpperCase()]) {
     status = 'green-text';
   }
-
-  // Get who is waiting for this notification
-  sio.anlixNotifications.forEach((item) => {
-    if (item.type == SIO_NOTIFICATION_DEVICE_STATUS) {
-      if (sio.anlixConnections[item.session]) {
-        console.log('SIO: Send DEVICESTATUS of ' + mac +
-                    ' information for ' + item.session);
-        sio.anlixConnections[item.session].emit(
-          'DEVICESTATUS',
-          mac,
-          status
-        );
-        found = true;
-      }
-    }
-  });
-
+  let found = emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, status);
   if (!found) {
     console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
-    return false;
   }
-  return true;
+  return found;
 };
 
 module.exports = sio;
