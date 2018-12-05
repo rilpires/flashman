@@ -1,15 +1,18 @@
 
 const aedes = require('aedes');
+const sio = require('./sio');
 const DeviceModel = require('./models/device');
 
 let mqtts = aedes();
 
 mqtts.on('client', function(client, err) {
-  console.log('Router connected on MQTT: '+client.id);
+  console.log('Router connected on MQTT: ' + client.id);
+  sio.anlixSendDeviceStatusNotification(client.id);
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
-  console.log('Router disconnected on MQTT: '+client.id);
+  console.log('Router disconnected on MQTT: ' + client.id);
+  sio.anlixSendDeviceStatusNotification(client.id);
 });
 
 mqtts.on('ack', function(packet, client, err) {

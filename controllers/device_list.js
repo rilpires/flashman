@@ -374,6 +374,18 @@ deviceListController.delDeviceReg = function(req, res) {
   });
 };
 
+deviceListController.registerStatusNotification = function(req, res) {
+  if (sio.anlixWaitDeviceStatusNotification(req.sessionID)) {
+    return res.status(200).json({success: true});
+  } else {
+    return res.status(500).json({
+      success: false,
+      type: 'danger',
+      message: 'Erro no registro de notificação de status',
+    });
+  }
+};
+
 //
 // REST API only functions
 //
@@ -435,7 +447,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
         } else {
           // This message is only valid if we have a socket to send response to
-          if (sio.anlix_connections[req.sessionID]) {
+          if (sio.anlixConnections[req.sessionID]) {
             if (msgtype == 'log') {
               sio.anlixWaitForLiveLogNotification(
                 req.sessionID, req.params.id.toUpperCase(), 5000);

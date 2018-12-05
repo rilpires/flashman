@@ -158,4 +158,21 @@ $(document).ready(function() {
   $('#export-csv').click(function(event) {
     exportTableToCSV('lista-de-roteadores-flashbox.csv');
   });
+
+
+  $.ajax({
+    url: '/devicelist/notify/register/devicestatus',
+    type: 'post',
+    dataType: 'json',
+    error: function(xhr, status, error) {
+      displayAlertMsg(JSON.parse(xhr.responseText));
+    },
+  });
+  // Important: include and initialize socket.io first using socket var
+  socket.on('DEVICESTATUS', function(macaddr, data) {
+    $('#' + $.escapeSelector(macaddr))
+      .find('.fas.fa-circle')
+      .removeClass('green-text red-text grey-text')
+      .addClass(data);
+  });
 });
