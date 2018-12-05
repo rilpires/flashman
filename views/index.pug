@@ -231,7 +231,7 @@ block content
                         .fas.fa-chevron-right.fa-lg
                       td.text-center.col-xs-1=(index + 1)
                       td.text-center.col-xs-1
-                        .fas.fa-circle.fa-lg(
+                        .fas.fa-circle.fa-lg.device-status(
                           class=status.devices[device._id],
                           data-toggle="tooltip",
                           title=device.last_contact.toString()

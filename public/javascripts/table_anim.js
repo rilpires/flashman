@@ -171,7 +171,7 @@ $(document).ready(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('DEVICESTATUS', function(macaddr, data) {
     $('#' + $.escapeSelector(macaddr))
-      .find('.fas.fa-circle')
+      .find('.device-status')
       .removeClass('green-text red-text grey-text')
       .addClass(data);
   });

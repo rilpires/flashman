@@ -450,12 +450,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           if (sio.anlixConnections[req.sessionID]) {
             if (msgtype == 'log') {
               sio.anlixWaitForLiveLogNotification(
-                req.sessionID, req.params.id.toUpperCase(), 5000);
+                req.sessionID, req.params.id.toUpperCase());
               mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
             } else
             if (msgtype == 'onlinedevs') {
               sio.anlixWaitForOnlineDevNotification(
-                req.sessionID, req.params.id.toUpperCase(), 5000);
+                req.sessionID, req.params.id.toUpperCase());
               mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
             }
           } else {
