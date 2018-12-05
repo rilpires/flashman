@@ -56,7 +56,16 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   if (!sio.anlixNotifications[sessionId]) {
     sio.anlixNotifications[sessionId] = [];
   }
-  sio.anlixNotifications[sessionId].push(notification);
+  if (!sio.anlixNotifications[sessionId].find((notif) => {
+    const sameType = notif.type == notification.type;
+    let sameMac = true;
+    if (sameType && macaddr) {
+      sameMac = notif.macaddr == macaddr;
+    }
+    return sameType && sameMac;
+  })) {
+    sio.anlixNotifications[sessionId].push(notification);
+  }
 };
 
 const emitNotification = function(type, macaddr,
@@ -102,17 +111,7 @@ sio.anlixBindSession = function(session) {
   }));
 };
 
-sio.removeOldNotification = function(timer) {
-  sio.anlixNotifications = sio.anlixNotifications.filter((item) => {
-    if (item.timer >= timer) {
-      console.log('SIO WARNING: Remove notification for ' +
-                  item.session + ': Timeout');
-    }
-    return item.timer >= timer;
-  });
-};
-
-sio.anlixWaitForLiveLogNotification = function(session, macaddr, timeout) {
+sio.anlixWaitForLiveLogNotification = function(session, macaddr) {
   if (!session) {
     console.log('ERROR: SIO: ' +
                 'Try to add livelog notification with an invalid session!');
@@ -123,21 +122,8 @@ sio.anlixWaitForLiveLogNotification = function(session, macaddr, timeout) {
                 'Try to add livelog notification with an invalid mac address!');
     return false;
   }
-  if (!timeout || timeout == 0) {
-    timeout = 5000;
-  } // 5s default
 
   registerNotification(session, SIO_NOTIFICATION_LIVELOG, macaddr);
-
-  // set a timer to remove the notification if it takes too long
-  // set a 100ms error (to only remove AFTER timeout)
-  const timelimit = Date.now() + timeout;
-  setTimeout(function() {
-    sio.removeOldNotification(timelimit);
-  }, timeout + 100);
-  console.log('SIO: Notification added to LIVELOG of ' +
-              macaddr + ' for ' + session);
-
   return true;
 };
 
@@ -156,7 +142,7 @@ sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
   return found;
 };
 
-sio.anlixWaitForOnlineDevNotification = function(session, macaddr, timeout) {
+sio.anlixWaitForOnlineDevNotification = function(session, macaddr) {
   if (!session) {
     console.log('ERROR: SIO: ' +
                 'Try to add onlinedev notification with an invalid session!');
@@ -167,21 +153,8 @@ sio.anlixWaitForOnlineDevNotification = function(session, macaddr, timeout) {
                 'notification with an invalid mac address!');
     return false;
   }
-  if (!timeout || timeout == 0) {
-    timeout = 5000;
-  } // 5s default
 
   registerNotification(session, SIO_NOTIFICATION_ONLINEDEVS, macaddr);
-
-  // set a timer to remove the notification if it takes too long
-  // set a 100ms error (to only remove AFTER timeout)
-  const timelimit = Date.now() + timeout;
-  setTimeout(function() {
-    sio.removeOldNotification(timelimit);
-  }, timeout + 100);
-  console.log('SIO: Notification added to ONLINEDEVS of ' +
-              macaddr + ' for ' + session);
-
   return true;
 };
 
@@ -224,7 +197,8 @@ sio.anlixWaitDeviceStatusNotification = function(session) {
     return false;
   }
   registerNotification(session, SIO_NOTIFICATION_DEVICE_STATUS);
-  console.log('SIO: Notification added to DEVICESTATUS of for ' + session);
+  // Debug
+  // console.log('SIO: Notification added to DEVICESTATUS of for ' + session);
   return true;
 };
 
