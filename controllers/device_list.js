@@ -82,12 +82,14 @@ const getOnlineCount = function(query, status) {
   recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
   offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
 
-  DeviceModel.count(onlineQuery, function(err, count) {
+  DeviceModel.find(onlineQuery, {'_id': 1}, function(err, devices) {
     if (!err) {
-      status.onlinenum = count;
+      status.onlinenum = devices.length;
+      recoveryQuery.$and.push({_id: {$nin: devices}});
       DeviceModel.count(recoveryQuery, function(err, count) {
         if (!err) {
           status.recoverynum = count;
+          offlineQuery.$and.push({_id: {$nin: devices}});
           DeviceModel.count(offlineQuery, function(err, count) {
             if (!err) {
               status.offlinenum = count;
