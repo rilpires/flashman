@@ -2,12 +2,13 @@
 const aedes = require('aedes');
 const sio = require('./sio');
 const DeviceModel = require('./models/device');
+const Notification = require('./models/notification');
 
 let mqtts = aedes();
 
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 
-const anlixSendDeviceStatusNotification = function(mac) {
+const anlixSendDeviceStatusNotification = function(mac, data) {
   if (!mac) {
     console.log(
       'ERROR: SIO: ' +
@@ -15,11 +16,7 @@ const anlixSendDeviceStatusNotification = function(mac) {
     );
     return false;
   }
-  let status = 'red-text';
-  if (mqtts.clients[mac.toUpperCase()]) {
-    status = 'green-text';
-  }
-  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, status);
+  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
   if (!found) {
     console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
   }
@@ -28,12 +25,12 @@ const anlixSendDeviceStatusNotification = function(mac) {
 
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id);
+  anlixSendDeviceStatusNotification(client.id, 'online');
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
   console.log('Router disconnected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id);
+  anlixSendDeviceStatusNotification(client.id, 'recovery');
 });
 
 mqtts.on('ack', function(packet, client, err) {
@@ -88,6 +85,22 @@ mqtts.authenticate = function(client, username, password, cb) {
               } else {
                 console.log('MQTT AUTH ERROR: Device ' + username +
                             ' wrong password!');
+                let notification = new Notification({
+                  'title': 'Autenticação não confere',
+                  'message': 'Este firmware Flashbox foi ' +
+                             'modificado ou substituído localmente',
+                  'severity': 'alert',
+                  'type': 'communication',
+                  'action_title': 'Permitir comunicação',
+                  'action_url': '/devicelist/command/' +
+                                matchedDevice._id + '/rstmqtt',
+                });
+                notification.save(function(err) {
+                  if (!err) {
+                    anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                      notification);
+                  }
+                });
                 error.returnCode = 4;
                 cb(error, null);
               }
