@@ -69,21 +69,33 @@ const getStatus = function(devices) {
 };
 
 const getOnlineCount = function(query, status) {
-  let andQuery = {};
+  let onlineQuery = {};
+  let recoveryQuery = {};
+  let offlineQuery = {};
   let lastHour = new Date();
   lastHour.setHours(lastHour.getHours() - 1);
+  status.onlinenum = 0;
+  status.recoverynum = 0;
+  status.offlinenum = 0;
 
-  andQuery.$and = [
-    {$or: [
-      {_id: {$in: Object.keys(mqtt.clients)}},
-      {last_contact: {$gte: lastHour.getTime()}},
-    ]},
-    query];
-  DeviceModel.count(andQuery, function(err, count) {
-    if (err) {
-      status.onlinenum = 0;
+  onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
+  recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
+  offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
+
+  DeviceModel.count(onlineQuery, function(err, count) {
+    if (!err) {
+      status.onlinenum = count;
+      DeviceModel.count(recoveryQuery, function(err, count) {
+        if (!err) {
+          status.recoverynum = count;
+          DeviceModel.count(offlineQuery, function(err, count) {
+            if (!err) {
+              status.offlinenum = count;
+            }
+          });
+        }
+      });
     }
-    status.onlinenum = count;
   });
 };
 

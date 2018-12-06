@@ -170,9 +170,26 @@ $(document).ready(function() {
   });
   // Important: include and initialize socket.io first using socket var
   socket.on('DEVICESTATUS', function(macaddr, data) {
-    $('#' + $.escapeSelector(macaddr))
-      .find('.device-status')
-      .removeClass('green-text red-text grey-text')
-      .addClass(data);
+    let status = $('#' + $.escapeSelector(macaddr)).find('.device-status');
+    let currentGreen = status.hasClass('green-text');
+    let currentRed = status.hasClass('red-text');
+    if (currentGreen) {
+      $('#online-status-sum').text(
+        parseInt($('#online-status-sum').text()) - 1);
+    } else if (currentRed) {
+      $('#recovery-status-sum').text(
+        parseInt($('#recovery-status-sum').text()) - 1);
+    } else {
+      $('#offline-status-sum').text(
+        parseInt($('#offline-status-sum').text()) - 1);
+    }
+    if (data == 'green-text') {
+      $('#online-status-sum').text(
+        parseInt($('#online-status-sum').text()) + 1);
+    } else if (data == 'red-text') {
+      $('#recovery-status-sum').text(
+        parseInt($('#recovery-status-sum').text()) + 1);
+    }
+    status.removeClass('green-text red-text grey-text').addClass(data);
   });
 });
