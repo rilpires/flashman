@@ -16,7 +16,7 @@ block content
             title="-Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
           )
             span.input-group-text.md-addon
-              .fas.fa-question.fa-lg
+              .fas.fa-question-circle.fa-lg
           .input-group-btn
             button.my-0.btn.teal.lighten-2(type="submit")
               .fas.fa-search.fa-lg
@@ -159,7 +159,7 @@ block content
                       a.fas.fa-question-circle(
                         href="#",
                         data-toggle="tooltip",
-                        title="-Verde: Online\n-Vermelho: Sem resposta imediata\n-Cinza: Sem resposta por mais de 1 hora",
+                        title="Verde: Online\nVermelho: Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
                       )
                     th.text-center Usuário PPPoE
                     th.text-center Endereço MAC
@@ -173,8 +173,18 @@ block content
                     td
                     td.text-center
                       | #{status.totalnum} total
-                    td.text-center
-                      | #{status.onlinenum} online  
+                    td
+                      .fas.fa-circle.green-text
+                      span &nbsp
+                      span#online-status-sum #{status.onlinenum}
+                      br
+                      .fas.fa-circle.red-text
+                      span &nbsp
+                      span#recovery-status-sum #{status.recoverynum}
+                      br
+                      .fas.fa-circle.grey-text
+                      span &nbsp
+                      span#offline-status-sum #{status.offlinenum}
                     td.text-center *
                     td.text-center *
                     td.text-center *
@@ -230,8 +240,8 @@ block content
                       )
                         .fas.fa-chevron-right.fa-lg
                       td.text-center.col-xs-1=(index + 1)
-                      td.text-center.col-xs-1
-                        .fas.fa-circle.fa-lg(
+                      td.col-xs-1
+                        .fas.fa-circle.fa-lg.device-status(
                           class=status.devices[device._id],
                           data-toggle="tooltip",
                           title=device.last_contact.toString()

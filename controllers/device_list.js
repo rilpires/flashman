@@ -69,21 +69,35 @@ const getStatus = function(devices) {
 };
 
 const getOnlineCount = function(query, status) {
-  let andQuery = {};
+  let onlineQuery = {};
+  let recoveryQuery = {};
+  let offlineQuery = {};
   let lastHour = new Date();
   lastHour.setHours(lastHour.getHours() - 1);
+  status.onlinenum = 0;
+  status.recoverynum = 0;
+  status.offlinenum = 0;
 
-  andQuery.$and = [
-    {$or: [
-      {_id: {$in: Object.keys(mqtt.clients)}},
-      {last_contact: {$gte: lastHour.getTime()}},
-    ]},
-    query];
-  DeviceModel.count(andQuery, function(err, count) {
-    if (err) {
-      status.onlinenum = 0;
+  onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
+  recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
+  offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
+
+  DeviceModel.find(onlineQuery, {'_id': 1}, function(err, devices) {
+    if (!err) {
+      status.onlinenum = devices.length;
+      recoveryQuery.$and.push({_id: {$nin: devices}});
+      DeviceModel.count(recoveryQuery, function(err, count) {
+        if (!err) {
+          status.recoverynum = count;
+          offlineQuery.$and.push({_id: {$nin: devices}});
+          DeviceModel.count(offlineQuery, function(err, count) {
+            if (!err) {
+              status.offlinenum = count;
+            }
+          });
+        }
+      });
     }
-    status.onlinenum = count;
   });
 };
 
@@ -209,7 +223,7 @@ deviceListController.changeUpdate = function(req, res) {
                                      message: 'Erro ao registrar atualização'});
       }
 
-      mqtt.anlix_message_router_update(matchedDevice._id);
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
       return res.status(200).json({'success': true});
     });
@@ -232,7 +246,7 @@ deviceListController.changeAllUpdates = function(req, res) {
       matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
       matchedDevices[idx].do_update = form.do_update;
       matchedDevices[idx].save();
-      mqtt.anlix_message_router_update(matchedDevices[idx]._id);
+      mqtt.anlixMessageRouterUpdate(matchedDevices[idx]._id);
       scheduledDevices.push(matchedDevices[idx]._id);
     }
 
@@ -374,6 +388,18 @@ deviceListController.delDeviceReg = function(req, res) {
   });
 };
 
+deviceListController.registerStatusNotification = function(req, res) {
+  if (sio.anlixWaitDeviceStatusNotification(req.sessionID)) {
+    return res.status(200).json({success: true});
+  } else {
+    return res.status(500).json({
+      success: false,
+      type: 'danger',
+      message: 'Erro no registro de notificação de status',
+    });
+  }
+};
+
 //
 // REST API only functions
 //
@@ -400,7 +426,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           device.app_password = undefined;
           device.save();
         }
-        mqtt.anlix_message_router_resetapp(req.params.id.toUpperCase());
+        mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
         break;
       case 'rstdevices':
         if (!permissions.grantResetDevices) {
@@ -415,14 +441,14 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
           device.save();
         }
-        mqtt.anlix_message_router_update(req.params.id.toUpperCase());
+        mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
         break;
       case 'rstmqtt':
         if (device) {
           device.mqtt_secret = undefined;
           device.save();
         }
-        mqtt.anlix_message_router_resetmqtt(req.params.id.toUpperCase());
+        mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
         break;
       case 'log':
       case 'boot':
@@ -432,19 +458,19 @@ deviceListController.sendMqttMsg = function(req, res) {
                                      message: 'Roteador não esta online!'});
         }
         if (msgtype == 'boot') {
-          mqtt.anlix_message_router_reboot(req.params.id.toUpperCase());
+          mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
         } else {
           // This message is only valid if we have a socket to send response to
-          if (sio.anlix_connections[req.sessionID]) {
+          if (sio.anlixConnections[req.sessionID]) {
             if (msgtype == 'log') {
-              sio.anlix_wait_for_livelog_notification(
-                req.sessionID, req.params.id.toUpperCase(), 5000);
-              mqtt.anlix_message_router_log(req.params.id.toUpperCase());
+              sio.anlixWaitForLiveLogNotification(
+                req.sessionID, req.params.id.toUpperCase());
+              mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
             } else
             if (msgtype == 'onlinedevs') {
-              sio.anlix_wait_for_onlinedev_notification(
-                req.sessionID, req.params.id.toUpperCase(), 5000);
-              mqtt.anlix_message_router_onlinedev(req.params.id.toUpperCase());
+              sio.anlixWaitForOnlineDevNotification(
+                req.sessionID, req.params.id.toUpperCase());
+              mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
             }
           } else {
             return res.status(200).json({
@@ -682,7 +708,7 @@ deviceListController.setDeviceReg = function(req, res) {
               if (err) {
                 console.log(err);
               }
-              mqtt.anlix_message_router_update(matchedDevice._id);
+              mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
               matchedDevice.success = true;
               return res.status(200).json(matchedDevice);
@@ -906,7 +932,7 @@ deviceListController.setPortForward = function(req, res) {
             message: 'Erro salvando regras no servidor',
           });
         }
-        mqtt.anlix_message_router_update(matchedDevice._id);
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
         return res.status(200).json({
           success: true,

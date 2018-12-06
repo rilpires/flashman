@@ -267,7 +267,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.do_update_parameters = false;
 
           // Remove notification to device using MQTT
-          mqtt.anlix_message_router_reset(matchedDevice._id);
+          mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
         matchedDevice.save();
@@ -519,7 +519,7 @@ let appSet = function(req, res, processFunction) {
 
       matchedDevice.save();
 
-      mqtt.anlix_message_router_update(matchedDevice._id, hashSuffix);
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
       .then((done)=>{
@@ -709,7 +709,7 @@ deviceInfoController.receiveLog = function(req, res) {
       console.log('Log Receiving for device ' +
         id + ' successfully. LAST BOOT');
     } else if (bootType == 'LIVE') {
-      sio.anlix_send_livelog_notifications(id, req.body);
+      sio.anlixSendLiveLogNotifications(id, req.body);
       console.log('Log Receiving for device ' +
         id + ' successfully. LIVE');
     }
@@ -778,7 +778,7 @@ deviceInfoController.receiveDevices = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlix_send_onlinedev_notifications(matchedDevice, req.body);
+    sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

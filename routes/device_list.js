@@ -29,6 +29,11 @@ router.route('/updateall').post(
 router.route('/search').get(authController.ensureLogin(),
                             deviceListController.searchDeviceReg);
 
+// POST hook registration for device status updates
+router.route('/notify/register/devicestatus').post(
+  authController.ensureLogin(),
+  deviceListController.registerStatusNotification);
+
 // REST API or POST delete device
 router.route('/delete/:id').post(
   authController.ensureLogin(),
