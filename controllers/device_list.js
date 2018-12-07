@@ -171,10 +171,10 @@ deviceListController.index = function(req, res) {
           indexContent.update = matchedConfig.hasUpdate;
           indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
           let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure = {};
-          indexContent.measure.active = active;
-          indexContent.measure.token = (active) ?
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
               matchedConfig.measure_configs.auth_token : '';
+          indexContent.measure_license = 0;
         }
 
         // Filter data using user permissions
@@ -350,12 +350,11 @@ deviceListController.searchDeviceReg = function(req, res) {
           indexContent.update = false;
         } else {
           indexContent.update = matchedConfig.hasUpdate;
+          let active = matchedConfig.measure_configs.is_active;
+            indexContent.measure_active = active;
+            indexContent.measure_token = (active) ?
+                matchedConfig.measure_configs.auth_token : '';
         }
-        let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure = {};
-          indexContent.measure.active = active;
-          indexContent.measure.token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
 
         // Filter data using user permissions
         if (req.user.is_superuser) {

@@ -272,6 +272,10 @@ userController.getProfile = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
       }
       Role.findOne({name: req.user.role}, function(err, role) {
         indexContent.superuser = req.user.is_superuser;
@@ -307,6 +311,10 @@ userController.showAll = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
       }
       indexContent.username = req.user.name;
 
@@ -332,6 +340,10 @@ userController.showRoles = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
       }
       indexContent.username = req.user.name;
 
