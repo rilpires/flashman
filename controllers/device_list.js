@@ -174,7 +174,8 @@ deviceListController.index = function(req, res) {
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
               matchedConfig.measure_configs.auth_token : '';
-          indexContent.measure_license = 0;
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         // Filter data using user permissions
@@ -354,6 +355,8 @@ deviceListController.searchDeviceReg = function(req, res) {
             indexContent.measure_active = active;
             indexContent.measure_token = (active) ?
                 matchedConfig.measure_configs.auth_token : '';
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         // Filter data using user permissions

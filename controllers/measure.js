@@ -3,8 +3,6 @@ const await = require('asyncawait/await');
 
 const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
-const UserModel = require('../models/user');
-const RoleModel = require('../models/role');
 
 let measureController = {};
 

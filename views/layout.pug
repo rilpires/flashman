@@ -38,5 +38,20 @@ html
       if (superuser && update && Math.random() < 0.3) {
         alertUpdateFlashman();
       }
+      let measure_active = '#{measure_active}' === true;
+      let measure_license = parseInt('#{measure_license}');
+      if (!measure_active && !measure_license) {
+        $('.bell-notification').addClass('swing faster delay-2s');
+        $('.bell-counter').attr('count', '1');
+        $('.bell-counter').show();
+        $('#notification-text').addClass('bg-danger');
+      }
+      if (!measure_active) {
+        console.log(measure_license);
+        let msg = (measure_license) ?
+            'Sua licença de medição está ativa!' :
+            'Sua licença de medição está inativa!<br>Verifique o status no controle Anlix';
+        $('#notification-text').html('<h6><b>' + msg + '</b></h6>');
+      }
 
     block scripts

@@ -276,6 +276,8 @@ userController.getProfile = function(req, res) {
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
               matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       Role.findOne({name: req.user.role}, function(err, role) {
         indexContent.superuser = req.user.is_superuser;
@@ -315,6 +317,8 @@ userController.showAll = function(req, res) {
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
               matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       indexContent.username = req.user.name;
 
@@ -344,6 +348,8 @@ userController.showRoles = function(req, res) {
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
               matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       indexContent.username = req.user.name;
 
