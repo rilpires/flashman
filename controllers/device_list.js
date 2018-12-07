@@ -388,18 +388,6 @@ deviceListController.delDeviceReg = function(req, res) {
   });
 };
 
-deviceListController.registerStatusNotification = function(req, res) {
-  if (sio.anlixWaitDeviceStatusNotification(req.sessionID)) {
-    return res.status(200).json({success: true});
-  } else {
-    return res.status(500).json({
-      success: false,
-      type: 'danger',
-      message: 'Erro no registro de notificação de status',
-    });
-  }
-};
-
 //
 // REST API only functions
 //

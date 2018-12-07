@@ -161,7 +161,7 @@ $(document).ready(function() {
 
 
   $.ajax({
-    url: '/devicelist/notify/register/devicestatus',
+    url: '/notification/register/devicestatus',
     type: 'post',
     dataType: 'json',
     error: function(xhr, status, error) {
@@ -197,7 +197,7 @@ $(document).ready(function() {
       } else {
         let alert = deviceOnTable.find('.device-alert');
         alert.removeClass('d-none').addClass('animated heartBeat infinite');
-        alert.parent().click(function() {
+        alert.parent().click(function(event) {
           swal({
             type: 'warning',
             text: data.message,
@@ -207,11 +207,21 @@ $(document).ready(function() {
             cancelButtonColor: '#f2ab63',
             showCancelButton: true,
           }).then(function(result) {
+            $(event.target).removeClass('animated heartBeat infinite')
+                           .addClass('d-none');
             if (result.value) {
-              // data.action_url
-            } else {
-              // Remove URL
+              $.ajax({
+                type: 'POST',
+                url: data.action_url,
+                traditional: true,
+              });
             }
+            $.ajax({
+              type: 'POST',
+              url: '/notification/del',
+              traditional: true,
+              data: {id: data._id},
+            });
           });
         });
       }
