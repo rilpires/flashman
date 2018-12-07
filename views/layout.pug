@@ -16,6 +16,7 @@ html
     .container
       include includes/flash
       include includes/configflashman
+      include includes/alertsflashman
       block content
     p.version-label 1.13.0
 
@@ -41,10 +42,11 @@ html
       let measure_active = '#{measure_active}' === true;
       let measure_license = parseInt('#{measure_license}');
       if (measure_active && !measure_license) {
+        $('.alert-license-card').removeClass('bg-success');
+        $('.alert-license-card').addClass('bg-danger');
         $('.bell-notification').addClass('swing faster delay-2s');
         $('.bell-counter').attr('count', '1');
         $('.bell-counter').show();
-        $('#notification-text').addClass('bg-danger');
       }
       if (measure_active) {
         let msg = (measure_license) ?

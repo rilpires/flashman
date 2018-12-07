@@ -5,13 +5,11 @@ nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
       span(style="font-size: 24px;") &nbsp FlashMan
   if (username && (superuser || role.grantMonitorManage) && measure_active)
     ul.navbar-nav.mc-auto
-        li.nav-item.dropdown
-          a#navbarNotificationDropdown.nav-link(data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false")
+        li.nav-item
+          a.nav-link(data-toggle="modal" data-target="#alerts-flashman")
             .bell-notification.animated(style="cursor: pointer")
               .fas.fa-bell.fa-lg.text-white
             .bell-counter(style="display: none;")
-          .dropdown-menu(aria-labelledby="navbarNotificationDropdown")
-            #notification-text.dropdown-item.text-center
   button.navbar-toggler.col-2(type="button", data-toggle="collapse",
                         data-target="#navbar-menu", aria-controls="#navbar-menu",
                         aria-expanded="false", aria-label="Alternar navegação")
