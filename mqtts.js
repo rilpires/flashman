@@ -85,20 +85,33 @@ mqtts.authenticate = function(client, username, password, cb) {
               } else {
                 console.log('MQTT AUTH ERROR: Device ' + username +
                             ' wrong password!');
-                let notification = new Notification({
-                  'title': 'Autenticação não confere',
-                  'message': 'Este firmware Flashbox foi ' +
-                             'modificado ou substituído localmente',
-                  'severity': 'alert',
-                  'type': 'communication',
-                  'action_title': 'Permitir comunicação',
-                  'action_url': '/devicelist/command/' +
-                                matchedDevice._id + '/rstmqtt',
-                });
-                notification.save(function(err) {
-                  if (!err) {
+                // Send notification
+                Notification.findOne({
+                  'message_code': 1,
+                  'target': matchedDevice._id},
+                function(err, matchedNotif) {
+                  if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
+                    let notification = new Notification({
+                      'message': 'Este firmware Flashbox foi ' +
+                                 'modificado ou substituído localmente',
+                      'message_code': 1,
+                      'severity': 'alert',
+                      'type': 'communication',
+                      'action_title': 'Permitir comunicação',
+                      'action_url': '/devicelist/command/' +
+                                    matchedDevice._id + '/rstmqtt',
+                      'allow_duplicate': false,
+                      'target': matchedDevice._id,
+                    });
+                    notification.save(function(err) {
+                      if (!err) {
+                        anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                          notification);
+                      }
+                    });
+                  } else {
                     anlixSendDeviceStatusNotification(matchedDevice._id,
-                                                      notification);
+                                                      matchedNotif);
                   }
                 });
                 error.returnCode = 4;

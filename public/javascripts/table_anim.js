@@ -197,6 +197,23 @@ $(document).ready(function() {
       } else {
         let alert = deviceOnTable.find('.device-alert');
         alert.removeClass('d-none').addClass('animated heartBeat infinite');
+        alert.parent().click(function() {
+          swal({
+            type: 'warning',
+            text: data.message,
+            confirmButtonText: data.action_title,
+            confirmButtonColor: '#4db6ac',
+            cancelButtonText: 'Cancelar',
+            cancelButtonColor: '#f2ab63',
+            showCancelButton: true,
+          }).then(function(result) {
+            if (result.value) {
+              // data.action_url
+            } else {
+              // Remove URL
+            }
+          });
+        });
       }
     }
   });
