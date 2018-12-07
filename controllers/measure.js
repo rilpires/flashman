@@ -1,5 +1,6 @@
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const request = require('request-promise-native');
 
 const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
@@ -144,12 +145,67 @@ measureController.deactivateDevices = async(function(req, res) {
     });
   }
 
-  // For each device, register new PSK and send MQTT message
+  // For each device, send MQTT message
   let macList = req.body.mac_list;
   macList.forEach((mac)=>{
     mqtts.anlix_message_router_measure(mac);
   });
   return res.status(200).end();
+});
+
+measureController.updateLicenseStatus = async(function(req, res) {
+  const customHandler = async(function(req) {
+    let content = req.body;
+    if (!content.hasOwnProperty('status')) {
+      return [500, 'Não foi fornecido um valor de status para a licença'];
+    }
+    return [200, ''];
+  });
+
+  // Handle request errors
+  let [errorCode, errorMsg] = await(requestErrorHandler(req, customHandler));
+  if (errorCode !== 200 && errorMsg !== '') {
+    return res.status(errorCode).json({
+      message: errorMsg,
+    });
+  }
+
+  // Save new license status in config
+  let status = req.body.status;
+  try {
+    let config = await(ConfigModel.findOne({is_default: true}));
+    if (!config) throw new {};
+    config.measure_configs.is_license_active = status;
+    await(config.save());
+    return res.status(200).end();
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: 'Erro acessando o banco de dados',
+    });
+  }
+});
+
+measureController.pingLicenseStatus = async(function() {
+  try {
+    let config = await(ConfigModel.findOne({is_default: true}));
+    if (!config || !config.measure_configs.is_active) return;
+    let controllerUrl = 'https://';
+    controllerUrl += config.measure_configs.controller_fqdn;
+    controllerUrl += '/license/status';
+    let body = await(request({
+      url: controllerUrl,
+      method: 'POST',
+      json: {
+        'secret': process.env.FLM_CONTROL_SECRET,
+      },
+    }));
+    config.measure_configs.is_license_active = body.is_active;
+    await(config.save());
+  } catch (err) {
+    console.log('Failed to update license status');
+    console.log(err);
+  }
 });
 
 module.exports = measureController;

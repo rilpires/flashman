@@ -40,13 +40,13 @@ html
       }
       let measure_active = '#{measure_active}' === true;
       let measure_license = parseInt('#{measure_license}');
-      if (!measure_active && !measure_license) {
+      if (measure_active && !measure_license) {
         $('.bell-notification').addClass('swing faster delay-2s');
         $('.bell-counter').attr('count', '1');
         $('.bell-counter').show();
         $('#notification-text').addClass('bg-danger');
       }
-      if (!measure_active) {
+      if (measure_active) {
         console.log(measure_license);
         let msg = (measure_license) ?
             'Sua licença de medição está ativa!' :

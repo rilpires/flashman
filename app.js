@@ -13,6 +13,7 @@ const fileUpload = require('express-fileupload');
 const sio = require('./sio');
 let session = require('express-session');
 
+let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
 let Config = require('./models/config');
 let User = require('./models/user');
@@ -205,6 +206,7 @@ app.listen(3000, function() {
   // Schedule automatic update
   let s = schedule.scheduleJob(rule, function() {
     updater.update();
+    measurer.pingLicenseStatus();
   });
   // Force an update check to alert user on app startup
   updater.checkUpdate();

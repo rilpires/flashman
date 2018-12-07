@@ -10,4 +10,7 @@ router.route('/activate')
 router.route('/deactivate')
 .post(measureController.deactivateDevices);
 
+router.route('/license')
+.post(measureController.updateLicenseStatus);
+
 module.exports = router;

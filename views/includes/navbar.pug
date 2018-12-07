@@ -3,7 +3,7 @@ nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
     .image-block
       img(alt="brand", src="/images/logo.png", width="50", height="50")
       span(style="font-size: 24px;") &nbsp FlashMan
-  if (username && (superuser || role.grantMonitorManage) && !measure_active)
+  if (username && (superuser || role.grantMonitorManage) && measure_active)
     ul.navbar-nav.mc-auto
         li.nav-item.dropdown
           a#navbarNotificationDropdown.nav-link(data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false")
