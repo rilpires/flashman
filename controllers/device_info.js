@@ -1,6 +1,7 @@
 
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
+const Notification = require('./models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
