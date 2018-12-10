@@ -39,8 +39,8 @@ html
       if (superuser && update && Math.random() < 0.3) {
         alertUpdateFlashman();
       }
-      let measure_active = '#{measure_active}' === true;
-      let measure_license = parseInt('#{measure_license}');
+      let measure_active = '#{measure_active}' === 'true';
+      let measure_license = '#{measure_license}' === 'true';
       if (measure_active && !measure_license) {
         $('.alert-license-card').removeClass('bg-success');
         $('.alert-license-card').addClass('bg-danger');
