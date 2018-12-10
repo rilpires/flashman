@@ -7,6 +7,21 @@ const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 let deviceInfoController = {};
 
+const anlixSendDeviceStatusNotification = function(mac, data) {
+  if (!mac) {
+    console.log(
+      'ERROR: SIO: ' +
+      'Try to send status notification to an invalid mac address!'
+    );
+    return false;
+  }
+  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
+  if (!found) {
+    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
+  }
+  return found;
+};
+
 const returnObjOrEmptyStr = function(query) {
   if (typeof query !== 'undefined' && query) {
     return query;
