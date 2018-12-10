@@ -248,8 +248,8 @@ block content
                         )
                         span &nbsp
                         span &nbsp
-                        a
-                          .fas.fa-exclamation-triangle.fa-lg.orange-text.d-none.device-alert
+                        a.d-none
+                          .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
                       td.text-center
                         | #{device.pppoe_user}
                       td.text-center
@@ -525,6 +525,9 @@ block scripts
   script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
+  script(src='/javascripts/notification_actions.js',
+         devices=(devices.map(device => device._id)
+                         .reduce((acc, dev) => acc + ',' + dev)))
   script.
     (function() {
       'use strict';
