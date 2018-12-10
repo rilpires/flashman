@@ -10,6 +10,10 @@ router.route('/register/devicestatus').post(
   authController.ensureLogin(),
   notificationController.registerStatusNotification);
 
+router.route('/fetch').post(
+  authController.ensureLogin(),
+  notificationController.fetchNotifications);
+
 router.route('/del').post(
   authController.ensureLogin(),
   notificationController.delNotification);
