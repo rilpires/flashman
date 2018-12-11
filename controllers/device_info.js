@@ -17,7 +17,7 @@ const returnObjOrEmptyStr = function(query) {
 
 const createRegistry = function(req, res) {
   if (typeof req.body.id == 'undefined') {
-    return res.status(400).end(); ;
+    return res.status(400).end();
   }
 
   const validator = new Validator();
@@ -102,7 +102,7 @@ const createRegistry = function(req, res) {
       });
     } else {
       console.log('Error creating entry: ' + errors);
-      return res.status(500).end(); ;
+      return res.status(500).end();
     }
   });
 };
@@ -180,7 +180,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
-      return res.status(404).end(); ;
+      return res.status(404).end();
     }
   }
 
@@ -188,7 +188,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   DeviceModel.findById(devId, function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device '+devId+': ' + err);
-      return res.status(500).end(); ;
+      return res.status(500).end();
     } else {
       if (matchedDevice == null) {
         createRegistry(req, res);
