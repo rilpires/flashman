@@ -65,6 +65,8 @@ mqtts.authenticate = function(client, username, password, cb) {
                   matchedDevice.mqtt_secret_bypass) {
                 console.log('MQTT AUTH WARNING: Device ' + username +
                             ' wrong password! Bypass allowed...');
+                matchedDevice.mqtt_secret_bypass = false;
+                matchedDevice.save();
                 cb(null, true);
               } else {
                 console.log('MQTT AUTH ERROR: Device ' + username +
