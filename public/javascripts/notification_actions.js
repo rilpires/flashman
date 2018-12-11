@@ -8,27 +8,31 @@ let changeDeviceStatusOnTable = function(macaddr, data) {
       let status = deviceOnTable.find('.device-status');
       let currentGreen = status.hasClass('green-text');
       let currentRed = status.hasClass('red-text');
-      let newStatus = 'green-text';
-      if (currentGreen) {
-        $('#online-status-sum').text(
-          parseInt($('#online-status-sum').text()) - 1);
-      } else if (currentRed) {
-        $('#recovery-status-sum').text(
-          parseInt($('#recovery-status-sum').text()) - 1);
-      } else {
-        $('#offline-status-sum').text(
-          parseInt($('#offline-status-sum').text()) - 1);
+      let currentOnlineCount = parseInt($('#online-status-sum').text());
+      let currentRecoveryCount = parseInt($('#recovery-status-sum').text());
+      let currentOfflineCount = parseInt($('#offline-status-sum').text());
+      let canIncreaseCounter = false;
+      if (currentGreen && (currentOnlineCount > 0)) {
+        $('#online-status-sum').text(currentOnlineCount - 1);
+        canIncreaseCounter = true;
+      } else if (currentRed && (currentRecoveryCount > 0)) {
+        $('#recovery-status-sum').text(currentRecoveryCount - 1);
+        canIncreaseCounter = true;
+      } else if (currentOfflineCount > 0) {
+        $('#offline-status-sum').text(currentOfflineCount - 1);
+        canIncreaseCounter = true;
       }
-      if (data == 'online') {
+      if (data == 'online' && canIncreaseCounter) {
         $('#online-status-sum').text(
           parseInt($('#online-status-sum').text()) + 1);
-        newStatus = 'green-text';
-      } else if (data == 'recovery') {
+        let newStatus = 'green-text';
+        status.removeClass('green-text red-text grey-text').addClass(newStatus);
+      } else if (data == 'recovery' && canIncreaseCounter) {
         $('#recovery-status-sum').text(
           parseInt($('#recovery-status-sum').text()) + 1);
-        newStatus = 'red-text';
+        let newStatus = 'red-text';
+        status.removeClass('green-text red-text grey-text').addClass(newStatus);
       }
-      status.removeClass('green-text red-text grey-text').addClass(newStatus);
     } else {
       let alert = deviceOnTable.find('.device-alert');
       let alertLink = alert.parent();
