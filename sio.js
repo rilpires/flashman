@@ -67,7 +67,7 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   }
 };
 
-emitNotification = function(type, macaddr, data, removeMeKey=null) {
+const emitNotification = function(type, macaddr, data, removeMeKey=null) {
   let found = false;
   // Get who is waiting for this notification
   for (let sessionId in sio.anlixNotifications) {

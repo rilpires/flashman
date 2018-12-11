@@ -4,7 +4,7 @@ let notificationActionsScript = document.currentScript;
 let changeDeviceStatusOnTable = function(macaddr, data) {
   let deviceOnTable = $('#' + $.escapeSelector(macaddr));
   if (deviceOnTable.length) {
-    if (data == 'online' && data == 'recovery') {
+    if (data == 'online' || data == 'recovery') {
       let status = deviceOnTable.find('.device-status');
       let currentGreen = status.hasClass('green-text');
       let currentRed = status.hasClass('red-text');
