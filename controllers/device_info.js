@@ -7,6 +7,8 @@ const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 let deviceInfoController = {};
 
+const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
+
 const anlixSendDeviceStatusNotification = function(mac, data) {
   if (!mac) {
     console.log(
