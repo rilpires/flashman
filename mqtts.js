@@ -61,7 +61,8 @@ mqtts.authenticate = function(client, username, password, cb) {
               console.log('MQTT AUTH OK: id ' + username);
               cb(null, true);
             } else {
-              if (process.env.FLM_BYPASS_MQTTS_PASSWD) {
+              if (process.env.FLM_BYPASS_MQTTS_PASSWD ||
+                  matchedDevice.mqtt_secret_bypass) {
                 console.log('MQTT AUTH WARNING: Device ' + username +
                             ' wrong password! Bypass allowed...');
                 cb(null, true);
@@ -75,8 +76,8 @@ mqtts.authenticate = function(client, username, password, cb) {
                 function(err, matchedNotif) {
                   if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
                     let notification = new Notification({
-                      'message': 'Este firmware Flashbox foi ' +
-                                 'modificado ou substituído localmente',
+                      'message': 'Este firmware Flashbox teve ' +
+                                 'seu identificador de segurança alterado',
                       'message_code': 1,
                       'severity': 'alert',
                       'type': 'communication',

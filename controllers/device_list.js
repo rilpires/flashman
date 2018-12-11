@@ -434,6 +434,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'rstmqtt':
         if (device) {
           device.mqtt_secret = undefined;
+          device.mqtt_secret_bypass = true;
           device.save();
         }
         mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
