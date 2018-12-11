@@ -32,6 +32,7 @@ let deviceSchema = new Schema({
   do_update: Boolean,
   do_update_parameters: Boolean,
   mqtt_secret: String,
+  mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
   firstboot_date: Date,
   lastboot_log: Buffer,

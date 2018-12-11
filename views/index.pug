@@ -235,26 +235,30 @@ block content
                       data-device-release=(device.release ? device.release : ""),
                       data-do-update=(device.do_update ? "Sim" : "Não"),
                     )
-                      td.text-center.col-xs-1(
+                      td.text-center(
                         style="cursor: pointer;"
                       )
                         .fas.fa-chevron-right.fa-lg
-                      td.text-center.col-xs-1=(index + 1)
-                      td.col-xs-1
+                      td.text-center #{index + 1}
+                      td
                         .fas.fa-circle.fa-lg.device-status(
                           class=status.devices[device._id],
                           data-toggle="tooltip",
                           title=device.last_contact.toString()
                         )
-                      td.text-center.col-xs-2
+                        span &nbsp
+                        span &nbsp
+                        a.d-none
+                          .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
+                      td.text-center
                         | #{device.pppoe_user}
-                      td.text-center.col-xs-2
+                      td.text-center
                         | #{device._id}
-                      td.text-center.col-xs-1
+                      td.text-center
                         | #{device.wan_ip}
-                      td.text-center.col-xs-2
+                      td.text-center
                         | #{device.ip}
-                      td.text-center.col-xs-1
+                      td.text-center
                         .btn-group
                           button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
                             type="button",
@@ -274,7 +278,7 @@ block content
                                 if (device.model === release.model)
                                   a.dropdown-item.text-center #{release.id}
                       if (superuser || role.grantFirmwareUpgrade)
-                        td.text-center.col-xs-1
+                        td.text-center
                           label.switch
                             input.checkbox.firmwareUpdateCheckbox(
                               type="checkbox",
@@ -521,6 +525,9 @@ block scripts
   script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
+  script(src='/javascripts/notification_actions.js',
+         devices=(devices.map(device => device._id)
+                         .reduce((acc, dev) => acc + ',' + dev)))
   script.
     (function() {
       'use strict';

@@ -1,6 +1,7 @@
 
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
+const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
@@ -368,6 +369,35 @@ deviceInfoController.registerMqtt = function(req, res) {
         // Device have a secret. Modification of secret is forbidden!
         console.log('Attempt to register MQTT secret for device ' +
           req.body.id + ' failed: Device have a secret.');
+        // Send notification
+        Notification.findOne({
+          'message_code': 1,
+          'target': matchedDevice._id},
+        function(err, matchedNotif) {
+          if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
+            let notification = new Notification({
+              'message': 'Este firmware Flashbox foi ' +
+                         'modificado ou substituído localmente',
+              'message_code': 1,
+              'severity': 'alert',
+              'type': 'communication',
+              'action_title': 'Permitir comunicação',
+              'action_url': '/devicelist/command/' +
+                            matchedDevice._id + '/rstmqtt',
+              'allow_duplicate': false,
+              'target': matchedDevice._id,
+            });
+            notification.save(function(err) {
+              if (!err) {
+                sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                      notification);
+              }
+            });
+          } else {
+            sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                  matchedNotif);
+          }
+        });
         return res.status(404).json({is_registered: 0});
       }
     });

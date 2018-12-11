@@ -2,38 +2,18 @@
 const aedes = require('aedes');
 const sio = require('./sio');
 const DeviceModel = require('./models/device');
+const Notification = require('./models/notification');
 
 let mqtts = aedes();
 
-const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
-
-const anlixSendDeviceStatusNotification = function(mac) {
-  if (!mac) {
-    console.log(
-      'ERROR: SIO: ' +
-      'Try to send status notification to an invalid mac address!'
-    );
-    return false;
-  }
-  let status = 'red-text';
-  if (mqtts.clients[mac.toUpperCase()]) {
-    status = 'green-text';
-  }
-  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, status);
-  if (!found) {
-    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
-  }
-  return found;
-};
-
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id);
+  sio.anlixSendDeviceStatusNotification(client.id, 'online');
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
   console.log('Router disconnected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id);
+  sio.anlixSendDeviceStatusNotification(client.id, 'recovery');
 });
 
 mqtts.on('ack', function(packet, client, err) {
@@ -81,13 +61,45 @@ mqtts.authenticate = function(client, username, password, cb) {
               console.log('MQTT AUTH OK: id ' + username);
               cb(null, true);
             } else {
-              if (process.env.FLM_BYPASS_MQTTS_PASSWD) {
+              if (process.env.FLM_BYPASS_MQTTS_PASSWD ||
+                  matchedDevice.mqtt_secret_bypass) {
                 console.log('MQTT AUTH WARNING: Device ' + username +
                             ' wrong password! Bypass allowed...');
+                matchedDevice.mqtt_secret_bypass = false;
+                matchedDevice.save();
                 cb(null, true);
               } else {
                 console.log('MQTT AUTH ERROR: Device ' + username +
                             ' wrong password!');
+                // Send notification
+                Notification.findOne({
+                  'message_code': 1,
+                  'target': matchedDevice._id},
+                function(err, matchedNotif) {
+                  if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
+                    let notification = new Notification({
+                      'message': 'Este firmware Flashbox teve ' +
+                                 'seu identificador de segurança alterado',
+                      'message_code': 1,
+                      'severity': 'alert',
+                      'type': 'communication',
+                      'action_title': 'Permitir comunicação',
+                      'action_url': '/devicelist/command/' +
+                                    matchedDevice._id + '/rstmqtt',
+                      'allow_duplicate': false,
+                      'target': matchedDevice._id,
+                    });
+                    notification.save(function(err) {
+                      if (!err) {
+                        sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                              notification);
+                      }
+                    });
+                  } else {
+                    sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                          matchedNotif);
+                  }
+                });
                 error.returnCode = 4;
                 cb(error, null);
               }

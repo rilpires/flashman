@@ -67,8 +67,7 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   }
 };
 
-sio.emitNotification = function(type, macaddr,
-                                  data, removeMeKey=null) {
+const emitNotification = function(type, macaddr, data, removeMeKey=null) {
   let found = false;
   // Get who is waiting for this notification
   for (let sessionId in sio.anlixNotifications) {
@@ -104,6 +103,21 @@ sio.emitNotification = function(type, macaddr,
   return found;
 };
 
+sio.anlixSendDeviceStatusNotification = function(mac, data) {
+  if (!mac) {
+    console.log(
+      'ERROR: SIO: ' +
+      'Try to send status notification to an invalid mac address!'
+    );
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
+  if (!found) {
+    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
+  }
+  return found;
+};
+
 sio.anlixBindSession = function(session) {
   sio.use(sharedsession(session, {
     autoSave: true,
@@ -132,7 +146,7 @@ sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
                 'Try to send livelog notification to an invalid mac address!');
     return false;
   }
-  let found = sio.emitNotification(SIO_NOTIFICATION_LIVELOG,
+  let found = emitNotification(SIO_NOTIFICATION_LIVELOG,
                                macaddr, logdata, macaddr);
   if (!found) {
     console.log('SIO: NO Session found for ' +
@@ -180,7 +194,7 @@ sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
       }
     }
   }
-  let found = sio.emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
+  let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
                                matchedDevice._id, devsData, matchedDevice._id);
   if (!found) {
     console.log('SIO: NO Session found for ' +
