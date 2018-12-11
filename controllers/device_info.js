@@ -1,6 +1,7 @@
 
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
+const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
@@ -16,7 +17,7 @@ const returnObjOrEmptyStr = function(query) {
 
 const createRegistry = function(req, res) {
   if (typeof req.body.id == 'undefined') {
-    return res.status(400).end(); ;
+    return res.status(400).end();
   }
 
   const validator = new Validator();
@@ -101,7 +102,7 @@ const createRegistry = function(req, res) {
       });
     } else {
       console.log('Error creating entry: ' + errors);
-      return res.status(500).end(); ;
+      return res.status(500).end();
     }
   });
 };
@@ -179,7 +180,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
-      return res.status(404).end(); ;
+      return res.status(404).end();
     }
   }
 
@@ -187,7 +188,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   DeviceModel.findById(devId, function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device '+devId+': ' + err);
-      return res.status(500).end(); ;
+      return res.status(500).end();
     } else {
       if (matchedDevice == null) {
         createRegistry(req, res);
@@ -267,7 +268,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.do_update_parameters = false;
 
           // Remove notification to device using MQTT
-          mqtt.anlix_message_router_reset(matchedDevice._id);
+          mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
         matchedDevice.save();
@@ -368,6 +369,35 @@ deviceInfoController.registerMqtt = function(req, res) {
         // Device have a secret. Modification of secret is forbidden!
         console.log('Attempt to register MQTT secret for device ' +
           req.body.id + ' failed: Device have a secret.');
+        // Send notification
+        Notification.findOne({
+          'message_code': 1,
+          'target': matchedDevice._id},
+        function(err, matchedNotif) {
+          if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
+            let notification = new Notification({
+              'message': 'Este firmware Flashbox foi ' +
+                         'modificado ou substituído localmente',
+              'message_code': 1,
+              'severity': 'alert',
+              'type': 'communication',
+              'action_title': 'Permitir comunicação',
+              'action_url': '/devicelist/command/' +
+                            matchedDevice._id + '/rstmqtt',
+              'allow_duplicate': false,
+              'target': matchedDevice._id,
+            });
+            notification.save(function(err) {
+              if (!err) {
+                sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                      notification);
+              }
+            });
+          } else {
+            sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                  matchedNotif);
+          }
+        });
         return res.status(404).json({is_registered: 0});
       }
     });
@@ -519,7 +549,7 @@ let appSet = function(req, res, processFunction) {
 
       matchedDevice.save();
 
-      mqtt.anlix_message_router_update(matchedDevice._id, hashSuffix);
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
       .then((done)=>{
@@ -709,7 +739,7 @@ deviceInfoController.receiveLog = function(req, res) {
       console.log('Log Receiving for device ' +
         id + ' successfully. LAST BOOT');
     } else if (bootType == 'LIVE') {
-      sio.anlix_send_livelog_notifications(id, req.body);
+      sio.anlixSendLiveLogNotifications(id, req.body);
       console.log('Log Receiving for device ' +
         id + ' successfully. LIVE');
     }
@@ -778,7 +808,7 @@ deviceInfoController.receiveDevices = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlix_send_onlinedev_notifications(matchedDevice, req.body);
+    sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

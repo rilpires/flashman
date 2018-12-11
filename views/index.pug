@@ -16,7 +16,7 @@ block content
             title="-Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
           )
             span.input-group-text.md-addon
-              .fas.fa-question.fa-lg
+              .fas.fa-question-circle.fa-lg
           .input-group-btn
             button.my-0.btn.teal.lighten-2(type="submit")
               .fas.fa-search.fa-lg
@@ -159,7 +159,7 @@ block content
                       a.fas.fa-question-circle(
                         href="#",
                         data-toggle="tooltip",
-                        title="-Verde: Online\n-Vermelho: Sem resposta imediata\n-Cinza: Sem resposta por mais de 1 hora",
+                        title="Verde: Online\nVermelho: Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
                       )
                     th.text-center Usuário PPPoE
                     th.text-center Endereço MAC
@@ -173,8 +173,18 @@ block content
                     td
                     td.text-center
                       | #{status.totalnum} total
-                    td.text-center
-                      | #{status.onlinenum} online  
+                    td
+                      .fas.fa-circle.green-text
+                      span &nbsp
+                      span#online-status-sum #{status.onlinenum}
+                      br
+                      .fas.fa-circle.red-text
+                      span &nbsp
+                      span#recovery-status-sum #{status.recoverynum}
+                      br
+                      .fas.fa-circle.grey-text
+                      span &nbsp
+                      span#offline-status-sum #{status.offlinenum}
                     td.text-center *
                     td.text-center *
                     td.text-center *
@@ -225,26 +235,30 @@ block content
                       data-device-release=(device.release ? device.release : ""),
                       data-do-update=(device.do_update ? "Sim" : "Não"),
                     )
-                      td.text-center.col-xs-1(
+                      td.text-center(
                         style="cursor: pointer;"
                       )
                         .fas.fa-chevron-right.fa-lg
-                      td.text-center.col-xs-1=(index + 1)
-                      td.text-center.col-xs-1
-                        .fas.fa-circle.fa-lg(
+                      td.text-center #{index + 1}
+                      td
+                        .fas.fa-circle.fa-lg.device-status(
                           class=status.devices[device._id],
                           data-toggle="tooltip",
                           title=device.last_contact.toString()
                         )
-                      td.text-center.col-xs-2
+                        span &nbsp
+                        span &nbsp
+                        a.d-none
+                          .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
+                      td.text-center
                         | #{device.pppoe_user}
-                      td.text-center.col-xs-2
+                      td.text-center
                         | #{device._id}
-                      td.text-center.col-xs-1
+                      td.text-center
                         | #{device.wan_ip}
-                      td.text-center.col-xs-2
+                      td.text-center
                         | #{device.ip}
-                      td.text-center.col-xs-1
+                      td.text-center
                         .btn-group
                           button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
                             type="button",
@@ -264,7 +278,7 @@ block content
                                 if (device.model === release.model)
                                   a.dropdown-item.text-center #{release.id}
                       if (superuser || role.grantFirmwareUpgrade)
-                        td.text-center.col-xs-1
+                        td.text-center
                           label.switch
                             input.checkbox.firmwareUpdateCheckbox(
                               type="checkbox",
@@ -511,6 +525,9 @@ block scripts
   script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
+  script(src='/javascripts/notification_actions.js',
+         devices=(devices.map(device => device._id)
+                         .reduce((acc, dev) => acc + ',' + dev)))
   script.
     (function() {
       'use strict';
