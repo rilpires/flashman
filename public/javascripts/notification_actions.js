@@ -8,6 +8,7 @@ let changeDeviceStatusOnTable = function(macaddr, data) {
       let status = deviceOnTable.find('.device-status');
       let currentGreen = status.hasClass('green-text');
       let currentRed = status.hasClass('red-text');
+      let newStatus = 'green-text';
       if (currentGreen) {
         $('#online-status-sum').text(
           parseInt($('#online-status-sum').text()) - 1);
@@ -21,11 +22,13 @@ let changeDeviceStatusOnTable = function(macaddr, data) {
       if (data == 'online') {
         $('#online-status-sum').text(
           parseInt($('#online-status-sum').text()) + 1);
+        newStatus = 'green-text';
       } else if (data == 'recovery') {
         $('#recovery-status-sum').text(
           parseInt($('#recovery-status-sum').text()) + 1);
+        newStatus = 'red-text';
       }
-      status.removeClass('green-text red-text grey-text').addClass(data);
+      status.removeClass('green-text red-text grey-text').addClass(newStatus);
     } else {
       let alert = deviceOnTable.find('.device-alert');
       let alertLink = alert.parent();
