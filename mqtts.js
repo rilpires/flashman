@@ -6,31 +6,14 @@ const Notification = require('./models/notification');
 
 let mqtts = aedes();
 
-const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
-
-const anlixSendDeviceStatusNotification = function(mac, data) {
-  if (!mac) {
-    console.log(
-      'ERROR: SIO: ' +
-      'Try to send status notification to an invalid mac address!'
-    );
-    return false;
-  }
-  let found = sio.emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
-  if (!found) {
-    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
-  }
-  return found;
-};
-
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id, 'online');
+  sio.anlixSendDeviceStatusNotification(client.id, 'online');
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
   console.log('Router disconnected on MQTT: ' + client.id);
-  anlixSendDeviceStatusNotification(client.id, 'recovery');
+  sio.anlixSendDeviceStatusNotification(client.id, 'recovery');
 });
 
 mqtts.on('ack', function(packet, client, err) {
@@ -105,13 +88,13 @@ mqtts.authenticate = function(client, username, password, cb) {
                     });
                     notification.save(function(err) {
                       if (!err) {
-                        anlixSendDeviceStatusNotification(matchedDevice._id,
-                                                          notification);
+                        sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                              notification);
                       }
                     });
                   } else {
-                    anlixSendDeviceStatusNotification(matchedDevice._id,
-                                                      matchedNotif);
+                    sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                          matchedNotif);
                   }
                 });
                 error.returnCode = 4;
