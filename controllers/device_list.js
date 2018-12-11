@@ -68,45 +68,48 @@ const getStatus = function(devices) {
   return statusAll;
 };
 
-const getOnlineCount = function(query, status) {
-  let onlineQuery = {};
-  let recoveryQuery = {};
-  let offlineQuery = {};
-  let lastHour = new Date();
-  lastHour.setHours(lastHour.getHours() - 1);
-  status.onlinenum = 0;
-  status.recoverynum = 0;
-  status.offlinenum = 0;
+const getOnlineCount = function(query) {
+  return new Promise((resolve, reject)=> {
+    let onlineQuery = {};
+    let recoveryQuery = {};
+    let offlineQuery = {};
+    let status = {};
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    status.onlinenum = 0;
+    status.recoverynum = 0;
+    status.offlinenum = 0;
 
-  onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
-  recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
-  offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
+    onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
+    recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
+    offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
 
-  DeviceModel.find(onlineQuery, {'_id': 1}, function(err, devices) {
-    if (!err) {
-      status.onlinenum = devices.length;
-      recoveryQuery.$and.push({_id: {$nin: devices}});
-      DeviceModel.count(recoveryQuery, function(err, count) {
-        if (!err) {
-          status.recoverynum = count;
-          offlineQuery.$and.push({_id: {$nin: devices}});
-          DeviceModel.count(offlineQuery, function(err, count) {
-            if (!err) {
-              status.offlinenum = count;
-            }
-          });
-        }
-      });
-    }
-  });
-};
-
-const getTotalCount = function(query, status) {
-  DeviceModel.count(query, function(err, count) {
-    if (err) {
-      status.totalnum = 0;
-    }
-    status.totalnum = count;
+    DeviceModel.find(onlineQuery, {'_id': 1}, function(err, devices) {
+      if (!err) {
+        status.onlinenum = devices.length;
+        recoveryQuery.$and.push({_id: {$nin: devices}});
+        DeviceModel.count(recoveryQuery, function(err, count) {
+          if (!err) {
+            status.recoverynum = count;
+            offlineQuery.$and.push({_id: {$nin: devices}});
+            DeviceModel.count(offlineQuery, function(err, count) {
+              if (!err) {
+                status.offlinenum = count;
+                status.totalnum = (status.offlinenum + status.recoverynum +
+                                   status.onlinenum);
+                return resolve(status);
+              } else {
+                return reject(err);
+              }
+            });
+          } else {
+            return reject(err);
+          }
+        });
+      } else {
+        return reject(err);
+      }
+    });
   });
 };
 
@@ -145,8 +148,6 @@ deviceListController.index = function(req, res) {
   }
   // Counters
   let status = {};
-  getOnlineCount({}, status);
-  getTotalCount({}, status);
 
   DeviceModel.paginate({}, {page: reqPage,
                             limit: elementsPerPage,
@@ -164,7 +165,6 @@ deviceListController.index = function(req, res) {
     indexContent.devices = devices.docs;
     indexContent.releases = releases;
     indexContent.singlereleases = singleReleases;
-    indexContent.status = status;
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
     indexContent.devicesPermissions = devices.docs.map((device)=>{
@@ -186,18 +186,27 @@ deviceListController.index = function(req, res) {
           indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
         }
 
-        // Filter data using user permissions
-        if (req.user.is_superuser) {
-          return res.render('index', indexContent);
-        } else {
-          Role.findOne({name: req.user.role}, function(err, role) {
-            if (err) {
-              console.log(err);
-            }
-            indexContent.role = role;
+        getOnlineCount({}).then((onlineStatus) => {
+          status = Object.assign(status, onlineStatus);
+          indexContent.status = status;
+
+          // Filter data using user permissions
+          if (req.user.is_superuser) {
             return res.render('index', indexContent);
-          });
-        }
+          } else {
+            Role.findOne({name: req.user.role}, function(err, role) {
+              if (err) {
+                console.log(err);
+              }
+              indexContent.role = role;
+              return res.render('index', indexContent);
+            });
+          }
+        }, (error) => {
+          indexContent.type = 'danger';
+          indexContent.message = err.message;
+          return res.render('error', indexContent);
+        });
       });
     });
   });
@@ -320,8 +329,6 @@ deviceListController.searchDeviceReg = function(req, res) {
   }
   // Counters
   let status = {};
-  getOnlineCount(finalQuery, status);
-  getTotalCount(finalQuery, status);
 
   DeviceModel.paginate(finalQuery, {page: reqPage,
                             limit: elementsPerPage,
@@ -361,18 +368,27 @@ deviceListController.searchDeviceReg = function(req, res) {
           indexContent.update = matchedConfig.hasUpdate;
         }
 
-        // Filter data using user permissions
-        if (req.user.is_superuser) {
-          return res.render('index', indexContent);
-        } else {
-          Role.findOne({name: req.user.role}, function(err, role) {
-            if (err) {
-              console.log(err);
-            }
-            indexContent.role = role;
+        getOnlineCount(finalQuery).then((onlineStatus) => {
+          status = Object.assign(status, onlineStatus);
+          indexContent.status = status;
+
+          // Filter data using user permissions
+          if (req.user.is_superuser) {
             return res.render('index', indexContent);
-          });
-        }
+          } else {
+            Role.findOne({name: req.user.role}, function(err, role) {
+              if (err) {
+                console.log(err);
+              }
+              indexContent.role = role;
+              return res.render('index', indexContent);
+            });
+          }
+        }, (error) => {
+          indexContent.type = 'danger';
+          indexContent.message = err.message;
+          return res.render('error', indexContent);
+        });
       });
     });
   });
