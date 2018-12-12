@@ -1,6 +1,7 @@
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const request = require('request-promise-native');
+const mqtt = require('../mqtts');
 
 const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
@@ -55,31 +56,30 @@ measureController.activateDevices = async(function(req, res) {
         content.device_list.length < 1) {
       return [500, 'Não foi fornecida uma lista de dispositivos'];
     }
-    for (device in content.device_list) {
-      if (Object.prototype.hasOwnProperty.call(content.device_list, device)) {
-        let mac = returnStrOrEmptyStr(device.mac);
-        let psk = returnStrOrEmptyStr(device.psk);
-        if (!mac) {
-          return [500, 'Um elemento da lista não forneceu endereço MAC'];
-        }
-        if (!psk) {
-          return [500, 'Um elemento da lista não forneceu chave de segurança'];
-        }
-        if (!mac.match(macRegex)) {
-          return [500, 'Um endereço MAC fornecido não é válido'];
-        }
-        try {
-          let device = await(DeviceModel.findById(mac));
-          if (!device) {
-            return [500, 'Um endereço MAC fornecido não está cadastrado'];
-          }
-        } catch (err) {
-          console.log(err);
-          return [500, 'Erro interno ao consultar o banco de dados'];
-        }
+    return content.device_list.reduce((status, device) => {
+      if (status[0] != 200) return status;
+      let mac = returnStrOrEmptyStr(device.mac).toUpperCase();
+      let psk = returnStrOrEmptyStr(device.psk);
+      if (!mac) {
+        return [500, 'Um elemento da lista não forneceu endereço MAC'];
       }
-    }
-    return [200, ''];
+      if (!psk) {
+        return [500, 'Um elemento da lista não forneceu chave de segurança'];
+      }
+      if (!mac.match(macRegex)) {
+        return [500, 'Um endereço MAC fornecido não é válido'];
+      }
+      try {
+        let device = await(DeviceModel.findById(mac));
+        if (!device) {
+          return [500, 'Um endereço MAC fornecido não está cadastrado'];
+        }
+      } catch (err) {
+        console.log(err);
+        return [500, 'Erro interno ao consultar o banco de dados'];
+      }
+      return status;
+    }, [200, '']);
   });
 
   // Handle request errors
@@ -94,12 +94,12 @@ measureController.activateDevices = async(function(req, res) {
   let deviceList = req.body.device_list;
   try {
     deviceList.forEach((dev)=>{
-      let mac = dev.mac;
+      let mac = dev.mac.toUpperCase();
       let psk = dev.psk;
       let device = await(DeviceModel.findById(mac));
       device.measure_config.measure_psk = psk;
       await(device.save());
-      mqtts.anlix_message_router_measure(mac, psk);
+      mqtt.anlix_message_router_measure(mac, psk);
     });
     return res.status(200).end();
   } catch (err) {
@@ -118,23 +118,22 @@ measureController.deactivateDevices = async(function(req, res) {
         content.mac_list.length < 1) {
       return [500, 'Não foi fornecida uma lista de dispositivos'];
     }
-    for (mac in content.mac_list) {
-      if (Object.prototype.hasOwnProperty.call(content.mac_list, mac)) {
-        if (!mac.match(macRegex)) {
-          return [500, 'Um endereço MAC fornecido não é válido'];
-        }
-        try {
-          let device = await(DeviceModel.findById(mac));
-          if (!device) {
-            return [500, 'Um endereço MAC fornecido não está cadastrado'];
-          }
-        } catch (err) {
-          console.log(err);
-          return [500, 'Erro interno ao consultar o banco de dados'];
-        }
+    return content.mac_list.reduce((status, mac)=>{
+      if (status[0] != 200) return status;
+      if (!mac.match(macRegex)) {
+        return [500, 'Um endereço MAC fornecido não é válido'];
       }
-    }
-    return [200, ''];
+      try {
+        let device = await(DeviceModel.findById(mac.toUpperCase()));
+        if (!device) {
+          return [500, 'Um endereço MAC fornecido não está cadastrado'];
+        }
+      } catch (err) {
+        console.log(err);
+        return [500, 'Erro interno ao consultar o banco de dados'];
+      }
+      return [200, ''];
+    }, [200, '']);
   });
 
   // Handle request errors
@@ -148,7 +147,7 @@ measureController.deactivateDevices = async(function(req, res) {
   // For each device, send MQTT message
   let macList = req.body.mac_list;
   macList.forEach((mac)=>{
-    mqtts.anlix_message_router_measure(mac);
+    mqtt.anlix_message_router_measure(mac.toUpperCase());
   });
   return res.status(200).end();
 });
