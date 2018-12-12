@@ -116,7 +116,7 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
 };
 
 // Important: include and initialize socket.io first using socket var
-socket.on('ONLINEDEV', function(macaddr, data) {
+socket.on('ONLINEDEVS', function(macaddr, data) {
   if (($('#open-firewall-ports').data('bs.modal') || {})._isShown) {
     let id = $('#openfirewallRouterid_label').text();
     if (id == macaddr) {
