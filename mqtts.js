@@ -185,7 +185,7 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
       topic: 'flashman/update/' + id,
       payload: 'onlinedev',
     });
-  console.log('MQTT SEND Message ONLINEDEV to ' + id);
+  console.log('MQTT SEND Message ONLINEDEVS to ' + id);
 };
 
 module.exports = mqtts;
