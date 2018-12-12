@@ -196,7 +196,7 @@ measureController.pingLicenseStatus = async(function() {
       url: controllerUrl,
       method: 'POST',
       json: {
-        'secret': process.env.FLM_CONTROL_SECRET,
+        'secret': process.env.FLM_COMPANY_SECRET,
       },
     }));
     config.measure_configs.is_license_active = body.is_active;
