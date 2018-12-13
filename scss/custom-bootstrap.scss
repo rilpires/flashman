@@ -82,3 +82,61 @@
     }
   }
 }
+
+.md-select {
+  // Remove arrow on Firefox
+  -moz-appearance: none;
+  // Remove arrow on Chrome
+  -webkit-appearance: none;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid $input-border-color;
+  color: $input-color;
+  font-family: inherit;
+  font-size: $input-label-font-size;
+  padding: $input-form-control-padding-top 0 $input-form-control-padding-bottom;
+  width: 100%;
+
+  // Remove arrow on IE10
+  &::-ms-expand {
+    display: none;
+  }
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.md-selectfield {
+  border: 0;
+  position: relative;
+
+  label {
+    color: $input-label-color;
+    cursor: text;
+    font-size: $label-font-size;
+    left: 0;
+    position: absolute;
+    top: $input-label-top;
+    transform: $input-label-active-transform;
+    transition: $input-label-transition;
+  }
+
+  .md-select {
+    appearance: none;
+  }
+
+  &::after {
+    border-left: .25em solid transparent;
+    border-right: .25em solid transparent;
+    border-top: .375em solid $black;
+    content: '';
+    height: 0;
+    padding: 0;
+    pointer-events: none;
+    position: absolute;
+    right: .5em;
+    top: .75em;
+    width: 0;
+  }
+}

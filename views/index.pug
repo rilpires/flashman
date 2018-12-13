@@ -118,17 +118,21 @@ block content
       else
         .row
           .col-12.col-lg-3.offset-lg-9
-            .md-form.input-group
-              input.form-control.col-xs-10(
-                type="text",
-                id="input-elements-pp",
-                maxlength="4",
-                value=elementsperpage)
-              label Registros por página
-              .input-group-btn
-                button.btn.teal.lighten-2.mr-0.my-0(
-                  type="button",
-                  id="btn-elements-per-page") Ok
+            .md-form.mb-0
+              .input-group
+                .md-selectfield.form-control
+                  label Registros por página
+                  select.browser-default.md-select(id="input-elements-pp")
+                    option(value="" disabled selected) Selecione...
+                    option(value=10 selected=(elementsperpage == 10)) 10
+                    option(value=50 selected=(elementsperpage == 50)) 50
+                    option(value=100 selected=(elementsperpage == 100)) 100
+                    option(value=250 selected=(elementsperpage == 250)) 250
+                    option(value=500 selected=(elementsperpage == 500)) 500
+                .input-group-btn
+                  button.btn.teal.lighten-2.mr-0.my-0(
+                    type="button",
+                    id="btn-elements-per-page") Ok
         .card
           .card-body
             .table-responsive
