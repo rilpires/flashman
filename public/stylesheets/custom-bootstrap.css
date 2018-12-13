@@ -16961,4 +16961,59 @@ table.table-sm td {
   outline: none;
 }
 
+.md-select {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid #ced4da;
+  color: #495057;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0.3rem 0 0.55rem;
+  width: 100%;
+}
+
+.md-select::-ms-expand {
+  display: none;
+}
+
+.md-select:focus {
+  outline: none;
+}
+
+.md-selectfield {
+  border: 0;
+  position: relative;
+}
+
+.md-selectfield label {
+  color: #757575;
+  cursor: text;
+  font-size: 0.8rem;
+  left: 0;
+  position: absolute;
+  top: 0.65rem;
+  transform: translateY(-140%);
+  transition: 0.2s ease-out;
+}
+
+.md-selectfield .md-select {
+  appearance: none;
+}
+
+.md-selectfield::after {
+  border-left: .25em solid transparent;
+  border-right: .25em solid transparent;
+  border-top: 0.375em solid #000;
+  content: '';
+  height: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  right: .5em;
+  top: .75em;
+  width: 0;
+}
+
 /*# sourceMappingURL=custom-bootstrap.css.map */

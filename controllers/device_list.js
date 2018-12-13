@@ -279,8 +279,19 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['last_contact'] = {$gte: lastHour};
-      field['_id'] = {$in: Object.keys(mqtt.clients)};
+      field['$and'] = [
+        {'last_contact': {$gte: lastHour}},
+        {'_id': {$in: Object.keys(mqtt.clients)}},
+      ];
+      queryArray.push(field);
+    } else if (queryContents[idx].toLowerCase() == 'instavel') {
+      let field = {};
+      let lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+      field['$and'] = [
+        {last_contact: {$gte: lastHour}},
+        {_id: {$nin: Object.keys(mqtt.clients)}},
+      ];
       queryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'offline') {
       let field = {};

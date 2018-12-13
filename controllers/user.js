@@ -17,6 +17,12 @@ userController.changePassword = function(req, res) {
 };
 
 userController.changeElementsPerPage = function(req, res) {
+  if (isNaN(parseInt(req.body.elementsperpage))) {
+    return res.json({
+      type: 'danger',
+      message: 'Valor inválido',
+    });
+  }
   // Use the User model to find a specific user
   User.findById(req.user._id, function(err, user) {
     if (err) {
