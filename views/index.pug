@@ -527,7 +527,7 @@ block scripts
   script(src='/javascripts/table_anim.js')
   script(src='/javascripts/notification_actions.js',
          devices=(devices.map(device => device._id)
-                         .reduce((acc, dev) => acc + ',' + dev)))
+                         .reduce((acc, dev) => acc + ',' + dev, '')))
   script.
     (function() {
       'use strict';
