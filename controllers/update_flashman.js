@@ -173,10 +173,9 @@ const updateFlashman = function(automatic, res) {
 
 const sendTokenControl = function(req, token) {
   return request({
-    url: 'https://controle.anlix.io/api/???',
+    url: 'https://controle.anlix.io/api/measure/token',
     method: 'POST',
     json: {
-      'secret': req.locals.app.secret,
       'token': token,
     },
   }).then(
