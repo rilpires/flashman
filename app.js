@@ -12,7 +12,6 @@ const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
-const md5File = require('md5-file');
 let session = require('express-session');
 
 let updater = require('./controllers/update_flashman');
@@ -114,16 +113,16 @@ app.use(logger(':req[x-forwarded-for] - :method :url HTTP/:http-version :status 
 app.use(cookieParser());
 app.use(serveStatic(path.join(__dirname, 'public'), {
   dotfiles: 'ignore',
-  setHeaders: setMd5Sum,
+  // setHeaders: setMd5Sum,
 }));
 
 /**
  * Generate MD5 hash for firmware files
  */
-function setMd5Sum(res, path) {
-  const md5Checksum = md5File.sync(path);
-  res.setHeader('X-Checksum-Md5', md5Checksum);
-}
+// function setMd5Sum(res, path) {
+
+//   res.setHeader('X-Checksum-Md5', md5Checksum);
+// }
 
 let sessParam = session({
   secret: app.locals.secret,
@@ -160,7 +159,8 @@ app.use('/scripts/selectize',
   express.static(path.join(__dirname, 'node_modules/selectize/dist'))
 );
 app.use('/scripts/selectize-bootstrap',
-  express.static(path.join(__dirname, 'node_modules/selectize-bootstrap4-theme/dist'))
+  express.static(path.join(__dirname,
+                           'node_modules/selectize-bootstrap4-theme/dist'))
 );
 app.use('/scripts/sweetalert2',
   express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))

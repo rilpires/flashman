@@ -19,6 +19,10 @@ const getReleases = function(modelAsArray=false) {
     let fnameSubStrings = filename.split('_');
     let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
     let releaseSubStringsRaw = releaseSubStringRaw.split('.');
+    if (releaseSubStringsRaw[1] == 'md5') {
+      // Skip MD5 hash files
+      return;
+    }
     let releaseId = releaseSubStringsRaw[0];
     let releaseModel = fnameSubStrings[1];
     if (fnameSubStrings.length == 4) {
