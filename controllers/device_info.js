@@ -37,6 +37,13 @@ const createRegistry = function(req, res) {
   let password = returnObjOrEmptyStr(req.body.wifi_password).trim();
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
+  let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
+
+  // The syn came from flashbox keepalive procedure
+  // Keepalive is designed to failsafe existing devices and not create new ones
+  if (flmUpdater == '0') {
+    return res.status(400).end();
+  }
 
   let genericValidate = function(field, func, key, minlength) {
     let validField = func(field, minlength);
@@ -266,7 +273,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
 
           // We can disable since the device will receive the update
           matchedDevice.do_update_parameters = false;
-
           // Remove notification to device using MQTT
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
