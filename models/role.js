@@ -15,6 +15,7 @@ let roleSchema = new mongoose.Schema({
   grantFirmwareManage: {type: Boolean, required: true, default: false},
   grantAPIAccess: {type: Boolean, required: true, default: false},
   grantLOGAccess: {type: Boolean, required: true, default: false},
+  grantNotificationPopups: {type: Boolean, required: true, default: true},
 });
 
 let Role = mongoose.model('Role', roleSchema);

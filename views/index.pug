@@ -252,8 +252,9 @@ block content
                         )
                         span &nbsp
                         span &nbsp
-                        a.d-none
-                          .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
+                        if (superuser || role.grantNotificationPopups)
+                          a.d-none
+                            .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
                       td.text-center
                         | #{device.pppoe_user}
                       td.text-center
