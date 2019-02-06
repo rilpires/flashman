@@ -684,6 +684,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 }
               } else {
                 matchedDevice.connection_type = connectionType;
+                matchedDevice.pppoe_user = '';
+                matchedDevice.pppoe_password = '';
                 updateParameters = true;
               }
             }
