@@ -156,7 +156,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Controle de Identificação do Dispositivo'),
+                      .text('Controle de Identificação do Roteador'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-device-id').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -165,7 +165,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Controle de Ações no Dispositivo'),
+                      .text('Controle de Ações no Roteador'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-device-actions').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -174,7 +174,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Acesso aos LOGS dos roteadores'),
+                      .text('Acesso aos Logs dos Roteadores'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-log-access').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -183,7 +183,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Permitir resolução de alertas em roteadores'),
+                      .text('Permitir Resolução de Alertas em Roteadores'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-notification-popups').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -194,7 +194,7 @@ $(document).ready(function() {
                   $('<div></div>').addClass('col-4').append(
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Remoção de Registro de Dispositivo'),
+                      .text('Remoção de Registro de Roteador'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-device-removal').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -203,7 +203,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Adição de Registro de Dispositivo'),
+                      .text('Adição de Registro de Roteador'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-device-add').append(
                         $('<option></option>').val(false).text('Bloquear'),
@@ -221,7 +221,7 @@ $(document).ready(function() {
                     ),
                     $('<div></div>').addClass('input-entry').append(
                       $('<label></label>')
-                      .text('Permitir acesso a API REST'),
+                      .text('Permitir Acesso a API REST'),
                       $('<select></select>').addClass('form-control')
                       .attr('name', 'grant-api-access').append(
                         $('<option></option>').val(false).text('Bloquear'),

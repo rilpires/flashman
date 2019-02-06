@@ -39,7 +39,7 @@ block content
               .col-1
                 .fas.fa-plus
               .col-10.text-center
-                span.card-title Adicionar novo dispositivo
+                span.card-title Adicionar novo roteador
           .card-body.collapse.out(id="deviceCard")
             form.needs-validation(id="deviceForm", novalidate)
               .md-form.input-group
@@ -114,7 +114,7 @@ block content
   .row.justify-content-center
     .col-12.mt-4
       if ! devices || devices.length == 0
-        h3.mt-2.text-center Nenhum dispositivo registrado
+        h3.mt-2.text-center Nenhum roteador registrado
       else
         .row
           .col-12.col-lg-3.offset-lg-9
@@ -357,17 +357,17 @@ block content
                                         .dropdown-divider
                                         a.dropdown-item.btn-log-modal
                                           .fas.fa-file-alt
-                                          span &nbsp Logs do Roteador
+                                          span &nbsp Logs do roteador
                                     if (devicesPermissions[index].grantResetDevices)
                                       .dropdown-divider
                                       a.dropdown-item.btn-reset-blocked
                                         .fas.fa-ban
-                                        span &nbsp Desbloquear Dispositivos
+                                        span &nbsp Desbloquear dispositivos
                                     if (devicesPermissions[index].grantPortForward)
                                       .dropdown-divider
                                       a.dropdown-item.btn-openFirewallPorts-modal
                                         .fas.fa-lock-open
-                                        span &nbsp Abertura de Portas
+                                        span &nbsp Abertura de portas
 
                                 br
                                 span.badge.badge-success.bounceIn(style="display: none;") Sucesso
