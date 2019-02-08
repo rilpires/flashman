@@ -40,11 +40,31 @@ const grantPortForward = function(version) {
   }
 };
 
+const grantWifi5ghz = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantWifiBand = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
   result.grantPortForward = grantPortForward(version);
+  result.grantWifi5ghz = grantWifi5ghz(version);
+  result.grantWifiBand = grantWifiBand(version);
   return result;
 };
 

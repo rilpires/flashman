@@ -12,8 +12,8 @@ form.edit-form.needs-validation(novalidate)
         if (superuser || role.grantWifiInfo >= 1)
           label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_wifi-" + (index + 1))
             input(type="radio")
-            | Wi-Fi 2.4GHz
-        if (superuser || role.grantWifiInfo >= 1)
+            | Wi-Fi
+        if (devicesPermissions[index].grantWifi5ghz && (superuser || role.grantWifiInfo >= 1))
           label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_wifi5-" + (index + 1))
             input(type="radio")
             | Wi-Fi 5.0GHz
@@ -195,7 +195,8 @@ form.edit-form.needs-validation(novalidate)
                     label(for="edit_wifi_band-" + (index + 1)) Largura de banda
                     select.browser-default.md-select(
                       id="edit_wifi_band-" + (index + 1),
-                      disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
+                      disabled=((devicesPermissions[index].grantWifiBand &&
+                        (superuser || role.grantWifiInfo > 1)) ? false : true)
                     )
                       option(value="40") 40 MHz
                       option(value="20") 20 MHz
@@ -205,12 +206,13 @@ form.edit-form.needs-validation(novalidate)
                     label(for="edit_wifi_mode-" + (index + 1)) Modo de operação
                     select.browser-default.md-select(
                       id="edit_wifi_mode-" + (index + 1),
-                      disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
+                      disabled=((devicesPermissions[index].grantWifiBand &&
+                        (superuser || role.grantWifiInfo > 1)) ? false : true)
                     )
                       option(value="n") BGN
                       option(value="g") G
       // Wi-Fi 5GHz
-      if (superuser || role.grantWifiInfo >= 1)
+      if (devicesPermissions[index].grantWifi5ghz && (superuser || role.grantWifiInfo >= 1))
         .edit-tab.d-none(id="tab_wifi5-" + (index + 1))
           .row
               .col-6
