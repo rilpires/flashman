@@ -24,7 +24,6 @@ let loadDeviceInfoOnForm = function(row) {
 
   $('#edit_connect_type-' + index.toString()).change(function() {
     $('#edit_connect_type_warning-' + index.toString()).show();
-    $('#edit_connect_type-' + index.toString()).addClass('orange lighten-4');
     if ($('#edit_connect_type-' + index.toString()).val() === 'PPPoE') {
       $('#edit_pppoe_user-' + index.toString()).parent().show();
       $('#edit_pppoe_pass-' + index.toString()).closest('.input-entry').show();
@@ -37,10 +36,10 @@ let loadDeviceInfoOnForm = function(row) {
   // Device info
   $('#info_device_model-' + index.toString()).val(
     row.data('device-model').toUpperCase()
-  );
+  ).change();
   $('#info_device_version-' + index.toString()).val(
     row.data('device-version')
-  );
+  ).change();
 };
 
 let downloadCSV = function(csv, filename) {
@@ -119,21 +118,21 @@ $(document).ready(function() {
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $('.fa-chevron-right').parents('td').click(function(event) {
+  $('.fa-chevron-down').parents('td').click(function(event) {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
-    if ($(this).children().hasClass('fa-chevron-right')) {
+    if ($(this).children().hasClass('fa-chevron-down')) {
       loadDeviceInfoOnForm(row);
-      $(formId).show();
-      $(this).find('.fa-chevron-right')
-        .removeClass('fa-chevron-right')
-        .addClass('fa-chevron-down');
-    } else if ($(this).children().hasClass('fa-chevron-down')) {
-      $(formId).hide();
+      $(formId).show('fast');
       $(this).find('.fa-chevron-down')
         .removeClass('fa-chevron-down')
-        .addClass('fa-chevron-right');
+        .addClass('fa-chevron-up text-primary');
+    } else if ($(this).children().hasClass('fa-chevron-up')) {
+      $(formId).hide('fast');
+      $(this).find('.fa-chevron-up')
+        .removeClass('fa-chevron-up text-primary')
+        .addClass('fa-chevron-down');
     }
   });
   $('#ext_ref_type a').on('click', refreshExtRefType);
@@ -157,5 +156,11 @@ $(document).ready(function() {
 
   $('#export-csv').click(function(event) {
     exportTableToCSV('lista-de-roteadores-flashbox.csv');
+  });
+
+  $('.tab-switch-btn').click(function(event) {
+    let tabId = $(this).data('tab-id');
+    $(tabId).siblings().addClass('d-none');
+    $(tabId).removeClass('d-none');
   });
 });
