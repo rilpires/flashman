@@ -143,14 +143,13 @@ app.use(cookieParser());
 app.use('/stylesheets',
   serveStatic(path.join(__dirname, 'public/stylesheets'), {
     dotfiles: 'ignore',
-    maxAge: '1d',
+    maxAge: false,
   })
 );
 app.use('/javascripts',
   serveStatic(path.join(__dirname, 'public/javascripts'), {
     dotfiles: 'ignore',
-    maxAge: '1d',
-    // setHeaders: setMd5Sum,
+    maxAge: false,
   })
 );
 app.use('/images',
