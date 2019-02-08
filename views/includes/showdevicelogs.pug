@@ -11,12 +11,18 @@
           span.white-text &times;
       .modal-body
         .row
-          pre.pre-scrollable#logArea
+          .col
+            h2.text-center.grey-text.mb-3#logs-placeholder
+              i.fas.fa-file-alt.fa-4x
+              br
+              br
+              span Escolha uma opção abaixo
+            pre.pre-scrollable#logArea(style="display: none;")
       .modal-footer 
         .btn-group.btn-group-sm(role="group")
             button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
-              span &nbsp Upgrade
+              span &nbsp Primeiro boot
             button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
-              span &nbsp Inicianização
+              span &nbsp Boot
             button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
               span &nbsp Ao Vivo

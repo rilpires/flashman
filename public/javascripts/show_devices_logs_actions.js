@@ -41,7 +41,7 @@ let printLogData = function(url) {
     success: function(res, status, xhr) {
       let ct = xhr.getResponseHeader('content-type') || '';
       if (ct.indexOf('json') > -1) {
-        textarea.html('ERRO: ' + res.message);
+        textarea.html('Erro: ' + res.message);
       } else {
         textarea.html('<code>' + res + '</code>');
         textarea.highlight(
@@ -87,23 +87,41 @@ $(document).ready(function() {
       type: 'post',
       dataType: 'json',
       success: function(res) {
-        if (res.success) {
-          textarea.html('Aguardando resposta do roteador...');
-        } else {
-          textarea.html(res.message);
-        }
+        $('#logs-placeholder').hide('fast', function() {
+          $('#logArea').show('fast');
+          if (res.success) {
+            textarea.html('Aguardando resposta do roteador...');
+          } else {
+            textarea.html(res.message);
+          }
+        });
       },
       error: function(xhr, status, error) {
-        textarea.html(status+': '+error);
+        $('#logs-placeholder').hide('fast', function() {
+          $('#logArea').show('fast');
+          textarea.html(status + ': ' + error);
+        });
       },
     });
   });
 
   $('.btn-log-upgrade').click(function(event) {
-    printLogData('/devicelist/uifirstlog/');
+    $('#logs-placeholder').hide('fast', function() {
+      $('#logArea').show('fast');
+      printLogData('/devicelist/uifirstlog/');
+    });
   });
 
   $('.btn-log-init').click(function(event) {
-    printLogData('/devicelist/uilastlog/');
+    $('#logs-placeholder').hide('fast', function() {
+      $('#logArea').show('fast');
+      printLogData('/devicelist/uilastlog/');
+    });
+  });
+
+  // Restore placeholder
+  $('#analyse-logs').on('hidden.bs.modal', function() {
+    $('#logs-placeholder').show();
+    $('#logArea').hide();
   });
 });
