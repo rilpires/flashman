@@ -231,6 +231,12 @@ block content
                         (superuser || role.grantWifiInfo >= 1) ? "true" : "false"),
                       data-validate-pppoe=(
                         (superuser || role.grantPPPoEInfo >= 1) ? "true" : "false"),
+                      data-validate-wifi-band=(
+                        (devicesPermissions[index].grantWifiBand &&
+                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
+                      data-validate-wifi-5ghz=(
+                        (devicesPermissions[index].grantWifi5ghz &&
+                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )
