@@ -40,15 +40,15 @@
 
     Validator.prototype.validateBand = function(band) {
       return {
-        valid: ['20', '40', '80'].includes(band),
-        err: ['Somente são aceitos os valores 20, 40 e 80 MHz'],
+        valid: ['HT20', 'HT40', 'VHT20', 'VHT40', 'VHT80'].includes(band),
+        err: ['Somente são aceitos os valores HT20,HT40,VHT20,VHT40 e VHT80'],
       };
     };
 
     Validator.prototype.validateMode = function(mode) {
       return {
-        valid: ['g', 'n', 'ac'].includes(mode),
-        err: ['Somente são aceitos os valores G, N e AC'],
+        valid: ['11g', '11n', '11na', '11ac'].includes(mode),
+        err: ['Somente são aceitos os valores 11g, 11n, 11na e 11ac'],
       };
     };
 

@@ -204,8 +204,8 @@ form.edit-form.needs-validation(novalidate)
                       disabled=((devicesPermissions[index].grantWifiBand &&
                         (superuser || role.grantWifiInfo > 1)) ? false : true)
                     )
-                      option(value="40") 40 MHz
-                      option(value="20") 20 MHz
+                      option(value="HT40") 40 MHz
+                      option(value="HT20") 20 MHz
               .md-form
                 .input-group
                   .md-selectfield.form-control.my-0
@@ -215,8 +215,8 @@ form.edit-form.needs-validation(novalidate)
                       disabled=((devicesPermissions[index].grantWifiBand &&
                         (superuser || role.grantWifiInfo > 1)) ? false : true)
                     )
-                      option(value="n") BGN
-                      option(value="g") G
+                      option(value="11n") BGN
+                      option(value="11g") G
       // Wi-Fi 5GHz
       if (devicesPermissions[index].grantWifi5ghz && (superuser || role.grantWifiInfo >= 1))
         .edit-tab.d-none(id="tab_wifi5-" + (index + 1))
@@ -277,9 +277,9 @@ form.edit-form.needs-validation(novalidate)
                         id="edit_wifi5_band-" + (index + 1),
                         disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
                       )
-                        option(value="40") 80 MHz
-                        option(value="40") 40 MHz
-                        option(value="20") 20 MHz
+                        option(value="VHT80") 80 MHz
+                        option(value="VHT40") 40 MHz
+                        option(value="VHT20") 20 MHz
                 .md-form
                   .input-group
                     .md-selectfield.form-control.my-0
@@ -288,8 +288,8 @@ form.edit-form.needs-validation(novalidate)
                         id="edit_wifi5_mode-" + (index + 1),
                         disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
                       )
-                        option(value="ac") AC
-                        option(value="n") N
+                        option(value="11ac") AC
+                        option(value="11na") N
   .row
     // Buttons
     .col.text-right
