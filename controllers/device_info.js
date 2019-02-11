@@ -5,6 +5,7 @@ const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
+const DeviceVersion = require('../models/device_version');
 let deviceInfoController = {};
 
 const returnObjOrEmptyStr = function(query) {
@@ -12,6 +13,17 @@ const returnObjOrEmptyStr = function(query) {
     return query;
   } else {
     return '';
+  }
+};
+
+const genericValidate = function(field, func, key, minlength, errors) {
+  let validField = func(field, minlength);
+  if (!validField.valid) {
+    validField.err.forEach(function(error) {
+      let obj = {};
+      obj[key] = error;
+      errors.push(obj);
+    });
   }
 };
 
@@ -52,17 +64,6 @@ const createRegistry = function(req, res) {
     return res.status(400).end();
   }
 
-  let genericValidate = function(field, func, key, minlength) {
-    let validField = func(field, minlength);
-    if (!validField.valid) {
-      validField.err.forEach(function(error) {
-        let obj = {};
-        obj[key] = error;
-        errors.push(obj);
-      });
-    }
-  };
-
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (err || !matchedConfig) {
       console.log('Error creating entry: ' + err);
@@ -70,26 +71,37 @@ const createRegistry = function(req, res) {
     }
 
     // Validate fields
-    genericValidate(macAddr, validator.validateMac, 'mac');
+    genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
     if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
         connectionType != '') {
       return res.status(500);
     }
     if (pppoe) {
-      genericValidate(pppoeUser, validator.validateUser, 'pppoe_user');
+      genericValidate(pppoeUser, validator.validateUser,
+                      'pppoe_user', null, errors);
       genericValidate(pppoePassword, validator.validatePassword,
-                      'pppoe_password', matchedConfig.pppoePassLength);
+                      'pppoe_password', matchedConfig.pppoePassLength, errors);
     }
-    genericValidate(ssid, validator.validateSSID, 'ssid');
-    genericValidate(password, validator.validateWifiPassword, 'password');
-    genericValidate(channel, validator.validateChannel, 'channel');
-    genericValidate(band, validator.validateBand, 'band');
-    genericValidate(mode, validator.validateMode, 'mode');
-    genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
-    genericValidate(password5ghz, validator.validateWifiPassword, 'password5ghz');
-    genericValidate(channel5ghz, validator.validateChannel, 'channel5ghz');
-    genericValidate(band5ghz, validator.validateBand, 'band5ghz');
-    genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
+    genericValidate(ssid, validator.validateSSID,
+                    'ssid', null, errors);
+    genericValidate(password, validator.validateWifiPassword,
+                    'password', null, errors);
+    genericValidate(channel, validator.validateChannel,
+                    'channel', null, errors);
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
+    genericValidate(mode, validator.validateMode,
+                    'mode', null, errors);
+    genericValidate(ssid5ghz, validator.validateSSID,
+                    'ssid5ghz', null, errors);
+    genericValidate(password5ghz, validator.validateWifiPassword,
+                    'password5ghz', null, errors);
+    genericValidate(channel5ghz, validator.validateChannel,
+                    'channel5ghz', null, errors);
+    genericValidate(band5ghz, validator.validateBand,
+                    'band5ghz', null, errors);
+    genericValidate(mode5ghz, validator.validateMode,
+                    'mode5ghz', null, errors);
 
     if (errors.length < 1) {
       newDeviceModel = new DeviceModel({
@@ -241,6 +253,56 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         let sentVersion = returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
           console.log('Device '+ devId +' changed version to: '+ sentVersion);
+
+          // Legacy registration only. Register advanced wireless
+          // values for routers with versions older than 0.13.0.
+          let permissionsSentVersion = DeviceVersion.findByVersion(sentVersion);
+          let permissionsCurrVersion = DeviceVersion.findByVersion(sentVersion);
+          if ( permissionsSentVersion.grantWifiBand &&
+              !permissionsCurrVersion.grantWifiBand) {
+            let errors = [];
+            const validator = new Validator();
+
+            let band =
+              returnObjOrEmptyStr(req.body.wifi_band).trim();
+            let mode =
+              returnObjOrEmptyStr(req.body.wifi_mode).trim();
+            let ssid5ghz =
+              returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
+            let password5ghz =
+              returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
+            let channel5ghz =
+              returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
+            let band5ghz =
+              returnObjOrEmptyStr(req.body.wifi_band_5ghz).trim();
+            let mode5ghz =
+              returnObjOrEmptyStr(req.body.wifi_mode_5ghz).trim();
+
+            genericValidate(band, validator.validateBand,
+                            'band', null, errors);
+            genericValidate(mode, validator.validateMode,
+                            'mode', null, errors);
+            genericValidate(ssid5ghz, validator.validateSSID,
+                            'ssid5ghz', null, errors);
+            genericValidate(password5ghz, validator.validateWifiPassword,
+                            'password5ghz', null, errors);
+            genericValidate(channel5ghz, validator.validateChannel,
+                            'channel5ghz', null, errors);
+            genericValidate(band5ghz, validator.validateBand,
+                            'band5ghz', null, errors);
+            genericValidate(mode5ghz, validator.validateMode,
+                            'mode5ghz', null, errors);
+
+            if (errors.length < 1) {
+              matchedDevice.wifi_band = band;
+              matchedDevice.wifi_mode = mode;
+              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
+              matchedDevice.wifi_password_5ghz = password5ghz;
+              matchedDevice.wifi_channel_5ghz = channel5ghz;
+              matchedDevice.wifi_band_5ghz = band5ghz;
+              matchedDevice.wifi_mode_5ghz = mode5ghz;
+            }
+          }
           matchedDevice.version = sentVersion;
         }
 
