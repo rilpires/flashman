@@ -15,6 +15,13 @@ let deviceSchema = new Schema({
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
+  wifi_band: String,
+  wifi_mode: String,
+  wifi_ssid_5ghz: String,
+  wifi_password_5ghz: String,
+  wifi_channel_5ghz: String,
+  wifi_band_5ghz: String,
+  wifi_mode_5ghz: String,
   app_password: String,
   lan_devices: [{
     mac: String,

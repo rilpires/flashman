@@ -27,8 +27,8 @@ let validateEditDevice = function(event) {
   // Get form values
   let mac = row.data('deviceid');
   let validateWifi = row.data('validateWifi');
-  let validateWifiBand = row.data('validateWifiBand');
-  let validateWifi5ghz = row.data('validateWifi5ghz');
+  let validateWifiBand = row.data('validate-wifi-band');
+  let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validatePppoe = row.data('validatePppoe');
   let pppoe = $('#edit_connect_type-' + index.toString()).val() === 'PPPoE';
   let pppoeUser = $('#edit_pppoe_user-' + index.toString()).val();

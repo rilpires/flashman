@@ -36,6 +36,13 @@ const createRegistry = function(req, res) {
   let ssid = returnObjOrEmptyStr(req.body.wifi_ssid).trim();
   let password = returnObjOrEmptyStr(req.body.wifi_password).trim();
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
+  let band = returnObjOrEmptyStr(req.body.wifi_band).trim();
+  let mode = returnObjOrEmptyStr(req.body.wifi_mode).trim();
+  let ssid5ghz = returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
+  let password5ghz = returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
+  let channel5ghz = returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
+  let band5ghz = returnObjOrEmptyStr(req.body.wifi_band_5ghz).trim();
+  let mode5ghz = returnObjOrEmptyStr(req.body.wifi_mode_5ghz).trim();
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
 
@@ -76,6 +83,13 @@ const createRegistry = function(req, res) {
     genericValidate(ssid, validator.validateSSID, 'ssid');
     genericValidate(password, validator.validateWifiPassword, 'password');
     genericValidate(channel, validator.validateChannel, 'channel');
+    genericValidate(band, validator.validateBand, 'band');
+    genericValidate(mode, validator.validateMode, 'mode');
+    genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+    genericValidate(password5ghz, validator.validateWifiPassword, 'password5ghz');
+    genericValidate(channel5ghz, validator.validateChannel, 'channel5ghz');
+    genericValidate(band5ghz, validator.validateBand, 'band5ghz');
+    genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
 
     if (errors.length < 1) {
       newDeviceModel = new DeviceModel({
@@ -88,6 +102,13 @@ const createRegistry = function(req, res) {
         'wifi_ssid': ssid,
         'wifi_password': password,
         'wifi_channel': channel,
+        'wifi_band': band,
+        'wifi_mode': mode,
+        'wifi_ssid_5ghz': ssid5ghz,
+        'wifi_password_5ghz': password5ghz,
+        'wifi_channel_5ghz': channel5ghz,
+        'wifi_band_5ghz': band5ghz,
+        'wifi_mode_5ghz': mode5ghz,
         'wan_ip': wanIp,
         'ip': ip,
         'last_contact': Date.now(),
@@ -307,6 +328,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'wifi_ssid': returnObjOrEmptyStr(matchedDevice.wifi_ssid),
           'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
+          'wifi_band': returnObjOrEmptyStr(matchedDevice.wifi_band),
+          'wifi_mode': returnObjOrEmptyStr(matchedDevice.wifi_mode),
+          'wifi_ssid_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
+          'wifi_password_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
+          'wifi_channel_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
+          'wifi_band_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
+          'wifi_mode_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
           'blocked_devices': serializeBlocked(blockedDevices),
           'named_devices': serializeNamed(namedDevices),

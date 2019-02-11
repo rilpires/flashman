@@ -5,6 +5,13 @@ let loadDeviceInfoOnForm = function(row) {
   $('#edit_wifi_ssid-' + index.toString()).val(row.data('ssid')).change();
   $('#edit_wifi_pass-' + index.toString()).val(row.data('wifi-pass')).change();
   $('#edit_wifi_channel-' + index.toString()).val(row.data('channel')).change();
+  $('#edit_wifi_band-' + index.toString()).val(row.data('band')).change();
+  $('#edit_wifi_mode-' + index.toString()).val(row.data('mode')).change();
+  $('#edit_wifi5_ssid-' + index.toString()).val(row.data('ssid-5ghz')).change();
+  $('#edit_wifi5_pass-' + index.toString()).val(row.data('wifi-pass-5ghz')).change();
+  $('#edit_wifi5_channel-' + index.toString()).val(row.data('channel-5ghz')).change();
+  $('#edit_wifi5_band-' + index.toString()).val(row.data('band-5ghz')).change();
+  $('#edit_wifi5_mode-' + index.toString()).val(row.data('mode-5ghz')).change();
   $('#edit_ext_ref_type_selected-' + index.toString())
     .closest('.input-group-btn').find('#ext_ref_type a:contains("' +
       row.data('external-ref-type') + '")').click();
