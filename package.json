@@ -46,7 +46,7 @@
     "passport-http": "^0.3.0",
     "passport-http-bearer": "^1.0.1",
     "passport-local": "^1.0.0",
-    "pem": "^1.13.1",
+    "pem": "^1.14.1",
     "popper.js": "^1.14.3",
     "prompt": "^1.0.0",
     "pug": "^2.0.3",
