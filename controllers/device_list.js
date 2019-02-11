@@ -172,7 +172,8 @@ deviceListController.index = function(req, res) {
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
     indexContent.devicesPermissions = devices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -366,7 +367,8 @@ deviceListController.searchDeviceReg = function(req, res) {
     indexContent.pages = matchedDevices.pages;
     indexContent.lastquery = req.query.content;
     indexContent.devicesPermissions = matchedDevices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -437,7 +439,8 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: 'Roteador não encontrado'});
     }
     let device = matchedDevice;
-    let permissions = DeviceVersion.findByVersion(device.version);
+    let permissions = DeviceVersion.findByVersion(device.version,
+                                                  device.wifi_is_5ghz_capable);
 
     switch (msgtype) {
       case 'rstapp':
@@ -958,7 +961,8 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -1057,7 +1061,8 @@ deviceListController.getPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,

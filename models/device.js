@@ -17,6 +17,7 @@ let deviceSchema = new Schema({
   wifi_channel: String,
   wifi_band: String,
   wifi_mode: String,
+  wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,

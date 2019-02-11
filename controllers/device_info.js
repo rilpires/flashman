@@ -250,23 +250,42 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.model = bodyModel + bodyModelVer;
         }
 
+        // Store if device has dual band capability
+        const is5ghzCapable =
+          (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
+        matchedDevice.wifi_is_5ghz_capable = is5ghzCapable;
+
         let sentVersion = returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
           console.log('Device '+ devId +' changed version to: '+ sentVersion);
 
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
-          let permissionsSentVersion = DeviceVersion.findByVersion(sentVersion);
-          let permissionsCurrVersion = DeviceVersion.findByVersion(sentVersion);
+          let permissionsSentVersion = DeviceVersion.findByVersion(
+            sentVersion, is5ghzCapable);
+          let permissionsCurrVersion = DeviceVersion.findByVersion(
+            sentVersion, is5ghzCapable);
+          let errors = [];
+          const validator = new Validator();
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
-            let errors = [];
-            const validator = new Validator();
-
             let band =
               returnObjOrEmptyStr(req.body.wifi_band).trim();
             let mode =
               returnObjOrEmptyStr(req.body.wifi_mode).trim();
+
+            genericValidate(band, validator.validateBand,
+                            'band', null, errors);
+            genericValidate(mode, validator.validateMode,
+                            'mode', null, errors);
+
+            if (errors.length < 1) {
+              matchedDevice.wifi_band = band;
+              matchedDevice.wifi_mode = mode;
+            }
+          }
+          if ( permissionsSentVersion.grantWifi5ghz &&
+              !permissionsSentVersion.grantWifi5ghz) {
             let ssid5ghz =
               returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
             let password5ghz =
@@ -278,10 +297,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             let mode5ghz =
               returnObjOrEmptyStr(req.body.wifi_mode_5ghz).trim();
 
-            genericValidate(band, validator.validateBand,
-                            'band', null, errors);
-            genericValidate(mode, validator.validateMode,
-                            'mode', null, errors);
             genericValidate(ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
@@ -294,8 +309,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'mode5ghz', null, errors);
 
             if (errors.length < 1) {
-              matchedDevice.wifi_band = band;
-              matchedDevice.wifi_mode = mode;
               matchedDevice.wifi_ssid_5ghz = ssid5ghz;
               matchedDevice.wifi_password_5ghz = password5ghz;
               matchedDevice.wifi_channel_5ghz = channel5ghz;
