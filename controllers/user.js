@@ -82,6 +82,7 @@ userController.postRole = function(req, res) {
     grantDeviceActions: req.body['grant-device-actions'],
     grantDeviceRemoval: req.body['grant-device-removal'],
     grantDeviceAdd: req.body['grant-device-add'],
+    grantMonitorManage: req.body['grant-monitor-manage'],
     grantFirmwareManage: req.body['grant-firmware-manage'],
     grantAPIAccess: req.body['grant-api-access'],
     grantLOGAccess: req.body['grant-log-access'],
@@ -199,6 +200,7 @@ userController.editRole = function(req, res) {
     role.grantDeviceActions = req.body['grant-device-actions'];
     role.grantDeviceRemoval = req.body['grant-device-removal'];
     role.grantDeviceAdd = req.body['grant-device-add'];
+    role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];
     role.grantAPIAccess = req.body['grant-api-access'];
     role.grantLOGAccess = req.body['grant-log-access'];
@@ -278,6 +280,12 @@ userController.getProfile = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       Role.findOne({name: req.user.role}, function(err, role) {
         indexContent.superuser = req.user.is_superuser;
@@ -313,6 +321,12 @@ userController.showAll = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       indexContent.username = req.user.name;
 
@@ -338,6 +352,12 @@ userController.showRoles = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
       indexContent.username = req.user.name;
 

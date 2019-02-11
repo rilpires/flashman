@@ -1,9 +1,16 @@
 nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
-  a.navbar-brand(href="/").col-2
+  a.navbar-brand(href="/").mc-auto
     .image-block
       img(alt="brand", src="/images/logo.png", width="50", height="50")
       span(style="font-size: 24px;") &nbsp FlashMan
-  button.navbar-toggler.col-4(type="button", data-toggle="collapse",
+  if (username && (superuser || role.grantMonitorManage) && measure_active)
+    ul.navbar-nav.mc-auto
+        li.nav-item
+          a.nav-link(data-toggle="modal" data-target="#alerts-flashman")
+            .bell-notification.animated(style="cursor: pointer")
+              .fas.fa-bell.fa-lg.text-white
+            .bell-counter(style="display: none;")
+  button.navbar-toggler.col-2(type="button", data-toggle="collapse",
                         data-target="#navbar-menu", aria-controls="#navbar-menu",
                         aria-expanded="false", aria-label="Alternar navegação")
     span.navbar-toggler-icon

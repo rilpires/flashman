@@ -140,3 +140,28 @@
     width: 0;
   }
 }
+
+// Bell notifications
+.bell-notification {
+  padding: 0.6em;
+  font-size: 1.0em;
+}
+
+.bell-counter::after {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-size: 1.6em;
+  font-weight: 700;
+  position: absolute;
+  top: 30px;
+  left: 18px;
+  padding: 5px 8px;
+  line-height: 100%;
+  border-radius: 60px;
+  background: #d00;
+  content: attr(count);
+  -webkit-transform: scale(0.5);
+  transform: scale(0.5);
+  transition: transform, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: ease-out;
+}

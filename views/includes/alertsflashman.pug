@@ -1,0 +1,26 @@
+#alerts-flashman.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-bell.fa-lg
+          strong &nbsp; Notificações e Alertas
+
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row.justify-content-center
+          .col-11
+            if (measure_active)
+              .card
+                h4.card-header.bg-success.white-text.alert-license-card
+                  .row.justify-content-center
+                    .col-2
+                      if (measure_license)
+                        .fas.fa-check.fa-lg.text-white
+                      else
+                        .fas.fa-exclamation-triangle.fa-lg.text-white
+                    .col-10
+                      span#license-card-title.card-title Status da licença
+                .card-body
+                  #notification-text.text-center

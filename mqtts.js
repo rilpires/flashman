@@ -188,4 +188,15 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   console.log('MQTT SEND Message ONLINEDEVS to ' + id);
 };
 
+mqtts.anlix_message_router_measure = function(id, psk) {
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: true,
+    topic: 'flashman/update/' + id,
+    payload: (psk) ? 'measure '+psk : 'measure',
+  });
+  console.log('MQTT SEND Message MEASURE to '+id);
+};
+
 module.exports = mqtts;

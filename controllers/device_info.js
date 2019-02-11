@@ -308,6 +308,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
           'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
+          'zabbix_psk': returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
           'blocked_devices': serializeBlocked(blockedDevices),
           'named_devices': serializeNamed(namedDevices),
           'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),

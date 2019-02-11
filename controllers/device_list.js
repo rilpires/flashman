@@ -188,6 +188,12 @@ deviceListController.index = function(req, res) {
         } else {
           indexContent.update = matchedConfig.hasUpdate;
           indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
+          let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         getOnlineCount({}).then((onlineStatus) => {
@@ -381,6 +387,12 @@ deviceListController.searchDeviceReg = function(req, res) {
           indexContent.update = false;
         } else {
           indexContent.update = matchedConfig.hasUpdate;
+          let active = matchedConfig.measure_configs.is_active;
+            indexContent.measure_active = active;
+            indexContent.measure_token = (active) ?
+                matchedConfig.measure_configs.auth_token : '';
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         getOnlineCount(finalQuery).then((onlineStatus) => {
