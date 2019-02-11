@@ -11,12 +11,23 @@
           span.white-text &times;
       .modal-body
         .row
-          pre.pre-scrollable#logArea
-      .modal-footer 
-        .btn-group.btn-group-sm(role="group")
-            button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
-              span &nbsp Upgrade
-            button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
-              span &nbsp Inicianização
-            button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
-              span &nbsp Ao Vivo
+          .col
+            h2.text-center.grey-text.mb-3#logs-placeholder
+              i.fas.fa-file-alt.fa-4x
+              br
+              br
+              span Escolha uma opção abaixo
+            pre.pre-scrollable#logArea(style="display: none;")
+      .modal-footer
+        .col-6.p-0
+          button#export-log.btn.btn-primary.btn-sm.disabled
+            .fas.fa-file-excel.fa-lg
+            span &nbsp Exportar log
+        .col-6.p-0.text-right
+          .btn-group.btn-group-sm(role="group")
+              button.btn.teal.lighten-2.btn-sm.btn-log-upgrade(type="button")
+                span &nbsp Primeiro boot
+              button.btn.teal.lighten-2.btn-sm.btn-log-init(type="button")
+                span &nbsp Boot
+              button.btn.teal.lighten-2.btn-sm.btn-log-live(type="button")
+                span &nbsp Ao Vivo

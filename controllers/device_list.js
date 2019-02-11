@@ -172,7 +172,8 @@ deviceListController.index = function(req, res) {
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
     indexContent.devicesPermissions = devices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -372,7 +373,8 @@ deviceListController.searchDeviceReg = function(req, res) {
     indexContent.pages = matchedDevices.pages;
     indexContent.lastquery = req.query.content;
     indexContent.devicesPermissions = matchedDevices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -449,7 +451,8 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: 'Roteador não encontrado'});
     }
     let device = matchedDevice;
-    let permissions = DeviceVersion.findByVersion(device.version);
+    let permissions = DeviceVersion.findByVersion(device.version,
+                                                  device.wifi_is_5ghz_capable);
 
     switch (msgtype) {
       case 'rstapp':
@@ -632,6 +635,13 @@ deviceListController.setDeviceReg = function(req, res) {
       let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
       let password = returnObjOrEmptyStr(content.wifi_password).trim();
       let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
+      let band = returnObjOrEmptyStr(content.wifi_band).trim();
+      let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+      let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
+      let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
+      let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
+      let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
+      let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -676,6 +686,29 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('wifi_channel')) {
           genericValidate(channel, validator.validateChannel, 'channel');
+        }
+        if (content.hasOwnProperty('wifi_band')) {
+          genericValidate(band, validator.validateBand, 'band');
+        }
+        if (content.hasOwnProperty('wifi_mode')) {
+          genericValidate(mode, validator.validateMode, 'mode');
+        }
+        if (content.hasOwnProperty('wifi_ssid_5ghz')) {
+          genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+        }
+        if (content.hasOwnProperty('wifi_password_5ghz')) {
+          genericValidate(password5ghz,
+                          validator.validateWifiPassword, 'password5ghz');
+        }
+        if (content.hasOwnProperty('wifi_channel_5ghz')) {
+          genericValidate(channel5ghz,
+                          validator.validateChannel, 'channel5ghz');
+        }
+        if (content.hasOwnProperty('wifi_band_5ghz')) {
+          genericValidate(band5ghz, validator.validateBand, 'band5ghz');
+        }
+        if (content.hasOwnProperty('wifi_mode_5ghz')) {
+          genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
         }
 
         if (errors.length < 1) {
@@ -729,6 +762,48 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 channel !== '') {
               matchedDevice.wifi_channel = channel;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_band') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                band !== '') {
+              matchedDevice.wifi_band = band;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_mode') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                mode !== '') {
+              matchedDevice.wifi_mode = mode;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_ssid_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                ssid5ghz !== '') {
+              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_password_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                password5ghz !== '') {
+              matchedDevice.wifi_password_5ghz = password5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_channel_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                channel5ghz !== '') {
+              matchedDevice.wifi_channel_5ghz = channel5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_band_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                band5ghz !== '') {
+              matchedDevice.wifi_band_5ghz = band5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                mode5ghz !== '') {
+              matchedDevice.wifi_mode_5ghz = mode5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('external_reference') &&
@@ -898,7 +973,8 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -997,7 +1073,8 @@ deviceListController.getPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
