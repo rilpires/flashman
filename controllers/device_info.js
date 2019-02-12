@@ -38,6 +38,8 @@ const createRegistry = function(req, res) {
   let errors = [];
   let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   let wanIp = returnObjOrEmptyStr(req.body.wan_ip).trim();
+  let wanSpeed = returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
+  let wanDuplex = returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
   let release = returnObjOrEmptyStr(req.body.release_id).trim();
   let model = returnObjOrEmptyStr(req.body.model).trim().toUpperCase() +
               returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
@@ -122,6 +124,8 @@ const createRegistry = function(req, res) {
         'wifi_band_5ghz': band5ghz,
         'wifi_mode_5ghz': mode5ghz,
         'wan_ip': wanIp,
+        'wan_negociated_speed': wanSpeed,
+        'wan_negociated_duplex': wanDuplex,
         'ip': ip,
         'last_contact': Date.now(),
         'do_update': false,
@@ -326,7 +330,12 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         // Parameters *NOT* available to be modified by REST API
-        matchedDevice.wan_ip = returnObjOrEmptyStr(req.body.wan_ip).trim();
+        matchedDevice.wan_ip =
+        returnObjOrEmptyStr(req.body.wan_ip).trim();
+        matchedDevice.wan_negociated_speed =
+        returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
+        matchedDevice.wan_negociated_duplex =
+        returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
         matchedDevice.ip = ip;
         matchedDevice.last_contact = Date.now();
 

@@ -104,7 +104,7 @@ form.edit-form.needs-validation(novalidate)
       // WAN
       .edit-tab.d-none(id="tab_wan-" + (index + 1))
         .row
-          .col-6
+          .col-4
             .md-form
               .input-group.has-warning
                 .md-selectfield.form-control.my-0
@@ -119,8 +119,21 @@ form.edit-form.needs-validation(novalidate)
                                style="display: none;")
                   | Cuidado! Isso pode deixar o roteador inacessível
                   | dependendo das configurações de rede do seu provedor
+          .col-4
+            .md-form.input-entry
+              label(for="edit_connect_speed-" + (index + 1)) Velocidade Negociada (Mbps)
+              input.form-control(type="text",
+                                 id="edit_connect_speed-" + (index + 1),
+                                 maxlength="32", disabled)
+              .invalid-feedback
+            .md-form.input-entry
+              label(for="edit_connect_duplex-" + (index + 1)) Modo de Transmissão (Duplex)
+              input.form-control(type="text",
+                                 id="edit_connect_duplex-" + (index + 1),
+                                 maxlength="32", disabled)
+              .invalid-feedback
           if (superuser || role.grantPPPoEInfo >= 1)
-            .col-6
+            .col-4
               .md-form.input-entry
                 label(for="edit_pppoe_user-" + (index + 1)) Usuário PPPoE
                 input.form-control(

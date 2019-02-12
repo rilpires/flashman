@@ -36,6 +36,8 @@ let deviceSchema = new Schema({
     dmz: {type: Boolean, default: false},
   }],
   wan_ip: String,
+  wan_negociated_speed: String,
+  wan_negociated_duplex: String,
   ip: String,
   ntp_status: String,
   last_contact: Date,

@@ -47,6 +47,12 @@ let loadDeviceInfoOnForm = function(row) {
   $('#info_device_version-' + index.toString()).val(
     row.data('device-version')
   ).change();
+  $('#edit_connect_speed-' + index.toString()).val(
+    row.data('wan-speed')
+  ).change();
+  $('#edit_connect_duplex-' + index.toString()).val(
+    row.data('wan-duplex')
+  ).change();
 };
 
 let downloadCSV = function(csv, filename) {
