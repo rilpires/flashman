@@ -22,21 +22,19 @@ form.needs-validation(id="deviceForm", novalidate)
     input.form-control(type="text", id="new_mac")
     .invalid-feedback
   .md-form.pt-2
-    .input-group
-      .md-selectfield.form-control.my-0
-        label(for="new_connect_type") Tipo de Conexão
-        select.browser-default.md-select(id="new_connect_type")
-          option(value="DHCP") DHCP
-          option(value="PPPoE") PPPoE
+    .md-selectfield.form-control.my-0
+      label(for="new_connect_type") Tipo de Conexão
+      select.browser-default.md-select(id="new_connect_type")
+        option(value="DHCP") DHCP
+        option(value="PPPoE") PPPoE
   .md-form
-    .input-group
-      .md-selectfield.form-control.my-0
-        label(for="new_wifi_channel") Canal do WiFi
-        select.browser-default.md-select(id="new_wifi_channel")
-          option(value="auto") auto
-          option(value="1") 1
-          option(value="6") 6
-          option(value="11") 11
+    .md-selectfield.form-control.my-0
+      label(for="new_wifi_channel") Canal do WiFi
+      select.browser-default.md-select(id="new_wifi_channel")
+        option(value="auto") auto
+        option(value="1") 1
+        option(value="6") 6
+        option(value="11") 11
   .md-form.input-entry
     label(for="new_wifi_ssid") SSID do WiFi
     input.form-control(type="text",

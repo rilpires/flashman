@@ -1,7 +1,7 @@
 
 form.edit-form.needs-validation(novalidate)
   .row
-    .col-10.actions-opts
+    .col-9.actions-opts
       .btn-group.btn-group-toggle(data-toggle="buttons")
         label.btn.btn-primary.active.tab-switch-btn(data-tab-id="#tab_about-" + (index + 1))
           input(type="radio")
@@ -58,9 +58,9 @@ form.edit-form.needs-validation(novalidate)
       span.badge.badge-warning.bounceIn(style="display: none;") Falha
       br
     if (superuser || role.grantDeviceRemoval)
-      .col-2.text-right
+      .col-3.text-right
         button.btn.btn-danger.btn-trash.m-0(type="button")
-          .fas.fa-trash.fa-lg
+          .fas.fa-trash
           span &nbsp Remover
   .row
     .col
