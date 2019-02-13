@@ -1,0 +1,24 @@
+
+#ping-test.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-stethoscope.fa-lg
+          strong &nbsp; Teste de latência e perda bidirecional &nbsp;
+            label(name="ping-test-hlabel" id="ping-test-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          .col
+            h2.text-center.grey-text.mb-3#ping-test-placeholder
+              i.fas.fa-stethoscope.fa-4x
+              br
+              br
+              span Clique em iniciar
+      .modal-footer
+        .col
+          .btn-group.btn-group-sm(role="group")
+              button.btn.btn-primary.btn-sm.btn-start-ping-test(type="button")
+                span &nbsp Iniciar teste
