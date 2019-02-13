@@ -1,37 +1,32 @@
 
 // Important: include and initialize socket.io first using socket var
 socket.on('PINGRESULT', function(macaddr, data) {
-  if (($('#analyse-logs').data('bs.modal') || {})._isShown) {
-    let id = $('#logRouterid_label').text();
+  if (($('#ping-test').data('bs.modal') || {})._isShown) {
+    let id = $('#ping-test-hlabel').text();
     if (id == macaddr) {
-      let textarea = $('#logArea');
-      if (textarea.text() == 'Aguardando resposta do roteador...') {
-        let usrtypes = ['user', 'daemon', 'kern', 'local1', 'authpriv'];
-        let logContent = pako.ungzip(data, {to: 'string'});
-        // Store log to be downloadable
-        logBodyRawContent = logContent;
-        textarea.html('<code>' + logContent + '</code>');
-        textarea.highlight(
-          usrtypes.map(function(x) {
-            return x + '.warn';
-          }),
-          {element: 'strong', className: 'text-warning'}
+      $('#ping-test-results').empty();
+      let resultsList = $('<ul></ul>').addClass('list-group');
+
+      $.each(data.results, function(key, value) {
+        let hostname = key;
+        let hostLatency = value.lat;
+        let hostLoss = value.loss;
+
+        resultsList.append(
+          $('<li></li>').addClass('list-group-item d-flex')
+          .addClass('justify-content-between align-items-center')
+          .html(hostname)
+          .append(
+            $('<span></span>')
+            .addClass('badge badge-primary badge-pill')
+            .html(hostLatency + ' ms'),
+            $('<span></span>')
+            .addClass('badge badge-primary badge-pill')
+            .html(hostLoss + '%')
+          )
         );
-        textarea.highlight(
-          usrtypes.map(function(x) {
-            return x + '.err';
-          }),
-          {element: 'strong', className: 'text-danger'}
-        );
-        textarea.highlight(
-          usrtypes.map(function(x) {
-            return x+'.debug';
-          }),
-          {element: 'strong', className: 'text-info'}
-        );
-        // Enable export button
-        $('#export-log').removeClass('disabled');
-      }
+      });
+      $('#ping-test-results').append(resultsList);
     }
   }
 });
@@ -56,16 +51,18 @@ $(document).ready(function() {
         $('#ping-test-placeholder').hide('fast', function() {
           $('#ping-test-results').show('fast');
           if (res.success) {
-            textarea.html('Aguardando resposta do roteador...');
+            textarea.append(
+              $('<p></p>').text('Aguardando resposta do roteador...')
+            );
           } else {
-            textarea.html(res.message);
+            textarea.append($('<p></p>').text(res.message));
           }
         });
       },
       error: function(xhr, status, error) {
         $('#ping-test-placeholder').hide('fast', function() {
           $('#ping-test-results').show('fast');
-          textarea.html(status + ': ' + error);
+          textarea.append($('<p></p>').text(status + ': ' + error));
         });
       },
     });
@@ -73,6 +70,7 @@ $(document).ready(function() {
 
   // Restore default modal state
   $('#ping-test').on('hidden.bs.modal', function() {
+    $('#ping-test-results').hide().empty();
     $('#ping-test-placeholder').show();
   });
 });
