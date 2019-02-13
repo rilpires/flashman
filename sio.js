@@ -232,4 +232,20 @@ sio.anlixWaitForPingTestNotification = function(session, macaddr) {
   return true;
 };
 
+sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
+  if (!macaddr) {
+    console.log('ERROR: SIO: ' +
+                'Try to send ping test results notification ' +
+                'to an invalid mac address!');
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_PING_TEST,
+                               macaddr, pingdata, macaddr);
+  if (!found) {
+    console.log('SIO: NO Session found for ' +
+                macaddr + '! Discarding message...');
+  }
+  return found;
+};
+
 module.exports = sio;

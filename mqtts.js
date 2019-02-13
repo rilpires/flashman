@@ -188,7 +188,7 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   console.log('MQTT SEND Message ONLINEDEVS to ' + id);
 };
 
-mqtts.anlix_message_router_measure = function(id, psk) {
+mqtts.anlixMessageRouterMeasure = function(id, psk) {
   mqtts.publish({
     cmd: 'publish',
     qos: 2,
@@ -208,6 +208,6 @@ mqtts.anlixMessageRouterPingTest = function(id) {
       payload: 'ping',
     });
   console.log('MQTT SEND Message PING to ' + id);
-}
+};
 
 module.exports = mqtts;
