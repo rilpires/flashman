@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-stethoscope.fa-lg
-          strong &nbsp; Teste de latência e perda bidirecional &nbsp;
+          strong &nbsp;Latência e perda bidirecional para&nbsp;
             label(name="ping-test-hlabel" id="ping-test-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -17,6 +17,7 @@
               br
               br
               span Clique em iniciar
+          pre#ping-test-results(style="display: none;")
       .modal-footer
         .col
           .btn-group.btn-group-sm(role="group")

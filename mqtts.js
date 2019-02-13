@@ -199,4 +199,15 @@ mqtts.anlix_message_router_measure = function(id, psk) {
   console.log('MQTT SEND Message MEASURE to '+id);
 };
 
+mqtts.anlixMessageRouterPingTest = function(id) {
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'ping',
+    });
+  console.log('MQTT SEND Message PING to ' + id);
+}
+
 module.exports = mqtts;
