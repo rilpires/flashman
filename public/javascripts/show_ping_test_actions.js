@@ -163,6 +163,7 @@ $(document).ready(function() {
     $('#ping-test-results').hide().empty();
     $('#ping-test-placeholder').show();
     $('#hosts-list').removeClass('is-valid is-invalid');
+    $('.btn-start-ping-test').prop('disabled', false);
     isPingHostListInitialized = false;
   });
 });
