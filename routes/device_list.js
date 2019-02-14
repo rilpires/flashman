@@ -108,4 +108,17 @@ router.route('/portforward/:id')
        authController.ensurePermission('grantAPIAccess'),
        deviceListController.setPortForward);
 
+// REST API - Set/Get Ping hosts list
+router.route('/pinghostslist/:id')
+  .get(authController.ensureLogin(),
+       deviceListController.getPingHostsList)
+  .post(authController.ensureLogin(),
+        deviceListController.setPingHostsList)
+  .post(authController.ensureAPIAccess,
+        authController.ensurePermission('grantAPIAccess'),
+        deviceListController.setPingHostsList)
+  .put(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.setPingHostsList);
+
 module.exports = router;

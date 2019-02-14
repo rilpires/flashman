@@ -1103,4 +1103,75 @@ deviceListController.getPortForward = function(req, res) {
   });
 };
 
+deviceListController.getPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      ping_hosts_list: matchedDevice.ping_hosts,
+    });
+  });
+};
+
+deviceListController.setPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    console.log('Updating hosts ping list for ' + matchedDevice._id);
+    console.log(req.body.hosts);
+    if (isJsonString(req.body)) {
+      let hosts = JSON.parse(req.body.hosts);
+      let approvedHosts = [];
+      hosts.forEach((host) => {
+        let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
+        host = host.toLowerCase();
+        if (host.match(fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedDevice.ping_hosts = approvedHosts;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: 'Erro interno do servidor',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          hosts: approvedHosts,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro ao tratar JSON',
+      });
+    }
+  });
+};
+
 module.exports = deviceListController;

@@ -12,11 +12,23 @@
       .modal-body
         .row
           .col
+            span Endereços de destino &nbsp;
+            a.fas.fa-question-circle(
+              href="#",
+              data-toggle="tooltip",
+              title="Os endereços de destino podem ser sites na Internet " +
+                    "ou endereços IP válidos"
+            )
+        .row
+          .col
+            select.form-control#hosts-list(Multiple)
+        .row.mt-4
+          .col
             h2.text-center.grey-text.mb-3#ping-test-placeholder
               i.fas.fa-stethoscope.fa-4x
               br
               br
-              span Clique em iniciar
+              span Adicione os endereços e clique em iniciar
             #ping-test-results(style="display: none;")
       .modal-footer
         .col.p-0.text-right

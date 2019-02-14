@@ -54,7 +54,15 @@ let deviceSchema = new Schema({
   // For port forward
   forward_index: String,
   // Store hosts to measure against
-  ping_hosts: [String],
+  ping_hosts: {
+    type: [String],
+    default: [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ],
+  },
 });
 
 deviceSchema.plugin(mongoosePaginate);
