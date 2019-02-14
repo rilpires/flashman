@@ -991,9 +991,9 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlixSendPingTestNotifications(matchedDevice, req.body);
-    console.log('Devices Receiving for device ' +
-      id + ' successfully.');
+    sio.anlixSendPingTestNotifications(id, req.body);
+    console.log('Ping results for device ' +
+      id + ' received successfully.');
 
     return res.status(200).json({processed: 1});
   });
