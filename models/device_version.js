@@ -58,6 +58,15 @@ const grantWifiBand = function(version) {
   }
 };
 
+const grantPingTest = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -65,6 +74,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   result.grantPortForward = grantPortForward(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
+  result.grantPingTest = grantPingTest(version);
   return result;
 };
 

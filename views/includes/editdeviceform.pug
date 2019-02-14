@@ -53,6 +53,11 @@ form.edit-form.needs-validation(novalidate)
               a.dropdown-item.btn-openFirewallPorts-modal
                 .fas.fa-lock-open
                 span &nbsp Abertura de portas
+            if (devicesPermissions[index].grantPingTest)
+              .dropdown-divider
+              a.dropdown-item.btn-ping-test-modal
+                .fas.fa-stethoscope
+                span &nbsp Teste de latência e perda
       br
       span.badge.badge-success.bounceIn(style="display: none;") Sucesso
       span.badge.badge-warning.bounceIn(style="display: none;") Falha

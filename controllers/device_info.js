@@ -871,12 +871,12 @@ deviceInfoController.getPortForward = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
-        console.log('Router '+req.body.id+' Get Port Forwards ' +
+        console.log('Router ' + req.body.id + ' Get Port Forwards ' +
           'failed: Cant get device profile.');
         return res.status(400).json({success: false});
       }
       if (!matchedDevice) {
-        console.log('Router '+req.body.id+' Get Port Forwards ' +
+        console.log('Router ' + req.body.id + ' Get Port Forwards ' +
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
@@ -884,21 +884,23 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.lan_devices.filter(function(lanDevice) {
-            if (
-              typeof lanDevice.port !== 'undefined' &&
-              lanDevice.port.length > 0
-            ) {
-              return true;
-            } else {
-              return false;
+          'forward_rules': matchedDevice.lan_devices.filter(
+            function(lanDevice) {
+              if (
+                typeof lanDevice.port !== 'undefined' &&
+                lanDevice.port.length > 0
+              ) {
+                return true;
+              } else {
+                return false;
+              }
             }
-          }),
+          ),
         });
       }
     });
   } else {
-    console.log('Router '+req.body.id+' Get Port Forwards ' +
+    console.log('Router ' + req.body.id + ' Get Port Forwards ' +
       'failed: Client Secret not match!');
     return res.status(401).json({success: false});
   }
@@ -928,6 +930,68 @@ deviceInfoController.receiveDevices = function(req, res) {
     }
 
     sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
+    console.log('Devices Receiving for device ' +
+      id + ' successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.getPingHosts = function(req, res) {
+  if (req.body.secret == req.app.locals.secret) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+      if (err) {
+        console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
+          'failed: Cant get device profile.');
+        return res.status(400).json({success: false});
+      }
+      if (!matchedDevice) {
+        console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
+          'failed: No device found.');
+        return res.status(404).json({success: false});
+      }
+      if (matchedDevice.ping_hosts) {
+        return res.status(200).json({
+          'success': true,
+          'hosts': matchedDevice.ping_hosts,
+        });
+      } else {
+        console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
+          'failed: No hosts found.');
+        return res.status(404).json({success: false});
+      }
+    });
+  } else {
+    console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+      'failed: Client Secret not match!');
+    return res.status(401).json({success: false});
+  }
+};
+
+deviceInfoController.receivePingResult = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Ping results for device ' +
+        id + ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Ping results for device ' +
+        id + ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+
+    sio.anlixSendPingTestNotifications(matchedDevice, req.body);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

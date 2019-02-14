@@ -488,6 +488,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'log':
       case 'boot':
       case 'onlinedevs':
+      case 'ping':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
@@ -506,6 +507,11 @@ deviceListController.sendMqttMsg = function(req, res) {
               sio.anlixWaitForOnlineDevNotification(
                 req.sessionID, req.params.id.toUpperCase());
               mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+            }
+            if (msgtype == 'ping') {
+              sio.anlixWaitForPingTestNotification(
+                req.sessionID, req.params.id.toUpperCase());
+              mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
             }
           } else {
             return res.status(200).json({
@@ -1094,6 +1100,76 @@ deviceListController.getPortForward = function(req, res) {
         }
       }),
     });
+  });
+};
+
+deviceListController.getPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      ping_hosts_list: matchedDevice.ping_hosts,
+    });
+  });
+};
+
+deviceListController.setPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    console.log('Updating hosts ping list for ' + matchedDevice._id);
+    if (isJsonString(req.body.content)) {
+      let content = JSON.parse(req.body.content);
+      let approvedHosts = [];
+      content.hosts.forEach((host) => {
+        let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
+        host = host.toLowerCase();
+        if (host.match(fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedDevice.ping_hosts = approvedHosts;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: 'Erro interno do servidor',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          hosts: approvedHosts,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro ao tratar JSON',
+      });
+    }
   });
 };
 
