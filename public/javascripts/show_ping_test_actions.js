@@ -10,33 +10,24 @@ const saveHostList = function() {
       type: 'POST',
       url: '/devicelist/pinghostslist/' + id,
       dataType: 'json',
-      data: {
-        'hosts': hostList,
-      },
+      data: JSON.stringify({
+        'content': JSON.stringify({'hosts': hostList}),
+      }),
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
-          swal({
-            title: 'Endereços salvos com sucesso',
-            type: 'success',
-            confirmButtonColor: '#4db6ac',
-          });
+          $('#hosts-list').removeClass('is-invalid').addClass('is-valid');
+          setTimeout(function() {
+            $('#hosts-list').removeClass('is-invalid is-valid');
+          }, 1500);
         } else {
-          swal({
-            title: 'Falha ao salvar endereços',
-            text: res.message,
-            type: 'error',
-            confirmButtonColor: '#4db6ac',
-          });
+          $('#hosts-list-invalid-feedback').html(res.message);
+          $('#hosts-list').removeClass('is-valid').addClass('is-invalid');
         }
       },
       error: function(xhr, status, error) {
-        swal({
-          title: 'Falha na comunicação com o servidor',
-          text: error,
-          type: 'error',
-          confirmButtonColor: '#4db6ac',
-        });
+        $('#hosts-list-invalid-feedback').html(error);
+        $('#hosts-list').removeClass('is-valid').addClass('is-invalid');
       },
     });
   }
@@ -62,6 +53,7 @@ socket.on('PINGRESULT', function(macaddr, data) {
     let id = $('#ping-test-hlabel').text();
     if (id == macaddr) {
       $('#ping-test-results').empty();
+      $('.btn-start-ping-test').prop('disabled', false);
       let resultsList = $('<ul></ul>').addClass('list-group');
 
       $.each(data.results, function(key, value) {
@@ -127,25 +119,39 @@ $(document).ready(function() {
   $('.btn-start-ping-test').click(function(event) {
     let textarea = $('#ping-test-results');
     let id = $('#ping-test-hlabel').text();
+    $('.btn-start-ping-test').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + id + '/ping',
       type: 'post',
       dataType: 'json',
       success: function(res) {
         $('#ping-test-placeholder').hide('fast', function() {
-          $('#ping-test-results').show('fast');
+          $('#ping-test-results').empty().show('fast');
           if (res.success) {
             textarea.append(
-              $('<p></p>').text('Aguardando resposta do roteador...')
+              $('<h2></h2>').addClass('text-center grey-text mb-3').append(
+                $('<i></i>').addClass('fas fa-spinner fa-pulse fa-4x'),
+                $('</br>'),
+                $('</br>'),
+                $('<span></span>').html('Aguardando resposta do roteador...')
+              )
             );
           } else {
-            textarea.append($('<p></p>').text(res.message));
+            $('.btn-start-ping-test').prop('disabled', false);
+            textarea.append(
+              $('<h2></h2>').addClass('text-center grey-text mb-3').append(
+                $('<i></i>').addClass('fas fa-times fa-4x'),
+                $('</br>'),
+                $('<span></span>').html(res.message)
+              )
+            );
           }
         });
       },
       error: function(xhr, status, error) {
         $('#ping-test-placeholder').hide('fast', function() {
-          $('#ping-test-results').show('fast');
+          $('#ping-test-results').empty().show('fast');
+          $('.btn-start-ping-test').prop('disabled', false);
           textarea.append($('<p></p>').text(status + ': ' + error));
         });
       },
@@ -156,6 +162,7 @@ $(document).ready(function() {
   $('#ping-test').on('hidden.bs.modal', function() {
     $('#ping-test-results').hide().empty();
     $('#ping-test-placeholder').show();
+    $('#hosts-list').removeClass('is-valid is-invalid');
     isPingHostListInitialized = false;
   });
 });

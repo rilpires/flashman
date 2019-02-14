@@ -1141,11 +1141,10 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
-    console.log(req.body.hosts);
-    if (isJsonString(req.body)) {
-      let hosts = JSON.parse(req.body.hosts);
+    if (isJsonString(req.body.content)) {
+      let content = JSON.parse(req.body.content);
       let approvedHosts = [];
-      hosts.forEach((host) => {
+      content.hosts.forEach((host) => {
         let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
         host = host.toLowerCase();
         if (host.match(fqdnLengthRegex)) {

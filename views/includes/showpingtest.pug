@@ -19,9 +19,16 @@
               title="Os endereços de destino podem ser sites na Internet " +
                     "ou endereços IP válidos"
             )
-        .row
+        .row.mt-1
           .col
             select.form-control#hosts-list(Multiple)
+            .valid-feedback.text-right.mt-0
+              .fas.fa-check
+              span &nbsp Salvo com sucesso
+            .invalid-feedback.text-right.mt-0
+              .fas.fa-times
+              span &nbsp
+              span#hosts-list-invalid-feedback Erro ao salvar endereços
         .row.mt-4
           .col
             h2.text-center.grey-text.mb-3#ping-test-placeholder
