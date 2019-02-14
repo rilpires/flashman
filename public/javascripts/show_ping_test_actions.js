@@ -48,13 +48,13 @@ const selectizeOptionsHosts = {
 };
 
 // Important: include and initialize socket.io first using socket var
-socket.on('PINGRESULT', function(macaddr, data) {
+socket.on('PINGTEST', function(macaddr, data) {
   if (($('#ping-test').data('bs.modal') || {})._isShown) {
     let id = $('#ping-test-hlabel').text();
     if (id == macaddr) {
       $('#ping-test-results').empty();
       $('.btn-start-ping-test').prop('disabled', false);
-      let resultsList = $('<ul></ul>').addClass('list-group');
+      let resultsList = $('<ul></ul>').addClass('list-group list-group-flush');
 
       $.each(data.results, function(key, value) {
         let hostname = key;
@@ -68,10 +68,10 @@ socket.on('PINGRESULT', function(macaddr, data) {
           .append(
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
-            .html(hostLatency + ' ms'),
+            .html('latência de ' + hostLatency + ' ms'),
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
-            .html(hostLoss + '%')
+            .html(hostLoss + '% pacotes perdidos')
           )
         );
       });
