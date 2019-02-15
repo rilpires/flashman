@@ -1,30 +1,11 @@
 
-let updateDevice = function(event) {
-  let row = $(event.target).parents('tr');
-  let id = row.prop('id');
-  let release = row.find('span.selected').text();
-  let isChecked = $(event.target).parents('tr').find('.checkbox').is(':checked');
-  $(event.target).prop('disabled', true);
-  $.ajax({
-    url: '/devicelist/update/' + id + '/' + release,
-    type: 'post',
-    traditional: true,
-    data: {do_update: isChecked},
-    success: function(res) {
-      if (res.success) {
-        $(event.target).prop('disabled', false);
-      }
-    },
-  });
-};
-
 let updateAllDevices = function(event) {
   let row = $(event.target).parents('tr');
   let isChecked = $(event.target).is(':checked');
   let rows = row.siblings();
   let idsObj = {};
   let singleReleases = $(event.target).data('singlereleases');
-  let selectedRelease = $('#all-releases').text();
+  let selectedRelease = $('#all-devices').text();
   let selectedModels = [];
 
   // Get models of selected release
@@ -71,19 +52,78 @@ let updateAllDevices = function(event) {
   });
 };
 
-let refreshRelease = function(event) {
-  $(event.target).parents('.btn-group').find('.dropdown-item')
-    .removeClass('active teal lighten-2');
+let updateDevice = function(event) {
+  let selRelease = $(this).text();
+  let selBtnGroup = $(event.target).closest('.btn-group');
+  // Change current selected release
+  selBtnGroup.find('span.selected').text(selRelease);
+  // Disable selection
+  let dropdownBtn = selBtnGroup.find('.dropdown-toggle');
+  dropdownBtn.attr('disabled', true);
+  // Submit update
+  let row = $(event.target).closest('tr');
+  let id = row.prop('id');
+  $.ajax({
+    url: '/devicelist/update/' + id + '/' + selRelease,
+    type: 'post',
+    traditional: true,
+    data: {do_update: true},
+    success: function(res) {
+      if (res.success) {
+        // Activate waiting status
+        let upgradeStatus = selBtnGroup.find('span.upgrade-status');
+        upgradeStatus.find('.status-none').addClass('d-none');
+        upgradeStatus.find('.status-waiting').removeClass('d-none');
+        // Activate cancel button
+        selBtnGroup.siblings('.btn-cancel-update')
+          .addClass('btn-danger').attr('disabled', false);
+      }
+    },
+    error: function(xhr, status, error) {
+      dropdownBtn.attr('disabled', false);
+    },
+  });
+};
 
-  let selected = $(event.target).parents('.btn-group').find('span.selected');
-  selected.text($(this).text());
-  let dropItem = $(event.target).parents('.btn-group')
-    .find('.dropdown-item:contains(' + $(this).text() + ')');
-  dropItem.addClass('active teal lighten-2');
+let cancelDeviceUpdate = function(event) {
+  // Deactivate cancel button
+  $(this).removeClass('btn-danger').attr('disabled', true);
+
+  let selBtnGroup = $(event.target).closest('.btn-group');
+  let selRelease = selBtnGroup.find('.dropdown-toggle .selected').text();
+  // Submit update
+  let row = $(event.target).closest('tr');
+  let id = row.prop('id');
+  $.ajax({
+    url: '/devicelist/update/' + id + '/' + selRelease,
+    type: 'post',
+    traditional: true,
+    data: {do_update: false},
+    success: function(res) {
+      if (res.success) {
+        // Activate dropdown
+        selBtnGroup.find('.dropdown-toggle .selected').text('Escolher');
+        selBtnGroup.find('.dropdown-toggle').attr('disabled', false);
+        // Deactivate waiting status
+        let upgradeStatus = selBtnGroup.find('span.upgrade-status');
+        upgradeStatus.find('.status-none').removeClass('d-none');
+        upgradeStatus.find('.status-waiting').addClass('d-none');
+      }
+    },
+    error: function(xhr, status, error) {
+      selBtnGroup.find('.dropdown-toggle .selected').text('Escolher');
+      selBtnGroup.find('.dropdown-toggle').attr('disabled', false);
+      // Deactivate waiting status
+      let upgradeStatus = selBtnGroup.find('span.upgrade-status');
+      upgradeStatus.find('.status-none').removeClass('d-none');
+      upgradeStatus.find('.status-waiting').addClass('d-none');
+    },
+  });
 };
 
 $(function() {
-  $('.dropdown-menu.refresh-selected a').on('click', refreshRelease);
-  $('.firmwareUpdateCheckbox').change(updateDevice);
-  $('#all-devices').change(updateAllDevices);
+  $('.dropdown-menu.refresh-selected a').on('click', updateDevice);
+  $('.btn-cancel-update').on('click', cancelDeviceUpdate);
+  $('#all-devices').on('click', updateAllDevices);
+  $('#cancel-all-devices').on('click', cancelAllDeviceUpdates);
 });

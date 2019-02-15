@@ -111,9 +111,9 @@ block content
                     th.text-center Endereço MAC
                     th.text-center IP WAN
                     th.text-center IP Público
-                    th.text-center Release
+                    th.text-center Firmware Instalado
                     if (superuser || role.grantFirmwareUpgrade)
-                      th.text-center Atualizar Firmware
+                      th.text-left Atualizar Firmware
                 tbody
                   tr
                     td
@@ -131,36 +131,30 @@ block content
                       .fas.fa-circle.grey-text
                       span &nbsp
                       span#offline-status-sum #{status.offlinenum}
-                    td.text-center *
-                    td.text-center *
-                    td.text-center *
-                    td.text-center *
-                    td.text-center
-                      .btn-group
-                        button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
-                          type="button",
-                          id="all-releases",
-                          data-toggle="dropdown",
-                          aria-haspopup="true",
-                          aria-expanded="true",
-                          disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
-                        )
-                          span.selected Selecionar
-                        .dropdown-menu.refresh-selected
-                          each release, idx in singlereleases
-                            a.dropdown-item.text-center #{release.id}
-
+                    td
+                    td
+                    td
+                    td
+                    td
                     if (superuser || role.grantFirmwareUpgrade)
-                      td.text-center
-                        label.switch
-                          input.checkbox(
-                            id="all-devices",
-                            data-singlereleases=singlereleases
-                            type="checkbox",
-                            name="do_update",
-                            checked=false
-                          )
-                          .slider.round
+                      td
+                        .btn-group
+                          button.btn.btn-sm.btn-danger.px-2#cancel-all-devices
+                            .fas.fa-times
+                          .btn-group
+                            button.btn.btn-sm.btn-primary.dropdown-toggle(
+                              type="button",
+                              id="all-devices",
+                              data-toggle="dropdown",
+                              data-singlereleases=singlereleases,
+                              disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
+                            )
+                              span.selected Escolher
+                            .dropdown-menu.refresh-selected
+                              each release, idx in singlereleases
+                                a.dropdown-item.text-center #{release.id}
+                            span.ml-2.upgrade-status
+                              .fas.fa-question-circle.fa-2x.dark-grey-text
                   each device, index in devices
                     tr.csv-export(
                       id=device._id,
@@ -215,33 +209,45 @@ block content
                       td.text-center
                         | #{device.ip}
                       td.text-center
-                        .btn-group
-                          button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
-                            type="button",
-                            data-toggle="dropdown",
-                            aria-haspopup="true",
-                            aria-expanded="true",
-                            disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
-                          )
-                            span.selected #{device.release}
-                          .dropdown-menu.refresh-selected
-                            a.dropdown-item.text-center.active.teal.lighten-2 #{device.release}
-                            each release, idx in releases
-                              if (device.release !== release.id)
-                                if device.model.includes('N/')
-                                  if (device.model.replace('N/', '') === release.model)
-                                    a.dropdown-item.text-center #{release.id}
-                                if (device.model === release.model)
-                                  a.dropdown-item.text-center #{release.id}
+                        if (device.do_update)
+                          | #{device.past_release}
+                        else
+                          | #{device.release}
                       if (superuser || role.grantFirmwareUpgrade)
-                        td.text-center
-                          label.switch
-                            input.checkbox.firmwareUpdateCheckbox(
-                              type="checkbox",
-                              name="do_update",
-                              checked=device.do_update
+                        td
+                          .btn-group
+                            button.btn.btn-sm.px-2.btn-cancel-update(
+                              class=(!device.do_update ? "" : "btn-danger")
+                              disabled=!device.do_update
                             )
-                            .slider.round
+                              .fas.fa-times
+                            .btn-group
+                              button.btn.btn-sm.btn-primary.dropdown-toggle(
+                                type="button",
+                                data-toggle="dropdown"
+                                disabled=device.do_update
+                              )
+                                span.selected Escolher
+                              .dropdown-menu.refresh-selected
+                                each release, idx in releases
+                                  if device.model.includes('N/')
+                                    if (device.model.replace('N/', '') === release.model)
+                                      a.dropdown-item.text-center #{release.id}
+                                  if (device.model === release.model)
+                                    a.dropdown-item.text-center #{release.id}
+                              span.ml-3.upgrade-status
+                                .far.fa-circle.fa-2x.white-text.status-none(
+                                  class=(device.do_update ? "d-none" : "")
+                                )
+                                .fas.fa-spinner.fa-2x.fa-pulse.status-waiting(
+                                  class=(!device.do_update ? "d-none" : "")
+                                )
+                                .fas.fa-check-circle.fa-2x.green-text.status-ok(
+                                  class=(device.do_update && device.do_update_status == 1 ? "" : "d-none")
+                                )
+                                .fas.fa-exclamation-circle.fa-2x.red-text.status-error(
+                                  class=(device.do_update && device.do_update_status >= 2 ? "" : "d-none")
+                                )      
                     tr(
                       id="form-" + (index + 1),
                       data-index=(index + 1),
