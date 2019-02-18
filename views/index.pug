@@ -141,16 +141,15 @@ block content
                         .btn-group
                           button.btn.btn-sm.btn-danger.px-2#cancel-all-devices
                             .fas.fa-times
-                          .btn-group
+                          .btn-group#all-devices
                             button.btn.btn-sm.btn-primary.dropdown-toggle(
                               type="button",
-                              id="all-devices",
                               data-toggle="dropdown",
                               data-singlereleases=singlereleases,
                               disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
                             )
                               span.selected Escolher
-                            .dropdown-menu.refresh-selected
+                            .dropdown-menu
                               each release, idx in singlereleases
                                 a.dropdown-item.text-center #{release.id}
                             span.ml-2.upgrade-status
@@ -227,7 +226,7 @@ block content
                                 data-toggle="dropdown"
                                 disabled=device.do_update
                               )
-                                span.selected Escolher
+                                span.selected #{device.do_update ? device.release : "Escolher"}
                               .dropdown-menu.refresh-selected
                                 each release, idx in releases
                                   if device.model.includes('N/')
