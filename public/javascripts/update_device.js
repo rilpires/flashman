@@ -137,7 +137,7 @@ let updateDevice = function(event) {
     title: 'Atenção!',
     text: 'A atualização de firmware dura aproximadamente 3 minutos. ' +
     'O roteador não deverá ser desligado durante esse procedimento. ' +
-    'Comunique seu usuário antes de realizar esse procedimento.',
+    'Comunique seu usuário antes de prosseguir.',
     confirmButtonText: 'Prosseguir',
     confirmButtonColor: '#4db6ac',
     cancelButtonText: 'Cancelar',
@@ -218,4 +218,10 @@ $(function() {
   $('.btn-cancel-update').on('click', cancelDeviceUpdate);
   $('#all-devices .dropdown-menu a').on('click', updateAllDevices);
   $('#cancel-all-devices').on('click', cancelAllDeviceUpdates);
+  // Disable dropdowns without a release to select
+  $('.dropdown-menu.refresh-selected').each(function(idx) {
+    if ($(this).children().length == 0) {
+      $(this).siblings('.dropdown-toggle').attr('disabled', true);
+    }
+  });
 });
