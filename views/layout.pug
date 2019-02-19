@@ -12,6 +12,10 @@ html
     block stylesheets
 
   body
+    // Preloader
+    #preloader
+      #status &nbsp
+
     include includes/navbar
     .container
       include includes/flash
@@ -56,3 +60,11 @@ html
       }
 
     block scripts
+
+    // Preloader
+    script.
+      $(window).on('load', function() { // makes sure the whole site is loaded 
+        $('#status').fadeOut(); // will first fade out the loading animation 
+        $('#preloader').delay(350).fadeOut('slow');
+        $('body').delay(350).css({'overflow':'visible'});
+      })
