@@ -119,6 +119,8 @@ let cancelAllDeviceUpdates = function(event) {
             let upgradeStatus = selBtnGroup.find('span.upgrade-status');
             upgradeStatus.find('.status-none').removeClass('d-none');
             upgradeStatus.find('.status-waiting').addClass('d-none');
+            upgradeStatus.find('.status-ok').addClass('d-none');
+            upgradeStatus.find('.status-error').addClass('d-none');
             // Deactivate cancel button
             selBtnCancel.removeClass('btn-danger').attr('disabled', true);
           });
@@ -200,6 +202,8 @@ let cancelDeviceUpdate = function(event) {
         let upgradeStatus = selBtnGroup.find('span.upgrade-status');
         upgradeStatus.find('.status-none').removeClass('d-none');
         upgradeStatus.find('.status-waiting').addClass('d-none');
+        upgradeStatus.find('.status-ok').addClass('d-none');
+        upgradeStatus.find('.status-error').addClass('d-none');
       }
     },
     error: function(xhr, status, error) {
@@ -209,6 +213,8 @@ let cancelDeviceUpdate = function(event) {
       let upgradeStatus = selBtnGroup.find('span.upgrade-status');
       upgradeStatus.find('.status-none').removeClass('d-none');
       upgradeStatus.find('.status-waiting').addClass('d-none');
+      upgradeStatus.find('.status-ok').addClass('d-none');
+      upgradeStatus.find('.status-error').addClass('d-none');
     },
   });
 };
@@ -223,5 +229,16 @@ $(function() {
     if ($(this).children().length == 0) {
       $(this).siblings('.dropdown-toggle').attr('disabled', true);
     }
+  });
+  // Display message on update error
+  $('.status-error').on('click', function() {
+    swal({
+      type: 'error',
+      title: 'Erro',
+      text: 'Houve um erro ao realizar a transferência do firmware. ' +
+      'Cancele o procedimento e tente novamente.',
+      confirmButtonText: 'Ok',
+      confirmButtonColor: '#4db6ac',
+    });
   });
 });

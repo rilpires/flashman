@@ -196,10 +196,11 @@ function setMd5Sum(res, filePath) {
   try {
     md5Checksum = fs.readFileSync(
       path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname), 'utf8');
+    res.setHeader('X-Checksum-Md5', md5Checksum);
   } catch (err) {
     md5Checksum = '';
+    res.setHeader('X-Checksum-Md5', md5Checksum);
   }
-  res.setHeader('X-Checksum-Md5', md5Checksum);
 }
 
 let sessParam = session({

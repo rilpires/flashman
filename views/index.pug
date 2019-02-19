@@ -236,14 +236,15 @@ block content
                                   class=(device.do_update ? "d-none" : "")
                                 )
                                 .fas.fa-spinner.fa-2x.fa-pulse.status-waiting(
-                                  class=(!device.do_update ? "d-none" : "")
+                                  class=(device.do_update && device.do_update_status == 0 ? "" : "d-none")
                                 )
                                 .fas.fa-check-circle.fa-2x.green-text.status-ok(
                                   class=(device.do_update && device.do_update_status == 1 ? "" : "d-none")
                                 )
-                                .fas.fa-exclamation-circle.fa-2x.red-text.status-error(
+                                a.status-error(
                                   class=(device.do_update && device.do_update_status >= 2 ? "" : "d-none")
-                                )      
+                                )
+                                  .fas.fa-exclamation-circle.fa-2x.red-text    
                     tr(
                       id="form-" + (index + 1),
                       data-index=(index + 1),
