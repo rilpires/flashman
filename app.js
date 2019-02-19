@@ -20,6 +20,7 @@ let updater = require('./controllers/update_flashman');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
+let Device = require('./models/device');
 let index = require('./routes/index');
 
 let app = express();
@@ -73,6 +74,22 @@ Role.find({}, function(err, roles) {
       grantNotificationPopups: true,
     });
     managerRole.save();
+  }
+});
+
+// check migration for devices checked for upgrade
+Device.find({}, function(err, devices) {
+  if (!err && devices) {
+    for (let idx = 0; idx < devices.length; idx++) {
+      if (!devices[idx].installed_release) {
+        if (devices[idx].do_update == true) {
+          devices[idx].do_update_status = 0; // waiting
+        } else {
+          devices[idx].installed_release = devices[idx].release;
+        }
+        devices[idx].save();
+      }
+    }
   }
 });
 

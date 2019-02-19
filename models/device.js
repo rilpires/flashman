@@ -8,6 +8,7 @@ let deviceSchema = new Schema({
   external_reference: {kind: String, data: String},
   model: String,
   version: {type: String, default: '0.0.0'},
+  installed_release: String,
   release: String,
   measure_config: {
     measure_psk: String,
@@ -44,6 +45,12 @@ let deviceSchema = new Schema({
   last_hardreset: Date,
   do_update: Boolean,
   do_update_parameters: Boolean,
+  do_update_status: {type: Number, default: 1, enum: [
+    0, // waiting status update
+    1, // success
+    2, // error, image download failed
+    3, // error, image check failed
+  ]},
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
