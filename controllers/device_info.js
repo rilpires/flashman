@@ -40,7 +40,7 @@ const createRegistry = function(req, res) {
   let wanIp = returnObjOrEmptyStr(req.body.wan_ip).trim();
   let wanSpeed = returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
   let wanDuplex = returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
-  let release = returnObjOrEmptyStr(req.body.release_id).trim();
+  let installedRelease = returnObjOrEmptyStr(req.body.release_id).trim();
   let model = returnObjOrEmptyStr(req.body.model).trim().toUpperCase() +
               returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
   let version = returnObjOrEmptyStr(req.body.version).trim();
@@ -110,7 +110,8 @@ const createRegistry = function(req, res) {
         '_id': macAddr,
         'model': model,
         'version': version,
-        'release': release,
+        'installed_release': installedRelease,
+        'release': installedRelease,
         'pppoe_user': pppoeUser,
         'pppoe_password': pppoePassword,
         'wifi_ssid': ssid,
@@ -141,7 +142,7 @@ const createRegistry = function(req, res) {
         } else {
           return res.status(200).json({'do_update': false,
                                        'do_newprobe': true,
-                                       'release_id:': release});
+                                       'release_id:': installedRelease});
         }
       });
     } else {
@@ -347,8 +348,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         let upgradeInfo = returnObjOrEmptyStr(req.body.upgfirm).trim();
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
-            console.log('Device '+devId+' upgraded successfuly');
+            console.log('Device ' + devId + ' upgraded successfuly');
             matchedDevice.do_update = false;
+            matchedDevice.do_update_status = 1; // success
           } else {
             console.log(
               'WARNING: Device ' + devId +
@@ -358,19 +360,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         let sentRelease = returnObjOrEmptyStr(req.body.release_id).trim();
-        if (matchedDevice.release != sentRelease) {
-          if (matchedDevice.do_update) {
-            console.log(
-              'Device '+ devId +' reported release as '+ sentRelease +
-              ', but is expect to change to '+ matchedDevice.release
-            );
-          } else {
-            console.log(
-              'Device ' + devId + ' changed release to: ' + sentRelease
-            );
-            matchedDevice.release = sentRelease;
-          }
-        }
+        matchedDevice.installed_release = sentRelease;
 
         let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
         if (flmUpdater == '1' || flmUpdater == '') {
@@ -445,17 +435,20 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         let upgStatus = returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          console.log('Device '+req.body.id+' is going on upgrade...');
+          console.log('Device ' + req.body.id + ' is going on upgrade...');
         } else if (upgStatus == '0') {
           console.log('WARNING: Device ' + req.body.id +
                       ' failed in firmware check!');
+          matchedDevice.do_update_status = 3; // img check failed
         } else if (upgStatus == '2') {
           console.log('WARNING: Device ' + req.body.id +
                       ' failed to download firmware!');
+          matchedDevice.do_update_status = 2; // img download failed
         } else if (upgStatus == '') {
           console.log('WARNING: Device ' + req.body.id +
                       ' ack update on an old firmware! Reseting upgrade...');
           matchedDevice.do_update = false;
+          matchedDevice.do_update_status = 1; // success
         }
 
         matchedDevice.save();

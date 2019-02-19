@@ -8,7 +8,7 @@ let deviceSchema = new Schema({
   external_reference: {kind: String, data: String},
   model: String,
   version: {type: String, default: '0.0.0'},
-  past_release: String,
+  installed_release: String,
   release: String,
   measure_config: {
     measure_psk: String,

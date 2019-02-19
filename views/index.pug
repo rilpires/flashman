@@ -208,10 +208,7 @@ block content
                       td.text-center
                         | #{device.ip}
                       td.text-center
-                        if (device.do_update)
-                          | #{device.past_release}
-                        else
-                          | #{device.release}
+                        | #{device.installed_release}
                       if (superuser || role.grantFirmwareUpgrade)
                         td
                           .btn-group

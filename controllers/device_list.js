@@ -233,7 +233,12 @@ deviceListController.changeUpdate = function(req, res) {
                                    message: 'Erro ao encontrar dispositivo'});
     }
     matchedDevice.do_update = req.body.do_update;
-    matchedDevice.release = req.params.release.trim();
+    if (req.body.do_update) {
+      matchedDevice.do_update_status = 0; // waiting
+      matchedDevice.release = req.params.release.trim();
+    } else {
+      matchedDevice.do_update_status = 1; // success
+    }
     matchedDevice.save(function(err) {
       if (err) {
         let indexContent = {};
@@ -263,8 +268,13 @@ deviceListController.changeAllUpdates = function(req, res) {
 
     let scheduledDevices = [];
     for (let idx = 0; idx < matchedDevices.length; idx++) {
-      matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
       matchedDevices[idx].do_update = form.do_update;
+      if (form.do_update) {
+        matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
+        matchedDevices[idx].do_update_status = 0; // waiting
+      } else {
+        matchedDevices[idx].do_update_status = 1; // success
+      }
       matchedDevices[idx].save();
       mqtt.anlixMessageRouterUpdate(matchedDevices[idx]._id);
       scheduledDevices.push(matchedDevices[idx]._id);
