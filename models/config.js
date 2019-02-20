@@ -10,6 +10,7 @@ let configSchema = new mongoose.Schema({
     is_license_active: {type: Boolean, default: false},
     auth_token: {type: String},
     controller_fqdn: String,
+    zabbix_fqdn: String,
   },
 });
 
