@@ -6,6 +6,8 @@ const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const DeviceVersion = require('../models/device_version');
+const async = require('asyncawait/async');
+const await = require('asyncawait/await');
 let deviceInfoController = {};
 
 const returnObjOrEmptyStr = function(query) {
@@ -991,5 +993,44 @@ deviceInfoController.receivePingResult = function(req, res) {
     return res.status(200).json({processed: 1});
   });
 };
+
+deviceInfoController.getZabbixConfig = async(function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  // Check secret to authenticate api call
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec !== req.app.locals.secret) {
+      console.log('Router ' + id + ' Get Zabbix Conf fail: Secret not match');
+      return res.status(403).json({success: 0});
+    }
+  }
+
+  try {
+    // Check if zabbix fqdn config is set
+    let config = await(Config.findOne({is_default: true}));
+    if (!config) throw new {message: 'Config not found'};
+    if (!config.measure_configs.zabbix_fqdn) {
+      throw new {message: 'Zabbix FQDN not configured'};
+    }
+
+    // Check if device has a zabbix psk configured
+    let device = await(DeviceModel.findById(id));
+    if (!device) throw new {message: 'Device ' + id + ' not found'};
+    if (!device.measure_config.measure_psk) {
+      throw new {message: 'Device ' + id + ' has no psk configured'};
+    }
+
+    // Reply with zabbix fqdn and device zabbix psk
+    return res.status(200).json({
+      success: 1,
+      psk: device.measure_config.measure_psk,
+      fqdn: config.measure_configs.zabbix_fqdn,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({success: 0});
+  }
+});
 
 module.exports = deviceInfoController;
