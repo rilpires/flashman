@@ -99,7 +99,7 @@ measureController.activateDevices = async(function(req, res) {
       let device = await(DeviceModel.findById(mac));
       device.measure_config.measure_psk = psk;
       await(device.save());
-      mqtt.anlixMessageRouterMeasure(mac, psk);
+      mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'on');
     });
     return res.status(200).end();
   } catch (err) {
@@ -147,7 +147,7 @@ measureController.deactivateDevices = async(function(req, res) {
   // For each device, send MQTT message
   let macList = req.body.mac_list;
   macList.forEach((mac)=>{
-    mqtt.anlixMessageRouterMeasure(mac.toUpperCase());
+    mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'off');
   });
   return res.status(200).end();
 });
