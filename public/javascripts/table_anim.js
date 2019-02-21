@@ -2,6 +2,8 @@ let loadDeviceInfoOnForm = function(row) {
   let index = row.data('index');
   $('#edit_pppoe_user-' + index.toString()).val(row.data('user')).change();
   $('#edit_pppoe_pass-' + index.toString()).val(row.data('pass')).change();
+  $('#edit_lan_subnet-' + index.toString()).val(row.data('lan-subnet')).change();
+  $('#edit_lan_netmask-' + index.toString()).val(row.data('lan-netmask')).change();
   $('#edit_wifi_ssid-' + index.toString()).val(row.data('ssid')).change();
   $('#edit_wifi_pass-' + index.toString()).val(row.data('wifi-pass')).change();
   $('#edit_wifi_channel-' + index.toString()).val(row.data('channel')).change();

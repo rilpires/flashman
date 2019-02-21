@@ -9,6 +9,10 @@ form.edit-form.needs-validation(novalidate)
         label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_wan-" + (index + 1))
           input(type="radio")
           | WAN
+        if (devicesPermissions[index].grantLanEdit)
+          label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_lan-" + (index + 1))
+            input(type="radio")
+            | LAN
         if (superuser || role.grantWifiInfo >= 1)
           label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_wifi-" + (index + 1))
             input(type="radio")
@@ -163,6 +167,31 @@ form.edit-form.needs-validation(novalidate)
                         a.toggle-pass
                           .fas.fa-eye-slash.white-text
                   .invalid-feedback
+      // LAN
+      .edit-tab.d-none(id="tab_lan-" + (index + 1))
+        .row
+          .col-6
+            .md-form.input-entry
+              label(for="edit_lan_subnet-" + (index + 1)) IP da Rede
+              input.form-control(
+                type="text",
+                id="edit_lan_subnet-" + (index + 1),
+                maxlength="15",
+                disabled=((superuser || role.grantLanEdit) ? false : true)
+              )
+              .invalid-feedback
+          .col-6
+            .md-form
+              .input-group
+                .md-selectfield.form-control.my-0
+                  label(for="edit_lan_netmask-" + (index + 1)) Máscara
+                  select.browser-default.md-select(
+                    id="edit_lan_netmask-" + (index + 1),
+                    disabled=((superuser || role.grantLanEdit) ? false : true)
+                  )
+                    option(value="24") 24
+                    option(value="25") 25
+                    option(value="26") 26
       // Wi-Fi 2.4GHz
       if (superuser || role.grantWifiInfo >= 1)
         .edit-tab.d-none(id="tab_wifi-" + (index + 1))
