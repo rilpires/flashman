@@ -87,6 +87,7 @@ userController.postRole = function(req, res) {
     grantAPIAccess: req.body['grant-api-access'],
     grantLOGAccess: req.body['grant-log-access'],
     grantNotificationPopups: req.body['grant-notification-popups'],
+    grantLanEdit: req.body['grant-lan-edit'],
   });
   role.save(function(err) {
     if (err) {
@@ -205,6 +206,7 @@ userController.editRole = function(req, res) {
     role.grantAPIAccess = req.body['grant-api-access'];
     role.grantLOGAccess = req.body['grant-log-access'];
     role.grantNotificationPopups = req.body['grant-notification-popups'];
+    role.grantLanEdit = req.body['grant-lan-edit'];
 
     role.save(function(err) {
       if (err) {
