@@ -110,6 +110,13 @@
       return ret;
     };
 
+    Validator.prototype.validateNetmask = function(netmask) {
+      return {
+        valid: [24, 25, 26, '24', '25', '26'].includes(netmask),
+        err: ['Somente são aceitos as máscaras 24, 25 ou 26'],
+      };
+    };
+
     return Validator;
   })();
 

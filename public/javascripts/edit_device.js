@@ -112,6 +112,8 @@ let validateEditDevice = function(event) {
   if (validateLan) {
     genericValidate(lanSubnet,
                     validator.validateIP, errors.lan_subnet);
+    genericValidate(lanNetmask,
+                    validator.validateNetmask, errors.lan_netmask);
   }
 
   let hasNoErrors = function(key) {

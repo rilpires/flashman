@@ -731,6 +731,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('lan_subnet')) {
           genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
         }
+        if (content.hasOwnProperty('lan_netmask')) {
+          genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
+        }
 
         if (errors.length < 1) {
           Role.findOne({name: returnObjOrEmptyStr(req.user.role)},
