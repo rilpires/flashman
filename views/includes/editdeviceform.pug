@@ -173,7 +173,7 @@ form.edit-form.needs-validation(novalidate)
           .col-6
             .md-form.input-entry
               label(for="edit_lan_subnet-" + (index + 1)) IP da Rede
-              input.form-control(
+              input.form-control.ip-mask-field(
                 type="text",
                 id="edit_lan_subnet-" + (index + 1),
                 maxlength="15",

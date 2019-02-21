@@ -261,6 +261,8 @@ block content
                       data-validate-wifi-5ghz=(
                         (devicesPermissions[index].grantWifi5ghz &&
                         (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
+                      data-validate-lan=(
+                        devicesPermissions[index].grantLanEdit ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )
