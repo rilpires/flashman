@@ -164,6 +164,21 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle da rede LAN'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-lan-edit').append(
+                          $('<option></option>').val(false)
+                          .text('Visualizar'),
+                          $('<option></option>').val(true)
+                          .text('Visualizar e editar')
+                        )
+                      )
                     )
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
@@ -361,6 +376,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-notification-popups] option[value=' +
           roleObj.grantNotificationPopups + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-lan-edit] option[value=' +
+          roleObj.grantLanEdit + ']')
         .attr('selected', 'selected');
       });
     } else {
