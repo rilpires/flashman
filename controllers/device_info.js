@@ -47,6 +47,8 @@ const createRegistry = function(req, res) {
   let connectionType = returnObjOrEmptyStr(req.body.connection_type).trim();
   let pppoeUser = returnObjOrEmptyStr(req.body.pppoe_user).trim();
   let pppoePassword = returnObjOrEmptyStr(req.body.pppoe_password).trim();
+  let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
+  let lanNetmask = returnObjOrEmptyStr(req.body.lan_netmask).trim();
   let ssid = returnObjOrEmptyStr(req.body.wifi_ssid).trim();
   let password = returnObjOrEmptyStr(req.body.wifi_password).trim();
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
@@ -114,6 +116,8 @@ const createRegistry = function(req, res) {
         'release': installedRelease,
         'pppoe_user': pppoeUser,
         'pppoe_password': pppoePassword,
+        'lan_subnet': lanSubnet,
+        'lan_netmask': lanNetmask,
         'wifi_ssid': ssid,
         'wifi_password': password,
         'wifi_channel': channel,
@@ -253,6 +257,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (matchedDevice.model == '' || matchedDevice.model == bodyModel) {
           // Legacy versions include only model so let's include model version
           matchedDevice.model = bodyModel + bodyModelVer;
+        }
+        let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
+        let lanNetmask = returnObjOrEmptyStr(req.body.lan_netmask).trim();
+        if (!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') {
+          matchedDevice.lan_subnet = lanSubnet;
+        }
+        if (!matchedDevice.lan_netmask) {
+          matchedDevice.lan_netmask = lanNetmask;
         }
 
         // Store if device has dual band capability
@@ -399,6 +411,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           'connection_type': returnObjOrEmptyStr(matchedDevice.connection_type),
           'pppoe_user': returnObjOrEmptyStr(matchedDevice.pppoe_user),
           'pppoe_password': returnObjOrEmptyStr(matchedDevice.pppoe_password),
+          'lan_addr': returnObjOrEmptyStr(matchedDevice.lan_subnet),
+          'lan_netmask': returnObjOrEmptyStr(matchedDevice.lan_netmask),
           'wifi_ssid': returnObjOrEmptyStr(matchedDevice.wifi_ssid),
           'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
           'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),

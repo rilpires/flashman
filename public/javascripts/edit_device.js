@@ -30,10 +30,13 @@ let validateEditDevice = function(event) {
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validatePppoe = row.data('validatePppoe');
+  let validateLan = row.data('validate-lan');
   let pppoe = $('#edit_connect_type-' + index.toString()).val() === 'PPPoE';
   let pppoeUser = $('#edit_pppoe_user-' + index.toString()).val();
   let pppoePassword = $('#edit_pppoe_pass-' + index.toString()).val();
   let pppoePassLength = row.data('minlengthPassPppoe');
+  let lanSubnet = $('#edit_lan_subnet-' + index.toString()).val();
+  let lanNetmask = $('#edit_lan_netmask-' + index.toString()).val();
   let ssid = $('#edit_wifi_ssid-' + index.toString()).val();
   let password = $('#edit_wifi_pass-' + index.toString()).val();
   let channel = $('#edit_wifi_channel-' + index.toString()).val();
@@ -63,6 +66,8 @@ let validateEditDevice = function(event) {
     channel5ghz: {field: '#edit_wifi5_channel-' + index.toString()},
     band5ghz: {field: '#edit_wifi5_band-' + index.toString()},
     mode5ghz: {field: '#edit_wifi5_mode-' + index.toString()},
+    lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
+    lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -104,6 +109,12 @@ let validateEditDevice = function(event) {
     genericValidate(mode5ghz,
                     validator.validateMode, errors.mode5ghz);
   }
+  if (validateLan) {
+    genericValidate(lanSubnet,
+                    validator.validateIP, errors.lan_subnet);
+    genericValidate(lanNetmask,
+                    validator.validateNetmask, errors.lan_netmask);
+  }
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
@@ -137,6 +148,10 @@ let validateEditDevice = function(event) {
       data.content.wifi_channel_5ghz = channel5ghz;
       data.content.wifi_band_5ghz = band5ghz;
       data.content.wifi_mode_5ghz = mode5ghz;
+    }
+    if (validateLan) {
+      data.content.lan_subnet = lanSubnet;
+      data.content.lan_netmask = lanNetmask;
     }
 
     $.ajax({
@@ -182,6 +197,8 @@ let validateEditDevice = function(event) {
 
 $(document).ready(function() {
   $('.edit-form').submit(validateEditDevice);
+  // Apply IP mask on LAN subnet field
+  $('.edit-form .ip-mask-field').mask('099.099.099.099');
 
   $('.btn-reboot').click(function(event) {
     let row = $(event.target).parents('tr');

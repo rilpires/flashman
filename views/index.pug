@@ -162,6 +162,8 @@ block content
                       data-connection-type=(device.connection_type ? device.connection_type : ""),
                       data-user=device.pppoe_user,
                       data-pass=device.pppoe_password,
+                      data-lan-subnet=device.lan_subnet,
+                      data-lan-netmask=device.lan_netmask,
                       data-ssid=device.wifi_ssid,
                       data-wifi-pass=device.wifi_password,
                       data-channel=device.wifi_channel,
@@ -259,6 +261,8 @@ block content
                       data-validate-wifi-5ghz=(
                         (devicesPermissions[index].grantWifi5ghz &&
                         (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
+                      data-validate-lan=(
+                        devicesPermissions[index].grantLanEdit ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )

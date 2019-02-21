@@ -648,6 +648,8 @@ deviceListController.setDeviceReg = function(req, res) {
       let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
       let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
       let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
+      let lanSubnet = returnObjOrEmptyStr(content.lan_subnet).trim();
+      let lanNetmask = returnObjOrEmptyStr(content.lan_netmask).trim();
       let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
       let password = returnObjOrEmptyStr(content.wifi_password).trim();
       let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
@@ -725,6 +727,12 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('wifi_mode_5ghz')) {
           genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
+        }
+        if (content.hasOwnProperty('lan_subnet')) {
+          genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
+        }
+        if (content.hasOwnProperty('lan_netmask')) {
+          genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
 
         if (errors.length < 1) {
@@ -820,6 +828,18 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 mode5ghz !== '') {
               matchedDevice.wifi_mode_5ghz = mode5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('lan_subnet') &&
+                (superuserGrant || role.grantLanEdit) &&
+                lanSubnet !== '') {
+              matchedDevice.lan_subnet = lanSubnet;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('lan_netmask') &&
+                (superuserGrant || role.grantLanEdit) &&
+                lanNetmask !== '') {
+              matchedDevice.lan_netmask = lanNetmask;
               updateParameters = true;
             }
             if (content.hasOwnProperty('external_reference') &&

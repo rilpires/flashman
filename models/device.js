@@ -28,6 +28,8 @@ let deviceSchema = new Schema({
   wifi_band_5ghz: String,
   wifi_mode_5ghz: String,
   app_password: String,
+  lan_subnet: String,
+  lan_netmask: Number,
   lan_devices: [{
     mac: String,
     dhcp_name: String,

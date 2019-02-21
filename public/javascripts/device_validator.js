@@ -99,6 +99,24 @@
       return ret;
     };
 
+    Validator.prototype.validateIP = function(ip) {
+      const messages = [
+        'Este campo deve ter no mínimo 7 caracteres',
+        'Este campo não pode ter mais de 15 caracteres',
+        'Este campo deve conter um formato IP válido',
+      ];
+      let ret = validateRegex(ip, 7, 15, /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
+    Validator.prototype.validateNetmask = function(netmask) {
+      return {
+        valid: [24, 25, 26, '24', '25', '26'].includes(netmask),
+        err: ['Somente são aceitos as máscaras 24, 25 ou 26'],
+      };
+    };
+
     return Validator;
   })();
 
