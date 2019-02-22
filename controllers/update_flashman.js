@@ -258,12 +258,16 @@ updateController.setAutoConfig = async(function(req, res) {
     let message = 'Salvo com sucesso!';
     let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
     if (measureToken !== '' &&
-        measureToken !== config.measure_configs.controller_fqdn) {
+        measureToken !== config.measure_configs.auth_token) {
       let controlResp = await(sendTokenControl(req, measureToken));
-      if (!('controller_fqdn' in controlResp)) throw new {};
+      if (!('controller_fqdn' in controlResp) ||
+          !('zabbix_fqdn' in controlResp)) {
+        throw new {};
+      }
       config.measure_configs.is_active = true;
       config.measure_configs.auth_token = measureToken;
       config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
+      config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
       message += ' Seus dispositivos começarão a medir em breve.';
     }
     await(config.save());
