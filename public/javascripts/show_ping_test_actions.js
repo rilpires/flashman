@@ -52,7 +52,7 @@ socket.on('PINGTEST', function(macaddr, data) {
   if (($('#ping-test').data('bs.modal') || {})._isShown) {
     let id = $('#ping-test-hlabel').text();
     if (id == macaddr) {
-      $('#ping-test-results').empty();
+      $('#ping-test-results').hide('fast').empty();
       $('.btn-start-ping-test').prop('disabled', false);
       let resultsList = $('<ul></ul>').addClass('list-group list-group-flush');
 
@@ -75,7 +75,7 @@ socket.on('PINGTEST', function(macaddr, data) {
           )
         );
       });
-      $('#ping-test-results').append(resultsList);
+      $('#ping-test-results').append(resultsList).show('fast');
     }
   }
 });
