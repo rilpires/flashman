@@ -283,7 +283,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           let permissionsSentVersion = DeviceVersion.findByVersion(
             sentVersion, is5ghzCapable);
           let permissionsCurrVersion = DeviceVersion.findByVersion(
-            sentVersion, is5ghzCapable);
+            matchedDevice.version, is5ghzCapable);
           let errors = [];
           const validator = new Validator();
           if ( permissionsSentVersion.grantWifiBand &&
