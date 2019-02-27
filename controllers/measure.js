@@ -98,6 +98,7 @@ measureController.activateDevices = async(function(req, res) {
       let psk = dev.psk;
       let device = await(DeviceModel.findById(mac));
       device.measure_config.measure_psk = psk;
+      device.measure_config.is_active = true;
       await(device.save());
       mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'on');
     });
@@ -144,12 +145,22 @@ measureController.deactivateDevices = async(function(req, res) {
     });
   }
 
-  // For each device, send MQTT message
+  // For each device, update config and send MQTT message
   let macList = req.body.mac_list;
-  macList.forEach((mac)=>{
-    mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'off');
-  });
-  return res.status(200).end();
+  try {
+    macList.forEach((mac)=>{
+      let device = await(DeviceModel.findById(mac.toUpperCase()));
+      device.measure_config.is_active = false;
+      await(device.save());
+      mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'off');
+    });
+    return res.status(200).end();
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: 'Erro interno ao consultar o banco de dados',
+    });
+  }
 });
 
 measureController.updateLicenseStatus = async(function(req, res) {

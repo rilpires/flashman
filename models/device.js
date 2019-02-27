@@ -12,6 +12,7 @@ let deviceSchema = new Schema({
   release: String,
   measure_config: {
     measure_psk: String,
+    is_active: {type: Boolean, default: false},
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,

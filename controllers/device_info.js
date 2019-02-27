@@ -405,31 +405,39 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
-        return res.status(200).json({
-          'do_update': matchedDevice.do_update,
-          'do_newprobe': false,
-          'mqtt_status': (matchedDevice._id in mqtt.clients),
-          'release_id': returnObjOrEmptyStr(matchedDevice.release),
-          'connection_type': returnObjOrEmptyStr(matchedDevice.connection_type),
-          'pppoe_user': returnObjOrEmptyStr(matchedDevice.pppoe_user),
-          'pppoe_password': returnObjOrEmptyStr(matchedDevice.pppoe_password),
-          'lan_addr': returnObjOrEmptyStr(matchedDevice.lan_subnet),
-          'lan_netmask': returnObjOrEmptyStr(matchedDevice.lan_netmask),
-          'wifi_ssid': returnObjOrEmptyStr(matchedDevice.wifi_ssid),
-          'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
-          'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
-          'wifi_band': returnObjOrEmptyStr(matchedDevice.wifi_band),
-          'wifi_mode': returnObjOrEmptyStr(matchedDevice.wifi_mode),
-          'wifi_ssid_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
-          'wifi_password_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
-          'wifi_channel_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
-          'wifi_band_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
-          'wifi_mode_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
-          'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
-          'zabbix_psk': returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
-          'blocked_devices': serializeBlocked(blockedDevices),
-          'named_devices': serializeNamed(namedDevices),
-          'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
+        Config.findOne({is_default: true}, function(err, matchedConfig) {
+          let zabbixFqdn = '';
+          if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
+            zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
+          }
+          return res.status(200).json({
+            'do_update': matchedDevice.do_update,
+            'do_newprobe': false,
+            'mqtt_status': (matchedDevice._id in mqtt.clients),
+            'release_id': returnObjOrEmptyStr(matchedDevice.release),
+            'connection_type': returnObjOrEmptyStr(matchedDevice.connection_type),
+            'pppoe_user': returnObjOrEmptyStr(matchedDevice.pppoe_user),
+            'pppoe_password': returnObjOrEmptyStr(matchedDevice.pppoe_password),
+            'lan_addr': returnObjOrEmptyStr(matchedDevice.lan_subnet),
+            'lan_netmask': returnObjOrEmptyStr(matchedDevice.lan_netmask),
+            'wifi_ssid': returnObjOrEmptyStr(matchedDevice.wifi_ssid),
+            'wifi_password': returnObjOrEmptyStr(matchedDevice.wifi_password),
+            'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
+            'wifi_band': returnObjOrEmptyStr(matchedDevice.wifi_band),
+            'wifi_mode': returnObjOrEmptyStr(matchedDevice.wifi_mode),
+            'wifi_ssid_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
+            'wifi_password_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
+            'wifi_channel_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
+            'wifi_band_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
+            'wifi_mode_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
+            'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
+            'zabbix_psk': returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
+            'zabbix_fqdn': zabbixFqdn,
+            'zabbix_active': returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'blocked_devices': serializeBlocked(blockedDevices),
+            'named_devices': serializeNamed(namedDevices),
+            'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
+          });
         });
       }
     }
@@ -1040,6 +1048,7 @@ deviceInfoController.getZabbixConfig = async(function(req, res) {
       success: 1,
       psk: device.measure_config.measure_psk,
       fqdn: config.measure_configs.zabbix_fqdn,
+      is_active: device.measure_config.is_active,
     });
   } catch (err) {
     console.log(err);
