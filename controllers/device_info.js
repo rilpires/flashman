@@ -304,7 +304,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
           if ( permissionsSentVersion.grantWifi5ghz &&
-              !permissionsSentVersion.grantWifi5ghz) {
+              !permissionsCurrVersion.grantWifi5ghz) {
             let ssid5ghz =
               returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
             let password5ghz =
