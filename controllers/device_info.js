@@ -63,6 +63,8 @@ const createRegistry = function(req, res) {
   let mode5ghz = returnObjOrEmptyStr(req.body.wifi_mode_5ghz).trim();
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
+  let is5ghzCapable =
+    (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -125,6 +127,7 @@ const createRegistry = function(req, res) {
         'wifi_channel': channel,
         'wifi_band': band,
         'wifi_mode': mode,
+        'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
