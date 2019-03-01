@@ -104,20 +104,26 @@ const createRegistry = function(req, res) {
                     'password', null, errors);
     genericValidate(channel, validator.validateChannel,
                     'channel', null, errors);
-    genericValidate(band, validator.validateBand,
-                    'band', null, errors);
-    genericValidate(mode, validator.validateMode,
-                    'mode', null, errors);
-    genericValidate(ssid5ghz, validator.validateSSID,
-                    'ssid5ghz', null, errors);
-    genericValidate(password5ghz, validator.validateWifiPassword,
-                    'password5ghz', null, errors);
-    genericValidate(channel5ghz, validator.validateChannel,
-                    'channel5ghz', null, errors);
-    genericValidate(band5ghz, validator.validateBand,
-                    'band5ghz', null, errors);
-    genericValidate(mode5ghz, validator.validateMode,
-                    'mode5ghz', null, errors);
+
+    let permissions = DeviceVersion.findByVersion(version, is5ghzCapable);
+    if (permissions.grantWifiBand) {
+      genericValidate(band, validator.validateBand,
+                      'band', null, errors);
+      genericValidate(mode, validator.validateMode,
+                      'mode', null, errors);
+    }
+    if (permissions.grantWifi5ghz) {
+      genericValidate(ssid5ghz, validator.validateSSID,
+                      'ssid5ghz', null, errors);
+      genericValidate(password5ghz, validator.validateWifiPassword,
+                      'password5ghz', null, errors);
+      genericValidate(channel5ghz, validator.validateChannel,
+                      'channel5ghz', null, errors);
+      genericValidate(band5ghz, validator.validateBand,
+                      'band5ghz', null, errors);
+      genericValidate(mode5ghz, validator.validateMode,
+                      'mode5ghz', null, errors);
+    }
 
     if (errors.length < 1) {
       newDeviceModel = new DeviceModel({
