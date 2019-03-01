@@ -18,6 +18,14 @@ const returnObjOrEmptyStr = function(query) {
   }
 };
 
+const returnObjOrNum = function(query, num) {
+  if (typeof query !== 'undefined' && query) {
+    return query;
+  } else {
+    return num;
+  }
+};
+
 const genericValidate = function(field, func, key, minlength, errors) {
   let validField = func(field, minlength);
   if (!validField.valid) {
@@ -50,7 +58,7 @@ const createRegistry = function(req, res) {
   let pppoeUser = returnObjOrEmptyStr(req.body.pppoe_user).trim();
   let pppoePassword = returnObjOrEmptyStr(req.body.pppoe_password).trim();
   let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
-  let lanNetmask = returnObjOrEmptyStr(req.body.lan_netmask).trim();
+  let lanNetmask = parseInt(returnObjOrNum(req.body.lan_netmask, 24));
   let ssid = returnObjOrEmptyStr(req.body.wifi_ssid).trim();
   let password = returnObjOrEmptyStr(req.body.wifi_password).trim();
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
@@ -264,7 +272,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.model = bodyModel + bodyModelVer;
         }
         let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
-        let lanNetmask = returnObjOrEmptyStr(req.body.lan_netmask).trim();
+        let lanNetmask = parseInt(returnObjOrNum(req.body.lan_netmask, 24));
         if (!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') {
           matchedDevice.lan_subnet = lanSubnet;
         }
