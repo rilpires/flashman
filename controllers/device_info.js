@@ -75,8 +75,8 @@ const createRegistry = function(req, res) {
   let ssid5ghz = returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
-  let band5ghz = returnObjOrStr(req.body.wifi_band_5ghz, 'HT40').trim();
-  let mode5ghz = returnObjOrStr(req.body.wifi_mode_5ghz, '11na').trim();
+  let band5ghz = returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
+  let mode5ghz = returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
@@ -337,9 +337,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             let channel5ghz =
               returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
             let band5ghz =
-              returnObjOrStr(req.body.wifi_band_5ghz, 'HT40').trim();
+              returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
             let mode5ghz =
-              returnObjOrStr(req.body.wifi_mode_5ghz, '11na').trim();
+              returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
 
             genericValidate(ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
