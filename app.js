@@ -254,6 +254,16 @@ app.use('/scripts/datatables.net',
 app.use('/scripts/datatables.net-bs4',
   express.static(path.join(__dirname, 'node_modules/datatables.net-bs4'))
 );
+app.use('/scripts/fontawesome/css',
+  express.static(path.join(
+    __dirname,
+    'node_modules/@fortawesome/fontawesome-free/css'))
+);
+app.use('/scripts/fontawesome/webfonts',
+  express.static(path.join(
+    __dirname,
+    'node_modules/@fortawesome/fontawesome-free/webfonts'))
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
