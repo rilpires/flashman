@@ -16,6 +16,7 @@
     "githubBranch": "master"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.7.2",
     "aedes": "^0.35.3",
     "asyncawait": "^1.0.8",
     "bcrypt-nodejs": "0.0.3",
