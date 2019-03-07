@@ -1,0 +1,67 @@
+
+form.needs-validation(id="deviceForm", novalidate)
+  .md-form.input-group
+    .input-group-btn
+      button.btn.teal.lighten-2.dropdown-toggle.ml-0.my-0(
+        type="button",
+        data-toggle="dropdown"
+      )
+        span#new_ext_ref_type_selected.selected CPF
+      #ext_ref_type.dropdown-menu
+        a.dropdown-item.text-center.active.teal.lighten-2 CPF
+        a.dropdown-item.text-center CNPJ
+        a.dropdown-item.text-center Outro
+    input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
+      type="text",
+      id="new_external_reference",
+      placeholder="Identificação do cliente (opcional)",
+      maxlength="64"
+    )
+  .md-form.input-entry
+    label(for="new_mac") Endereço MAC
+    input.form-control(type="text", id="new_mac")
+    .invalid-feedback
+  .md-form.pt-2
+    .md-selectfield.form-control.my-0
+      label(for="new_connect_type") Tipo de Conexão
+      select.browser-default.md-select(id="new_connect_type")
+        option(value="DHCP") DHCP
+        option(value="PPPoE") PPPoE
+  .md-form
+    .md-selectfield.form-control.my-0
+      label(for="new_wifi_channel") Canal do WiFi
+      select.browser-default.md-select(id="new_wifi_channel")
+        option(value="auto") auto
+        option(value="1") 1
+        option(value="6") 6
+        option(value="11") 11
+  .md-form.input-entry
+    label(for="new_wifi_ssid") SSID do WiFi
+    input.form-control(type="text",
+                       id="new_wifi_ssid",
+                       maxlength="32")
+    .invalid-feedback
+  .md-form.input-entry
+    label(for="new_wifi_pass") Senha do WiFi
+    input.form-control(type="text",
+                       id="new_wifi_pass",
+                       maxlength="64")
+    .invalid-feedback
+  .md-form.input-entry
+    label(for="new_pppoe_user") Usuário PPPoE
+    input.form-control(type="text",
+                       id="new_pppoe_user",
+                       maxlength="64")
+    .invalid-feedback
+  .md-form.input-entry
+    label(for="new_pppoe_pass") Senha PPPoE
+    input.form-control(type="text",
+                       id="new_pppoe_pass",
+                       maxlength="64",
+                       data-minlength-pass-pppoe=minlengthpasspppoe)
+    .invalid-feedback
+  .col.text-center
+    .form-buttons
+      button.btn.btn-lg.teal.lighten-2(type="submit")
+        .fas.fa-check.fa-lg
+        span &nbsp Adicionar

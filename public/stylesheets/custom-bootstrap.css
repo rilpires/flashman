@@ -16902,6 +16902,28 @@ table.table-sm td {
   border-bottom-right-radius: 0;
 }
 
+#preloader {
+  background-color: #fff;
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 99;
+}
+
+#status {
+  background-image: url("../images/preloading.gif");
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 200px;
+  left: 50%;
+  margin: -100px 0 0 -100px;
+  position: absolute;
+  top: 50%;
+  width: 200px;
+}
+
 .selectize-control .option .description {
   color: #6c757d;
   display: block;
@@ -17014,6 +17036,30 @@ table.table-sm td {
   right: .5em;
   top: .75em;
   width: 0;
+}
+
+.bell-notification {
+  padding: 0.6em;
+  font-size: 1.0em;
+}
+
+.bell-counter::after {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  font-size: 1.6em;
+  font-weight: 700;
+  position: absolute;
+  top: 30px;
+  left: 18px;
+  padding: 5px 8px;
+  line-height: 100%;
+  border-radius: 60px;
+  background: #d00;
+  content: attr(count);
+  -webkit-transform: scale(0.5);
+  transform: scale(0.5);
+  transition: transform, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: ease-out;
 }
 
 /*# sourceMappingURL=custom-bootstrap.css.map */

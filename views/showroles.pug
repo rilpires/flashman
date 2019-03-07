@@ -23,79 +23,115 @@ block content
             action='/user/role/new',
             novalidate
           )
-            .input-entry
-              label Nome da classe
-              input.form-control(type="text",
-                                 name="name",
-                                 required)
-              .invalid-feedback Por favor, preencha este campo
-            .input-entry.mt-2
-              label Informações do WiFi
-              select.form-control(name="grant-wifi-info")
-                option(value=0) Não visualizar
-                option(value=1) Visualizar
-                option(value=2) Visualizar e editar
-            .input-entry.mt-2
-              label Informações do PPPoE
-              select.form-control(name="grant-pppoe-info")
-                option(value=0) Não visualizar
-                option(value=1) Visualizar
-                option(value=2) Visualizar e editar
-            .input-entry.mt-2
-              label Visualização de Senhas ao Editar
-              select.form-control(name="grant-pass-show")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Controle de Atualização de Firmware
-              select.form-control(name="grant-firmware-upgrade")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Controle do Tipo de Conexão
-              select.form-control(name="grant-wan-type")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Controle de Identificação do Dispositivo
-              select.form-control(name="grant-device-id")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Controle de Ações no Dispositivo
-              select.form-control(name="grant-device-actions")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Acesso aos LOGS dos Roteadores
-              select.form-control(name="grant-log-access")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Remoção de Registro de Dispositivo
-              select.form-control(name="grant-device-removal")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Adição de Registro de Dispositivo
-              select.form-control(name="grant-device-add")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Controle de Gerência de Firmwares
-              select.form-control(name="grant-firmware-manage")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .input-entry.mt-2
-              label Permitir acesso a API REST
-              select.form-control(name="grant-api-access")
-                option(value="false") Bloquear
-                option(value="true") Permitir
-            .col.text-center.mt-3
-              .form-buttons
-                button.btn.btn-lg.teal.lighten-2(type="submit")
-                  .fas.fa-check.fa-lg
-                  span &nbsp Adicionar
+            .row
+              .col
+                .md-form.input-entry
+                  label Nome da classe
+                  input.form-control(type="text",
+                                     name="name",
+                                     required)
+                  .invalid-feedback Por favor, preencha este campo
+            .row
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Informações do WiFi
+                    select.browser-default.md-select(name="grant-wifi-info")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e editar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Informações do PPPoE
+                    select.browser-default.md-select(name="grant-pppoe-info")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e editar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Visualização de Senhas ao Editar
+                    select.browser-default.md-select(name="grant-pass-show")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware
+                    select.browser-default.md-select(name="grant-firmware-upgrade")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle do Tipo de Conexão
+                    select.browser-default.md-select(name="grant-wan-type")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Identificação do Roteador
+                    select.browser-default.md-select(name="grant-device-id")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Ações no Roteador
+                    select.browser-default.md-select(name="grant-device-actions")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle da rede LAN
+                    select.browser-default.md-select(name="grant-lan-edit")
+                      option(value="false") Visualizar
+                      option(value="true") Visualizar e editar
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Acesso aos Logs dos Roteadores
+                    select.browser-default.md-select(name="grant-log-access")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Remoção de Registro de Roteador
+                    select.browser-default.md-select(name="grant-device-removal")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Adição de Registro de Roteador
+                    select.browser-default.md-select(name="grant-device-add")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Configurar as Medições de Dispositivos
+                    select.browser-default.md-select(name="grant-monitor-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Gerência de Firmwares
+                    select.browser-default.md-select(name="grant-firmware-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Permitir Acesso a API REST
+                    select.browser-default.md-select(name="grant-api-access")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Mostrar Alertas em Roteadores
+                    select.browser-default.md-select(name="grant-notification-popups")
+                      option(value="true") Permitir
+                      option(value="false") Bloquear
+            .row
+              .col.text-center
+                .form-buttons
+                  button.btn.btn-lg.teal.lighten-2(type="submit")
+                    .fas.fa-check.fa-lg
+                    span &nbsp Adicionar
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-address-card.fa-lg

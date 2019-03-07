@@ -19,6 +19,10 @@ const getReleases = function(modelAsArray=false) {
     let fnameSubStrings = filename.split('_');
     let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
     let releaseSubStringsRaw = releaseSubStringRaw.split('.');
+    if (releaseSubStringsRaw[1] == 'md5') {
+      // Skip MD5 hash files
+      return;
+    }
     let releaseId = releaseSubStringsRaw[0];
     let releaseModel = fnameSubStrings[1];
     if (fnameSubStrings.length == 4) {
@@ -168,7 +172,8 @@ deviceListController.index = function(req, res) {
     indexContent.page = devices.page;
     indexContent.pages = devices.pages;
     indexContent.devicesPermissions = devices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -184,6 +189,12 @@ deviceListController.index = function(req, res) {
         } else {
           indexContent.update = matchedConfig.hasUpdate;
           indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
+          let active = matchedConfig.measure_configs.is_active;
+          indexContent.measure_active = active;
+          indexContent.measure_token = (active) ?
+              matchedConfig.measure_configs.auth_token : '';
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         getOnlineCount({}).then((onlineStatus) => {
@@ -222,7 +233,12 @@ deviceListController.changeUpdate = function(req, res) {
                                    message: 'Erro ao encontrar dispositivo'});
     }
     matchedDevice.do_update = req.body.do_update;
-    matchedDevice.release = req.params.release.trim();
+    if (req.body.do_update) {
+      matchedDevice.do_update_status = 0; // waiting
+      matchedDevice.release = req.params.release.trim();
+    } else {
+      matchedDevice.do_update_status = 1; // success
+    }
     matchedDevice.save(function(err) {
       if (err) {
         let indexContent = {};
@@ -252,8 +268,13 @@ deviceListController.changeAllUpdates = function(req, res) {
 
     let scheduledDevices = [];
     for (let idx = 0; idx < matchedDevices.length; idx++) {
-      matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
       matchedDevices[idx].do_update = form.do_update;
+      if (form.do_update) {
+        matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
+        matchedDevices[idx].do_update_status = 0; // waiting
+      } else {
+        matchedDevices[idx].do_update_status = 1; // success
+      }
       matchedDevices[idx].save();
       mqtt.anlixMessageRouterUpdate(matchedDevices[idx]._id);
       scheduledDevices.push(matchedDevices[idx]._id);
@@ -362,7 +383,8 @@ deviceListController.searchDeviceReg = function(req, res) {
     indexContent.pages = matchedDevices.pages;
     indexContent.lastquery = req.query.content;
     indexContent.devicesPermissions = matchedDevices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version);
+      return DeviceVersion.findByVersion(device.version,
+                                         device.wifi_is_5ghz_capable);
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
@@ -377,6 +399,12 @@ deviceListController.searchDeviceReg = function(req, res) {
           indexContent.update = false;
         } else {
           indexContent.update = matchedConfig.hasUpdate;
+          let active = matchedConfig.measure_configs.is_active;
+            indexContent.measure_active = active;
+            indexContent.measure_token = (active) ?
+                matchedConfig.measure_configs.auth_token : '';
+          let license = matchedConfig.measure_configs.is_license_active;
+          indexContent.measure_license = license;
         }
 
         getOnlineCount(finalQuery).then((onlineStatus) => {
@@ -433,7 +461,8 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: 'Roteador não encontrado'});
     }
     let device = matchedDevice;
-    let permissions = DeviceVersion.findByVersion(device.version);
+    let permissions = DeviceVersion.findByVersion(device.version,
+                                                  device.wifi_is_5ghz_capable);
 
     switch (msgtype) {
       case 'rstapp':
@@ -469,6 +498,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'log':
       case 'boot':
       case 'onlinedevs':
+      case 'ping':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
@@ -487,6 +517,11 @@ deviceListController.sendMqttMsg = function(req, res) {
               sio.anlixWaitForOnlineDevNotification(
                 req.sessionID, req.params.id.toUpperCase());
               mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+            }
+            if (msgtype == 'ping') {
+              sio.anlixWaitForPingTestNotification(
+                req.sessionID, req.params.id.toUpperCase());
+              mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
             }
           } else {
             return res.status(200).json({
@@ -613,9 +648,18 @@ deviceListController.setDeviceReg = function(req, res) {
       let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
       let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
       let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
+      let lanSubnet = returnObjOrEmptyStr(content.lan_subnet).trim();
+      let lanNetmask = returnObjOrEmptyStr(content.lan_netmask).trim();
       let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
       let password = returnObjOrEmptyStr(content.wifi_password).trim();
       let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
+      let band = returnObjOrEmptyStr(content.wifi_band).trim();
+      let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+      let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
+      let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
+      let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
+      let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
+      let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -661,6 +705,35 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_channel')) {
           genericValidate(channel, validator.validateChannel, 'channel');
         }
+        if (content.hasOwnProperty('wifi_band')) {
+          genericValidate(band, validator.validateBand, 'band');
+        }
+        if (content.hasOwnProperty('wifi_mode')) {
+          genericValidate(mode, validator.validateMode, 'mode');
+        }
+        if (content.hasOwnProperty('wifi_ssid_5ghz')) {
+          genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+        }
+        if (content.hasOwnProperty('wifi_password_5ghz')) {
+          genericValidate(password5ghz,
+                          validator.validateWifiPassword, 'password5ghz');
+        }
+        if (content.hasOwnProperty('wifi_channel_5ghz')) {
+          genericValidate(channel5ghz,
+                          validator.validateChannel, 'channel5ghz');
+        }
+        if (content.hasOwnProperty('wifi_band_5ghz')) {
+          genericValidate(band5ghz, validator.validateBand, 'band5ghz');
+        }
+        if (content.hasOwnProperty('wifi_mode_5ghz')) {
+          genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
+        }
+        if (content.hasOwnProperty('lan_subnet')) {
+          genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
+        }
+        if (content.hasOwnProperty('lan_netmask')) {
+          genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
+        }
 
         if (errors.length < 1) {
           Role.findOne({name: returnObjOrEmptyStr(req.user.role)},
@@ -680,6 +753,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 }
               } else {
                 matchedDevice.connection_type = connectionType;
+                matchedDevice.pppoe_user = '';
+                matchedDevice.pppoe_password = '';
                 updateParameters = true;
               }
             }
@@ -711,6 +786,60 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 channel !== '') {
               matchedDevice.wifi_channel = channel;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_band') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                band !== '') {
+              matchedDevice.wifi_band = band;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_mode') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                mode !== '') {
+              matchedDevice.wifi_mode = mode;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_ssid_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                ssid5ghz !== '') {
+              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_password_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                password5ghz !== '') {
+              matchedDevice.wifi_password_5ghz = password5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_channel_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                channel5ghz !== '') {
+              matchedDevice.wifi_channel_5ghz = channel5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_band_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                band5ghz !== '') {
+              matchedDevice.wifi_band_5ghz = band5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                mode5ghz !== '') {
+              matchedDevice.wifi_mode_5ghz = mode5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('lan_subnet') &&
+                (superuserGrant || role.grantLanEdit) &&
+                lanSubnet !== '') {
+              matchedDevice.lan_subnet = lanSubnet;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('lan_netmask') &&
+                (superuserGrant || role.grantLanEdit) &&
+                lanNetmask !== '') {
+              matchedDevice.lan_netmask = lanNetmask;
               updateParameters = true;
             }
             if (content.hasOwnProperty('external_reference') &&
@@ -880,7 +1009,8 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -979,7 +1109,8 @@ deviceListController.getPortForward = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    let permissions = DeviceVersion.findByVersion(matchedDevice.version);
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -999,6 +1130,76 @@ deviceListController.getPortForward = function(req, res) {
         }
       }),
     });
+  });
+};
+
+deviceListController.getPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      ping_hosts_list: matchedDevice.ping_hosts,
+    });
+  });
+};
+
+deviceListController.setPingHostsList = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    console.log('Updating hosts ping list for ' + matchedDevice._id);
+    if (isJsonString(req.body.content)) {
+      let content = JSON.parse(req.body.content);
+      let approvedHosts = [];
+      content.hosts.forEach((host) => {
+        let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
+        host = host.toLowerCase();
+        if (host.match(fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedDevice.ping_hosts = approvedHosts;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: 'Erro interno do servidor',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          hosts: approvedHosts,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro ao tratar JSON',
+      });
+    }
   });
 };
 

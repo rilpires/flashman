@@ -188,4 +188,26 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   console.log('MQTT SEND Message ONLINEDEVS to ' + id);
 };
 
+mqtts.anlixMessageRouterMeasure = function(id, status) {
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: true,
+    topic: 'flashman/update/' + id,
+    payload: 'measure '+status,
+  });
+  console.log('MQTT SEND Message MEASURE to '+id);
+};
+
+mqtts.anlixMessageRouterPingTest = function(id) {
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'ping',
+    });
+  console.log('MQTT SEND Message PING to ' + id);
+};
+
 module.exports = mqtts;

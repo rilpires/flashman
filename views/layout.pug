@@ -12,12 +12,17 @@ html
     block stylesheets
 
   body
+    // Preloader
+    #preloader
+      #status &nbsp
+
     include includes/navbar
     .container
       include includes/flash
       include includes/configflashman
+      include includes/alertsflashman
       block content
-    p.version-label 1.14.2
+    p.version-label 1.15.0
 
     script(src='/scripts/jquery/jquery.min.js')
     script(src='/scripts/jquery-mask/jquery.mask.min.js')
@@ -38,5 +43,28 @@ html
       if (superuser && update && Math.random() < 0.3) {
         alertUpdateFlashman();
       }
+      let measure_active = '#{measure_active}' === 'true';
+      let measure_license = '#{measure_license}' === 'true';
+      if (measure_active && !measure_license) {
+        $('.alert-license-card').removeClass('bg-success');
+        $('.alert-license-card').addClass('bg-danger');
+        $('.bell-notification').addClass('swing faster delay-2s');
+        $('.bell-counter').attr('count', '1');
+        $('.bell-counter').show();
+      }
+      if (measure_active) {
+        let msg = (measure_license) ?
+            'Sua licença de medição está ativa!' :
+            'Sua licença de medição está inativa!<br>Verifique o status no controle Anlix';
+        $('#notification-text').html('<h6><b>' + msg + '</b></h6>');
+      }
 
     block scripts
+
+    // Preloader
+    script.
+      $(window).on('load', function() { // makes sure the whole site is loaded 
+        $('#status').fadeOut(); // will first fade out the loading animation 
+        $('#preloader').delay(350).fadeOut('slow');
+        $('body').delay(350).css({'overflow':'visible'});
+      })

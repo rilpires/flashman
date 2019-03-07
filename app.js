@@ -11,12 +11,16 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const sio = require('./sio');
+const serveStatic = require('serve-static');
+const md5File = require('md5-file');
 let session = require('express-session');
 
+let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
+let Device = require('./models/device');
 let index = require('./routes/index');
 
 let app = express();
@@ -67,8 +71,26 @@ Role.find({}, function(err, roles) {
       grantDeviceAdd: true,
       grantFirmwareManage: true,
       grantAPIAccess: false,
+      grantNotificationPopups: true,
+      grantLanEdit: true,
     });
     managerRole.save();
+  }
+});
+
+// check migration for devices checked for upgrade
+Device.find({}, function(err, devices) {
+  if (!err && devices) {
+    for (let idx = 0; idx < devices.length; idx++) {
+      if (!devices[idx].installed_release) {
+        if (devices[idx].do_update == true) {
+          devices[idx].do_update_status = 0; // waiting
+        } else {
+          devices[idx].installed_release = devices[idx].release;
+        }
+        devices[idx].save();
+      }
+    }
   }
 });
 
@@ -99,6 +121,32 @@ if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = companySecret.secret;
 }
 
+// Check md5 file hashes on firmware directory
+fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
+  // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
+  let fnameSubStrings = filename.split('_');
+  let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
+  let releaseSubStringsRaw = releaseSubStringRaw.split('.');
+  if (releaseSubStringsRaw[1] == 'md5') {
+    // Skip MD5 hash files
+    return;
+  } else if (releaseSubStringsRaw[1] == 'bin') {
+    const md5fname = '.' + filename.replace('.bin', '.md5');
+    const md5fpath = path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname);
+    const filePath = path.join(process.env.FLM_IMG_RELEASE_DIR, filename);
+    if (!fs.existsSync(md5fpath)) {
+      // Generate MD5 file
+      const md5Checksum = md5File.sync(filePath);
+      fs.writeFile(md5fpath, md5Checksum, function(err) {
+        if (err) {
+          console.log('Error generating MD5 hash file: ' + md5fpath);
+          throw err;
+        }
+      });
+    }
+  }
+});
+
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(bodyParser.raw({type: 'application/octet-stream'}));
@@ -108,9 +156,53 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
-app.use(logger(':req[x-forwarded-for] - :method :url HTTP/:http-version :status :res[content-length] - :response-time ms'));
+app.use(logger(':req[x-forwarded-for] - :method :url HTTP/:http-version ' +
+               ':status :res[content-length] - :response-time ms'));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use('/stylesheets',
+  serveStatic(path.join(__dirname, 'public/stylesheets'), {
+    dotfiles: 'ignore',
+    maxAge: false,
+  })
+);
+app.use('/javascripts',
+  serveStatic(path.join(__dirname, 'public/javascripts'), {
+    dotfiles: 'ignore',
+    maxAge: false,
+  })
+);
+app.use('/images',
+  serveStatic(path.join(__dirname, 'public/images'), {
+    dotfiles: 'ignore',
+    maxAge: '1d',
+  })
+);
+app.use('/firmwares',
+  serveStatic(path.join(__dirname, 'public/firmwares'), {
+    dotfiles: 'ignore',
+    cacheControl: false,
+    setHeaders: setMd5Sum,
+  })
+);
+
+/**
+ * Generate MD5 hash for firmware files
+ */
+function setMd5Sum(res, filePath) {
+  let md5Checksum;
+  let pathElements = filePath.split('/');
+  let fname = pathElements[pathElements.length - 1];
+
+  const md5fname = '.' + fname.replace('.bin', '.md5');
+  try {
+    md5Checksum = fs.readFileSync(
+      path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname), 'utf8');
+    res.setHeader('X-Checksum-Md5', md5Checksum);
+  } catch (err) {
+    md5Checksum = '';
+    res.setHeader('X-Checksum-Md5', md5Checksum);
+  }
+}
 
 let sessParam = session({
   secret: app.locals.secret,
@@ -147,7 +239,8 @@ app.use('/scripts/selectize',
   express.static(path.join(__dirname, 'node_modules/selectize/dist'))
 );
 app.use('/scripts/selectize-bootstrap',
-  express.static(path.join(__dirname, 'node_modules/selectize-bootstrap4-theme/dist'))
+  express.static(path.join(__dirname,
+                           'node_modules/selectize-bootstrap4-theme/dist'))
 );
 app.use('/scripts/sweetalert2',
   express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))
@@ -205,6 +298,7 @@ app.listen(3000, function() {
   // Schedule automatic update
   let s = schedule.scheduleJob(rule, function() {
     updater.update();
+    measurer.pingLicenseStatus();
   });
   // Force an update check to alert user on app startup
   updater.checkUpdate();

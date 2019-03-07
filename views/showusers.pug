@@ -23,21 +23,21 @@ block content
             action='/user/new',
             novalidate
           )
-            .input-entry
+            .md-form.input-entry
               label(for="new_user") Usuário
               input.form-control(type="text",
                                  id="new_user",
                                  name="name",
                                  required)
               .invalid-feedback Por favor, preencha este campo
-            .input-entry.mt-2
+            .md-form.input-entry
               label(for="new_pass") Senha
               input.form-control(type="password",
                                  id="new_pass",
                                  name="password",
                                  required)
               .invalid-feedback Por favor, preencha este campo
-            .input-entry.mt-2
+            .md-form.input-entry
               label(for="new_pass_ack") Senha novamente
               input.form-control(type="password",
                                  id="new_pass_ack",
@@ -45,13 +45,14 @@ block content
                                  oninput="check(this)",
                                  required)
               .invalid-feedback As senhas estão diferentes
-            .input-entry.mt-2
-              label(for="new_user_role") Classe de permissões
-              select.form-control(id="new_user_role",
-                                  name="role",
-                                  required)
-                each role in roles
-                  option(value=role.name) #{role.name}
+            .md-form.pt-2
+              .md-selectfield.form-control.my-0
+                label(for="new_user_role") Classe de permissões
+                select.browser-default.md-select(id="new_user_role",
+                                                 name="role",
+                                                 required)
+                  each role in roles
+                    option(value=role.name) #{role.name}
             .col.text-center.mt-3
               .form-buttons
                 button.btn.btn-lg.teal.lighten-2(type="submit")

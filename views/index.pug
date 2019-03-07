@@ -4,6 +4,7 @@ block content
   include includes/showsearchterms
   include includes/showdevicelogs
   include includes/configdevicefirewall
+  include includes/showpingtest
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
@@ -39,82 +40,14 @@ block content
               .col-1
                 .fas.fa-plus
               .col-10.text-center
-                span.card-title Adicionar novo dispositivo
+                span.card-title Adicionar novo roteador
           .card-body.collapse.out(id="deviceCard")
-            form.needs-validation(id="deviceForm", novalidate)
-              .md-form.input-group
-                .input-group-btn
-                  button.btn.teal.lighten-2.dropdown-toggle.ml-0.my-0(
-                    type="button",
-                    data-toggle="dropdown"
-                  )
-                    span#new_ext_ref_type_selected.selected CPF
-                  #ext_ref_type.dropdown-menu
-                    a.dropdown-item.text-center.active.teal.lighten-2 CPF
-                    a.dropdown-item.text-center CNPJ
-                    a.dropdown-item.text-center Outro
-                input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
-                  type="text",
-                  id="new_external_reference",
-                  placeholder="Identificação do cliente (opcional)",
-                  maxlength="64"
-                )
-              label(for="new_connect_type") Tipo de Conexão
-              select.form-control(id="new_connect_type")
-                option(value="DHCP") DHCP
-                option(value="PPPoE") PPPoE
-              br
-              label(for="new_wifi_channel") Canal do WiFi
-              select.form-control(id="new_wifi_channel")
-                option(value="auto") auto
-                option(value="1") 1
-                option(value="6") 6
-                option(value="11") 11
-              br
-              .input-entry
-                label(for="new_wifi_ssid") SSID do WiFi
-                input.form-control(type="text",
-                                   id="new_wifi_ssid",
-                                   maxlength="32")
-                .invalid-feedback
-                br
-              .input-entry
-                label(for="new_wifi_pass") Senha do WiFi
-                input.form-control(type="text",
-                                   id="new_wifi_pass",
-                                   maxlength="64")
-                .invalid-feedback
-                br
-              .input-entry
-                label(for="new_mac") Endereço MAC
-                input.form-control(type="text", id="new_mac")
-                .invalid-feedback
-                br
-              .input-entry
-                label(for="new_pppoe_user") Usuário PPPoE
-                input.form-control(type="text",
-                                   id="new_pppoe_user",
-                                   maxlength="64")
-                .invalid-feedback
-                br
-              .input-entry
-                label(for="new_pppoe_pass") Senha PPPoE
-                input.form-control(type="text",
-                                   id="new_pppoe_pass",
-                                   maxlength="64",
-                                   data-minlength-pass-pppoe=minlengthpasspppoe)
-                .invalid-feedback
-                br
-              .col.text-center
-                .form-buttons
-                  button.btn.btn-lg.teal.lighten-2(type="submit")
-                    .fas.fa-check.fa-lg
-                    span &nbsp Adicionar
+            include includes/newdeviceform
 
   .row.justify-content-center
     .col-12.mt-4
       if ! devices || devices.length == 0
-        h3.mt-2.text-center Nenhum dispositivo registrado
+        h3.mt-2.text-center Nenhum roteador registrado
       else
         .row
           .col-12.col-lg-3.offset-lg-9
@@ -147,8 +80,17 @@ block content
                     data-ssid="WiFi SSID",
                     data-wifi-pass="WiFi Senha",
                     data-channel="WiFi Canal",
+                    data-band="Largura de banda",
+                    data-mode="Modo de operação",
+                    data-ssid-5ghz="WiFi SSID 5GHz",
+                    data-wifi-pass-5ghz="WiFi Senha 5GHz",
+                    data-channel-5ghz="WiFi Canal 5GHz",
+                    data-band-5ghz="Largura de banda 5GHz",
+                    data-mode-5ghz="Modo de operação 5GHz",
                     data-ext-wan="IP Público",
                     data-int-wan="IP WAN",
+                    data-wan-speed="Velocidade WAN negociada"
+                    data-wan-duplex="Modo de transmissão WAN (duplex)"
                     data-external-ref-type="Tipo de ID do cliente",
                     data-external-ref="ID do cliente",
                     data-device-model="Modelo do roteador",
@@ -169,9 +111,9 @@ block content
                     th.text-center Endereço MAC
                     th.text-center IP WAN
                     th.text-center IP Público
-                    th.text-center Release
+                    th.text-center Firmware Instalado
                     if (superuser || role.grantFirmwareUpgrade)
-                      th.text-center Atualizar Firmware
+                      th.text-left Atualizar Firmware
                 tbody
                   tr
                     td
@@ -189,36 +131,29 @@ block content
                       .fas.fa-circle.grey-text
                       span &nbsp
                       span#offline-status-sum #{status.offlinenum}
-                    td.text-center *
-                    td.text-center *
-                    td.text-center *
-                    td.text-center *
-                    td.text-center
-                      .btn-group
-                        button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
-                          type="button",
-                          id="all-releases",
-                          data-toggle="dropdown",
-                          aria-haspopup="true",
-                          aria-expanded="true",
-                          disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
-                        )
-                          span.selected Selecionar
-                        .dropdown-menu.refresh-selected
-                          each release, idx in singlereleases
-                            a.dropdown-item.text-center #{release.id}
-
+                    td
+                    td
+                    td
+                    td
+                    td
                     if (superuser || role.grantFirmwareUpgrade)
-                      td.text-center
-                        label.switch
-                          input.checkbox(
-                            id="all-devices",
-                            data-singlereleases=singlereleases
-                            type="checkbox",
-                            name="do_update",
-                            checked=false
-                          )
-                          .slider.round
+                      td
+                        .btn-group
+                          button.btn.btn-sm.btn-danger.px-2#cancel-all-devices
+                            .fas.fa-times
+                          .btn-group#all-devices
+                            button.btn.btn-sm.btn-primary.dropdown-toggle(
+                              type="button",
+                              data-toggle="dropdown",
+                              data-singlereleases=singlereleases,
+                              disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
+                            )
+                              span.selected Escolher
+                            .dropdown-menu
+                              each release, idx in singlereleases
+                                a.dropdown-item.text-center #{release.id}
+                            span.ml-2.upgrade-status
+                              .far.fa-circle.fa-2x.white-text
                   each device, index in devices
                     tr.csv-export(
                       id=device._id,
@@ -227,11 +162,22 @@ block content
                       data-connection-type=(device.connection_type ? device.connection_type : ""),
                       data-user=device.pppoe_user,
                       data-pass=device.pppoe_password,
+                      data-lan-subnet=device.lan_subnet,
+                      data-lan-netmask=device.lan_netmask,
                       data-ssid=device.wifi_ssid,
                       data-wifi-pass=device.wifi_password,
                       data-channel=device.wifi_channel,
+                      data-band=(device.wifi_band ? device.wifi_band : ""),
+                      data-mode=(device.wifi_mode ? device.wifi_mode : ""),
+                      data-ssid-5ghz=(device.wifi_ssid_5ghz ? device.wifi_ssid_5ghz : ""),
+                      data-wifi-pass-5ghz=(device.wifi_password_5ghz ? device.wifi_password_5ghz : ""),
+                      data-channel-5ghz=(device.wifi_channel_5ghz ? device.wifi_channel_5ghz : ""),
+                      data-band-5ghz=(device.wifi_band_5ghz ? device.wifi_band_5ghz : ""),
+                      data-mode-5ghz=(device.wifi_mode_5ghz ? device.wifi_mode_5ghz : ""),
                       data-ext-wan=(device.ip ? device.ip : ""),
                       data-int-wan=(device.wan_ip ? device.wan_ip : ""),
+                      data-wan-speed=(device.wan_negociated_speed ? device.wan_negociated_speed : ""),
+                      data-wan-duplex=(device.wan_negociated_duplex ? device.wan_negociated_duplex : ""),
                       data-external-ref-type=(device.external_reference.kind ? device.external_reference.kind : ""),
                       data-external-ref=(device.external_reference.data ? device.external_reference.data : ""),
                       data-device-model=(device.model ? device.model : ""),
@@ -242,7 +188,7 @@ block content
                       td.text-center(
                         style="cursor: pointer;"
                       )
-                        .fas.fa-chevron-right.fa-lg
+                        .fas.fa-chevron-down.fa-lg
                       td.text-center #{index + 1}
                       td
                         .fas.fa-circle.fa-lg.device-status(
@@ -252,8 +198,9 @@ block content
                         )
                         span &nbsp
                         span &nbsp
-                        a.d-none
-                          .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
+                        if (superuser || role.grantNotificationPopups)
+                          a.d-none
+                            .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
                       td.text-center
                         | #{device.pppoe_user}
                       td.text-center
@@ -263,33 +210,43 @@ block content
                       td.text-center
                         | #{device.ip}
                       td.text-center
-                        .btn-group
-                          button.btn.btn-sm.teal.lighten-2.dropdown-toggle(
-                            type="button",
-                            data-toggle="dropdown",
-                            aria-haspopup="true",
-                            aria-expanded="true",
-                            disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
-                          )
-                            span.selected #{device.release}
-                          .dropdown-menu.refresh-selected
-                            a.dropdown-item.text-center.active.teal.lighten-2 #{device.release}
-                            each release, idx in releases
-                              if (device.release !== release.id)
-                                if device.model.includes('N/')
-                                  if (device.model.replace('N/', '') === release.model)
-                                    a.dropdown-item.text-center #{release.id}
-                                if (device.model === release.model)
-                                  a.dropdown-item.text-center #{release.id}
+                        | #{device.installed_release}
                       if (superuser || role.grantFirmwareUpgrade)
-                        td.text-center
-                          label.switch
-                            input.checkbox.firmwareUpdateCheckbox(
-                              type="checkbox",
-                              name="do_update",
-                              checked=device.do_update
+                        td
+                          .btn-group
+                            button.btn.btn-sm.px-2.btn-cancel-update(
+                              class=(!device.do_update ? "" : "btn-danger")
+                              disabled=!device.do_update
                             )
-                            .slider.round
+                              .fas.fa-times
+                            .btn-group
+                              button.btn.btn-sm.btn-primary.dropdown-toggle(
+                                type="button",
+                                data-toggle="dropdown"
+                                disabled=device.do_update
+                              )
+                                span.selected #{device.do_update ? device.release : "Escolher"}
+                              .dropdown-menu.refresh-selected
+                                each release, idx in releases
+                                  if device.model.includes('N/')
+                                    if (device.model.replace('N/', '') === release.model)
+                                      a.dropdown-item.text-center #{release.id}
+                                  if (device.model === release.model)
+                                    a.dropdown-item.text-center #{release.id}
+                              span.ml-3.upgrade-status
+                                .far.fa-circle.fa-2x.white-text.status-none(
+                                  class=(device.do_update ? "d-none" : "")
+                                )
+                                .fas.fa-spinner.fa-2x.fa-pulse.status-waiting(
+                                  class=(device.do_update && device.do_update_status == 0 ? "" : "d-none")
+                                )
+                                .fas.fa-check-circle.fa-2x.green-text.status-ok(
+                                  class=(device.do_update && device.do_update_status == 1 ? "" : "d-none")
+                                )
+                                a.status-error(
+                                  class=(device.do_update && device.do_update_status >= 2 ? "" : "d-none")
+                                )
+                                  .fas.fa-exclamation-circle.fa-2x.red-text    
                     tr(
                       id="form-" + (index + 1),
                       data-index=(index + 1),
@@ -298,217 +255,42 @@ block content
                         (superuser || role.grantWifiInfo >= 1) ? "true" : "false"),
                       data-validate-pppoe=(
                         (superuser || role.grantPPPoEInfo >= 1) ? "true" : "false"),
+                      data-validate-wifi-band=(
+                        (devicesPermissions[index].grantWifiBand &&
+                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
+                      data-validate-wifi-5ghz=(
+                        (devicesPermissions[index].grantWifi5ghz &&
+                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
+                      data-validate-lan=(
+                        devicesPermissions[index].grantLanEdit ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )
                       td(colspan=9).grey.lighten-5
-                        form.edit-form.needs-validation(novalidate)
-                          .row(style="margin: 0;")
-                            .col-5
-                              // Identification
-                              .md-form.input-group.input-entry(style="margin: 0px;")
-                                .input-group-btn
-                                  button.btn.teal.lighten-2.dropdown-toggle.ml-0.my-0(
-                                    type="button",
-                                    data-toggle="dropdown",
-                                    disabled=((superuser || role.grantDeviceId) ? false : true)
-                                  )
-                                    span.selected(id="edit_ext_ref_type_selected-" + (index + 1)) CPF
-                                  #ext_ref_type.dropdown-menu
-                                    a.dropdown-item.text-center.active.teal.lighten-2 CPF
-                                    a.dropdown-item.text-center CNPJ
-                                    a.dropdown-item.text-center Outro
-                                input.form-control.py-0.added-margin.ext-ref-input(
-                                  type="text",
-                                  id="edit_external_reference-" + (index + 1),
-                                  placeholder="ID do cliente (opcional)",
-                                  maxlength="64",
-                                  disabled=((superuser || role.grantDeviceId) ? false : true)
-                                )
-                                .invalid-feedback
-                              br
-                            // Actions
-                            if (superuser || role.grantDeviceActions)
-                              .col-7.text-right.actions-opts
-                                .btn-group(role="group")
-              
-                                  button.btn.teal.lighten-2.dropdown-toggle(
-                                    type="button",
-                                    data-toggle="dropdown",
-                                    aria-haspopup="true",
-                                    aria-expanded="false",
-                                    disabled=((superuser || role.grantDeviceActions) ? false : true)
-                                  ) Ações
-
-                                  .dropdown-menu.dropdown-menu-right(
-                                    data-dropdown-in="fadeIn",
-                                    data-dropdown-out="fadeOut"
-                                  )
-                                    a.dropdown-item.btn-reboot 
-                                      .fas.fa-sync
-                                      span &nbsp Reiniciar roteador  
-                                    .dropdown-divider
-                                    a.dropdown-item.btn-reset-app 
-                                      .fas.fa-mobile-alt
-                                      span &nbsp Resetar senha App
-                                    if (superuser || role.grantLOGAccess)
-                                      if (devicesPermissions[index].grantViewLogs)
-                                        .dropdown-divider
-                                        a.dropdown-item.btn-log-modal
-                                          .fas.fa-file-alt
-                                          span &nbsp Logs do Roteador
-                                    if (devicesPermissions[index].grantResetDevices)
-                                      .dropdown-divider
-                                      a.dropdown-item.btn-reset-blocked
-                                        .fas.fa-ban
-                                        span &nbsp Desbloquear Dispositivos
-                                    if (devicesPermissions[index].grantPortForward)
-                                      .dropdown-divider
-                                      a.dropdown-item.btn-openFirewallPorts-modal
-                                        .fas.fa-lock-open
-                                        span &nbsp Abertura de Portas
-
-                                br
-                                span.badge.badge-success.bounceIn(style="display: none;") Sucesso
-                                span.badge.badge-warning.bounceIn(style="display: none;") Falha
-                          .row(style="margin: 0;")
-                            .col-2
-                              // Connection type
-                              label(for="edit_connect_type-" + (index + 1)) Tipo de Conexão
-                              select.form-control(
-                                id="edit_connect_type-" + (index + 1),
-                                disabled=((superuser || role.grantWanType) ? false : true)
-                              )
-                                option(value="DHCP") DHCP
-                                option(value="PPPoE") PPPoE
-                              br
-                              h7.orange-text(id="edit_connect_type_warning-" + (index + 1),
-                                             style="display: none;")
-                                | Cuidado! Isso pode deixar o roteador inacessível
-                                | dependendo das configurações de rede do seu provedor
-                            .col-3
-                              // Device info
-                              .input-entry
-                                label Modelo
-                                input.form-control(type="text",
-                                                   id="info_device_model-" + (index + 1),
-                                                   maxlength="32", disabled)
-                                .invalid-feedback
-                              br
-                              .input-entry
-                                label Versão do Flashbox
-                                input.form-control(type="text",
-                                                   id="info_device_version-" + (index + 1),
-                                                   maxlength="32", disabled)
-                                .invalid-feedback
-                              br
-                            .col-4
-                              if (superuser || role.grantWifiInfo >= 1)
-                                // Wifi channel
-                                label(for="edit_wifi_channel-" + (index + 1)) Canal do WiFi
-                                select.form-control(
-                                  id="edit_wifi_channel-" + (index + 1),
-                                  disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-                                )
-                                  option(value="auto") auto
-                                  option(value="1") 1
-                                  option(value="6") 6
-                                  option(value="11") 11
-                                br
-                                // Wifi ssid
-                                .input-entry
-                                  label(for="edit_wifi_ssid-" + (index + 1)) SSID do WiFi
-                                  input.form-control(
-                                    type="text",
-                                    id="edit_wifi_ssid-" + (index + 1),
-                                    maxlength="32",
-                                    disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-                                  )
-                                  .invalid-feedback
-                                br
-                                // Wifi password
-                                .input-entry
-                                  label(for="edit_wifi_pass-" + (index + 1)) Senha do WiFi
-                                  .input-group
-                                    input.form-control(
-                                      type="password",
-                                      id="edit_wifi_pass-" + (index + 1),
-                                      maxlength="64",
-                                      disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-                                    )
-                                    if (superuser || role.grantPassShow)
-                                      .input-group-append
-                                        .input-group-text.teal.lighten-2
-                                          a.toggle-pass
-                                            .fas.fa-eye-slash.white-text
-                                    .invalid-feedback
-                            .col-3
-                              if (superuser || role.grantPPPoEInfo >= 1)
-                                // PPPoE user
-                                .input-entry
-                                  label(for="edit_pppoe_user-" + (index + 1)) Usuário PPPoE
-                                  input.form-control(
-                                    type="text",
-                                    id="edit_pppoe_user-" + (index + 1),
-                                    maxlength="64",
-                                    disabled=((superuser || role.grantPPPoEInfo > 1) ? false : true)
-                                  )
-                                  .invalid-feedback
-                                br 
-                                // PPPoE password
-                                .input-entry
-                                  label(for="edit_pppoe_pass-" + (index + 1)) Senha PPPoE
-                                  .input-group
-                                    input.form-control(
-                                      type="password",
-                                      id="edit_pppoe_pass-" + (index + 1),
-                                      maxlength="64",
-                                      disabled=((superuser || role.grantPPPoEInfo > 1) ? false : true)
-                                    )
-                                    if (superuser || role.grantPassShow)
-                                      .input-group-append
-                                        .input-group-text.teal.lighten-2
-                                          a.toggle-pass
-                                            .fas.fa-eye-slash.white-text
-                                    .invalid-feedback
-                                br
-                          .row(style="margin: 0;")
-                            // Buttons
-                            if (superuser || role.grantDeviceRemoval)
-                              .col.text-left
-                                button.btn.btn-danger.btn-trash(type="button")
-                                  .fas.fa-trash.fa-lg
-                                  span &nbsp Remover
-                            .col.text-right
-                              button.btn.teal.lighten-2(type="submit")
-                                .fas.fa-check.fa-lg
-                                span &nbsp Editar
-
+                        include includes/editdeviceform
         .row.mt-3.mb-3
           .col-md-9
             nav
               ul.pagination.pagination-lg
-                - let cPage = parseInt(page);
-                - let delta = 2;
-                - for (var i=1; i<=pages; i++) {
-                -   if (i == 1 || i == pages || ((i >= cPage-delta) && (i <= cPage+delta))) {
-                -     if (i == page)
-                        li.page-item.active
-                          a.page-link.teal.lighten-2(href="#") #{i}
-                -     else {
-                -       if (i == pages && (cPage+delta <= pages-delta)) {
-                          li.page-item
-                            h3.page-link.disabled ...
-                -       }
+                - var cPage = parseInt(page);
+                - var delta = 2;
+                - var i = 1;
+                while i <= pages
+                  if (i == 1 || i == pages || ((i >= cPage-delta) && (i <= cPage+delta)))
+                    if (i == page)
+                      li.page-item.active
+                        a.page-link.teal.lighten-2(href="#") #{i}
+                    else
+                      if (i == pages && (cPage+delta <= pages-delta))
                         li.page-item
-                          a.page-link(href="?content=" + lastquery + "&page=" + i) #{i}
-                -       if (i == 1 && (cPage-delta > delta)) {
-                          li.page-item
-                            h3.page-link.disabled ...
-                -       }
-                -     }
-                -   }
-                - }
+                          h3.page-link.disabled ...
+                      li.page-item
+                        a.page-link(href="?content=" + lastquery + "&page=" + i) #{i}
+                      if (i == 1 && (cPage-delta > delta))
+                        li.page-item
+                          h3.page-link.disabled ...
+                  - i++
+
           .col-md-3
             .text-right
               button#export-csv.btn.teal.lighten-2.mr-0.my-0
@@ -527,6 +309,7 @@ block scripts
   script(src='/javascripts/edit_device.js')
   script(src='/javascripts/edit_device_firewall.js')
   script(src='/javascripts/show_devices_logs_actions.js')
+  script(src='/javascripts/show_ping_test_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
   script(src='/javascripts/notification_actions.js',

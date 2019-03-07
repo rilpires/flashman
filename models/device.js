@@ -8,14 +8,29 @@ let deviceSchema = new Schema({
   external_reference: {kind: String, data: String},
   model: String,
   version: {type: String, default: '0.0.0'},
+  installed_release: String,
   release: String,
+  measure_config: {
+    measure_psk: String,
+    is_active: {type: Boolean, default: false},
+  },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
   pppoe_password: String,
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
+  wifi_band: String,
+  wifi_mode: String,
+  wifi_is_5ghz_capable: {type: Boolean, default: false},
+  wifi_ssid_5ghz: String,
+  wifi_password_5ghz: String,
+  wifi_channel_5ghz: String,
+  wifi_band_5ghz: String,
+  wifi_mode_5ghz: String,
   app_password: String,
+  lan_subnet: String,
+  lan_netmask: Number,
   lan_devices: [{
     mac: String,
     dhcp_name: String,
@@ -25,12 +40,20 @@ let deviceSchema = new Schema({
     dmz: {type: Boolean, default: false},
   }],
   wan_ip: String,
+  wan_negociated_speed: String,
+  wan_negociated_duplex: String,
   ip: String,
   ntp_status: String,
   last_contact: Date,
   last_hardreset: Date,
   do_update: Boolean,
   do_update_parameters: Boolean,
+  do_update_status: {type: Number, default: 1, enum: [
+    0, // waiting status update
+    1, // success
+    2, // error, image download failed
+    3, // error, image check failed
+  ]},
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
@@ -40,6 +63,16 @@ let deviceSchema = new Schema({
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
+  // Store hosts to measure against
+  ping_hosts: {
+    type: [String],
+    default: [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ],
+  },
 });
 
 deviceSchema.plugin(mongoosePaginate);
