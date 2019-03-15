@@ -263,6 +263,8 @@ block content
                         (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
                       data-validate-lan=(
                         devicesPermissions[index].grantLanEdit ? "true" : "false"),
+                      data-validate-port-forward-asym=(
+                        devicesPermissions[index].grantPortForwardAsym ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )
