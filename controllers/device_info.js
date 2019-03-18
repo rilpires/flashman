@@ -915,26 +915,32 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(404).json({success: false});
       }
 
-      let res_out = JSON.parse(JSON.stringify(matchedDevice.lan_devices.filter(function(lanDevice) {
+      let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
       if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
         return true;
       } else {
         return false;
-      }})));
+      }});
 
+      let out_data = [];
       for(var i = 0; i < res_out.length; i++) {
-        if(res_out[i].hasOwnProperty('router_port') && 
-            res_out[i].router_port.length == 0)
-          delete res_out[i].router_port;
-        if(res_out[i].hasOwnProperty('_id'))
-          delete res_out[i]._id;
+        tmp_data = {};
+        tmp_data.mac = res_out[i].mac;
+        tmp_data.port = res_out[i].port;
+        tmp_data.dmz = res_out[i].dmz;
+
+        if(('router_port' in res_out[i]) && 
+            res_out[i].router_port.length != 0)
+          tmp_data.router_port = res_out[i].router_port
+
+        out_data.push(tmp_data)
       }
 
       if (matchedDevice.forward_index) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': res_out,
+          'forward_rules': out_data,
         });
       }
     });

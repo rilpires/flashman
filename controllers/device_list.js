@@ -1193,24 +1193,35 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
 
-    let res_out = JSON.parse(JSON.stringify(matchedDevice.lan_devices.filter(function(lanDevice) {
+    let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
         if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
           return true;
         } else {
           return false;
-        }})));
+        }});
 
+    let out_data = [];
     for(var i = 0; i < res_out.length; i++) {
-      if(res_out[i].hasOwnProperty('router_port') && 
-          res_out[i].router_port.length == 0)
-        delete res_out[i].router_port;
-      if(res_out[i].hasOwnProperty('_id'))
-        delete res_out[i]._id;
+      tmp_data = {};
+      tmp_data.mac = res_out[i].mac;
+      tmp_data.port = res_out[i].port;
+      tmp_data.dmz = res_out[i].dmz;
+
+      if(('router_port' in res_out[i]) && 
+          res_out[i].router_port.length != 0)
+        tmp_data.router_port = res_out[i].router_port
+
+      if(!('name' in res_out[i] && res_out[i].name == '') && ('dhcp_name' in res_out[i]))
+        tmp_data.name = res_out[i].dhcp_name;
+      else
+        tmp_data.name = res_out[i].name;
+
+      out_data.push(tmp_data)
     }
 
     return res.status(200).json({
         success: true,
-        landevices: res_out,
+        landevices: out_data,
       });
   });
 };
