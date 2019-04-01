@@ -28,7 +28,8 @@
                   data-toggle="tooltip",
                   title="As portas abertas terão um mapeamento um para um. " +
                         "Ou seja, a porta X aberta no dispositivo será " +
-                        "mapeada na mesma porta X do roteador"
+                        "mapeada na mesma porta X do roteador. Para portas assimetricas, " +
+                        "separe as portas com ':'. Ex: 80:8080" 
                 )
               .col-1.px-0
                 span DMZ &nbsp;
@@ -69,6 +70,7 @@
                     th &nbsp;
                 tbody#openFirewallPortsRules
         input#openFirewallPortsFinalRules(type="hidden")
+        input#hasFirewallPortForwardAsym(type="hidden")
       .modal-footer 
         button.btn.btn-primary.btn-openFirewallPortsSubmit(type="button")
           .fas.fa-check.fa-lg

@@ -95,12 +95,18 @@ router.route('/command/:id/:msg')
        authController.ensurePermission('grantAPIAccess'),
        deviceListController.sendMqttMsg);
 
-// REST API - Set/Get Port forward
-router.route('/portforward/:id')
+// For user Interface - Set/Get Port forward
+router.route('/uiportforward/:id')
   .get(authController.ensureLogin(),
        deviceListController.getPortForward)
   .post(authController.ensureLogin(),
-        deviceListController.setPortForward)
+        deviceListController.setPortForward);
+
+// REST API - Set/Get Port forward
+router.route('/portforward/:id')
+  .get(authController.ensureAPIAccess,
+       authController.ensurePermission('grantAPIAccess'),
+       deviceListController.getPortForward)
   .post(authController.ensureAPIAccess,
         authController.ensurePermission('grantAPIAccess'),
         deviceListController.setPortForward)
