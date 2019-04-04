@@ -37,7 +37,10 @@ let deviceSchema = new Schema({
     is_blocked: {type: Boolean, default: false},
     name: String,
     port: [Number],
+    router_port: [Number],
     dmz: {type: Boolean, default: false},
+    last_seen: Date,
+    first_seen: Date,
   }],
   wan_ip: String,
   wan_negociated_speed: String,
@@ -76,6 +79,12 @@ let deviceSchema = new Schema({
 });
 
 deviceSchema.plugin(mongoosePaginate);
+
+deviceSchema.methods.getLanDevice = function(mac) {
+  return this.lan_devices.find(function(device, idx) {
+    return device.mac == mac;
+  });
+};
 
 let Device = mongoose.model('Device', deviceSchema );
 

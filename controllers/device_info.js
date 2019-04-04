@@ -922,22 +922,33 @@ deviceInfoController.getPortForward = function(req, res) {
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
+
+      let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
+      if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
+        return true;
+      } else {
+        return false;
+      }});
+
+      let out_data = [];
+      for(var i = 0; i < res_out.length; i++) {
+        tmp_data = {};
+        tmp_data.mac = res_out[i].mac;
+        tmp_data.port = res_out[i].port;
+        tmp_data.dmz = res_out[i].dmz;
+
+        if(('router_port' in res_out[i]) && 
+            res_out[i].router_port.length != 0)
+          tmp_data.router_port = res_out[i].router_port
+
+        out_data.push(tmp_data)
+      }
+
       if (matchedDevice.forward_index) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.lan_devices.filter(
-            function(lanDevice) {
-              if (
-                typeof lanDevice.port !== 'undefined' &&
-                lanDevice.port.length > 0
-              ) {
-                return true;
-              } else {
-                return false;
-              }
-            }
-          ),
+          'forward_rules': out_data,
         });
       }
     });
@@ -971,7 +982,41 @@ deviceInfoController.receiveDevices = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
+    let devsData = req.body.Devices;
+    let outData = [];
+
+    for (let connDeviceMac in devsData) {
+      let upConnDevMac = connDeviceMac.toLowerCase();
+      let upConnDev = devsData[upConnDevMac];
+      let outDev = {};
+      let devreg = matchedDevice.getLanDevice(upConnDevMac);
+      if(devreg){
+        if(upConnDev.hostname && upConnDev.hostname != '' && upConnDev.hostname != '!')
+          devreg.dhcp_name = upConnDev.hostname;
+        if(!devreg.first_seen)
+          devreg.first_seen = Date.now();
+        devreg.last_seen = Date.now();
+        if(devreg.name && devreg.name != '')
+          outDev.hostname = devreg.name;
+        else 
+          outDev.hostname = devreg.dhcp_name;
+      } else {
+        matchedDevice.lan_devices.push({
+          mac: upConnDevMac,
+          dhcp_name: (upConnDev.hostname != '' && upConnDev.hostname != '!')? upConnDev.hostname : '',
+          first_seen: Date.now(),
+          last_seen: Date.now(),
+        });
+        outDev.hostname = (upConnDev.hostname != '' && upConnDev.hostname != '!')? upConnDev.hostname : '';
+      }
+      outDev.mac = upConnDevMac;
+      outData.push(outDev);
+    }
+
+    matchedDevice.save();
+
+    // if someone is waiting for this message, send the information
+    sio.anlixSendOnlineDevNotifications(id, outData);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

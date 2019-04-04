@@ -1023,52 +1023,127 @@ deviceListController.setPortForward = function(req, res) {
     if (isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
 
-      let usedPorts = [];
-      let hasInvalidRules = false;
+      let usedAsymPorts = [];
+
       content.forEach((r) => {
         let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-        let newRuleMac = r.mac.toLowerCase();
 
-        if (r.hasOwnProperty('mac') && r.hasOwnProperty('port') &&
-            r.hasOwnProperty('dmz') && r.mac.match(macRegex) &&
-            Array.isArray(r.port) &&
-            r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
-        {
-          let portsArray = r.port.map((p) => parseInt(p));
-          // Filter duplicate ports inside new ports array
-          portsArray = [...new Set(portsArray)];
-          // Include new rules only if they have unique ports
-          if (portsArray.every((p) => (!usedPorts.includes(p)))) {
-            let newLanDevice = true;
-            for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-              if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
-                matchedDevice.lan_devices[idx].port = portsArray;
-                matchedDevice.lan_devices[idx].dmz = r.dmz;
-                newLanDevice = false;
-                break;
-              }
-            }
-            if (newLanDevice) {
-              matchedDevice.lan_devices.push({
-                mac: newRuleMac,
-                port: portsArray,
-                dmz: r.dmz,
-              });
-            }
-            usedPorts = usedPorts.concat(portsArray);
-          } else {
-            hasInvalidRules = true;
+        if (!r.hasOwnProperty('mac') ||
+            !r.hasOwnProperty('dmz') ||
+            !r.mac.match(macRegex)) {
+          return res.status(200).json({
+            success: false,
+            message: 'Dados de Endereço MAC do Dispositivo Invalidos No JSON',
+          });          
+        }
+
+        if(!r.hasOwnProperty('port') ||
+           !Array.isArray(r.port) ||
+           !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535))))
+          return res.status(200).json({
+            success: false,
+            message: 'Portas Internas de Dispositivo invalidas no JSON',
+          });
+
+        let localPorts = r.port.map((p) => parseInt(p));
+          // Get unique port set
+        let localUniquePorts = [...new Set(localPorts)];
+
+        if(r.hasOwnProperty('router_port')) {
+          if(!permissions.grantPortForwardAsym) {
+            return res.status(200).json({
+              success: false,
+              message: 'Roteador não aceita portas assimétricas',
+            });
           }
+
+          if(!Array.isArray(r.router_port) || 
+             !(r.router_port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535))))
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Externas invalidas no JSON',
+            });
+
+          let localAsymPorts = r.router_port.map((p) => parseInt(p));
+          // Get unique port set
+          let localUniqueAsymPorts = [...new Set(localAsymPorts)];
+          if(localUniqueAsymPorts.lenght != localAsymPorts.lenght){
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Externas Repetidas no JSON',
+            });
+          }
+
+          if(localUniqueAsymPorts.length != localUniquePorts.length){
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Internas e Externas não conferem no JSON',
+            });    
+          }
+
+          if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))) {
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Externas Repetidas no JSON',
+            });
+          }
+
+          usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
         } else {
-          hasInvalidRules = true;
+
+          if (!(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))) {
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Externas Repetidas no JSON',
+            });
+          }
+          usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
         }
       });
-      if (hasInvalidRules) {
-        return res.status(200).json({
-          success: false,
-          message: 'Dados invalidos no JSON',
-        });
+
+      // If we get here, all is validated!
+
+      // Remove all old firewall rules
+      for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+        if (matchedDevice.lan_devices[idx].port.length > 0) {
+          matchedDevice.lan_devices[idx].port = [];
+          matchedDevice.lan_devices[idx].router_port = [];
+          matchedDevice.lan_devices[idx].dmz = false;
+        }
       }
+
+      // Update with new ones
+      content.forEach((r) => {
+        let newRuleMac = r.mac.toLowerCase();
+        let portsArray = r.port.map((p) => parseInt(p));
+        portsArray = [...new Set(portsArray)];
+        let portAsymArray = [];
+
+        if(r.hasOwnProperty('router_port')) {
+          portAsymArray = r.router_port.map((p) => parseInt(p));
+          portAsymArray = [...new Set(portAsymArray)];
+        } 
+
+        let newLanDevice = true;
+        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+          if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
+            matchedDevice.lan_devices[idx].port = portsArray;
+            matchedDevice.lan_devices[idx].router_port = portAsymArray;
+            matchedDevice.lan_devices[idx].dmz = r.dmz;
+            newLanDevice = false;
+            break;
+          }
+        }
+        if (newLanDevice) {
+          matchedDevice.lan_devices.push({
+            mac: newRuleMac,
+            port: portsArray,
+            router_port: portAsymArray,
+            dmz: r.dmz,
+          });
+        }
+      });
+
       matchedDevice.forward_index = Date.now();
 
       matchedDevice.save(function(err) {
@@ -1118,19 +1193,37 @@ deviceListController.getPortForward = function(req, res) {
         message: 'Roteador não possui essa função',
       });
     }
-    return res.status(200).json({
-      success: true,
-      landevices: matchedDevice.lan_devices.filter(function(lanDevice) {
-        if (
-          typeof lanDevice.port !== 'undefined' &&
-          lanDevice.port.length > 0
-        ) {
+
+    let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
+        if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
           return true;
         } else {
           return false;
-        }
-      }),
-    });
+        }});
+
+    let out_data = [];
+    for(var i = 0; i < res_out.length; i++) {
+      tmp_data = {};
+      tmp_data.mac = res_out[i].mac;
+      tmp_data.port = res_out[i].port;
+      tmp_data.dmz = res_out[i].dmz;
+
+      if(('router_port' in res_out[i]) && 
+          res_out[i].router_port.length != 0)
+        tmp_data.router_port = res_out[i].router_port
+
+      if(!('name' in res_out[i] && res_out[i].name == '') && ('dhcp_name' in res_out[i]))
+        tmp_data.name = res_out[i].dhcp_name;
+      else
+        tmp_data.name = res_out[i].name;
+
+      out_data.push(tmp_data)
+    }
+
+    return res.status(200).json({
+        success: true,
+        landevices: out_data,
+      });
   });
 };
 

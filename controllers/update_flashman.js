@@ -249,22 +249,25 @@ updateController.getAutoConfig = function(req, res) {
 };
 
 updateController.setAutoConfig = async(function(req, res) {
-  console.log(req.body);
   try {
     let config = await(Config.findOne({is_default: true}));
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let message = 'Salvo com sucesso!';
+    let updateToken = (req.body.token_update === 'on') ? true : false;
     let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
-    if (measureToken !== '' &&
-        measureToken !== config.measure_configs.auth_token) {
+    // Update configs if either no token is set and form sets one, or
+    // if one is already set and checkbox to update was marked
+    if ((!config.measure_configs.auth_token || updateToken) &&
+        measureToken !== '') {
       let controlResp = await(sendTokenControl(req, measureToken));
       if (!('controller_fqdn' in controlResp) ||
           !('zabbix_fqdn' in controlResp)) {
         throw new {};
       }
       config.measure_configs.is_active = true;
+      config.measure_configs.is_license_active = true;
       config.measure_configs.auth_token = measureToken;
       config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
       config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
