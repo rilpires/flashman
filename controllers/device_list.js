@@ -399,6 +399,7 @@ deviceListController.searchDeviceReg = function(req, res) {
           indexContent.update = false;
         } else {
           indexContent.update = matchedConfig.hasUpdate;
+          indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
           let active = matchedConfig.measure_configs.is_active;
             indexContent.measure_active = active;
             indexContent.measure_token = (active) ?
