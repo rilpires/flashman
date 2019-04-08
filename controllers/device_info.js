@@ -189,7 +189,10 @@ const isJSONObject = function(val) {
 
 const serializeBlocked = function(devices) {
   if (!devices) return [];
-  return devices.map((device)=>device.mac + '|' + device.dhcp_name);
+  return devices.map((device)=>{
+    let dhcpLease = (device.dhcp_name === '!') ? '*' : device.dhcp_name;
+    return device.mac + '|' + dhcpLease;
+  });
 };
 
 const serializeNamed = function(devices) {
@@ -817,12 +820,20 @@ deviceInfoController.appSetBlacklist = function(req, res) {
         content.blacklist_device.mac.match(macRegex)) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
+      // Transform dhcp name in case it's a single *
+      let dhcpLease = content.blacklist_device.id;
+      if (dhcpLease === '*') dhcpLease = '!';
       // Search blocked device
       let blackMacDevice = content.blacklist_device.mac.toLowerCase();
+      let ret = false;
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == blackMacDevice) {
+          if (device.lan_devices[idx].dhcp_name !== dhcpLease) {
+            device.lan_devices[idx].dhcp_name = dhcpLease;
+            ret = true;
+          }
           if (device.lan_devices[idx].is_blocked) {
-            return false;
+            return ret;
           } else {
             device.lan_devices[idx].is_blocked = true;
             return true;
@@ -832,7 +843,7 @@ deviceInfoController.appSetBlacklist = function(req, res) {
       // Mac address not found
       device.lan_devices.push({
         mac: blackMacDevice,
-        dhcp_name: content.blacklist_device.id,
+        dhcp_name: dhcpLease,
         is_blocked: true,
       });
       return true;
