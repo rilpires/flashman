@@ -17,6 +17,8 @@ router.route('/receive/pingresult').post(deviceInfoController.receivePingResult)
 router.route('/app/add').post(deviceInfoController.registerApp);
 router.route('/app/del').post(deviceInfoController.removeApp);
 router.route('/app/addpass').post(deviceInfoController.registerPassword);
+router.route('/app/get/version').post(deviceInfoController.appGetVersion);
+router.route('/app/get/portforward').post(deviceInfoController.appGetPortForward);
 router.route('/app/set').post(deviceInfoController.appSetWifi);
 router.route('/app/set/wifi').post(deviceInfoController.appSetWifi);
 router.route('/app/set/password').post(deviceInfoController.appSetPassword);
