@@ -954,7 +954,8 @@ deviceInfoController.appGetPortForward = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    let devices = matchedDevice.lan_devices.map((device)=>{
+    let devices = {};
+    matchedDevice.lan_devices.forEach((device)=>{
       let numRules = device.port.length;
       let rules = [];
       for (let i = 0; i < numRules; i++) {
@@ -963,11 +964,7 @@ deviceInfoController.appGetPortForward = function(req, res) {
           out: device.router_port[i],
         });
       }
-      return {
-        mac: device.mac,
-        dmz: device.dmz,
-        rules: rules,
-      };
+      devices[device.mac] = {dmz: device.dmz, rules: rules};
     });
 
     return res.status(200).json({
