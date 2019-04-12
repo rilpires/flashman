@@ -731,6 +731,8 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('lan_subnet')) {
           genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
+          genericValidate(lanSubnet, validator.validateIPAgainst,
+                          'lan_subnet', '192.168.43');
         }
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
