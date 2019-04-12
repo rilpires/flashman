@@ -14,10 +14,10 @@ const selectizeOptionsMacs = {
       let dataVal =
         isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
       return $('<div></div>').addClass('option').append(
-        $('<span></span>').addClass('title').html(escape(data.label.toUpperCase())),
-        $('<span></span>').addClass('description').html(
-          escape(dataVal.toUpperCase())
-        )
+        $('<span></span>').addClass('title')
+        .html(escape(data.label.toUpperCase())),
+        $('<span></span>').addClass('description')
+        .html(escape(dataVal.toUpperCase()))
       );
     },
   },
@@ -26,7 +26,7 @@ const selectizeOptionsMacs = {
 const selectizeOptionsPorts = {
   create: true,
   createFilter: function(input) {
-    function check_val(val) {
+    const checkVal = function(val) {
       if (!isNaN(val)) {
         let intPort = parseInt(val);
         if (intPort >= 1 && intPort <= 65535) {
@@ -36,19 +36,20 @@ const selectizeOptionsPorts = {
       return false;
     };
 
-    if(input.indexOf(':') == -1) {
-      return check_val(input);
+    if (input.indexOf(':') == -1) {
+      return checkVal(input);
     } else {
       res = input.split(':', 2);
-      if(!check_val(res[0]))
+      if (!checkVal(res[0])) {
         return false;
-      return check_val(res[1]);      
+      }
+      return checkVal(res[1]);
     }
     return false;
   },
   render: {
     option_create: function(data, escape) {
-      if(data.input.indexOf(':') == -1) {
+      if (data.input.indexOf(':') == -1) {
         return $('<div></div>').addClass('create').append(
           'Adicionar: ',
           $('<strong></strong>').html(escape(data.input))
@@ -91,11 +92,12 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   let portListBadges = $('<td></td>').addClass('text-center');
   $.each(deviceEntry.port, function(idx, portValue) {
     finalValue = portValue;
-    if(deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
+    if (deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
        deviceEntry.router_port.length == deviceEntry.port.length) {
-      if(portValue != deviceEntry.router_port[idx])
-        finalValue = portValue+":"+deviceEntry.router_port[idx];
-    } 
+      if (portValue != deviceEntry.router_port[idx]) {
+        finalValue = portValue + ':' + deviceEntry.router_port[idx];
+      }
+    }
     portListBadges.append(
       $('<span></span>').addClass('badge badge-primary mr-1').html(finalValue)
     );
@@ -139,10 +141,10 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   newport.mac = deviceEntry.mac;
   newport.port = deviceEntry.port;
   newport.dmz = deviceEntry.dmz;
-  if(deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
+  if (deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
        deviceEntry.router_port.length == deviceEntry.port.length &&
        deviceEntry.router_port.length > 0) {
-    newport.router_port = deviceEntry.router_port
+    newport.router_port = deviceEntry.router_port;
   }
 
   portsFinal.push(newport);
@@ -301,7 +303,7 @@ $(document).ready(function() {
 
     let asymusage = false;
     $.each(ports, function(idx, portValue) {
-      if(!hasPortForwardAsym && portValue.indexOf(':') != -1){
+      if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
         swal({
           title: 'Falha na inclução da regra',
           text: 'Roteador não aceita portas assimétricas! Atualize o Roteador.',
@@ -311,8 +313,9 @@ $(document).ready(function() {
         asymusage = true;
       }
     });
-    if(asymusage)
+    if (asymusage) {
       return;
+    }
 
     // Check for ports already in use
     let reservedPorts = [36022];
@@ -321,10 +324,11 @@ $(document).ready(function() {
     if (rules.val() != '') {
       let rulesJson = JSON.parse(rules.val());
       $.each(rulesJson, function(idx, ruleEntry) {
-        if(ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port)
+        if (ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port) {
           reservedPorts = reservedPorts.concat(parseInt(ruleEntry.router_port));
-        else
+        } else {
           reservedPorts = reservedPorts.concat(parseInt(ruleEntry.port));
+        }
       });
     }
 
@@ -334,7 +338,7 @@ $(document).ready(function() {
     $.each(ports, function(idx, portValue) {
       let portFinal = 0;
       let intPort = 0;
-      if(portValue.indexOf(':') == -1) {
+      if (portValue.indexOf(':') == -1) {
         portFinal = portValue;
         intPort = portValue;
         portsFinal = portsFinal.concat(parseInt(portValue));
@@ -384,7 +388,8 @@ $(document).ready(function() {
     }
     asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
     insertOpenFirewallDoorRule({
-      mac: deviceMac, port: portsFinal, router_port: asymPortsValue, dmz: dmz, label: deviceLabel,
+      mac: deviceMac, port: portsFinal, router_port: asymPortsValue,
+      dmz: dmz, label: deviceLabel,
     });
   });
 
