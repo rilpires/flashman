@@ -889,17 +889,29 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
       let newLanDevice = true;
-      let macDevice = content.device_configs.mac.toLowerCase();
+      let configs = content.device_configs;
+      let macDevice = configs.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == macDevice) {
-          device.lan_devices[idx].name = content.device_configs.name;
+          device.lan_devices[idx].name = configs.name;
           newLanDevice = false;
+          if (configs.hasOwnProperty('rules')) {
+            let rules = configs.rules;
+            device.lan_devices[idx].port = rules.map((rule)=>rule.in);
+            device.lan_devices[idx].router_port = rules.map((rule)=>rule.out);
+          }
         }
       }
       if (newLanDevice) {
+        let rules = (configs.hasOwnProperty('rules')) ? configs.rules : [];
         device.lan_devices.push({
           mac: macDevice,
-          name: content.device_configs.name,
+          name: configs.name,
+          dmz: configs.dmz,
+          port: rules.map((rule)=>rule.in),
+          router_port: rules.map((rule)=>rule.out),
+          first_seen: Date.now(),
+          last_seen: Date.now(),
         });
       }
       return true;
