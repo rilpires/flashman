@@ -126,6 +126,13 @@ block content
                     select.browser-default.md-select(name="grant-notification-popups")
                       option(value="true") Permitir
                       option(value="false") Bloquear
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Informações Sobre Dispositivos Conectados
+                    select.browser-default.md-select(name="grant-lan-devices")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e realizar ações
             .row
               .col.text-center
                 .form-buttons
