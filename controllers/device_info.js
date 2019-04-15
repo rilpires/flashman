@@ -899,6 +899,7 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
             let rules = configs.rules;
             device.lan_devices[idx].port = rules.map((rule)=>rule.in);
             device.lan_devices[idx].router_port = rules.map((rule)=>rule.out);
+            device.forward_index = Date.now();
           }
         }
       }
