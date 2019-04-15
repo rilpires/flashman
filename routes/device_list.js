@@ -127,4 +127,8 @@ router.route('/pinghostslist/:id')
        authController.ensurePermission('grantAPIAccess'),
        deviceListController.setPingHostsList);
 
+router.route('/landevices/:id')
+  .get(authController.ensureLogin(),
+       deviceListController.getLanDevices);
+
 module.exports = router;

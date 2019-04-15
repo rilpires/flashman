@@ -21,10 +21,6 @@ form.edit-form.needs-validation(novalidate)
           label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_wifi5-" + (index + 1))
             input(type="radio")
             | Wi-Fi 5.0GHz
-        if (devicesPermissions[index].grantLanDevices && (superuser || role.grantLanDevices >= 1))
-          label.btn.btn-primary.tab-switch-btn(data-tab-id="#tab_landevs-" + (index + 1))
-            input(type="radio")
-            | Dispositivos
         //- Actions
         if (superuser || role.grantDeviceActions)
           button.btn.btn-primary.dropdown-toggle(
@@ -33,7 +29,7 @@ form.edit-form.needs-validation(novalidate)
             aria-haspopup="true",
             aria-expanded="false",
             disabled=((superuser || role.grantDeviceActions) ? false : true)
-          ) Ações
+          ) Opções
           .dropdown-menu.dropdown-menu-right(
             data-dropdown-in="fadeIn",
             data-dropdown-out="fadeOut"
@@ -66,6 +62,12 @@ form.edit-form.needs-validation(novalidate)
               a.dropdown-item.btn-ping-test-modal
                 .fas.fa-stethoscope
                 span &nbsp Teste de latência e perda
+            if (superuser || role.grantLanDevices >= 1)
+              if (devicesPermissions[index].grantLanDevices)
+                .dropdown-divider
+                a.dropdown-item.btn-lan-devices-modal
+                  .fas.fa-network-wired
+                  span &nbsp Dispositivos Conectados
       br
       span.badge.badge-success.bounceIn(style="display: none;") Sucesso
       span.badge.badge-warning.bounceIn(style="display: none;") Falha
@@ -341,10 +343,6 @@ form.edit-form.needs-validation(novalidate)
                     )
                       option(value="11ac") AC
                       option(value="11na") N
-      //- LAN Devices
-      if (devicesPermissions[index].grantLanDevices && (superuser || role.grantLanDevices >= 1))
-        .edit-tab.d-none(id="tab_landevs-" + (index + 1))
-          .row
   .row
     //- Buttons
     .col.text-right

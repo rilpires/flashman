@@ -1299,4 +1299,26 @@ deviceListController.setPingHostsList = function(req, res) {
   });
 };
 
+deviceListController.getLanDevices = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      lan_devices: matchedDevice.lan_devices,
+    });
+  });
+};
+
 module.exports = deviceListController;
