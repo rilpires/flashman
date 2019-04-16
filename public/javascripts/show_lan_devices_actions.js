@@ -1,5 +1,29 @@
 
 $(document).ready(function() {
+  const refreshLanDevices = function(deviceId) {
+    $('#lan-devices-hlabel').text(deviceId);
+    $('#lan-devices').modal('show');
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/onlinedevs',
+      type: 'post',
+      dataType: 'json',
+      success: function(res) {
+        if (res.success) {
+          $('.btn-sync-lan-devs > i').addClass('animated rotateOut infinite');
+        } else {
+          $('#lan-devices-body').empty(); // Clear old data
+          fetchLanDevices(deviceId);
+          $('.btn-sync-lan-devs').prop('disabled', true);
+        }
+      },
+      error: function(xhr, status, error) {
+        $('#lan-devices-body').empty(); // Clear old data
+        fetchLanDevices(deviceId);
+        $('.btn-sync-lan-devs').prop('disabled', true);
+      },
+    });
+  };
+
   const fetchLanDevices = function(deviceId) {
     $.ajax({
       type: 'GET',
@@ -7,8 +31,7 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          $('#lan-devices-hlabel').text(deviceId);
-          let lanDevsRow = $('<div></div>').addClass('row');
+          let lanDevsRow = $('#lan-devices-body');
           $.each(res.lan_devices, function(idx, device) {
             const lastSeen = ((device.last_seen) ?
                               Date.parse(device.last_seen) : Date.now());
@@ -78,23 +101,6 @@ $(document).ready(function() {
               lanDevsRow.append($('<div></div>').addClass('w-100'));
             }
           });
-          // Add refresh button
-          $('#lan-devices-body').append(
-            $('<div></div>').addClass('row').append(
-              $('<div></div>').addClass('col p-0 text-right').append(
-                $('<button></button>')
-                .addClass('btn btn-primary btn-sm btn-sync-lan-devs').append(
-                  $('<i></i>').addClass('fas fa-sync-alt fa-lg'),
-                  $('<span></span>').html('&nbsp Atualizar')
-                )
-              )
-            )
-          );
-          $('#lan-devices-body').append(
-            lanDevsRow
-          );
-          $('.btn-sync-lan-devs').trigger('click'); // Refresh devices status
-          $('#lan-devices').modal('show');
         } else {
           displayAlertMsg(res);
         }
@@ -108,26 +114,12 @@ $(document).ready(function() {
   $('.btn-lan-devices-modal').click(function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    fetchLanDevices(id);
+    refreshLanDevices(id); // Refresh devices status
   });
 
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
     let id = $('#lan-devices-hlabel').text();
-    $.ajax({
-      url: '/devicelist/command/' + id + '/onlinedevs',
-      type: 'post',
-      dataType: 'json',
-      success: function(res) {
-        if (res.success) {
-          $(event.target).children().addClass('animated rotateOut infinite');
-        } else {
-          $('.btn-sync-lan-devs').prop('disabled', true);
-        }
-      },
-      error: function(xhr, status, error) {
-        $('.btn-sync-lan-devs').prop('disabled', true);
-      },
-    });
+    refreshLanDevices(id);
   });
 
   // Important: include and initialize socket.io first using socket var
@@ -135,6 +127,7 @@ $(document).ready(function() {
     if (($('#lan-devices').data('bs.modal') || {})._isShown) {
       let id = $('#lan-devices-hlabel').text();
       if (id == macaddr) {
+        $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
         // Clear old data
         $('#lan-devices-body').empty();
         fetchLanDevices(id);
@@ -145,6 +138,7 @@ $(document).ready(function() {
   // Restore default modal state
   $('#lan-devices').on('hidden.bs.modal', function() {
     $('#lan-devices-body').empty();
+    $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-lan-devs').prop('disabled', false);
   });
 });
