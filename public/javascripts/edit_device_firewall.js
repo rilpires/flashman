@@ -321,10 +321,14 @@ $(document).ready(function() {
     if (rules.val() != '') {
       let rulesJson = JSON.parse(rules.val());
       $.each(rulesJson, function(idx, ruleEntry) {
+        let portsArray = [];
         if(ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port)
-          reservedPorts = reservedPorts.concat(parseInt(ruleEntry.router_port));
+          portsArray = ruleEntry.router_port;
         else
-          reservedPorts = reservedPorts.concat(parseInt(ruleEntry.port));
+          portsArray = ruleEntry.port;
+        $.each(portsArray, function(idx, portsEntry) {
+          reservedPorts.push(parseInt(portsEntry));
+        });
       });
     }
 
