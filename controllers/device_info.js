@@ -1109,31 +1109,40 @@ deviceInfoController.receiveDevices = function(req, res) {
     let outData = [];
 
     for (let connDeviceMac in devsData) {
-      let upConnDevMac = connDeviceMac.toLowerCase();
-      let upConnDev = devsData[upConnDevMac];
-      let outDev = {};
-      let devreg = matchedDevice.getLanDevice(upConnDevMac);
-      if(devreg){
-        if(upConnDev.hostname && upConnDev.hostname != '' && upConnDev.hostname != '!')
-          devreg.dhcp_name = upConnDev.hostname;
-        if(!devreg.first_seen)
-          devreg.first_seen = Date.now();
-        devreg.last_seen = Date.now();
-        if(devreg.name && devreg.name != '')
-          outDev.hostname = devreg.name;
-        else 
-          outDev.hostname = devreg.dhcp_name;
-      } else {
-        matchedDevice.lan_devices.push({
-          mac: upConnDevMac,
-          dhcp_name: (upConnDev.hostname != '' && upConnDev.hostname != '!')? upConnDev.hostname : '',
-          first_seen: Date.now(),
-          last_seen: Date.now(),
-        });
-        outDev.hostname = (upConnDev.hostname != '' && upConnDev.hostname != '!')? upConnDev.hostname : '';
+      if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
+        let upConnDevMac = connDeviceMac.toLowerCase();
+        let upConnDev = devsData[upConnDevMac];
+        let outDev = {};
+        let devReg = matchedDevice.getLanDevice(upConnDevMac);
+        if (devReg) {
+          if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
+              (upConnDev.hostname != '!')
+          ) {
+            devReg.dhcp_name = upConnDev.hostname;
+          }
+          if (!devReg.first_seen) {
+            devReg.first_seen = Date.now();
+          }
+          devReg.last_seen = Date.now();
+          if (devReg.name && devReg.name != '') {
+            outDev.hostname = devReg.name;
+          } else {
+            outDev.hostname = devReg.dhcp_name;
+          }
+        } else {
+          let hostName = (upConnDev.hostname != '' &&
+                          upConnDev.hostname != '!') ? upConnDev.hostname : '';
+          matchedDevice.lan_devices.push({
+            mac: upConnDevMac,
+            dhcp_name: hostName,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+          outDev.hostname = hostName;
+        }
+        outDev.mac = upConnDevMac;
+        outData.push(outDev);
       }
-      outDev.mac = upConnDevMac;
-      outData.push(outDev);
     }
 
     matchedDevice.save();

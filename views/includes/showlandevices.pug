@@ -1,0 +1,18 @@
+
+#lan-devices.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-network-wired.fa-lg
+          strong &nbsp;Dispositivos conectados em&nbsp;
+            label(name="lan-devices-hlabel" id="lan-devices-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body.pt-2
+        .row
+          .col.p-0.text-right
+            button.btn.btn-primary.btn-sm.btn-sync-lan-devs
+              i.fas.fa-sync-alt.fa-lg
+              span &nbsp Atualizar
+        .row#lan-devices-body
