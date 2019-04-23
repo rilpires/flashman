@@ -1104,16 +1104,36 @@ deviceInfoController.receiveDevices = function(req, res) {
         id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
-
+    const validator = new Validator();
     let devsData = req.body.Devices;
     let outData = [];
 
     for (let connDeviceMac in devsData) {
       if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
+        let outDev = {};
         let upConnDevMac = connDeviceMac.toLowerCase();
         let upConnDev = devsData[upConnDevMac];
-        let outDev = {};
+        // Skip if not lowercase
+        if (!upConnDev) continue;
+
+        let ipRes = validator.validateIP(upConnDev.ip);
         let devReg = matchedDevice.getLanDevice(upConnDevMac);
+        // Check wifi or cable data
+        if (upConnDev.conn_type) {
+          upConnDev.conn_type = parseInt(upConnDev.conn_type);
+        }
+        if (upConnDev.conn_speed) {
+          upConnDev.conn_speed = parseInt(upConnDev.conn_speed);
+        }
+        if (upConnDev.wifi_signal) {
+          upConnDev.wifi_signal = parseFloat(upConnDev.wifi_signal);
+        }
+        if (upConnDev.wifi_snr) {
+          upConnDev.wifi_snr = parseInt(upConnDev.wifi_snr);
+        }
+        if (upConnDev.wifi_freq) {
+          upConnDev.wifi_freq = parseFloat(upConnDev.wifi_freq);
+        }
         if (devReg) {
           if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
               (upConnDev.hostname != '!')
@@ -1129,6 +1149,15 @@ deviceInfoController.receiveDevices = function(req, res) {
           } else {
             outDev.hostname = devReg.dhcp_name;
           }
+          devReg.ip = (ipRes.valid ? upConnDev.ip : null);
+          devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
+                              upConnDev.conn_type : null);
+          devReg.conn_speed = upConnDev.conn_speed;
+          devReg.wifi_signal = upConnDev.wifi_signal;
+          devReg.wifi_snr = upConnDev.wifi_snr;
+          devReg.wifi_freq = upConnDev.wifi_freq;
+          devReg.wifi_mode = (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
+                              upConnDev.wifi_mode : null);
         } else {
           let hostName = (upConnDev.hostname != '' &&
                           upConnDev.hostname != '!') ? upConnDev.hostname : '';
@@ -1137,6 +1166,15 @@ deviceInfoController.receiveDevices = function(req, res) {
             dhcp_name: hostName,
             first_seen: Date.now(),
             last_seen: Date.now(),
+            ip: (ipRes.valid ? upConnDev.ip : null),
+            conn_type: ([0, 1].includes(upConnDev.conn_type) ?
+                        upConnDev.conn_type : null),
+            conn_speed: upConnDev.conn_speed,
+            wifi_signal: upConnDev.wifi_signal,
+            wifi_snr: upConnDev.wifi_snr,
+            wifi_freq: upConnDev.wifi_freq,
+            wifi_mode: (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
+                        upConnDev.wifi_mode : null),
           });
           outDev.hostname = hostName;
         }

@@ -41,13 +41,14 @@ let deviceSchema = new Schema({
     dmz: {type: Boolean, default: false},
     last_seen: Date,
     first_seen: Date,
+    ip: String,
     conn_type: {type: Number, enum: [
       0, // cable
       1, // wireless
     ]},
-    conn_speed: Number, // Bps. Bitrate value in case of wireless
+    conn_speed: Number, // Mbps. Bitrate value in case of wireless
     wifi_freq: Number, // GHz
-    wifi_rssi: Number, // dBm
+    wifi_signal: Number, // dBm
     wifi_snr: Number, // dBm
     wifi_mode: String, // G, N, AC
   }],

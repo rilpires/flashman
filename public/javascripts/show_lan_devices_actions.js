@@ -2,7 +2,7 @@
 $(document).ready(function() {
   const refreshLanDevices = function(deviceId) {
     $('#lan-devices-hlabel').text(deviceId);
-    $('#lan-devices').modal('show');
+    $('#lan-devices').modal();
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -12,12 +12,14 @@ $(document).ready(function() {
           $('.btn-sync-lan-devs > i').addClass('animated rotateOut infinite');
         } else {
           $('#lan-devices-body').empty(); // Clear old data
+          $('#lan-devices-placeholder').show();
           fetchLanDevices(deviceId);
           $('.btn-sync-lan-devs').prop('disabled', true);
         }
       },
       error: function(xhr, status, error) {
         $('#lan-devices-body').empty(); // Clear old data
+        $('#lan-devices-placeholder').show();
         fetchLanDevices(deviceId);
         $('.btn-sync-lan-devs').prop('disabled', true);
       },
@@ -31,6 +33,7 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
+          $('#lan-devices-placeholder').hide();
           let lanDevsRow = $('#lan-devices-body');
           $.each(res.lan_devices, function(idx, device) {
             const lastSeen = ((device.last_seen) ?
@@ -74,8 +77,7 @@ $(document).ready(function() {
                   (device.conn_speed ?
                     $('<div></div>').addClass('col-8 text-right').append(
                       $('<h6></h6>').text('Velocidade Máx. ' +
-                                          (device.conn_speed / 1000000) +
-                                          ' Mbps')
+                                          device.conn_speed + ' Mbps')
                     ) : ''
                   )
                 ),
@@ -85,11 +87,11 @@ $(document).ready(function() {
                     $('<h6></h6>').text(device.dhcp_name),
                     $('<h6></h6>').text(device.mac)
                   ),
-                  (device.conn_type == 1 && device.wifi_rssi) ?
+                  (device.conn_type == 1 && device.wifi_signal) ?
                   $('<div></div>').addClass('col').append(
                     $('<h6></h6>').text(device.wifi_freq + ' GHz'),
                     $('<h6></h6>').text('Modo: ' + device.wifi_mode),
-                    $('<h6></h6>').text('RSSI: ' + device.wifi_rssi + ' dBm'),
+                    $('<h6></h6>').text('Sinal: ' + device.wifi_signal + ' dBm'),
                     $('<h6></h6>').text('SNR: ' + device.wifi_snr + ' dBm')
                   ) :
                   ''
@@ -130,6 +132,7 @@ $(document).ready(function() {
         $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
         // Clear old data
         $('#lan-devices-body').empty();
+        $('#lan-devices-placeholder').show();
         fetchLanDevices(id);
       }
     }
@@ -138,6 +141,7 @@ $(document).ready(function() {
   // Restore default modal state
   $('#lan-devices').on('hidden.bs.modal', function() {
     $('#lan-devices-body').empty();
+    $('#lan-devices-placeholder').show();
     $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-lan-devs').prop('disabled', false);
   });
