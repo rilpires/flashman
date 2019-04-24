@@ -45,7 +45,7 @@ $(document).ready(function() {
               $('<div></div>')
               .addClass('col m-1 grey lighten-4').append(
                 $('<div></div>').addClass('row pt-2').append(
-                  ((device.conn_type) ?
+                  ((device.conn_type != undefined) ?
                     $('<div></div>').addClass('col').append(
                       (device.conn_type == 0) ?
                         $('<i></i>').addClass('fas fa-ethernet fa-lg') :
