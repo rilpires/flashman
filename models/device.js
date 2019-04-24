@@ -49,7 +49,7 @@ let deviceSchema = new Schema({
     conn_speed: Number, // Mbps. Bitrate value in case of wireless
     wifi_freq: Number, // GHz
     wifi_signal: Number, // dBm
-    wifi_snr: Number, // dBm
+    wifi_snr: Number, // dB
     wifi_mode: String, // G, N, AC
   }],
   wan_ip: String,

@@ -43,7 +43,7 @@ $(document).ready(function() {
             const devTimeDiffHours = Math.floor(devTimeDiff / 3.6e6);
             lanDevsRow.append(
               $('<div></div>')
-              .addClass('col m-1 grey lighten-4').append(
+              .addClass('col-lg m-1 grey lighten-4').append(
                 $('<div></div>').addClass('row pt-2').append(
                   ((device.conn_type != undefined) ?
                     $('<div></div>').addClass('col').append(
@@ -91,8 +91,17 @@ $(document).ready(function() {
                   $('<div></div>').addClass('col').append(
                     $('<h6></h6>').text(device.wifi_freq + ' GHz'),
                     $('<h6></h6>').text('Modo: ' + device.wifi_mode),
-                    $('<h6></h6>').text('Sinal: ' + device.wifi_signal + ' dBm'),
-                    $('<h6></h6>').text('SNR: ' + device.wifi_snr + ' dBm')
+                    $('<h6></h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
+                    $('<h6></h6>').text('SNR: ' + device.wifi_snr + ' dB')
+                    .append(
+                      $('<span></span>').html('&nbsp'),
+                      ((device.wifi_snr >= 25) ?
+                       $('<i></i>').addClass('fas fa-circle green-text') :
+                       (device.wifi_snr >= 15) ?
+                       $('<i></i>').addClass('fas fa-circle yellow-text') :
+                       $('<i></i>').addClass('fas fa-circle red-text')
+                      )
+                    )
                   ) :
                   ''
                 )
