@@ -1036,54 +1036,61 @@ deviceListController.setPortForward = function(req, res) {
           return res.status(200).json({
             success: false,
             message: 'Dados de Endereço MAC do Dispositivo Invalidos No JSON',
-          });          
+          });
         }
 
-        if(!r.hasOwnProperty('port') ||
-           !Array.isArray(r.port) ||
-           !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535))))
+        if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
+          !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+        ) {
           return res.status(200).json({
             success: false,
             message: 'Portas Internas de Dispositivo invalidas no JSON',
           });
+        }
 
         let localPorts = r.port.map((p) => parseInt(p));
           // Get unique port set
         let localUniquePorts = [...new Set(localPorts)];
 
-        if(r.hasOwnProperty('router_port')) {
-          if(!permissions.grantPortForwardAsym) {
+        if (r.hasOwnProperty('router_port')) {
+          if (!permissions.grantPortForwardAsym) {
             return res.status(200).json({
               success: false,
               message: 'Roteador não aceita portas assimétricas',
             });
           }
 
-          if(!Array.isArray(r.router_port) || 
-             !(r.router_port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535))))
+          if (!Array.isArray(r.router_port) ||
+            !(r.router_port.map((p) => parseInt(p)).every(
+                (p) => (p >= 1 && p <= 65535)
+              )
+            )
+          ) {
             return res.status(200).json({
               success: false,
               message: 'Portas Externas invalidas no JSON',
             });
+          }
 
           let localAsymPorts = r.router_port.map((p) => parseInt(p));
           // Get unique port set
           let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-          if(localUniqueAsymPorts.lenght != localAsymPorts.lenght){
+          if (localUniqueAsymPorts.lenght != localAsymPorts.lenght) {
             return res.status(200).json({
               success: false,
               message: 'Portas Externas Repetidas no JSON',
             });
           }
 
-          if(localUniqueAsymPorts.length != localUniquePorts.length){
+          if (localUniqueAsymPorts.length != localUniquePorts.length) {
             return res.status(200).json({
               success: false,
               message: 'Portas Internas e Externas não conferem no JSON',
-            });    
+            });
           }
 
-          if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))) {
+          if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
+          ) {
             return res.status(200).json({
               success: false,
               message: 'Portas Externas Repetidas no JSON',
@@ -1092,7 +1099,6 @@ deviceListController.setPortForward = function(req, res) {
 
           usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
         } else {
-
           if (!(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))) {
             return res.status(200).json({
               success: false,
@@ -1121,10 +1127,10 @@ deviceListController.setPortForward = function(req, res) {
         portsArray = [...new Set(portsArray)];
         let portAsymArray = [];
 
-        if(r.hasOwnProperty('router_port')) {
+        if (r.hasOwnProperty('router_port')) {
           portAsymArray = r.router_port.map((p) => parseInt(p));
           portAsymArray = [...new Set(portAsymArray)];
-        } 
+        }
 
         let newLanDevice = true;
         for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {

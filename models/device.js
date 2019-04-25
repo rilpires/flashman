@@ -76,6 +76,8 @@ let deviceSchema = new Schema({
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
+  // For blocked devices
+  blocked_devices_index: String,
   // Store hosts to measure against
   ping_hosts: {
     type: [String],

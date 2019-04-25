@@ -465,6 +465,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
+            'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
           });
         });
       }
@@ -830,12 +831,14 @@ deviceInfoController.appSetBlacklist = function(req, res) {
         if (device.lan_devices[idx].mac == blackMacDevice) {
           if (device.lan_devices[idx].dhcp_name !== dhcpLease) {
             device.lan_devices[idx].dhcp_name = dhcpLease;
+            device.blocked_devices_index = Date.now();
             ret = true;
           }
           if (device.lan_devices[idx].is_blocked) {
             return ret;
           } else {
             device.lan_devices[idx].is_blocked = true;
+            device.blocked_devices_index = Date.now();
             return true;
           }
         }
@@ -846,6 +849,7 @@ deviceInfoController.appSetBlacklist = function(req, res) {
         dhcp_name: dhcpLease,
         is_blocked: true,
       });
+      device.blocked_devices_index = Date.now();
       return true;
     }
     return false;
@@ -867,6 +871,7 @@ deviceInfoController.appSetWhitelist = function(req, res) {
         if (device.lan_devices[idx].mac == whiteMacDevice) {
           if (device.lan_devices[idx].is_blocked) {
             device.lan_devices[idx].is_blocked = false;
+            device.blocked_devices_index = Date.now();
             return true;
           } else {
             return false;
@@ -1046,32 +1051,34 @@ deviceInfoController.getPortForward = function(req, res) {
         return res.status(404).json({success: false});
       }
 
-      let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
-      if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
-        return true;
-      } else {
-        return false;
-      }});
+      let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
+        if (typeof lanDevice.port !== 'undefined' &&
+            lanDevice.port.length > 0) {
+          return true;
+        } else {
+          return false;
+        }
+      });
 
-      let out_data = [];
-      for(var i = 0; i < res_out.length; i++) {
-        tmp_data = {};
-        tmp_data.mac = res_out[i].mac;
-        tmp_data.port = res_out[i].port;
-        tmp_data.dmz = res_out[i].dmz;
+      let outData = [];
+      for (let i = 0; i < resOut.length; i++) {
+        tmpData = {};
+        tmpData.mac = resOut[i].mac;
+        tmpData.port = resOut[i].port;
+        tmpData.dmz = resOut[i].dmz;
 
-        if(('router_port' in res_out[i]) && 
-            res_out[i].router_port.length != 0)
-          tmp_data.router_port = res_out[i].router_port
-
-        out_data.push(tmp_data)
+        if (('router_port' in resOut[i]) &&
+            resOut[i].router_port.length != 0) {
+          tmpData.router_port = resOut[i].router_port;
+        }
+        outData.push(tmpData);
       }
 
       if (matchedDevice.forward_index) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': out_data,
+          'forward_rules': outData,
         });
       }
     });
