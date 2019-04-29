@@ -40,7 +40,12 @@ $(document).ready(function() {
                               Date.parse(device.last_seen) : Date.now());
             const justNow = Date.now();
             const devTimeDiff = Math.abs(justNow - lastSeen);
-            const devTimeDiffHours = Math.floor(devTimeDiff / 3.6e6);
+            const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);
+            const offlineThresh = 5;
+            // Skip if offline for too long. 24hrs
+            if (devTimeDiffSeconds >= 86400) {
+              return true;
+            }
             lanDevsRow.append(
               $('<div></div>')
               .addClass('col-lg m-1 grey lighten-4').append(
@@ -67,14 +72,14 @@ $(document).ready(function() {
                 ),
                 $('<div></div>').addClass('row pt-3').append(
                   $('<div></div>').addClass('col-4').append(
-                    (devTimeDiffHours <= 1 ?
+                    (devTimeDiffSeconds <= offlineThresh ?
                       $('<i></i>').addClass('fas fa-circle green-text') :
                       $('<i></i>').addClass('fas fa-circle red-text')),
-                    (devTimeDiffHours <= 1 ?
+                    (devTimeDiffSeconds <= offlineThresh ?
                       $('<span></span>').html('&nbsp Online') :
                       $('<span></span>').html('&nbsp Offline'))
                   ),
-                  (device.conn_speed ?
+                  (device.conn_speed && (devTimeDiffSeconds <= offlineThresh) ?
                     $('<div></div>').addClass('col-8 text-right').append(
                       $('<h6></h6>').text('Velocidade Máx. ' +
                                           device.conn_speed + ' Mbps')
@@ -87,7 +92,8 @@ $(document).ready(function() {
                     $('<h6></h6>').text(device.dhcp_name),
                     $('<h6></h6>').text(device.mac)
                   ),
-                  (device.conn_type == 1 && device.wifi_signal) ?
+                  (device.conn_type == 1 && device.wifi_signal &&
+                   (devTimeDiffSeconds <= offlineThresh)) ?
                   $('<div></div>').addClass('col').append(
                     $('<h6></h6>').text(device.wifi_freq + ' GHz'),
                     $('<h6></h6>').text('Modo: ' + device.wifi_mode),
