@@ -88,6 +88,7 @@ userController.postRole = function(req, res) {
     grantLOGAccess: req.body['grant-log-access'],
     grantNotificationPopups: req.body['grant-notification-popups'],
     grantLanEdit: req.body['grant-lan-edit'],
+    grantLanDevices: parseInt(req.body['grant-lan-devices']),
   });
   role.save(function(err) {
     if (err) {
@@ -207,6 +208,7 @@ userController.editRole = function(req, res) {
     role.grantLOGAccess = req.body['grant-log-access'];
     role.grantNotificationPopups = req.body['grant-notification-popups'];
     role.grantLanEdit = req.body['grant-lan-edit'];
+    role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
 
     role.save(function(err) {
       if (err) {

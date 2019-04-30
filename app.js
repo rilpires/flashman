@@ -73,6 +73,7 @@ Role.find({}, function(err, roles) {
       grantAPIAccess: false,
       grantNotificationPopups: true,
       grantLanEdit: true,
+      grantLanDevices: 2,
     });
     managerRole.save();
   }

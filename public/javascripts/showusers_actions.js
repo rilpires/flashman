@@ -60,7 +60,10 @@ $(document).ready(function() {
       'lengthMenu': 'Exibir _MENU_',
     },
     'order': [[1, 'asc'], [2, 'asc']],
-    'columnDefs': [{className: 'text-center', targets: ['_all']}],
+    'columnDefs': [
+      {className: 'text-center', targets: ['_all']},
+      {orderable: false, targets: [0]},
+    ],
     'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">' +
            '       <"col-sm-12 col-md-6"f>               >' +
            '<"row" t>                                     ' +

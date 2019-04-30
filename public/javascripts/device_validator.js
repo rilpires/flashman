@@ -110,10 +110,18 @@
       return ret;
     };
 
+    Validator.prototype.validateIPAgainst = function(ip, ipChallenge) {
+      return {
+        valid: !ip.includes(ipChallenge),
+        err: ['Este campo não pode conter o valor ' + ipChallenge +
+              '. O valor é reservado.'],
+      };
+    };
+
     Validator.prototype.validateNetmask = function(netmask) {
       return {
         valid: [24, 25, 26, '24', '25', '26'].includes(netmask),
-        err: ['Somente são aceitos as máscaras 24, 25 ou 26'],
+        err: ['Somente são aceitas as máscaras 24, 25 ou 26'],
       };
     };
 

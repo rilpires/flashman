@@ -189,7 +189,10 @@ const isJSONObject = function(val) {
 
 const serializeBlocked = function(devices) {
   if (!devices) return [];
-  return devices.map((device)=>device.mac + '|' + device.dhcp_name);
+  return devices.map((device)=>{
+    let dhcpLease = (device.dhcp_name === '!') ? '*' : device.dhcp_name;
+    return device.mac + '|' + dhcpLease;
+  });
 };
 
 const serializeNamed = function(devices) {
@@ -462,6 +465,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
+            'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
           });
         });
       }
@@ -747,14 +751,49 @@ deviceInfoController.appSetWifi = function(req, res) {
       device.wifi_ssid = content.wifi_ssid;
       updateParameters = true;
     }
+    if (content.hasOwnProperty('wifi_ssid_5ghz')) {
+      rollback.wifi_ssid_5ghz = device.wifi_ssid_5ghz;
+      device.wifi_ssid_5ghz = content.wifi_ssid_5ghz;
+      updateParameters = true;
+    }
     if (content.hasOwnProperty('wifi_password')) {
       rollback.wifi_password = device.wifi_password;
       device.wifi_password = content.wifi_password;
       updateParameters = true;
     }
+    if (content.hasOwnProperty('wifi_password_5ghz')) {
+      rollback.wifi_password_5ghz = device.wifi_password_5ghz;
+      device.wifi_password_5ghz = content.wifi_password_5ghz;
+      updateParameters = true;
+    }
     if (content.hasOwnProperty('wifi_channel')) {
       rollback.wifi_channel = device.wifi_channel;
       device.wifi_channel = content.wifi_channel;
+      updateParameters = true;
+    }
+    if (content.hasOwnProperty('wifi_band')) {
+      rollback.wifi_band = device.wifi_band;
+      device.wifi_band = content.wifi_band;
+      updateParameters = true;
+    }
+    if (content.hasOwnProperty('wifi_mode')) {
+      rollback.wifi_mode = device.wifi_mode;
+      device.wifi_mode = content.wifi_mode;
+      updateParameters = true;
+    }
+    if (content.hasOwnProperty('wifi_channel_5ghz')) {
+      rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
+      device.wifi_channel_5ghz = content.wifi_channel_5ghz;
+      updateParameters = true;
+    }
+    if (content.hasOwnProperty('wifi_band_5ghz')) {
+      rollback.wifi_band_5ghz = device.wifi_band_5ghz;
+      device.wifi_band_5ghz = content.wifi_band_5ghz;
+      updateParameters = true;
+    }
+    if (content.hasOwnProperty('wifi_mode_5ghz')) {
+      rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
+      device.wifi_mode_5ghz = content.wifi_mode_5ghz;
       updateParameters = true;
     }
     return updateParameters;
@@ -782,14 +821,24 @@ deviceInfoController.appSetBlacklist = function(req, res) {
         content.blacklist_device.mac.match(macRegex)) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
+      // Transform dhcp name in case it's a single *
+      let dhcpLease = content.blacklist_device.id;
+      if (dhcpLease === '*') dhcpLease = '!';
       // Search blocked device
       let blackMacDevice = content.blacklist_device.mac.toLowerCase();
+      let ret = false;
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == blackMacDevice) {
+          if (device.lan_devices[idx].dhcp_name !== dhcpLease) {
+            device.lan_devices[idx].dhcp_name = dhcpLease;
+            device.blocked_devices_index = Date.now();
+            ret = true;
+          }
           if (device.lan_devices[idx].is_blocked) {
-            return false;
+            return ret;
           } else {
             device.lan_devices[idx].is_blocked = true;
+            device.blocked_devices_index = Date.now();
             return true;
           }
         }
@@ -797,9 +846,10 @@ deviceInfoController.appSetBlacklist = function(req, res) {
       // Mac address not found
       device.lan_devices.push({
         mac: blackMacDevice,
-        dhcp_name: content.blacklist_device.id,
+        dhcp_name: dhcpLease,
         is_blocked: true,
       });
+      device.blocked_devices_index = Date.now();
       return true;
     }
     return false;
@@ -821,6 +871,7 @@ deviceInfoController.appSetWhitelist = function(req, res) {
         if (device.lan_devices[idx].mac == whiteMacDevice) {
           if (device.lan_devices[idx].is_blocked) {
             device.lan_devices[idx].is_blocked = false;
+            device.blocked_devices_index = Date.now();
             return true;
           } else {
             return false;
@@ -843,17 +894,30 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
       // Deep copy lan devices for rollback
       rollback.lan_devices = deepCopyObject(device.lan_devices);
       let newLanDevice = true;
-      let macDevice = content.device_configs.mac.toLowerCase();
+      let configs = content.device_configs;
+      let macDevice = configs.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == macDevice) {
-          device.lan_devices[idx].name = content.device_configs.name;
+          device.lan_devices[idx].name = configs.name;
           newLanDevice = false;
+          if (configs.hasOwnProperty('rules')) {
+            let rules = configs.rules;
+            device.lan_devices[idx].port = rules.map((rule)=>rule.in);
+            device.lan_devices[idx].router_port = rules.map((rule)=>rule.out);
+            device.forward_index = Date.now();
+          }
         }
       }
       if (newLanDevice) {
+        let rules = (configs.hasOwnProperty('rules')) ? configs.rules : [];
         device.lan_devices.push({
           mac: macDevice,
-          name: content.device_configs.name,
+          name: configs.name,
+          dmz: configs.dmz,
+          port: rules.map((rule)=>rule.in),
+          router_port: rules.map((rule)=>rule.out),
+          first_seen: Date.now(),
+          last_seen: Date.now(),
         });
       }
       return true;
@@ -861,6 +925,70 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
     return false;
   };
   appSet(req, res, processFunction);
+};
+
+deviceInfoController.appGetVersion = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
+    );
+    return res.status(200).json({
+      permissions: permissions,
+    });
+  });
+};
+
+deviceInfoController.appGetPortForward = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    let devices = {};
+    matchedDevice.lan_devices.forEach((device)=>{
+      let numRules = device.port.length;
+      let rules = [];
+      for (let i = 0; i < numRules; i++) {
+        rules.push({
+          in: device.port[i],
+          out: device.router_port[i],
+        });
+      }
+      devices[device.mac] = {dmz: device.dmz, rules: rules};
+    });
+
+    return res.status(200).json({
+      devices: devices,
+    });
+  });
 };
 
 deviceInfoController.receiveLog = function(req, res) {
@@ -922,22 +1050,35 @@ deviceInfoController.getPortForward = function(req, res) {
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
+
+      let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
+        if (typeof lanDevice.port !== 'undefined' &&
+            lanDevice.port.length > 0) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+
+      let outData = [];
+      for (let i = 0; i < resOut.length; i++) {
+        tmpData = {};
+        tmpData.mac = resOut[i].mac;
+        tmpData.port = resOut[i].port;
+        tmpData.dmz = resOut[i].dmz;
+
+        if (('router_port' in resOut[i]) &&
+            resOut[i].router_port.length != 0) {
+          tmpData.router_port = resOut[i].router_port;
+        }
+        outData.push(tmpData);
+      }
+
       if (matchedDevice.forward_index) {
         return res.status(200).json({
           'success': true,
           'forward_index': matchedDevice.forward_index,
-          'forward_rules': matchedDevice.lan_devices.filter(
-            function(lanDevice) {
-              if (
-                typeof lanDevice.port !== 'undefined' &&
-                lanDevice.port.length > 0
-              ) {
-                return true;
-              } else {
-                return false;
-              }
-            }
-          ),
+          'forward_rules': outData,
         });
       }
     });
@@ -970,8 +1111,89 @@ deviceInfoController.receiveDevices = function(req, res) {
         id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
+    const validator = new Validator();
+    let devsData = req.body.Devices;
+    let outData = [];
 
-    sio.anlixSendOnlineDevNotifications(matchedDevice, req.body);
+    for (let connDeviceMac in devsData) {
+      if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
+        let outDev = {};
+        let upConnDevMac = connDeviceMac.toLowerCase();
+        let upConnDev = devsData[upConnDevMac];
+        // Skip if not lowercase
+        if (!upConnDev) continue;
+
+        let ipRes = validator.validateIP(upConnDev.ip);
+        let devReg = matchedDevice.getLanDevice(upConnDevMac);
+        // Check wifi or cable data
+        if (upConnDev.conn_type) {
+          upConnDev.conn_type = parseInt(upConnDev.conn_type);
+        }
+        if (upConnDev.conn_speed) {
+          upConnDev.conn_speed = parseInt(upConnDev.conn_speed);
+        }
+        if (upConnDev.wifi_signal) {
+          upConnDev.wifi_signal = parseFloat(upConnDev.wifi_signal);
+        }
+        if (upConnDev.wifi_snr) {
+          upConnDev.wifi_snr = parseInt(upConnDev.wifi_snr);
+        }
+        if (upConnDev.wifi_freq) {
+          upConnDev.wifi_freq = parseFloat(upConnDev.wifi_freq);
+        }
+        if (devReg) {
+          if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
+              (upConnDev.hostname != '!')
+          ) {
+            devReg.dhcp_name = upConnDev.hostname;
+          }
+          if (!devReg.first_seen) {
+            devReg.first_seen = Date.now();
+          }
+          devReg.last_seen = Date.now();
+          if (devReg.name && devReg.name != '') {
+            outDev.hostname = devReg.name;
+          } else {
+            outDev.hostname = devReg.dhcp_name;
+          }
+          devReg.ip = (ipRes.valid ? upConnDev.ip : null);
+          devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
+                              upConnDev.conn_type : null);
+          devReg.conn_speed = upConnDev.conn_speed;
+          devReg.wifi_signal = upConnDev.wifi_signal;
+          devReg.wifi_snr = upConnDev.wifi_snr;
+          devReg.wifi_freq = upConnDev.wifi_freq;
+          devReg.wifi_mode = (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
+                              upConnDev.wifi_mode : null);
+        } else {
+          let hostName = (upConnDev.hostname != '' &&
+                          upConnDev.hostname != '!') ? upConnDev.hostname : '';
+          matchedDevice.lan_devices.push({
+            mac: upConnDevMac,
+            dhcp_name: hostName,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+            ip: (ipRes.valid ? upConnDev.ip : null),
+            conn_type: ([0, 1].includes(upConnDev.conn_type) ?
+                        upConnDev.conn_type : null),
+            conn_speed: upConnDev.conn_speed,
+            wifi_signal: upConnDev.wifi_signal,
+            wifi_snr: upConnDev.wifi_snr,
+            wifi_freq: upConnDev.wifi_freq,
+            wifi_mode: (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
+                        upConnDev.wifi_mode : null),
+          });
+          outDev.hostname = hostName;
+        }
+        outDev.mac = upConnDevMac;
+        outData.push(outDev);
+      }
+    }
+
+    matchedDevice.save();
+
+    // if someone is waiting for this message, send the information
+    sio.anlixSendOnlineDevNotifications(id, outData);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 

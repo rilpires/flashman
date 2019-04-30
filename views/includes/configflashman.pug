@@ -39,6 +39,17 @@
                 .input-entry
                   label(for="measure-token") Token de ativação da ferramenta de medição
                   input.form-control(type="text", value=measure_token, name="measure-token", id="measure-token")
+                if (measure_active)
+                  br
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(
+                      name="token_update",
+                      type="checkbox",
+                      id="token_update"
+                    )
+                    label.custom-control-label(for="token_update")
+                      | Reconfigurar ferramenta de medição com este token
+                    .invalid-feedback
           .row.mt-3
             .col.text-center
               button.btn.teal.lighten-2(type="submit")

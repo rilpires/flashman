@@ -18,6 +18,7 @@ let roleSchema = new mongoose.Schema({
   grantLOGAccess: {type: Boolean, required: true, default: false},
   grantNotificationPopups: {type: Boolean, required: true, default: true},
   grantLanEdit: {type: Boolean, required: true, default: true},
+  grantLanDevices: {type: Number, required: true, default: 2},
 });
 
 let Role = mongoose.model('Role', roleSchema);

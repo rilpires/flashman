@@ -5,6 +5,7 @@ block content
   include includes/showdevicelogs
   include includes/configdevicefirewall
   include includes/showpingtest
+  include includes/showlandevices
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
@@ -263,6 +264,8 @@ block content
                         (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
                       data-validate-lan=(
                         devicesPermissions[index].grantLanEdit ? "true" : "false"),
+                      data-validate-port-forward-asym=(
+                        devicesPermissions[index].grantPortForwardAsym ? "true" : "false"),
                       data-minlength-pass-pppoe=minlengthpasspppoe,
                       style="display: none;"
                     )
@@ -310,6 +313,7 @@ block scripts
   script(src='/javascripts/edit_device_firewall.js')
   script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/show_ping_test_actions.js')
+  script(src='/javascripts/show_lan_devices_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
   script(src='/javascripts/notification_actions.js',

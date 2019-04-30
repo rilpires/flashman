@@ -14,10 +14,10 @@ const selectizeOptionsMacs = {
       let dataVal =
         isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
       return $('<div></div>').addClass('option').append(
-        $('<span></span>').addClass('title').html(escape(data.label.toUpperCase())),
-        $('<span></span>').addClass('description').html(
-          escape(dataVal.toUpperCase())
-        )
+        $('<span></span>').addClass('title')
+        .html(escape(data.label.toUpperCase())),
+        $('<span></span>').addClass('description')
+        .html(escape(dataVal.toUpperCase()))
       );
     },
   },
@@ -26,20 +26,43 @@ const selectizeOptionsMacs = {
 const selectizeOptionsPorts = {
   create: true,
   createFilter: function(input) {
-    if (!isNaN(parseInt(input))) {
-      let intPort = parseInt(input);
-      if (intPort >= 1 && intPort <= 65535) {
-        return true;
+    const checkVal = function(val) {
+      if (!isNaN(val)) {
+        let intPort = parseInt(val);
+        if (intPort >= 1 && intPort <= 65535) {
+          return true;
+        }
       }
+      return false;
+    };
+
+    if (input.indexOf(':') == -1) {
+      return checkVal(input);
+    } else {
+      res = input.split(':', 2);
+      if (!checkVal(res[0])) {
+        return false;
+      }
+      return checkVal(res[1]);
     }
     return false;
   },
   render: {
     option_create: function(data, escape) {
-      return $('<div></div>').addClass('create').append(
-        'Adicionar: ',
-        $('<strong></strong>').html(escape(data.input))
-      );
+      if (data.input.indexOf(':') == -1) {
+        return $('<div></div>').addClass('create').append(
+          'Adicionar: ',
+          $('<strong></strong>').html(escape(data.input))
+        );
+      } else {
+        res = data.input.split(':', 2);
+        return $('<div></div>').addClass('create').append(
+          'Dispositivo: ',
+          $('<strong></strong>').html(escape(res[0])),
+          '<br>Externo: ',
+          $('<strong></strong>').html(escape(res[1]))
+        );
+      }
     },
   },
 };
@@ -68,8 +91,15 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   // Prepare badge list of ports
   let portListBadges = $('<td></td>').addClass('text-center');
   $.each(deviceEntry.port, function(idx, portValue) {
+    finalValue = portValue;
+    if (deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
+       deviceEntry.router_port.length == deviceEntry.port.length) {
+      if (portValue != deviceEntry.router_port[idx]) {
+        finalValue = portValue + ':' + deviceEntry.router_port[idx];
+      }
+    }
     portListBadges.append(
-      $('<span></span>').addClass('badge badge-primary mr-1').html(portValue)
+      $('<span></span>').addClass('badge badge-primary mr-1').html(finalValue)
     );
   });
   // Prepare DMZ string
@@ -111,6 +141,12 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   newport.mac = deviceEntry.mac;
   newport.port = deviceEntry.port;
   newport.dmz = deviceEntry.dmz;
+  if (deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
+       deviceEntry.router_port.length == deviceEntry.port.length &&
+       deviceEntry.router_port.length > 0) {
+    newport.router_port = deviceEntry.router_port;
+  }
+
   portsFinal.push(newport);
   rules.val(JSON.stringify(portsFinal));
 };
@@ -126,12 +162,10 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
       $('.btn-syncOnlineDevs').children()
                               .removeClass('animated rotateOut infinite');
       let macoptions = [];
-      $.each(data.Devices, function(key, value) {
+      $.each(data, function(idx, value) {
         let datanew = {};
-        let deviceMac = key;
-        let deviceName = deviceMac;
-        deviceName = ('hostname' in value && value.hostname != '!') ?
-          value.hostname : deviceName;
+        let deviceMac = value.mac;
+        let deviceName = value.hostname;
         datanew.value = JSON.stringify([deviceMac, deviceName]);
         datanew.label = deviceName;
         // Populate connected devices dropdown options
@@ -150,10 +184,12 @@ $(document).ready(function() {
   $('.btn-openFirewallPorts-modal').click(function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let hasPortForwardAsym = row.data('validate-port-forward-asym');
+    $('#hasFirewallPortForwardAsym').val(hasPortForwardAsym);
 
     $.ajax({
       type: 'GET',
-      url: '/devicelist/portforward/' + id,
+      url: '/devicelist/uiportforward/' + id,
       dataType: 'json',
       success: function(res) {
         if (res.success) {
@@ -165,8 +201,9 @@ $(document).ready(function() {
             let deviceLabel = value.mac;
             deviceLabel = value.dhcp_name ? value.dhcp_name : deviceLabel;
             deviceLabel = value.name ? value.name : deviceLabel;
+            devicePortAsym = hasPortForwardAsym ? value.router_port : null;
             insertOpenFirewallDoorRule({
-              mac: value.mac, port: value.port,
+              mac: value.mac, port: value.port, router_port: devicePortAsym,
               dmz: value.dmz, label: deviceLabel,
             });
           });
@@ -225,6 +262,7 @@ $(document).ready(function() {
   $(document).on('click', '.openFirewallPortsRemoveRule', function(event) {
     let row = $(event.target).parents('tr');
     let mac = row.data('device');
+
     // Delete row form table
     let rulesTable = $('#openFirewallPortsRules');
     rulesTable.find('[data-device="' + mac + '"]').remove();
@@ -233,18 +271,14 @@ $(document).ready(function() {
     let portsFinal = [];
     if (rules.val() != '') {
       portsFinal = JSON.parse(rules.val());
-      for (let idx = 0; idx < portsFinal.length; idx++) {
-        // Erase ports will remove rule
-        if (portsFinal[idx].mac == mac) {
-          portsFinal[idx].port = [];
-          portsFinal[idx].dmz = false;
-        }
-      }
+      portsFinal = removeByKey(portsFinal, {key: 'mac', value: mac});
       rules.val(JSON.stringify(portsFinal));
     }
   });
 
   $('.btn-openFirewallPortsSaveRule').click(function(event) {
+    let hasPortForwardAsym = ($('#hasFirewallPortForwardAsym').val() == 'true');
+
     let deviceId = $('#openFirewallPortsMac')[0].selectize.getValue();
     let ports = $('#openFirewallPortsPorts')[0].selectize.getValue();
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
@@ -266,6 +300,23 @@ $(document).ready(function() {
       });
       return;
     }
+
+    let asymusage = false;
+    $.each(ports, function(idx, portValue) {
+      if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
+        swal({
+          title: 'Falha na inclução da regra',
+          text: 'Roteador não aceita portas assimétricas! Atualize o Roteador.',
+          type: 'error',
+          confirmButtonColor: '#4db6ac',
+        });
+        asymusage = true;
+      }
+    });
+    if (asymusage) {
+      return;
+    }
+
     // Check for ports already in use
     let reservedPorts = [36022];
     let hasPortInUse = false;
@@ -273,19 +324,58 @@ $(document).ready(function() {
     if (rules.val() != '') {
       let rulesJson = JSON.parse(rules.val());
       $.each(rulesJson, function(idx, ruleEntry) {
-        reservedPorts = reservedPorts.concat(parseInt(ruleEntry.port));
+        let portsArray = [];
+        if (ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port) {
+          portsArray = ruleEntry.router_port;
+        } else {
+          portsArray = ruleEntry.port;
+        }
+        $.each(portsArray, function(idx, portsEntry) {
+          reservedPorts.push(parseInt(portsEntry));
+        });
       });
     }
+
+    let intPorts = [];
+    let portsFinal = [];
+    let asymPortsFinal = [];
     $.each(ports, function(idx, portValue) {
-      if (reservedPorts.indexOf(parseInt(portValue)) != -1) {
+      let portFinal = 0;
+      let intPort = 0;
+      if (portValue.indexOf(':') == -1) {
+        portFinal = portValue;
+        intPort = portValue;
+        portsFinal = portsFinal.concat(parseInt(portValue));
+        asymPortsFinal = asymPortsFinal.concat(parseInt(portValue));
+      } else {
+        res = portValue.split(':', 2);
+        intPort = res[0];
+        portFinal = res[1];
+        portsFinal = portsFinal.concat(parseInt(intPort));
+        asymPortsFinal = asymPortsFinal.concat(parseInt(portFinal));
+      }
+
+      if (reservedPorts.indexOf(parseInt(portFinal)) != -1) {
         swal({
           title: 'Falha na inclução da regra',
-          text: 'Porta já utilizada!',
+          text: 'Porta Externa já utilizada!',
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
         hasPortInUse = true;
       }
+      reservedPorts = reservedPorts.concat(parseInt(portFinal));
+
+      if (intPorts.indexOf(parseInt(intPort)) != -1) {
+        swal({
+          title: 'Falha na inclução da regra',
+          text: 'Porta Interna já utilizada!',
+          type: 'error',
+          confirmButtonColor: '#4db6ac',
+        });
+        hasPortInUse = true;
+      }
+      intPorts = intPorts.concat(parseInt(intPort));
     });
     if (hasPortInUse) {
       return;
@@ -300,8 +390,10 @@ $(document).ready(function() {
       deviceMac = deviceId;
       deviceLabel = deviceId;
     }
+    asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
     insertOpenFirewallDoorRule({
-      mac: deviceMac, port: ports, dmz: dmz, label: deviceLabel,
+      mac: deviceMac, port: portsFinal, router_port: asymPortsValue,
+      dmz: dmz, label: deviceLabel,
     });
   });
 
@@ -309,7 +401,7 @@ $(document).ready(function() {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
       type: 'POST',
-      url: '/devicelist/portforward/' + id,
+      url: '/devicelist/uiportforward/' + id,
       dataType: 'json',
       data: JSON.stringify({
         'content': $('#openFirewallPortsFinalRules').val(),

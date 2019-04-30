@@ -172,34 +172,20 @@ sio.anlixWaitForOnlineDevNotification = function(session, macaddr) {
   return true;
 };
 
-sio.anlixSendOnlineDevNotifications = function(matchedDevice, devsData) {
-  if (!matchedDevice) {
+sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
+  if (!macaddr) {
     console.log(
       'ERROR: SIO: ' +
       'Try to send onlinedev notification to an invalid mac address!'
     );
     return false;
   }
-  // Enrich information about connected devices
-  for (let connDeviceMac in devsData.Devices) {
-    if (devsData.Devices.hasOwnProperty(connDeviceMac)) {
-      let upConnDevMac = connDeviceMac.toLowerCase();
-      let lanDevice = matchedDevice.lan_devices.filter(function(lanDev) {
-        return lanDev.mac.toLowerCase() == upConnDevMac;
-      });
-      if (lanDevice[0] && ('name' in lanDevice[0]) && lanDevice[0].name != '') {
-        devsData.Devices[connDeviceMac].hostname = lanDevice[0].name;
-      } else if (lanDevice[0] && ('dhcp_name' in lanDevice[0]) &&
-                 lanDevice[0].dhcp_name != '') {
-        devsData.Devices[connDeviceMac].hostname = lanDevice[0].dhcp_name;
-      }
-    }
-  }
+
   let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
-                               matchedDevice._id, devsData, matchedDevice._id);
+                               macaddr, devsData, macaddr);
   if (!found) {
     console.log('SIO: NO Session found for ' +
-                matchedDevice._id + '! Discarding message...');
+                macaddr + '! Discarding message...');
   }
   return found;
 };

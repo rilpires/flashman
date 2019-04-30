@@ -37,7 +37,20 @@ let deviceSchema = new Schema({
     is_blocked: {type: Boolean, default: false},
     name: String,
     port: [Number],
+    router_port: [Number],
     dmz: {type: Boolean, default: false},
+    last_seen: Date,
+    first_seen: Date,
+    ip: String,
+    conn_type: {type: Number, enum: [
+      0, // cable
+      1, // wireless
+    ]},
+    conn_speed: Number, // Mbps. Bitrate value in case of wireless
+    wifi_freq: Number, // GHz
+    wifi_signal: Number, // dBm
+    wifi_snr: Number, // dB
+    wifi_mode: String, // G, N, AC
   }],
   wan_ip: String,
   wan_negociated_speed: String,
@@ -63,6 +76,8 @@ let deviceSchema = new Schema({
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
+  // For blocked devices
+  blocked_devices_index: String,
   // Store hosts to measure against
   ping_hosts: {
     type: [String],
@@ -76,6 +91,12 @@ let deviceSchema = new Schema({
 });
 
 deviceSchema.plugin(mongoosePaginate);
+
+deviceSchema.methods.getLanDevice = function(mac) {
+  return this.lan_devices.find(function(device, idx) {
+    return device.mac == mac;
+  });
+};
 
 let Device = mongoose.model('Device', deviceSchema );
 

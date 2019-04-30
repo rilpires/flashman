@@ -40,6 +40,15 @@ const grantPortForward = function(version) {
   }
 };
 
+const grantPortForwardAsym = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.14.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantWifi5ghz = function(version, is5ghzCapable) {
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (versionCompare(version, '0.13.0') >= 0));
@@ -76,15 +85,26 @@ const grantLanEdit = function(version) {
   }
 };
 
+const grantLanDevices = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.14.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
   result.grantPortForward = grantPortForward(version);
+  result.grantPortForwardAsym = grantPortForwardAsym(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
+  result.grantLanDevices = grantLanDevices(version);
   return result;
 };
 
