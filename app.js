@@ -27,7 +27,9 @@ let app = express();
 
 mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman',
-  {useNewUrlParser: true}
+  {useNewUrlParser: true,
+   reconnectTries: Number.MAX_VALUE,
+   reconnectInterval: 1000}
 );
 mongoose.set('useCreateIndex', true);
 
