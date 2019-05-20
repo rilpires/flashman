@@ -484,6 +484,7 @@ deviceListController.sendMqttMsg = function(req, res) {
             lanDevice.is_blocked = false;
             return lanDevice;
           });
+          device.blocked_devices_index = Date.now();
           device.save();
         }
         mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
