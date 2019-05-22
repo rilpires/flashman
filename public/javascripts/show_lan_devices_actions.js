@@ -37,7 +37,8 @@ $(document).ready(function() {
           let lanDevsRow = $('#lan-devices-body');
           $.each(res.lan_devices, function(idx, device) {
             const lastSeen = ((device.last_seen) ?
-                              Date.parse(device.last_seen) : Date.now());
+                              Date.parse(device.last_seen) :
+                              new Date(1970, 1, 1));
             const justNow = Date.now();
             const devTimeDiff = Math.abs(justNow - lastSeen);
             const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);

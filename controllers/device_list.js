@@ -1139,6 +1139,7 @@ deviceListController.setPortForward = function(req, res) {
             matchedDevice.lan_devices[idx].port = portsArray;
             matchedDevice.lan_devices[idx].router_port = portAsymArray;
             matchedDevice.lan_devices[idx].dmz = r.dmz;
+            matchedDevice.lan_devices[idx].last_seen = Date.now();
             newLanDevice = false;
             break;
           }
@@ -1149,6 +1150,8 @@ deviceListController.setPortForward = function(req, res) {
             port: portsArray,
             router_port: portAsymArray,
             dmz: r.dmz,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
           });
         }
       });
