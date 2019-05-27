@@ -87,6 +87,11 @@ $(document).ready(function() {
                     ) : ''
                   )
                 ),
+                $('<div></div>').addClass('row pt-2').append(
+                  $('<div></div>').addClass('col').append(
+                    $('<h6></h6>').text(device.ip)
+                  )
+                ),
                 $('<div></div>').addClass('row pt-3 mb-2').append(
                   $('<div></div>').addClass('col').append(
                     $('<h6></h6>').text(device.name),
