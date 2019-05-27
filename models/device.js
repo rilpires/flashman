@@ -39,8 +39,8 @@ let deviceSchema = new Schema({
     port: [Number],
     router_port: [Number],
     dmz: {type: Boolean, default: false},
-    last_seen: Date,
-    first_seen: Date,
+    last_seen: {type: Date, default: Date.now},
+    first_seen: {type: Date, default: Date.now},
     ip: String,
     conn_type: {type: Number, enum: [
       0, // cable

@@ -829,6 +829,7 @@ deviceInfoController.appSetBlacklist = function(req, res) {
       let ret = false;
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == blackMacDevice) {
+          device.lan_devices[idx].last_seen = Date.now();
           if (device.lan_devices[idx].dhcp_name !== dhcpLease) {
             device.lan_devices[idx].dhcp_name = dhcpLease;
             device.blocked_devices_index = Date.now();
@@ -848,6 +849,8 @@ deviceInfoController.appSetBlacklist = function(req, res) {
         mac: blackMacDevice,
         dhcp_name: dhcpLease,
         is_blocked: true,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
       });
       device.blocked_devices_index = Date.now();
       return true;
@@ -869,6 +872,7 @@ deviceInfoController.appSetWhitelist = function(req, res) {
       let whiteMacDevice = content.whitelist_device.mac.toLowerCase();
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == whiteMacDevice) {
+          device.lan_devices[idx].last_seen = Date.now();
           if (device.lan_devices[idx].is_blocked) {
             device.lan_devices[idx].is_blocked = false;
             device.blocked_devices_index = Date.now();
@@ -899,6 +903,7 @@ deviceInfoController.appSetDeviceInfo = function(req, res) {
       for (let idx = 0; idx < device.lan_devices.length; idx++) {
         if (device.lan_devices[idx].mac == macDevice) {
           device.lan_devices[idx].name = configs.name;
+          device.lan_devices[idx].last_seen = Date.now();
           newLanDevice = false;
           if (configs.hasOwnProperty('rules')) {
             let rules = configs.rules;

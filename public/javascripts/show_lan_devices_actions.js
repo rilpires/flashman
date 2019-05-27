@@ -37,7 +37,8 @@ $(document).ready(function() {
           let lanDevsRow = $('#lan-devices-body');
           $.each(res.lan_devices, function(idx, device) {
             const lastSeen = ((device.last_seen) ?
-                              Date.parse(device.last_seen) : Date.now());
+                              Date.parse(device.last_seen) :
+                              new Date(1970, 1, 1));
             const justNow = Date.now();
             const devTimeDiff = Math.abs(justNow - lastSeen);
             const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);
@@ -84,6 +85,11 @@ $(document).ready(function() {
                       $('<h6></h6>').text('Velocidade Máx. ' +
                                           device.conn_speed + ' Mbps')
                     ) : ''
+                  )
+                ),
+                $('<div></div>').addClass('row pt-2').append(
+                  $('<div></div>').addClass('col').append(
+                    $('<h6></h6>').text(device.ip)
                   )
                 ),
                 $('<div></div>').addClass('row pt-3 mb-2').append(
