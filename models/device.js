@@ -42,6 +42,8 @@ let deviceSchema = new Schema({
     last_seen: {type: Date, default: Date.now},
     first_seen: {type: Date, default: Date.now},
     ip: String,
+    ipv6: [String],
+    dhcpv6: [String],
     conn_type: {type: Number, enum: [
       0, // cable
       1, // wireless
