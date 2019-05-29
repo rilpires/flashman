@@ -49,6 +49,15 @@ const grantPortForwardAsym = function(version) {
   }
 };
 
+const grantPortOpenIpv6 = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.15.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantWifi5ghz = function(version, is5ghzCapable) {
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (versionCompare(version, '0.13.0') >= 0));
@@ -100,6 +109,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   result.grantResetDevices = grantResetDevices(version);
   result.grantPortForward = grantPortForward(version);
   result.grantPortForwardAsym = grantPortForwardAsym(version);
+  result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
   result.grantPingTest = grantPingTest(version);

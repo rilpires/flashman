@@ -1162,6 +1162,23 @@ deviceInfoController.receiveDevices = function(req, res) {
             outDev.hostname = devReg.dhcp_name;
           }
           devReg.ip = (ipRes.valid ? upConnDev.ip : null);
+          if (Array.isArray(upConnDev.ipv6)) {
+            if (devReg.ipv6 && devReg.ipv6.length > 0) {
+              // Remove duplicates when merging arrays
+              devReg.ipv6 = [...new Set([...devReg.ipv6, ...upConnDev.ipv6])];
+            } else {
+              devReg.ipv6 = upConnDev.ipv6;
+            }
+          }
+          if (Array.isArray(upConnDev.dhcpv6)) {
+            if (devReg.dhcpv6 && devReg.dhcpv6.length > 0) {
+              // Remove duplicates when merging arrays
+              devReg.dhcpv6 = [...new Set([...devReg.dhcpv6,
+                               ...upConnDev.dhcpv6])];
+            } else {
+              devReg.dhcpv6 = upConnDev.dhcpv6;
+            }
+          }
           devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
                               upConnDev.conn_type : null);
           devReg.conn_speed = upConnDev.conn_speed;
@@ -1179,6 +1196,8 @@ deviceInfoController.receiveDevices = function(req, res) {
             first_seen: Date.now(),
             last_seen: Date.now(),
             ip: (ipRes.valid ? upConnDev.ip : null),
+            ipv6: (Array.isArray(upConnDev.ipv6) ? upConnDev.ipv6 : null),
+            dhcpv6: (Array.isArray(upConnDev.dhcpv6) ? upConnDev.dhcpv6 : null),
             conn_type: ([0, 1].includes(upConnDev.conn_type) ?
                         upConnDev.conn_type : null),
             conn_speed: upConnDev.conn_speed,

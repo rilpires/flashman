@@ -89,18 +89,28 @@ const isJsonString = function(str) {
 
 const insertOpenFirewallDoorRule = function(deviceEntry) {
   // Prepare badge list of ports
-  let portListBadges = $('<td></td>').addClass('text-center');
+  let portListBadges = $('<td>').addClass('text-center');
+  let portListBadgesIpv6 = $('<td>').addClass('text-center');
+  // Check if has ipv6 open port functionality
+  console.log($('#hasFirewallPortOpenIpv6').val());
+  let hasPortOpenIpv6 = ($('#hasFirewallPortOpenIpv6').val() == 'true');
   $.each(deviceEntry.port, function(idx, portValue) {
-    finalValue = portValue;
+    let finalValueIpv4 = portValue;
+    let finalValueIpv6 = portValue;
     if (deviceEntry.router_port && Array.isArray(deviceEntry.router_port) &&
        deviceEntry.router_port.length == deviceEntry.port.length) {
       if (portValue != deviceEntry.router_port[idx]) {
-        finalValue = portValue + ':' + deviceEntry.router_port[idx];
+        finalValueIpv4 = portValue + ':' + deviceEntry.router_port[idx];
       }
     }
     portListBadges.append(
-      $('<span></span>').addClass('badge badge-primary mr-1').html(finalValue)
+      $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4)
     );
+    if (hasPortOpenIpv6) {
+      portListBadgesIpv6.append(
+        $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6)
+      );
+    }
   });
   // Prepare DMZ string
   let dmzString = deviceEntry.dmz ? 'Sim':'Não';
@@ -109,20 +119,21 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   rulesTable.find('[data-device="' + deviceEntry.mac + '"]').remove();
   // Create table entries
   rulesTable.append(
-    $('<tr></tr>').append(
-      $('<td></td>').addClass('text-left').append(
-        $('<span></span>').css('display', 'block').append(
-          $('<strong></strong>').html(deviceEntry.label.toUpperCase())
+    $('<tr>').append(
+      $('<td>').addClass('text-left').append(
+        $('<span>').css('display', 'block').append(
+          $('<strong>').html(deviceEntry.label.toUpperCase())
                                 .addClass('conn-device-label')
         ),
-        $('<span></span>').css('display', 'block')
+        $('<span>').css('display', 'block')
                           .html(deviceEntry.mac.toUpperCase())
       ),
       portListBadges,
-      $('<td></td>').addClass('text-center').html(dmzString),
-      $('<td></td>').addClass('text-right').append(
-        $('<button></button>').append(
-          $('<div></div>').addClass('fas fa-times fa-lg')
+      portListBadgesIpv6,
+      $('<td>').addClass('text-center').html(dmzString),
+      $('<td>').addClass('text-right').append(
+        $('<button>').append(
+          $('<div>').addClass('fas fa-times fa-lg')
         ).addClass('btn btn-sm btn-danger my-0 openFirewallPortsRemoveRule')
         .attr('type', 'button')
       )
@@ -185,7 +196,9 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let hasPortForwardAsym = row.data('validate-port-forward-asym');
+    let hasPortOpenIpv6 = row.data('validate-port-open-ipv6');
     $('#hasFirewallPortForwardAsym').val(hasPortForwardAsym);
+    $('#hasFirewallPortOpenIpv6').val(hasPortOpenIpv6);
 
     $.ajax({
       type: 'GET',
