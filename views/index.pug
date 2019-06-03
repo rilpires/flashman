@@ -15,7 +15,7 @@ block content
                                         placeholder="Buscar...")
           .input-group-append(
             data-toggle="tooltip",
-            title="-Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
+            title="Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
           )
             span.input-group-text.md-addon
               .fas.fa-question-circle.fa-lg
@@ -26,7 +26,7 @@ block content
           data-toggle="modal",
           data-target="#special-search-terms"
         )
-          | Termos Especiais &nbsp
+          | Filtros Especiais &nbsp
           .fas.fa-plus-circle
 
   if (superuser || role.grantDeviceAdd)

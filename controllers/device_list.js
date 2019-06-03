@@ -292,6 +292,14 @@ deviceListController.searchDeviceReg = function(req, res) {
   let elementsPerPage = 10;
   let queryContents = req.query.content.split(',');
 
+  // Defaults to match all query contents
+  let queryLogicalOperator = '$and';
+  if (queryContents.includes('/ou')) {
+    queryLogicalOperator = '$or';
+    queryContents = queryContents.filter((query) => query !== '/ou');
+  }
+  queryContents = queryContents.filter((query) => query !== '/e');
+
   for (let idx=0; idx < queryContents.length; idx++) {
     let queryInput = new RegExp(queryContents[idx], 'i');
     let queryArray = [];
@@ -300,7 +308,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {'last_contact': {$gte: lastHour}},
         {'_id': {$in: Object.keys(mqtt.clients)}},
       ];
@@ -309,7 +317,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {last_contact: {$gte: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
@@ -318,7 +326,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {last_contact: {$lt: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
@@ -326,12 +334,12 @@ deviceListController.searchDeviceReg = function(req, res) {
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
                (queryContents[idx].toLowerCase() == 'update on')) {
       let field = {};
-      field['do_update'] = {$eq: true};
+      field.do_update = {$eq: true};
       queryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade off') ||
                (queryContents[idx].toLowerCase() == 'update off')) {
       let field = {};
-      field['do_update'] = {$eq: false};
+      field.do_update = {$eq: false};
       queryArray.push(field);
     } else {
       for (let property in DeviceModel.schema.paths) {
@@ -348,10 +356,7 @@ deviceListController.searchDeviceReg = function(req, res) {
     };
     finalQueryArray.push(query);
   }
-
-  finalQuery = {
-    $and: finalQueryArray,
-  };
+  finalQuery[queryLogicalOperator] = finalQueryArray;
 
   if (req.query.page) {
     reqPage = req.query.page;
