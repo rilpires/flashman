@@ -59,6 +59,7 @@ let deviceSchema = new Schema({
   wan_negociated_duplex: String,
   ip: String,
   ntp_status: String,
+  last_devices_refresh: Date,
   last_contact: Date,
   last_hardreset: Date,
   do_update: Boolean,
