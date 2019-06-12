@@ -567,6 +567,7 @@ deviceListController.newSearchDeviceReg = function(req, res) {
             page: matchedDevices.page,
             pages: matchedDevices.pages,
             status: status,
+            single_releases: getReleases(true),
             filter_list: req.body.filter_list,
             devices: enrichedMatchedDevs,
           });
