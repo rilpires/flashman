@@ -78,6 +78,8 @@ block content
                     data-connection-type="Tipo de Conexão WAN",
                     data-user="Usuário PPPoE",
                     data-pass="Senha PPPoE",
+                    data-lan-subnet="Subrede LAN",
+                    data-lan-netmask="Máscara LAN",
                     data-ssid="WiFi SSID",
                     data-wifi-pass="WiFi Senha",
                     data-channel="WiFi Canal",
@@ -115,164 +117,9 @@ block content
                     th.text-center Firmware Instalado
                     if (superuser || role.grantFirmwareUpgrade)
                       th.text-left Atualizar Firmware
-                tbody
-                  tr
-                    td
-                    td.text-center
-                      | #{status.totalnum} total
-                    td
-                      .fas.fa-circle.green-text
-                      span &nbsp
-                      span#online-status-sum #{status.onlinenum}
-                      br
-                      .fas.fa-circle.red-text
-                      span &nbsp
-                      span#recovery-status-sum #{status.recoverynum}
-                      br
-                      .fas.fa-circle.grey-text
-                      span &nbsp
-                      span#offline-status-sum #{status.offlinenum}
-                    td
-                    td
-                    td
-                    td
-                    td
-                    if (superuser || role.grantFirmwareUpgrade)
-                      td
-                        .btn-group
-                          button.btn.btn-sm.btn-danger.px-2#cancel-all-devices
-                            .fas.fa-times
-                          .btn-group#all-devices
-                            button.btn.btn-sm.btn-primary.dropdown-toggle(
-                              type="button",
-                              data-toggle="dropdown",
-                              data-singlereleases=singlereleases,
-                              disabled=((superuser || role.grantFirmwareUpgrade) ? false : true)
-                            )
-                              span.selected Escolher
-                            .dropdown-menu
-                              each release, idx in singlereleases
-                                a.dropdown-item.text-center #{release.id}
-                            span.ml-2.upgrade-status
-                              .far.fa-circle.fa-2x.white-text
-                  each device, index in devices
-                    tr.csv-export(
-                      id=device._id,
-                      data-index=(index + 1),
-                      data-deviceid=device._id,
-                      data-connection-type=(device.connection_type ? device.connection_type : ""),
-                      data-user=device.pppoe_user,
-                      data-pass=device.pppoe_password,
-                      data-lan-subnet=device.lan_subnet,
-                      data-lan-netmask=device.lan_netmask,
-                      data-ssid=device.wifi_ssid,
-                      data-wifi-pass=device.wifi_password,
-                      data-channel=device.wifi_channel,
-                      data-band=(device.wifi_band ? device.wifi_band : ""),
-                      data-mode=(device.wifi_mode ? device.wifi_mode : ""),
-                      data-ssid-5ghz=(device.wifi_ssid_5ghz ? device.wifi_ssid_5ghz : ""),
-                      data-wifi-pass-5ghz=(device.wifi_password_5ghz ? device.wifi_password_5ghz : ""),
-                      data-channel-5ghz=(device.wifi_channel_5ghz ? device.wifi_channel_5ghz : ""),
-                      data-band-5ghz=(device.wifi_band_5ghz ? device.wifi_band_5ghz : ""),
-                      data-mode-5ghz=(device.wifi_mode_5ghz ? device.wifi_mode_5ghz : ""),
-                      data-ext-wan=(device.ip ? device.ip : ""),
-                      data-int-wan=(device.wan_ip ? device.wan_ip : ""),
-                      data-wan-speed=(device.wan_negociated_speed ? device.wan_negociated_speed : ""),
-                      data-wan-duplex=(device.wan_negociated_duplex ? device.wan_negociated_duplex : ""),
-                      data-external-ref-type=(device.external_reference.kind ? device.external_reference.kind : ""),
-                      data-external-ref=(device.external_reference.data ? device.external_reference.data : ""),
-                      data-device-model=(device.model ? device.model : ""),
-                      data-device-version=(device.version ? device.version : ""),
-                      data-device-release=(device.release ? device.release : ""),
-                      data-do-update=(device.do_update ? "Sim" : "Não"),
-                    )
-                      td.text-center(
-                        style="cursor: pointer;"
-                      )
-                        .fas.fa-chevron-down.fa-lg
-                      td.text-center #{index + 1}
-                      td
-                        .fas.fa-circle.fa-lg.device-status(
-                          class=status.devices[device._id],
-                          data-toggle="tooltip",
-                          title=device.last_contact.toString()
-                        )
-                        span &nbsp
-                        span &nbsp
-                        if (superuser || role.grantNotificationPopups)
-                          a.d-none
-                            .fas.fa-exclamation-triangle.fa-lg.orange-text.device-alert.animated.heartBeat.infinite
-                      td.text-center
-                        | #{device.pppoe_user}
-                      td.text-center
-                        | #{device._id}
-                      td.text-center
-                        | #{device.wan_ip}
-                      td.text-center
-                        | #{device.ip}
-                      td.text-center
-                        | #{device.installed_release}
-                      if (superuser || role.grantFirmwareUpgrade)
-                        td
-                          .btn-group
-                            button.btn.btn-sm.px-2.btn-cancel-update(
-                              class=(!device.do_update ? "" : "btn-danger")
-                              disabled=!device.do_update
-                            )
-                              .fas.fa-times
-                            .btn-group
-                              button.btn.btn-sm.btn-primary.dropdown-toggle(
-                                type="button",
-                                data-toggle="dropdown"
-                                disabled=device.do_update
-                              )
-                                span.selected #{device.do_update ? device.release : "Escolher"}
-                              .dropdown-menu.refresh-selected
-                                each release, idx in releases
-                                  if device.model.includes('N/')
-                                    if (device.model.replace('N/', '') === release.model)
-                                      a.dropdown-item.text-center #{release.id}
-                                  if (device.model === release.model)
-                                    a.dropdown-item.text-center #{release.id}
-                              span.ml-3.upgrade-status
-                                .far.fa-circle.fa-2x.white-text.status-none(
-                                  class=(device.do_update ? "d-none" : "")
-                                )
-                                .fas.fa-spinner.fa-2x.fa-pulse.status-waiting(
-                                  class=(device.do_update && device.do_update_status == 0 ? "" : "d-none")
-                                )
-                                .fas.fa-check-circle.fa-2x.green-text.status-ok(
-                                  class=(device.do_update && device.do_update_status == 1 ? "" : "d-none")
-                                )
-                                a.status-error(
-                                  class=(device.do_update && device.do_update_status >= 2 ? "" : "d-none")
-                                )
-                                  .fas.fa-exclamation-circle.fa-2x.red-text    
-                    tr(
-                      id="form-" + (index + 1),
-                      data-index=(index + 1),
-                      data-deviceid=device._id,
-                      data-validate-wifi=(
-                        (superuser || role.grantWifiInfo >= 1) ? "true" : "false"),
-                      data-validate-pppoe=(
-                        (superuser || role.grantPPPoEInfo >= 1) ? "true" : "false"),
-                      data-validate-wifi-band=(
-                        (devicesPermissions[index].grantWifiBand &&
-                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
-                      data-validate-wifi-5ghz=(
-                        (devicesPermissions[index].grantWifi5ghz &&
-                        (superuser || role.grantWifiInfo >= 1)) ? "true" : "false"),
-                      data-validate-lan=(
-                        devicesPermissions[index].grantLanEdit ? "true" : "false"),
-                      data-validate-port-forward-asym=(
-                        devicesPermissions[index].grantPortForwardAsym ? "true" : "false"),
-                      data-validate-port-open-ipv6=(
-                        devicesPermissions[index].grantPortOpenIpv6 ? "true" : "false"),
-                      data-minlength-pass-pppoe=minlengthpasspppoe,
-                      style="display: none;"
-                    )
-                      td(colspan=9).grey.lighten-5
-                        include includes/editdeviceform
+                tbody#devices-table-content(
+                  data-role=role,
+                  data-superuser=superuser ? "true" : "false")
         .row.mt-3.mb-3
           .col-md-9
             nav
