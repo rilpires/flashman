@@ -1,15 +1,15 @@
 
 const express = require('express');
-const deviceListController = require('../controllers/device_list');
-const authController = require('../controllers/auth');
+const deviceListController = require('../../controllers/device_list');
+const authController = require('../../controllers/auth');
 
 let router = express.Router();
 
 // Query devices
-router.route('/search').get(
+router.route('/search').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.searchDeviceReg);
+  deviceListController.newSearchDeviceReg);
 
 // Change device update/upgrade status
 router.route('/update/:id/:release').put(

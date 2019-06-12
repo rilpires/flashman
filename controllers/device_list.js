@@ -439,6 +439,148 @@ deviceListController.searchDeviceReg = function(req, res) {
   });
 };
 
+deviceListController.newSearchDeviceReg = function(req, res) {
+  let finalQuery = {};
+  let finalQueryArray = [];
+  let reqPage = 1;
+  let elementsPerPage = 10;
+  // let queryContents = req.query.content.split(',');
+  let queryContents = req.body.filter_list.split(',');
+
+  // Defaults to match all query contents
+  let queryLogicalOperator = '$and';
+  if (queryContents.includes('/ou')) {
+    queryLogicalOperator = '$or';
+    queryContents = queryContents.filter((query) => query !== '/ou');
+  }
+  queryContents = queryContents.filter((query) => query !== '/e');
+
+  for (let idx=0; idx < queryContents.length; idx++) {
+    let queryInput = new RegExp(queryContents[idx], 'i');
+    let queryArray = [];
+
+    if (queryContents[idx].toLowerCase() == 'online') {
+      let field = {};
+      let lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+      field.$and = [
+        {'last_contact': {$gte: lastHour}},
+        {'_id': {$in: Object.keys(mqtt.clients)}},
+      ];
+      queryArray.push(field);
+    } else if (queryContents[idx].toLowerCase() == 'instavel') {
+      let field = {};
+      let lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+      field.$and = [
+        {last_contact: {$gte: lastHour}},
+        {_id: {$nin: Object.keys(mqtt.clients)}},
+      ];
+      queryArray.push(field);
+    } else if (queryContents[idx].toLowerCase() == 'offline') {
+      let field = {};
+      let lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+      field.$and = [
+        {last_contact: {$lt: lastHour}},
+        {_id: {$nin: Object.keys(mqtt.clients)}},
+      ];
+      queryArray.push(field);
+    } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
+               (queryContents[idx].toLowerCase() == 'update on')) {
+      let field = {};
+      field.do_update = {$eq: true};
+      queryArray.push(field);
+    } else if ((queryContents[idx].toLowerCase() == 'upgrade off') ||
+               (queryContents[idx].toLowerCase() == 'update off')) {
+      let field = {};
+      field.do_update = {$eq: false};
+      queryArray.push(field);
+    } else {
+      for (let property in DeviceModel.schema.paths) {
+        if (DeviceModel.schema.paths.hasOwnProperty(property) &&
+            DeviceModel.schema.paths[property].instance === 'String') {
+          let field = {};
+          field[property] = queryInput;
+          queryArray.push(field);
+        }
+      }
+    }
+    let query = {
+      $or: queryArray,
+    };
+    finalQueryArray.push(query);
+  }
+  finalQuery[queryLogicalOperator] = finalQueryArray;
+
+  if (req.query.page) {
+    reqPage = req.query.page;
+  }
+  if (req.user.maxElementsPerPage) {
+    elementsPerPage = req.user.maxElementsPerPage;
+  }
+
+  DeviceModel.paginate(finalQuery, {page: reqPage,
+                            limit: elementsPerPage,
+                            lean: true,
+                            sort: {_id: 1}}, function(err, matchedDevices) {
+    if (err) {
+      return res.json({
+        type: 'danger',
+        message: err.message,
+      });
+    }
+    let lastHour = new Date();
+    let releases = getReleases();
+    lastHour.setHours(lastHour.getHours() - 1);
+
+    let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
+      const model = device.model.replace('N/', '');
+      const devReleases = releases.filter((release) => release.model === model);
+      device.releases = devReleases;
+      // Status color
+      let deviceColor = 'grey-text';
+      if (mqtt.clients[device._id.toUpperCase()]) {
+        deviceColor = 'green-text';
+      } else if (device.last_contact.getTime() >= lastHour.getTime()) {
+        deviceColor = 'red-text';
+      }
+      device.status_color = deviceColor;
+      // Device permissions
+      device.permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable
+      );
+      return device;
+    });
+
+    User.findOne({name: req.user.name}, function(err, user) {
+      Config.findOne({is_default: true}, function(err, matchedConfig) {
+        getOnlineCount(finalQuery).then((onlineStatus) => {
+          // Counters
+          let status = {};
+          status = Object.assign(status, onlineStatus);
+          // Filter data using user permissions
+          return res.json({
+            type: 'success',
+            limit: req.user.maxElementsPerPage,
+            page: matchedDevices.page,
+            pages: matchedDevices.pages,
+            status: status,
+            filter_list: req.body.filter_list,
+            devices: enrichedMatchedDevs,
+          });
+        }, (error) => {
+          return res.json({
+            type: 'danger',
+            message: err.message,
+          });
+        });
+      });
+    });
+  });
+};
+
 deviceListController.delDeviceReg = function(req, res) {
   DeviceModel.remove({_id: req.params.id.toUpperCase()}, function(err) {
     if (err) {
