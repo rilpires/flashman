@@ -566,6 +566,7 @@ deviceListController.newSearchDeviceReg = function(req, res) {
             limit: req.user.maxElementsPerPage,
             page: matchedDevices.page,
             pages: matchedDevices.pages,
+            min_length_pass_pppoe: matchedConfig.pppoePassLength,
             status: status,
             single_releases: getReleases(true),
             filter_list: req.body.filter_list,
