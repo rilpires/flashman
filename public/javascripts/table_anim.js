@@ -1,49 +1,3 @@
-// let loadDeviceInfoOnForm = function(row) {
-//   let index = row.data('index');
-//   $('#edit_pppoe_user-' + index.toString()).val(row.data('user')).change();
-//   $('#edit_pppoe_pass-' + index.toString()).val(row.data('pass')).change();
-//   $('#edit_lan_subnet-' + index.toString()).val(row.data('lan-subnet')).change();
-//   $('#edit_lan_netmask-' + index.toString()).val(row.data('lan-netmask')).change();
-//   $('#edit_wifi_ssid-' + index.toString()).val(row.data('ssid')).change();
-//   $('#edit_wifi_pass-' + index.toString()).val(row.data('wifi-pass')).change();
-//   $('#edit_wifi_channel-' + index.toString()).val(row.data('channel')).change();
-//   $('#edit_wifi_band-' + index.toString()).val(row.data('band')).change();
-//   $('#edit_wifi_mode-' + index.toString()).val(row.data('mode')).change();
-//   $('#edit_wifi5_ssid-' + index.toString()).val(row.data('ssid-5ghz')).change();
-//   $('#edit_wifi5_pass-' + index.toString()).val(row.data('wifi-pass-5ghz')).change();
-//   $('#edit_wifi5_channel-' + index.toString()).val(row.data('channel-5ghz')).change();
-//   $('#edit_wifi5_band-' + index.toString()).val(row.data('band-5ghz')).change();
-//   $('#edit_wifi5_mode-' + index.toString()).val(row.data('mode-5ghz')).change();
-
-//   let connectionType = row.data('connection-type').toUpperCase();
-//   if (connectionType === 'DHCP') {
-//     $('#edit_connect_type-' + index.toString()).val('DHCP');
-//     $('#edit_pppoe_user-' + index.toString()).parent().hide();
-//     $('#edit_pppoe_pass-' + index.toString()).closest('.input-entry').hide();
-//   } else {
-//     $('#edit_connect_type-' + index.toString()).val('PPPoE');
-//     $('#edit_pppoe_user-' + index.toString()).parent().show();
-//     $('#edit_pppoe_pass-' + index.toString()).closest('.input-entry').show();
-//   }
-
-//   $('#edit_connect_type-' + index.toString()).change(function() {
-//     $('#edit_connect_type_warning-' + index.toString()).show();
-//     if ($('#edit_connect_type-' + index.toString()).val() === 'PPPoE') {
-//       $('#edit_pppoe_user-' + index.toString()).parent().show();
-//       $('#edit_pppoe_pass-' + index.toString()).closest('.input-entry').show();
-//     } else {
-//       $('#edit_pppoe_user-' + index.toString()).parent().hide();
-//       $('#edit_pppoe_pass-' + index.toString()).closest('.input-entry').hide();
-//     }
-//   });
-
-//   $('#edit_connect_speed-' + index.toString()).val(
-//     row.data('wan-speed')
-//   ).change();
-//   $('#edit_connect_duplex-' + index.toString()).val(
-//     row.data('wan-duplex')
-//   ).change();
-// };
 
 let downloadCSV = function(csv, filename) {
   let csvFile;
@@ -127,7 +81,6 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
-    // loadDeviceInfoOnForm(row);
     $(formId).removeClass('d-none');
     $(event.target).removeClass('fa-chevron-down')
                    .addClass('fa-chevron-up text-primary');
@@ -153,6 +106,7 @@ $(document).ready(function() {
   let grantLanAccess = false;
   let grantDeviceRemoval = false;
   let grantDeviceId = false;
+  let grantPassShow = false;
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
@@ -167,10 +121,11 @@ $(document).ready(function() {
     grantLanAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceId = role.grantDeviceId;
+    grantPassShow = role.grantPassShow;
   }
 
   $.ajax({
-    url: '/api/v2/search',
+    url: '/devicelist/search',
     type: 'PUT',
     data: {filter_list: ''},
     success: function(res) {
@@ -590,18 +545,350 @@ $(document).ready(function() {
                       // WAN
                       $('<div>').addClass('edit-tab d-none').attr('id', 'tab_wan-' + index)
                       .append(
+                        $('<div>').addClass('row').append(
+                          // Client ID
+                          $('<div>').addClass('col-4').append(
+                            $('<div>').addClass('md-form').append(
+                              $('<div>').addClass('input-group has-warning')
+                              .append(
+                                $('<div>').addClass('md-selectfield form-control my-0')
+                                .append(
+                                  $('<label>').html('Tipo de Conexão'),
+                                  $('<select>').addClass('browser-default md-select')
+                                               .attr('id', 'edit_connect_type-' + index)
+                                  .append(
+                                    $('<option>').val('DHCP').html('DHCP'),
+                                    $('<option>').val('PPPoE').html('PPPoE')
+                                  )
+                                  .val(device.connection_type.toUpperCase() === 'DHCP' ? 'DHCP' : 'PPPoE')
+                                ),
+                                $('<h7>').addClass('orange-text d-none')
+                                         .attr('id', 'edit_connect_type_warning-' + index)
+                                .html('Cuidado! Isso pode deixar o roteador inacessível' +
+                                      'dependendo das configurações de rede do seu provedor')
+                              )
+                            )
+                          ),
+                          $('<div>').addClass('col-4').append(
+                            $('<div>').addClass('md-form input-entry').append(
+                              $('<label>').html('Velocidade Negociada (Mbps)'),
+                              $('<input>').addClass('form-control')
+                                          .attr('type', 'text')
+                                          .attr('maxlength', '32')
+                                          .attr('disabled', true)
+                                           .val(device.wan_negociated_speed),
+                              $('<div>').addClass('invalid-feedback')
+                            ),
+                            $('<div>').addClass('md-form input-entry').append(
+                              $('<label>').html('Modo de Transmissão (Duplex)'),
+                              $('<input>').addClass('form-control')
+                                          .attr('type', 'text')
+                                          .attr('maxlength', '32')
+                                          .attr('disabled', true)
+                                          .val(device.wan_negociated_duplex),
+                              $('<div>').addClass('invalid-feedback')
+                            )
+                          ),
+                          ((isSuperuser || grantPPPoEInfo >= 1) &&
+                            device.connection_type.toUpperCase() !== 'DHCP' ?
+                            $('<div>').addClass('col-4').append(
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<label>').html('Usuário PPPoE'),
+                                $('<input>').addClass('form-control')
+                                            .attr('type', 'text')
+                                            .attr('id', 'edit_pppoe_user-' + index)
+                                            .attr('maxlength', '64')
+                                            .attr('disabled', !isSuperuser && grantPPPoEInfo <= 1)
+                                            .val(device.pppoe_user),
+                                $('<div>').addClass('invalid-feedback')
+                              ),
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<label>').html('Senha PPPoE'),
+                                  $('<input>').addClass('form-control my-0')
+                                              .attr('type', 'password')
+                                              .attr('id', 'edit_pppoe_pass-' + index)
+                                              .attr('maxlength', '64')
+                                              .attr('disabled', !isSuperuser && grantPPPoEInfo <= 1)
+                                              .val(device.pppoe_password),
+                                  (isSuperuser || grantPassShow ?
+                                    $('<div>').addClass('input-group-append')
+                                    .append(
+                                      $('<div>').addClass('input-group-text primary-color')
+                                      .append(
+                                        $('<a>').addClass('toggle-pass')
+                                        .append(
+                                          $('<i>').addClass('fas fa-eye-slash white-text')
+                                        )
+                                      )
+                                    )
+                                    :
+                                    ''
+                                  ),
+                                  $('<div>').addClass('invalid-feedback')
+                                )
+                              )
+                            )
+                            :
+                            ''
+                          )
+                        )
                       ),
                       // LAN
                       $('<div>').addClass('edit-tab d-none').attr('id', 'tab_lan-' + index)
                       .append(
+                        $('<div>').addClass('row')
+                        .append(
+                          $('<div>').addClass('col-6').append(
+                            $('<div>').addClass('md-form input-entry').append(
+                              $('<label>').html('IP da Rede'),
+                              $('<input>').addClass('form-control ip-mask-field')
+                                          .attr('type', 'text')
+                                          .attr('id', 'edit_lan_subnet-' + index)
+                                          .attr('maxlength', '15')
+                                          .attr('disabled', !isSuperuser && !grantLanEdit)
+                                          .val(device.lan_subnet),
+                              $('<div>').addClass('invalid-feedback')
+                            )
+                          ),
+                          $('<div>').addClass('col-6').append(
+                            $('<div>').addClass('md-form').append(
+                              $('<div>').addClass('input-group').append(
+                                $('<div>').addClass('md-selectfield form-control my-0')
+                                .append(
+                                  $('<label>').html('Máscara'),
+                                  $('<select>').addClass('browser-default md-select')
+                                              .attr('type', 'text')
+                                              .attr('id', 'edit_lan_netmask-' + index)
+                                              .attr('maxlength', '15')
+                                              .attr('disabled', !isSuperuser && !grantLanEdit)
+                                  .append(() => {
+                                    let opts = $('<div>');
+                                    ['24', '25', '26'].forEach((mask) => {
+                                      opts.append(
+                                        $('<option>').val(mask).html(mask)
+                                      );
+                                    });
+                                    return opts.html();
+                                  })
+                                  .val(device.lan_netmask)
+                                )
+                              )
+                            )
+                          )
+                        )
                       ),
                       // Wi-Fi 2.4Ghz
-                      $('<div>').addClass('edit-tab d-none').attr('id', 'tab_wifi-' + index)
-                      .append(
+                      (isSuperuser || grantWifiInfo >= 1 ?
+                        $('<div>').addClass('edit-tab d-none').attr('id', 'tab_wifi-' + index)
+                        .append(
+                          $('<div>').addClass('row').append(
+                            $('<div>').addClass('col-6').append(
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Canal do Wi-Fi'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi_channel-' + index)
+                                                .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                    .append(() => {
+                                      let opts = $('<div>');
+                                      ['auto', '1', '2', '3', '4', '5',
+                                       '6', '7', '8', '9', '10', '11']
+                                      .forEach((channel) => {
+                                        opts.append(
+                                          $('<option>').val(channel).html(channel)
+                                        );
+                                      });
+                                      return opts.html();
+                                    })
+                                    .val(device.wifi_channel)
+                                  )
+                                )
+                              ),
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<label>').html('SSID do Wi-Fi'),
+                                $('<input>').addClass('form-control')
+                                            .attr('type', 'text')
+                                            .attr('id', 'edit_wifi_ssid-' + index)
+                                            .attr('maxlength', '32')
+                                            .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                            .val(device.wifi_ssid),
+                                $('<div>').addClass('invalid-feedback')
+                              ),
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<label>').html('Senha do Wi-Fi'),
+                                  $('<input>').addClass('form-control my-0')
+                                              .attr('type', 'password')
+                                              .attr('id', 'edit_wifi_pass-' + index)
+                                              .attr('maxlength', '64')
+                                              .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                              .val(device.wifi_password),
+                                  (isSuperuser || grantPassShow ?
+                                    $('<div>').addClass('input-group-append')
+                                    .append(
+                                      $('<div>').addClass('input-group-text primary-color')
+                                      .append(
+                                        $('<a>').addClass('toggle-pass')
+                                        .append(
+                                          $('<i>').addClass('fas fa-eye-slash white-text')
+                                        )
+                                      )
+                                    )
+                                    :
+                                    ''
+                                  ),
+                                  $('<div>').addClass('invalid-feedback')
+                                )
+                              )
+                            ),
+                            $('<div>').addClass('col-6').append(
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Largura de banda'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi_band-' + index)
+                                                .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                    .append(
+                                      $('<option>').val('HT40').html('40 MHz'),
+                                      $('<option>').val('HT20').html('20 MHz')
+                                    )
+                                    .val(device.wifi_band)
+                                  )
+                                )
+                              ),
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Modo de operação'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi_mode-' + index)
+                                                .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
+                                    .append(
+                                      $('<option>').val('11n').html('BGN'),
+                                      $('<option>').val('11g').html('G')
+                                    )
+                                    .val(device.wifi_mode)
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                        :
+                        ''
                       ),
                       // Wi-Fi 5Ghz
-                      $('<div>').addClass('edit-tab d-none').attr('id', 'tab_wifi5-' + index)
-                      .append(
+                      (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1) ?
+                        $('<div>').addClass('edit-tab d-none').attr('id', 'tab_wifi5-' + index)
+                        .append(
+                          $('<div>').addClass('row').append(
+                            $('<div>').addClass('col-6').append(
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Canal do Wi-Fi'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi5_channel-' + index)
+                                                .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                    .append(() => {
+                                      let opts = $('<div>');
+                                      ['auto', '36', '40', '44', '48', '52',
+                                       '56', '60', '64', '149', '153', '157',
+                                       '161', '165']
+                                      .forEach((channel) => {
+                                        opts.append(
+                                          $('<option>').val(channel).html(channel)
+                                        );
+                                      });
+                                      return opts.html();
+                                    })
+                                    .val(device.wifi_channel_5ghz)
+                                  )
+                                )
+                              ),
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<label>').html('SSID do Wi-Fi'),
+                                $('<input>').addClass('form-control')
+                                            .attr('type', 'text')
+                                            .attr('id', 'edit_wifi5_ssid-' + index)
+                                            .attr('maxlength', '32')
+                                            .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                            .val(device.wifi_ssid_5ghz),
+                                $('<div>').addClass('invalid-feedback')
+                              ),
+                              $('<div>').addClass('md-form input-entry').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<label>').html('Senha do Wi-Fi'),
+                                  $('<input>').addClass('form-control my-0')
+                                              .attr('type', 'password')
+                                              .attr('id', 'edit_wifi5_pass-' + index)
+                                              .attr('maxlength', '64')
+                                              .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                              .val(device.wifi_password_5ghz),
+                                  (isSuperuser || grantPassShow ?
+                                    $('<div>').addClass('input-group-append')
+                                    .append(
+                                      $('<div>').addClass('input-group-text primary-color')
+                                      .append(
+                                        $('<a>').addClass('toggle-pass')
+                                        .append(
+                                          $('<i>').addClass('fas fa-eye-slash white-text')
+                                        )
+                                      )
+                                    )
+                                    :
+                                    ''
+                                  ),
+                                  $('<div>').addClass('invalid-feedback')
+                                )
+                              )
+                            ),
+                            $('<div>').addClass('col-6').append(
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Largura de banda'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi5_band-' + index)
+                                                .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
+                                    .append(
+                                      $('<option>').val('VHT80').html('80 MHz'),
+                                      $('<option>').val('VHT40').html('40 MHz'),
+                                      $('<option>').val('VHT20').html('20 MHz')
+                                    )
+                                    .val(device.wifi_band_5ghz)
+                                  )
+                                )
+                              ),
+                              $('<div>').addClass('md-form').append(
+                                $('<div>').addClass('input-group').append(
+                                  $('<div>').addClass('md-selectfield form-control my-0')
+                                  .append(
+                                    $('<label>').html('Modo de operação'),
+                                    $('<select>').addClass('browser-default md-select')
+                                                .attr('id', 'edit_wifi5_mode-' + index)
+                                                .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
+                                    .append(
+                                      $('<option>').val('11ac').html('AC'),
+                                      $('<option>').val('11na').html('N')
+                                    )
+                                    .val(device.wifi_mode_5ghz)
+                                  )
+                                )
+                              )
+                            )
+                          )
+                        )
+                        :
+                        ''
                       )
                     )
                   ),
@@ -620,6 +907,20 @@ $(document).ready(function() {
               )
             )
           );
+
+          // Index variable has a global scope related to below function
+          let localIdx = index;
+          $(document).on('change', '#edit_connect_type-' + localIdx, (event) => {
+            $('#edit_connect_type_warning-' + localIdx).removeClass('d-none');
+            if ($('#edit_connect_type-' + localIdx).val() === 'PPPoE') {
+              $('#edit_pppoe_user-' + localIdx).parent().show();
+              $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').show();
+            } else {
+              $('#edit_pppoe_user-' + localIdx).parent().hide();
+              $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').hide();
+            }
+          });
+
           index += 1;
         });
         $('.ext-ref-input').mask('000.000.000-009').keyup();
@@ -629,234 +930,6 @@ $(document).ready(function() {
       }
     },
   });
-
-  //       //- WAN
-  //       .edit-tab.d-none(id="tab_wan-" + (index + 1))
-  //         .row
-  //           .col-4
-  //             .md-form
-  //               .input-group.has-warning
-  //                 .md-selectfield.form-control.my-0
-  //                   label(for="edit_connect_type-" + (index + 1)) Tipo de Conexão
-  //                   select.browser-default.md-select(
-  //                     id="edit_connect_type-" + (index + 1),
-  //                     disabled=((superuser || role.grantWanType) ? false : true)
-  //                   )
-  //                     option(value="DHCP") DHCP
-  //                     option(value="PPPoE") PPPoE
-  //                 h7.orange-text(id="edit_connect_type_warning-" + (index + 1),
-  //                                style="display: none;")
-  //                   | Cuidado! Isso pode deixar o roteador inacessível
-  //                   | dependendo das configurações de rede do seu provedor
-  //           .col-4
-  //             .md-form.input-entry
-  //               label(for="edit_connect_speed-" + (index + 1)) Velocidade Negociada (Mbps)
-  //               input.form-control(type="text",
-  //                                  id="edit_connect_speed-" + (index + 1),
-  //                                  maxlength="32", disabled)
-  //               .invalid-feedback
-  //             .md-form.input-entry
-  //               label(for="edit_connect_duplex-" + (index + 1)) Modo de Transmissão (Duplex)
-  //               input.form-control(type="text",
-  //                                  id="edit_connect_duplex-" + (index + 1),
-  //                                  maxlength="32", disabled)
-  //               .invalid-feedback
-  //           if (superuser || role.grantPPPoEInfo >= 1)
-  //             .col-4
-  //               .md-form.input-entry
-  //                 label(for="edit_pppoe_user-" + (index + 1)) Usuário PPPoE
-  //                 input.form-control(
-  //                   type="text",
-  //                   id="edit_pppoe_user-" + (index + 1),
-  //                   maxlength="64",
-  //                   disabled=((superuser || role.grantPPPoEInfo > 1) ? false : true)
-  //                 )
-  //                 .invalid-feedback
-  //               .md-form.input-entry
-  //                 .input-group
-  //                   label(for="edit_pppoe_pass-" + (index + 1)) Senha PPPoE
-  //                   input.form-control.my-0(
-  //                     type="password",
-  //                     id="edit_pppoe_pass-" + (index + 1),
-  //                     maxlength="64",
-  //                     disabled=((superuser || role.grantPPPoEInfo > 1) ? false : true)
-  //                   )
-  //                   if (superuser || role.grantPassShow)
-  //                     .input-group-append
-  //                       .input-group-text.teal.lighten-2
-  //                         a.toggle-pass
-  //                           .fas.fa-eye-slash.white-text
-  //                   .invalid-feedback
-  //       //- LAN
-  //       .edit-tab.d-none(id="tab_lan-" + (index + 1))
-  //         .row
-  //           .col-6
-  //             .md-form.input-entry
-  //               label(for="edit_lan_subnet-" + (index + 1)) IP da Rede
-  //               input.form-control.ip-mask-field(
-  //                 type="text",
-  //                 id="edit_lan_subnet-" + (index + 1),
-  //                 maxlength="15",
-  //                 disabled=((superuser || role.grantLanEdit) ? false : true)
-  //               )
-  //               .invalid-feedback
-  //           .col-6
-  //             .md-form
-  //               .input-group
-  //                 .md-selectfield.form-control.my-0
-  //                   label(for="edit_lan_netmask-" + (index + 1)) Máscara
-  //                   select.browser-default.md-select(
-  //                     id="edit_lan_netmask-" + (index + 1),
-  //                     disabled=((superuser || role.grantLanEdit) ? false : true)
-  //                   )
-  //                     option(value="24") 24
-  //                     option(value="25") 25
-  //                     option(value="26") 26
-  //       //- Wi-Fi 2.4GHz
-  //       if (superuser || role.grantWifiInfo >= 1)
-  //         .edit-tab.d-none(id="tab_wifi-" + (index + 1))
-  //           .row
-  //             .col-6
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi_channel-" + (index + 1)) Canal do WiFi
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi_channel-" + (index + 1),
-  //                       disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                     )
-  //                       option(value="auto") auto
-  //                       option(value="1") 1
-  //                       option(value="2") 2
-  //                       option(value="3") 3
-  //                       option(value="4") 4
-  //                       option(value="5") 5
-  //                       option(value="6") 6
-  //                       option(value="7") 7
-  //                       option(value="8") 8
-  //                       option(value="9") 9
-  //                       option(value="10") 10
-  //                       option(value="11") 11
-  //               .md-form.input-entry
-  //                 label(for="edit_wifi_ssid-" + (index + 1)) SSID do WiFi
-  //                 input.form-control(
-  //                   type="text",
-  //                   id="edit_wifi_ssid-" + (index + 1),
-  //                   maxlength="32",
-  //                   disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                 )
-  //                 .invalid-feedback
-  //               .md-form.input-entry
-  //                 .input-group
-  //                   label(for="edit_wifi_pass-" + (index + 1)) Senha do WiFi
-  //                   input.form-control.my-0(
-  //                     type="password",
-  //                     id="edit_wifi_pass-" + (index + 1),
-  //                     maxlength="64",
-  //                     disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                   )
-  //                   if (superuser || role.grantPassShow)
-  //                     .input-group-append
-  //                       .input-group-text.teal.lighten-2
-  //                         a.toggle-pass
-  //                           .fas.fa-eye-slash.white-text
-  //                   .invalid-feedback
-  //             .col-6
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi_band-" + (index + 1)) Largura de banda
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi_band-" + (index + 1),
-  //                       disabled=((devicesPermissions[index].grantWifiBand &&
-  //                         (superuser || role.grantWifiInfo > 1)) ? false : true)
-  //                     )
-  //                       option(value="HT40") 40 MHz
-  //                       option(value="HT20") 20 MHz
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi_mode-" + (index + 1)) Modo de operação
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi_mode-" + (index + 1),
-  //                       disabled=((devicesPermissions[index].grantWifiBand &&
-  //                         (superuser || role.grantWifiInfo > 1)) ? false : true)
-  //                     )
-  //                       option(value="11n") BGN
-  //                       option(value="11g") G
-  //       //- Wi-Fi 5GHz
-  //       if (devicesPermissions[index].grantWifi5ghz && (superuser || role.grantWifiInfo >= 1))
-  //         .edit-tab.d-none(id="tab_wifi5-" + (index + 1))
-  //           .row
-  //             .col-6
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi5_channel-" + (index + 1)) Canal do WiFi
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi5_channel-" + (index + 1),
-  //                       disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                     )
-  //                       option(value="auto") auto
-  //                       option(value="36") 36
-  //                       option(value="40") 40
-  //                       option(value="44") 44
-  //                       option(value="48") 48
-  //                       option(value="52") 52
-  //                       option(value="56") 56
-  //                       option(value="60") 60
-  //                       option(value="64") 64
-  //                       option(value="149") 149
-  //                       option(value="153") 153
-  //                       option(value="157") 157
-  //                       option(value="161") 161
-  //                       option(value="165") 165
-  //               .md-form.input-entry
-  //                 label(for="edit_wifi5_ssid-" + (index + 1)) SSID do WiFi
-  //                 input.form-control(
-  //                   type="text",
-  //                   id="edit_wifi5_ssid-" + (index + 1),
-  //                   maxlength="32",
-  //                   disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                 )
-  //                 .invalid-feedback
-  //               .md-form.input-entry
-  //                 .input-group
-  //                   label(for="edit_wifi5_pass-" + (index + 1)) Senha do WiFi
-  //                   input.form-control.my-0(
-  //                     type="password",
-  //                     id="edit_wifi5_pass-" + (index + 1),
-  //                     maxlength="64",
-  //                     disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                   )
-  //                   if (superuser || role.grantPassShow)
-  //                     .input-group-append
-  //                       .input-group-text.teal.lighten-2
-  //                         a.toggle-pass
-  //                           .fas.fa-eye-slash.white-text
-  //                   .invalid-feedback
-  //             .col-6
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi5_band-" + (index + 1)) Largura de banda
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi5_band-" + (index + 1),
-  //                       disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                     )
-  //                       option(value="VHT80") 80 MHz
-  //                       option(value="VHT40") 40 MHz
-  //                       option(value="VHT20") 20 MHz
-  //               .md-form
-  //                 .input-group
-  //                   .md-selectfield.form-control.my-0
-  //                     label(for="edit_wifi5_mode-" + (index + 1)) Modo de operação
-  //                     select.browser-default.md-select(
-  //                       id="edit_wifi5_mode-" + (index + 1),
-  //                       disabled=((superuser || role.grantWifiInfo > 1) ? false : true)
-  //                     )
-  //                       option(value="11ac") AC
-  //                       option(value="11na") N
 
   $(document).on('click', '#ext_ref_type a', refreshExtRefType);
 

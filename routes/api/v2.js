@@ -9,7 +9,7 @@ let router = express.Router();
 router.route('/search').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.newSearchDeviceReg);
+  deviceListController.searchDeviceReg);
 
 // Change device update/upgrade status
 router.route('/update/:id/:release').put(

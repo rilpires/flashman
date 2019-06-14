@@ -26,7 +26,7 @@ router.route('/updateall').post(
   deviceListController.changeAllUpdates);
 
 // POST search device
-router.route('/search').get(authController.ensureLogin(),
+router.route('/search').put(authController.ensureLogin(),
                             deviceListController.searchDeviceReg);
 
 // REST API or POST delete device
