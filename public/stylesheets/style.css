@@ -151,6 +151,7 @@ input:checked + .slider:before {
   background-color: #4db6ac;
 }
 
-.fa-chevron-down::before {
+.fa-chevron-down::before,
+.fa-chevron-up::before {
   cursor: pointer;
 }

@@ -192,7 +192,7 @@ $(document).ready(function() {
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
 
-  $('.btn-openFirewallPorts-modal').click(function(event) {
+  $(document).on('click', '.btn-open-ports-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let hasPortForwardAsym = row.data('validate-port-forward-asym');

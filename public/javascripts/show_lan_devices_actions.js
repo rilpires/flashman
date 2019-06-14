@@ -134,7 +134,7 @@ $(document).ready(function() {
     });
   };
 
-  $('.btn-lan-devices-modal').click(function(event) {
+  $(document).on('click', '.btn-lan-devices-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     refreshLanDevices(id); // Refresh devices status

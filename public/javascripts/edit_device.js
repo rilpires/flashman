@@ -203,7 +203,7 @@ $(document).ready(function() {
   // Apply IP mask on LAN subnet field
   $('.edit-form .ip-mask-field').mask('099.099.099.099');
 
-  $('.btn-reboot').click(function(event) {
+  $(document).on('click', '.btn-reboot', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -222,24 +222,24 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
   });
 
-  $('.btn-reset-app').click(function(event) {
+  $(document).on('click', '.btn-reset-app', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -259,24 +259,24 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
   });
 
-  $('.btn-trash').click(function(event) {
+  $(document).on('click', '.btn-trash', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -290,7 +290,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.toggle-pass').click(function(event) {
+  $(document).on('click', '.toggle-pass', function(event) {
     let inputField = $(event.target).closest('.input-group').find('input');
     if (inputField.attr('type') == 'text') {
       inputField.attr('type', 'password');
@@ -301,7 +301,7 @@ $(document).ready(function() {
     }
   });
 
-  $('.btn-reset-blocked').click(function(event) {
+  $(document).on('click', '.btn-reset-blocked', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -321,18 +321,18 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
