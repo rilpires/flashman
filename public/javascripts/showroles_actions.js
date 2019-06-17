@@ -4,14 +4,14 @@ $(document).ready(function() {
   let selectedItens = [];
   let selectedNames = [];
 
-  $('#card-header').click(function() {
+  $(document).on('click', '#card-header', function() {
     let plus = $(this).find('.fa-plus');
     let cross = $(this).find('.fa-times');
     plus.removeClass('fa-plus').addClass('fa-times');
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $('#btn-roles-trash').click(function(event) {
+  $(document).on('click', '#btn-roles-trash', function(event) {
     $.ajax({
       type: 'POST',
       url: '/user/role/del',

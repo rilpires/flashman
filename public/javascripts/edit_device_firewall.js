@@ -92,7 +92,6 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   let portListBadges = $('<td>').addClass('text-center');
   let portListBadgesIpv6 = $('<td>').addClass('text-center');
   // Check if has ipv6 open port functionality
-  console.log($('#hasFirewallPortOpenIpv6').val());
   let hasPortOpenIpv6 = ($('#hasFirewallPortOpenIpv6').val() == 'true');
   $.each(deviceEntry.port, function(idx, portValue) {
     let finalValueIpv4 = portValue;
@@ -250,7 +249,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.btn-syncOnlineDevs').click(function(event) {
+  $(document).on('click', '.btn-syncOnlineDevs', function(event) {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
       url: '/devicelist/command/' + id + '/onlinedevs',
@@ -289,7 +288,7 @@ $(document).ready(function() {
     }
   });
 
-  $('.btn-openFirewallPortsSaveRule').click(function(event) {
+  $(document).on('click', '.btn-openFirewallPortsSaveRule', function(event) {
     let hasPortForwardAsym = ($('#hasFirewallPortForwardAsym').val() == 'true');
 
     let deviceId = $('#openFirewallPortsMac')[0].selectize.getValue();
@@ -410,7 +409,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.btn-openFirewallPortsSubmit').click(function(event) {
+  $(document).on('click', '.btn-openFirewallPortsSubmit', function(event) {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
       type: 'POST',

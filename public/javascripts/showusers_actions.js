@@ -80,7 +80,7 @@ $(document).ready(function() {
   // Load table content
   fetchUsers(usersTable);
 
-  $('#card-header').click(function() {
+  $(document).on('click', '#card-header', function() {
     let plus = $(this).find('.fa-plus');
     let cross = $(this).find('.fa-times');
     plus.removeClass('fa-plus').addClass('fa-times');
