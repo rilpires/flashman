@@ -220,16 +220,29 @@ $(document).ready(function() {
   });
 
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
+    // Clean all elements before loading
+    $('#devices-table-content').empty();
+    $('#devices-table-pagination').empty();
+    // Start loading animation
+    $('#devices-table-content').append(
+      $('<tr>').append(
+        $('<td>').attr('colspan', '8')
+        .addClass('grey lighten-5 text-center')
+        .append(
+          $('<h3>').append(
+            $('<i>').addClass('fas fa-spinner fa-pulse fa-2x grey-text')
+          )
+        )
+      )
+    );
     $.ajax({
       url: '/devicelist/search?page=' + selelectedPage,
       type: 'PUT',
       data: {filter_list: filterList},
       success: function(res) {
         if (res.type == 'success') {
-          // Clean all elements before loading
+          // Stop loading animation
           $('#devices-table-content').empty();
-          $('#devices-table-pagination').empty();
-
           // Just fill not found message if there are no devices found
           if (res.devices.length == 0) {
             $('#devices-table-content').append(
@@ -237,8 +250,7 @@ $(document).ready(function() {
                 $('<td>').attr('colspan', '8')
                 .addClass('grey lighten-5 text-center')
                 .append(
-                  $('<h5>').append('mt-2')
-                           .html('Nenhum roteador encontrado')
+                  $('<h5>').html('Nenhum roteador encontrado')
                 )
               )
             );
