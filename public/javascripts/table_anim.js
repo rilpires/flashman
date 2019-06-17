@@ -675,7 +675,11 @@ $(document).ready(function() {
                                       $('<option>').val('DHCP').html('DHCP'),
                                       $('<option>').val('PPPoE').html('PPPoE')
                                     )
-                                    .val(device.connection_type.toUpperCase() === 'DHCP' ? 'DHCP' : 'PPPoE')
+                                    .val(device.connection_type ?
+                                      (device.connection_type.toUpperCase() === 'DHCP' ? 'DHCP' : 'PPPoE')
+                                      :
+                                      'DHCP'
+                                    )
                                   ),
                                   $('<h7>').addClass('orange-text d-none')
                                            .attr('id', 'edit_connect_type_warning-' + index)
@@ -705,7 +709,7 @@ $(document).ready(function() {
                               )
                             ),
                             ((isSuperuser || grantPPPoEInfo >= 1) &&
-                              device.connection_type.toUpperCase() !== 'DHCP' ?
+                             (device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
                               $('<div>').addClass('col-4').append(
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<label>').html('Usuário PPPoE'),
