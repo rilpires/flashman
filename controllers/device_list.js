@@ -138,87 +138,50 @@ const returnObjOrEmptyStr = function(query) {
   }
 };
 
-// List all devices on a main page
+// Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
-  let reqPage = 1;
   let elementsPerPage = 10;
 
-  if (req.query.page) {
-    reqPage = req.query.page;
-  }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
   }
-  // Counters
-  let status = {};
+  indexContent.username = req.user.name;
+  indexContent.elementsperpage = elementsPerPage;
 
-  DeviceModel.paginate({}, {page: reqPage,
-                            limit: elementsPerPage,
-                            sort: {_id: 1}}, function(err, devices) {
-    if (err) {
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.render('error', indexContent);
+  User.findOne({name: req.user.name}, function(err, user) {
+    if (err || !user) {
+      indexContent.superuser = false;
+    } else {
+      indexContent.superuser = user.is_superuser;
     }
-    let releases = getReleases();
-    let singleReleases = getReleases(true);
-    status.devices = getStatus(devices.docs);
-    indexContent.username = req.user.name;
-    indexContent.elementsperpage = req.user.maxElementsPerPage;
-    indexContent.devices = devices.docs;
-    indexContent.releases = releases;
-    indexContent.singlereleases = singleReleases;
-    indexContent.page = devices.page;
-    indexContent.pages = devices.pages;
-    indexContent.devicesPermissions = devices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version,
-                                         device.wifi_is_5ghz_capable);
-    });
 
-    User.findOne({name: req.user.name}, function(err, user) {
-      if (err || !user) {
-        indexContent.superuser = false;
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        indexContent.update = false;
       } else {
-        indexContent.superuser = user.is_superuser;
+        indexContent.update = matchedConfig.hasUpdate;
+        indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
+        let active = matchedConfig.measure_configs.is_active;
+        indexContent.measure_active = active;
+        indexContent.measure_token = (active) ?
+            matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
 
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
-        if (err || !matchedConfig) {
-          indexContent.update = false;
-        } else {
-          indexContent.update = matchedConfig.hasUpdate;
-          indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-          let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-          let license = matchedConfig.measure_configs.is_license_active;
-          indexContent.measure_license = license;
-        }
-
-        getOnlineCount({}).then((onlineStatus) => {
-          status = Object.assign(status, onlineStatus);
-          indexContent.status = status;
-
-          // Filter data using user permissions
-          if (req.user.is_superuser) {
-            return res.render('index', indexContent);
-          } else {
-            Role.findOne({name: req.user.role}, function(err, role) {
-              if (err) {
-                console.log(err);
-              }
-              indexContent.role = role;
-              return res.render('index', indexContent);
-            });
+      // Filter data using user permissions
+      if (req.user.is_superuser) {
+        return res.render('index', indexContent);
+      } else {
+        Role.findOne({name: req.user.role}, function(err, role) {
+          if (err) {
+            console.log(err);
           }
-        }, (error) => {
-          indexContent.type = 'danger';
-          indexContent.message = err.message;
-          return res.render('error', indexContent);
+          indexContent.role = role;
+          return res.render('index', indexContent);
         });
-      });
+      }
     });
   });
 };
@@ -359,7 +322,7 @@ deviceListController.searchDeviceReg = function(req, res) {
   finalQuery[queryLogicalOperator] = finalQueryArray;
 
   if (req.query.page) {
-    reqPage = req.query.page;
+    reqPage = parseInt(req.query.page);
   }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
