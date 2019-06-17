@@ -9,7 +9,7 @@ block content
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
-      form(action="/devicelist/search")
+      form#devices-search-form(action="/devicelist/search")
         .mt-4.input-group
           input.form-control.tags-input(type="tags", name="content",
                                         placeholder="Buscar...")
@@ -47,106 +47,83 @@ block content
 
   .row.justify-content-center
     .col-12.mt-4
-      if ! devices || devices.length == 0
-        h3.mt-2.text-center Nenhum roteador registrado
-      else
-        .row
-          .col-12.col-lg-3.offset-lg-9
-            .md-form.mb-0
-              .input-group
-                .md-selectfield.form-control
-                  label Registros por página
-                  select.browser-default.md-select(id="input-elements-pp")
-                    option(value="" disabled selected) Selecione...
-                    option(value=10 selected=(elementsperpage == 10)) 10
-                    option(value=50 selected=(elementsperpage == 50)) 50
-                    option(value=100 selected=(elementsperpage == 100)) 100
-                    option(value=250 selected=(elementsperpage == 250)) 250
-                    option(value=500 selected=(elementsperpage == 500)) 500
-                .input-group-btn
-                  button.btn.teal.lighten-2.mr-0.my-0(
-                    type="button",
-                    id="btn-elements-per-page") Ok
-        .card
-          .card-body
-            .table-responsive
-              table.table.devices-table
-                thead
-                  tr.csv-export(
-                    data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
-                    data-deviceid="Endereço MAC",
-                    data-connection-type="Tipo de Conexão WAN",
-                    data-user="Usuário PPPoE",
-                    data-pass="Senha PPPoE",
-                    data-lan-subnet="Subrede LAN",
-                    data-lan-netmask="Máscara LAN",
-                    data-ssid="WiFi SSID",
-                    data-wifi-pass="WiFi Senha",
-                    data-channel="WiFi Canal",
-                    data-band="Largura de banda",
-                    data-mode="Modo de operação",
-                    data-ssid-5ghz="WiFi SSID 5GHz",
-                    data-wifi-pass-5ghz="WiFi Senha 5GHz",
-                    data-channel-5ghz="WiFi Canal 5GHz",
-                    data-band-5ghz="Largura de banda 5GHz",
-                    data-mode-5ghz="Modo de operação 5GHz",
-                    data-ext-wan="IP Público",
-                    data-int-wan="IP WAN",
-                    data-wan-speed="Velocidade WAN negociada"
-                    data-wan-duplex="Modo de transmissão WAN (duplex)"
-                    data-external-ref-type="Tipo de ID do cliente",
-                    data-external-ref="ID do cliente",
-                    data-device-model="Modelo do roteador",
-                    data-device-version="Versão do Flashbox",
-                    data-device-release="Release",
-                    data-do-update="Atualizar Firmware"
-                  )
-                    th
-                    th.text-center
-                      span Status &nbsp
-                      a.fas.fa-question-circle(
-                        href="#",
-                        data-toggle="tooltip",
-                        title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
-                      )
-                    th.text-center Usuário PPPoE
-                    th.text-center Endereço MAC
-                    th.text-center IP WAN
-                    th.text-center IP Público
-                    th.text-center Firmware Instalado
-                    if (superuser || role.grantFirmwareUpgrade)
-                      th.text-left Atualizar Firmware
-                tbody#devices-table-content(
-                  data-role=role,
-                  data-superuser=superuser ? "true" : "false")
-        .row.mt-3.mb-3
-          .col-md-9
-            nav
-              ul.pagination.pagination-lg
-                - var cPage = parseInt(page);
-                - var delta = 2;
-                - var i = 1;
-                while i <= pages
-                  if (i == 1 || i == pages || ((i >= cPage-delta) && (i <= cPage+delta)))
-                    if (i == page)
-                      li.page-item.active
-                        a.page-link.teal.lighten-2(href="#") #{i}
-                    else
-                      if (i == pages && (cPage+delta <= pages-delta))
-                        li.page-item
-                          h3.page-link.disabled ...
-                      li.page-item
-                        a.page-link(href="?content=" + lastquery + "&page=" + i) #{i}
-                      if (i == 1 && (cPage-delta > delta))
-                        li.page-item
-                          h3.page-link.disabled ...
-                  - i++
-
-          .col-md-3
-            .text-right
-              button#export-csv.btn.teal.lighten-2.mr-0.my-0
-                .fas.fa-file-excel.fa-lg
-                span &nbsp Exportar CSV
+      .row
+        .col-12.col-lg-3.offset-lg-9
+          .md-form.mb-0
+            .input-group
+              .md-selectfield.form-control
+                label Registros por página
+                select.browser-default.md-select(id="input-elements-pp")
+                  option(value="" disabled selected) Selecione...
+                  option(value=10 selected=(elementsperpage == 10)) 10
+                  option(value=50 selected=(elementsperpage == 50)) 50
+                  option(value=100 selected=(elementsperpage == 100)) 100
+                  option(value=250 selected=(elementsperpage == 250)) 250
+                  option(value=500 selected=(elementsperpage == 500)) 500
+              .input-group-btn
+                button.btn.teal.lighten-2.mr-0.my-0(
+                  type="button",
+                  id="btn-elements-per-page") Ok
+      .card
+        .card-body
+          .table-responsive
+            table.table.devices-table
+              thead
+                tr.csv-export(
+                  data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
+                  data-deviceid="Endereço MAC",
+                  data-connection-type="Tipo de Conexão WAN",
+                  data-user="Usuário PPPoE",
+                  data-pass="Senha PPPoE",
+                  data-lan-subnet="Subrede LAN",
+                  data-lan-netmask="Máscara LAN",
+                  data-ssid="WiFi SSID",
+                  data-wifi-pass="WiFi Senha",
+                  data-channel="WiFi Canal",
+                  data-band="Largura de banda",
+                  data-mode="Modo de operação",
+                  data-ssid-5ghz="WiFi SSID 5GHz",
+                  data-wifi-pass-5ghz="WiFi Senha 5GHz",
+                  data-channel-5ghz="WiFi Canal 5GHz",
+                  data-band-5ghz="Largura de banda 5GHz",
+                  data-mode-5ghz="Modo de operação 5GHz",
+                  data-ext-wan="IP Público",
+                  data-int-wan="IP WAN",
+                  data-wan-speed="Velocidade WAN negociada"
+                  data-wan-duplex="Modo de transmissão WAN (duplex)"
+                  data-external-ref-type="Tipo de ID do cliente",
+                  data-external-ref="ID do cliente",
+                  data-device-model="Modelo do roteador",
+                  data-device-version="Versão do Flashbox",
+                  data-device-release="Release",
+                  data-do-update="Atualizar Firmware"
+                )
+                  th
+                  th.text-center
+                    span Status &nbsp
+                    a.fas.fa-question-circle(
+                      href="#",
+                      data-toggle="tooltip",
+                      title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
+                    )
+                  th.text-center Usuário PPPoE
+                  th.text-center Endereço MAC
+                  th.text-center IP WAN
+                  th.text-center IP Público
+                  th.text-center Firmware Instalado
+                  if (superuser || role.grantFirmwareUpgrade)
+                    th.text-left Atualizar Firmware
+              tbody#devices-table-content(
+                data-role=role,
+                data-superuser=superuser ? "true" : "false")
+      .row.mt-3.mb-3
+        .col-md-9
+          nav#devices-table-pagination
+        .col-md-3
+          .text-right
+            button#export-csv.btn.teal.lighten-2.mr-0.my-0
+              .fas.fa-file-excel.fa-lg
+              span &nbsp Exportar CSV
 
 block scripts
   script(src='/scripts/tags-input/tags-input.js')
@@ -164,23 +141,3 @@ block scripts
   script(src='/javascripts/show_lan_devices_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')
-  script(src='/javascripts/notification_actions.js',
-         devices=(devices.map(device => device._id)
-                         .reduce((acc, dev) => acc + ',' + dev, '')))
-  script.
-    (function() {
-      'use strict';
-      window.addEventListener('load', function() {
-        var forms = document.getElementsByClassName('needs-validation');
-        // Loop over them and prevent submission
-        var validation = Array.prototype.filter.call(forms, function(form) {
-          form.addEventListener('submit', function(event) {
-            if (form.checkValidity() === false) {
-              event.preventDefault();
-              event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-          }, false);
-        });
-      }, false);
-    })();
