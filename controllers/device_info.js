@@ -190,7 +190,8 @@ const isJSONObject = function(val) {
 const serializeBlocked = function(devices) {
   if (!devices) return [];
   return devices.map((device)=>{
-    let dhcpLease = (device.dhcp_name === '!') ? '*' : device.dhcp_name;
+    let dhcpLease = (!lanDevice.dhcp_name ||
+                     device.dhcp_name === '!') ? '*' : device.dhcp_name;
     return device.mac + '|' + dhcpLease;
   });
 };
