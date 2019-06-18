@@ -53,6 +53,7 @@ let deviceSchema = new Schema({
     wifi_signal: Number, // dBm
     wifi_snr: Number, // dB
     wifi_mode: String, // G, N, AC
+    app_uid: String, // App unique identification, should match with apps field
   }],
   wan_ip: String,
   wan_negociated_speed: String,
