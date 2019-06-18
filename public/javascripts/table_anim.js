@@ -219,6 +219,10 @@ $(document).ready(function() {
     $(tabId).removeClass('d-none');
   });
 
+  $(document).on('click', '#btn-upgrade-scheduler', function(event) {
+    $('#upgrade-scheduler').modal('show');
+  });
+
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
     // Clean all elements before loading
     $('#devices-table-content').empty();
@@ -310,7 +314,12 @@ $(document).ready(function() {
                           );
                         });
                         return opts.html();
-                      })
+                      }),
+                      $('<button>').addClass('btn btn-sm px-2 teal darken-5')
+                        .attr('id', 'btn-upgrade-scheduler')
+                      .append(
+                        $('<div>').addClass('fas fa-clock fa-lg')
+                      )
                     )
                   )
                 ) :
