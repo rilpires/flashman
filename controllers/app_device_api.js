@@ -100,62 +100,62 @@ let appSet = function(req, res, processFunction) {
 
 let processWifi = function(content, device, rollback) {
   let updateParameters = false;
-  if (content.hasOwnProperty('pppoe_user')) {
+  if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
     device.pppoe_user = content.pppoe_user;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('pppoe_password')) {
+  if (content.pppoe_password) {
     rollback.pppoe_password = device.pppoe_password;
     device.pppoe_password = content.pppoe_password;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_ssid')) {
+  if (content.wifi_ssid) {
     rollback.wifi_ssid = device.wifi_ssid;
     device.wifi_ssid = content.wifi_ssid;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_ssid_5ghz')) {
+  if (content.wifi_ssid_5ghz) {
     rollback.wifi_ssid_5ghz = device.wifi_ssid_5ghz;
     device.wifi_ssid_5ghz = content.wifi_ssid_5ghz;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_password')) {
+  if (content.wifi_password) {
     rollback.wifi_password = device.wifi_password;
     device.wifi_password = content.wifi_password;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_password_5ghz')) {
+  if (content.wifi_password_5ghz) {
     rollback.wifi_password_5ghz = device.wifi_password_5ghz;
     device.wifi_password_5ghz = content.wifi_password_5ghz;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_channel')) {
+  if (content.wifi_channel) {
     rollback.wifi_channel = device.wifi_channel;
     device.wifi_channel = content.wifi_channel;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_band')) {
+  if (content.wifi_band) {
     rollback.wifi_band = device.wifi_band;
     device.wifi_band = content.wifi_band;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_mode')) {
+  if (content.wifi_mode) {
     rollback.wifi_mode = device.wifi_mode;
     device.wifi_mode = content.wifi_mode;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_channel_5ghz')) {
+  if (content.wifi_channel_5ghz) {
     rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
     device.wifi_channel_5ghz = content.wifi_channel_5ghz;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_band_5ghz')) {
+  if (content.wifi_band_5ghz) {
     rollback.wifi_band_5ghz = device.wifi_band_5ghz;
     device.wifi_band_5ghz = content.wifi_band_5ghz;
     updateParameters = true;
   }
-  if (content.hasOwnProperty('wifi_mode_5ghz')) {
+  if (content.wifi_mode_5ghz) {
     rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
     device.wifi_mode_5ghz = content.wifi_mode_5ghz;
     updateParameters = true;
@@ -183,7 +183,7 @@ let processBlacklist = function(content, device, rollback) {
     }
     // Transform dhcp name in case it's a single *
     let dhcpLease = content.blacklist_device.id;
-    if (dhcpLease === '*') dhcpLease = '!';
+    if (dhcpLease === '*') dhcpLease = '';
     // Search blocked device
     let blackMacDevice = content.blacklist_device.mac.toLowerCase();
     let ret = false;
@@ -307,7 +307,7 @@ let formatDevices = function(device) {
     let name = lanDevice.mac;
     if (lanDevice.name) {
       name = lanDevice.name;
-    } else if (lanDevice.dhcp_name !== '!') {
+    } else if (lanDevice.dhcp_name !== '' && lanDevice.dhcp_name !== '!') {
       name = lanDevice.dhcp_name;
     }
     let numRules = lanDevice.port.length;
@@ -324,7 +324,8 @@ let formatDevices = function(device) {
     }
     return {
       mac: lanDevice.mac,
-      id: (lanDevice.dhcp_name === '!') ? '*' : lanDevice.dhcp_name,
+      id: (!lanDevice.dhcp_name ||
+           lanDevice.dhcp_name === '!') ? '*' : lanDevice.dhcp_name,
       ip: lanDevice.ip,
       blocked: lanDevice.is_blocked,
       name: name,
@@ -346,6 +347,14 @@ appDeviceAPIController.registerApp = function(req, res) {
       }
       if (!matchedDevice) {
         return res.status(404).json({is_registered: 0});
+      }
+      if (req.body.app_mac) {
+        let deviceObj = matchedDevice.lan_devices.find((device)=>{
+          return device.mac === req.body.app_mac;
+        });
+        if (deviceObj && !deviceObj.app_uid) {
+          deviceObj.app_uid = req.body.app_id;
+        }
       }
       let appObj = matchedDevice.apps.filter(function(app) {
         return app.id === req.body.app_id;
@@ -415,7 +424,7 @@ appDeviceAPIController.removeApp = function(req, res) {
   }
 };
 
-appDeviceAPIController.refreshDevices = function(req, res) {
+appDeviceAPIController.rebootRouter = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
@@ -434,13 +443,43 @@ appDeviceAPIController.refreshDevices = function(req, res) {
     }
 
     // Send mqtt message to update devices on flashman db
-    mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    mqtt.anlixMessageRouterReboot(req.body.id);
 
     return res.status(200).json({
+      success: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+    });
+  });
+};
+
+appDeviceAPIController.refreshInfo = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    // Send mqtt message to update devices on flashman db
+    if (req.body.content.do_device_update) {
+      mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    }
+
+    return res.status(200).json({
+      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
       devices_timestamp: matchedDevice.last_devices_refresh,
     });
   });
-}
+};
 
 appDeviceAPIController.appSetWifi = function(req, res) {
   appSet(req, res, processWifi);
@@ -514,10 +553,18 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       };
     }
 
+    let localDevice = matchedDevice.lan_devices.find((device)=>{
+      return req.body.app_id === device.app_uid;
+    });
+    let localMac = localDevice ? localDevice.mac : '';
+
     return res.status(200).json({
       permissions: permissions,
       wifi: wifiConfig,
+      localMac: localMac,
+      model: matchedDevice.model,
       devices_timestamp: matchedDevice.last_devices_refresh,
+      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
     });
   });
 };
