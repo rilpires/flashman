@@ -195,13 +195,12 @@ let validateEditDevice = function(event) {
     // Else, render errors on form
     renderEditErrors(errors);
   }
+  $(this).addClass('was-validated');
   return false;
 };
 
 $(document).ready(function() {
-  $('.edit-form').submit(validateEditDevice);
-  // Apply IP mask on LAN subnet field
-  $('.edit-form .ip-mask-field').mask('099.099.099.099');
+  $(document).on('submit', '.edit-form', validateEditDevice);
 
   $(document).on('click', '.btn-reboot', function(event) {
     let row = $(event.target).parents('tr');

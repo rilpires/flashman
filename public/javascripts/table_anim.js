@@ -1100,6 +1100,8 @@ $(document).ready(function() {
             })
           );
           $('.ext-ref-input').mask('000.000.000-009').keyup();
+          // Apply IP mask on LAN subnet field
+          $('.ip-mask-field').mask('099.099.099.099');
           // Fix MD Bootstrap filled input forms
           $('.form-control').change();
           // Fetch existing notifications
@@ -1143,7 +1145,7 @@ $(document).ready(function() {
   // Initial table
   loadDevicesTable();
 
-  $('#devices-search-form').submit(function(event) {
+  $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-form .tags-input').val();
     loadDevicesTable(1, filterList);
     return false;
