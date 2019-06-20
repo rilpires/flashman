@@ -84,7 +84,7 @@ $(document).ready(function() {
   // Init selectize fields
   $('#hosts-list').selectize(selectizeOptionsHosts);
 
-  $('.btn-ping-test-modal').click(function(event) {
+  $(document).on('click', '.btn-ping-test-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
 
@@ -116,7 +116,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.btn-start-ping-test').click(function(event) {
+  $(document).on('click', '.btn-start-ping-test', function(event) {
     let textarea = $('#ping-test-results');
     let id = $('#ping-test-hlabel').text();
     $('.btn-start-ping-test').prop('disabled', true);

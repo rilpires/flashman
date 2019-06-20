@@ -1,45 +1,70 @@
 
 #special-search-terms.modal.fade(tabindex="-1", role="dialog")
-  .modal-dialog.modal-notify.modal-teal(role="document")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
     .modal-content
       .modal-header
         p.heading.lead
           span.fas.fa-search.fa-lg
-          strong &nbsp; Termos de Busca Especiais
+          strong &nbsp; Filtros de Busca Especiais
 
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
           .row
-            .col-7
+            .col
               h4
-                span.badge.grey.lighten-2.bounceIn.mr-2
+                span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
                   .black-text online
-                span.badge.grey.lighten-2.bounceIn.mr-2
+                span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
                   .black-text instavel
                 span.badge.grey.lighten-2.bounceIn
                   .black-text offline
-            .col-5
+            .col
               p
-                strong Use um desses termos para filtrar somente os 
-                  | roteadores online (verde), instável (vermelho) ou offline (cinza)
+                strong Use um desses filtros para filtrar somente os 
+                  | roteadores online (verde), instável (vermelho) 
+                  | ou offline (cinza)
           .row.mt-2
-            .col-7
+            .col
               h4
-                span.badge.grey.lighten-2.bounceIn.mr-2
+                span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
                   .black-text upgrade on
                 span.badge.grey.lighten-2.bounceIn
                   .black-text update on
-            .col-5
+            .col
               p
-                strong Use um desses termos para filtrar somente os roteadores marcados para atualização
+                strong Use um desses filtros para filtrar somente os 
+                  | roteadores marcados para atualização
           .row.mt-2
-            .col-7
+            .col
               h4
-                span.badge.grey.lighten-2.bounceIn.mr-2
+                span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
                   .black-text upgrade off
                 span.badge.grey.lighten-2.bounceIn
                   .black-text update off
-            .col-5
+            .col
               p
-                strong Use um desses termos para filtrar somente os roteadores não marcados para atualização
+                strong Use um desses filtros para filtrar somente os 
+                  | roteadores não marcados para atualização
+          .row.mt-2
+            .col
+              h4
+                span.badge.grey.lighten-2.bounceIn.mr-2
+                  .black-text /ou
+            .col
+              p
+                strong Inclui resultados que contém um ou mais filtros 
+                 | aplicados. Exemplo: "João","online","/ou" exibirá 
+                 | todos os roteadores que estão online, ou contém "João", 
+                 | ou estão online e contém "João" no cadastro
+          .row.mt-2
+            .col
+              h4
+                span.badge.grey.lighten-2.bounceIn.mr-2
+                  .black-text /e
+            .col
+              p
+                strong Inclui resultados que contém todos os filtros 
+                 | aplicados. Exemplo: "João","online","/e" exibirá 
+                 | todos os roteadores que estão online e contém "João" 
+                 | no cadastro

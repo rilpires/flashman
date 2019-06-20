@@ -122,7 +122,7 @@ let validateEditDevice = function(event) {
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
   };
-
+  let editFormObj = $(this);
   if (Object.keys(errors).every(hasNoErrors)) {
     // If no errors present, send to backend
     let data = {'content': {
@@ -164,7 +164,8 @@ let validateEditDevice = function(event) {
       data: JSON.stringify(data),
       contentType: 'application/json',
       success: function(resp) {
-        location.reload();
+        editFormObj.removeClass('was-validated');
+        displayAlertMsg({type: 'success', message: 'Editado com sucesso'});
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -195,15 +196,14 @@ let validateEditDevice = function(event) {
     // Else, render errors on form
     renderEditErrors(errors);
   }
+  editFormObj.addClass('was-validated');
   return false;
 };
 
 $(document).ready(function() {
-  $('.edit-form').submit(validateEditDevice);
-  // Apply IP mask on LAN subnet field
-  $('.edit-form .ip-mask-field').mask('099.099.099.099');
+  $(document).on('submit', '.edit-form', validateEditDevice);
 
-  $('.btn-reboot').click(function(event) {
+  $(document).on('click', '.btn-reboot', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -222,24 +222,24 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
   });
 
-  $('.btn-reset-app').click(function(event) {
+  $(document).on('click', '.btn-reset-app', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -259,24 +259,24 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
   });
 
-  $('.btn-trash').click(function(event) {
+  $(document).on('click', '.btn-trash', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -290,7 +290,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.toggle-pass').click(function(event) {
+  $(document).on('click', '.toggle-pass', function(event) {
     let inputField = $(event.target).closest('.input-group').find('input');
     if (inputField.attr('type') == 'text') {
       inputField.attr('type', 'password');
@@ -301,7 +301,7 @@ $(document).ready(function() {
     }
   });
 
-  $('.btn-reset-blocked').click(function(event) {
+  $(document).on('click', '.btn-reset-blocked', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     $.ajax({
@@ -321,18 +321,18 @@ $(document).ready(function() {
           }
         }
 
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
       error: function(xhr, status, error) {
         let badge = $(event.target).closest('.actions-opts')
                                    .find('.badge-warning');
         badge.text(status);
-        badge.show();
+        badge.removeClass('d-none');
         setTimeout(function() {
-          badge.hide();
+          badge.addClass('d-none');
         }, 1500);
       },
     });
