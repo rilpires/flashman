@@ -54,7 +54,7 @@ $(document).ready(function() {
         $('<div></div>').addClass('fas fa-trash fa-lg'))
     )
   );
-  $('.btn-trash').click(function(event) {
+  $(document).on('click', '.btn-trash', function(event) {
     $.ajax({
       type: 'POST',
       url: '/firmware/del',

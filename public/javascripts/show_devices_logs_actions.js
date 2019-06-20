@@ -107,7 +107,7 @@ let exportLogToFile = function(filename) {
 };
 
 $(document).ready(function() {
-  $('.btn-log-modal').click(function(event) {
+  $(document).on('click', '.btn-log-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
 
@@ -115,7 +115,7 @@ $(document).ready(function() {
     $('#analyse-logs').modal('show');
   });
 
-  $('.btn-log-live').click(function(event) {
+  $(document).on('click', '.btn-log-live', function(event) {
     let textarea = $('#logArea');
     let id = $('#logRouterid_label').text();
     $.ajax({
@@ -141,14 +141,14 @@ $(document).ready(function() {
     });
   });
 
-  $('.btn-log-upgrade').click(function(event) {
+  $(document).on('click', '.btn-log-upgrade', function(event) {
     $('#logs-placeholder').hide('fast', function() {
       $('#logArea').show('fast');
       printLogData('/devicelist/uifirstlog/');
     });
   });
 
-  $('.btn-log-init').click(function(event) {
+  $(document).on('click', '.btn-log-init', function(event) {
     $('#logs-placeholder').hide('fast', function() {
       $('#logArea').show('fast');
       printLogData('/devicelist/uilastlog/');

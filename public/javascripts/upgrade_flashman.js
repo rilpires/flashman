@@ -111,7 +111,7 @@ let configFlashman = function(event) {
 };
 
 $(document).ready(function() {
-  $('.update').click(checkUpdateFlashman);
+  $(document).on('click', '.update', checkUpdateFlashman);
   $('#config-flashman-form').submit(configFlashman);
 
   // Load configuration options

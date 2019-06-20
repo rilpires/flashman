@@ -44,7 +44,8 @@ $(document).ready(function() {
             const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);
             const offlineThresh = 5;
             // Skip if offline for too long. 24hrs
-            if (devTimeDiffSeconds >= 86400) {
+            // Skip also if there is no time stamp registered.
+            if (devTimeDiffSeconds >= 86400 || devTimeDiff <= 150) {
               return true;
             }
             lanDevsRow.append(
@@ -134,7 +135,7 @@ $(document).ready(function() {
     });
   };
 
-  $('.btn-lan-devices-modal').click(function(event) {
+  $(document).on('click', '.btn-lan-devices-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     refreshLanDevices(id); // Refresh devices status

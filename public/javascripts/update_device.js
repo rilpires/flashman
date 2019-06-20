@@ -3,7 +3,8 @@ let updateAllDevices = function(event) {
   let row = $(event.target).closest('tr');
   let rows = row.siblings();
   let idsObj = {};
-  let singleReleases = $('#all-devices .dropdown-toggle').data('singlereleases');
+  let singleReleases = $('#all-devices .dropdown-toggle')
+                       .data('singlereleases');
   let selectedRelease = $(this).text();
   let selectedModels = [];
 
@@ -220,10 +221,10 @@ let cancelDeviceUpdate = function(event) {
 };
 
 $(function() {
-  $('.dropdown-menu.refresh-selected a').on('click', updateDevice);
-  $('.btn-cancel-update').on('click', cancelDeviceUpdate);
-  $('#all-devices .dropdown-menu a').on('click', updateAllDevices);
-  $('#cancel-all-devices').on('click', cancelAllDeviceUpdates);
+  $(document).on('click', '.dropdown-menu.refresh-selected a', updateDevice);
+  $(document).on('click', '.btn-cancel-update', cancelDeviceUpdate);
+  $(document).on('click', '#all-devices .dropdown-menu a', updateAllDevices);
+  $(document).on('click', '#cancel-all-devices', cancelAllDeviceUpdates);
   // Disable dropdowns without a release to select
   $('.dropdown-menu.refresh-selected').each(function(idx) {
     if ($(this).children().length == 0) {
@@ -231,7 +232,7 @@ $(function() {
     }
   });
   // Display message on update error
-  $('.status-error').on('click', function() {
+  $(document).on('click', '.status-error', function() {
     swal({
       type: 'error',
       title: 'Erro',
