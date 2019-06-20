@@ -122,7 +122,7 @@ let validateEditDevice = function(event) {
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
   };
-
+  let editFormObj = $(this);
   if (Object.keys(errors).every(hasNoErrors)) {
     // If no errors present, send to backend
     let data = {'content': {
@@ -164,7 +164,8 @@ let validateEditDevice = function(event) {
       data: JSON.stringify(data),
       contentType: 'application/json',
       success: function(resp) {
-        location.reload();
+        editFormObj.removeClass('was-validated');
+        displayAlertMsg({type: 'success', message: 'Editado com sucesso'});
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -195,7 +196,7 @@ let validateEditDevice = function(event) {
     // Else, render errors on form
     renderEditErrors(errors);
   }
-  $(this).addClass('was-validated');
+  editFormObj.addClass('was-validated');
   return false;
 };
 
