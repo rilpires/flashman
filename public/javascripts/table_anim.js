@@ -995,7 +995,12 @@ $(document).ready(function() {
                                         $('<option>').val('VHT40').html('40 MHz'),
                                         $('<option>').val('VHT20').html('20 MHz')
                                       )
-                                      .val(device.wifi_band_5ghz)
+                                      .val((device.wifi_band_5ghz === 'HT20' ||
+                                            device.wifi_band_5ghz === 'HT40') ?
+                                        'V' + device.wifi_band_5ghz
+                                        :
+                                        device.wifi_band_5ghz
+                                      )
                                     )
                                   )
                                 ),
