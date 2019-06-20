@@ -169,6 +169,7 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
       let inputDevs = $('#openFirewallPortsMac')[0].selectize;
       // Clear old data
       inputDevs.clearOptions();
+      inputDevs.enable();
       $('.btn-syncOnlineDevs').children()
                               .removeClass('animated rotateOut infinite');
       let macoptions = [];
@@ -176,6 +177,8 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
         let datanew = {};
         let deviceMac = value.mac;
         let deviceName = value.hostname;
+        // Replace device name for a mac address if it's an empty string
+        deviceName = (deviceName != '') ? deviceName : deviceMac;
         datanew.value = JSON.stringify([deviceMac, deviceName]);
         datanew.label = deviceName;
         // Populate connected devices dropdown options
@@ -257,6 +260,7 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
+          $('#openFirewallPortsMac')[0].selectize.disable();
           $(event.target).children().addClass('animated rotateOut infinite');
         } else {
           $(event.target).title = res.message;

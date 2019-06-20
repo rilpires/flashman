@@ -641,7 +641,7 @@ $(document).ready(function() {
                                     )
                                   )
                                 ),
-                                $('<input>').addClass('form-control py-0 added-margin ext-ref-input')
+                                $('<input>').addClass('form-control py-0 added-margin')
                                             .attr('type', 'text')
                                             .attr('id', 'edit_external_reference-' + index)
                                             .attr('placeholder', 'ID do cliente (opcional)')
@@ -1004,7 +1004,12 @@ $(document).ready(function() {
                                         $('<option>').val('VHT40').html('40 MHz'),
                                         $('<option>').val('VHT20').html('20 MHz')
                                       )
-                                      .val(device.wifi_band_5ghz)
+                                      .val((device.wifi_band_5ghz === 'HT20' ||
+                                            device.wifi_band_5ghz === 'HT40') ?
+                                        'V' + device.wifi_band_5ghz
+                                        :
+                                        device.wifi_band_5ghz
+                                      )
                                     )
                                   )
                                 ),
@@ -1061,6 +1066,17 @@ $(document).ready(function() {
               }
             });
 
+            // Apply mask on reference input
+            if (device.external_reference &&
+                device.external_reference.kind === 'CPF') {
+              $('edit_external_reference-' + index)
+              .mask('000.000.000-009').keyup();
+            } else if (device.external_reference &&
+                       device.external_reference.kind === 'CNPJ') {
+              $('edit_external_reference-' + index)
+              .mask('00.000.000/0000-00').keyup();
+            }
+
             index += 1;
           });
           // Fill table pagination
@@ -1108,7 +1124,8 @@ $(document).ready(function() {
               return opts.html();
             })
           );
-          $('.ext-ref-input').mask('000.000.000-009').keyup();
+          // Apply IP mask on LAN subnet field
+          $('.ip-mask-field').mask('099.099.099.099');
           // Fix MD Bootstrap filled input forms
           $('.form-control').change();
           // Fetch existing notifications
@@ -1152,7 +1169,7 @@ $(document).ready(function() {
   // Initial table
   loadDevicesTable();
 
-  $('#devices-search-form').submit(function(event) {
+  $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-form .tags-input').val();
     loadDevicesTable(1, filterList);
     return false;
