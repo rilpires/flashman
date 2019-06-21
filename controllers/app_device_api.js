@@ -298,8 +298,8 @@ let processAll = function(content, device, rollback) {
 
 let formatDevices = function(device) {
   let allRules = [];
+  const justNow = Date.now();
   let lanDevices = device.lan_devices.filter((device)=>{
-    const justNow = Date.now();
     const timeDiff = Math.abs(justNow - device.last_seen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
     return (timeDiffSeconds < 86400);
@@ -322,6 +322,14 @@ let formatDevices = function(device) {
         out: lanDevice.router_port[i],
       });
     }
+    const timeDiff = Math.abs(justNow - lanDevice.last_seen);
+    const timeDiffSeconds = Math.floor(timeDiff / 3600);
+    let online = (timeDiffSeconds < 3600);
+    let signal = 'none';
+    if (lanDevice.wifi_snr >= 35) signal = 'excellent';
+    else if (lanDevice.wifi_snr >= 25) signal = 'good';
+    else if (lanDevice.wifi_snr >= 15) signal = 'ok';
+    else if (lanDevice.wifi_snr >= 0) signal = 'bad';
     return {
       mac: lanDevice.mac,
       id: (!lanDevice.dhcp_name ||
@@ -331,6 +339,8 @@ let formatDevices = function(device) {
       name: name,
       dmz: lanDevice.dmz,
       rules: rules,
+      online: online,
+      signal: signal,
     };
   });
   return {
@@ -563,6 +573,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       wifi: wifiConfig,
       localMac: localMac,
       model: matchedDevice.model,
+      version: matchedDevice.version,
+      release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
     });
