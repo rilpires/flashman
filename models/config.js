@@ -12,6 +12,17 @@ let configSchema = new mongoose.Schema({
     controller_fqdn: String,
     zabbix_fqdn: String,
   },
+  device_update_schedule: {
+    is_active: {type: Boolean, default: false},
+    date: {type: Date},
+    allowed_time_range: {type: Date},
+    rule: {
+      total_count: {type: Number},
+      devices: [String],
+      in_progress_devices: [String],
+      release: {type: String},
+    },
+  },
 });
 
 let config = mongoose.model('config', configSchema);
