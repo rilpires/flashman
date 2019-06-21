@@ -330,6 +330,7 @@ let formatDevices = function(device) {
     else if (lanDevice.wifi_snr >= 25) signal = 'good';
     else if (lanDevice.wifi_snr >= 15) signal = 'ok';
     else if (lanDevice.wifi_snr >= 0) signal = 'bad';
+    let isWifi = (lanDevice.conn_type === 1);
     return {
       mac: lanDevice.mac,
       id: (!lanDevice.dhcp_name ||
@@ -341,6 +342,7 @@ let formatDevices = function(device) {
       rules: rules,
       online: online,
       signal: signal,
+      is_wifi: isWifi,
     };
   });
   return {
