@@ -51,27 +51,6 @@ const getReleases = function(modelAsArray=false) {
   return releases;
 };
 
-const getStatus = function(devices) {
-  let statusAll = {};
-  let lastHour = new Date();
-  lastHour.setHours(lastHour.getHours() - 1);
-
-  devices.forEach((device) => {
-    let deviceColor = 'grey-text';
-    // MQTTS status
-    if (mqtt.clients[device._id.toUpperCase()]) {
-      deviceColor = 'green-text';
-    } else {
-      // No MQTT connected. Check last keepalive
-      if (device.last_contact.getTime() >= lastHour.getTime()) {
-        deviceColor = 'red-text';
-      }
-    }
-    statusAll[device._id] = deviceColor;
-  });
-  return statusAll;
-};
-
 const getOnlineCount = function(query) {
   return new Promise((resolve, reject)=> {
     let onlineQuery = {};
