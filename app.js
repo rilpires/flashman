@@ -309,7 +309,7 @@ app.listen(3000, function() {
   rule.hour = 20;
   rule.minute = 0;
   // Schedule automatic update
-  let s = schedule.scheduleJob(rule, function() {
+  schedule.scheduleJob(rule, function() {
     updater.update();
     measurer.pingLicenseStatus();
   });
