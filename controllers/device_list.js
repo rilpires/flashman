@@ -1163,36 +1163,40 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
 
-    let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
-        if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
-          return true;
-        } else {
-          return false;
-        }});
+    let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
+      if (typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
+        return true;
+      } else {
+        return false;
+      }
+    });
 
-    let out_data = [];
-    for(var i = 0; i < res_out.length; i++) {
-      tmp_data = {};
-      tmp_data.mac = res_out[i].mac;
-      tmp_data.port = res_out[i].port;
-      tmp_data.dmz = res_out[i].dmz;
+    let outData = [];
+    for (let i = 0; i < resOut.length; i++) {
+      let tmpData = {};
+      tmpData.mac = resOut[i].mac;
+      tmpData.port = resOut[i].port;
+      tmpData.dmz = resOut[i].dmz;
 
-      if(('router_port' in res_out[i]) && 
-          res_out[i].router_port.length != 0)
-        tmp_data.router_port = res_out[i].router_port
+      if (('router_port' in resOut[i]) &&
+          resOut[i].router_port.length != 0) {
+        tmpData.router_port = resOut[i].router_port;
+      }
 
-      if(!('name' in res_out[i] && res_out[i].name == '') && ('dhcp_name' in res_out[i]))
-        tmp_data.name = res_out[i].dhcp_name;
-      else
-        tmp_data.name = res_out[i].name;
+      if (!('name' in resOut[i] && resOut[i].name == '') &&
+          ('dhcp_name' in resOut[i])) {
+        tmpData.name = resOut[i].dhcp_name;
+      } else {
+        tmpData.name = resOut[i].name;
+      }
 
-      out_data.push(tmp_data)
+      outData.push(tmpData);
     }
 
     return res.status(200).json({
-        success: true,
-        landevices: out_data,
-      });
+      success: true,
+      landevices: outData,
+    });
   });
 };
 
