@@ -1292,4 +1292,35 @@ deviceListController.getLanDevices = function(req, res) {
   });
 };
 
+deviceListController.setDeviceCrudTrap = function(req, res) {
+  // Store callback URL for devices
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.device_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+      }
+      // TODO Check if it is a valid URL
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
+  });
+};
+
 module.exports = deviceListController;

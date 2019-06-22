@@ -84,6 +84,12 @@ router.route('/device/pinghostslist/:id').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setPingHostsList);
 
+// Set traps URL for devices CRUD operations
+router.route('/device/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.setDeviceCrudTrap);
+
 // *************
 // *** Users ***
 // *************

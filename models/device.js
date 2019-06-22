@@ -1,6 +1,10 @@
 
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
+const request = require('request');
+
+const Config = require('./config');
+
 let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
@@ -99,6 +103,41 @@ deviceSchema.methods.getLanDevice = function(mac) {
     return device.mac == mac;
   });
 };
+
+// Hooks for device traps notifications
+deviceSchema.pre('save', function(callback) {
+  let device = this;
+  let changedAttrs = {};
+  let requestOptions = {};
+
+  if (device.modifiedPaths().length > 0) {
+    // Send modified fields if callback exists
+    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+      let callbackUrl = defConfig.traps_callbacks.device_crud.url;
+      let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
+      let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
+      if (callbackUrl) {
+        device.modifiedPaths().forEach((attr) => {
+          changedAttrs[attr] = device[attr];
+        });
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'changes': changedAttrs,
+        };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        request(requestOptions);
+      }
+    });
+  }
+  callback();
+});
 
 let Device = mongoose.model('Device', deviceSchema );
 
