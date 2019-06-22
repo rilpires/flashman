@@ -784,7 +784,10 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('external_reference') &&
                 (superuserGrant || role.grantDeviceId)) {
-              matchedDevice.external_reference = content.external_reference;
+              matchedDevice.external_reference.kind =
+                content.external_reference.kind;
+              matchedDevice.external_reference.data =
+                content.external_reference.data;
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
