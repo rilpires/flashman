@@ -1,6 +1,10 @@
 
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
+const request = require('request');
+
+const Config = require('./config');
+
 let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
@@ -101,6 +105,79 @@ deviceSchema.methods.getLanDevice = function(mac) {
     return device.mac == mac;
   });
 };
+
+// Hooks for device traps notifications
+deviceSchema.pre('save', function(callback) {
+  let device = this;
+  let changedAttrs = {};
+  let requestOptions = {};
+  const attrsList = device.modifiedPaths();
+
+  if (attrsList.length > 0) {
+    // Send modified fields if callback exists
+    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+      if (err || !defConfig.traps_callbacks ||
+                 !defConfig.traps_callbacks.device_crud) {
+        return callback(err);
+      }
+      let callbackUrl = defConfig.traps_callbacks.device_crud.url;
+      let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
+      let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
+      if (callbackUrl) {
+        attrsList.forEach((attr) => {
+          changedAttrs[attr] = device[attr];
+        });
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'changes': changedAttrs,
+        };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        request(requestOptions);
+      }
+    });
+  }
+  callback();
+});
+
+deviceSchema.post('remove', function(device, callback) {
+  let requestOptions = {};
+
+  // Send modified fields if callback exists
+  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    if (err || !defConfig.traps_callbacks ||
+               !defConfig.traps_callbacks.device_crud) {
+      return callback(err);
+    }
+    let callbackUrl = defConfig.traps_callbacks.device_crud.url;
+    let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
+    let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
+    if (callbackUrl) {
+      requestOptions.url = callbackUrl;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': device._id,
+        'type': 'device',
+        'removed': true,
+      };
+      if (callbackAuthUser && callbackAuthSecret) {
+        requestOptions.auth = {
+          user: callbackAuthUser,
+          pass: callbackAuthSecret,
+        };
+      }
+      request(requestOptions);
+    }
+  });
+  callback();
+});
 
 let Device = mongoose.model('Device', deviceSchema );
 

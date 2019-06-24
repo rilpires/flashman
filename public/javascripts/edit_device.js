@@ -276,20 +276,6 @@ $(document).ready(function() {
     });
   });
 
-  $(document).on('click', '.btn-trash', function(event) {
-    let row = $(event.target).parents('tr');
-    let id = row.data('deviceid');
-    $.ajax({
-      url: '/devicelist/delete/' + id,
-      type: 'post',
-      success: function(res) {
-        setTimeout(function() {
-          window.location.reload();
-        }, 100);
-      },
-    });
-  });
-
   $(document).on('click', '.toggle-pass', function(event) {
     let inputField = $(event.target).closest('.input-group').find('input');
     if (inputField.attr('type') == 'text') {

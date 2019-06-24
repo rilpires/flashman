@@ -84,6 +84,12 @@ router.route('/device/pinghostslist/:id').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setPingHostsList);
 
+// Set traps URL for devices CRUD operations
+router.route('/device/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.setDeviceCrudTrap);
+
 // *************
 // *** Users ***
 // *************
@@ -108,6 +114,12 @@ router.route('/user/del').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.deleteUser);
 
+// Set traps URL for users CRUD operations
+router.route('/user/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.setUserCrudTrap);
+
 // *************
 // *** Roles ***
 // *************
@@ -131,5 +143,11 @@ router.route('/role/del').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.deleteRole);
+
+// Set traps URL for role CRUD operations
+router.route('/role/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.setRoleCrudTrap);
 
 module.exports = router;
