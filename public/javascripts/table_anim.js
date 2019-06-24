@@ -1083,7 +1083,10 @@ $(document).ready(function() {
                   if (idx == currPage) {
                     opts.append(
                       $('<li>').addClass('page-item active').append(
-                        $('<a>').addClass('page-link primary-color').html(idx)
+                        $('<a>')
+                        .addClass('page-link primary-color')
+                        .attr('id', 'curr-page-link')
+                        .html(idx)
                       )
                     );
                   } else {
@@ -1170,5 +1173,19 @@ $(document).ready(function() {
     let pageNum = parseInt($(event.target).html());
     let filterList = $('#devices-search-form .tags-input').val();
     loadDevicesTable(pageNum, filterList);
+  });
+
+  $(document).on('click', '.btn-trash', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    $.ajax({
+      url: '/devicelist/delete/' + id,
+      type: 'post',
+      success: function(res) {
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-form .tags-input').val();
+        loadDevicesTable(pageNum, filterList);
+      },
+    });
   });
 });
