@@ -109,15 +109,16 @@ deviceSchema.pre('save', function(callback) {
   let device = this;
   let changedAttrs = {};
   let requestOptions = {};
+  const attrsList = device.modifiedPaths();
 
-  if (device.modifiedPaths().length > 0) {
+  if (attrsList.length > 0) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       let callbackUrl = defConfig.traps_callbacks.device_crud.url;
       let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
       let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
       if (callbackUrl) {
-        device.modifiedPaths().forEach((attr) => {
+        attrsList.forEach((attr) => {
           changedAttrs[attr] = device[attr];
         });
         requestOptions.url = callbackUrl;
