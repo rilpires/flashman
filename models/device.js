@@ -129,6 +129,7 @@ deviceSchema.pre('save', function(callback) {
         requestOptions.method = 'PUT';
         requestOptions.json = {
           'id': device._id,
+          'type': 'device',
           'changes': changedAttrs,
         };
         if (callbackAuthUser && callbackAuthSecret) {
@@ -161,6 +162,7 @@ deviceSchema.post('remove', function(device, callback) {
       requestOptions.method = 'PUT';
       requestOptions.json = {
         'id': device._id,
+        'type': 'device',
         'removed': true,
       };
       if (callbackAuthUser && callbackAuthSecret) {

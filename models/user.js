@@ -62,6 +62,7 @@ userSchema.pre('save', function(callback) {
         requestOptions.method = 'PUT';
         requestOptions.json = {
           'id': user._id,
+          'type': 'user',
           'name': user.name,
           'changes': changedAttrs,
         };
@@ -96,6 +97,7 @@ userSchema.post('remove', function(user, callback) {
       requestOptions.method = 'PUT';
       requestOptions.json = {
         'id': user._id,
+        'type': 'user',
         'name': user.name,
         'removed': true,
       };
