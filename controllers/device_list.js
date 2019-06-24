@@ -837,6 +837,8 @@ deviceListController.createDeviceReg = function(req, res) {
     let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
     let password = returnObjOrEmptyStr(content.wifi_password).trim();
     let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
+    let band = returnObjOrEmptyStr(content.wifi_band).trim();
+    let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -879,6 +881,8 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(ssid, validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
+      genericValidate(band, validator.validateBand, 'band');
+      genericValidate(mode, validator.validateMode, 'mode');
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -902,6 +906,8 @@ deviceListController.createDeviceReg = function(req, res) {
               'wifi_ssid': ssid,
               'wifi_password': password,
               'wifi_channel': channel,
+              'wifi_band': band,
+              'wifi_mode': mode,
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
@@ -1290,7 +1296,6 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         matchedConfig.traps_callbacks.device_crud.user = req.body.user;
         matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
       }
-      // TODO Check if it is a valid URL
       matchedConfig.save((err) => {
         if (err) {
           return res.status(500).json({

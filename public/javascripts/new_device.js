@@ -29,6 +29,8 @@ let validateNewDevice = function() {
   let ssid = $('#new_wifi_ssid').val();
   let password = $('#new_wifi_pass').val();
   let channel = $('#new_wifi_channel').val();
+  let band = $('#new_wifi_band').val();
+  let mode = $('#new_wifi_mode').val();
   let externalReferenceType = $('#new_ext_ref_type_selected').html();
   let externalReferenceData = $('#new_external_reference').val();
 
@@ -40,6 +42,8 @@ let validateNewDevice = function() {
     ssid: {field: '#new_wifi_ssid'},
     password: {field: '#new_wifi_pass'},
     channel: {field: '#new_wifi_channel'},
+    band: {field: '#new_wifi_band'},
+    mode: {field: '#new_wifi_mode'},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -64,6 +68,8 @@ let validateNewDevice = function() {
   genericValidate(ssid, validator.validateSSID, errors.ssid);
   genericValidate(password, validator.validateWifiPassword, errors.password);
   genericValidate(channel, validator.validateChannel, errors.channel);
+  genericValidate(band, validator.validateBand, errors.band);
+  genericValidate(mode, validator.validateMode, errors.mode);
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
@@ -79,6 +85,8 @@ let validateNewDevice = function() {
       'wifi_ssid': ssid,
       'wifi_password': password,
       'wifi_channel': channel,
+      'wifi_band': band,
+      'wifi_mode': mode,
       'external_reference': {
         kind: externalReferenceType,
         data: externalReferenceData,
@@ -104,6 +112,8 @@ let validateNewDevice = function() {
             ssid: errors.ssid,
             password: errors.password,
             channel: errors.channel,
+            band: errors.band,
+            mode: errors.mode,
           };
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
@@ -122,7 +132,7 @@ let validateNewDevice = function() {
 
 $(document).ready(function() {
   $('#deviceForm').submit(validateNewDevice);
-
+  $('#new_external_reference').mask('000.000.000-009').keyup();
   $('#new_mac').mask('HH:HH:HH:HH:HH:HH', {
     translation: {
       H: {pattern: /[A-Fa-f0-9]/},
@@ -131,7 +141,6 @@ $(document).ready(function() {
       $('#new_mac').val(mac.toUpperCase());
     },
   });
-
   $('#new_connect_type').change(function() {
     if ($('#new_connect_type').val() === 'PPPoE') {
       $('#new_pppoe_user').parent().show();
@@ -141,7 +150,6 @@ $(document).ready(function() {
       $('#new_pppoe_pass').parent().hide();
     }
   });
-
   $('#new_pppoe_user').parent().hide();
   $('#new_pppoe_pass').parent().hide();
 });
