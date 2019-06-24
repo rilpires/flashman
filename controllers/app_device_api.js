@@ -324,7 +324,7 @@ let formatDevices = function(device) {
     }
     const timeDiff = Math.abs(justNow - lanDevice.last_seen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
-    let online = (timeDiffSeconds < 3600);
+    let online = (timeDiffSeconds < 5);
     let signal = 'none';
     if (lanDevice.wifi_snr >= 35) signal = 'excellent';
     else if (lanDevice.wifi_snr >= 25) signal = 'good';
