@@ -47,7 +47,10 @@ userSchema.pre('save', function(callback) {
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
-      if (err) return callback(err);
+      if (err || !defConfig.traps_callbacks ||
+                 !defConfig.traps_callbacks.user_crud) {
+        return callback(err);
+      }
       let callbackUrl = defConfig.traps_callbacks.user_crud.url;
       let callbackAuthUser = defConfig.traps_callbacks.user_crud.user;
       let callbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;
@@ -81,7 +84,10 @@ userSchema.post('remove', function(user, callback) {
 
   // Send modified fields if callback exists
   Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
-    if (err) return callback(err);
+    if (err || !defConfig.traps_callbacks ||
+               !defConfig.traps_callbacks.user_crud) {
+      return callback(err);
+    }
     let callbackUrl = defConfig.traps_callbacks.user_crud.url;
     let callbackAuthUser = defConfig.traps_callbacks.user_crud.user;
     let callbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;

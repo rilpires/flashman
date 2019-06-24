@@ -114,7 +114,10 @@ deviceSchema.pre('save', function(callback) {
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
-      if (err) return callback(err);
+      if (err || !defConfig.traps_callbacks ||
+                 !defConfig.traps_callbacks.device_crud) {
+        return callback(err);
+      }
       let callbackUrl = defConfig.traps_callbacks.device_crud.url;
       let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
       let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
@@ -146,7 +149,10 @@ deviceSchema.post('remove', function(device, callback) {
 
   // Send modified fields if callback exists
   Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
-    if (err) return callback(err);
+    if (err || !defConfig.traps_callbacks ||
+               !defConfig.traps_callbacks.device_crud) {
+      return callback(err);
+    }
     let callbackUrl = defConfig.traps_callbacks.device_crud.url;
     let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
     let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
