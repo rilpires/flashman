@@ -12,6 +12,11 @@ let configSchema = new mongoose.Schema({
     controller_fqdn: String,
     zabbix_fqdn: String,
   },
+  traps_callbacks: {
+    device_crud: {url: String, user: String, secret: String},
+    user_crud: {url: String, user: String, secret: String},
+    role_crud: {url: String, user: String, secret: String},
+  },
 });
 
 let config = mongoose.model('config', configSchema);

@@ -1,5 +1,8 @@
 
 const mongoose = require('mongoose');
+const request = require('request');
+
+const Config = require('./config');
 
 let roleSchema = new mongoose.Schema({
   name: {type: String, unique: true, required: true},
@@ -19,6 +22,81 @@ let roleSchema = new mongoose.Schema({
   grantNotificationPopups: {type: Boolean, required: true, default: true},
   grantLanEdit: {type: Boolean, required: true, default: true},
   grantLanDevices: {type: Number, required: true, default: 2},
+});
+
+// Hooks traps notifications
+roleSchema.pre('save', function(callback) {
+  let role = this;
+  let changedAttrs = {};
+  let requestOptions = {};
+  const attrsList = role.modifiedPaths();
+
+  if (attrsList.length > 0) {
+    // Send modified fields if callback exists
+    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+      if (err || !defConfig.traps_callbacks ||
+                 !defConfig.traps_callbacks.role_crud) {
+        return callback(err);
+      }
+      let callbackUrl = defConfig.traps_callbacks.role_crud.url;
+      let callbackAuthUser = defConfig.traps_callbacks.role_crud.user;
+      let callbackAuthSecret = defConfig.traps_callbacks.role_crud.secret;
+      if (callbackUrl) {
+        attrsList.forEach((attr) => {
+          changedAttrs[attr] = role[attr];
+        });
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': role._id,
+          'type': 'role',
+          'name': role.name,
+          'changes': changedAttrs,
+        };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        request(requestOptions);
+      }
+    });
+  }
+  callback();
+});
+
+roleSchema.post('remove', function(role, callback) {
+  let requestOptions = {};
+
+  // Send modified fields if callback exists
+  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    if (err || !defConfig.traps_callbacks ||
+               !defConfig.traps_callbacks.role_crud) {
+      return callback(err);
+    }
+    let callbackUrl = defConfig.traps_callbacks.role_crud.url;
+    let callbackAuthUser = defConfig.traps_callbacks.role_crud.user;
+    let callbackAuthSecret = defConfig.traps_callbacks.role_crud.secret;
+    if (callbackUrl) {
+      requestOptions.url = callbackUrl;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': role._id,
+        'type': 'role',
+        'name': role.name,
+        'removed': true,
+      };
+      if (callbackAuthUser && callbackAuthSecret) {
+        requestOptions.auth = {
+          user: callbackAuthUser,
+          pass: callbackAuthSecret,
+        };
+      }
+      request(requestOptions);
+    }
+  });
+  callback();
 });
 
 let Role = mongoose.model('Role', roleSchema);
