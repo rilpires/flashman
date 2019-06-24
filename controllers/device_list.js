@@ -371,11 +371,13 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.remove({_id: req.params.id.toUpperCase()}, function(err) {
-    if (err) {
+  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
+    if (err || !device) {
       return res.status(500).json({success: false,
                                    message: 'Entrada não pode ser removida'});
     }
+    // Use this .remove method so middleware post hook receives object info
+    device.remove();
     return res.status(200).json({success: true});
   });
 };

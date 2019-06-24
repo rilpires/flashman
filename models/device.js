@@ -114,6 +114,7 @@ deviceSchema.pre('save', function(callback) {
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+      if (err) return callback(err);
       let callbackUrl = defConfig.traps_callbacks.device_crud.url;
       let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
       let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
@@ -137,6 +138,34 @@ deviceSchema.pre('save', function(callback) {
       }
     });
   }
+  callback();
+});
+
+deviceSchema.post('remove', function(device, callback) {
+  let requestOptions = {};
+
+  // Send modified fields if callback exists
+  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    if (err) return callback(err);
+    let callbackUrl = defConfig.traps_callbacks.device_crud.url;
+    let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
+    let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
+    if (callbackUrl) {
+      requestOptions.url = callbackUrl;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': device._id,
+        'removed': true,
+      };
+      if (callbackAuthUser && callbackAuthSecret) {
+        requestOptions.auth = {
+          user: callbackAuthUser,
+          pass: callbackAuthSecret,
+        };
+      }
+      request(requestOptions);
+    }
+  });
   callback();
 });
 
