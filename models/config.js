@@ -14,6 +14,7 @@ let configSchema = new mongoose.Schema({
   },
   traps_callbacks: {
     device_crud: {url: String, user: String, secret: String},
+    user_crud: {url: String, user: String, secret: String},
   },
 });
 

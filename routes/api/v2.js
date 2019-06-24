@@ -114,6 +114,12 @@ router.route('/user/del').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.deleteUser);
 
+// Set traps URL for users CRUD operations
+router.route('/user/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.setUserCrudTrap);
+
 // *************
 // *** Roles ***
 // *************

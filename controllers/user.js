@@ -227,8 +227,8 @@ userController.editRole = function(req, res) {
 };
 
 userController.deleteUser = function(req, res) {
-  User.find({'_id': {$in: req.body.ids}}).remove(function(err) {
-    if (err) {
+  User.find({'_id': {$in: req.body.ids}}, function(err, users) {
+    if (err || !users) {
       console.log('User delete error: ' + err);
       return res.json({
         type: 'danger',
@@ -236,6 +236,9 @@ userController.deleteUser = function(req, res) {
         'Entre em contato com o desenvolvedor',
       });
     }
+    users.forEach((user) => {
+      user.remove();
+    });
     return res.json({
       type: 'success',
       message: 'Usuário(s) deletado(s) com sucesso!',
@@ -367,6 +370,37 @@ userController.showRoles = function(req, res) {
 
       return res.render('showroles', indexContent);
     });
+  });
+};
+
+userController.setUserCrudTrap = function(req, res) {
+  // Store callback URL for users
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.user_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.user_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
+      }
+      // TODO Check if it is a valid URL
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
   });
 };
 
