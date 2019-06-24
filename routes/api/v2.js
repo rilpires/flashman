@@ -144,4 +144,10 @@ router.route('/role/del').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.deleteRole);
 
+// Set traps URL for role CRUD operations
+router.route('/role/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.setRoleCrudTrap);
+
 module.exports = router;
