@@ -390,7 +390,6 @@ userController.setUserCrudTrap = function(req, res) {
         matchedConfig.traps_callbacks.user_crud.user = req.body.user;
         matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
       }
-      // TODO Check if it is a valid URL
       matchedConfig.save((err) => {
         if (err) {
           return res.status(500).json({
@@ -421,7 +420,6 @@ userController.setRoleCrudTrap = function(req, res) {
         matchedConfig.traps_callbacks.role_crud.user = req.body.user;
         matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
       }
-      // TODO Check if it is a valid URL
       matchedConfig.save((err) => {
         if (err) {
           return res.status(500).json({
