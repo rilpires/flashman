@@ -313,6 +313,7 @@ deviceListController.searchDeviceReg = function(req, res) {
                             sort: {_id: 1}}, function(err, matchedDevices) {
     if (err) {
       return res.json({
+        success: false,
         type: 'danger',
         message: err.message,
       });
@@ -349,6 +350,7 @@ deviceListController.searchDeviceReg = function(req, res) {
           status = Object.assign(status, onlineStatus);
           // Filter data using user permissions
           return res.json({
+            success: true,
             type: 'success',
             limit: req.user.maxElementsPerPage,
             page: matchedDevices.page,
@@ -361,6 +363,7 @@ deviceListController.searchDeviceReg = function(req, res) {
           });
         }, (error) => {
           return res.json({
+            success: false,
             type: 'danger',
             message: err.message,
           });
