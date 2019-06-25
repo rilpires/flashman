@@ -35,6 +35,7 @@ $(document).ready(function() {
         if (res.success) {
           $('#lan-devices-placeholder').hide();
           let lanDevsRow = $('#lan-devices-body');
+          let countAddedDevs = 0;
           $.each(res.lan_devices, function(idx, device) {
             const lastSeen = ((device.last_seen) ?
                               Date.parse(device.last_seen) :
@@ -120,8 +121,9 @@ $(document).ready(function() {
                 )
               )
             );
+            countAddedDevs += 1;
             // Line break every 2 columns
-            if (idx % 2 == 1) {
+            if (countAddedDevs % 2 == 0) {
               lanDevsRow.append($('<div></div>').addClass('w-100'));
             }
           });
