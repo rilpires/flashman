@@ -89,9 +89,46 @@ $(document).ready(function() {
                     ) : ''
                   )
                 ),
-                $('<div></div>').addClass('row pt-2').append(
-                  $('<div></div>').addClass('col').append(
-                    $('<h6></h6>').text(device.ip)
+                $('<div>').addClass('row pt-2').append(
+                  $('<div>').addClass('col').append(
+                    $('<button>').addClass('btn btn-primary btn-sm mx-0')
+                                 .attr('type', 'button')
+                                 .attr('data-toggle', 'collapse')
+                                 .attr('data-target', '#ipv4-collapse-' + idx)
+                                 .prop('disabled', !device.ip)
+                    .append(
+                      $('<i>').addClass('fas fa-search'),
+                      $('<span>').html('&nbsp IPv4')
+                    ),
+                    $('<button>').addClass('btn btn-primary btn-sm')
+                                 .attr('type', 'button')
+                                 .attr('data-toggle', 'collapse')
+                                 .attr('data-target', '#ipv6-collapse-' + idx)
+                                 .prop('disabled', device.ipv6.length == 0)
+                    .append(
+                      $('<i>').addClass('fas fa-search'),
+                      $('<span>').html('&nbsp IPv6')
+                    ),
+                    // IPv4 section
+                    $('<div>').addClass('collapse')
+                              .attr('id', 'ipv4-collapse-' + idx)
+                    .append(
+                      $('<div>').addClass('mt-2').append(
+                        $('<h6>').text(device.ip)
+                      )
+                    ),
+                    // IPv6 section
+                    $('<div>').addClass('collapse')
+                              .attr('id', 'ipv6-collapse-' + idx)
+                    .append(
+                      $('<div>').addClass('mt-2').append(() => {
+                        let opts = $('<div>');
+                        device.ipv6.forEach((ipv6) => {
+                          opts.append($('<h6>').text(ipv6));
+                        });
+                        return opts.html();
+                      })
+                    )
                   )
                 ),
                 $('<div></div>').addClass('row pt-3 mb-2').append(
