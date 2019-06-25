@@ -1180,7 +1180,8 @@ deviceListController.getPortForward = function(req, res) {
         tmpData.name = resOut[i].name;
       }
       // Check if device has IPv6 through DHCP
-      tmpData.has_dhcpv6 = (Array.isArray(resOut[i].dhcpv6) ? true : false);
+      tmpData.has_dhcpv6 = (Array.isArray(resOut[i].dhcpv6) &&
+                            resOut[i].dhcpv6.length > 0 ? true : false);
 
       outData.push(tmpData);
     }
