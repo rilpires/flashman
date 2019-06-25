@@ -183,14 +183,10 @@ const createRegistry = function(req, res) {
   });
 };
 
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
-
 const serializeBlocked = function(devices) {
   if (!devices) return [];
   return devices.map((device)=>{
-    let dhcpLease = (!lanDevice.dhcp_name ||
+    let dhcpLease = (!device.dhcp_name ||
                      device.dhcp_name === '!') ? '*' : device.dhcp_name;
     return device.mac + '|' + dhcpLease;
   });
