@@ -1,4 +1,4 @@
-nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
+nav.navbar.navbar-expand-lg.navbar-dark.primary-color
   a.navbar-brand(href="/").mc-auto
     .image-block
       img(alt="brand", src="/images/logo.png", width="50", height="50")
@@ -16,10 +16,11 @@ nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
     span.navbar-toggler-icon
   #navbar-menu.navbar-default.navbar-collapse.collapse
     if (username)
-      ul.navbar-nav.ml-auto
-        li.nav-item.dropdown.col-10
-          a#navbarDropdown.nav-link.dropdown-toggle(data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false")
-            | Olá, #{username}
+      ul.navbar-nav.ml-auto.nav-flex-icons
+        li.nav-item.dropdown
+          a#navbarDropdown.nav-link.dropdown-toggle(data-toggle="dropdown")
+            i.fas.fa-cog
+            span &nbsp #{username}
           .dropdown-menu(aria-labelledby="navbarDropdown")
             a.dropdown-item(href="/user/profile")
               .fas.fa-user.fa-lg
@@ -45,5 +46,5 @@ nav.navbar.navbar-expand-lg.navbar-dark.flashbox-color
                 .fas.fa-cog.fa-lg
                 span &nbsp Configurações
         li.nav-item
-          a.nav-link(href="/logout")
-            .fas.fa-sign-out-alt.fa-lg
+          a.ml-2.nav-link.waves-effect.waves-light(href="/logout")
+            i.fas.fa-sign-out-alt
