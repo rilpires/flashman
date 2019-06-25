@@ -105,7 +105,7 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
     portListBadges.append(
       $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4)
     );
-    if (hasPortOpenIpv6) {
+    if (hasPortOpenIpv6 && deviceEntry.has_dhcpv6) {
       portListBadgesIpv6.append(
         $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6)
       );
@@ -177,9 +177,10 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
         let datanew = {};
         let deviceMac = value.mac;
         let deviceName = value.hostname;
+        let hasDhcpv6 = value.has_dhcpv6 ? true : false;
         // Replace device name for a mac address if it's an empty string
         deviceName = (deviceName != '') ? deviceName : deviceMac;
-        datanew.value = JSON.stringify([deviceMac, deviceName]);
+        datanew.value = JSON.stringify([deviceMac, deviceName, hasDhcpv6]);
         datanew.label = deviceName;
         // Populate connected devices dropdown options
         macoptions.push(datanew);
@@ -219,7 +220,7 @@ $(document).ready(function() {
             devicePortAsym = hasPortForwardAsym ? value.router_port : null;
             insertOpenFirewallDoorRule({
               mac: value.mac, port: value.port, router_port: devicePortAsym,
-              dmz: value.dmz, label: deviceLabel,
+              dmz: value.dmz, label: deviceLabel, has_dhcpv6: value.has_dhcpv6,
             });
           });
 
@@ -399,9 +400,11 @@ $(document).ready(function() {
     // Check if id has only a MAC or contains also a device name
     let deviceMac;
     let deviceLabel;
+    let hasDhcpv6 = false;
     if (isJsonString(deviceId)) {
       deviceMac = JSON.parse(deviceId)[0];
       deviceLabel = JSON.parse(deviceId)[1];
+      hasDhcpv6 = JSON.parse(deviceId)[2];
     } else {
       deviceMac = deviceId;
       deviceLabel = deviceId;
@@ -409,7 +412,7 @@ $(document).ready(function() {
     asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
     insertOpenFirewallDoorRule({
       mac: deviceMac, port: portsFinal, router_port: asymPortsValue,
-      dmz: dmz, label: deviceLabel,
+      dmz: dmz, label: deviceLabel, has_dhcpv6: hasDhcpv6,
     });
   });
 

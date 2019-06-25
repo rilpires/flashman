@@ -1163,21 +1163,13 @@ deviceInfoController.receiveDevices = function(req, res) {
           }
           devReg.ip = (ipRes.valid ? upConnDev.ip : null);
           if (Array.isArray(upConnDev.ipv6)) {
-            if (devReg.ipv6 && devReg.ipv6.length > 0) {
-              // Remove duplicates when merging arrays
-              devReg.ipv6 = [...new Set([...devReg.ipv6, ...upConnDev.ipv6])];
-            } else {
-              devReg.ipv6 = upConnDev.ipv6;
-            }
+            devReg.ipv6 = upConnDev.ipv6;
           }
           if (Array.isArray(upConnDev.dhcpv6)) {
-            if (devReg.dhcpv6 && devReg.dhcpv6.length > 0) {
-              // Remove duplicates when merging arrays
-              devReg.dhcpv6 = [...new Set([...devReg.dhcpv6,
-                               ...upConnDev.dhcpv6])];
-            } else {
-              devReg.dhcpv6 = upConnDev.dhcpv6;
-            }
+            devReg.dhcpv6 = upConnDev.dhcpv6;
+            outDev.has_dhcpv6 = true;
+          } else {
+            outDev.has_dhcpv6 = false;
           }
           devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
                               upConnDev.conn_type : null);
@@ -1208,6 +1200,7 @@ deviceInfoController.receiveDevices = function(req, res) {
                         upConnDev.wifi_mode : null),
           });
           outDev.hostname = hostName;
+          outDev.has_dhcpv6 = (Array.isArray(upConnDev.dhcpv6) ? true : false);
         }
         outDev.mac = upConnDevMac;
         outData.push(outDev);
