@@ -313,6 +313,7 @@ deviceListController.searchDeviceReg = function(req, res) {
                             sort: {_id: 1}}, function(err, matchedDevices) {
     if (err) {
       return res.json({
+        success: false,
         type: 'danger',
         message: err.message,
       });
@@ -349,6 +350,7 @@ deviceListController.searchDeviceReg = function(req, res) {
           status = Object.assign(status, onlineStatus);
           // Filter data using user permissions
           return res.json({
+            success: true,
             type: 'success',
             limit: req.user.maxElementsPerPage,
             page: matchedDevices.page,
@@ -361,6 +363,7 @@ deviceListController.searchDeviceReg = function(req, res) {
           });
         }, (error) => {
           return res.json({
+            success: false,
             type: 'danger',
             message: err.message,
           });
@@ -371,11 +374,13 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.remove({_id: req.params.id.toUpperCase()}, function(err) {
-    if (err) {
+  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
+    if (err || !device) {
       return res.status(500).json({success: false,
                                    message: 'Entrada não pode ser removida'});
     }
+    // Use this .remove method so middleware post hook receives object info
+    device.remove();
     return res.status(200).json({success: true});
   });
 };
@@ -784,7 +789,10 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('external_reference') &&
                 (superuserGrant || role.grantDeviceId)) {
-              matchedDevice.external_reference = content.external_reference;
+              matchedDevice.external_reference.kind =
+                content.external_reference.kind;
+              matchedDevice.external_reference.data =
+                content.external_reference.data;
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
@@ -832,6 +840,8 @@ deviceListController.createDeviceReg = function(req, res) {
     let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
     let password = returnObjOrEmptyStr(content.wifi_password).trim();
     let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
+    let band = returnObjOrEmptyStr(content.wifi_band).trim();
+    let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -874,6 +884,8 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(ssid, validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
+      genericValidate(band, validator.validateBand, 'band');
+      genericValidate(mode, validator.validateMode, 'mode');
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -897,6 +909,8 @@ deviceListController.createDeviceReg = function(req, res) {
               'wifi_ssid': ssid,
               'wifi_password': password,
               'wifi_channel': channel,
+              'wifi_band': band,
+              'wifi_mode': mode,
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
@@ -1142,36 +1156,43 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
 
-    let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
-        if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
-          return true;
-        } else {
-          return false;
-        }});
+    let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
+      if (typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
+        return true;
+      } else {
+        return false;
+      }
+    });
 
-    let out_data = [];
-    for(var i = 0; i < res_out.length; i++) {
-      tmp_data = {};
-      tmp_data.mac = res_out[i].mac;
-      tmp_data.port = res_out[i].port;
-      tmp_data.dmz = res_out[i].dmz;
+    let outData = [];
+    for (let i = 0; i < resOut.length; i++) {
+      let tmpData = {};
+      tmpData.mac = resOut[i].mac;
+      tmpData.port = resOut[i].port;
+      tmpData.dmz = resOut[i].dmz;
 
-      if(('router_port' in res_out[i]) && 
-          res_out[i].router_port.length != 0)
-        tmp_data.router_port = res_out[i].router_port
+      if (('router_port' in resOut[i]) &&
+          resOut[i].router_port.length != 0) {
+        tmpData.router_port = resOut[i].router_port;
+      }
 
-      if(!('name' in res_out[i] && res_out[i].name == '') && ('dhcp_name' in res_out[i]))
-        tmp_data.name = res_out[i].dhcp_name;
-      else
-        tmp_data.name = res_out[i].name;
+      if (!('name' in resOut[i] && resOut[i].name == '') &&
+          ('dhcp_name' in resOut[i])) {
+        tmpData.name = resOut[i].dhcp_name;
+      } else {
+        tmpData.name = resOut[i].name;
+      }
+      // Check if device has IPv6 through DHCP
+      tmpData.has_dhcpv6 = (Array.isArray(resOut[i].dhcpv6) &&
+                            resOut[i].dhcpv6.length > 0 ? true : false);
 
-      out_data.push(tmp_data)
+      outData.push(tmpData);
     }
 
     return res.status(200).json({
-        success: true,
-        landevices: out_data,
-      });
+      success: true,
+      landevices: outData,
+    });
   });
 };
 
@@ -1264,6 +1285,36 @@ deviceListController.getLanDevices = function(req, res) {
       success: true,
       lan_devices: matchedDevice.lan_devices,
     });
+  });
+};
+
+deviceListController.setDeviceCrudTrap = function(req, res) {
+  // Store callback URL for devices
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.device_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+      }
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
   });
 };
 

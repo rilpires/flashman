@@ -59,11 +59,13 @@ userController.postUser = function(req, res) {
     if (err) {
       console.log('Error creating user: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao criar usuário. Verifique se o usuário já existe.',
       });
     }
     return res.json({
+      success: true,
       type: 'success',
       message: 'Usuário criado com sucesso!',
     });
@@ -94,11 +96,13 @@ userController.postRole = function(req, res) {
     if (err) {
       console.log('Error creating role: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao criar classe. Verifique se já existe.',
       });
     }
     return res.json({
+      success: true,
       type: 'success',
       message: 'Classe de permissões criada com sucesso!',
     });
@@ -108,18 +112,18 @@ userController.postRole = function(req, res) {
 userController.getUsers = function(req, res) {
   User.find(function(err, users) {
     if (err) {
-      return res.json({type: 'danger', message: err});
+      return res.json({success: false, type: 'danger', message: err});
     }
-    return res.json({type: 'success', users: users});
+    return res.json({success: true, type: 'success', users: users});
   });
 };
 
 userController.getRoles = function(req, res) {
   Role.find(function(err, roles) {
     if (err) {
-      return res.json({type: 'danger', message: err});
+      return res.json({success: false, type: 'danger', message: err});
     }
-    return res.json({type: 'success', roles: roles});
+    return res.json({success: true, type: 'success', roles: roles});
   });
 };
 
@@ -129,6 +133,7 @@ userController.editUser = function(req, res) {
     if (err) {
       console.log('Error finding user: ' + err);
       return res.status(500).json({
+        success: false,
         type: 'danger',
         message: 'Erro ao encontrar usuário',
       });
@@ -145,6 +150,7 @@ userController.editUser = function(req, res) {
         }
       } else {
         return res.status(500).json({
+          success: false,
           type: 'danger',
           message: 'As senhas estão diferentes',
         });
@@ -165,11 +171,13 @@ userController.editUser = function(req, res) {
         if (err) {
           console.log('Error saving user entry: ' + err);
           return res.status(500).json({
+            success: false,
             type: 'danger',
             message: 'Erro ao salvar alterações',
           });
         } else {
           return res.json({
+            success: true,
             type: 'success',
             message: 'Editado com sucesso!',
           });
@@ -177,6 +185,7 @@ userController.editUser = function(req, res) {
       });
     } else {
       return res.status(403).json({
+        success: false,
         type: 'danger',
         message: 'Permissão negada',
       });
@@ -189,6 +198,7 @@ userController.editRole = function(req, res) {
     if (err || !role) {
       console.log('Error editing role: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao encontrar classe.',
       });
@@ -214,11 +224,13 @@ userController.editRole = function(req, res) {
       if (err) {
         console.log('Error saving role: ' + err);
         return res.json({
+          success: false,
           type: 'danger',
           message: 'Erro ao editar classe.',
         });
       }
       return res.json({
+        success: true,
         type: 'success',
         message: 'Classe de permissões editada com sucesso!',
       });
@@ -227,16 +239,21 @@ userController.editRole = function(req, res) {
 };
 
 userController.deleteUser = function(req, res) {
-  User.find({'_id': {$in: req.body.ids}}).remove(function(err) {
-    if (err) {
+  User.find({'_id': {$in: req.body.ids}}, function(err, users) {
+    if (err || !users) {
       console.log('User delete error: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro interno ao deletar usuário(s). ' +
         'Entre em contato com o desenvolvedor',
       });
     }
+    users.forEach((user) => {
+      user.remove();
+    });
     return res.json({
+      success: true,
       type: 'success',
       message: 'Usuário(s) deletado(s) com sucesso!',
     });
@@ -246,22 +263,28 @@ userController.deleteUser = function(req, res) {
 userController.deleteRole = function(req, res) {
   User.count({'role': {$in: req.body.names}}, function(err, count) {
     if (count == 0) {
-      Role.find({'_id': {$in: req.body.ids}}).remove(function(err) {
-        if (err) {
+      Role.find({'_id': {$in: req.body.ids}}, function(err, roles) {
+        if (err || !roles) {
           console.log('Role delete error: ' + err);
           return res.json({
+            success: false,
             type: 'danger',
             message: 'Erro interno ao deletar classe(s). ' +
             'Entre em contato com o desenvolvedor',
           });
         }
+        roles.forEach((role) => {
+          role.remove();
+        });
         return res.json({
+          success: true,
           type: 'success',
           message: 'Classe(s) deletada(s) com sucesso!',
         });
       });
     } else {
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao deletar classe(s). ' +
         'Uma ou mais classes ainda estão em uso por seus usuários.',
@@ -367,6 +390,66 @@ userController.showRoles = function(req, res) {
 
       return res.render('showroles', indexContent);
     });
+  });
+};
+
+userController.setUserCrudTrap = function(req, res) {
+  // Store callback URL for users
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.user_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.user_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
+      }
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
+  });
+};
+
+userController.setRoleCrudTrap = function(req, res) {
+  // Store callback URL for roles
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.role_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.role_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
+      }
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
   });
 };
 

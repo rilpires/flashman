@@ -2,13 +2,13 @@
 form.needs-validation(id="deviceForm", novalidate)
   .md-form.input-group
     .input-group-btn
-      button.btn.teal.lighten-2.dropdown-toggle.ml-0.my-0(
+      button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
         type="button",
         data-toggle="dropdown"
       )
         span#new_ext_ref_type_selected.selected CPF
-      #ext_ref_type.dropdown-menu
-        a.dropdown-item.text-center.active.teal.lighten-2 CPF
+      .ext-ref-type.dropdown-menu
+        a.dropdown-item.text-center.primary-color.active CPF
         a.dropdown-item.text-center CNPJ
         a.dropdown-item.text-center Outro
     input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
@@ -29,20 +29,32 @@ form.needs-validation(id="deviceForm", novalidate)
         option(value="PPPoE") PPPoE
   .md-form
     .md-selectfield.form-control.my-0
-      label(for="new_wifi_channel") Canal do WiFi
+      label(for="new_wifi_channel") Canal do Wi-Fi
       select.browser-default.md-select(id="new_wifi_channel")
         option(value="auto") auto
         option(value="1") 1
         option(value="6") 6
         option(value="11") 11
+  .md-form
+    .md-selectfield.form-control.my-0
+      label(for="new_wifi_band") Largura de banda do Wi-Fi
+      select.browser-default.md-select(id="new_wifi_band")
+        option(value="HT40") 40 MHz
+        option(value="HT20") 20 MHz
+  .md-form
+    .md-selectfield.form-control.my-0
+      label(for="new_wifi_mode") Modo de operação do Wi-Fi
+      select.browser-default.md-select(id="new_wifi_mode")
+        option(value="11n") BGN
+        option(value="11g") G
   .md-form.input-entry
-    label(for="new_wifi_ssid") SSID do WiFi
+    label(for="new_wifi_ssid") SSID do Wi-Fi
     input.form-control(type="text",
                        id="new_wifi_ssid",
                        maxlength="32")
     .invalid-feedback
   .md-form.input-entry
-    label(for="new_wifi_pass") Senha do WiFi
+    label(for="new_wifi_pass") Senha do Wi-Fi
     input.form-control(type="text",
                        id="new_wifi_pass",
                        maxlength="64")
@@ -62,6 +74,6 @@ form.needs-validation(id="deviceForm", novalidate)
     .invalid-feedback
   .col.text-center
     .form-buttons
-      button.btn.btn-lg.teal.lighten-2(type="submit")
+      button.btn.btn-lg.btn-primary(type="submit")
         .fas.fa-check.fa-lg
         span &nbsp Adicionar

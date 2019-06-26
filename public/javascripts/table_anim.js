@@ -48,7 +48,7 @@ let exportTableToCSV = function(filename) {
 let refreshExtRefType = function(event) {
   let selectedSpan = $(event.target).closest('.input-group-btn')
                                     .find('span.selected');
-  let selectedItem = $(event.target).closest('#ext_ref_type').find('.active');
+  let selectedItem = $(event.target).closest('.ext-ref-type').find('.active');
   let inputField = $(event.target).closest('.input-group').find('input');
   selectedSpan.text($(this).text());
   selectedItem.removeClass('active primary-color');
@@ -191,7 +191,7 @@ $(document).ready(function() {
                    .addClass('fa-chevron-down');
   });
 
-  $(document).on('click', '#ext_ref_type a', refreshExtRefType);
+  $(document).on('click', '.ext-ref-type a', refreshExtRefType);
 
   $(document).on('click', '#btn-elements-per-page', function(event) {
     $.ajax({
@@ -619,8 +619,8 @@ $(document).ready(function() {
                                       device.external_reference.kind : 'CPF'
                                     )
                                   ),
-                                  $('<div>').addClass('dropdown-menu')
-                                            .attr('id', 'ext_ref_type')
+                                  $('<div>')
+                                  .addClass('dropdown-menu ext-ref-type')
                                   .append(
                                     $('<a>').addClass('dropdown-item text-center')
                                             .html('CPF')
@@ -1069,11 +1069,11 @@ $(document).ready(function() {
             // Apply mask on reference input
             if (device.external_reference &&
                 device.external_reference.kind === 'CPF') {
-              $('edit_external_reference-' + index)
+              $('#edit_external_reference-' + index)
               .mask('000.000.000-009').keyup();
             } else if (device.external_reference &&
                        device.external_reference.kind === 'CNPJ') {
-              $('edit_external_reference-' + index)
+              $('#edit_external_reference-' + index)
               .mask('00.000.000/0000-00').keyup();
             }
 
@@ -1092,7 +1092,10 @@ $(document).ready(function() {
                   if (idx == currPage) {
                     opts.append(
                       $('<li>').addClass('page-item active').append(
-                        $('<a>').addClass('page-link primary-color').html(idx)
+                        $('<a>')
+                        .addClass('page-link primary-color')
+                        .attr('id', 'curr-page-link')
+                        .html(idx)
                       )
                     );
                   } else {
@@ -1179,5 +1182,19 @@ $(document).ready(function() {
     let pageNum = parseInt($(event.target).html());
     let filterList = $('#devices-search-form .tags-input').val();
     loadDevicesTable(pageNum, filterList);
+  });
+
+  $(document).on('click', '.btn-trash', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    $.ajax({
+      url: '/devicelist/delete/' + id,
+      type: 'post',
+      success: function(res) {
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-form .tags-input').val();
+        loadDevicesTable(pageNum, filterList);
+      },
+    });
   });
 });
