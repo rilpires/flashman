@@ -220,11 +220,13 @@ $(document).ready(function() {
   });
 
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
+    let deviceTableContent = $('#devices-table-content');
+    let deviceTablePagination = $('#devices-table-pagination');
     // Clean all elements before loading
-    $('#devices-table-content').empty();
-    $('#devices-table-pagination').empty();
+    deviceTableContent.empty();
+    deviceTablePagination.empty();
     // Start loading animation
-    $('#devices-table-content').append(
+    deviceTableContent.append(
       $('<tr>').append(
         $('<td>').attr('colspan', '8')
         .addClass('grey lighten-5 text-center')
@@ -241,11 +243,14 @@ $(document).ready(function() {
       data: {filter_list: filterList},
       success: function(res) {
         if (res.type == 'success') {
+          // Improve performance by working with table content
+          // outside DOM since there is o lot of manipulation ahead
+          deviceTableContent.detach();
           // Stop loading animation
-          $('#devices-table-content').empty();
+          deviceTableContent.empty();
           // Just fill not found message if there are no devices found
           if (res.devices.length == 0) {
-            $('#devices-table-content').append(
+            deviceTableContent.append(
               $('<tr>').append(
                 $('<td>').attr('colspan', '8')
                 .addClass('grey lighten-5 text-center')
@@ -254,11 +259,13 @@ $(document).ready(function() {
                 )
               )
             );
-            return;
+            // Attach elements back to DOM after manipulation
+            $('#devices-table').append(deviceTableContent);
+            return false;
           }
 
           // Fill status row
-          $('#devices-table-content').append(
+          deviceTableContent.append(
             $('<tr>').append(
               $('<td>').addClass('text-center')
                        .html(res.status.totalnum + ' total'),
@@ -332,7 +339,7 @@ $(document).ready(function() {
             let grantPingTest = device.permissions.grantPingTest;
             let grantLanDevices = device.permissions.grantLanDevices;
 
-            $('#devices-table-content').append(
+            deviceTableContent.append(
               $('<tr>').addClass('csv-export').attr('id', device._id)
                        .attr('data-index', index)
                        .attr('data-deviceid', device._id)
@@ -1071,7 +1078,7 @@ $(document).ready(function() {
             index += 1;
           });
           // Fill table pagination
-          $('#devices-table-pagination').append(
+          deviceTablePagination.append(
             $('<ul>').addClass('pagination pagination-lg').append(() => {
               let opts = $('<div>');
               let delta = 2;
@@ -1154,6 +1161,8 @@ $(document).ready(function() {
           socket.on('DEVICESTATUS', function(macaddr, data) {
             changeDeviceStatusOnTable(macaddr, data);
           });
+          // Attach elements back to DOM after manipulation
+          $('#devices-table').append(deviceTableContent);
         } else {
           displayAlertMsg(res);
         }
