@@ -310,12 +310,14 @@ $(document).ready(function() {
                       ),
                       $('<div>').addClass('dropdown-menu').append(() => {
                         let opts = $('<div>');
-                        res.single_releases.forEach((release) => {
+                        for (let idx = 0;
+                             idx < res.single_releases.length; idx += 1) {
+                          let release = res.single_releases[idx];
                           opts.append(
                             $('<a>').addClass('dropdown-item text-center')
                                     .html(release.id)
                           );
-                        });
+                        }
                         return opts.html();
                       })
                     )
@@ -327,7 +329,8 @@ $(document).ready(function() {
           );
           let index = 0;
           // Fill remaining rows with devices
-          res.devices.forEach((device) => {
+          for (let idx = 0; idx < res.devices.length; idx += 1) {
+            let device = res.devices[idx];
             let grantWifiBand = device.permissions.grantWifiBand;
             let grantWifi5ghz = device.permissions.grantWifi5ghz;
             let grantLanEdit = device.permissions.grantLanEdit;
@@ -416,12 +419,14 @@ $(document).ready(function() {
                         $('<div>').addClass('dropdown-menu refresh-selected')
                         .append(() => {
                           let opts = $('<div>');
-                          device.releases.forEach((release) => {
+                          for (let idx = 0;
+                               idx < device.releases.length; idx += 1) {
+                            let release = device.releases[idx];
                             opts.append(
                               $('<a>').addClass('dropdown-item text-center')
                                       .html(release.id)
                             );
-                          });
+                          }
                           return opts.html();
                         }),
                         $('<span>').addClass('ml-3 upgrade-status')
@@ -802,11 +807,14 @@ $(document).ready(function() {
                                                 .attr('disabled', !isSuperuser && !grantLanEdit)
                                     .append(() => {
                                       let opts = $('<div>');
-                                      ['24', '25', '26'].forEach((mask) => {
+                                      const masks = ['24', '25', '26'];
+                                      for (let idx = 0;
+                                           idx < masks.length; idx += 1) {
+                                        let mask = masks[idx];
                                         opts.append(
                                           $('<option>').val(mask).html(mask)
                                         );
-                                      });
+                                      }
                                       return opts.html();
                                     })
                                     .val(device.lan_netmask)
@@ -832,13 +840,17 @@ $(document).ready(function() {
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
                                       .append(() => {
                                         let opts = $('<div>');
-                                        ['auto', '1', '2', '3', '4', '5',
-                                         '6', '7', '8', '9', '10', '11']
-                                        .forEach((channel) => {
+                                        const channels = ['auto', '1', '2', '3',
+                                                        '4', '5', '6', '7', '8',
+                                                        '9', '10', '11'];
+                                        for (let idx = 0;
+                                             idx < channels.length; idx += 1) {
+                                          let channel = channels[idx];
                                           opts.append(
-                                            $('<option>').val(channel).html(channel)
+                                            $('<option>').val(channel)
+                                            .html(channel)
                                           );
-                                        });
+                                        }
                                         return opts.html();
                                       })
                                       .val(device.wifi_channel)
@@ -937,14 +949,19 @@ $(document).ready(function() {
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
                                       .append(() => {
                                         let opts = $('<div>');
-                                        ['auto', '36', '40', '44', '48', '52',
-                                         '56', '60', '64', '149', '153', '157',
-                                         '161', '165']
-                                        .forEach((channel) => {
+                                        const channels = ['auto', '36', '40',
+                                                          '44', '48', '52',
+                                                          '56', '60', '64',
+                                                          '149', '153', '157',
+                                                          '161', '165'];
+                                        for (let idx = 0;
+                                             idx < channels.length; idx += 1) {
+                                          let channel = channels[idx];
                                           opts.append(
-                                            $('<option>').val(channel).html(channel)
+                                            $('<option>').val(channel)
+                                            .html(channel)
                                           );
-                                        });
+                                        }
                                         return opts.html();
                                       })
                                       .val(device.wifi_channel_5ghz)
@@ -1076,7 +1093,7 @@ $(document).ready(function() {
             }
 
             index += 1;
-          });
+          }
           // Fill table pagination
           deviceTablePagination.append(
             $('<ul>').addClass('pagination pagination-lg').append(() => {
@@ -1139,19 +1156,20 @@ $(document).ready(function() {
                                   .reduce((acc, dev) => acc + ',' + dev, ''),
             },
             success: function(res) {
-              res.notifications.forEach((notification) => {
+              for (let idx = 0; idx < res.notifications.length; idx += 1) {
+                let notification = res.notifications[idx];
                 changeDeviceStatusOnTable(notification.target, notification);
+              }
+              // Enable device status notification reception
+              $.ajax({
+                url: '/notification/register/devicestatus',
+                type: 'POST',
+                dataType: 'json',
+                error: function(xhr, status, error) {
+                  displayAlertMsg(JSON.parse(xhr.responseText));
+                },
               });
             },
-            error: function(xhr, status, error) {
-              displayAlertMsg(JSON.parse(xhr.responseText));
-            },
-          });
-          // Enable device status notification reception
-          $.ajax({
-            url: '/notification/register/devicestatus',
-            type: 'POST',
-            dataType: 'json',
             error: function(xhr, status, error) {
               displayAlertMsg(JSON.parse(xhr.responseText));
             },
