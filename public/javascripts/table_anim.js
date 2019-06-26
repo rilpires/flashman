@@ -663,7 +663,8 @@ $(document).ready(function() {
                             $('<div>').addClass('col-6').append(
                               $('<div>').addClass('md-form input-entry pt-1')
                               .append(
-                                $('<label>').html('Modelo'),
+                                $('<label>').html('Modelo')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -673,7 +674,8 @@ $(document).ready(function() {
                               ),
                               $('<div>').addClass('md-form input-entry')
                               .append(
-                                $('<label>').html('Versão do Flashbox'),
+                                $('<label>').html('Versão do Flashbox')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -695,7 +697,8 @@ $(document).ready(function() {
                                 .append(
                                   $('<div>').addClass('md-selectfield form-control my-0')
                                   .append(
-                                    $('<label>').html('Tipo de Conexão'),
+                                    $('<label>').html('Tipo de Conexão')
+                                                .addClass('active'),
                                     $('<select>').addClass('browser-default md-select')
                                                  .attr('id', 'edit_connect_type-' + index)
                                     .append(
@@ -717,7 +720,8 @@ $(document).ready(function() {
                             ),
                             $('<div>').addClass('col-4').append(
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('Velocidade Negociada (Mbps)'),
+                                $('<label>').html('Velocidade Negociada (Mbps)')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -726,7 +730,8 @@ $(document).ready(function() {
                                 $('<div>').addClass('invalid-feedback')
                               ),
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('Modo de Transmissão (Duplex)'),
+                                $('<label>').html('Modo de Transmissão (Duplex)')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -739,7 +744,8 @@ $(document).ready(function() {
                              (device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
                               $('<div>').addClass('col-4').append(
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('Usuário PPPoE'),
+                                  $('<label>').html('Usuário PPPoE')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_pppoe_user-' + index)
@@ -750,7 +756,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha PPPoE'),
+                                    $('<label>').html('Senha PPPoE')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_pppoe_pass-' + index)
@@ -787,7 +794,8 @@ $(document).ready(function() {
                           .append(
                             $('<div>').addClass('col-6').append(
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('IP da Rede'),
+                                $('<label>').html('IP da Rede')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control ip-mask-field')
                                             .attr('type', 'text')
                                             .attr('id', 'edit_lan_subnet-' + index)
@@ -802,7 +810,8 @@ $(document).ready(function() {
                                 $('<div>').addClass('input-group').append(
                                   $('<div>').addClass('md-selectfield form-control my-0')
                                   .append(
-                                    $('<label>').html('Máscara'),
+                                    $('<label>').html('Máscara')
+                                                .addClass('active'),
                                     $('<select>').addClass('browser-default md-select')
                                                 .attr('type', 'text')
                                                 .attr('id', 'edit_lan_netmask-' + index)
@@ -837,7 +846,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Canal do Wi-Fi'),
+                                      $('<label>').html('Canal do Wi-Fi')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_channel-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -861,7 +871,8 @@ $(document).ready(function() {
                                   )
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('SSID do Wi-Fi'),
+                                  $('<label>').html('SSID do Wi-Fi')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_wifi_ssid-' + index)
@@ -872,7 +883,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha do Wi-Fi'),
+                                    $('<label>').html('Senha do Wi-Fi')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_wifi_pass-' + index)
@@ -902,7 +914,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Largura de banda'),
+                                      $('<label>').html('Largura de banda')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_band-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -918,7 +931,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Modo de operação'),
+                                      $('<label>').html('Modo de operação')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_mode-' + index)
                                                   .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
@@ -946,7 +960,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Canal do Wi-Fi'),
+                                      $('<label>').html('Canal do Wi-Fi')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_channel-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -972,7 +987,8 @@ $(document).ready(function() {
                                   )
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('SSID do Wi-Fi'),
+                                  $('<label>').html('SSID do Wi-Fi')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_wifi5_ssid-' + index)
@@ -983,7 +999,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha do Wi-Fi'),
+                                    $('<label>').html('Senha do Wi-Fi')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_wifi5_pass-' + index)
@@ -1013,7 +1030,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Largura de banda'),
+                                      $('<label>').html('Largura de banda')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_band-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -1035,7 +1053,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Modo de operação'),
+                                      $('<label>').html('Modo de operação')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_mode-' + index)
                                                   .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
@@ -1147,8 +1166,6 @@ $(document).ready(function() {
           );
           // Apply IP mask on LAN subnet field
           deviceTableContent.find('.ip-mask-field').mask('099.099.099.099');
-          // Fix MD Bootstrap filled input forms
-          deviceTableContent.find('.form-control').change();
           // Fetch existing notifications
           $.ajax({
             url: '/notification/fetch',
