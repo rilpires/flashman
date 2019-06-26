@@ -1146,9 +1146,9 @@ $(document).ready(function() {
             })
           );
           // Apply IP mask on LAN subnet field
-          $('.ip-mask-field').mask('099.099.099.099');
+          deviceTableContent.find('.ip-mask-field').mask('099.099.099.099');
           // Fix MD Bootstrap filled input forms
-          $('.form-control').change();
+          deviceTableContent.find('.form-control').change();
           // Fetch existing notifications
           $.ajax({
             url: '/notification/fetch',
