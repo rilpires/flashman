@@ -150,3 +150,8 @@ input:checked + .slider:before {
 .modal-dialog.modal-notify.modal-teal .modal-header {
   background-color: #4db6ac;
 }
+
+.fa-chevron-down::before,
+.fa-chevron-up::before {
+  cursor: pointer;
+}

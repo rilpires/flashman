@@ -11,6 +11,7 @@ router.use('/user', require('./user'));
 router.use('/firmware', require('./firmware'));
 router.use('/upgrade', require('./upgrade'));
 router.use('/notification', require('./notification'));
+router.use('/api', require('./api/api'));
 
 router.get('/', function(req, res) {
   res.redirect('/devicelist');

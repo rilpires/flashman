@@ -51,27 +51,6 @@ const getReleases = function(modelAsArray=false) {
   return releases;
 };
 
-const getStatus = function(devices) {
-  let statusAll = {};
-  let lastHour = new Date();
-  lastHour.setHours(lastHour.getHours() - 1);
-
-  devices.forEach((device) => {
-    let deviceColor = 'grey-text';
-    // MQTTS status
-    if (mqtt.clients[device._id.toUpperCase()]) {
-      deviceColor = 'green-text';
-    } else {
-      // No MQTT connected. Check last keepalive
-      if (device.last_contact.getTime() >= lastHour.getTime()) {
-        deviceColor = 'red-text';
-      }
-    }
-    statusAll[device._id] = deviceColor;
-  });
-  return statusAll;
-};
-
 const getOnlineCount = function(query) {
   return new Promise((resolve, reject)=> {
     let onlineQuery = {};
@@ -138,87 +117,50 @@ const returnObjOrEmptyStr = function(query) {
   }
 };
 
-// List all devices on a main page
+// Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
-  let reqPage = 1;
   let elementsPerPage = 10;
 
-  if (req.query.page) {
-    reqPage = req.query.page;
-  }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
   }
-  // Counters
-  let status = {};
+  indexContent.username = req.user.name;
+  indexContent.elementsperpage = elementsPerPage;
 
-  DeviceModel.paginate({}, {page: reqPage,
-                            limit: elementsPerPage,
-                            sort: {_id: 1}}, function(err, devices) {
-    if (err) {
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.render('error', indexContent);
+  User.findOne({name: req.user.name}, function(err, user) {
+    if (err || !user) {
+      indexContent.superuser = false;
+    } else {
+      indexContent.superuser = user.is_superuser;
     }
-    let releases = getReleases();
-    let singleReleases = getReleases(true);
-    status.devices = getStatus(devices.docs);
-    indexContent.username = req.user.name;
-    indexContent.elementsperpage = req.user.maxElementsPerPage;
-    indexContent.devices = devices.docs;
-    indexContent.releases = releases;
-    indexContent.singlereleases = singleReleases;
-    indexContent.page = devices.page;
-    indexContent.pages = devices.pages;
-    indexContent.devicesPermissions = devices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version,
-                                         device.wifi_is_5ghz_capable);
-    });
 
-    User.findOne({name: req.user.name}, function(err, user) {
-      if (err || !user) {
-        indexContent.superuser = false;
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        indexContent.update = false;
       } else {
-        indexContent.superuser = user.is_superuser;
+        indexContent.update = matchedConfig.hasUpdate;
+        indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
+        let active = matchedConfig.measure_configs.is_active;
+        indexContent.measure_active = active;
+        indexContent.measure_token = (active) ?
+            matchedConfig.measure_configs.auth_token : '';
+        let license = matchedConfig.measure_configs.is_license_active;
+        indexContent.measure_license = license;
       }
 
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
-        if (err || !matchedConfig) {
-          indexContent.update = false;
-        } else {
-          indexContent.update = matchedConfig.hasUpdate;
-          indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-          let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-          let license = matchedConfig.measure_configs.is_license_active;
-          indexContent.measure_license = license;
-        }
-
-        getOnlineCount({}).then((onlineStatus) => {
-          status = Object.assign(status, onlineStatus);
-          indexContent.status = status;
-
-          // Filter data using user permissions
-          if (req.user.is_superuser) {
-            return res.render('index', indexContent);
-          } else {
-            Role.findOne({name: req.user.role}, function(err, role) {
-              if (err) {
-                console.log(err);
-              }
-              indexContent.role = role;
-              return res.render('index', indexContent);
-            });
+      // Filter data using user permissions
+      if (req.user.is_superuser) {
+        return res.render('index', indexContent);
+      } else {
+        Role.findOne({name: req.user.role}, function(err, role) {
+          if (err) {
+            console.log(err);
           }
-        }, (error) => {
-          indexContent.type = 'danger';
-          indexContent.message = err.message;
-          return res.render('error', indexContent);
+          indexContent.role = role;
+          return res.render('index', indexContent);
         });
-      });
+      }
     });
   });
 };
@@ -287,10 +229,18 @@ deviceListController.changeAllUpdates = function(req, res) {
 deviceListController.searchDeviceReg = function(req, res) {
   let finalQuery = {};
   let finalQueryArray = [];
-  let indexContent = {};
   let reqPage = 1;
   let elementsPerPage = 10;
-  let queryContents = req.query.content.split(',');
+  // let queryContents = req.query.content.split(',');
+  let queryContents = req.body.filter_list.split(',');
+
+  // Defaults to match all query contents
+  let queryLogicalOperator = '$and';
+  if (queryContents.includes('/ou')) {
+    queryLogicalOperator = '$or';
+    queryContents = queryContents.filter((query) => query !== '/ou');
+  }
+  queryContents = queryContents.filter((query) => query !== '/e');
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let queryInput = new RegExp(queryContents[idx], 'i');
@@ -300,7 +250,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {'last_contact': {$gte: lastHour}},
         {'_id': {$in: Object.keys(mqtt.clients)}},
       ];
@@ -309,7 +259,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {last_contact: {$gte: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
@@ -318,7 +268,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
-      field['$and'] = [
+      field.$and = [
         {last_contact: {$lt: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
@@ -326,12 +276,12 @@ deviceListController.searchDeviceReg = function(req, res) {
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
                (queryContents[idx].toLowerCase() == 'update on')) {
       let field = {};
-      field['do_update'] = {$eq: true};
+      field.do_update = {$eq: true};
       queryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade off') ||
                (queryContents[idx].toLowerCase() == 'update off')) {
       let field = {};
-      field['do_update'] = {$eq: false};
+      field.do_update = {$eq: false};
       queryArray.push(field);
     } else {
       for (let property in DeviceModel.schema.paths) {
@@ -348,86 +298,75 @@ deviceListController.searchDeviceReg = function(req, res) {
     };
     finalQueryArray.push(query);
   }
-
-  finalQuery = {
-    $and: finalQueryArray,
-  };
+  finalQuery[queryLogicalOperator] = finalQueryArray;
 
   if (req.query.page) {
-    reqPage = req.query.page;
+    reqPage = parseInt(req.query.page);
   }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
   }
-  // Counters
-  let status = {};
 
   DeviceModel.paginate(finalQuery, {page: reqPage,
                             limit: elementsPerPage,
+                            lean: true,
                             sort: {_id: 1}}, function(err, matchedDevices) {
     if (err) {
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.render('error', indexContent);
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: err.message,
+      });
     }
+    let lastHour = new Date();
     let releases = getReleases();
-    let singleReleases = getReleases(true);
-    status.devices = getStatus(matchedDevices.docs);
-    indexContent.username = req.user.name;
-    indexContent.elementsperpage = req.user.maxElementsPerPage;
-    indexContent.devices = matchedDevices.docs;
-    indexContent.releases = releases;
-    indexContent.singlereleases = singleReleases;
-    indexContent.status = status;
-    indexContent.page = matchedDevices.page;
-    indexContent.pages = matchedDevices.pages;
-    indexContent.lastquery = req.query.content;
-    indexContent.devicesPermissions = matchedDevices.docs.map((device)=>{
-      return DeviceVersion.findByVersion(device.version,
-                                         device.wifi_is_5ghz_capable);
+    lastHour.setHours(lastHour.getHours() - 1);
+
+    let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
+      const model = device.model.replace('N/', '');
+      const devReleases = releases.filter((release) => release.model === model);
+      device.releases = devReleases;
+      // Status color
+      let deviceColor = 'grey-text';
+      if (mqtt.clients[device._id.toUpperCase()]) {
+        deviceColor = 'green-text';
+      } else if (device.last_contact.getTime() >= lastHour.getTime()) {
+        deviceColor = 'red-text';
+      }
+      device.status_color = deviceColor;
+      // Device permissions
+      device.permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable
+      );
+      return device;
     });
 
     User.findOne({name: req.user.name}, function(err, user) {
-      if (err || !user) {
-        indexContent.superuser = false;
-      } else {
-        indexContent.superuser = user.is_superuser;
-      }
-
       Config.findOne({is_default: true}, function(err, matchedConfig) {
-        if (err || !matchedConfig) {
-          indexContent.update = false;
-        } else {
-          indexContent.update = matchedConfig.hasUpdate;
-          indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-          let active = matchedConfig.measure_configs.is_active;
-            indexContent.measure_active = active;
-            indexContent.measure_token = (active) ?
-                matchedConfig.measure_configs.auth_token : '';
-          let license = matchedConfig.measure_configs.is_license_active;
-          indexContent.measure_license = license;
-        }
-
         getOnlineCount(finalQuery).then((onlineStatus) => {
+          // Counters
+          let status = {};
           status = Object.assign(status, onlineStatus);
-          indexContent.status = status;
-
           // Filter data using user permissions
-          if (req.user.is_superuser) {
-            return res.render('index', indexContent);
-          } else {
-            Role.findOne({name: req.user.role}, function(err, role) {
-              if (err) {
-                console.log(err);
-              }
-              indexContent.role = role;
-              return res.render('index', indexContent);
-            });
-          }
+          return res.json({
+            success: true,
+            type: 'success',
+            limit: req.user.maxElementsPerPage,
+            page: matchedDevices.page,
+            pages: matchedDevices.pages,
+            min_length_pass_pppoe: matchedConfig.pppoePassLength,
+            status: status,
+            single_releases: getReleases(true),
+            filter_list: req.body.filter_list,
+            devices: enrichedMatchedDevs,
+          });
         }, (error) => {
-          indexContent.type = 'danger';
-          indexContent.message = err.message;
-          return res.render('error', indexContent);
+          return res.json({
+            success: false,
+            type: 'danger',
+            message: err.message,
+          });
         });
       });
     });
@@ -435,11 +374,13 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.remove({_id: req.params.id.toUpperCase()}, function(err) {
-    if (err) {
+  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
+    if (err || !device) {
       return res.status(500).json({success: false,
                                    message: 'Entrada não pode ser removida'});
     }
+    // Use this .remove method so middleware post hook receives object info
+    device.remove();
     return res.status(200).json({success: true});
   });
 };
@@ -848,7 +789,10 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('external_reference') &&
                 (superuserGrant || role.grantDeviceId)) {
-              matchedDevice.external_reference = content.external_reference;
+              matchedDevice.external_reference.kind =
+                content.external_reference.kind;
+              matchedDevice.external_reference.data =
+                content.external_reference.data;
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
@@ -896,6 +840,8 @@ deviceListController.createDeviceReg = function(req, res) {
     let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
     let password = returnObjOrEmptyStr(content.wifi_password).trim();
     let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
+    let band = returnObjOrEmptyStr(content.wifi_band).trim();
+    let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -938,6 +884,8 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(ssid, validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
+      genericValidate(band, validator.validateBand, 'band');
+      genericValidate(mode, validator.validateMode, 'mode');
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -961,6 +909,8 @@ deviceListController.createDeviceReg = function(req, res) {
               'wifi_ssid': ssid,
               'wifi_password': password,
               'wifi_channel': channel,
+              'wifi_band': band,
+              'wifi_mode': mode,
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
@@ -1206,36 +1156,43 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
 
-    let res_out = matchedDevice.lan_devices.filter(function(lanDevice) {
-        if ( typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
-          return true;
-        } else {
-          return false;
-        }});
+    let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
+      if (typeof lanDevice.port !== 'undefined' && lanDevice.port.length > 0 ) {
+        return true;
+      } else {
+        return false;
+      }
+    });
 
-    let out_data = [];
-    for(var i = 0; i < res_out.length; i++) {
-      tmp_data = {};
-      tmp_data.mac = res_out[i].mac;
-      tmp_data.port = res_out[i].port;
-      tmp_data.dmz = res_out[i].dmz;
+    let outData = [];
+    for (let i = 0; i < resOut.length; i++) {
+      let tmpData = {};
+      tmpData.mac = resOut[i].mac;
+      tmpData.port = resOut[i].port;
+      tmpData.dmz = resOut[i].dmz;
 
-      if(('router_port' in res_out[i]) && 
-          res_out[i].router_port.length != 0)
-        tmp_data.router_port = res_out[i].router_port
+      if (('router_port' in resOut[i]) &&
+          resOut[i].router_port.length != 0) {
+        tmpData.router_port = resOut[i].router_port;
+      }
 
-      if(!('name' in res_out[i] && res_out[i].name == '') && ('dhcp_name' in res_out[i]))
-        tmp_data.name = res_out[i].dhcp_name;
-      else
-        tmp_data.name = res_out[i].name;
+      if (!('name' in resOut[i] && resOut[i].name == '') &&
+          ('dhcp_name' in resOut[i])) {
+        tmpData.name = resOut[i].dhcp_name;
+      } else {
+        tmpData.name = resOut[i].name;
+      }
+      // Check if device has IPv6 through DHCP
+      tmpData.has_dhcpv6 = (Array.isArray(resOut[i].dhcpv6) &&
+                            resOut[i].dhcpv6.length > 0 ? true : false);
 
-      out_data.push(tmp_data)
+      outData.push(tmpData);
     }
 
     return res.status(200).json({
-        success: true,
-        landevices: out_data,
-      });
+      success: true,
+      landevices: outData,
+    });
   });
 };
 
@@ -1328,6 +1285,36 @@ deviceListController.getLanDevices = function(req, res) {
       success: true,
       lan_devices: matchedDevice.lan_devices,
     });
+  });
+};
+
+deviceListController.setDeviceCrudTrap = function(req, res) {
+  // Store callback URL for devices
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+      if ('user' in req.body && 'secret' in req.body) {
+        matchedConfig.traps_callbacks.device_crud.user = req.body.user;
+        matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+      }
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao gravar dados na base',
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: 'Endereço salvo com sucesso',
+        });
+      });
+    }
   });
 };
 

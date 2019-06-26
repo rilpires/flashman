@@ -92,7 +92,6 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
   let portListBadges = $('<td>').addClass('text-center');
   let portListBadgesIpv6 = $('<td>').addClass('text-center');
   // Check if has ipv6 open port functionality
-  console.log($('#hasFirewallPortOpenIpv6').val());
   let hasPortOpenIpv6 = ($('#hasFirewallPortOpenIpv6').val() == 'true');
   $.each(deviceEntry.port, function(idx, portValue) {
     let finalValueIpv4 = portValue;
@@ -106,7 +105,7 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
     portListBadges.append(
       $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4)
     );
-    if (hasPortOpenIpv6) {
+    if (hasPortOpenIpv6 && deviceEntry.has_dhcpv6) {
       portListBadgesIpv6.append(
         $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6)
       );
@@ -170,6 +169,7 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
       let inputDevs = $('#openFirewallPortsMac')[0].selectize;
       // Clear old data
       inputDevs.clearOptions();
+      inputDevs.enable();
       $('.btn-syncOnlineDevs').children()
                               .removeClass('animated rotateOut infinite');
       let macoptions = [];
@@ -177,7 +177,10 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
         let datanew = {};
         let deviceMac = value.mac;
         let deviceName = value.hostname;
-        datanew.value = JSON.stringify([deviceMac, deviceName]);
+        let hasDhcpv6 = value.has_dhcpv6 ? true : false;
+        // Replace device name for a mac address if it's an empty string
+        deviceName = (deviceName != '') ? deviceName : deviceMac;
+        datanew.value = JSON.stringify([deviceMac, deviceName, hasDhcpv6]);
         datanew.label = deviceName;
         // Populate connected devices dropdown options
         macoptions.push(datanew);
@@ -192,7 +195,7 @@ $(document).ready(function() {
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
 
-  $('.btn-openFirewallPorts-modal').click(function(event) {
+  $(document).on('click', '.btn-open-ports-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let hasPortForwardAsym = row.data('validate-port-forward-asym');
@@ -217,7 +220,7 @@ $(document).ready(function() {
             devicePortAsym = hasPortForwardAsym ? value.router_port : null;
             insertOpenFirewallDoorRule({
               mac: value.mac, port: value.port, router_port: devicePortAsym,
-              dmz: value.dmz, label: deviceLabel,
+              dmz: value.dmz, label: deviceLabel, has_dhcpv6: value.has_dhcpv6,
             });
           });
 
@@ -250,7 +253,7 @@ $(document).ready(function() {
     });
   });
 
-  $('.btn-syncOnlineDevs').click(function(event) {
+  $(document).on('click', '.btn-syncOnlineDevs', function(event) {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
       url: '/devicelist/command/' + id + '/onlinedevs',
@@ -258,6 +261,7 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
+          $('#openFirewallPortsMac')[0].selectize.disable();
           $(event.target).children().addClass('animated rotateOut infinite');
         } else {
           $(event.target).title = res.message;
@@ -289,7 +293,7 @@ $(document).ready(function() {
     }
   });
 
-  $('.btn-openFirewallPortsSaveRule').click(function(event) {
+  $(document).on('click', '.btn-openFirewallPortsSaveRule', function(event) {
     let hasPortForwardAsym = ($('#hasFirewallPortForwardAsym').val() == 'true');
 
     let deviceId = $('#openFirewallPortsMac')[0].selectize.getValue();
@@ -396,9 +400,11 @@ $(document).ready(function() {
     // Check if id has only a MAC or contains also a device name
     let deviceMac;
     let deviceLabel;
+    let hasDhcpv6 = false;
     if (isJsonString(deviceId)) {
       deviceMac = JSON.parse(deviceId)[0];
       deviceLabel = JSON.parse(deviceId)[1];
+      hasDhcpv6 = JSON.parse(deviceId)[2];
     } else {
       deviceMac = deviceId;
       deviceLabel = deviceId;
@@ -406,11 +412,11 @@ $(document).ready(function() {
     asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
     insertOpenFirewallDoorRule({
       mac: deviceMac, port: portsFinal, router_port: asymPortsValue,
-      dmz: dmz, label: deviceLabel,
+      dmz: dmz, label: deviceLabel, has_dhcpv6: hasDhcpv6,
     });
   });
 
-  $('.btn-openFirewallPortsSubmit').click(function(event) {
+  $(document).on('click', '.btn-openFirewallPortsSubmit', function(event) {
     let id = $('#openfirewallRouterid_label').text();
     $.ajax({
       type: 'POST',
