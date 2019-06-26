@@ -59,11 +59,13 @@ userController.postUser = function(req, res) {
     if (err) {
       console.log('Error creating user: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao criar usuário. Verifique se o usuário já existe.',
       });
     }
     return res.json({
+      success: true,
       type: 'success',
       message: 'Usuário criado com sucesso!',
     });
@@ -94,11 +96,13 @@ userController.postRole = function(req, res) {
     if (err) {
       console.log('Error creating role: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao criar classe. Verifique se já existe.',
       });
     }
     return res.json({
+      success: true,
       type: 'success',
       message: 'Classe de permissões criada com sucesso!',
     });
@@ -108,18 +112,18 @@ userController.postRole = function(req, res) {
 userController.getUsers = function(req, res) {
   User.find(function(err, users) {
     if (err) {
-      return res.json({type: 'danger', message: err});
+      return res.json({success: false, type: 'danger', message: err});
     }
-    return res.json({type: 'success', users: users});
+    return res.json({success: true, type: 'success', users: users});
   });
 };
 
 userController.getRoles = function(req, res) {
   Role.find(function(err, roles) {
     if (err) {
-      return res.json({type: 'danger', message: err});
+      return res.json({success: false, type: 'danger', message: err});
     }
-    return res.json({type: 'success', roles: roles});
+    return res.json({success: true, type: 'success', roles: roles});
   });
 };
 
@@ -129,6 +133,7 @@ userController.editUser = function(req, res) {
     if (err) {
       console.log('Error finding user: ' + err);
       return res.status(500).json({
+        success: false,
         type: 'danger',
         message: 'Erro ao encontrar usuário',
       });
@@ -145,6 +150,7 @@ userController.editUser = function(req, res) {
         }
       } else {
         return res.status(500).json({
+          success: false,
           type: 'danger',
           message: 'As senhas estão diferentes',
         });
@@ -165,11 +171,13 @@ userController.editUser = function(req, res) {
         if (err) {
           console.log('Error saving user entry: ' + err);
           return res.status(500).json({
+            success: false,
             type: 'danger',
             message: 'Erro ao salvar alterações',
           });
         } else {
           return res.json({
+            success: true,
             type: 'success',
             message: 'Editado com sucesso!',
           });
@@ -177,6 +185,7 @@ userController.editUser = function(req, res) {
       });
     } else {
       return res.status(403).json({
+        success: false,
         type: 'danger',
         message: 'Permissão negada',
       });
@@ -189,6 +198,7 @@ userController.editRole = function(req, res) {
     if (err || !role) {
       console.log('Error editing role: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao encontrar classe.',
       });
@@ -214,11 +224,13 @@ userController.editRole = function(req, res) {
       if (err) {
         console.log('Error saving role: ' + err);
         return res.json({
+          success: false,
           type: 'danger',
           message: 'Erro ao editar classe.',
         });
       }
       return res.json({
+        success: true,
         type: 'success',
         message: 'Classe de permissões editada com sucesso!',
       });
@@ -231,6 +243,7 @@ userController.deleteUser = function(req, res) {
     if (err || !users) {
       console.log('User delete error: ' + err);
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro interno ao deletar usuário(s). ' +
         'Entre em contato com o desenvolvedor',
@@ -240,6 +253,7 @@ userController.deleteUser = function(req, res) {
       user.remove();
     });
     return res.json({
+      success: true,
       type: 'success',
       message: 'Usuário(s) deletado(s) com sucesso!',
     });
@@ -253,6 +267,7 @@ userController.deleteRole = function(req, res) {
         if (err || !roles) {
           console.log('Role delete error: ' + err);
           return res.json({
+            success: false,
             type: 'danger',
             message: 'Erro interno ao deletar classe(s). ' +
             'Entre em contato com o desenvolvedor',
@@ -262,12 +277,14 @@ userController.deleteRole = function(req, res) {
           role.remove();
         });
         return res.json({
+          success: true,
           type: 'success',
           message: 'Classe(s) deletada(s) com sucesso!',
         });
       });
     } else {
       return res.json({
+        success: false,
         type: 'danger',
         message: 'Erro ao deletar classe(s). ' +
         'Uma ou mais classes ainda estão em uso por seus usuários.',
