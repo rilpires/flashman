@@ -63,35 +63,38 @@ let refreshExtRefType = function(event) {
   }
 };
 
-let changeDeviceStatusOnTable = function(macaddr, data) {
-  let deviceOnTable = $('#' + $.escapeSelector(macaddr));
+let changeDeviceStatusOnTable = function(table, macaddr, data) {
+  let deviceOnTable = table.find('#' + $.escapeSelector(macaddr));
+  let statusOnlineSum = table.find('#online-status-sum');
+  let statusRecoverSum = table.find('#recovery-status-sum');
+  let statusOffSum = table.find('#offline-status-sum');
   if (deviceOnTable.length) {
     if (data == 'online' || data == 'recovery') {
       let status = deviceOnTable.find('.device-status');
       let currentGreen = status.hasClass('green-text');
       let currentRed = status.hasClass('red-text');
-      let currentOnlineCount = parseInt($('#online-status-sum').text());
-      let currentRecoveryCount = parseInt($('#recovery-status-sum').text());
-      let currentOfflineCount = parseInt($('#offline-status-sum').text());
+      let currentOnlineCount = parseInt(statusOnlineSum.text());
+      let currentRecoveryCount = parseInt(statusRecoverSum.text());
+      let currentOfflineCount = parseInt(statusOffSum.text());
       let canIncreaseCounter = false;
       if (currentGreen && (currentOnlineCount > 0)) {
-        $('#online-status-sum').text(currentOnlineCount - 1);
+        statusOnlineSum.text(currentOnlineCount - 1);
         canIncreaseCounter = true;
       } else if (currentRed && (currentRecoveryCount > 0)) {
-        $('#recovery-status-sum').text(currentRecoveryCount - 1);
+        statusRecoverSum.text(currentRecoveryCount - 1);
         canIncreaseCounter = true;
       } else if (currentOfflineCount > 0) {
-        $('#offline-status-sum').text(currentOfflineCount - 1);
+        statusOffSum.text(currentOfflineCount - 1);
         canIncreaseCounter = true;
       }
       if (data == 'online' && canIncreaseCounter) {
-        $('#online-status-sum').text(
-          parseInt($('#online-status-sum').text()) + 1);
+        statusOnlineSum.text(
+          parseInt(statusOnlineSum.text()) + 1);
         let newStatus = 'green-text';
         status.removeClass('green-text red-text grey-text').addClass(newStatus);
       } else if (data == 'recovery' && canIncreaseCounter) {
-        $('#recovery-status-sum').text(
-          parseInt($('#recovery-status-sum').text()) + 1);
+        statusRecoverSum.text(
+          parseInt(statusRecoverSum.text()) + 1);
         let newStatus = 'red-text';
         status.removeClass('green-text red-text grey-text').addClass(newStatus);
       }
@@ -1158,7 +1161,8 @@ $(document).ready(function() {
             success: function(res) {
               for (let idx = 0; idx < res.notifications.length; idx += 1) {
                 let notification = res.notifications[idx];
-                changeDeviceStatusOnTable(notification.target, notification);
+                changeDeviceStatusOnTable(deviceTableContent,
+                                          notification.target, notification);
               }
               // Enable device status notification reception
               $.ajax({
@@ -1173,14 +1177,16 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
               displayAlertMsg(JSON.parse(xhr.responseText));
             },
+            complete: function() {
+              // Attach elements back to DOM after manipulation
+              $('#devices-table').append(deviceTableContent);
+            },
           });
           // Important: include and initialize socket.io first using socket var
           // Actions when a status change is received
           socket.on('DEVICESTATUS', function(macaddr, data) {
-            changeDeviceStatusOnTable(macaddr, data);
+            changeDeviceStatusOnTable(deviceTableContent, macaddr, data);
           });
-          // Attach elements back to DOM after manipulation
-          $('#devices-table').append(deviceTableContent);
         } else {
           displayAlertMsg(res);
         }
