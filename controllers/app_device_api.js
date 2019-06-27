@@ -300,7 +300,9 @@ let formatDevices = function(device) {
   let allRules = [];
   const justNow = Date.now();
   let lanDevices = device.lan_devices.filter((device)=>{
-    const timeDiff = Math.abs(justNow - device.last_seen);
+    const lastSeen = ((device.last_seen) ?
+                      device.last_seen : new Date(1970, 1, 1));
+    const timeDiff = Math.abs(justNow - lastSeen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
     return (timeDiffSeconds < 86400);
   }).map((lanDevice)=>{
@@ -322,7 +324,9 @@ let formatDevices = function(device) {
         out: lanDevice.router_port[i],
       });
     }
-    const timeDiff = Math.abs(justNow - lanDevice.last_seen);
+    const lastSeen = ((lanDevice.last_seen) ?
+                      lanDevice.last_seen : new Date(1970, 1, 1));
+    const timeDiff = Math.abs(justNow - lastSeen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
     let online = (timeDiffSeconds < 5);
     let signal = 'none';
