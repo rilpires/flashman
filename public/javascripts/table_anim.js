@@ -233,8 +233,9 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
     $.ajax({
-      url: '/api/v2/device/update/' + deviceId,
+      url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
       success: function(res) {
         row.find('.device-status').removeClass('green-text red-text grey-text')
@@ -243,17 +244,23 @@ $(document).ready(function() {
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
         row.find('.device-pppoe-user').html(res.pppoe_user);
-
-        // device.do_update
-        // Activate dropdown
-        // selBtnGroup.find('.dropdown-toggle .selected').text('Escolher');
-        // selBtnGroup.find('.dropdown-toggle').attr('disabled', false);
-        // // Deactivate waiting status
-        // let upgradeStatus = selBtnGroup.find('span.upgrade-status');
-        // upgradeStatus.find('.status-none').removeClass('d-none');
-        // upgradeStatus.find('.status-waiting').addClass('d-none');
-        // upgradeStatus.find('.status-ok').addClass('d-none');
-        // upgradeStatus.find('.status-error').addClass('d-none');
+        if (deviceDoUpdate != res.do_update) {
+          if (res.do_update == false) {
+            // Activate dropdown
+            row.find('.device-update .dropdown-toggle .selected')
+               .text('Escolher');
+            row.find('.device-update .dropdown-toggle').attr('disabled', false);
+            // Deactivate waiting status
+            let upgradeStatus = row.find('span.upgrade-status');
+            upgradeStatus.find('.status-none').removeClass('d-none');
+            upgradeStatus.find('.status-waiting').addClass('d-none');
+            upgradeStatus.find('.status-ok').addClass('d-none');
+            upgradeStatus.find('.status-error').addClass('d-none');
+            // Deactivate cancel button
+            row.find('.btn-group .btn-cancel-update')
+               .removeClass('btn-danger').attr('disabled', true);
+          }
+        }
       },
     });
   });
@@ -455,7 +462,7 @@ $(document).ready(function() {
                          .html(device.installed_release),
                 (isSuperuser || grantFirmwareUpgrade ?
                   $('<td>').append(
-                    $('<div>').addClass('btn-group').append(
+                    $('<div>').addClass('btn-group device-update').append(
                       $('<button>').addClass('btn btn-sm px-2 btn-cancel-update')
                                    .addClass(!device.do_update ? '':'btn-danger')
                                    .attr('disabled', !device.do_update)
