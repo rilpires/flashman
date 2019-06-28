@@ -45,8 +45,7 @@ $(document).ready(function() {
             const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);
             const offlineThresh = 5;
             // Skip if offline for too long. 24hrs
-            // Skip also if there is no time stamp registered.
-            if (devTimeDiffSeconds >= 86400 || devTimeDiff <= 150) {
+            if (devTimeDiffSeconds >= 86400) {
               return true;
             }
             lanDevsRow.append(

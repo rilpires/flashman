@@ -17062,4 +17062,9 @@ table.table-sm td {
   transition-timing-function: ease-out;
 }
 
+.device-row-refresher > .fas:active,
+#refresh-table-content > .fas:active  {
+  color: #4db6ac;
+}
+
 /*# sourceMappingURL=custom-bootstrap.css.map */

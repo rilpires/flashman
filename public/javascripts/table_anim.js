@@ -222,6 +222,49 @@ $(document).ready(function() {
     $(tabId).removeClass('d-none');
   });
 
+  // Refresh table content
+  $(document).on('click', '#refresh-table-content', function(event) {
+    let pageNum = parseInt($('#curr-page-link').html());
+    let filterList = $('#devices-search-form .tags-input').val();
+    loadDevicesTable(pageNum, filterList);
+  });
+
+  // Refresh single row
+  $(document).on('click', '.device-row-refresher', function(event) {
+    let row = $(event.target).parents('tr');
+    let deviceId = row.data('deviceid');
+    let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    $.ajax({
+      url: '/devicelist/uiupdate/' + deviceId,
+      type: 'GET',
+      success: function(res) {
+        row.find('.device-status').removeClass('green-text red-text grey-text')
+                                  .addClass(res.status_color + '-text');
+        row.find('.device-wan-ip').html(res.wan_ip);
+        row.find('.device-ip').html(res.ip);
+        row.find('.device-installed-release').html(res.installed_release);
+        row.find('.device-pppoe-user').html(res.pppoe_user);
+        if (deviceDoUpdate != res.do_update) {
+          if (res.do_update == false) {
+            // Activate dropdown
+            row.find('.device-update .dropdown-toggle .selected')
+               .text('Escolher');
+            row.find('.device-update .dropdown-toggle').attr('disabled', false);
+            // Deactivate waiting status
+            let upgradeStatus = row.find('span.upgrade-status');
+            upgradeStatus.find('.status-none').removeClass('d-none');
+            upgradeStatus.find('.status-waiting').addClass('d-none');
+            upgradeStatus.find('.status-ok').addClass('d-none');
+            upgradeStatus.find('.status-error').addClass('d-none');
+            // Deactivate cancel button
+            row.find('.btn-group .btn-cancel-update')
+               .removeClass('btn-danger').attr('disabled', true);
+          }
+        }
+      },
+    });
+  });
+
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
     let deviceTableContent = $('#devices-table-content');
     let deviceTablePagination = $('#devices-table-pagination');
@@ -231,7 +274,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '8')
+        $('<td>').attr('colspan', '9')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -255,7 +298,7 @@ $(document).ready(function() {
           if (res.devices.length == 0) {
             deviceTableContent.append(
               $('<tr>').append(
-                $('<td>').attr('colspan', '8')
+                $('<td>').attr('colspan', '9')
                 .addClass('grey lighten-5 text-center')
                 .append(
                   $('<h5>').html('Nenhum roteador encontrado')
@@ -270,6 +313,12 @@ $(document).ready(function() {
           // Fill status row
           deviceTableContent.append(
             $('<tr>').append(
+              $('<td>').addClass('pl-1 pr-0').append(
+                $('<a>').attr('id', 'refresh-table-content')
+                .append(
+                  $('<div>').addClass('fas fa-sync-alt fa-lg mt-2')
+                )
+              ),
               $('<td>').addClass('text-center')
                        .html(res.status.totalnum + ' total'),
               $('<td>').append(
@@ -375,6 +424,12 @@ $(document).ready(function() {
                        .attr('data-device-release', device.release ? device.release : '')
                        .attr('data-do-update', device.do_update ? 'Sim' : 'Não')
               .append(
+                $('<td>').addClass('pl-1 pr-0').append(
+                  $('<a>').addClass('device-row-refresher')
+                  .append(
+                    $('<div>').addClass('fas fa-sync-alt fa-lg')
+                  )
+                ),
                 $('<td>').addClass('text-center')
                 .append(
                   $('<div>').addClass('fas fa-chevron-down fa-lg')
@@ -395,14 +450,19 @@ $(document).ready(function() {
                     ''
                   )
                 ),
-                $('<td>').addClass('text-center').html(device.pppoe_user),
-                $('<td>').addClass('text-center').html(device._id),
-                $('<td>').addClass('text-center').html(device.wan_ip),
-                $('<td>').addClass('text-center').html(device.ip),
-                $('<td>').addClass('text-center').html(device.installed_release),
+                $('<td>').addClass('text-center device-pppoe-user')
+                         .html(device.pppoe_user),
+                $('<td>').addClass('text-center')
+                         .html(device._id),
+                $('<td>').addClass('text-center device-wan-ip')
+                         .html(device.wan_ip),
+                $('<td>').addClass('text-center device-ip')
+                         .html(device.ip),
+                $('<td>').addClass('text-center device-installed-release')
+                         .html(device.installed_release),
                 (isSuperuser || grantFirmwareUpgrade ?
                   $('<td>').append(
-                    $('<div>').addClass('btn-group').append(
+                    $('<div>').addClass('btn-group device-update').append(
                       $('<button>').addClass('btn btn-sm px-2 btn-cancel-update')
                                    .addClass(!device.do_update ? '':'btn-danger')
                                    .attr('disabled', !device.do_update)
@@ -469,7 +529,7 @@ $(document).ready(function() {
                        .attr('data-minlength-pass-pppoe', res.min_length_pass_pppoe)
 
               .append(
-                $('<td>').attr('colspan', '8').addClass('grey lighten-5')
+                $('<td>').attr('colspan', '9').addClass('grey lighten-5')
                 .append(
                   $('<form>').addClass('edit-form needs-validation')
                              .attr('novalidate', true)
