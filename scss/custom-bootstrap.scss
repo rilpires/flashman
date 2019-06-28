@@ -189,3 +189,9 @@
   transition-duration: 0.3s;
   transition-timing-function: ease-out;
 }
+
+// Refresh button on index page
+.device-row-refresher > .fas:active,
+#refresh-table-content > .fas:active {
+  color: $primary-color;
+}
