@@ -552,13 +552,23 @@ deviceListController.getDeviceReg = function(req, res) {
 
     // hide logs - too large for json
     if (matchedDevice.firstboot_log) {
-      matchedDevice['firstboot_log'] = null;
+      matchedDevice.firstboot_log = null;
     }
     if (matchedDevice.lastboot_log) {
-      matchedDevice['lastboot_log'] = null;
+      matchedDevice.lastboot_log = null;
     }
 
-    matchedDevice['online_status'] = (req.params.id in mqtt.clients);
+    matchedDevice.online_status = (req.params.id in mqtt.clients);
+    // Status color
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    let deviceColor = 'grey';
+    if (matchedDevice.online_status) {
+      deviceColor = 'green';
+    } else if (matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
+      deviceColor = 'red';
+    }
+    matchedDevice.status_color = deviceColor;
 
     return res.status(200).json(matchedDevice);
   });
