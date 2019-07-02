@@ -174,6 +174,7 @@ let processPassword = function(content, device, rollback) {
 
 let processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
       content.blacklist_device.hasOwnProperty('mac') &&
       content.blacklist_device.mac.match(macRegex)) {
@@ -215,11 +216,40 @@ let processBlacklist = function(content, device, rollback) {
     device.blocked_devices_index = Date.now();
     return true;
   }
+  else if (content.hasOwnProperty('device_configs') &&
+           content.device_configs.hasOwnProperty('mac') &&
+           content.device_configs.mac.match(macRegex) &&
+           content.device_configs.hasOwnProperty('block') &&
+           content.device_configs.block === true) {
+    if (!rollback.lan_devices) {
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+    }
+    let blackMacDevice = content.device_configs.mac.toLowerCase();
+    for (let idx = 0; idx < device.lan_devices.length; idx++) {
+      if (device.lan_devices[idx].mac == blackMacDevice) {
+        device.lan_devices[idx].last_seen = Date.now();
+        device.lan_devices[idx].is_blocked = true;
+        device.blocked_devices_index = Date.now();
+        return true;
+      }
+    }
+    // Mac address not found
+    device.lan_devices.push({
+      mac: blackMacDevice,
+      name: content.device_configs.name,
+      is_blocked: true,
+      first_seen: Date.now(),
+      last_seen: Date.now(),
+    });
+    device.blocked_devices_index = Date.now();
+    return true;
+  }
   return false;
 };
 
 let processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
       content.whitelist_device.hasOwnProperty('mac') &&
       content.whitelist_device.mac.match(macRegex)) {
@@ -239,6 +269,24 @@ let processWhitelist = function(content, device, rollback) {
         } else {
           return false;
         }
+      }
+    }
+  }
+  else if (content.hasOwnProperty('device_configs') &&
+           content.device_configs.hasOwnProperty('mac') &&
+           content.device_configs.mac.match(macRegex) &&
+           content.device_configs.hasOwnProperty('block') &&
+           content.device_configs.block === false) {
+    if (!rollback.lan_devices) {
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+    }
+    let blackMacDevice = content.device_configs.mac.toLowerCase();
+    for (let idx = 0; idx < device.lan_devices.length; idx++) {
+      if (device.lan_devices[idx].mac == blackMacDevice) {
+        device.lan_devices[idx].last_seen = Date.now();
+        device.lan_devices[idx].is_blocked = false;
+        device.blocked_devices_index = Date.now();
+        return true;
       }
     }
   }

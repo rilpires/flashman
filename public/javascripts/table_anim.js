@@ -1232,8 +1232,7 @@ $(document).ready(function() {
             type: 'POST',
             traditional: true,
             data: {
-              devices: res.devices.map((device) => device._id)
-                                  .reduce((acc, dev) => acc + ',' + dev, ''),
+              devices: res.devices.map((device) => device._id),
             },
             success: function(res) {
               for (let idx = 0; idx < res.notifications.length; idx += 1) {
