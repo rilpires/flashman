@@ -273,6 +273,18 @@ deviceListController.searchDeviceReg = function(req, res) {
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
       queryArray.push(field);
+    // Filter offline if more than X hours
+    } else if (queryContents[idx].toLowerCase().includes('offline >')) {
+      let field = {};
+      let hours = new Date();
+      const parsedHour = parseInt(queryContents[idx].split('>')[1]);
+      const hourThreshold = parsedHour ? parsedHour : 1;
+      hours.setHours(hours.getHours() - hourThreshold);
+      field.$and = [
+        {last_contact: {$lt: hours}},
+        {_id: {$nin: Object.keys(mqtt.clients)}},
+      ];
+      queryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
                (queryContents[idx].toLowerCase() == 'update on')) {
       let field = {};
