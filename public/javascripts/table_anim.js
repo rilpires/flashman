@@ -800,9 +800,14 @@ $(document).ready(function() {
                                 $('<div>').addClass('invalid-feedback')
                               )
                             ),
-                            ((isSuperuser || grantPPPoEInfo >= 1) &&
-                             (device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
-                              $('<div>').addClass('col-4').append(
+                            (isSuperuser || grantPPPoEInfo >= 1 ?
+                              $('<div>')
+                              .addClass('col-4')
+                              .addClass((device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
+                                '' :
+                                'd-none')
+                              .attr('id', 'edit_pppoe_combo-' + index)
+                              .append(
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<label>').html('Usuário PPPoE')
                                               .addClass('active'),
@@ -1152,14 +1157,13 @@ $(document).ready(function() {
 
             // Index variable has a global scope related to below function
             let localIdx = index;
-            $(document).on('change', '#edit_connect_type-' + localIdx, (event) => {
+            $(document).on('change', '#edit_connect_type-' + localIdx,
+            (event) => {
               $('#edit_connect_type_warning-' + localIdx).removeClass('d-none');
               if ($('#edit_connect_type-' + localIdx).val() === 'PPPoE') {
-                $('#edit_pppoe_user-' + localIdx).parent().show();
-                $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').show();
+                $('#edit_pppoe_combo-' + localIdx).removeClass('d-none');
               } else {
-                $('#edit_pppoe_user-' + localIdx).parent().hide();
-                $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').hide();
+                $('#edit_pppoe_combo-' + localIdx).addClass('d-none');
               }
             });
 
