@@ -28,6 +28,18 @@
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
+                  .black-text offline >H
+            .col
+              p
+                strong Substituir H pelo número de horas desejado.
+                  | Inclui resultados de roteadores que estão offline
+                  | por um período igual ou superior ao número de horas
+                  | especificado. Exemplo: "offline >48" exibirá roteadores
+                  | que estão offline há 48 horas ou mais
+          .row.mt-2
+            .col
+              h4
+                span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
                   .black-text upgrade on
                 span.badge.grey.lighten-2.bounceIn
                   .black-text update on
@@ -68,3 +80,14 @@
                  | aplicados. Exemplo: "João","online","/e" exibirá 
                  | todos os roteadores que estão online e contém "João" 
                  | no cadastro
+          .row.mt-2
+            .col
+              h4
+                span.badge.grey.lighten-2.bounceIn.mr-2
+                  .black-text /excluir
+            .col
+              p
+                strong Exclui resultados de roteadores que possuem o termo
+                  |  procurado. Exemplo: "online","/excluir 9999-aix" exibirá
+                  | todos os roteadores que estão online e que não contém a
+                  | release 9999-aix do Flashbox
