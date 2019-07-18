@@ -63,35 +63,38 @@ let refreshExtRefType = function(event) {
   }
 };
 
-let changeDeviceStatusOnTable = function(macaddr, data) {
-  let deviceOnTable = $('#' + $.escapeSelector(macaddr));
+let changeDeviceStatusOnTable = function(table, macaddr, data) {
+  let deviceOnTable = table.find('#' + $.escapeSelector(macaddr));
+  let statusOnlineSum = table.find('#online-status-sum');
+  let statusRecoverSum = table.find('#recovery-status-sum');
+  let statusOffSum = table.find('#offline-status-sum');
   if (deviceOnTable.length) {
     if (data == 'online' || data == 'recovery') {
       let status = deviceOnTable.find('.device-status');
       let currentGreen = status.hasClass('green-text');
       let currentRed = status.hasClass('red-text');
-      let currentOnlineCount = parseInt($('#online-status-sum').text());
-      let currentRecoveryCount = parseInt($('#recovery-status-sum').text());
-      let currentOfflineCount = parseInt($('#offline-status-sum').text());
+      let currentOnlineCount = parseInt(statusOnlineSum.text());
+      let currentRecoveryCount = parseInt(statusRecoverSum.text());
+      let currentOfflineCount = parseInt(statusOffSum.text());
       let canIncreaseCounter = false;
       if (currentGreen && (currentOnlineCount > 0)) {
-        $('#online-status-sum').text(currentOnlineCount - 1);
+        statusOnlineSum.text(currentOnlineCount - 1);
         canIncreaseCounter = true;
       } else if (currentRed && (currentRecoveryCount > 0)) {
-        $('#recovery-status-sum').text(currentRecoveryCount - 1);
+        statusRecoverSum.text(currentRecoveryCount - 1);
         canIncreaseCounter = true;
       } else if (currentOfflineCount > 0) {
-        $('#offline-status-sum').text(currentOfflineCount - 1);
+        statusOffSum.text(currentOfflineCount - 1);
         canIncreaseCounter = true;
       }
       if (data == 'online' && canIncreaseCounter) {
-        $('#online-status-sum').text(
-          parseInt($('#online-status-sum').text()) + 1);
+        statusOnlineSum.text(
+          parseInt(statusOnlineSum.text()) + 1);
         let newStatus = 'green-text';
         status.removeClass('green-text red-text grey-text').addClass(newStatus);
       } else if (data == 'recovery' && canIncreaseCounter) {
-        $('#recovery-status-sum').text(
-          parseInt($('#recovery-status-sum').text()) + 1);
+        statusRecoverSum.text(
+          parseInt(statusRecoverSum.text()) + 1);
         let newStatus = 'red-text';
         status.removeClass('green-text red-text grey-text').addClass(newStatus);
       }
@@ -223,14 +226,59 @@ $(document).ready(function() {
     $('#upgrade-scheduler').modal('show');
   });
 
+  // Refresh table content
+  $(document).on('click', '#refresh-table-content', function(event) {
+    let pageNum = parseInt($('#curr-page-link').html());
+    let filterList = $('#devices-search-form .tags-input').val();
+    loadDevicesTable(pageNum, filterList);
+  });
+
+  // Refresh single row
+  $(document).on('click', '.device-row-refresher', function(event) {
+    let row = $(event.target).parents('tr');
+    let deviceId = row.data('deviceid');
+    let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    $.ajax({
+      url: '/devicelist/uiupdate/' + deviceId,
+      type: 'GET',
+      success: function(res) {
+        row.find('.device-status').removeClass('green-text red-text grey-text')
+                                  .addClass(res.status_color + '-text');
+        row.find('.device-wan-ip').html(res.wan_ip);
+        row.find('.device-ip').html(res.ip);
+        row.find('.device-installed-release').html(res.installed_release);
+        row.find('.device-pppoe-user').html(res.pppoe_user);
+        if (deviceDoUpdate != res.do_update) {
+          if (res.do_update == false) {
+            // Activate dropdown
+            row.find('.device-update .dropdown-toggle .selected')
+               .text('Escolher');
+            row.find('.device-update .dropdown-toggle').attr('disabled', false);
+            // Deactivate waiting status
+            let upgradeStatus = row.find('span.upgrade-status');
+            upgradeStatus.find('.status-none').removeClass('d-none');
+            upgradeStatus.find('.status-waiting').addClass('d-none');
+            upgradeStatus.find('.status-ok').addClass('d-none');
+            upgradeStatus.find('.status-error').addClass('d-none');
+            // Deactivate cancel button
+            row.find('.btn-group .btn-cancel-update')
+               .removeClass('btn-danger').attr('disabled', true);
+          }
+        }
+      },
+    });
+  });
+
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
+    let deviceTableContent = $('#devices-table-content');
+    let deviceTablePagination = $('#devices-table-pagination');
     // Clean all elements before loading
-    $('#devices-table-content').empty();
-    $('#devices-table-pagination').empty();
+    deviceTableContent.empty();
+    deviceTablePagination.empty();
     // Start loading animation
-    $('#devices-table-content').append(
+    deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '8')
+        $('<td>').attr('colspan', '9')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -245,25 +293,36 @@ $(document).ready(function() {
       data: {filter_list: filterList},
       success: function(res) {
         if (res.type == 'success') {
+          // Improve performance by working with table content
+          // outside DOM since there is o lot of manipulation ahead
+          deviceTableContent.detach();
           // Stop loading animation
-          $('#devices-table-content').empty();
+          deviceTableContent.empty();
           // Just fill not found message if there are no devices found
           if (res.devices.length == 0) {
-            $('#devices-table-content').append(
+            deviceTableContent.append(
               $('<tr>').append(
-                $('<td>').attr('colspan', '8')
+                $('<td>').attr('colspan', '9')
                 .addClass('grey lighten-5 text-center')
                 .append(
                   $('<h5>').html('Nenhum roteador encontrado')
                 )
               )
             );
-            return;
+            // Attach elements back to DOM after manipulation
+            $('#devices-table').append(deviceTableContent);
+            return false;
           }
 
           // Fill status row
-          $('#devices-table-content').append(
+          deviceTableContent.append(
             $('<tr>').append(
+              $('<td>').addClass('pl-1 pr-0').append(
+                $('<a>').attr('id', 'refresh-table-content')
+                .append(
+                  $('<div>').addClass('fas fa-sync-alt fa-lg mt-2')
+                )
+              ),
               $('<td>').addClass('text-center')
                        .html(res.status.totalnum + ' total'),
               $('<td>').append(
@@ -307,12 +366,14 @@ $(document).ready(function() {
                       ),
                       $('<div>').addClass('dropdown-menu').append(() => {
                         let opts = $('<div>');
-                        res.single_releases.forEach((release) => {
+                        for (let idx = 0;
+                             idx < res.single_releases.length; idx += 1) {
+                          let release = res.single_releases[idx];
                           opts.append(
                             $('<a>').addClass('dropdown-item text-center')
                                     .html(release.id)
                           );
-                        });
+                        }
                         return opts.html();
                       }),
                       $('<button>').addClass('btn btn-sm px-2 teal darken-5')
@@ -329,7 +390,8 @@ $(document).ready(function() {
           );
           let index = 0;
           // Fill remaining rows with devices
-          res.devices.forEach((device) => {
+          for (let idx = 0; idx < res.devices.length; idx += 1) {
+            let device = res.devices[idx];
             let grantWifiBand = device.permissions.grantWifiBand;
             let grantWifi5ghz = device.permissions.grantWifi5ghz;
             let grantLanEdit = device.permissions.grantLanEdit;
@@ -341,7 +403,7 @@ $(document).ready(function() {
             let grantPingTest = device.permissions.grantPingTest;
             let grantLanDevices = device.permissions.grantLanDevices;
 
-            $('#devices-table-content').append(
+            deviceTableContent.append(
               $('<tr>').addClass('csv-export').attr('id', device._id)
                        .attr('data-index', index)
                        .attr('data-deviceid', device._id)
@@ -371,6 +433,12 @@ $(document).ready(function() {
                        .attr('data-device-release', device.release ? device.release : '')
                        .attr('data-do-update', device.do_update ? 'Sim' : 'Não')
               .append(
+                $('<td>').addClass('pl-1 pr-0').append(
+                  $('<a>').addClass('device-row-refresher')
+                  .append(
+                    $('<div>').addClass('fas fa-sync-alt fa-lg')
+                  )
+                ),
                 $('<td>').addClass('text-center')
                 .append(
                   $('<div>').addClass('fas fa-chevron-down fa-lg')
@@ -391,14 +459,19 @@ $(document).ready(function() {
                     ''
                   )
                 ),
-                $('<td>').addClass('text-center').html(device.pppoe_user),
-                $('<td>').addClass('text-center').html(device._id),
-                $('<td>').addClass('text-center').html(device.wan_ip),
-                $('<td>').addClass('text-center').html(device.ip),
-                $('<td>').addClass('text-center').html(device.installed_release),
+                $('<td>').addClass('text-center device-pppoe-user')
+                         .html(device.pppoe_user),
+                $('<td>').addClass('text-center')
+                         .html(device._id),
+                $('<td>').addClass('text-center device-wan-ip')
+                         .html(device.wan_ip),
+                $('<td>').addClass('text-center device-ip')
+                         .html(device.ip),
+                $('<td>').addClass('text-center device-installed-release')
+                         .html(device.installed_release),
                 (isSuperuser || grantFirmwareUpgrade ?
                   $('<td>').append(
-                    $('<div>').addClass('btn-group').append(
+                    $('<div>').addClass('btn-group device-update').append(
                       $('<button>').addClass('btn btn-sm px-2 btn-cancel-update')
                                    .addClass(!device.do_update ? '':'btn-danger')
                                    .attr('disabled', !device.do_update)
@@ -418,12 +491,14 @@ $(document).ready(function() {
                         $('<div>').addClass('dropdown-menu refresh-selected')
                         .append(() => {
                           let opts = $('<div>');
-                          device.releases.forEach((release) => {
+                          for (let idx = 0;
+                               idx < device.releases.length; idx += 1) {
+                            let release = device.releases[idx];
                             opts.append(
                               $('<a>').addClass('dropdown-item text-center')
                                       .html(release.id)
                             );
-                          });
+                          }
                           return opts.html();
                         }),
                         $('<span>').addClass('ml-3 upgrade-status')
@@ -463,7 +538,7 @@ $(document).ready(function() {
                        .attr('data-minlength-pass-pppoe', res.min_length_pass_pppoe)
 
               .append(
-                $('<td>').attr('colspan', '8').addClass('grey lighten-5')
+                $('<td>').attr('colspan', '9').addClass('grey lighten-5')
                 .append(
                   $('<form>').addClass('edit-form needs-validation')
                              .attr('novalidate', true)
@@ -657,7 +732,8 @@ $(document).ready(function() {
                             $('<div>').addClass('col-6').append(
                               $('<div>').addClass('md-form input-entry pt-1')
                               .append(
-                                $('<label>').html('Modelo'),
+                                $('<label>').html('Modelo')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -667,7 +743,8 @@ $(document).ready(function() {
                               ),
                               $('<div>').addClass('md-form input-entry')
                               .append(
-                                $('<label>').html('Versão do Flashbox'),
+                                $('<label>').html('Versão do Flashbox')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -689,7 +766,8 @@ $(document).ready(function() {
                                 .append(
                                   $('<div>').addClass('md-selectfield form-control my-0')
                                   .append(
-                                    $('<label>').html('Tipo de Conexão'),
+                                    $('<label>').html('Tipo de Conexão')
+                                                .addClass('active'),
                                     $('<select>').addClass('browser-default md-select')
                                                  .attr('id', 'edit_connect_type-' + index)
                                     .append(
@@ -711,7 +789,8 @@ $(document).ready(function() {
                             ),
                             $('<div>').addClass('col-4').append(
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('Velocidade Negociada (Mbps)'),
+                                $('<label>').html('Velocidade Negociada (Mbps)')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -720,7 +799,8 @@ $(document).ready(function() {
                                 $('<div>').addClass('invalid-feedback')
                               ),
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('Modo de Transmissão (Duplex)'),
+                                $('<label>').html('Modo de Transmissão (Duplex)')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control')
                                             .attr('type', 'text')
                                             .attr('maxlength', '32')
@@ -729,11 +809,17 @@ $(document).ready(function() {
                                 $('<div>').addClass('invalid-feedback')
                               )
                             ),
-                            ((isSuperuser || grantPPPoEInfo >= 1) &&
-                             (device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
-                              $('<div>').addClass('col-4').append(
+                            (isSuperuser || grantPPPoEInfo >= 1 ?
+                              $('<div>')
+                              .addClass('col-4')
+                              .addClass((device.connection_type && device.connection_type.toUpperCase() !== 'DHCP') ?
+                                '' :
+                                'd-none')
+                              .attr('id', 'edit_pppoe_combo-' + index)
+                              .append(
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('Usuário PPPoE'),
+                                  $('<label>').html('Usuário PPPoE')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_pppoe_user-' + index)
@@ -744,7 +830,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha PPPoE'),
+                                    $('<label>').html('Senha PPPoE')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_pppoe_pass-' + index)
@@ -781,7 +868,8 @@ $(document).ready(function() {
                           .append(
                             $('<div>').addClass('col-6').append(
                               $('<div>').addClass('md-form input-entry').append(
-                                $('<label>').html('IP da Rede'),
+                                $('<label>').html('IP da Rede')
+                                            .addClass('active'),
                                 $('<input>').addClass('form-control ip-mask-field')
                                             .attr('type', 'text')
                                             .attr('id', 'edit_lan_subnet-' + index)
@@ -796,7 +884,8 @@ $(document).ready(function() {
                                 $('<div>').addClass('input-group').append(
                                   $('<div>').addClass('md-selectfield form-control my-0')
                                   .append(
-                                    $('<label>').html('Máscara'),
+                                    $('<label>').html('Máscara')
+                                                .addClass('active'),
                                     $('<select>').addClass('browser-default md-select')
                                                 .attr('type', 'text')
                                                 .attr('id', 'edit_lan_netmask-' + index)
@@ -804,11 +893,14 @@ $(document).ready(function() {
                                                 .attr('disabled', !isSuperuser && !grantLanEdit)
                                     .append(() => {
                                       let opts = $('<div>');
-                                      ['24', '25', '26'].forEach((mask) => {
+                                      const masks = ['24', '25', '26'];
+                                      for (let idx = 0;
+                                           idx < masks.length; idx += 1) {
+                                        let mask = masks[idx];
                                         opts.append(
                                           $('<option>').val(mask).html(mask)
                                         );
-                                      });
+                                      }
                                       return opts.html();
                                     })
                                     .val(device.lan_netmask)
@@ -828,19 +920,24 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Canal do Wi-Fi'),
+                                      $('<label>').html('Canal do Wi-Fi')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_channel-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
                                       .append(() => {
                                         let opts = $('<div>');
-                                        ['auto', '1', '2', '3', '4', '5',
-                                         '6', '7', '8', '9', '10', '11']
-                                        .forEach((channel) => {
+                                        const channels = ['auto', '1', '2', '3',
+                                                        '4', '5', '6', '7', '8',
+                                                        '9', '10', '11'];
+                                        for (let idx = 0;
+                                             idx < channels.length; idx += 1) {
+                                          let channel = channels[idx];
                                           opts.append(
-                                            $('<option>').val(channel).html(channel)
+                                            $('<option>').val(channel)
+                                            .html(channel)
                                           );
-                                        });
+                                        }
                                         return opts.html();
                                       })
                                       .val(device.wifi_channel)
@@ -848,7 +945,8 @@ $(document).ready(function() {
                                   )
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('SSID do Wi-Fi'),
+                                  $('<label>').html('SSID do Wi-Fi')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_wifi_ssid-' + index)
@@ -859,7 +957,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha do Wi-Fi'),
+                                    $('<label>').html('Senha do Wi-Fi')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_wifi_pass-' + index)
@@ -889,7 +988,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Largura de banda'),
+                                      $('<label>').html('Largura de banda')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_band-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -905,7 +1005,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Modo de operação'),
+                                      $('<label>').html('Modo de operação')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi_mode-' + index)
                                                   .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
@@ -933,20 +1034,26 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Canal do Wi-Fi'),
+                                      $('<label>').html('Canal do Wi-Fi')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_channel-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
                                       .append(() => {
                                         let opts = $('<div>');
-                                        ['auto', '36', '40', '44', '48', '52',
-                                         '56', '60', '64', '149', '153', '157',
-                                         '161', '165']
-                                        .forEach((channel) => {
+                                        const channels = ['auto', '36', '40',
+                                                          '44', '48', '52',
+                                                          '56', '60', '64',
+                                                          '149', '153', '157',
+                                                          '161', '165'];
+                                        for (let idx = 0;
+                                             idx < channels.length; idx += 1) {
+                                          let channel = channels[idx];
                                           opts.append(
-                                            $('<option>').val(channel).html(channel)
+                                            $('<option>').val(channel)
+                                            .html(channel)
                                           );
-                                        });
+                                        }
                                         return opts.html();
                                       })
                                       .val(device.wifi_channel_5ghz)
@@ -954,7 +1061,8 @@ $(document).ready(function() {
                                   )
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
-                                  $('<label>').html('SSID do Wi-Fi'),
+                                  $('<label>').html('SSID do Wi-Fi')
+                                              .addClass('active'),
                                   $('<input>').addClass('form-control')
                                               .attr('type', 'text')
                                               .attr('id', 'edit_wifi5_ssid-' + index)
@@ -965,7 +1073,8 @@ $(document).ready(function() {
                                 ),
                                 $('<div>').addClass('md-form input-entry').append(
                                   $('<div>').addClass('input-group').append(
-                                    $('<label>').html('Senha do Wi-Fi'),
+                                    $('<label>').html('Senha do Wi-Fi')
+                                                .addClass('active'),
                                     $('<input>').addClass('form-control my-0')
                                                 .attr('type', 'password')
                                                 .attr('id', 'edit_wifi5_pass-' + index)
@@ -995,7 +1104,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Largura de banda'),
+                                      $('<label>').html('Largura de banda')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_band-' + index)
                                                   .attr('disabled', !isSuperuser && grantWifiInfo <= 1)
@@ -1017,7 +1127,8 @@ $(document).ready(function() {
                                   $('<div>').addClass('input-group').append(
                                     $('<div>').addClass('md-selectfield form-control my-0')
                                     .append(
-                                      $('<label>').html('Modo de operação'),
+                                      $('<label>').html('Modo de operação')
+                                                  .addClass('active'),
                                       $('<select>').addClass('browser-default md-select')
                                                   .attr('id', 'edit_wifi5_mode-' + index)
                                                   .attr('disabled', !grantWifiBand || (!isSuperuser && grantWifiInfo <= 1))
@@ -1055,14 +1166,13 @@ $(document).ready(function() {
 
             // Index variable has a global scope related to below function
             let localIdx = index;
-            $(document).on('change', '#edit_connect_type-' + localIdx, (event) => {
+            $(document).on('change', '#edit_connect_type-' + localIdx,
+            (event) => {
               $('#edit_connect_type_warning-' + localIdx).removeClass('d-none');
               if ($('#edit_connect_type-' + localIdx).val() === 'PPPoE') {
-                $('#edit_pppoe_user-' + localIdx).parent().show();
-                $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').show();
+                $('#edit_pppoe_combo-' + localIdx).removeClass('d-none');
               } else {
-                $('#edit_pppoe_user-' + localIdx).parent().hide();
-                $('#edit_pppoe_pass-' + localIdx).closest('.input-entry').hide();
+                $('#edit_pppoe_combo-' + localIdx).addClass('d-none');
               }
             });
 
@@ -1078,9 +1188,9 @@ $(document).ready(function() {
             }
 
             index += 1;
-          });
+          }
           // Fill table pagination
-          $('#devices-table-pagination').append(
+          deviceTablePagination.append(
             $('<ul>').addClass('pagination pagination-lg').append(() => {
               let opts = $('<div>');
               let delta = 2;
@@ -1128,40 +1238,43 @@ $(document).ready(function() {
             })
           );
           // Apply IP mask on LAN subnet field
-          $('.ip-mask-field').mask('099.099.099.099');
-          // Fix MD Bootstrap filled input forms
-          $('.form-control').change();
+          deviceTableContent.find('.ip-mask-field').mask('099.099.099.099');
           // Fetch existing notifications
           $.ajax({
             url: '/notification/fetch',
             type: 'POST',
             traditional: true,
             data: {
-              devices: res.devices.map((device) => device._id)
-                                  .reduce((acc, dev) => acc + ',' + dev, ''),
+              devices: res.devices.map((device) => device._id),
             },
             success: function(res) {
-              res.notifications.forEach((notification) => {
-                changeDeviceStatusOnTable(notification.target, notification);
+              for (let idx = 0; idx < res.notifications.length; idx += 1) {
+                let notification = res.notifications[idx];
+                changeDeviceStatusOnTable(deviceTableContent,
+                                          notification.target, notification);
+              }
+              // Enable device status notification reception
+              $.ajax({
+                url: '/notification/register/devicestatus',
+                type: 'POST',
+                dataType: 'json',
+                error: function(xhr, status, error) {
+                  displayAlertMsg(JSON.parse(xhr.responseText));
+                },
               });
             },
             error: function(xhr, status, error) {
               displayAlertMsg(JSON.parse(xhr.responseText));
             },
-          });
-          // Enable device status notification reception
-          $.ajax({
-            url: '/notification/register/devicestatus',
-            type: 'POST',
-            dataType: 'json',
-            error: function(xhr, status, error) {
-              displayAlertMsg(JSON.parse(xhr.responseText));
+            complete: function() {
+              // Attach elements back to DOM after manipulation
+              $('#devices-table').append(deviceTableContent);
             },
           });
           // Important: include and initialize socket.io first using socket var
           // Actions when a status change is received
           socket.on('DEVICESTATUS', function(macaddr, data) {
-            changeDeviceStatusOnTable(macaddr, data);
+            changeDeviceStatusOnTable(deviceTableContent, macaddr, data);
           });
         } else {
           displayAlertMsg(res);

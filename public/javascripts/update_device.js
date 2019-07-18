@@ -65,6 +65,8 @@ let updateAllDevices = function(event) {
             // Activate cancel button
             selBtnGroup.siblings('.btn-cancel-update')
               .addClass('btn-danger').attr('disabled', false);
+            // Update device row data
+            $('#' + $.escapeSelector(deviceId)).data('do-update', 'Sim');
           });
         }
       });
@@ -124,6 +126,8 @@ let cancelAllDeviceUpdates = function(event) {
             upgradeStatus.find('.status-error').addClass('d-none');
             // Deactivate cancel button
             selBtnCancel.removeClass('btn-danger').attr('disabled', true);
+            // Update device row data
+            $('#' + $.escapeSelector(deviceId)).data('do-update', 'Não');
           });
         }
       });
@@ -170,6 +174,8 @@ let updateDevice = function(event) {
             // Activate cancel button
             selBtnGroup.siblings('.btn-cancel-update')
               .addClass('btn-danger').attr('disabled', false);
+            // Update device row data
+            row.data('do-update', 'Sim');
           }
         },
         error: function(xhr, status, error) {
@@ -216,6 +222,10 @@ let cancelDeviceUpdate = function(event) {
       upgradeStatus.find('.status-waiting').addClass('d-none');
       upgradeStatus.find('.status-ok').addClass('d-none');
       upgradeStatus.find('.status-error').addClass('d-none');
+    },
+    complete: function() {
+      // Update device row data
+      row.data('do-update', 'Não');
     },
   });
 };

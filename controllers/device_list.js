@@ -243,9 +243,6 @@ deviceListController.searchDeviceReg = function(req, res) {
   queryContents = queryContents.filter((query) => query !== '/e');
 
   for (let idx=0; idx < queryContents.length; idx++) {
-    let queryInput = new RegExp(queryContents[idx], 'i');
-    let queryArray = [];
-
     if (queryContents[idx].toLowerCase() == 'online') {
       let field = {};
       let lastHour = new Date();
@@ -254,7 +251,7 @@ deviceListController.searchDeviceReg = function(req, res) {
         {'last_contact': {$gte: lastHour}},
         {'_id': {$in: Object.keys(mqtt.clients)}},
       ];
-      queryArray.push(field);
+      finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'instavel') {
       let field = {};
       let lastHour = new Date();
@@ -263,7 +260,7 @@ deviceListController.searchDeviceReg = function(req, res) {
         {last_contact: {$gte: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
-      queryArray.push(field);
+      finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'offline') {
       let field = {};
       let lastHour = new Date();
@@ -272,31 +269,60 @@ deviceListController.searchDeviceReg = function(req, res) {
         {last_contact: {$lt: lastHour}},
         {_id: {$nin: Object.keys(mqtt.clients)}},
       ];
-      queryArray.push(field);
+      finalQueryArray.push(field);
+    // Filter as offline if more than X hours
+    } else if (queryContents[idx].toLowerCase().includes('offline >')) {
+      let field = {};
+      let hours = new Date();
+      const parsedHour = parseInt(queryContents[idx].split('>')[1]);
+      const hourThreshold = parsedHour ? parsedHour : 1;
+      hours.setHours(hours.getHours() - hourThreshold);
+      field.$and = [
+        {last_contact: {$lt: hours}},
+        {_id: {$nin: Object.keys(mqtt.clients)}},
+      ];
+      finalQueryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
                (queryContents[idx].toLowerCase() == 'update on')) {
       let field = {};
       field.do_update = {$eq: true};
-      queryArray.push(field);
+      finalQueryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade off') ||
                (queryContents[idx].toLowerCase() == 'update off')) {
       let field = {};
       field.do_update = {$eq: false};
-      queryArray.push(field);
+      finalQueryArray.push(field);
     } else {
-      for (let property in DeviceModel.schema.paths) {
-        if (DeviceModel.schema.paths.hasOwnProperty(property) &&
-            DeviceModel.schema.paths[property].instance === 'String') {
-          let field = {};
-          field[property] = queryInput;
-          queryArray.push(field);
+      let query = {};
+      let queryArray = [];
+      let contentCondition = '$or';
+      // Check negation condition
+      if (queryContents[idx].startsWith('/excluir')) {
+        const filterContent = queryContents[idx].split('/excluir')[1].trim();
+        let queryInput = new RegExp(filterContent, 'i');
+        for (let property in DeviceModel.schema.paths) {
+          if (DeviceModel.schema.paths.hasOwnProperty(property) &&
+              DeviceModel.schema.paths[property].instance === 'String') {
+            let field = {};
+            field[property] = {$not: queryInput};
+            queryArray.push(field);
+          }
+        }
+        contentCondition = '$and';
+      } else {
+        let queryInput = new RegExp(queryContents[idx], 'i');
+        for (let property in DeviceModel.schema.paths) {
+          if (DeviceModel.schema.paths.hasOwnProperty(property) &&
+              DeviceModel.schema.paths[property].instance === 'String') {
+            let field = {};
+            field[property] = queryInput;
+            queryArray.push(field);
+          }
         }
       }
+      query[contentCondition] = queryArray;
+      finalQueryArray.push(query);
     }
-    let query = {
-      $or: queryArray,
-    };
-    finalQueryArray.push(query);
   }
   finalQuery[queryLogicalOperator] = finalQueryArray;
 
@@ -552,13 +578,23 @@ deviceListController.getDeviceReg = function(req, res) {
 
     // hide logs - too large for json
     if (matchedDevice.firstboot_log) {
-      matchedDevice['firstboot_log'] = null;
+      matchedDevice.firstboot_log = null;
     }
     if (matchedDevice.lastboot_log) {
-      matchedDevice['lastboot_log'] = null;
+      matchedDevice.lastboot_log = null;
     }
 
-    matchedDevice['online_status'] = (req.params.id in mqtt.clients);
+    matchedDevice.online_status = (req.params.id in mqtt.clients);
+    // Status color
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    let deviceColor = 'grey';
+    if (matchedDevice.online_status) {
+      deviceColor = 'green';
+    } else if (matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
+      deviceColor = 'red';
+    }
+    matchedDevice.status_color = deviceColor;
 
     return res.status(200).json(matchedDevice);
   });

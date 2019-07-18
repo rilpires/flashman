@@ -66,9 +66,9 @@ block content
                   type="button",
                   id="btn-elements-per-page") Ok
       .card
-        .card-body
+        .card-body.px-3
           .table-responsive
-            table.table.devices-table
+            table.table#devices-table
               thead
                 tr.csv-export(
                   data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
@@ -100,10 +100,10 @@ block content
                   data-do-update="Atualizar Firmware"
                 )
                   th
+                  th
                   th.text-center
                     span Status &nbsp
                     a.fas.fa-question-circle(
-                      href="#",
                       data-toggle="tooltip",
                       title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
                     )
