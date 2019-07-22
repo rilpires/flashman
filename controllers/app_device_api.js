@@ -419,6 +419,13 @@ appDeviceAPIController.registerApp = function(req, res) {
         if (deviceObj && !deviceObj.app_uid) {
           deviceObj.app_uid = req.body.app_id;
         }
+        else if (!deviceObj) {
+          matchedDevice.lan_devices.push({
+            mac: req.body.app_mac,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
       }
       let appObj = matchedDevice.apps.filter(function(app) {
         return app.id === req.body.app_id;
