@@ -58,6 +58,8 @@ let deviceSchema = new Schema({
     wifi_snr: Number, // dB
     wifi_mode: String, // G, N, AC
     app_uid: String, // App unique identification, should match with apps field
+    fcm_uid: String, // FCM unique id, app should provide it on login
+    upnp_permission: {type: Boolean, default: false},
   }],
   wan_ip: String,
   wan_negociated_speed: String,

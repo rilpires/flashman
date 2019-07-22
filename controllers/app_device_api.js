@@ -600,6 +600,21 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
 
+    // Check if FCM ID has changed, update if so
+    let appid = req.body.app_id;
+    let fcmid = req.body.content.fcmToken;
+    let lanDevice = matchedDevice.lan_devices.find((d)=>d.app_uid===appid);
+    if (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid) {
+      // Query again but this time without .lean() so we can edit register
+      DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
+        if (err || !matchedDeviceEdit) return;
+        let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+        device.fcm_uid = fcmid;
+        device.last_seen = Date.now();
+        matchedDeviceEdit.save();
+      });
+    }
+
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
