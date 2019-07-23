@@ -6,7 +6,8 @@ let renderDeviceErrors = function(errors) {
       errors[key].messages.forEach(function(msg) {
         message += msg + ' ';
       });
-      $(errors[key].field).closest('.input-entry').find('.invalid-feedback').html(message);
+      $(errors[key].field).closest('.input-entry')
+                          .find('.invalid-feedback').html(message);
       $(errors[key].field)[0].setCustomValidity(message);
     }
   }
@@ -74,7 +75,7 @@ let validateNewDevice = function() {
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
   };
-
+  let newFormObj = $(this);
   if (Object.keys(errors).every(hasNoErrors)) {
     // If no errors present, send to backend
     let data = {'content': {
@@ -100,6 +101,7 @@ let validateNewDevice = function() {
       data: JSON.stringify(data),
       contentType: 'application/json',
       success: function(resp) {
+        newFormObj.removeClass('was-validated');
         location.reload();
       },
       error: function(xhr, status, error) {
@@ -127,6 +129,7 @@ let validateNewDevice = function() {
     // Else, render errors on form
     renderDeviceErrors(errors);
   }
+  newFormObj.addClass('was-validated');
   return false;
 };
 
