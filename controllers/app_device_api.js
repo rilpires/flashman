@@ -308,7 +308,9 @@ let processDeviceInfo = function(content, device, rollback) {
     let macDevice = configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
-        device.lan_devices[idx].name = configs.name;
+        if (configs.name) {
+          device.lan_devices[idx].name = configs.name;
+        }
         device.lan_devices[idx].last_seen = Date.now();
         newLanDevice = false;
         if (configs.hasOwnProperty('rules')) {
