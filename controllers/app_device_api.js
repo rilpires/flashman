@@ -418,12 +418,13 @@ appDeviceAPIController.registerApp = function(req, res) {
         let deviceObj = matchedDevice.lan_devices.find((device)=>{
           return device.mac === req.body.app_mac;
         });
-        if (deviceObj && !deviceObj.app_uid) {
+        if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
           deviceObj.app_uid = req.body.app_id;
         }
         else if (!deviceObj) {
           matchedDevice.lan_devices.push({
             mac: req.body.app_mac,
+            app_uid: req.body.app_id,
             first_seen: Date.now(),
             last_seen: Date.now(),
           });
