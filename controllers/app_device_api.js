@@ -338,12 +338,46 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
+let processUpnpInfo = function(content, device, rollback) {
+  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (content.hasOwnProperty('upnp_configs') &&
+      content.upnp_configs.hasOwnProperty('allow') &&
+      content.upnp_configs.hasOwnProperty('mac') &&
+      content.upnp_configs.mac.match(macRegex)) {
+    // Deep copy lan devices for rollback
+    if (!rollback.lan_devices) {
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+    }
+    let newLanDevice = true;
+    let allow = content.upnp_configs.allow;
+    let macDevice = content.upnp_configs.mac.toLowerCase();
+    for (let idx = 0; idx < device.lan_devices.length; idx++) {
+      if (device.lan_devices[idx].mac == macDevice) {
+        device.lan_devices[idx].upnp_permission = allow;
+        device.lan_devices[idx].last_seen = Date.now();
+        newLanDevice = false;
+      }
+    }
+    if (newLanDevice) {
+      device.lan_devices.push({
+        mac: macDevice,
+        upnp_permission: allow,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
+      });
+    }
+    return true;
+  }
+  return false;
+};
+
 let processAll = function(content, device, rollback) {
   processWifi(content, device, rollback);
   processPassword(content, device, rollback);
   processBlacklist(content, device, rollback);
   processWhitelist(content, device, rollback);
   processDeviceInfo(content, device, rollback);
+  processUpnpInfo(content, device, rollback);
 };
 
 let formatDevices = function(device) {
