@@ -38,6 +38,7 @@ let deviceSchema = new Schema({
   lan_devices: [{
     mac: String,
     dhcp_name: String,
+    upnp_name: String,
     is_blocked: {type: Boolean, default: false},
     name: String,
     port: [Number],
@@ -61,6 +62,7 @@ let deviceSchema = new Schema({
     fcm_uid: String, // FCM unique id, app should provide it on login
     upnp_permission: {type: Boolean, default: false},
   }],
+  upnp_requests: [String], // Array of macs, use lan_devices for all device info
   wan_ip: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,

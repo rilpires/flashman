@@ -853,6 +853,55 @@ deviceInfoController.receivePingResult = function(req, res) {
   });
 };
 
+deviceInfoController.receiveUpnp = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Upnp request: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Upnp request for device ' + id +
+        ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Upnp request for device ' + id +
+        ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+
+    let deviceMac = req.body.mac;
+    let deviceName = req.body.name;
+    let lanDevice = matchedDevice.lan_devices.find((d)=>d.mac===deviceMac);
+    if (lanDevice) {
+      lanDevice.upnp_name = deviceName;
+      lanDevice.last_seen = Date.now();
+    } else {
+      matchedDevice.lan_devices.push({
+        mac: blackMacDevice,
+        upnp_name: deviceName,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
+      });
+    }
+    matchedDevice.upnp_requests.push(deviceMac); // add notification for app
+    matchedDevice.save();
+
+    // TODO: Integrate with google cloud functions to send app message
+
+    console.log('Upnp request for device ' + id +
+      ' received successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
 deviceInfoController.getZabbixConfig = async(function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
