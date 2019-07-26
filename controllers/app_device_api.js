@@ -348,8 +348,15 @@ let processUpnpInfo = function(content, device, rollback) {
     if (!rollback.lan_devices) {
       rollback.lan_devices = deepCopyObject(device.lan_devices);
     }
+    // Deep copy upnp requests for rollback
+    rollback.upnp_requests = deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
-    let allow = content.upnp_configs.allow;
+    let allow = "none";
+    if (content.upnp_configs.allow === true) {
+      allow = "accept";
+    } else if (content.upnp_configs.allow === false) {
+      allow = "reject";
+    }
     let macDevice = content.upnp_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
@@ -366,6 +373,7 @@ let processUpnpInfo = function(content, device, rollback) {
         last_seen: Date.now(),
       });
     }
+    device.upnp_requests = device.upnp_requests.filter((r) => r !== macDevice);
     return true;
   }
   return false;
@@ -413,6 +421,7 @@ let formatDevices = function(device) {
     const timeDiff = Math.abs(justNow - lastSeen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
     let online = (timeDiffSeconds < 5);
+    let upnpPermission = lanDevice.upnp_permission === 'accept';
     let signal = 'none';
     if (lanDevice.wifi_snr >= 35) signal = 'excellent';
     else if (lanDevice.wifi_snr >= 25) signal = 'good';
@@ -431,6 +440,7 @@ let formatDevices = function(device) {
       online: online,
       signal: signal,
       is_wifi: isWifi,
+      upnp_allow: upnpPermission,
     };
   });
   return {
@@ -676,6 +686,20 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       };
     }
 
+    let notifications = [];
+    matchedDevice.upnp_requests.forEach((mac)=>{
+      let upnpDevice = matchedDevice.lan_devices.find((d)=>d.mac===mac);
+      if (!upnpDevice) return;
+      let name = upnpDevice.upnp_name;
+      if (upnpDevice.name) {
+        name = upnpDevice.name;
+      }
+      notifications.push({
+        mac: mac,
+        name: name,
+      });
+    });
+
     let localDevice = matchedDevice.lan_devices.find((device)=>{
       return req.body.app_id === device.app_uid;
     });
@@ -685,6 +709,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
+      notifications: notifications,
       model: matchedDevice.model,
       version: matchedDevice.version,
       release: matchedDevice.installed_release,
