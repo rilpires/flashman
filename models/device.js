@@ -60,7 +60,11 @@ let deviceSchema = new Schema({
     wifi_mode: String, // G, N, AC
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
-    upnp_permission: {type: Boolean, default: false},
+    upnp_permission: {type: String, default: "none", enum: [
+      "accept",
+      "reject",
+      "none",
+    ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
   wan_ip: String,
