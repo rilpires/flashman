@@ -61,9 +61,9 @@ let deviceSchema = new Schema({
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
     upnp_permission: {type: String, default: "none", enum: [
-      "accept",
-      "reject",
-      "none",
+      "accept",   // explicit user ok
+      "reject",   // explicit user reject
+      "none",     // never asked
     ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
