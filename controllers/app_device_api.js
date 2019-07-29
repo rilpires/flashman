@@ -340,10 +340,10 @@ let processDeviceInfo = function(content, device, rollback) {
 
 let processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (content.hasOwnProperty('upnp_configs') &&
-      content.upnp_configs.hasOwnProperty('allow') &&
-      content.upnp_configs.hasOwnProperty('mac') &&
-      content.upnp_configs.mac.match(macRegex)) {
+  if (content.hasOwnProperty('device_configs') &&
+      content.device_configs.hasOwnProperty('upnp_allow') &&
+      content.device_configs.hasOwnProperty('mac') &&
+      content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = deepCopyObject(device.lan_devices);
@@ -351,15 +351,19 @@ let processUpnpInfo = function(content, device, rollback) {
     // Deep copy upnp requests for rollback
     rollback.upnp_requests = deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
-    let allow = "none";
-    if (content.upnp_configs.allow === true) {
-      allow = "accept";
-    } else if (content.upnp_configs.allow === false) {
-      allow = "reject";
-    }
-    let macDevice = content.upnp_configs.mac.toLowerCase();
+    let macDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
+        let allow = "none";
+        if (content.device_configs.upnp_allow === true) {
+          allow = "accept";
+        } else if (content.device_configs.upnp_allow === false) {
+          // Reject only if previous value was "accept" or if notification
+          if (content.device_configs.upnp_notification ||
+              device.lan_devices[idx].upnp_permission === "accept") {
+            allow = "reject";
+          }
+        }
         device.lan_devices[idx].upnp_permission = allow;
         device.lan_devices[idx].last_seen = Date.now();
         newLanDevice = false;
