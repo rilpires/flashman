@@ -8,7 +8,7 @@ const await = require('asyncawait/await');
 let messagingController = {};
 
 const getMessagingConfig = async(function() {
-  let config = await Config.findOne({is_default: true});
+  let config = await(Config.findOne({is_default: true}));
   if (!config || !config.messaging_configs.functions_fqdn ||
       !config.messaging_configs.secret_token) {
     return null;
@@ -22,7 +22,7 @@ const getTokensFromDevice = function(device, funcName, strName, data) {
 };
 
 const sendMessage = async(function(device) {
-  let config = await getMessagingConfig();
+  let config = await(getMessagingConfig());
   if (!config) {
     console.log('No valid config to send message');
     return;
