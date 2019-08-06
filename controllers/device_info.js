@@ -5,6 +5,7 @@ const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
+const messaging = require('./messaging')
 const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -388,6 +389,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
             console.log('Device ' + devId + ' upgraded successfuly');
+            messaging.sendUpdateDoneMessage(matchedDevice);
             matchedDevice.do_update = false;
             matchedDevice.do_update_status = 1; // success
           } else {
@@ -485,6 +487,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         let upgStatus = returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
+          messaging.sendUpdateMessage(matchedDevice);
           console.log('Device ' + req.body.id + ' is going on upgrade...');
         } else if (upgStatus == '0') {
           console.log('WARNING: Device ' + req.body.id +
@@ -899,7 +902,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
     }
     matchedDevice.save();
 
-    // TODO: Integrate with google cloud functions to send app message
+    messaging.sendUpnpMessage(matchedDevice, deviceMac, deviceName);
 
     console.log('Upnp request for device ' + id +
       ' received successfully.');
