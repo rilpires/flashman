@@ -48,7 +48,7 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
 
 // get message configs from control
 request({
-  url: 'https://controle.anlix.io/api/meassage/config',
+  url: 'https://controle.anlix.io/api/message/config',
   method: 'POST',
   json: {
     secret: process.env.FLM_COMPANY_SECRET,
@@ -62,6 +62,7 @@ request({
       }
       matchedConfig.messaging_configs.secret_token = resp.token;
       matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
+      matchedConfig.save();
     });
   }
 }, (err)=>{

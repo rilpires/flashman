@@ -16,12 +16,12 @@ const getMessagingConfig = async(function() {
   return config;
 });
 
-const getTokensFromDevice = function(device, funcName, strName, data) {
+const getTokensFromDevice = function(device) {
   // Filter devices that have a FCM uid registered
   return device.lan_devices.filter((d)=>d.fcm_uid).map((d)=>d.fcm_uid);
 };
 
-const sendMessage = async(function(device) {
+const sendMessage = async(function(device, funcName, strName, data) {
   let config = await(getMessagingConfig());
   if (!config) {
     console.log('No valid config to send message');

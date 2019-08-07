@@ -5,7 +5,7 @@ const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
-const messaging = require('./messaging')
+const messaging = require('./messaging');
 const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -896,7 +896,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
     if (lanDevice.upnp_permission !== "reject") {
       matchedDevice.upnp_requests.push(deviceMac); // add notification for app
     } else {
-      console.log('Upnp request for device ' + id + ' ignored because of'
+      console.log('Upnp request for device ' + id + ' ignored because of' +
         ' explicit user reject');
       return res.status(200).json({processed: 0, reason: 'User rejected upnp'});
     }
