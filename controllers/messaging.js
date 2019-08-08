@@ -7,6 +7,13 @@ const await = require('asyncawait/await');
 
 let messagingController = {};
 
+const randomBackoff = function(factor, offset) {
+  let interval = Math.random() * 1000; // scale to seconds
+  interval *= factor; // scale to factor
+  interval += (offset * 1000); // offset in seconds
+  return Math.floor(interval);
+};
+
 const getMessagingConfig = async(function() {
   let config = await(Config.findOne({is_default: true}));
   if (!config || !config.messaging_configs.functions_fqdn ||
@@ -21,7 +28,7 @@ const getTokensFromDevice = function(device) {
   return device.lan_devices.filter((d)=>d.fcm_uid).map((d)=>d.fcm_uid);
 };
 
-const sendMessage = async(function(device, funcName, strName, data) {
+const sendMessage = async(function(device, funcName, strName, data, retry=0) {
   let config = await(getMessagingConfig());
   if (!config) {
     console.log('No valid config to send message');
@@ -45,6 +52,13 @@ const sendMessage = async(function(device, funcName, strName, data) {
   }).then((resp)=>{
     console.log('Sent ' + strName + ' message to device ID ' + device._id);
   }, (err)=>{
+    // Check for quota exceeded
+    if (err.statusCode === 429 && retry <= 3) {
+      // Retry with exponential backoff
+      let interval = randomBackoff(retry+1, (retry*2)+1);
+      await(new Promise(resolve=>setTimeout(resolve, interval)));
+      return sendMessage(device, funcName, strName, data, retry+1);
+    }
     console.log('Error sending ' + strName + ' message');
   });
 });
