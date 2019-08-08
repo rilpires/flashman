@@ -487,7 +487,6 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         let upgStatus = returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          messaging.sendUpdateMessage(matchedDevice);
           console.log('Device ' + req.body.id + ' is going on upgrade...');
         } else if (upgStatus == '0') {
           console.log('WARNING: Device ' + req.body.id +
