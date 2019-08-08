@@ -53,6 +53,10 @@ messagingController.sendUpdateMessage = function(device) {
   sendMessage(device, 'sendUpdateMsg', 'update', null);
 };
 
+messagingController.sendUpdateErrorMessage = function(device) {
+  sendMessage(device, 'sendUpdateErrorMsg', 'update error', null);
+};
+
 messagingController.sendUpdateDoneMessage = function(device) {
   sendMessage(device, 'sendUpdateOkMsg', 'update ok', null);
 };
