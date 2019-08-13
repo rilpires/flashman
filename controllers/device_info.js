@@ -129,6 +129,11 @@ const createRegistry = function(req, res) {
                       'channel5ghz', null, errors);
       genericValidate(band5ghz, validator.validateBand,
                       'band5ghz', null, errors);
+
+      // Fix for devices that uses 11a as 11ac mode
+      if (mode5ghz == '11a') {
+        mode5ghz = '11ac';
+      }
       genericValidate(mode5ghz, validator.validateMode,
                       'mode5ghz', null, errors);
     }
@@ -349,6 +354,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'channel5ghz', null, errors);
             genericValidate(band5ghz, validator.validateBand,
                             'band5ghz', null, errors);
+
+            // Fix for devices that uses 11a as 11ac mode
+            if (mode5ghz == '11a') {
+              mode5ghz = '11ac';
+            }
             genericValidate(mode5ghz, validator.validateMode,
                             'mode5ghz', null, errors);
 
