@@ -13,6 +13,7 @@ const fileUpload = require('express-fileupload');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
+const request = require('request-promise-native');
 let session = require('express-session');
 
 let measurer = require('./controllers/measure');
@@ -43,6 +44,29 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
     });
     newConfig.save();
   }
+});
+
+// get message configs from control
+request({
+  url: 'https://controle.anlix.io/api/message/config',
+  method: 'POST',
+  json: {
+    secret: process.env.FLM_COMPANY_SECRET,
+  },
+}).then((resp)=>{
+  if (resp && resp.token && resp.fqdn) {
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        console.log('Error obtaining message config!');
+        return;
+      }
+      matchedConfig.messaging_configs.secret_token = resp.token;
+      matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
+      matchedConfig.save();
+    });
+  }
+}, (err)=>{
+  console.log('Error obtaining message config!');
 });
 
 // check administration user existence

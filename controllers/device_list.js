@@ -1,4 +1,5 @@
 const Validator = require('../public/javascripts/device_validator');
+const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
 const DeviceVersion = require('../models/device_version');
@@ -178,6 +179,7 @@ deviceListController.changeUpdate = function(req, res) {
     if (req.body.do_update) {
       matchedDevice.do_update_status = 0; // waiting
       matchedDevice.release = req.params.release.trim();
+      messaging.sendUpdateMessage(matchedDevice);
     } else {
       matchedDevice.do_update_status = 1; // success
     }
@@ -214,6 +216,7 @@ deviceListController.changeAllUpdates = function(req, res) {
       if (form.do_update) {
         matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
         matchedDevices[idx].do_update_status = 0; // waiting
+        messaging.sendUpdateMessage(matchedDevices[idx]);
       } else {
         matchedDevices[idx].do_update_status = 1; // success
       }
