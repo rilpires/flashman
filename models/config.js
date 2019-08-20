@@ -5,6 +5,10 @@ let configSchema = new mongoose.Schema({
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   pppoePassLength: {type: Number, default: 8},
+  messaging_configs: {
+    functions_fqdn: String,
+    secret_token: String,
+  },
   measure_configs: {
     is_active: {type: Boolean, default: false},
     is_license_active: {type: Boolean, default: false},

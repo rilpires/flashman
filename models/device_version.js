@@ -103,6 +103,16 @@ const grantLanDevices = function(version) {
   }
 };
 
+const grantUpnp = function(version) {
+  // if (version.match(versionRegex)) {
+  //   return (versionCompare(version, '0.16.0') >= 0);
+  // } else {
+  //   // Development version, enable everything by default
+  //   return true;
+  // }
+  return false;
+}
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -115,6 +125,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanDevices = grantLanDevices(version);
+  result.grantUpnp = grantUpnp(version);
   return result;
 };
 
