@@ -308,7 +308,9 @@ let processDeviceInfo = function(content, device, rollback) {
     let macDevice = configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
-        device.lan_devices[idx].name = configs.name;
+        if (configs.name) {
+          device.lan_devices[idx].name = configs.name;
+        }
         device.lan_devices[idx].last_seen = Date.now();
         newLanDevice = false;
         if (configs.hasOwnProperty('rules')) {
@@ -336,12 +338,58 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
+let processUpnpInfo = function(content, device, rollback) {
+  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (content.hasOwnProperty('device_configs') &&
+      content.device_configs.hasOwnProperty('upnp_allow') &&
+      content.device_configs.hasOwnProperty('mac') &&
+      content.device_configs.mac.match(macRegex)) {
+    // Deep copy lan devices for rollback
+    if (!rollback.lan_devices) {
+      rollback.lan_devices = deepCopyObject(device.lan_devices);
+    }
+    // Deep copy upnp requests for rollback
+    rollback.upnp_requests = deepCopyObject(device.upnp_requests);
+    let newLanDevice = true;
+    let macDevice = content.device_configs.mac.toLowerCase();
+    for (let idx = 0; idx < device.lan_devices.length; idx++) {
+      if (device.lan_devices[idx].mac == macDevice) {
+        let allow = "none";
+        if (content.device_configs.upnp_allow === true) {
+          allow = "accept";
+        } else if (content.device_configs.upnp_allow === false) {
+          // Reject only if previous value was "accept" or if notification
+          if (content.device_configs.upnp_notification ||
+              device.lan_devices[idx].upnp_permission === "accept") {
+            allow = "reject";
+          }
+        }
+        device.lan_devices[idx].upnp_permission = allow;
+        device.lan_devices[idx].last_seen = Date.now();
+        newLanDevice = false;
+      }
+    }
+    if (newLanDevice) {
+      device.lan_devices.push({
+        mac: macDevice,
+        upnp_permission: allow,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
+      });
+    }
+    device.upnp_requests = device.upnp_requests.filter((r) => r !== macDevice);
+    return true;
+  }
+  return false;
+};
+
 let processAll = function(content, device, rollback) {
   processWifi(content, device, rollback);
   processPassword(content, device, rollback);
   processBlacklist(content, device, rollback);
   processWhitelist(content, device, rollback);
   processDeviceInfo(content, device, rollback);
+  processUpnpInfo(content, device, rollback);
 };
 
 let formatDevices = function(device) {
@@ -377,6 +425,7 @@ let formatDevices = function(device) {
     const timeDiff = Math.abs(justNow - lastSeen);
     const timeDiffSeconds = Math.floor(timeDiff / 3600);
     let online = (timeDiffSeconds < 5);
+    let upnpPermission = lanDevice.upnp_permission === 'accept';
     let signal = 'none';
     if (lanDevice.wifi_snr >= 35) signal = 'excellent';
     else if (lanDevice.wifi_snr >= 25) signal = 'good';
@@ -395,6 +444,7 @@ let formatDevices = function(device) {
       online: online,
       signal: signal,
       is_wifi: isWifi,
+      upnp_allow: upnpPermission,
     };
   });
   return {
@@ -416,8 +466,16 @@ appDeviceAPIController.registerApp = function(req, res) {
         let deviceObj = matchedDevice.lan_devices.find((device)=>{
           return device.mac === req.body.app_mac;
         });
-        if (deviceObj && !deviceObj.app_uid) {
+        if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
           deviceObj.app_uid = req.body.app_id;
+        }
+        else if (!deviceObj) {
+          matchedDevice.lan_devices.push({
+            mac: req.body.app_mac,
+            app_uid: req.body.app_id,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
         }
       }
       let appObj = matchedDevice.apps.filter(function(app) {
@@ -593,6 +651,21 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
 
+    // Check if FCM ID has changed, update if so
+    let appid = req.body.app_id;
+    let fcmid = req.body.content.fcmToken;
+    let lanDevice = matchedDevice.lan_devices.find((d)=>d.app_uid===appid);
+    if (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid) {
+      // Query again but this time without .lean() so we can edit register
+      DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
+        if (err || !matchedDeviceEdit) return;
+        let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+        device.fcm_uid = fcmid;
+        device.last_seen = Date.now();
+        matchedDeviceEdit.save();
+      });
+    }
+
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
@@ -617,6 +690,20 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       };
     }
 
+    let notifications = [];
+    matchedDevice.upnp_requests.forEach((mac)=>{
+      let upnpDevice = matchedDevice.lan_devices.find((d)=>d.mac===mac);
+      if (!upnpDevice) return;
+      let name = upnpDevice.upnp_name;
+      if (upnpDevice.name) {
+        name = upnpDevice.name;
+      }
+      notifications.push({
+        mac: mac,
+        name: name,
+      });
+    });
+
     let localDevice = matchedDevice.lan_devices.find((device)=>{
       return req.body.app_id === device.app_uid;
     });
@@ -626,6 +713,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
+      notifications: notifications,
       model: matchedDevice.model,
       version: matchedDevice.version,
       release: matchedDevice.installed_release,

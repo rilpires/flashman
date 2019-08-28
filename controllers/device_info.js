@@ -5,6 +5,7 @@ const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
+const messaging = require('./messaging');
 const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -129,6 +130,11 @@ const createRegistry = function(req, res) {
                       'channel5ghz', null, errors);
       genericValidate(band5ghz, validator.validateBand,
                       'band5ghz', null, errors);
+
+      // Fix for devices that uses 11a as 11ac mode
+      if (mode5ghz == '11a') {
+        mode5ghz = '11ac';
+      }
       genericValidate(mode5ghz, validator.validateMode,
                       'mode5ghz', null, errors);
     }
@@ -349,6 +355,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'channel5ghz', null, errors);
             genericValidate(band5ghz, validator.validateBand,
                             'band5ghz', null, errors);
+
+            // Fix for devices that uses 11a as 11ac mode
+            if (mode5ghz == '11a') {
+              mode5ghz = '11ac';
+            }
             genericValidate(mode5ghz, validator.validateMode,
                             'mode5ghz', null, errors);
 
@@ -388,6 +399,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
             console.log('Device ' + devId + ' upgraded successfuly');
+            messaging.sendUpdateDoneMessage(matchedDevice);
             matchedDevice.do_update = false;
             matchedDevice.do_update_status = 1; // success
           } else {
@@ -848,6 +860,61 @@ deviceInfoController.receivePingResult = function(req, res) {
     sio.anlixSendPingTestNotifications(id, req.body);
     console.log('Ping results for device ' +
       id + ' received successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.receiveUpnp = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Upnp request: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Upnp request for device ' + id +
+        ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Upnp request for device ' + id +
+        ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+
+    let deviceMac = req.body.mac;
+    let deviceName = req.body.name;
+    let lanDevice = matchedDevice.lan_devices.find((d)=>d.mac===deviceMac);
+    if (lanDevice) {
+      lanDevice.upnp_name = deviceName;
+      lanDevice.last_seen = Date.now();
+    } else {
+      matchedDevice.lan_devices.push({
+        mac: blackMacDevice,
+        upnp_name: deviceName,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
+      });
+    }
+    if (lanDevice.upnp_permission !== "reject") {
+      matchedDevice.upnp_requests.push(deviceMac); // add notification for app
+    } else {
+      console.log('Upnp request for device ' + id + ' ignored because of' +
+        ' explicit user reject');
+      return res.status(200).json({processed: 0, reason: 'User rejected upnp'});
+    }
+    matchedDevice.save();
+
+    messaging.sendUpnpMessage(matchedDevice, deviceMac, deviceName);
+
+    console.log('Upnp request for device ' + id +
+      ' received successfully.');
 
     return res.status(200).json({processed: 1});
   });
