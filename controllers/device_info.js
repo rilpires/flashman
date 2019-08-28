@@ -475,6 +475,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'named_devices': serializeNamed(namedDevices),
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
+            'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
           });
         });
       }
