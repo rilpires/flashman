@@ -26,6 +26,42 @@ $(document).ready(function() {
     });
   };
 
+  const setUpnp = function(deviceId, lanDeviceId, upnpPermission, btnStatus) {
+    $('.btn-upnp').prop('disabled', true);
+
+    if (upnpPermission == 'accept') {
+      upnpPermission = 'reject';
+    } else {
+      upnpPermission = 'accept';
+    }
+
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/updateupnp',
+      type: 'post',
+      dataType: 'json',
+      traditional: true,
+      data: {lanid: lanDeviceId, permission: upnpPermission},
+      success: function(res) {
+        if (res.success) {
+          btnStatus.removeClass('indigo-text red-text')
+                   .addClass(upnpPermission == 'accept' ?
+                             'indigo-text' : 'red-text')
+                   .html(upnpPermission == 'accept' ?
+                         'Liberado' : 'Bloqueado');
+          btnStatus.parent().data('permission', upnpPermission);
+          setTimeout(function() {
+            $('.btn-upnp').prop('disabled', false);
+          }, 1000);
+        } else {
+          $('.btn-upnp').prop('disabled', false);
+        }
+      },
+      error: function(xhr, status, error) {
+        $('.btn-upnp').prop('disabled', false);
+      },
+    });
+  };
+
   const fetchLanDevices = function(deviceId) {
     $.ajax({
       type: 'GET',
@@ -108,6 +144,21 @@ $(document).ready(function() {
                       $('<i>').addClass('fas fa-search'),
                       $('<span>').html('&nbsp IPv6')
                     ),
+                    $('<button>').addClass('btn btn-primary btn-sm ' +
+                                           'ml-0 btn-upnp')
+                                 .attr('type', 'button')
+                                 .attr('data-mac', device.mac)
+                                 .attr('data-permission',
+                                       device.upnp_permission)
+                                 .prop('disabled', false)
+                    .append(
+                      $('<span>').html('UPnP &nbsp'),
+                      $('<span>').addClass('upnp-status-text')
+                                 .addClass(device.upnp_permission == 'accept' ?
+                                           'indigo-text' : 'red-text')
+                                 .html(device.upnp_permission == 'accept' ?
+                                       'Liberado' : 'Bloqueado')
+                    ),
                     // IPv4 section
                     $('<div>').addClass('collapse')
                               .attr('id', 'ipv4-collapse-' + idx)
@@ -182,6 +233,14 @@ $(document).ready(function() {
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
     let id = $('#lan-devices-hlabel').text();
     refreshLanDevices(id);
+  });
+
+  $(document).on('click', '.btn-upnp', function(event) {
+    let id = $('#lan-devices-hlabel').text();
+    let currBtnStatus = $(this).children('.upnp-status-text');
+    let devId = $(this).data('mac');
+    let upnpPermission = $(this).data('permission');
+    setUpnp(id, devId, upnpPermission, currBtnStatus);
   });
 
   // Important: include and initialize socket.io first using socket var
