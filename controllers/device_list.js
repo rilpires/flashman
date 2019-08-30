@@ -467,6 +467,25 @@ deviceListController.sendMqttMsg = function(req, res) {
         }
         mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
         break;
+      case 'updateupnp':
+        if (device) {
+          let lanDeviceId = req.body.lanid;
+          let lanDevicePerm = (req.body.permission === 'accept' ?
+                               'accept' : 'reject');
+          device.lan_devices.filter(function(lanDevice) {
+            if (lanDevice.mac.toUpperCase() === lanDeviceId.toUpperCase()) {
+              lanDevice.upnp_permission = lanDevicePerm;
+              device.upnp_devices_index = Date.now();
+              return true;
+            } else {
+              return false;
+            }
+          });
+          device.save(function(err) {
+            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          });
+        }
+        break;
       case 'log':
       case 'boot':
       case 'onlinedevs':
