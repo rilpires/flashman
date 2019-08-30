@@ -1,8 +1,9 @@
 
 $(document).ready(function() {
-  const refreshLanDevices = function(deviceId) {
+  const refreshLanDevices = function(deviceId, upnpSupport) {
     $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
+    $('#lan-devices').attr('data-validate-upnp', upnpSupport);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -13,14 +14,14 @@ $(document).ready(function() {
         } else {
           $('#lan-devices-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
-          fetchLanDevices(deviceId);
+          fetchLanDevices(deviceId, upnpSupport);
           $('.btn-sync-lan-devs').prop('disabled', true);
         }
       },
       error: function(xhr, status, error) {
         $('#lan-devices-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
-        fetchLanDevices(deviceId);
+        fetchLanDevices(deviceId, upnpSupport);
         $('.btn-sync-lan-devs').prop('disabled', true);
       },
     });
@@ -62,7 +63,13 @@ $(document).ready(function() {
     });
   };
 
-  const fetchLanDevices = function(deviceId) {
+  const fetchLanDevices = function(deviceId, upnpSupport) {
+    let grantUpnp = false;
+
+    if ($('#devices-table-content').data('role')) {
+      let role = $('#devices-table-content').data('role');
+      grantUpnp = role.grantUpnp;
+    }
     $.ajax({
       type: 'GET',
       url: '/devicelist/landevices/' + deviceId,
@@ -144,20 +151,24 @@ $(document).ready(function() {
                       $('<i>').addClass('fas fa-search'),
                       $('<span>').html('&nbsp IPv6')
                     ),
-                    $('<button>').addClass('btn btn-primary btn-sm ' +
-                                           'ml-0 btn-upnp')
-                                 .attr('type', 'button')
-                                 .attr('data-mac', device.mac)
-                                 .attr('data-permission',
-                                       device.upnp_permission)
-                                 .prop('disabled', false)
-                    .append(
-                      $('<span>').html('UPnP &nbsp'),
-                      $('<span>').addClass('upnp-status-text')
-                                 .addClass(device.upnp_permission == 'accept' ?
-                                           'indigo-text' : 'red-text')
-                                 .html(device.upnp_permission == 'accept' ?
-                                       'Liberado' : 'Bloqueado')
+                    (upnpSupport ?
+                      $('<button>').addClass('btn btn-primary btn-sm ' +
+                                             'ml-0 btn-upnp')
+                                   .attr('type', 'button')
+                                   .attr('data-mac', device.mac)
+                                   .attr('data-permission',
+                                         device.upnp_permission)
+                                   .prop('disabled', false)
+                      .append(
+                        $('<span>').html('UPnP &nbsp'),
+                        $('<span>')
+                          .addClass('upnp-status-text')
+                          .addClass(device.upnp_permission == 'accept' ?
+                                    'indigo-text' : 'red-text')
+                          .html(device.upnp_permission == 'accept' ?
+                                'Liberado' : 'Bloqueado')
+                      ) :
+                      ''
                     ),
                     // IPv4 section
                     $('<div>').addClass('collapse')
@@ -227,12 +238,14 @@ $(document).ready(function() {
   $(document).on('click', '.btn-lan-devices-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    refreshLanDevices(id); // Refresh devices status
+    let upnpSupport = row.data('validate-upnp');
+    refreshLanDevices(id, upnpSupport); // Refresh devices status
   });
 
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
     let id = $('#lan-devices-hlabel').text();
-    refreshLanDevices(id);
+    let upnpSupport = $('#lan-devices').data('validate-upnp');
+    refreshLanDevices(id, upnpSupport);
   });
 
   $(document).on('click', '.btn-upnp', function(event) {
@@ -247,12 +260,13 @@ $(document).ready(function() {
   socket.on('ONLINEDEVS', function(macaddr, data) {
     if (($('#lan-devices').data('bs.modal') || {})._isShown) {
       let id = $('#lan-devices-hlabel').text();
+      let upnpSupport = $('#lan-devices').data('validate-upnp');
       if (id == macaddr) {
         $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
         // Clear old data
         $('#lan-devices-body').empty();
         $('#lan-devices-placeholder').show();
-        fetchLanDevices(id);
+        fetchLanDevices(id, upnpSupport);
       }
     }
   });
