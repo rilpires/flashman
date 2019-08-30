@@ -64,11 +64,15 @@ $(document).ready(function() {
   };
 
   const fetchLanDevices = function(deviceId, upnpSupport) {
-    let grantUpnp = false;
+    let isSuperuser = false;
+    let grantLanDevices = 0;
 
+    if ($('#devices-table-content').data('superuser')) {
+      isSuperuser = $('#devices-table-content').data('superuser');
+    }
     if ($('#devices-table-content').data('role')) {
       let role = $('#devices-table-content').data('role');
-      grantUpnp = role.grantUpnp;
+      grantLanDevices = role.grantLanDevices;
     }
     $.ajax({
       type: 'GET',
@@ -151,7 +155,7 @@ $(document).ready(function() {
                       $('<i>').addClass('fas fa-search'),
                       $('<span>').html('&nbsp IPv6')
                     ),
-                    (upnpSupport ?
+                    ((isSuperuser || grantLanDevices > 1) && upnpSupport ?
                       $('<button>').addClass('btn btn-primary btn-sm ' +
                                              'ml-0 btn-upnp')
                                    .attr('type', 'button')
