@@ -475,6 +475,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           device.lan_devices.filter(function(lanDevice) {
             if (lanDevice.mac.toUpperCase() === lanDeviceId.toUpperCase()) {
               lanDevice.upnp_permission = lanDevicePerm;
+              device.upnp_devices_index = Date.now();
               return true;
             } else {
               return false;
