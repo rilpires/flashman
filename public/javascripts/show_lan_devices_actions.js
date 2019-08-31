@@ -1,8 +1,9 @@
 
 $(document).ready(function() {
-  const refreshLanDevices = function(deviceId) {
+  const refreshLanDevices = function(deviceId, upnpSupport) {
     $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
+    $('#lan-devices').attr('data-validate-upnp', upnpSupport);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -13,20 +14,66 @@ $(document).ready(function() {
         } else {
           $('#lan-devices-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
-          fetchLanDevices(deviceId);
+          fetchLanDevices(deviceId, upnpSupport);
           $('.btn-sync-lan-devs').prop('disabled', true);
         }
       },
       error: function(xhr, status, error) {
         $('#lan-devices-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
-        fetchLanDevices(deviceId);
+        fetchLanDevices(deviceId, upnpSupport);
         $('.btn-sync-lan-devs').prop('disabled', true);
       },
     });
   };
 
-  const fetchLanDevices = function(deviceId) {
+  const setUpnp = function(deviceId, lanDeviceId, upnpPermission, btnStatus) {
+    $('.btn-upnp').prop('disabled', true);
+
+    if (upnpPermission == 'accept') {
+      upnpPermission = 'reject';
+    } else {
+      upnpPermission = 'accept';
+    }
+
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/updateupnp',
+      type: 'post',
+      dataType: 'json',
+      traditional: true,
+      data: {lanid: lanDeviceId, permission: upnpPermission},
+      success: function(res) {
+        if (res.success) {
+          btnStatus.removeClass('indigo-text red-text')
+                   .addClass(upnpPermission == 'accept' ?
+                             'indigo-text' : 'red-text')
+                   .html(upnpPermission == 'accept' ?
+                         'Liberado' : 'Bloqueado');
+          btnStatus.parent().data('permission', upnpPermission);
+          setTimeout(function() {
+            $('.btn-upnp').prop('disabled', false);
+          }, 1000);
+        } else {
+          $('.btn-upnp').prop('disabled', false);
+        }
+      },
+      error: function(xhr, status, error) {
+        $('.btn-upnp').prop('disabled', false);
+      },
+    });
+  };
+
+  const fetchLanDevices = function(deviceId, upnpSupport) {
+    let isSuperuser = false;
+    let grantLanDevices = 0;
+
+    if ($('#devices-table-content').data('superuser')) {
+      isSuperuser = $('#devices-table-content').data('superuser');
+    }
+    if ($('#devices-table-content').data('role')) {
+      let role = $('#devices-table-content').data('role');
+      grantLanDevices = role.grantLanDevices;
+    }
     $.ajax({
       type: 'GET',
       url: '/devicelist/landevices/' + deviceId,
@@ -108,6 +155,25 @@ $(document).ready(function() {
                       $('<i>').addClass('fas fa-search'),
                       $('<span>').html('&nbsp IPv6')
                     ),
+                    ((isSuperuser || grantLanDevices > 1) && upnpSupport ?
+                      $('<button>').addClass('btn btn-primary btn-sm ' +
+                                             'ml-0 btn-upnp')
+                                   .attr('type', 'button')
+                                   .attr('data-mac', device.mac)
+                                   .attr('data-permission',
+                                         device.upnp_permission)
+                                   .prop('disabled', false)
+                      .append(
+                        $('<span>').html('UPnP &nbsp'),
+                        $('<span>')
+                          .addClass('upnp-status-text')
+                          .addClass(device.upnp_permission == 'accept' ?
+                                    'indigo-text' : 'red-text')
+                          .html(device.upnp_permission == 'accept' ?
+                                'Liberado' : 'Bloqueado')
+                      ) :
+                      ''
+                    ),
                     // IPv4 section
                     $('<div>').addClass('collapse')
                               .attr('id', 'ipv4-collapse-' + idx)
@@ -176,24 +242,35 @@ $(document).ready(function() {
   $(document).on('click', '.btn-lan-devices-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    refreshLanDevices(id); // Refresh devices status
+    let upnpSupport = row.data('validate-upnp');
+    refreshLanDevices(id, upnpSupport); // Refresh devices status
   });
 
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
     let id = $('#lan-devices-hlabel').text();
-    refreshLanDevices(id);
+    let upnpSupport = $('#lan-devices').data('validate-upnp');
+    refreshLanDevices(id, upnpSupport);
+  });
+
+  $(document).on('click', '.btn-upnp', function(event) {
+    let id = $('#lan-devices-hlabel').text();
+    let currBtnStatus = $(this).children('.upnp-status-text');
+    let devId = $(this).data('mac');
+    let upnpPermission = $(this).data('permission');
+    setUpnp(id, devId, upnpPermission, currBtnStatus);
   });
 
   // Important: include and initialize socket.io first using socket var
   socket.on('ONLINEDEVS', function(macaddr, data) {
     if (($('#lan-devices').data('bs.modal') || {})._isShown) {
       let id = $('#lan-devices-hlabel').text();
+      let upnpSupport = $('#lan-devices').data('validate-upnp');
       if (id == macaddr) {
         $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
         // Clear old data
         $('#lan-devices-body').empty();
         $('#lan-devices-placeholder').show();
-        fetchLanDevices(id);
+        fetchLanDevices(id, upnpSupport);
       }
     }
   });
