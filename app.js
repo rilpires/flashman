@@ -46,29 +46,6 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
   }
 });
 
-// get message configs from control
-request({
-  url: 'https://controle.anlix.io/api/message/config',
-  method: 'POST',
-  json: {
-    secret: process.env.FLM_COMPANY_SECRET,
-  },
-}).then((resp)=>{
-  if (resp && resp.token && resp.fqdn) {
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
-      if (err || !matchedConfig) {
-        console.log('Error obtaining message config!');
-        return;
-      }
-      matchedConfig.messaging_configs.secret_token = resp.token;
-      matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-      matchedConfig.save();
-    });
-  }
-}, (err)=>{
-  console.log('Error obtaining message config!');
-});
-
 // check administration user existence
 User.find({is_superuser: true}, function(err, matchedUsers) {
   if (err || !matchedUsers || 0 === matchedUsers.length) {
@@ -147,6 +124,30 @@ if (process.env.FLM_COMPANY_SECRET) {
   }
   app.locals.secret = companySecret.secret;
 }
+
+// get message configs from control
+request({
+  url: 'https://controle.anlix.io/api/message/config',
+  method: 'POST',
+  json: {
+    secret: app.locals.secret,
+  },
+}).then((resp)=>{
+  if (resp && resp.token && resp.fqdn) {
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        console.log('Error obtaining message config!');
+        return;
+      }
+      matchedConfig.messaging_configs.secret_token = resp.token;
+      matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
+      console.log('Obtained message config successfully!');
+      matchedConfig.save();
+    });
+  }
+}, (err)=>{
+  console.log('Error obtaining message config!');
+});
 
 // Check md5 file hashes on firmware directory
 fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {

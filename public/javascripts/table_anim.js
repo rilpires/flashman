@@ -402,6 +402,7 @@ $(document).ready(function() {
             let grantPortForward = device.permissions.grantPortForward;
             let grantPingTest = device.permissions.grantPingTest;
             let grantLanDevices = device.permissions.grantLanDevices;
+            let grantUpnpSupport = device.permissions.grantUpnp;
 
             deviceTableContent.append(
               $('<tr>').addClass('csv-export').attr('id', device._id)
@@ -535,6 +536,7 @@ $(document).ready(function() {
                        .attr('data-validate-lan', grantLanEdit)
                        .attr('data-validate-port-forward-asym', grantPortForwardAsym)
                        .attr('data-validate-port-open-ipv6', grantPortOpenIpv6)
+                       .attr('data-validate-upnp', grantUpnpSupport)
                        .attr('data-minlength-pass-pppoe', res.min_length_pass_pppoe)
 
               .append(

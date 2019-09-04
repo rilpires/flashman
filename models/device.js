@@ -60,10 +60,10 @@ let deviceSchema = new Schema({
     wifi_mode: String, // G, N, AC
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
-    upnp_permission: {type: String, default: "none", enum: [
-      "accept",   // explicit user ok
-      "reject",   // explicit user reject
-      "none",     // never asked
+    upnp_permission: {type: String, default: 'none', enum: [
+      'accept', // explicit user ok
+      'reject', // explicit user reject
+      'none', // never asked
     ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
@@ -94,6 +94,8 @@ let deviceSchema = new Schema({
   forward_index: String,
   // For blocked devices
   blocked_devices_index: String,
+  // For upnp devices permissions
+  upnp_devices_index: String,
   // Store hosts to measure against
   ping_hosts: {
     type: [String],

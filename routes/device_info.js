@@ -12,6 +12,7 @@ router.route('/mqtt/add').post(deviceInfoController.registerMqtt);
 router.route('/get/portforward').post(deviceInfoController.getPortForward);
 router.route('/get/pinghosts').post(deviceInfoController.getPingHosts);
 router.route('/get/measureconfig').post(deviceInfoController.getZabbixConfig);
+router.route('/get/upnpdevices').post(deviceInfoController.getUpnpDevsPerm);
 router.route('/receive/upnp').post(deviceInfoController.receiveUpnp);
 router.route('/receive/devices').post(deviceInfoController.receiveDevices);
 router.route('/receive/pingresult').post(deviceInfoController.receivePingResult);

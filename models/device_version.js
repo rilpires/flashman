@@ -104,14 +104,14 @@ const grantLanDevices = function(version) {
 };
 
 const grantUpnp = function(version) {
-  // if (version.match(versionRegex)) {
-  //   return (versionCompare(version, '0.16.0') >= 0);
-  // } else {
-  //   // Development version, enable everything by default
-  //   return true;
-  // }
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.21.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
   return false;
-}
+};
 
 DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   let result = {};

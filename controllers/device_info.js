@@ -475,6 +475,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'named_devices': serializeNamed(namedDevices),
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
+            'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
           });
         });
       }
@@ -829,6 +830,44 @@ deviceInfoController.getPingHosts = function(req, res) {
     });
   } else {
     console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+      'failed: Client Secret not match!');
+    return res.status(401).json({success: false});
+  }
+};
+
+deviceInfoController.getUpnpDevsPerm = function(req, res) {
+  if (req.body.secret == req.app.locals.secret) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+      if (err) {
+        console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
+          'failed: Cant get device profile.');
+        return res.status(400).json({success: false});
+      }
+      if (!matchedDevice) {
+        console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
+          'failed: No device found.');
+        return res.status(404).json({success: false});
+      }
+
+      let outData = [];
+      for (let i = 0; i < matchedDevice.lan_devices.length; i++) {
+        tmpData = {};
+        tmpData.mac = matchedDevice.lan_devices[i].mac;
+        tmpData.dmz = matchedDevice.lan_devices[i].dmz;
+        tmpData.upnp = matchedDevice.lan_devices[i].upnp_permission;
+        outData.push(tmpData);
+      }
+
+      if (matchedDevice.upnp_devices_index) {
+        return res.status(200).json({
+          'success': true,
+          'upnp_devices_index': matchedDevice.upnp_devices_index,
+          'upnp_devices': outData,
+        });
+      }
+    });
+  } else {
+    console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
       'failed: Client Secret not match!');
     return res.status(401).json({success: false});
   }

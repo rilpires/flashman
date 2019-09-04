@@ -1,5 +1,8 @@
 # Created by https://www.gitignore.io/api/code,vim,node
 
+# Custom
+secret.json
+
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/
 .settings/

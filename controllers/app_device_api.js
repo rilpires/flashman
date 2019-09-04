@@ -215,8 +215,7 @@ let processBlacklist = function(content, device, rollback) {
     });
     device.blocked_devices_index = Date.now();
     return true;
-  }
-  else if (content.hasOwnProperty('device_configs') &&
+  } else if (content.hasOwnProperty('device_configs') &&
            content.device_configs.hasOwnProperty('mac') &&
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
@@ -271,8 +270,7 @@ let processWhitelist = function(content, device, rollback) {
         }
       }
     }
-  }
-  else if (content.hasOwnProperty('device_configs') &&
+  } else if (content.hasOwnProperty('device_configs') &&
            content.device_configs.hasOwnProperty('mac') &&
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
@@ -354,18 +352,19 @@ let processUpnpInfo = function(content, device, rollback) {
     let macDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
-        let allow = "none";
+        let allow = 'none';
         if (content.device_configs.upnp_allow === true) {
-          allow = "accept";
+          allow = 'accept';
         } else if (content.device_configs.upnp_allow === false) {
           // Reject only if previous value was "accept" or if notification
           if (content.device_configs.upnp_notification ||
-              device.lan_devices[idx].upnp_permission === "accept") {
-            allow = "reject";
+              device.lan_devices[idx].upnp_permission === 'accept') {
+            allow = 'reject';
           }
         }
         device.lan_devices[idx].upnp_permission = allow;
         device.lan_devices[idx].last_seen = Date.now();
+        device.upnp_devices_index = Date.now();
         newLanDevice = false;
       }
     }
