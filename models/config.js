@@ -18,13 +18,28 @@ let configSchema = new mongoose.Schema({
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
+    is_aborted: {type: Boolean, default: false},
     date: {type: Date},
-    allowed_time_range: {type: Date},
+    allowed_time_range: {
+      start: {type: Date},
+      end: {type: Date},
+    },
     rule: {
-      total_count: {type: Number},
-      devices: [String],
-      in_progress_devices: [String],
       release: {type: String},
+      to_do_devices: [{
+        mac: {type: String, required: true},
+        state: {type: String, enum: ['update', 'retry', 'offline']},
+        retry_count: {type: Number, default: 0},
+      }],
+      in_progress_devices: [{
+        mac: {type: String, required: true},
+        state: {type: String, enum: ['downloading', 'updating']},
+        retry_count: {type: Number, default: 0},
+      }],
+      done_devices: [{
+        mac: {type: String, required: true},
+        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off']},
+      }],
     },
   },
   traps_callbacks: {
