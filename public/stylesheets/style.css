@@ -155,3 +155,23 @@ input:checked + .slider:before {
 .fa-chevron-up::before {
   cursor: pointer;
 }
+
+/* Stepper color override */
+.bs-stepper .step-trigger:focus {
+  color: #3f968e;
+  outline: none;
+}
+
+.active .bs-stepper-circle {
+  background-color: #4db6ac;
+}
+
+.bs-stepper .step-trigger {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+/* Time picker color override */
+.table-condensed a > .fa {
+  color: #4db6ac;
+}
