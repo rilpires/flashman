@@ -103,6 +103,11 @@ if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
 }
 
+// temporary dir must exist
+if (!fs.existsSync('./tmp')) {
+  fs.mkdirSync('./tmp');
+}
+
 if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = process.env.FLM_COMPANY_SECRET;
 } else {
