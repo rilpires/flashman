@@ -262,11 +262,20 @@ app.use('/scripts/pako',
 app.use('/scripts/popper',
   express.static(path.join(__dirname, 'node_modules/popper.js/dist'))
 );
+app.use('/scripts/moment',
+  express.static(path.join(__dirname, 'node_modules/moment/min'))
+);
 app.use('/scripts/bootstrap',
   express.static(path.join(__dirname, 'node_modules/bootstrap/dist'))
 );
 app.use('/scripts/mdbootstrap',
   express.static(path.join(__dirname, 'node_modules/mdbootstrap'))
+);
+app.use('/scripts/bs-stepper',
+  express.static(path.join(__dirname, 'node_modules/bs-stepper/dist'))
+);
+app.use('/scripts/tempusdominus',
+  express.static(path.join(__dirname, 'node_modules/tempusdominus-bootstrap-4/build'))
 );
 app.use('/scripts/selectize',
   express.static(path.join(__dirname, 'node_modules/selectize/dist'))
