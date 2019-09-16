@@ -12,7 +12,7 @@ let deviceListController = {};
 const fs = require('fs');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
-const getReleases = function(modelAsArray=false) {
+deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
   fs.readdirSync(imageReleasesDir).forEach((filename) => {
@@ -229,13 +229,9 @@ deviceListController.changeAllUpdates = function(req, res) {
   });
 };
 
-deviceListController.searchDeviceReg = function(req, res) {
+deviceListController.searchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
-  let reqPage = 1;
-  let elementsPerPage = 10;
-  // let queryContents = req.query.content.split(',');
-  let queryContents = req.body.filter_list.split(',');
 
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
@@ -328,6 +324,16 @@ deviceListController.searchDeviceReg = function(req, res) {
     }
   }
   finalQuery[queryLogicalOperator] = finalQueryArray;
+  return finalQuery;
+};
+
+deviceListController.searchDeviceReg = function(req, res) {
+  let reqPage = 1;
+  let elementsPerPage = 10;
+  // let queryContents = req.query.content.split(',');
+  let queryContents = req.body.filter_list.split(',');
+
+  let finalQuery = deviceListController.searchDeviceQuery(queryContents);
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -348,7 +354,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       });
     }
     let lastHour = new Date();
-    let releases = getReleases();
+    let releases = deviceListController.getReleases();
     lastHour.setHours(lastHour.getHours() - 1);
 
     let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
@@ -386,7 +392,7 @@ deviceListController.searchDeviceReg = function(req, res) {
             pages: matchedDevices.pages,
             min_length_pass_pppoe: matchedConfig.pppoePassLength,
             status: status,
-            single_releases: getReleases(true),
+            single_releases: deviceListController.getReleases(true),
             filter_list: req.body.filter_list,
             devices: enrichedMatchedDevs,
           });
