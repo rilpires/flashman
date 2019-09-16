@@ -1,5 +1,6 @@
 
 const express = require('express');
+const updaterScheduleController = require('../controllers/update_scheduler');
 const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
 
@@ -31,6 +32,17 @@ router.route('/updateall').post(
 router.route('/search').put(
   authController.ensureLogin(),
   deviceListController.searchDeviceReg);
+
+// Update schedule configuration
+router.route('/scheduler/releases').put(
+  authController.ensureLogin(),
+  updaterScheduleController.getDevicesReleases
+);
+
+router.route('/scheduler/upload').post(
+  authController.ensureLogin(),
+  updaterScheduleController.uploadDevicesFile
+);
 
 // Delete device
 router.route('/delete/:id').post(
