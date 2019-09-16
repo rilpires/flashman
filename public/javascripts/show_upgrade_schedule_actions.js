@@ -15,9 +15,10 @@ const resetStepperData = function(stepper) {
 };
 
 const isWhenPartValidated = function() {
-  if ($('input[name=weekDays]:checked').length > 0 &&
+  if ($('input[name=updateNow]:checked').length > 0 || (
+      $('input[name=weekDays]:checked').length > 0 &&
       $('#scheduleStart input').val() != '' &&
-      $('#scheduleEnd input').val() != '') {
+      $('#scheduleEnd input').val() != '')) {
     return true;
   }
   return false;
@@ -113,11 +114,22 @@ $(document).ready(function() {
     $('#which-btn-next').prop('disabled', false);
   });
 
+  $('#who-part-type').click((event)=>{
+    let useCsv = $('.nav-link.active').attr('id') === 'whichSearch';
+    if (useCsv) {
+      $('#which-btn-next').prop('disabled', true);
+    } else {
+      $('#which-btn-next').prop(
+        'disabled',
+        ($('input[name=deviceCount]:checked').length === 0)
+      );
+    }
+  });
+
   $('#which-btn-next').prop('disabled', true);
   $('#which-btn-next').click((event)=>{
     $('#which-error-msg').hide();
-    let useCsv = ('aria-selected' in $('#who-part-type a')[1].attributes);
-    useCsv = (useCsv === 'true');
+    let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
     let pageNum = parseInt($('#curr-page-link').html());
     let pageCount = parseInt($('#input-elements-pp option:selected').text());
     let filterList = $('#devices-search-form .tags-input').val();
@@ -158,7 +170,9 @@ $(document).ready(function() {
             missingCount += model.count;
           });
           let totalCount;
-          if (useAll) {
+          if (useCsv) {
+            totalCount = $('#csv-result-count').html();
+          } else if (useAll) {
             totalCount = $('#allDevicesLabel').html();
           } else {
             totalCount = $('#someDevicesLabel').html();
@@ -197,5 +211,17 @@ $(document).ready(function() {
   });
   $('.custom-control.custom-checkbox').click((event)=>{
     $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+
+  $('#updateNow').click((event)=>{
+    if ($('input[name=updateNow]:checked').length > 0) {
+      $('#scheduleStart input').prop('disabled', true);
+      $('#scheduleEnd input').prop('disabled', true);
+      $('[name=weekDays]').prop('disabled', true);
+    } else {
+      $('#scheduleStart input').prop('disabled', false);
+      $('#scheduleEnd input').prop('disabled', false);
+      $('[name=weekDays]').prop('disabled', false);
+    }
   });
 });
