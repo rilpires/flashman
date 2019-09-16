@@ -314,6 +314,8 @@ $(document).ready(function() {
             return false;
           }
 
+          // Fill multiple update form
+          updateSearchResultsScheduler(res);
           // Fill status row
           deviceTableContent.append(
             $('<tr>').append(
@@ -349,37 +351,15 @@ $(document).ready(function() {
               (isSuperuser || grantFirmwareUpgrade ?
                 $('<td>').append(
                   $('<div>').addClass('btn-group').append(
-                    $('<button>').addClass('btn btn-sm btn-danger px-2')
-                      .attr('id', 'cancel-all-devices')
-                    .append(
-                      $('<div>').addClass('fas fa-times')
-                    ),
                     $('<div>').addClass('btn-group').attr('id', 'all-devices')
                     .append(
-                      $('<button>')
-                        .addClass('btn btn-sm btn-primary dropdown-toggle')
-                        .attr('type', 'button')
-                        .attr('data-toggle', 'dropdown')
-                        .data('singlereleases', res.single_releases)
-                      .append(
-                        $('<span>').addClass('selected').html('Escolher')
-                      ),
-                      $('<div>').addClass('dropdown-menu').append(() => {
-                        let opts = $('<div>');
-                        for (let idx = 0;
-                             idx < res.single_releases.length; idx += 1) {
-                          let release = res.single_releases[idx];
-                          opts.append(
-                            $('<a>').addClass('dropdown-item text-center')
-                                    .html(release.id)
-                          );
-                        }
-                        return opts.html();
-                      }),
-                      $('<button>').addClass('btn btn-sm px-2 teal darken-5')
+                      $('<button>').addClass('btn btn-sm px-3 py-2 teal darken-5')
                         .attr('id', 'btn-upgrade-scheduler')
                       .append(
-                        $('<div>').addClass('fas fa-clock fa-lg')
+                        $('<i>').addClass('fas fa-clock fa-lg')
+                      )
+                      .append(
+                        $('<span>').html('&nbsp &nbsp Atualizar Vários')
                       )
                     )
                   )

@@ -5,14 +5,162 @@
       .modal-header
         p.heading.lead
           span.fas.fa-clock.fa-lg
-          strong &nbsp; Agendamento de atualização
+          strong &nbsp; Agendamento de Atualização
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
-        .row
-          .col
-            
-      .modal-footer 
-        button.btn.btn-primary#btn-submit-upgrade-schedule(type="button")
-          .fas.fa-check.fa-lg
-          span &nbsp Aplicar
+        .bs-stepper
+          .bs-stepper-header(role="tablist")
+            .step(data-target="#which-part")
+              button#which-part-trigger.step-trigger(type="button", role="tab", aria-controls="which-part")
+                span.bs-stepper-circle 1
+            .line
+            .step(data-target="#how-part")
+              button#how-part-trigger.step-trigger(type="button", role="tab", aria-controls="how-part")
+                span.bs-stepper-circle 2
+            .line
+            .step(data-target="#when-part")
+              button#when-part-trigger.step-trigger(type="button", role="tab", aria-controls="when-part")
+                span.bs-stepper-circle 3
+          .row
+            .col-4.text-left
+              strong Quem Atualizar
+            .col-4.text-center
+              strong Como Atualizar
+            .col-4.text-right
+              strong Quando Atualizar
+          .bs-stepper-content.mt-4
+            #which-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="which-part-trigger")
+              h4.text-center Vamos selecionar quais roteadores serão atualizados?
+              hr
+              h6.text-center Escolha entre utilizar os resultados da busca ou subir um arquivo CSV com os MACs
+              .teal.lighten-2.mt-4
+                ul#who-part-type.nav.nav-pills.nav-justified
+                  li.nav-item
+                    a.nav-link(data-toggle="tab", role="tab", href="#panel1")
+                      .fas.fa-search
+                      span &nbsp; Resultados da Busca
+                  li.nav-item
+                    a.nav-link(data-toggle="tab", role="tab", href="#panel2")
+                      .fas.fa-file
+                      span &nbsp; Arquivo CSV
+              .tab-content.mt-4
+                #panel1.tab-pane.fade(role="tabpanel")
+                  .custom-control.custom-radio
+                    input#allDevices.custom-control-input(type="radio", name="deviceCount")
+                    label.custom-control-label(for="allDevices") Todos os
+                      span#allDevicesLabel
+                      span  resultados da busca
+                  .custom-control.custom-radio
+                    input#someDevices.custom-control-input(type="radio", name="deviceCount")
+                    label.custom-control-label(for="someDevices") Somente os
+                      span#someDevicesLabel
+                      span  primeiros resultados da busca
+                #panel2.tab-pane.fade(role="tabpanel")
+                  form(method="post", action="/devicelist/scheduler/upload", name="scheduleform")
+                    .input-group
+                      .input-group-prepend
+                        label.btn.btn-md.btn-primary.btn-file.my-0
+                          | Arquivo...
+                          input.form-control(type="file", name="schedulefile",
+                                             style="display:none;", accept=".csv")
+                      input.form-control(type="text", readonly)
+                    .col.mt-2.text-center
+                      .form-buttons
+                        button.btn.btn-lg.teal.lighten-2(
+                          type="submit",
+                          id="btn-submit-upload"
+                        )
+                          .fas.fa-upload(id="btn-submit-icon")
+                          span &nbsp; Upload
+                    #csv-result.text-center.mt-4
+                      h6 Foram encontrados
+                        span#csv-result-count
+                        span  roteadores a partir do arquivo.
+                        span#csv-result-error  Verifique se os dados fornecidos estão corretos.
+              .row.mt-4
+                .col-md-8.red-text.text-left.align-self-center
+                  #which-error-msg
+                    .fas.fa-exclamation-triangle.fa-lg
+                    strong#which-error-text
+                .col-md-4
+                  .text-right
+                    button#which-btn-next.btn.btn-primary(type="button")
+                      strong Próximo
+            #how-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="how-part-trigger")
+              h4.text-center Vamos selecionar qual release será instalada?
+              hr
+              .text-center
+                h6 Escolha uma release para instalar nos seus roteadores.
+                h6 Lembre-se de gerar um firmware com essa release para todos os modelos!
+                .btn-group.mt-4
+                  button.btn.btn-primary.dropdown-toggle(type="button", data-toggle="dropdown")
+                    span#selected-release.selected Escolher
+                  #releases-dropdown.dropdown-menu
+              #warning-releases.text-center.red-text.mt-4
+                h6 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento.
+                h6 Adicione os firmwares que faltam para atualizar todos os roteadores!
+                ul#warning-missing-models
+                strong Esta mudança fará com que
+                  span#warning-newTotal
+                  span  dos
+                  span#warning-prevTotal
+                  span  roteadores selecionados sejam atualizados
+              .text-right.mt-4
+                button#how-btn-prev.btn.btn-primary(type="button")
+                  strong Anterior
+                button#how-btn-next.btn.btn-primary(type="button")
+                  strong Próximo
+            #when-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="when-part-trigger")
+              h4.text-center Vamos selecionar quando os roteadores serão atualizados?
+              hr
+              h6.text-center Escolha a faixa de horários e os dias da semana em que as atualizações serão feitas
+              .row.mt-4.text-center
+                .col-md-6
+                  #scheduleStart.input-group.date(data-target-input="nearest")
+                    .input-group-prepend
+                      span.input-group-text Das
+                    input.form-control.datetimepicker-input(type="text", data-target="#scheduleStart")
+                    .input-group-append(data-target="#scheduleStart" data-toggle="datetimepicker")
+                      .input-group-text
+                        .fas.fa-clock.fa-lg
+                .col-md-6
+                  #scheduleEnd.input-group.date(data-target-input="nearest")
+                    .input-group-prepend
+                      span.input-group-text Até às
+                    input.form-control.datetimepicker-input(type="text", data-target="#scheduleEnd")
+                    .input-group-append(data-target="#scheduleEnd" data-toggle="datetimepicker")
+                      .input-group-text
+                        .fas.fa-clock.fa-lg
+              .text-center.mt-4
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays0.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays0") Segunda
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays1.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays1") Terça
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays2.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays2") Quarta
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays3.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays3") Quinta
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays4.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays4") Sexta
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays5.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays5") Sábado
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#weekdays6.custom-control-input(type="checkbox", name="weekDays")
+                  label.custom-control-label(for="weekdays6") Domingo
+              .mt-4.text-center
+                .custom-control.custom-checkbox.custom-control-inline
+                  input#updateNow.custom-control-input(type="checkbox", name="updateNow")
+                  label.custom-control-label(for="updateNow") Atualizar imediatamente sem restrições de horário
+              .text-right.mt-4
+                button#when-btn-prev.btn.btn-primary
+                  strong Anterior
+                button#when-btn-next.btn.btn-primary(type="button")
+                  .fas.fa-check.fa-lg
+                  strong &nbsp; Agendar
