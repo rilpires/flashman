@@ -56,7 +56,7 @@ const sendMessage = async(function(device, funcName, strName, data, retry=0) {
     if (err.statusCode === 429 && retry <= 3) {
       // Retry with exponential backoff
       let interval = randomBackoff(retry+1, (retry*2)+1);
-      await(new Promise(resolve=>setTimeout(resolve, interval)));
+      await(new Promise((resolve)=>setTimeout(resolve, interval)));
       return sendMessage(device, funcName, strName, data, retry+1);
     }
     console.log('Error sending ' + strName + ' message');
