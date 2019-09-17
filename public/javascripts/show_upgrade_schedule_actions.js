@@ -15,10 +15,16 @@ const resetStepperData = function(stepper) {
 };
 
 const isWhenPartValidated = function() {
+  $('#time-equal-error').hide();
+  let startTime = $('#scheduleStart input').val();
+  let endTime = $('#scheduleEnd input').val();
+  if (startTime && endTime && startTime === endTime) {
+    $('#time-equal-error').show();
+    return false;
+  }
   if ($('input[name=updateNow]:checked').length > 0 || (
       $('input[name=weekDays]:checked').length > 0 &&
-      $('#scheduleStart input').val() != '' &&
-      $('#scheduleEnd input').val() != '')) {
+      startTime !== '' && endTime !== '')) {
     return true;
   }
   return false;
@@ -31,6 +37,8 @@ $(document).ready(function() {
   $('#scheduleEnd').datetimepicker({
       format: 'HH:mm',
   });
+
+  $('#time-equal-error').hide();
 
   $(document).on('change', ':file', function() {
     let input = $(this);
@@ -203,10 +211,10 @@ $(document).ready(function() {
   });
 
   $('#when-btn-next').prop('disabled', true);
-  $('#scheduleStart input').change((event)=>{
+  $('#scheduleStart input').on('input', (event)=>{
     $('#when-btn-next').prop('disabled', !isWhenPartValidated());
   });
-  $('#scheduleEnd input').change((event)=>{
+  $('#scheduleEnd input').on('input', (event)=>{
     $('#when-btn-next').prop('disabled', !isWhenPartValidated());
   });
   $('.custom-control.custom-checkbox').click((event)=>{
