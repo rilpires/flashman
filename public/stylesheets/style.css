@@ -175,3 +175,7 @@ input:checked + .slider:before {
 .table-condensed a > .fa {
   color: #4db6ac;
 }
+
+.input-group-text.remove-border {
+  border: none;
+}
