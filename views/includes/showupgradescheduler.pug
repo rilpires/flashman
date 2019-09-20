@@ -33,7 +33,6 @@
             #which-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="which-part-trigger")
               h4.text-center Vamos selecionar quais roteadores serão atualizados?
               hr
-              h6.text-center Escolha entre utilizar os resultados da busca ou subir um arquivo CSV com os MACs
               .teal.lighten-2.mt-4
                 ul#who-part-type.nav.nav-pills.nav-justified
                   li.nav-item
@@ -91,21 +90,19 @@
               h4.text-center Vamos selecionar qual release será instalada?
               hr
               .text-center
-                h6 Escolha uma release para instalar nos seus roteadores.
                 h6 Lembre-se de gerar um firmware com essa release para todos os modelos!
                 .btn-group.mt-4
                   button.btn.btn-primary.dropdown-toggle(type="button", data-toggle="dropdown")
                     span#selected-release.selected Escolher
                   #releases-dropdown.dropdown-menu
-              #warning-releases.text-center.red-text.mt-4
-                h6 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento.
-                h6 Adicione os firmwares que faltam para atualizar todos os roteadores!
-                ul#warning-missing-models
-                strong Esta mudança fará com que
+              #warning-releases.mt-4.alert.alert-danger
+                strong Atenção! Atualmente somente
                   span#warning-newTotal
                   span  dos
                   span#warning-prevTotal
-                  span  roteadores selecionados sejam atualizados
+                  span  roteadores selecionados serão atualizados!
+                h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os roteadores!
+                ul#warning-missing-models
               .text-right.mt-4
                 button#how-btn-prev.btn.btn-primary(type="button")
                   strong Anterior
@@ -114,55 +111,65 @@
             #when-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="when-part-trigger")
               h4.text-center Vamos selecionar quando os roteadores serão atualizados?
               hr
-              h6.text-center Escolha a faixa de horários e os dias da semana em que as atualizações serão feitas
-              .row.mt-4.text-center
-                .col-md-6
-                  #scheduleStart.input-group.date(data-target-input="nearest")
-                    .input-group-prepend
-                      span.input-group-text Das
-                    input.form-control.datetimepicker-input(type="text", data-target="#scheduleStart")
-                    .input-group-append(data-target="#scheduleStart" data-toggle="datetimepicker")
-                      .input-group-text
-                        .fas.fa-clock.fa-lg
-                .col-md-6
-                  #scheduleEnd.input-group.date(data-target-input="nearest")
-                    .input-group-prepend
-                      span.input-group-text Até às
-                    input.form-control.datetimepicker-input(type="text", data-target="#scheduleEnd")
-                    .input-group-append(data-target="#scheduleEnd" data-toggle="datetimepicker")
-                      .input-group-text
-                        .fas.fa-clock.fa-lg
-              #time-equal-error.text-center.mt-4.red-text
-                h6 Os horários de início e fim não podem ser iguais!
-              .text-center.mt-4
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays0.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays0") Segunda
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays1.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays1") Terça
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays2.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays2") Quarta
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays3.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays3") Quinta
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays4.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays4") Sexta
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays5.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays5") Sábado
-                .custom-control.custom-checkbox.custom-control-inline
-                  input#weekdays6.custom-control-input(type="checkbox", name="weekDays")
-                  label.custom-control-label(for="weekdays6") Domingo
-              .mt-4.text-center
+              .mt-4.text-center.pb-2
                 .custom-control.custom-checkbox.custom-control-inline
                   input#updateNow.custom-control-input(type="checkbox", name="updateNow")
                   label.custom-control-label(for="updateNow") Atualizar imediatamente sem restrições de horário
+              #time-ranges
+                .time-range
+                  .row.mt-2.text-center
+                    .col-md-6
+                      #scheduleStart-0.input-group.mb-3.date(data-target-input="nearest")
+                        .input-group-prepend
+                          button#startWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Dia da semana
+                          #dropdown-startWeekday-0.dropdown-menu
+                            a.dropdown-item(href="#") Segunda
+                            a.dropdown-item(href="#") Terça
+                            a.dropdown-item(href="#") Quarta
+                            a.dropdown-item(href="#") Quinta
+                            a.dropdown-item(href="#") Sexta
+                            a.dropdown-item(href="#") Sábado
+                            a.dropdown-item(href="#") Domingo
+                          span.input-group-text.primary-color.white-text.remove-border das
+                        input.form-control.datetimepicker-input.z-depth-0(type="text", data-target="#scheduleStart-0", placeholder="hh:mm")
+                        .input-group-append(data-target="#scheduleStart-0" data-toggle="datetimepicker")
+                          .input-group-text.primary-color.white-text
+                            .fas.fa-clock.fa-lg
+                    .col-md-6
+                      #scheduleEnd-0.input-group.mb-3.date(data-target-input="nearest")
+                        .input-group-prepend
+                          span.input-group-text.primary-color.white-text.remove-border Até
+                          button#endWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Dia da semana
+                          #dropdown-endWeekday-0.dropdown-menu
+                            a.dropdown-item(href="#") Segunda
+                            a.dropdown-item(href="#") Terça
+                            a.dropdown-item(href="#") Quarta
+                            a.dropdown-item(href="#") Quinta
+                            a.dropdown-item(href="#") Sexta
+                            a.dropdown-item(href="#") Sábado
+                            a.dropdown-item(href="#") Domingo
+                          span.input-group-text.primary-color.white-text.remove-border às
+                        input.form-control.datetimepicker-input(type="text", data-target="#scheduleEnd-0", placeholder="hh:mm")
+                        .input-group-append(data-target="#scheduleEnd-0" data-toggle="datetimepicker")
+                          .input-group-text.primary-color.white-text
+                            .fas.fa-clock.fa-lg
+                  #time-equal-error-0.text-center.mt-4.red-text
+                    h6 Os horários de início e fim não podem ser iguais!
+              .row.text-center.mt-2
+                .col-md-6
+                  button#addSchedule.btn.btn-sm.btn-primary.btn-block(type="button")
+                    .fas.fa-plus.fa-lg
+                    strong &nbsp;&nbsp; Adicionar mais um intervalo
+                .col-md-6
+                  button#removeSchedule.btn.btn-sm.btn-primary.btn-block(type="button")
+                    .fas.fa-times.fa-lg
+                    strong &nbsp;&nbsp; Remover último intervalo
+              #when-error-msg.mt-4.text-center.red-text
+                .fas.fa-exclamation-triangle.fa-lg
+                strong#when-error-text
               .text-right.mt-4
                 button#when-btn-prev.btn.btn-primary
                   strong Anterior
                 button#when-btn-next.btn.btn-primary(type="button")
-                  .fas.fa-check.fa-lg
+                  #when-btn-icon.fas.fa-check.fa-lg
                   strong &nbsp; Agendar
