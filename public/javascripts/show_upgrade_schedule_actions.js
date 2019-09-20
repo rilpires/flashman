@@ -15,30 +15,54 @@ const resetStepperData = function(stepper) {
 };
 
 const isWhenPartValidated = function() {
-  $('#time-equal-error').hide();
-  let startTime = $('#scheduleStart input').val();
-  let endTime = $('#scheduleEnd input').val();
-  if (startTime && endTime && startTime === endTime) {
-    $('#time-equal-error').show();
-    return false;
+  let rangesLength = $('#time-ranges .time-range').length;
+  let retval = true;
+  for (let i = 0; i < rangesLength; i++) {
+    $('#time-equal-error-'+i).hide();
+    let startDay = $('#startWeekday-'+i).html();
+    let endDay = $('#endWeekday-'+i).html();
+    let startTime = $('#scheduleStart-'+i+' input').val();
+    let endTime = $('#scheduleEnd-'+i+' input').val();
+    if (!startTime || !endTime) retval = false;
+    if (startDay === 'Dia da semana' || endDay === 'Dia da semana') {
+      retval = false;
+    } else if (startTime === endTime && startDay === endDay) {
+      $('#time-equal-error-'+i).show();
+      retval = false;
+    }
   }
-  if ($('input[name=updateNow]:checked').length > 0 || (
-      $('input[name=weekDays]:checked').length > 0 &&
-      startTime !== '' && endTime !== '')) {
-    return true;
-  }
-  return false;
+  return retval;
+};
+
+const configureDateDiv = function(i) {
+  $('#scheduleStart-' + i).datetimepicker({
+    format: 'HH:mm',
+  });
+  $('#scheduleEnd-' + i).datetimepicker({
+    format: 'HH:mm',
+  });
+  $('#time-equal-error-' + i).hide();
+  $('#scheduleStart-' + i + ' input').on('input', (event)=>{
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+  $('#scheduleEnd-' + i + ' input').on('input', (event)=>{
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+  $('#dropdown-startWeekday-' + i + ' a').click((event)=>{
+    let weekday = event.originalEvent.target.text;
+    $('#startWeekday-' + i).html(weekday);
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+  $('#dropdown-endWeekday-' + i + ' a').click((event)=>{
+    let weekday = event.originalEvent.target.text;
+    $('#endWeekday-' + i).html(weekday);
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
 };
 
 $(document).ready(function() {
-  $('#scheduleStart').datetimepicker({
-      format: 'HH:mm',
-  });
-  $('#scheduleEnd').datetimepicker({
-      format: 'HH:mm',
-  });
-
-  $('#time-equal-error').hide();
+  $('#removeSchedule').prop('disabled', true);
+  $('#when-error-msg').hide();
 
   $(document).on('change', ':file', function() {
     let input = $(this);
@@ -103,6 +127,8 @@ $(document).ready(function() {
     stepper.to(1);
     return false;
   });
+
+  configureDateDiv(0);
 
   $('#how-btn-prev').click((event)=>{
     resetStepperData(stepper);
@@ -211,25 +237,117 @@ $(document).ready(function() {
   });
 
   $('#when-btn-next').prop('disabled', true);
-  $('#scheduleStart input').on('input', (event)=>{
-    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
-  });
-  $('#scheduleEnd input').on('input', (event)=>{
-    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
-  });
   $('.custom-control.custom-checkbox').click((event)=>{
     $('#when-btn-next').prop('disabled', !isWhenPartValidated());
   });
 
   $('#updateNow').click((event)=>{
+    let rangesLength = $('#time-ranges .time-range').length;
     if ($('input[name=updateNow]:checked').length > 0) {
-      $('#scheduleStart input').prop('disabled', true);
-      $('#scheduleEnd input').prop('disabled', true);
-      $('[name=weekDays]').prop('disabled', true);
+      for (let i = 0; i < rangesLength; i++) {
+        $('#scheduleStart-' + i + ' input').prop('disabled', true);
+        $('#scheduleEnd-' + i + ' input').prop('disabled', true);
+        $('#startWeekday-' + i).prop('disabled', true);
+        $('#endWeekday-' + i).prop('disabled', true);
+      }
+      $('#addSchedule').prop('disabled', true);
+      $('#removeSchedule').prop('disabled', true);
     } else {
-      $('#scheduleStart input').prop('disabled', false);
-      $('#scheduleEnd input').prop('disabled', false);
-      $('[name=weekDays]').prop('disabled', false);
+      for (let i = 0; i < rangesLength; i++) {
+        $('#scheduleStart-' + i + ' input').prop('disabled', false);
+        $('#scheduleEnd-' + i + ' input').prop('disabled', false);
+        $('#startWeekday-' + i).prop('disabled', false);
+        $('#endWeekday-' + i).prop('disabled', false);
+      }
+      $('#addSchedule').prop('disabled', false);
+      $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
     }
+  });
+
+  $('#when-btn-next').click((event)=>{
+    $('#when-btn-prev').prop('disabled', true);
+    $('#when-btn-next').prop('disabled', true);
+    let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
+    let useAll = (useCsv) ? false :
+                 ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
+    let pageNum = parseInt($('#curr-page-link').html());
+    let pageCount = parseInt($('#input-elements-pp option:selected').text());
+    let filterList = $('#devices-search-form .tags-input').val();
+    let release = $('#selected-release').html();
+    let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
+    let timeRestrictions = [];
+    if (hasTimeRestriction) {
+      let rangeCount = $('#time-ranges .time-range').length;
+      for (let i = 0; i < rangeCount; i++) {
+        timeRestrictions.push({
+          'startWeekday': $('startWeekday-' + i).html(),
+          'endWeekday': $('endWeekday-' + i).html(),
+          'startTime': $('#scheduleStart-' + i).val(),
+          'endTime': $('#scheduleEnd-' + i).val(),
+        });
+      }
+    }
+    $('#when-error-msg').hide();
+    $('#when-btn-icon')
+      .removeClass('fa-check')
+      .addClass('fa-spinner fa-pulse');
+    $.ajax({
+      url: '/devicelist/scheduler/start',
+      type: 'POST',
+      data: {
+        use_csv: useCsv,
+        use_all: useAll,
+        use_time_restriction: hasTimeRestriction,
+        start_time: startTime,
+        end_time: endTime,
+        time_restriction: timeRestrictions,
+        release: release,
+        page_num: pageNum,
+        page_count: pageCount,
+        filter_list: filterList,
+      },
+      success: function(res) {
+        $('#when-btn-icon')
+          .removeClass('fa-spinner fa-pulse')
+          .addClass('fa-check');
+        $('#when-btn-prev').prop('disabled', false);
+        $('#when-btn-next').prop('disabled', false);
+      },
+      error: function(xhr, status, error) {
+        console.log(JSON.parse(xhr.responseText));
+        $('#when-btn-icon')
+          .removeClass('fa-spinner fa-pulse')
+          .addClass('fa-check');
+        $('#when-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
+                                    'Por favor tente novamente.');
+        $('#when-error-msg').show();
+        $('#when-btn-prev').prop('disabled', false);
+        $('#when-btn-next').prop('disabled', false);
+      },
+    });
+  });
+
+  $('#addSchedule').click((event)=>{
+    let timeRangesContent = $('#time-ranges .time-range');
+    let length = timeRangesContent.length;
+    let newHtml = timeRangesContent[0].innerHTML;
+    newHtml = newHtml.replace(/scheduleStart-0/g, 'scheduleStart-' + length);
+    newHtml = newHtml.replace(/startWeekday-0/g, 'startWeekday-' + length);
+    newHtml = newHtml.replace(/scheduleEnd-0/g, 'scheduleEnd-' + length);
+    newHtml = newHtml.replace(/endWeekday-0/g, 'endWeekday-' + length);
+    newHtml = newHtml.replace(/equal-error-0/g, 'equal-error-' + length);
+    $('#time-ranges').append(
+      $('<div class="time-range">').html(newHtml)
+    );
+    configureDateDiv(length);
+    $('#removeSchedule').prop('disabled', false);
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+
+  $('#removeSchedule').click((event)=>{
+    let timeRangesContent = $('#time-ranges .time-range');
+    timeRangesContent[timeRangesContent.length - 1].remove();
+    $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
+    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
   });
 });
