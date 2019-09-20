@@ -4,6 +4,7 @@ const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
 
+const nodeSchedule = require('node-schedule');
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 const async = require('asyncawait/async');
@@ -12,14 +13,44 @@ const await = require('asyncawait/await');
 const mutex = new Mutex();
 const maxRetries = 3;
 const maxDownloads = 50;
+let watchdogIntervalID = null;
 let scheduleController = {};
 
-const getConfig = async(function() {
+const returnStringOrEmptyStr = function(query) {
+  if (typeof query === 'string' && query) {
+    return query;
+  } else {
+    return '';
+  }
+};
+
+const scheduleOfflineWatchdog = function() {
+  // Check for online devices every 5 minutes
+  const interval = 5*60*1000;
+  if (watchdogIntervalID) return;
+  watchdogIntervalID = setInterval(()=>{
+    markNextForUpdate();
+  }, interval);
+};
+
+const removeOfflineWatchdog = function() {
+  // Clear interval if set
+  if (watchdogIntervalID) {
+    clearInterval(watchdogIntervalID);
+    watchdogIntervalID = null;
+  }
+};
+
+const getConfig = async(function(lean=true, needActive=true) {
   let config = null;
   try {
-    config = await(Config.findOne({is_default: true}).lean());
+    if (lean) {
+      config = await(Config.findOne({is_default: true}).lean());
+    } else {
+      config = await(Config.findOne({is_default: true}));
+    }
     if (!config || !config.device_update_schedule ||
-        !config.device_update_schedule.is_active) {
+        (needActive && !config.device_update_schedule.is_active)) {
       return null;
     }
   } catch (err) {
@@ -48,7 +79,7 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
   let query = {};
   if (setQuery) query ['$set'] = setQuery;
   if (pullQuery) query ['$pull'] = pullQuery;
-  if (setQuery) query ['$push'] = pushQuery;
+  if (pushQuery) query ['$push'] = pushQuery;
   return Config.updateOne({'is_default': true}, query);
 };
 
@@ -84,13 +115,15 @@ const markNextForUpdate = async(function() {
   if (!nextDevice) {
     // No online devices, mark them all as offline
     try {
-      await(configQuery(null, null, {
+      await(configQuery({
+        'device_update_schedule.is_on_watch': true,
         'device_update_schedule.rule.to_do_devices.$[].state': 'offline',
-      }));
+      }, null, null));
     } catch (err) {
       console.log(err);
     }
     mutexRelease();
+    scheduleOfflineWatchdog();
     return {success: true, marked: false};
   }
   try {
@@ -108,6 +141,10 @@ const markNextForUpdate = async(function() {
       }
     ));
     mutexRelease();
+    if (devices.length === 1) {
+      // Last device on to_do, remove watchdog
+      removeOfflineWatchdog();
+    }
   } catch (err) {
     console.log(err);
     mutexRelease();
@@ -299,18 +336,26 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   if (!useCsv) {
     finalQuery = deviceListController.searchDeviceQuery(queryContents);
   } else {
-    let csvContents = await(
-      csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv')
-    );
-    if (csvContents) {
-      let promises = csvContents.map((line)=>{
-        return new Promise(async((resolve)=>{
-          if (!line.field1.match(macRegex)) return resolve(null);
-          resolve(await(getDevice(line.field1, true)));
-        }));
+    try {
+      let csvContents = await(
+        csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv')
+      );
+      if (csvContents) {
+        let promises = csvContents.map((line)=>{
+          return new Promise(async((resolve)=>{
+            if (!line.field1.match(macRegex)) return resolve(null);
+            resolve(await(getDevice(line.field1, true)));
+          }));
+        });
+        let values = await(Promise.all(promises));
+        deviceList = values.filter((value)=>value!==null);
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao processar o arquivo',
       });
-      let values = await(Promise.all(promises));
-      deviceList = values.filter((value)=>value!==null);
     }
   }
 
@@ -397,5 +442,122 @@ scheduleController.uploadDevicesFile = function(req, res) {
     });
   });
 };
+
+scheduleController.startSchedule = async(function(req, res) {
+  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  let useCsv = (req.body.use_csv === 'true');
+  let useAllDevices = (req.body.use_all === 'true');
+  let hasTimeRestriction = (req.body.use_time_restriction === 'true');
+  let release = returnStringOrEmptyStr(req.body.release);
+  let pageNumber = parseInt(req.body.page_num);
+  let pageCount = parseInt(req.body.page_count);
+  let timeRestrictions = req.body.time_restriction;
+  let queryContents = req.body.filter_list.split(',');
+
+  let finalQuery = null;
+  let deviceList = [];
+  if (!useCsv) {
+    finalQuery = deviceListController.searchDeviceQuery(queryContents);
+  } else {
+    try {
+      let csvContents = await(
+        csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv')
+      );
+      if (csvContents) {
+        let promises = csvContents.map((line)=>{
+          return new Promise(async((resolve)=>{
+            if (!line.field1.match(macRegex)) return resolve(null);
+            resolve(await(getDevice(line.field1, true)));
+          }));
+        });
+        let values = await(Promise.all(promises));
+        deviceList = values.filter((value)=>value!==null);
+      }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno ao processar o arquivo',
+      });
+    }
+  }
+
+  let queryPromise = null;
+  if (useCsv) {
+    queryPromise = Promise.resolve(deviceList);
+  } else if (useAllDevices) {
+    queryPromise = DeviceModel.find(finalQuery).lean();
+  } else {
+    queryPromise = DeviceModel.paginate(finalQuery, {
+      page: pageNumber,
+      limit: pageCount,
+      lean: true,
+    });
+  }
+
+  queryPromise.then(async((matchedDevices)=>{
+    // Get valid models for this release
+    let releasesAvailable = deviceListController.getReleases(true);
+    let modelsAvailable = releasesAvailable.find((r)=>r.id===release);
+    if (!modelsAvailable) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar os parâmetros',
+      });
+    }
+    modelsAvailable = modelsAvailable.model;
+    // Filter devices that have a valid model
+    if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+    matchedDevices = matchedDevices.filter((device)=>{
+      return modelsAvailable.includes(device.model);
+    });
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao processar os parâmetros: nenhum roteador encontrado',
+      });
+    }
+    let macList = matchedDevices.map((device)=>device._id);
+    // Save scheduler configs to database
+    try {
+      let config = await(getConfig(false, false));
+      config.device_update_schedule.is_active = true;
+      config.device_update_schedule.used_time_range = hasTimeRestriction;
+      config.device_update_schedule.used_csv = useCsv;
+      config.device_update_schedule.device_count = macList.length;
+      config.device_update_schedule.date = Date.now();
+      if (hasTimeRestriction) {
+        config.device_update_schedule.allowed_time_range.start = startTime;
+        config.device_update_schedule.allowed_time_range.end = endTime;
+        config.device_update_schedule.allowed_time_range.weekdays = weekDays;
+      }
+      config.device_update_schedule.rule.release = release;
+      await(config.save());
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        success: false,
+        message: 'Erro interno na base',
+      });
+    }
+    // Start updating
+    let result = await(scheduleController.initialize(macList));
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error,
+      });
+    }
+    return res.status(200).json({
+      success: true,
+    });
+  }, (err)=>{
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno na base',
+    });
+  }));
+});
 
 module.exports = scheduleController;
