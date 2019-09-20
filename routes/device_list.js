@@ -34,6 +34,11 @@ router.route('/search').put(
   deviceListController.searchDeviceReg);
 
 // Update schedule configuration
+router.route('/scheduler/start').post(
+  authController.ensureLogin(),
+  updaterScheduleController.startSchedule
+);
+
 router.route('/scheduler/releases').put(
   authController.ensureLogin(),
   updaterScheduleController.getDevicesReleases
