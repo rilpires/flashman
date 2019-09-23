@@ -64,6 +64,12 @@
                           input.form-control(type="file", name="schedulefile",
                                              style="display:none;", accept=".csv")
                       input.form-control(type="text", readonly)
+                      .input-group-append(
+                        data-toggle="tooltip",
+                        title="Os arquivos CSV devem ter o MAC de cada roteador na primeira coluna."
+                      )
+                        span.input-group-text.md-addon
+                          .fas.fa-question-circle.fa-lg
                     .col.mt-2.text-center
                       .form-buttons
                         button.btn.btn-lg.teal.lighten-2(
@@ -96,11 +102,12 @@
                     span#selected-release.selected Escolher
                   #releases-dropdown.dropdown-menu
               #warning-releases.mt-4.alert.alert-danger
-                strong Atenção! Atualmente somente
-                  span#warning-newTotal
-                  span  dos
-                  span#warning-prevTotal
-                  span  roteadores selecionados serão atualizados!
+                .text-center
+                  strong Atenção! Atualmente somente
+                    span#warning-newTotal
+                    span  dos
+                    span#warning-prevTotal
+                    span  roteadores selecionados serão atualizados!
                 h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os roteadores!
                 ul#warning-missing-models
               .text-right.mt-4
