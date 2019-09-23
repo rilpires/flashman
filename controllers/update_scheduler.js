@@ -12,8 +12,9 @@ const await = require('asyncawait/await');
 
 const mutex = new Mutex();
 const maxRetries = 3;
-const maxDownloads = 50;
+const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
 let watchdogIntervalID = null;
+let initSchedules = [];
 let scheduleController = {};
 
 const returnStringOrEmptyStr = function(query) {
@@ -24,13 +25,85 @@ const returnStringOrEmptyStr = function(query) {
   }
 };
 
+const weekDayStrToInt = function(day) {
+  if (day === 'Domingo') return 0;
+  if (day === 'Segunda') return 1;
+  if (day === 'Terça') return 2;
+  if (day === 'Quarta') return 3;
+  if (day === 'Quinta') return 4;
+  if (day === 'Sexta') return 5;
+  if (day === 'Sábado') return 6;
+  return -1;
+};
+
+const weekDayCompare = function(foo, bar) {
+  // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
+  if (foo.day > bar.day) return 1;
+  if (foo.day < bar.day) return -1;
+  if (foo.hour > bar.hour) return 1;
+  if (foo.hour < bar.hour) return -1;
+  if (foo.minute > bar.minute) return 1;
+  if (foo.minute < bar.minute) return -1;
+  return 0;
+};
+
+const checkValidRange = function(config) {
+  let now = new Date();
+  now = {
+    day: now.getDay(),
+    hour: now.getHours(),
+    minute: now.getMinutes(),
+  };
+  if (!config.device_update_schedule.used_time_range) return true;
+  return config.device_update_schedule.allowed_time_ranges.reduce((v, r)=>{
+    if (v) return true;
+    let start = {
+      day: r.start_day,
+      hour: parseInt(r.start_time.substring(0, 2)),
+      minute: parseInt(r.start_time.substring(3, 5)),
+    };
+    let end = {
+      day: r.end_day,
+      hour: parseInt(r.end_time.substring(0, 2)),
+      minute: parseInt(r.end_time.substring(3, 5)),
+    };
+    if (weekDayCompare(now, start) === 0 || weekDayCompare(now, end) === 0) {
+      // Now is equal to either extreme, validate as true
+      return true;
+    }
+    if (weekDayCompare(now, start) > 0) {
+      // Now ahead of start
+      if (weekDayCompare(end, start) > 0) {
+        // End ahead of start, now must be before end
+        return (weekDayCompare(now, end) < 0);
+      } else {
+        // End behind start, always valid
+        return true;
+      }
+    } else {
+      // Now behind start
+      if (weekDayCompare(end, start) > 0) {
+        // End ahead of start, never valid
+        return false;
+      } else {
+        // End behind start, now must be before end
+        return (weekDayCompare(now, end) < 0);
+      }
+    }
+  }, false);
+};
+
 const scheduleOfflineWatchdog = function() {
   // Check for online devices every 5 minutes
   const interval = 5*60*1000;
   if (watchdogIntervalID) return;
-  watchdogIntervalID = setInterval(()=>{
-    markNextForUpdate();
-  }, interval);
+  watchdogIntervalID = setInterval(async(()=>{
+    let result = await(markNextForUpdate());
+    if (result.success && result.marked) {
+      // Marked one for update, may now exit watch mode
+      removeOfflineWatchdog();
+    }
+  }), interval);
 };
 
 const removeOfflineWatchdog = function() {
@@ -83,6 +156,67 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
   return Config.updateOne({'is_default': true}, query);
 };
 
+const markSeveral = function() {
+  for (let i = 0; i < maxDownloads; i++) {
+    let result = await(markNextForUpdate());
+    if (!result.success) {
+      return;
+    } else if (result.success && !result.marked) {
+      break;
+    }
+  }
+};
+
+scheduleController.recoverFromOffline = async(function(config) {
+  // Schedule time ranges start times
+  config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
+    scheduleInitialize(
+      r.start_day,
+      parseInt(r.start_time.substring(0, 2)),
+      parseInt(r.start_time.substring(3, 5))
+    );
+  });
+  // Move those in doing status downloading back to to_do
+  let rule = config.device_update_schedule.rule;
+  let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
+  pullArray = pullArray.map((d)=>d.mac);
+  let pushArray = pullArray.map((mac)=>{
+    return {mac: mac, state: 'update', retry_count: 0};
+  });
+  await(configQuery(
+    null,
+    {'device_update_schedule.rule.in_progress_devices': {
+      'device_update_schedule.rule.in_progress_devices.mac': {'$in': pullArray},
+    }},
+    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
+  ));
+  // Mark next for updates
+  markSeveral();
+});
+
+const scheduleInitialize = function(day, hour, minute) {
+  let cronLikeTime = '' + minute + ' ' + hour + ' * * ' + day;
+  initSchedules.push(nodeSchedule.scheduleJob(cronLikeTime, async(()=>{
+    let config = await(getConfig());
+    // No active schedule - this should never happen, but if it does, cancel job
+    if (!config) {
+      removeSchedules();
+      return;
+    }
+    // There are still active devices in progress, no need to initialize
+    if (config.device_update_schedule.rule.in_progress_devices.length > 0) {
+      return;
+    }
+    // Initialize update for next devices
+    markSeveral();
+  })));
+};
+
+const removeSchedules = function() {
+  initSchedules.forEach((j)=>j.cancel());
+  initSchedules = [];
+};
+
 const markNextForUpdate = async(function() {
   // This function should not have 2 running instances at the same time, since
   // async database access can lead to no longer valid reads after one instance
@@ -98,6 +232,12 @@ const markNextForUpdate = async(function() {
   if (!config) {
     mutexRelease();
     return {success: false, error: 'Não há um agendamento ativo'};
+  }
+  // Check if we are in a valid date range before doing DB operations
+  if (!checkValidRange(config)) {
+    mutexRelease();
+    removeOfflineWatchdog();
+    return {success: true, marked: false};
   }
   let devices = config.device_update_schedule.rule.to_do_devices;
   if (devices.length === 0) {
@@ -116,7 +256,6 @@ const markNextForUpdate = async(function() {
     // No online devices, mark them all as offline
     try {
       await(configQuery({
-        'device_update_schedule.is_on_watch': true,
         'device_update_schedule.rule.to_do_devices.$[].state': 'offline',
       }, null, null));
     } catch (err) {
@@ -141,10 +280,6 @@ const markNextForUpdate = async(function() {
       }
     ));
     mutexRelease();
-    if (devices.length === 1) {
-      // Last device on to_do, remove watchdog
-      removeOfflineWatchdog();
-    }
   } catch (err) {
     console.log(err);
     mutexRelease();
@@ -223,14 +358,15 @@ scheduleController.successDownload = async(function(mac) {
 scheduleController.successUpdate = async(function(mac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
+  let count = device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status updating to ok
   try {
     await(configQuery(
-      // Make schedule inactive if this is last device
-      {'is_active': (rule.in_progress_devices.length > 1)},
+      // Make schedule inactive if this is last device to enter done state
+      {'is_active': (rule.done_devices.length+1 !== count)},
       // Remove from in progress state
       {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
       // Add to done, status ok
@@ -245,12 +381,18 @@ scheduleController.successUpdate = async(function(mac) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
+  if (rule.done_devices.length+1 === count) {
+    // This was last device to enter done state, schedule is done
+    removeSchedules();
+    removeOfflineWatchdog();
+  }
   return {success: true};
 });
 
 scheduleController.failedDownload = async(function(mac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
+  let count = device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
@@ -258,7 +400,12 @@ scheduleController.failedDownload = async(function(mac) {
     let setQuery = null;
     if (device.retry_count >= maxRetries || config.is_aborted) {
       // Will not try again or move to to_do, so check if last device to update
-      setQuery = {'is_active': (rule.in_progress_devices.length > 1)};
+      setQuery = {'is_active': (rule.done_devices.length+1 !== count)};
+      if (rule.done_devices.length+1 === count) {
+        // This was last device to enter done state, schedule is done
+        removeSchedules();
+        removeOfflineWatchdog();
+      }
     }
     // Remove from in progress state
     let pullQuery = {
@@ -320,6 +467,8 @@ scheduleController.abortSchedule = function() {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
+  removeSchedules();
+  removeOfflineWatchdog();
   return {success: true};
 };
 
@@ -451,7 +600,7 @@ scheduleController.startSchedule = async(function(req, res) {
   let release = returnStringOrEmptyStr(req.body.release);
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
-  let timeRestrictions = req.body.time_restriction;
+  let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
 
   let finalQuery = null;
@@ -519,17 +668,40 @@ scheduleController.startSchedule = async(function(req, res) {
     }
     let macList = matchedDevices.map((device)=>device._id);
     // Save scheduler configs to database
+    let config = null;
     try {
-      let config = await(getConfig(false, false));
+      config = await(getConfig(false, false));
       config.device_update_schedule.is_active = true;
       config.device_update_schedule.used_time_range = hasTimeRestriction;
       config.device_update_schedule.used_csv = useCsv;
       config.device_update_schedule.device_count = macList.length;
       config.device_update_schedule.date = Date.now();
       if (hasTimeRestriction) {
-        config.device_update_schedule.allowed_time_range.start = startTime;
-        config.device_update_schedule.allowed_time_range.end = endTime;
-        config.device_update_schedule.allowed_time_range.weekdays = weekDays;
+        let hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+        let valid = timeRestrictions.filter((r)=>{
+          let startDay = weekDayStrToInt(r.startWeekday);
+          let endDay = weekDayStrToInt(r.endWeekday);
+          if (startDay < 0) return false;
+          if (endDay < 0) return false;
+          if (!r.startTime.match(hourRegex)) return false;
+          if (!r.endTime.match(hourRegex)) return false;
+          if (startDay === endDay && r.startTime === r.endTime) return false;
+          return true;
+        });
+        if (valid.length === 0) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao processar parâmetros: ranges de tempo inválidos',
+          });
+        }
+        config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
+          return {
+            start_day: weekDayStrToInt(r.startWeekday),
+            end_day: weekDayStrToInt(r.endWeekday),
+            start_time: r.startTime,
+            end_time: r.endTime,
+          };
+        });
       }
       config.device_update_schedule.rule.release = release;
       await(config.save());
@@ -548,6 +720,14 @@ scheduleController.startSchedule = async(function(req, res) {
         message: result.error,
       });
     }
+    // Schedule job to init whenever a time range starts
+    config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
+      scheduleInitialize(
+        r.start_day,
+        parseInt(r.start_time.substring(0, 2)),
+        parseInt(r.start_time.substring(3, 5))
+      );
+    });
     return res.status(200).json({
       success: true,
     });

@@ -19,11 +19,16 @@ let configSchema = new mongoose.Schema({
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
     is_aborted: {type: Boolean, default: false},
+    used_time_range: {type: Boolean},
+    used_csv: {type: Boolean},
     date: {type: Date},
-    allowed_time_range: {
-      start: {type: Date},
-      end: {type: Date},
-    },
+    device_count: {type: Number},
+    allowed_time_ranges: [{
+      start_day: {type: Number, enum: [0, 1, 2, 3, 4, 5, 6]},
+      end_day: {type: Number, enum: [0, 1, 2, 3, 4, 5, 6]},
+      start_time: {type: String},
+      end_time: {type: String},
+    }],
     rule: {
       release: {type: String},
       to_do_devices: [{
