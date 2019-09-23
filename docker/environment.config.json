@@ -6,7 +6,8 @@
       "autorestart": true,
       "env": {
         "production": true,
-        "TZ": "America/Sao_Paulo"
+        "TZ": "America/Sao_Paulo",
+        "FLM_CONCURRENT_UPDATES_LIMIT": 50
       },
       "error_file": "/dev/stderr",
       "out_file": "/dev/stdout",
