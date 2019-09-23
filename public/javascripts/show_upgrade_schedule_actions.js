@@ -15,6 +15,7 @@ const resetStepperData = function(stepper) {
 };
 
 const isWhenPartValidated = function() {
+  if ($('input[name=updateNow]:checked').length > 0) return true;
   let rangesLength = $('#time-ranges .time-range').length;
   let retval = true;
   for (let i = 0; i < rangesLength; i++) {
@@ -214,7 +215,7 @@ $(document).ready(function() {
           $('#warning-prevTotal').html(totalCount);
           totalCount = parseInt(totalCount) - missingCount;
           if (totalCount > 0) {
-            $('#warning-newTotal').html(' somente ' + totalCount);
+            $('#warning-newTotal').html(' ' + totalCount);
             $('#how-btn-next').prop('disabled', false);
           } else {
             $('#how-btn-next').prop('disabled', true);
@@ -280,10 +281,10 @@ $(document).ready(function() {
       let rangeCount = $('#time-ranges .time-range').length;
       for (let i = 0; i < rangeCount; i++) {
         timeRestrictions.push({
-          'startWeekday': $('startWeekday-' + i).html(),
-          'endWeekday': $('endWeekday-' + i).html(),
-          'startTime': $('#scheduleStart-' + i).val(),
-          'endTime': $('#scheduleEnd-' + i).val(),
+          'startWeekday': $('#startWeekday-' + i).html(),
+          'endWeekday': $('#endWeekday-' + i).html(),
+          'startTime': $('#scheduleStart-' + i + ' input').val(),
+          'endTime': $('#scheduleEnd-' + i + ' input').val(),
         });
       }
     }
@@ -298,9 +299,7 @@ $(document).ready(function() {
         use_csv: useCsv,
         use_all: useAll,
         use_time_restriction: hasTimeRestriction,
-        start_time: startTime,
-        end_time: endTime,
-        time_restriction: timeRestrictions,
+        time_restriction: JSON.stringify(timeRestrictions),
         release: release,
         page_num: pageNum,
         page_count: pageCount,
@@ -314,7 +313,6 @@ $(document).ready(function() {
         $('#when-btn-next').prop('disabled', false);
       },
       error: function(xhr, status, error) {
-        console.log(JSON.parse(xhr.responseText));
         $('#when-btn-icon')
           .removeClass('fa-spinner fa-pulse')
           .addClass('fa-check');
