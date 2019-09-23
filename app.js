@@ -18,6 +18,7 @@ let session = require('express-session');
 
 let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
+let deviceUpdater = require('./controllers/update_scheduler');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
@@ -342,6 +343,14 @@ app.use(function(err, req, res, next) {
     });
   }
 });
+
+// Check device update schedule, if active must re-initialize
+Config.findOne({is_default: true}, function(err, matchedConfig) {
+  if (err || !matchedConfig) return;
+  // Do nothing if no active schedule
+  if (!matchedConfig.device_update_schedule.is_active) return;
+  deviceUpdater.recoverFromOffline(matchedConfig);
+}).lean();
 
 app.listen(3000, function() {
   let rule = new schedule.RecurrenceRule();
