@@ -594,6 +594,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
 
 scheduleController.startSchedule = async(function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let hasTimeRestriction = (req.body.use_time_restriction === 'true');
@@ -674,6 +675,7 @@ scheduleController.startSchedule = async(function(req, res) {
       config.device_update_schedule.is_active = true;
       config.device_update_schedule.used_time_range = hasTimeRestriction;
       config.device_update_schedule.used_csv = useCsv;
+      config.device_update_schedule.used_search = searchTags;
       config.device_update_schedule.device_count = macList.length;
       config.device_update_schedule.date = Date.now();
       if (hasTimeRestriction) {

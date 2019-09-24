@@ -9,8 +9,13 @@
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
-        .bs-stepper
-          .bs-stepper-header(role="tablist")
+        .config-header.border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
+          .col-1
+            .fas.fa-chevron-down.fa-lg.mt-1
+          .col-11
+            h5 Parâmetros da Atualização
+        .bs-stepper.pl-2.pr-2.grey.lighten-5.border
+          .bs-stepper-header.mt-2(role="tablist")
             .step(data-target="#which-part")
               button#which-part-trigger.step-trigger(type="button", role="tab", aria-controls="which-part")
                 span.bs-stepper-circle 1
@@ -45,8 +50,12 @@
                       span &nbsp; Arquivo CSV
               .tab-content.mt-4
                 #panel1.tab-pane.fade(role="tabpanel")
-                  .custom-control.custom-radio
-                    input#allDevices.custom-control-input(type="radio", name="deviceCount")
+                  .text-center
+                    strong Filtros de busca usados: 
+                     span#searchTags Nenhum filtro utilizado
+                  .custom-control.custom-radio.mt-3
+                    .text-center
+                      input#allDevices.custom-control-input(type="radio", name="deviceCount")
                     label.custom-control-label(for="allDevices") Todos os
                       span#allDevicesLabel
                       span  resultados da busca
@@ -103,7 +112,7 @@
                   #releases-dropdown.dropdown-menu
               #warning-releases.mt-4.alert.alert-danger
                 .text-center
-                  strong Atenção! Atualmente somente
+                  strong Atenção! Atualmente
                     span#warning-newTotal
                     span  dos
                     span#warning-prevTotal

@@ -21,6 +21,7 @@ let configSchema = new mongoose.Schema({
     is_aborted: {type: Boolean, default: false},
     used_time_range: {type: Boolean},
     used_csv: {type: Boolean},
+    used_search: {type: String},
     date: {type: Date},
     device_count: {type: Number},
     allowed_time_ranges: [{

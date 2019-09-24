@@ -215,7 +215,7 @@ $(document).ready(function() {
           $('#warning-prevTotal').html(totalCount);
           totalCount = parseInt(totalCount) - missingCount;
           if (totalCount > 0) {
-            $('#warning-newTotal').html(' ' + totalCount);
+            $('#warning-newTotal').html(' somente ' + totalCount);
             $('#how-btn-next').prop('disabled', false);
           } else {
             $('#how-btn-next').prop('disabled', true);
@@ -275,6 +275,9 @@ $(document).ready(function() {
     let pageCount = parseInt($('#input-elements-pp option:selected').text());
     let filterList = $('#devices-search-form .tags-input').val();
     let release = $('#selected-release').html();
+    let value = $('#devices-search-form input').val();
+    let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
+                       : 'Nenhum filtro utilizado';
     let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
     let timeRestrictions = [];
     if (hasTimeRestriction) {
@@ -296,6 +299,7 @@ $(document).ready(function() {
       url: '/devicelist/scheduler/start',
       type: 'POST',
       data: {
+        use_search: tags,
         use_csv: useCsv,
         use_all: useAll,
         use_time_restriction: hasTimeRestriction,
@@ -347,5 +351,12 @@ $(document).ready(function() {
     timeRangesContent[timeRangesContent.length - 1].remove();
     $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
     $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  });
+
+  $('#devices-search-form input').on('change textInput input', (event)=>{
+    let value = $('#devices-search-form input').val();
+    let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
+                       : 'Nenhum filtro utilizado';
+    $('#searchTags').html(tags);
   });
 });
