@@ -458,8 +458,12 @@ scheduleController.abortSchedule = function() {
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
       return {mac: d.mac, state: state};
     });
+    let setQuery = {'device_update_schedule.rule.to_do_devices': []};
+    if (rule.done_devices.length + pushArray.length === count) {
+      setQuery['is_active'] = false;
+    }
     await(configQuery(
-      {'device_update_schedule.rule.to_do_devices': []},
+      setQuery,
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}}
     ));
