@@ -120,243 +120,280 @@ $(document).ready(function() {
     return false;
   });
 
-  let stepper = new Stepper($('.bs-stepper')[0], {animation: true});
-  resetStepperData(stepper);
-
-  $(document).on('submit', '#devices-search-form', function(event) {
+  let stepper = $('.bs-stepper');
+  if (stepper.length > 0) {
+    stepper = new Stepper(stepper[0], {animation: true});
     resetStepperData(stepper);
-    stepper.to(1);
-    return false;
-  });
+    $(document).on('submit', '#devices-search-form', function(event) {
+      resetStepperData(stepper);
+      stepper.to(1);
+      return false;
+    });
 
-  configureDateDiv(0);
+    configureDateDiv(0);
 
-  $('#how-btn-prev').click((event)=>{
-    resetStepperData(stepper);
-    stepper.previous();
-  });
+    $('#how-btn-prev').click((event)=>{
+      resetStepperData(stepper);
+      stepper.previous();
+    });
 
-  $('#when-btn-prev').click((event)=>{
-    stepper.previous();
-  });
+    $('#when-btn-prev').click((event)=>{
+      stepper.previous();
+    });
 
-  $('#how-btn-next').prop('disabled', true);
-  $('#how-btn-next').click((event)=>{
-    stepper.next();
-  });
+    $('#how-btn-next').prop('disabled', true);
+    $('#how-btn-next').click((event)=>{
+      stepper.next();
+    });
 
-  $('.custom-control.custom-radio').click((event)=>{
-    $('#which-btn-next').prop('disabled', false);
-  });
+    $('.custom-control.custom-radio').click((event)=>{
+      $('#which-btn-next').prop('disabled', false);
+    });
 
-  $('#who-part-type').click((event)=>{
-    let useCsv = $('.nav-link.active').attr('id') === 'whichSearch';
-    if (useCsv) {
-      $('#which-btn-next').prop('disabled', true);
-    } else {
-      $('#which-btn-next').prop(
-        'disabled',
-        ($('input[name=deviceCount]:checked').length === 0)
-      );
-    }
-  });
+    $('#who-part-type').click((event)=>{
+      let useCsv = $('.nav-link.active').attr('id') === 'whichSearch';
+      if (useCsv) {
+        $('#which-btn-next').prop('disabled', true);
+      } else {
+        $('#which-btn-next').prop(
+          'disabled',
+          ($('input[name=deviceCount]:checked').length === 0)
+        );
+      }
+    });
 
-  $('#which-btn-next').prop('disabled', true);
-  $('#which-btn-next').click((event)=>{
-    $('#which-error-msg').hide();
-    let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
-    let pageNum = parseInt($('#curr-page-link').html());
-    let pageCount = parseInt($('#input-elements-pp option:selected').text());
-    let filterList = $('#devices-search-form .tags-input').val();
-    let useAll = (useCsv) ? false :
-                 ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
-    $.ajax({
-      url: '/devicelist/scheduler/releases',
-      type: 'PUT',
-      data: {
-        use_csv: useCsv,
-        use_all: useAll,
-        page_num: pageNum,
-        page_count: pageCount,
-        filter_list: filterList,
-      },
-      success: function(res) {
-        // Build options dropdown
-        let dropdown = $('#releases-dropdown');
-        dropdown.html('');
-        res.releases.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
-          dropdown.append(
-            $('<a>').addClass('dropdown-item text-center').html(release.id)
-          );
-        });
-        // Build missing firmware data
-        $('#releases-dropdown a').unbind('click');
-        $('#releases-dropdown a').click((event)=>{
-          $('#warning-releases').hide();
-          let release = event.originalEvent.target.text;
-          $('#selected-release').html(release);
-          let missingModels = res.releases.find((r)=>r.id===release).models;
-          let missingCount = 0;
-          $('#warning-missing-models').html('');
-          missingModels.forEach((model)=>{
-            $('#warning-missing-models').append(
-              $('<li>').html(model.model)
+    $('#which-btn-next').prop('disabled', true);
+    $('#which-btn-next').click((event)=>{
+      $('#which-error-msg').hide();
+      let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
+      let pageNum = parseInt($('#curr-page-link').html());
+      let pageCount = parseInt($('#input-elements-pp option:selected').text());
+      let filterList = $('#devices-search-form .tags-input').val();
+      let useAll = (useCsv) ? false :
+          ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
+      $.ajax({
+        url: '/devicelist/scheduler/releases',
+        type: 'PUT',
+        data: {
+          use_csv: useCsv,
+          use_all: useAll,
+          page_num: pageNum,
+          page_count: pageCount,
+          filter_list: filterList,
+        },
+        success: function(res) {
+          // Build options dropdown
+          let dropdown = $('#releases-dropdown');
+          dropdown.html('');
+          res.releases.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
+            dropdown.append(
+              $('<a>').addClass('dropdown-item text-center').html(release.id)
             );
-            missingCount += model.count;
           });
-          let totalCount;
-          if (useCsv) {
-            totalCount = $('#csv-result-count').html();
-          } else if (useAll) {
-            totalCount = $('#allDevicesLabel').html();
-          } else {
-            totalCount = $('#someDevicesLabel').html();
-          }
-          $('#warning-prevTotal').html(totalCount);
-          totalCount = parseInt(totalCount) - missingCount;
-          if (totalCount > 0) {
-            $('#warning-newTotal').html(' somente ' + totalCount);
-            $('#how-btn-next').prop('disabled', false);
-          } else {
-            $('#how-btn-next').prop('disabled', true);
-            $('#warning-newTotal').html(' nenhum');
-          }
-          if (missingCount > 0) {
-            $('#warning-releases').show();
-          } else {
-            $('#how-btn-next').prop('disabled', false);
-          }
-        });
-        stepper.next();
-      },
-      error: function(xhr, status, error) {
-        $('#which-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
-                                    'Por favor tente novamente.');
-        $('#which-error-msg').show();
-      },
+          // Build missing firmware data
+          $('#releases-dropdown a').unbind('click');
+          $('#releases-dropdown a').click((event)=>{
+            $('#warning-releases').hide();
+            let release = event.originalEvent.target.text;
+            $('#selected-release').html(release);
+            let missingModels = res.releases.find((r)=>r.id===release).models;
+            let missingCount = 0;
+            $('#warning-missing-models').html('');
+            missingModels.forEach((model)=>{
+              $('#warning-missing-models').append(
+                $('<li>').html(model.model)
+              );
+              missingCount += model.count;
+            });
+            let totalCount;
+            if (useCsv) {
+              totalCount = $('#csv-result-count').html();
+            } else if (useAll) {
+              totalCount = $('#allDevicesLabel').html();
+            } else {
+              totalCount = $('#someDevicesLabel').html();
+            }
+            $('#warning-prevTotal').html(totalCount);
+            totalCount = parseInt(totalCount) - missingCount;
+            if (totalCount > 0) {
+              $('#warning-newTotal').html(' somente ' + totalCount);
+              $('#how-btn-next').prop('disabled', false);
+            } else {
+              $('#how-btn-next').prop('disabled', true);
+              $('#warning-newTotal').html(' nenhum');
+            }
+            if (missingCount > 0) {
+              $('#warning-releases').show();
+            } else {
+              $('#how-btn-next').prop('disabled', false);
+            }
+          });
+          stepper.next();
+        },
+        error: function(xhr, status, error) {
+          $('#which-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
+                                      'Por favor tente novamente.');
+          $('#which-error-msg').show();
+        },
+      });
     });
-  });
 
-  $('#when-btn-next').prop('disabled', true);
-  $('.custom-control.custom-checkbox').click((event)=>{
-    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
-  });
-
-  $('#updateNow').click((event)=>{
-    let rangesLength = $('#time-ranges .time-range').length;
-    if ($('input[name=updateNow]:checked').length > 0) {
-      for (let i = 0; i < rangesLength; i++) {
-        $('#scheduleStart-' + i + ' input').prop('disabled', true);
-        $('#scheduleEnd-' + i + ' input').prop('disabled', true);
-        $('#startWeekday-' + i).prop('disabled', true);
-        $('#endWeekday-' + i).prop('disabled', true);
-      }
-      $('#addSchedule').prop('disabled', true);
-      $('#removeSchedule').prop('disabled', true);
-    } else {
-      for (let i = 0; i < rangesLength; i++) {
-        $('#scheduleStart-' + i + ' input').prop('disabled', false);
-        $('#scheduleEnd-' + i + ' input').prop('disabled', false);
-        $('#startWeekday-' + i).prop('disabled', false);
-        $('#endWeekday-' + i).prop('disabled', false);
-      }
-      $('#addSchedule').prop('disabled', false);
-      $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
-    }
-  });
-
-  $('#when-btn-next').click((event)=>{
-    $('#when-btn-prev').prop('disabled', true);
     $('#when-btn-next').prop('disabled', true);
-    let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
-    let useAll = (useCsv) ? false :
-                 ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
-    let pageNum = parseInt($('#curr-page-link').html());
-    let pageCount = parseInt($('#input-elements-pp option:selected').text());
-    let filterList = $('#devices-search-form .tags-input').val();
-    let release = $('#selected-release').html();
-    let value = $('#devices-search-form input').val();
-    let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
-                       : 'Nenhum filtro utilizado';
-    let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
-    let timeRestrictions = [];
-    if (hasTimeRestriction) {
-      let rangeCount = $('#time-ranges .time-range').length;
-      for (let i = 0; i < rangeCount; i++) {
-        timeRestrictions.push({
-          'startWeekday': $('#startWeekday-' + i).html(),
-          'endWeekday': $('#endWeekday-' + i).html(),
-          'startTime': $('#scheduleStart-' + i + ' input').val(),
-          'endTime': $('#scheduleEnd-' + i + ' input').val(),
-        });
-      }
-    }
-    $('#when-error-msg').hide();
-    $('#when-btn-icon')
-      .removeClass('fa-check')
-      .addClass('fa-spinner fa-pulse');
-    $.ajax({
-      url: '/devicelist/scheduler/start',
-      type: 'POST',
-      data: {
-        use_search: tags,
-        use_csv: useCsv,
-        use_all: useAll,
-        use_time_restriction: hasTimeRestriction,
-        time_restriction: JSON.stringify(timeRestrictions),
-        release: release,
-        page_num: pageNum,
-        page_count: pageCount,
-        filter_list: filterList,
-      },
-      success: function(res) {
-        $('#when-btn-icon')
-          .removeClass('fa-spinner fa-pulse')
-          .addClass('fa-check');
-        $('#when-btn-prev').prop('disabled', false);
-        $('#when-btn-next').prop('disabled', false);
-      },
-      error: function(xhr, status, error) {
-        $('#when-btn-icon')
-          .removeClass('fa-spinner fa-pulse')
-          .addClass('fa-check');
-        $('#when-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
-                                    'Por favor tente novamente.');
-        $('#when-error-msg').show();
-        $('#when-btn-prev').prop('disabled', false);
-        $('#when-btn-next').prop('disabled', false);
-      },
+    $('.custom-control.custom-checkbox').click((event)=>{
+      $('#when-btn-next').prop('disabled', !isWhenPartValidated());
     });
+
+    $('#updateNow').click((event)=>{
+      let rangesLength = $('#time-ranges .time-range').length;
+      if ($('input[name=updateNow]:checked').length > 0) {
+        for (let i = 0; i < rangesLength; i++) {
+          $('#scheduleStart-' + i + ' input').prop('disabled', true);
+          $('#scheduleEnd-' + i + ' input').prop('disabled', true);
+          $('#startWeekday-' + i).prop('disabled', true);
+          $('#endWeekday-' + i).prop('disabled', true);
+        }
+        $('#addSchedule').prop('disabled', true);
+        $('#removeSchedule').prop('disabled', true);
+      } else {
+        for (let i = 0; i < rangesLength; i++) {
+          $('#scheduleStart-' + i + ' input').prop('disabled', false);
+          $('#scheduleEnd-' + i + ' input').prop('disabled', false);
+          $('#startWeekday-' + i).prop('disabled', false);
+          $('#endWeekday-' + i).prop('disabled', false);
+        }
+        $('#addSchedule').prop('disabled', false);
+        $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
+      }
+    });
+
+    $('#when-btn-next').click((event)=>{
+      $('#when-btn-prev').prop('disabled', true);
+      $('#when-btn-next').prop('disabled', true);
+      let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
+      let useAll = (useCsv) ? false :
+          ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
+      let pageNum = parseInt($('#curr-page-link').html());
+      let pageCount = parseInt($('#input-elements-pp option:selected').text());
+      let filterList = $('#devices-search-form .tags-input').val();
+      let release = $('#selected-release').html();
+      let value = $('#devices-search-form input').val();
+      let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
+                         : 'Nenhum filtro utilizado';
+      let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
+      let timeRestrictions = [];
+      if (hasTimeRestriction) {
+        let rangeCount = $('#time-ranges .time-range').length;
+        for (let i = 0; i < rangeCount; i++) {
+          timeRestrictions.push({
+            'startWeekday': $('#startWeekday-' + i).html(),
+            'endWeekday': $('#endWeekday-' + i).html(),
+            'startTime': $('#scheduleStart-' + i + ' input').val(),
+            'endTime': $('#scheduleEnd-' + i + ' input').val(),
+          });
+        }
+      }
+      $('#when-error-msg').hide();
+      $('#when-btn-icon')
+        .removeClass('fa-check')
+        .addClass('fa-spinner fa-pulse');
+      $.ajax({
+        url: '/devicelist/scheduler/start',
+        type: 'POST',
+        data: {
+          use_search: tags,
+          use_csv: useCsv,
+          use_all: useAll,
+          use_time_restriction: hasTimeRestriction,
+          time_restriction: JSON.stringify(timeRestrictions),
+          release: release,
+          page_num: pageNum,
+          page_count: pageCount,
+          filter_list: filterList,
+        },
+        success: function(res) {
+          $('#when-btn-icon')
+            .removeClass('fa-spinner fa-pulse')
+            .addClass('fa-check');
+          $('#when-btn-prev').prop('disabled', false);
+          $('#when-btn-next').prop('disabled', false);
+        },
+        error: function(xhr, status, error) {
+          $('#when-btn-icon')
+            .removeClass('fa-spinner fa-pulse')
+            .addClass('fa-check');
+          $('#when-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
+                                      'Por favor tente novamente.');
+          $('#when-error-msg').show();
+          $('#when-btn-prev').prop('disabled', false);
+          $('#when-btn-next').prop('disabled', false);
+        },
+      });
+    });
+
+    $('#addSchedule').click((event)=>{
+      let timeRangesContent = $('#time-ranges .time-range');
+      let length = timeRangesContent.length;
+      let newHtml = timeRangesContent[0].innerHTML;
+      newHtml = newHtml.replace(/scheduleStart-0/g, 'scheduleStart-' + length);
+      newHtml = newHtml.replace(/startWeekday-0/g, 'startWeekday-' + length);
+      newHtml = newHtml.replace(/scheduleEnd-0/g, 'scheduleEnd-' + length);
+      newHtml = newHtml.replace(/endWeekday-0/g, 'endWeekday-' + length);
+      newHtml = newHtml.replace(/equal-error-0/g, 'equal-error-' + length);
+      $('#time-ranges').append(
+        $('<div class="time-range">').html(newHtml)
+      );
+      configureDateDiv(length);
+      $('#removeSchedule').prop('disabled', false);
+      $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+    });
+
+    $('#removeSchedule').click((event)=>{
+      let timeRangesContent = $('#time-ranges .time-range');
+      timeRangesContent[timeRangesContent.length - 1].remove();
+      $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
+      $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+    });
+
+    $('#devices-search-form input').on('change textInput input', (event)=>{
+      let value = $('#devices-search-form input').val();
+      let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
+                         : 'Nenhum filtro utilizado';
+      $('#searchTags').html(tags);
+    });
+  }
+
+  $('#config-panel-arrow').click((event)=>{
+    let div = $('#config-panel-arrow');
+    if (div.hasClass('text-primary')) {
+      div.removeClass('text-primary fa-chevron-up').addClass('fa-chevron-down');
+      $('#config-panel').hide();
+    } else {
+      div.removeClass('fa-chevron-down').addClass('text-primary fa-chevron-up');
+      $('#config-panel').show();
+    }
   });
 
-  $('#addSchedule').click((event)=>{
-    let timeRangesContent = $('#time-ranges .time-range');
-    let length = timeRangesContent.length;
-    let newHtml = timeRangesContent[0].innerHTML;
-    newHtml = newHtml.replace(/scheduleStart-0/g, 'scheduleStart-' + length);
-    newHtml = newHtml.replace(/startWeekday-0/g, 'startWeekday-' + length);
-    newHtml = newHtml.replace(/scheduleEnd-0/g, 'scheduleEnd-' + length);
-    newHtml = newHtml.replace(/endWeekday-0/g, 'endWeekday-' + length);
-    newHtml = newHtml.replace(/equal-error-0/g, 'equal-error-' + length);
-    $('#time-ranges').append(
-      $('<div class="time-range">').html(newHtml)
-    );
-    configureDateDiv(length);
-    $('#removeSchedule').prop('disabled', false);
-    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  $('#prev-config-panel-arrow').click((event)=>{
+    let div = $('#prev-config-panel-arrow');
+    if (div.hasClass('text-primary')) {
+      div.removeClass('text-primary fa-chevron-up').addClass('fa-chevron-down');
+      $('#prev-config-panel').hide();
+    } else {
+      div.removeClass('fa-chevron-down').addClass('text-primary fa-chevron-up');
+      $('#prev-config-panel').show();
+    }
   });
 
-  $('#removeSchedule').click((event)=>{
-    let timeRangesContent = $('#time-ranges .time-range');
-    timeRangesContent[timeRangesContent.length - 1].remove();
-    $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
-    $('#when-btn-next').prop('disabled', !isWhenPartValidated());
+  $('#result-panel-arrow').click((event)=>{
+    let div = $('#result-panel-arrow');
+    if (div.hasClass('text-primary')) {
+      div.removeClass('text-primary fa-chevron-up').addClass('fa-chevron-down');
+      $('#result-panel').hide();
+    } else {
+      div.removeClass('fa-chevron-down').addClass('text-primary fa-chevron-up');
+      $('#result-panel').show();
+    }
   });
 
-  $('#devices-search-form input').on('change textInput input', (event)=>{
-    let value = $('#devices-search-form input').val();
-    let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
-                       : 'Nenhum filtro utilizado';
-    $('#searchTags').html(tags);
-  });
+  $('#prev-config-panel').hide();
 });
