@@ -176,7 +176,7 @@ $(document).ready(function() {
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $(document).on('click', '.fa-chevron-down', function(event) {
+  $(document).on('click', '.fa-chevron-down.device-table-row', function(event) {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
@@ -185,7 +185,7 @@ $(document).ready(function() {
                    .addClass('fa-chevron-up text-primary');
   });
 
-  $(document).on('click', '.fa-chevron-up', function(event) {
+  $(document).on('click', '.fa-chevron-up.device-table-row', function(event) {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
@@ -422,7 +422,7 @@ $(document).ready(function() {
                 ),
                 $('<td>').addClass('text-center')
                 .append(
-                  $('<div>').addClass('fas fa-chevron-down fa-lg')
+                  $('<div>').addClass('fas fa-chevron-down fa-lg device-table-row')
                 ),
                 $('<td>').append(
                   $('<div>').addClass('fas fa-circle fa-lg device-status')
