@@ -23,7 +23,7 @@ let configSchema = new mongoose.Schema({
     used_csv: {type: Boolean},
     used_search: {type: String},
     date: {type: Date},
-    device_count: {type: Number},
+    device_count: {type: Number, default: 0},
     allowed_time_ranges: [{
       start_day: {type: Number, enum: [0, 1, 2, 3, 4, 5, 6]},
       end_day: {type: Number, enum: [0, 1, 2, 3, 4, 5, 6]},
