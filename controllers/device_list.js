@@ -12,6 +12,17 @@ let deviceListController = {};
 const fs = require('fs');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
+const intToWeekDayStr = function(day) {
+  if (day === 0) return 'Domingo';
+  if (day === 1) return 'Segunda';
+  if (day === 2) return 'Terça';
+  if (day === 3) return 'Quarta';
+  if (day === 4) return 'Quinta';
+  if (day === 5) return 'Sexta';
+  if (day === 6) return 'Sábado';
+  return '';
+};
+
 deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
@@ -148,6 +159,36 @@ deviceListController.index = function(req, res) {
             matchedConfig.measure_configs.auth_token : '';
         let license = matchedConfig.measure_configs.is_license_active;
         indexContent.measure_license = license;
+        indexContent.update_schedule = {
+          is_active: matchedConfig.device_update_schedule.is_active,
+          device_total: matchedConfig.device_update_schedule.device_count,
+        };
+        if (matchedConfig.device_update_schedule.device_count > 0) {
+          // Has a previous configuration saved
+          let params = matchedConfig.device_update_schedule;
+          let rule = params.rule;
+          indexContent.update_schedule['is_aborted'] = params.is_aborted;
+          indexContent.update_schedule['date'] = params.date;
+          indexContent.update_schedule['use_csv'] = params.used_csv;
+          indexContent.update_schedule['use_search'] = params.used_search;
+          indexContent.update_schedule['use_time'] = params.used_time_range;
+          indexContent.update_schedule['time_ranges'] =
+            params.allowed_time_ranges.map((r)=>{
+              return {
+                start_day: intToWeekDayStr(r.start_day),
+                end_day: intToWeekDayStr(r.end_day),
+                start_time: r.start_time,
+                end_time: r.end_time,
+              };
+            });
+          indexContent.update_schedule['release'] = params.rule.release;
+          indexContent.update_schedule['device_to_do'] =
+            rule.to_do_devices.length + rule.in_progress_devices.length;
+          indexContent.update_schedule['device_done'] =
+            rule.done_devices.filter((d)=>d.state==='ok').length;
+          indexContent.update_schedule['device_error'] =
+            rule.done_devices.filter((d)=>d.state!=='ok').length;
+        }
       }
 
       // Filter data using user permissions
