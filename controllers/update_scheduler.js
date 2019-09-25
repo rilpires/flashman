@@ -179,7 +179,7 @@ scheduleController.recoverFromOffline = async(function(config) {
   // Move those in doing status downloading back to to_do
   let rule = config.device_update_schedule.rule;
   let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
-  pullArray = pullArray.map((d)=>d.mac);
+  pullArray = pullArray.map((d)=>d.mac.toUpperCase());
   let pushArray = pullArray.map((mac)=>{
     return {mac: mac, state: 'update', retry_count: 0};
   });
@@ -305,7 +305,7 @@ scheduleController.initialize = async(function(macList) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   devices = macList.map((mac)=>{
-    return {mac: mac, state: 'update', retry_count: 0};
+    return {mac: mac.toUpperCase(), state: 'update', retry_count: 0};
   });
   try {
     await(configQuery(
