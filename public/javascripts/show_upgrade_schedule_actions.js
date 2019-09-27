@@ -297,7 +297,7 @@ $(document).ready(function() {
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
       swal({
-        title: 'Abortando agendamento...',
+        title: 'Iniciando agendamento...',
         onOpen: () => {
           swal.showLoading();
         },
