@@ -296,6 +296,12 @@ $(document).ready(function() {
       $('#when-btn-icon')
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
+      swal({
+        title: 'Abortando agendamento...',
+        onOpen: () => {
+          swal.showLoading();
+        },
+      });
       $.ajax({
         url: '/devicelist/scheduler/start',
         type: 'POST',
@@ -316,6 +322,15 @@ $(document).ready(function() {
             .addClass('fa-check');
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
+          swal.close();
+          swal({
+            type: 'success',
+            title: 'Agendamento iniciado com sucesso!',
+            text: 'Pressione OK para recarregar a página',
+            confirmButtonColor: '#4db6ac',
+          }).then(()=>{
+            location.reload(true);
+          });
         },
         error: function(xhr, status, error) {
           $('#when-btn-icon')
@@ -326,6 +341,13 @@ $(document).ready(function() {
           $('#when-error-msg').show();
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
+          swal.close();
+          swal({
+            type: 'error',
+            title: 'Erro ao iniciar o agendamento',
+            text: 'Por favor tente novamente',
+            confirmButtonColor: '#4db6ac',
+          });
         },
       });
     });
@@ -393,6 +415,127 @@ $(document).ready(function() {
       div.removeClass('fa-chevron-down').addClass('text-primary fa-chevron-up');
       $('#result-panel').show();
     }
+  });
+
+  $('#abort-btn').click((event)=>{
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Ao abortar o agendamento todos os dispositivos que ainda não ' +
+        'foram atualizados terão sua atualização descartada, precisando de ' +
+        'um novo agendamento para atualiza-los. Deseja continuar mesmo assim?',
+      confirmButtonText: 'Prosseguir',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (!result.value) return;
+      swal({
+        title: 'Abortando agendamento...',
+        onOpen: () => {
+          swal.showLoading();
+        },
+      });
+      $.ajax({
+        type: 'POST',
+        url: '/devicelist/scheduler/abort',
+        success: function(res) {
+          swal.close();
+          swal({
+            type: 'success',
+            title: 'Agendamento abortado com sucesso!',
+            text: 'Pressione OK para recarregar a página',
+            confirmButtonColor: '#4db6ac',
+          }).then(()=>{
+            location.reload(true);
+          });
+        },
+        error: function(xhr, status, error) {
+          swal.close();
+          swal({
+            type: 'error',
+            title: 'Erro ao abortar o agendamento',
+            text: 'Por favor tente novamente',
+            confirmButtonColor: '#4db6ac',
+          });
+        },
+      });
+    });
+  });
+
+  $('#refresh-btn').click((event)=>{
+    swal({
+      title: 'Buscando informações...',
+      onOpen: () => {
+        swal.showLoading();
+      },
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/devicelist/scheduler/update',
+      success: function(res) {
+        swal.close();
+        $('#progress-total').html(' ' + res.total);
+        $('#progress-todo').html(' ' + res.todo);
+        $('#progress-done').html(' ' + res.done);
+        $('#progress-error').html(' ' + res.error);
+      },
+      error: function(xhr, status, error) {
+        swal.close();
+        swal({
+          type: 'error',
+          title: 'Erro ao buscar informações',
+          text: 'Por favor tente novamente',
+          confirmButtonColor: '#4db6ac',
+        });
+      },
+    });
+  });
+
+  function downloadCSV(csv, filename) {
+    let csvFile;
+    let downloadLink;
+    // CSV file
+    csvFile = new Blob([csv], {type: 'text/csv'});
+    // Download link
+    downloadLink = document.createElement('a');
+    // File name
+    downloadLink.download = filename;
+    // Create a link to the file
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    // Hide download link
+    downloadLink.style.display = 'none';
+    // Add the link to DOM
+    document.body.appendChild(downloadLink);
+    // Click download link
+    downloadLink.click();
+  }
+
+  $('#results-btn').click((event)=>{
+    swal({
+      title: 'Buscando informações...',
+      onOpen: () => {
+        swal.showLoading();
+      },
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/devicelist/scheduler/results',
+      success: function(res) {
+        swal.close();
+        downloadCSV(res, 'agendamento.csv');
+      },
+      error: function(xhr, status, error) {
+        swal.close();
+        swal({
+          type: 'error',
+          title: 'Erro ao buscar informações',
+          text: 'Por favor tente novamente',
+          confirmButtonColor: '#4db6ac',
+        });
+      },
+    });
   });
 
   $('#prev-config-panel').hide();

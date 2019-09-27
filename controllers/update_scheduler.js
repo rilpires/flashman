@@ -446,13 +446,14 @@ scheduleController.failedDownload = async(function(mac) {
   return await(markNextForUpdate());
 });
 
-scheduleController.abortSchedule = function() {
+scheduleController.abortSchedule = async(function(req, res) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   // Mark scheduled update as aborted - separately to mitigate racing conditions
   try {
     await(configQuery({'device_update_schedule.is_aborted': true}, null, null));
     // Mark all todo devices as aborted
+    let count = config.device_update_schedule.device_count;
     let rule = config.device_update_schedule.rule;
     let pushArray = rule.to_do_devices.map((d)=>{
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
@@ -460,7 +461,7 @@ scheduleController.abortSchedule = function() {
     });
     let setQuery = {'device_update_schedule.rule.to_do_devices': []};
     if (rule.done_devices.length + pushArray.length === count) {
-      setQuery['is_active'] = false;
+      setQuery['device_update_schedule.is_active'] = false;
     }
     await(configQuery(
       setQuery,
@@ -469,12 +470,17 @@ scheduleController.abortSchedule = function() {
     ));
   } catch (err) {
     console.log(err);
-    return {success: false, error: 'Erro alterando base de dados'};
+    return res.status(500).json({
+      success: false,
+      message: 'Erro alterando base de dados',
+    });
   }
   removeSchedules();
   removeOfflineWatchdog();
-  return {success: true};
-};
+  return res.status(200).json({
+    success: true,
+  });
+});
 
 scheduleController.getDevicesReleases = async(function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
@@ -744,6 +750,58 @@ scheduleController.startSchedule = async(function(req, res) {
       message: 'Erro interno na base',
     });
   }));
+});
+
+scheduleController.updateScheduleStatus = async(function(req, res) {
+  let config = await(getConfig(true, false));
+  if (!config) {
+    return res.status(500).json({
+      message: 'Não há um agendamento cadastrado',
+    });
+  }
+  let rule = config.device_update_schedule.rule;
+  return res.status(200).json({
+    total: config.device_update_schedule.device_count,
+    todo: rule.to_do_devices.length + rule.in_progress_devices.length,
+    done: rule.done_devices.filter((d)=>d.state==='ok').length,
+    error: rule.done_devices.filter((d)=>d.state!=='ok').length,
+  });
+});
+
+const translateState = function(state) {
+  if (state === 'update') return 'Aguardando atualização';
+  if (state === 'retry') return 'Aguardando atualização';
+  if (state === 'offline') return 'Roteador offline';
+  if (state === 'downloading') return 'Baixando firmware';
+  if (state === 'updating') return 'Atualizando firmware';
+  if (state === 'ok') return 'Atualizado com sucesso';
+  if (state === 'error') return 'Ocorreu um erro na atualização';
+  if (state === 'aborted') return 'Atualização abortada';
+  if (state === 'aborted_off') return 'Atualização abortada - roteador estava offline';
+  return 'Status desconhecido';
+};
+
+scheduleController.scheduleResult = async(function(req, res) {
+  let config = await(getConfig(true, false));
+  if (!config) {
+    return res.status(500).json({
+      message: 'Não há um agendamento cadastrado',
+    });
+  }
+  let csvData = '';
+  let rule = config.device_update_schedule.rule;
+  rule.to_do_devices.forEach((d)=>{
+    csvData += d.mac + ',' + translateState(d.state) + '\n';
+  });
+  rule.in_progress_devices.forEach((d)=>{
+    csvData += d.mac + ',' + translateState(d.state) + '\n';
+  });
+  rule.done_devices.forEach((d)=>{
+    csvData += d.mac + ',' + translateState(d.state) + '\n';
+  });
+  res.set('Content-Disposition', 'attachment; filename=agendamento.csv');
+  res.set('Content-Type', 'text/csv');
+  res.status(200).send(csvData);
 });
 
 module.exports = scheduleController;

@@ -39,6 +39,21 @@ router.route('/scheduler/start').post(
   updaterScheduleController.startSchedule
 );
 
+router.route('/scheduler/update').post(
+  authController.ensureLogin(),
+  updaterScheduleController.updateScheduleStatus
+);
+
+router.route('/scheduler/results').post(
+  authController.ensureLogin(),
+  updaterScheduleController.scheduleResult
+);
+
+router.route('/scheduler/abort').post(
+  authController.ensureLogin(),
+  updaterScheduleController.abortSchedule
+);
+
 router.route('/scheduler/releases').put(
   authController.ensureLogin(),
   updaterScheduleController.getDevicesReleases
