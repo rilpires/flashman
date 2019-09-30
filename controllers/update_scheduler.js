@@ -156,7 +156,7 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
   return Config.updateOne({'is_default': true}, query);
 };
 
-const markSeveral = function() {
+const markSeveral = async(function() {
   for (let i = 0; i < maxDownloads; i++) {
     let result = await(markNextForUpdate());
     if (!result.success) {
@@ -165,7 +165,7 @@ const markSeveral = function() {
       break;
     }
   }
-};
+});
 
 scheduleController.recoverFromOffline = async(function(config) {
   // Schedule time ranges start times
@@ -185,10 +185,12 @@ scheduleController.recoverFromOffline = async(function(config) {
   });
   await(configQuery(
     null,
-    {'device_update_schedule.rule.in_progress_devices.mac': {'$in': pullArray}},
+    {'device_update_schedule.rule.in_progress_devices': {
+      'mac': {'$in': pullArray},
+    }},
     {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
   ));
-  // Mark next for updates after 2 minutes - we leave time for mqtt to return
+  // Mark next for updates after 1 minute - we leave time for mqtt to return
   setTimeout(markSeveral, 1*60*1000);
 });
 
