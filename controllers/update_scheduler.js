@@ -245,10 +245,10 @@ const markNextForUpdate = async(function() {
     return {success: true, marked: false};
   }
   let nextDevice = null;
-  for (let device in devices) {
-    if (!Object.prototype.hasOwnProperty.call(devices, device)) continue;
-    if (device.mac in mqtt.clients) {
-      nextDevice = device;
+
+  for (let i = 0; i < devices.length; i++) {
+    if (devices[i].mac in mqtt.clients) {
+      nextDevice = devices[i];
       break;
     }
   }
@@ -358,7 +358,7 @@ scheduleController.successDownload = async(function(mac) {
 scheduleController.successUpdate = async(function(mac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
-  let count = device_update_schedule.device_count;
+  let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
@@ -366,7 +366,7 @@ scheduleController.successUpdate = async(function(mac) {
   try {
     await(configQuery(
       // Make schedule inactive if this is last device to enter done state
-      {'is_active': (rule.done_devices.length+1 !== count)},
+      {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
       // Remove from in progress state
       {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
       // Add to done, status ok
@@ -400,7 +400,9 @@ scheduleController.failedDownload = async(function(mac) {
     let setQuery = null;
     if (device.retry_count >= maxRetries || config.is_aborted) {
       // Will not try again or move to to_do, so check if last device to update
-      setQuery = {'is_active': (rule.done_devices.length+1 !== count)};
+      setQuery = {
+        'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)
+      };
       if (rule.done_devices.length+1 === count) {
         // This was last device to enter done state, schedule is done
         removeSchedules();

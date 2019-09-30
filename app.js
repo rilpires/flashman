@@ -346,7 +346,7 @@ app.use(function(err, req, res, next) {
 
 // Check device update schedule, if active must re-initialize
 Config.findOne({is_default: true}, function(err, matchedConfig) {
-  if (err || !matchedConfig) return;
+  if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
   // Do nothing if no active schedule
   if (!matchedConfig.device_update_schedule.is_active) return;
   deviceUpdater.recoverFromOffline(matchedConfig);
