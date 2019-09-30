@@ -10,6 +10,7 @@ let roleSchema = new mongoose.Schema({
   grantPPPoEInfo: {type: Number, required: true, default: 0},
   grantPassShow: {type: Boolean, required: true, default: false},
   grantFirmwareUpgrade: {type: Boolean, required: true, default: false},
+  grantMassFirmwareUpgrade: {type: Boolean, required: true, default: true},
   grantWanType: {type: Boolean, required: true, default: false},
   grantDeviceId: {type: Boolean, required: true, default: false},
   grantDeviceActions: {type: Boolean, required: true, default: false},

@@ -36,31 +36,37 @@ router.route('/search').put(
 // Update schedule configuration
 router.route('/scheduler/start').post(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.startSchedule
 );
 
 router.route('/scheduler/update').post(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.updateScheduleStatus
 );
 
 router.route('/scheduler/results').post(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.scheduleResult
 );
 
 router.route('/scheduler/abort').post(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.abortSchedule
 );
 
 router.route('/scheduler/releases').put(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.getDevicesReleases
 );
 
 router.route('/scheduler/upload').post(
   authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
   updaterScheduleController.uploadDevicesFile
 );
 

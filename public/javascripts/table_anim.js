@@ -143,6 +143,7 @@ $(document).ready(function() {
   let role = $('#devices-table-content').data('role');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
+  let grantMassFirmwareUpgrade = false;
   let grantNotificationPopups = false;
   let grantWifiInfo = false;
   let grantPPPoEInfo = false;
@@ -158,6 +159,7 @@ $(document).ready(function() {
   }
   if ($('#devices-table-content').data('role')) {
     grantFirmwareUpgrade = role.grantFirmwareUpgrade;
+    grantMassFirmwareUpgrade = role.grantMassFirmwareUpgrade;
     grantNotificationPopups = role.grantNotificationPopups;
     grantWifiInfo = role.grantWifiInfo;
     grantPPPoEInfo = role.grantPPPoEInfo;
@@ -348,7 +350,7 @@ $(document).ready(function() {
               $('<td>'),
               $('<td>'),
               $('<td>'),
-              (isSuperuser || grantFirmwareUpgrade ?
+              (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade) ?
                 $('<td>').append(
                   $('<div>').addClass('btn-group').append(
                     $('<div>').addClass('btn-group').attr('id', 'all-devices')
