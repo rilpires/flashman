@@ -185,13 +185,11 @@ scheduleController.recoverFromOffline = async(function(config) {
   });
   await(configQuery(
     null,
-    {'device_update_schedule.rule.in_progress_devices': {
-      'device_update_schedule.rule.in_progress_devices.mac': {'$in': pullArray},
-    }},
+    {'device_update_schedule.rule.in_progress_devices.mac': {'$in': pullArray}},
     {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
   ));
-  // Mark next for updates
-  markSeveral();
+  // Mark next for updates after 2 minutes - we leave time for mqtt to return
+  setTimeout(markSeveral, 1*60*1000);
 });
 
 const scheduleInitialize = function(day, hour, minute) {
@@ -203,10 +201,10 @@ const scheduleInitialize = function(day, hour, minute) {
       removeSchedules();
       return;
     }
-    // There are still active devices in progress, no need to initialize
-    if (config.device_update_schedule.rule.in_progress_devices.length > 0) {
-      return;
-    }
+    // There are still devices downloading in progress, no need to initialize
+    let remaining = config.device_update_schedule.rule.in_progress_devices
+    .reduce((s, d)=>s || d.state === 'downloading', false);
+    if (remaining) return;
     // Initialize update for next devices
     markSeveral();
   })));
