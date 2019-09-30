@@ -461,7 +461,15 @@ scheduleController.abortSchedule = async(function(req, res) {
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
       return {mac: d.mac, state: state};
     });
-    let setQuery = {'device_update_schedule.rule.to_do_devices': []};
+    rule.in_progress_devices.forEach((d)=>{
+      let stateSuffix = (d.state === 'downloading') ? '_down' : '_update';
+      let state = 'aborted' + stateSuffix;
+      pushArray.push({mac: d.mac, state: state});
+    });
+    let setQuery = {
+      'device_update_schedule.rule.to_do_devices': [],
+      'device_update_schedule.rule.in_progress_devices': [],
+    };
     if (rule.done_devices.length + pushArray.length === count) {
       setQuery['device_update_schedule.is_active'] = false;
     }
@@ -470,6 +478,13 @@ scheduleController.abortSchedule = async(function(req, res) {
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}}
     ));
+    // Remove do_update from in_progress devices
+    rule.in_progress_devices.forEach(async((d)=>{
+      let device = await(getDevice(d.mac));
+      device.do_update = false;
+      device.do_update_status = 4;
+      await(device.save());
+    }));
   } catch (err) {
     console.log(err);
     return res.status(500).json({
@@ -765,6 +780,7 @@ scheduleController.updateScheduleStatus = async(function(req, res) {
   return res.status(200).json({
     total: config.device_update_schedule.device_count,
     todo: rule.to_do_devices.length + rule.in_progress_devices.length,
+    doing: rule.in_progress_devices.length > 0,
     done: rule.done_devices.filter((d)=>d.state==='ok').length,
     error: rule.done_devices.filter((d)=>d.state!=='ok').length,
   });
@@ -780,6 +796,8 @@ const translateState = function(state) {
   if (state === 'error') return 'Ocorreu um erro na atualização';
   if (state === 'aborted') return 'Atualização abortada';
   if (state === 'aborted_off') return 'Atualização abortada - roteador estava offline';
+  if (state === 'aborted_down') return 'Atualização abortada - roteador estava baixando firmware';
+  if (state === 'aborted_update') return 'Atualização abortada - roteador estava instalando firmware';
   return 'Status desconhecido';
 };
 

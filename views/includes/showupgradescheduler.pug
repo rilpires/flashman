@@ -241,7 +241,10 @@
               .col.alert.alert-dark.mx-1
                 .fas.fa-info-circle.fa-2x
                 h6.mt-2 Restantes:
-                  span#progress-todo  #{update_schedule.device_to_do}
+                  if (update_schedule.device_doing > 0)
+                    span#progress-todo.doing  #{update_schedule.device_to_do}
+                  else
+                    span#progress-todo  #{update_schedule.device_to_do}
               .col.alert.alert-success.mx-1
                 .fas.fa-check-circle.fa-2x
                 h6.mt-2 Sucesso:

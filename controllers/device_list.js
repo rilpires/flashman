@@ -183,7 +183,9 @@ deviceListController.index = function(req, res) {
             });
           indexContent.update_schedule['release'] = params.rule.release;
           indexContent.update_schedule['device_to_do'] =
-            rule.to_do_devices.length + rule.in_progress_devices.length;
+            rule.to_do_devices.length;
+          indexContent.update_schedule['device_doing'] =
+            rule.in_progress_devices.length;
           indexContent.update_schedule['device_done'] =
             rule.done_devices.filter((d)=>d.state==='ok').length;
           indexContent.update_schedule['device_error'] =

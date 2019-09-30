@@ -353,7 +353,7 @@ $(document).ready(function() {
                   $('<div>').addClass('btn-group').append(
                     $('<div>').addClass('btn-group').attr('id', 'all-devices')
                     .append(
-                      $('<button>').addClass('btn btn-sm px-3 py-2 teal darken-5')
+                      $('<button>').addClass('btn btn-primary btn-sm px-3 py-2 teal darken-5')
                         .attr('id', 'btn-upgrade-scheduler')
                       .append(
                         $('<i>').addClass('fas fa-clock fa-lg')

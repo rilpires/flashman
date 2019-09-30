@@ -431,35 +431,50 @@ $(document).ready(function() {
       showCancelButton: true,
     }).then((result)=>{
       if (!result.value) return;
-      swal({
-        title: 'Abortando agendamento...',
-        onOpen: () => {
-          swal.showLoading();
-        },
-      });
-      $.ajax({
-        type: 'POST',
-        url: '/devicelist/scheduler/abort',
-        success: function(res) {
-          swal.close();
-          swal({
-            type: 'success',
-            title: 'Agendamento abortado com sucesso!',
-            text: 'Pressione OK para recarregar a página',
-            confirmButtonColor: '#4db6ac',
-          }).then(()=>{
-            location.reload(true);
-          });
-        },
-        error: function(xhr, status, error) {
-          swal.close();
-          swal({
-            type: 'error',
-            title: 'Erro ao abortar o agendamento',
-            text: 'Por favor tente novamente',
-            confirmButtonColor: '#4db6ac',
-          });
-        },
+      let p = Promise.resolve(true);
+      if ($('#progress-todo').hasClass('doing')) {
+        p = swal({
+          type: 'warning',
+          title: 'Atenção!',
+          text: 'Alguns roteadores já iniciaram o processo de atualização, e ' +
+            'não serão interrompidos ao abortar o agendamento. Exporte o CSV ' +
+            'com os resultados para saber quais roteadores ainda estavam ' +
+            'atualizando.',
+          confirmButtonText: 'Prosseguir',
+          confirmButtonColor: '#4db6ac',
+        });
+      }
+      p.then((result)=>{
+        swal({
+          title: 'Abortando agendamento...',
+          onOpen: () => {
+            swal.showLoading();
+          },
+        });
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/scheduler/abort',
+          success: function(res) {
+            swal.close();
+            swal({
+              type: 'success',
+              title: 'Agendamento abortado com sucesso!',
+              text: 'Pressione OK para recarregar a página',
+              confirmButtonColor: '#4db6ac',
+            }).then(()=>{
+              location.reload(true);
+            });
+          },
+          error: function(xhr, status, error) {
+            swal.close();
+            swal({
+              type: 'error',
+              title: 'Erro ao abortar o agendamento',
+              text: 'Por favor tente novamente',
+              confirmButtonColor: '#4db6ac',
+            });
+          },
+        });
       });
     });
   });
@@ -476,10 +491,16 @@ $(document).ready(function() {
       url: '/devicelist/scheduler/update',
       success: function(res) {
         swal.close();
+        let todo = $('#progress-todo');
+        todo.html(' ' + res.todo);
         $('#progress-total').html(' ' + res.total);
-        $('#progress-todo').html(' ' + res.todo);
         $('#progress-done').html(' ' + res.done);
         $('#progress-error').html(' ' + res.error);
+        if (res.doing && !todo.hasClass('doing')) {
+          todo.addClass('doing');
+        } else if (!res.doing && todo.hasClass('doing')) {
+          todo.removeClass('doing');
+        }
       },
       error: function(xhr, status, error) {
         swal.close();

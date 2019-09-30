@@ -44,7 +44,8 @@ let configSchema = new mongoose.Schema({
       }],
       done_devices: [{
         mac: {type: String, required: true},
-        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off']},
+        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off', 
+          'aborted_down', 'aborted_update']},
       }],
     },
   },
