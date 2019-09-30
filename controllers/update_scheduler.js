@@ -481,7 +481,6 @@ scheduleController.abortSchedule = async(function(req, res) {
     // Remove do_update from in_progress devices
     rule.in_progress_devices.forEach(async((d)=>{
       let device = await(getDevice(d.mac));
-      device.do_update = false;
       device.do_update_status = 4;
       await(device.save());
     }));
