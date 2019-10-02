@@ -361,7 +361,6 @@ app.listen(3000, function() {
     updater.update();
     measurer.pingLicenseStatus();
   });
-  // TODO Consult current schedule
 
   // Force an update check to alert user on app startup
   updater.checkUpdate();
