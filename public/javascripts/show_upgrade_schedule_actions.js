@@ -501,6 +501,25 @@ $(document).ready(function() {
         } else if (!res.doing && todo.hasClass('doing')) {
           todo.removeClass('doing');
         }
+        if (res.total === (res.done + res.error)) {
+          // All devices done, prompt page reload
+          swal({
+            type: 'success',
+            title: 'As atualizações foram concluídas',
+            text: 'Os resultados podem ser vistos exportando o arquivo CSV. ' +
+              'Para iniciar outro agendamento é necessário recarregar a ' +
+              'página. Deseja recarrega-la agora?',
+            confirmButtonText: 'Recarregar',
+            confirmButtonColor: '#4db6ac',
+            cancelButtonText: 'Mais tarde',
+            cancelButtonColor: '#f2ab63',
+            showCancelButton: true,
+          }).then((result)=>{
+            if (result.value) {
+              location.reload(true);
+            }
+          });
+        }
       },
       error: function(xhr, status, error) {
         swal.close();
@@ -514,7 +533,7 @@ $(document).ready(function() {
     });
   });
 
-  function downloadCSV(csv, filename) {
+  const downloadCSV = function(csv, filename) {
     let csvFile;
     let downloadLink;
     // CSV file
@@ -531,7 +550,7 @@ $(document).ready(function() {
     document.body.appendChild(downloadLink);
     // Click download link
     downloadLink.click();
-  }
+  };
 
   $('#results-btn').click((event)=>{
     swal({

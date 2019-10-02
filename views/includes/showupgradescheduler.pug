@@ -257,9 +257,10 @@
               button#results-btn.btn.btn-primary(type="button")
                 .fas.fa-file-excel.fa-lg
                 strong &nbsp; Exportar CSV com resultados
-              button#refresh-btn.btn.btn-primary(type="button")
-                .fas.fa-sync-alt.fa-lg
-                strong &nbsp; Atualizar Status
+              if (update_schedule.is_active)
+                button#refresh-btn.btn.btn-primary(type="button")
+                  .fas.fa-sync-alt.fa-lg
+                  strong &nbsp; Atualizar Status
             .mt-4
               if (update_schedule.is_active)
                 .text-right
