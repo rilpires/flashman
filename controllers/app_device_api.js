@@ -404,7 +404,7 @@ let formatDevices = function(device) {
     let name = lanDevice.mac;
     if (lanDevice.name) {
       name = lanDevice.name;
-    } else if (lanDevice.dhcp_name !== '' && lanDevice.dhcp_name !== '!') {
+    } else if (lanDevice.dhcp_name && lanDevice.dhcp_name !== '!') {
       name = lanDevice.dhcp_name;
     }
     let numRules = lanDevice.port.length;

@@ -169,6 +169,19 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Controle de Atualização de Firmware em Massa'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-mass-firmware-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Controle da rede LAN'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -363,6 +376,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-upgrade] option[value=' +
           roleObj.grantFirmwareUpgrade + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-mass-firmware-upgrade] option[value=' +
+          roleObj.grantMassFirmwareUpgrade + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-wan-type] option[value=' +
           roleObj.grantWanType + ']')

@@ -143,6 +143,7 @@ $(document).ready(function() {
   let role = $('#devices-table-content').data('role');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
+  let grantMassFirmwareUpgrade = false;
   let grantNotificationPopups = false;
   let grantWifiInfo = false;
   let grantPPPoEInfo = false;
@@ -158,6 +159,7 @@ $(document).ready(function() {
   }
   if ($('#devices-table-content').data('role')) {
     grantFirmwareUpgrade = role.grantFirmwareUpgrade;
+    grantMassFirmwareUpgrade = role.grantMassFirmwareUpgrade;
     grantNotificationPopups = role.grantNotificationPopups;
     grantWifiInfo = role.grantWifiInfo;
     grantPPPoEInfo = role.grantPPPoEInfo;
@@ -176,7 +178,7 @@ $(document).ready(function() {
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $(document).on('click', '.fa-chevron-down', function(event) {
+  $(document).on('click', '.fa-chevron-down.device-table-row', function(event) {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
@@ -185,7 +187,7 @@ $(document).ready(function() {
                    .addClass('fa-chevron-up text-primary');
   });
 
-  $(document).on('click', '.fa-chevron-up', function(event) {
+  $(document).on('click', '.fa-chevron-up.device-table-row', function(event) {
     let row = $(event.target).parents('tr');
     let index = row.data('index');
     let formId = '#form-' + index.toString();
@@ -220,6 +222,10 @@ $(document).ready(function() {
     let tabId = $(this).data('tab-id');
     $(tabId).siblings().addClass('d-none');
     $(tabId).removeClass('d-none');
+  });
+
+  $(document).on('click', '#btn-upgrade-scheduler', function(event) {
+    $('#upgrade-scheduler').modal('show');
   });
 
   // Refresh table content
@@ -310,6 +316,8 @@ $(document).ready(function() {
             return false;
           }
 
+          // Fill multiple update form
+          updateSearchResultsScheduler(res);
           // Fill status row
           deviceTableContent.append(
             $('<tr>').append(
@@ -342,36 +350,19 @@ $(document).ready(function() {
               $('<td>'),
               $('<td>'),
               $('<td>'),
-              (isSuperuser || grantFirmwareUpgrade ?
+              (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade) ?
                 $('<td>').append(
                   $('<div>').addClass('btn-group').append(
-                    $('<button>').addClass('btn btn-sm btn-danger px-2')
-                      .attr('id', 'cancel-all-devices')
-                    .append(
-                      $('<div>').addClass('fas fa-times')
-                    ),
                     $('<div>').addClass('btn-group').attr('id', 'all-devices')
                     .append(
-                      $('<button>')
-                        .addClass('btn btn-sm btn-primary dropdown-toggle')
-                        .attr('type', 'button')
-                        .attr('data-toggle', 'dropdown')
-                        .data('singlereleases', res.single_releases)
+                      $('<button>').addClass('btn btn-primary btn-sm px-3 py-2 teal darken-5')
+                        .attr('id', 'btn-upgrade-scheduler')
                       .append(
-                        $('<span>').addClass('selected').html('Escolher')
-                      ),
-                      $('<div>').addClass('dropdown-menu').append(() => {
-                        let opts = $('<div>');
-                        for (let idx = 0;
-                             idx < res.single_releases.length; idx += 1) {
-                          let release = res.single_releases[idx];
-                          opts.append(
-                            $('<a>').addClass('dropdown-item text-center')
-                                    .html(release.id)
-                          );
-                        }
-                        return opts.html();
-                      })
+                        $('<i>').addClass('fas fa-clock fa-lg')
+                      )
+                      .append(
+                        $('<span>').html('&nbsp &nbsp Atualizar Vários')
+                      )
                     )
                   )
                 ) :
@@ -433,7 +424,7 @@ $(document).ready(function() {
                 ),
                 $('<td>').addClass('text-center')
                 .append(
-                  $('<div>').addClass('fas fa-chevron-down fa-lg')
+                  $('<div>').addClass('fas fa-chevron-down fa-lg device-table-row')
                 ),
                 $('<td>').append(
                   $('<div>').addClass('fas fa-circle fa-lg device-status')

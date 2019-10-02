@@ -12,7 +12,18 @@ let deviceListController = {};
 const fs = require('fs');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
-const getReleases = function(modelAsArray=false) {
+const intToWeekDayStr = function(day) {
+  if (day === 0) return 'Domingo';
+  if (day === 1) return 'Segunda';
+  if (day === 2) return 'Terça';
+  if (day === 3) return 'Quarta';
+  if (day === 4) return 'Quinta';
+  if (day === 5) return 'Sexta';
+  if (day === 6) return 'Sábado';
+  return '';
+};
+
+deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
   fs.readdirSync(imageReleasesDir).forEach((filename) => {
@@ -148,6 +159,38 @@ deviceListController.index = function(req, res) {
             matchedConfig.measure_configs.auth_token : '';
         let license = matchedConfig.measure_configs.is_license_active;
         indexContent.measure_license = license;
+        indexContent.update_schedule = {
+          is_active: matchedConfig.device_update_schedule.is_active,
+          device_total: matchedConfig.device_update_schedule.device_count,
+        };
+        if (matchedConfig.device_update_schedule.device_count > 0) {
+          // Has a previous configuration saved
+          let params = matchedConfig.device_update_schedule;
+          let rule = params.rule;
+          indexContent.update_schedule['is_aborted'] = params.is_aborted;
+          indexContent.update_schedule['date'] = params.date;
+          indexContent.update_schedule['use_csv'] = params.used_csv;
+          indexContent.update_schedule['use_search'] = params.used_search;
+          indexContent.update_schedule['use_time'] = params.used_time_range;
+          indexContent.update_schedule['time_ranges'] =
+            params.allowed_time_ranges.map((r)=>{
+              return {
+                start_day: intToWeekDayStr(r.start_day),
+                end_day: intToWeekDayStr(r.end_day),
+                start_time: r.start_time,
+                end_time: r.end_time,
+              };
+            });
+          indexContent.update_schedule['release'] = params.rule.release;
+          indexContent.update_schedule['device_to_do'] =
+            rule.to_do_devices.length + rule.in_progress_devices.length;
+          indexContent.update_schedule['device_doing'] =
+            rule.in_progress_devices.length;
+          indexContent.update_schedule['device_done'] =
+            rule.done_devices.filter((d)=>d.state==='ok').length;
+          indexContent.update_schedule['device_error'] =
+            rule.done_devices.filter((d)=>d.state!=='ok').length;
+        }
       }
 
       // Filter data using user permissions
@@ -229,13 +272,9 @@ deviceListController.changeAllUpdates = function(req, res) {
   });
 };
 
-deviceListController.searchDeviceReg = function(req, res) {
+deviceListController.searchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
-  let reqPage = 1;
-  let elementsPerPage = 10;
-  // let queryContents = req.query.content.split(',');
-  let queryContents = req.body.filter_list.split(',');
 
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
@@ -328,6 +367,16 @@ deviceListController.searchDeviceReg = function(req, res) {
     }
   }
   finalQuery[queryLogicalOperator] = finalQueryArray;
+  return finalQuery;
+};
+
+deviceListController.searchDeviceReg = function(req, res) {
+  let reqPage = 1;
+  let elementsPerPage = 10;
+  // let queryContents = req.query.content.split(',');
+  let queryContents = req.body.filter_list.split(',');
+
+  let finalQuery = deviceListController.searchDeviceQuery(queryContents);
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -348,7 +397,7 @@ deviceListController.searchDeviceReg = function(req, res) {
       });
     }
     let lastHour = new Date();
-    let releases = getReleases();
+    let releases = deviceListController.getReleases();
     lastHour.setHours(lastHour.getHours() - 1);
 
     let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
@@ -386,7 +435,7 @@ deviceListController.searchDeviceReg = function(req, res) {
             pages: matchedDevices.pages,
             min_length_pass_pppoe: matchedConfig.pppoePassLength,
             status: status,
-            single_releases: getReleases(true),
+            single_releases: deviceListController.getReleases(true),
             filter_list: req.body.filter_list,
             devices: enrichedMatchedDevs,
           });

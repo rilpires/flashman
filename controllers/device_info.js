@@ -6,6 +6,7 @@ const mqtt = require('../mqtts');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
+const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -399,6 +400,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
             console.log('Device ' + devId + ' upgraded successfuly');
+            updateScheduler.successUpdate(matchedDevice._id);
             messaging.sendUpdateDoneMessage(matchedDevice);
             matchedDevice.do_update = false;
             matchedDevice.do_update_status = 1; // success
@@ -498,12 +500,15 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         let upgStatus = returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
+          updateScheduler.successDownload(req.body.id);
           console.log('Device ' + req.body.id + ' is going on upgrade...');
         } else if (upgStatus == '0') {
+          updateScheduler.failedDownload(req.body.id);
           console.log('WARNING: Device ' + req.body.id +
                       ' failed in firmware check!');
           matchedDevice.do_update_status = 3; // img check failed
         } else if (upgStatus == '2') {
+          updateScheduler.failedDownload(req.body.id);
           console.log('WARNING: Device ' + req.body.id +
                       ' failed to download firmware!');
           matchedDevice.do_update_status = 2; // img download failed

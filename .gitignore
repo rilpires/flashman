@@ -2,6 +2,8 @@
 
 # Custom
 secret.json
+/public/firmwares
+/tmp
 
 ### Code ###
 # Visual Studio Code - https://code.visualstudio.com/

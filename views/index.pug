@@ -1,11 +1,18 @@
 extends layout
 
+block stylesheets
+  link(rel='stylesheet', href='/scripts/tempusdominus/css/tempusdominus-bootstrap-4.min.css')
+  link(rel='stylesheet', href='/scripts/bs-stepper/css/bs-stepper.min.css')
+  // import style again because we need to override bs-stepper colors
+  link(rel='stylesheet', href='/stylesheets/style.css')
+
 block content
   include includes/showsearchterms
   include includes/showdevicelogs
   include includes/configdevicefirewall
   include includes/showpingtest
   include includes/showlandevices
+  include includes/showupgradescheduler
 
   .row.justify-content-center
     .col-12.col-lg-8.mt-4
@@ -132,6 +139,9 @@ block scripts
     let socket = io()
   script(src='/scripts/jquery-highlight/jquery.highlight.js')
   script(src='/scripts/pako/pako.js')
+  script(src='/scripts/moment/moment.min.js')
+  script(src='/scripts/tempusdominus/js/tempusdominus-bootstrap-4.min.js')
+  script(src='/scripts/bs-stepper/js/bs-stepper.min.js')
   script(src='/javascripts/device_validator.js')
   script(src='/javascripts/new_device.js')
   script(src='/javascripts/edit_device.js')
@@ -139,5 +149,6 @@ block scripts
   script(src='/javascripts/show_devices_logs_actions.js')
   script(src='/javascripts/show_ping_test_actions.js')
   script(src='/javascripts/show_lan_devices_actions.js')
+  script(src='/javascripts/show_upgrade_schedule_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')

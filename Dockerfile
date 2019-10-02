@@ -1,4 +1,4 @@
-FROM node:6
+FROM node:8
 
 # APP information
 MAINTAINER anlix "guisenges@gmail.com"
@@ -12,6 +12,7 @@ ENV FLM_ALLOW_DEV_UPDATE_REST_DATA false
 ENV FLM_MONGODB_HOST "localhost"
 ENV FLM_ADM_USER "admin"
 ENV FLM_ADM_PASS "flashman"
+ENV FLM_CONCURRENT_UPDATES_LIMIT 5
 
 WORKDIR /app
 
