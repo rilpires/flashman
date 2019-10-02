@@ -18,6 +18,7 @@ let session = require('express-session');
 
 let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
+let deviceUpdater = require('./controllers/update_scheduler');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
@@ -101,6 +102,11 @@ Device.find({}, function(err, devices) {
 // release dir must exists
 if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
+}
+
+// temporary dir must exist
+if (!fs.existsSync('./tmp')) {
+  fs.mkdirSync('./tmp');
 }
 
 if (process.env.FLM_COMPANY_SECRET) {
@@ -257,11 +263,20 @@ app.use('/scripts/pako',
 app.use('/scripts/popper',
   express.static(path.join(__dirname, 'node_modules/popper.js/dist'))
 );
+app.use('/scripts/moment',
+  express.static(path.join(__dirname, 'node_modules/moment/min'))
+);
 app.use('/scripts/bootstrap',
   express.static(path.join(__dirname, 'node_modules/bootstrap/dist'))
 );
 app.use('/scripts/mdbootstrap',
   express.static(path.join(__dirname, 'node_modules/mdbootstrap'))
+);
+app.use('/scripts/bs-stepper',
+  express.static(path.join(__dirname, 'node_modules/bs-stepper/dist'))
+);
+app.use('/scripts/tempusdominus',
+  express.static(path.join(__dirname, 'node_modules/tempusdominus-bootstrap-4/build'))
 );
 app.use('/scripts/selectize',
   express.static(path.join(__dirname, 'node_modules/selectize/dist'))
@@ -329,6 +344,14 @@ app.use(function(err, req, res, next) {
   }
 });
 
+// Check device update schedule, if active must re-initialize
+Config.findOne({is_default: true}, function(err, matchedConfig) {
+  if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
+  // Do nothing if no active schedule
+  if (!matchedConfig.device_update_schedule.is_active) return;
+  deviceUpdater.recoverFromOffline(matchedConfig);
+}).lean();
+
 app.listen(3000, function() {
   let rule = new schedule.RecurrenceRule();
   rule.hour = 20;
@@ -338,6 +361,7 @@ app.listen(3000, function() {
     updater.update();
     measurer.pingLicenseStatus();
   });
+
   // Force an update check to alert user on app startup
   updater.checkUpdate();
 });

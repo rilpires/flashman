@@ -1,5 +1,6 @@
 
 const express = require('express');
+const updaterScheduleController = require('../controllers/update_scheduler');
 const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
 
@@ -31,6 +32,43 @@ router.route('/updateall').post(
 router.route('/search').put(
   authController.ensureLogin(),
   deviceListController.searchDeviceReg);
+
+// Update schedule configuration
+router.route('/scheduler/start').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.startSchedule
+);
+
+router.route('/scheduler/update').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.updateScheduleStatus
+);
+
+router.route('/scheduler/results').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.scheduleResult
+);
+
+router.route('/scheduler/abort').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.abortSchedule
+);
+
+router.route('/scheduler/releases').put(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.getDevicesReleases
+);
+
+router.route('/scheduler/upload').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMassFirmwareUpgrade'),
+  updaterScheduleController.uploadDevicesFile
+);
 
 // Delete device
 router.route('/delete/:id').post(
