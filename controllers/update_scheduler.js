@@ -10,9 +10,10 @@ const Mutex = require('async-mutex').Mutex;
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 
-const mutex = new Mutex();
 const maxRetries = 3;
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
+let mutex = new Mutex();
+let mutexRelease = null;
 let watchdogIntervalID = null;
 let initSchedules = [];
 let scheduleController = {};
@@ -112,6 +113,10 @@ const removeOfflineWatchdog = function() {
     clearInterval(watchdogIntervalID);
     watchdogIntervalID = null;
   }
+};
+
+const resetMutex = function() {
+  if (mutex.isLocked()) mutexRelease();
 };
 
 const getConfig = async(function(lean=true, needActive=true) {
@@ -494,6 +499,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   }
   removeSchedules();
   removeOfflineWatchdog();
+  resetMutex();
   return res.status(200).json({
     success: true,
   });
@@ -700,6 +706,7 @@ scheduleController.startSchedule = async(function(req, res) {
     try {
       config = await(getConfig(false, false));
       config.device_update_schedule.is_active = true;
+      config.device_update_schedule.is_aborted = false;
       config.device_update_schedule.used_time_range = hasTimeRestriction;
       config.device_update_schedule.used_csv = useCsv;
       config.device_update_schedule.used_search = searchTags;
@@ -731,6 +738,9 @@ scheduleController.startSchedule = async(function(req, res) {
             end_time: r.endTime,
           };
         });
+      }
+      else {
+        config.device_update_schedule.allowed_time_ranges = [];
       }
       config.device_update_schedule.rule.release = release;
       await(config.save());
