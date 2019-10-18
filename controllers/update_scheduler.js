@@ -232,21 +232,28 @@ const markNextForUpdate = async(function() {
   // In addition, we add a random sleep to spread out requests a bit.
   let interval = Math.random() * 500; // scale to seconds, cap at 500ms
   await(new Promise((resolve)=>setTimeout(resolve, interval)));
-  let mutexRelease = await(mutex.acquire());
+  mutexRelease = await(mutex.acquire());
   let config = await(getConfig());
   if (!config) {
     mutexRelease();
+    console.log('Scheduler: não há um agendamento');
     return {success: false, error: 'Não há um agendamento ativo'};
+  } else if (config.is_aborted) {
+    mutexRelease();
+    console.log('Scheduler: agendamento abortado');
+    return {success: true, marked: false};
   }
   // Check if we are in a valid date range before doing DB operations
   if (!checkValidRange(config)) {
     mutexRelease();
+    console.log('Scheduler: fora do horário válido');
     removeOfflineWatchdog();
     return {success: true, marked: false};
   }
   let devices = config.device_update_schedule.rule.to_do_devices;
   if (devices.length === 0) {
     mutexRelease();
+    console.log('Scheduler: não há dispositivos para atualizar');
     return {success: true, marked: false};
   }
   let nextDevice = null;
@@ -267,6 +274,7 @@ const markNextForUpdate = async(function() {
       console.log(err);
     }
     mutexRelease();
+    console.log('Scheduler: não há dispositivos online');
     scheduleOfflineWatchdog();
     return {success: true, marked: false};
   }
@@ -285,6 +293,7 @@ const markNextForUpdate = async(function() {
       }
     ));
     mutexRelease();
+    console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
   } catch (err) {
     console.log(err);
     mutexRelease();
