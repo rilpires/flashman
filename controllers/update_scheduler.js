@@ -567,10 +567,11 @@ scheduleController.getDevicesReleases = async(function(req, res) {
     let modelsNeeded = {};
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     matchedDevices.forEach((device)=>{
-      if (device.model in modelsNeeded) {
-        modelsNeeded[device.model] += 1;
+      let model = device.model.replace('N/', '');
+      if (model in modelsNeeded) {
+        modelsNeeded[model] += 1;
       } else {
-        modelsNeeded[device.model] = 1;
+        modelsNeeded[model] = 1;
       }
     });
     let releasesMissing = releasesAvailable.map((release)=>{
@@ -701,7 +702,8 @@ scheduleController.startSchedule = async(function(req, res) {
     // Filter devices that have a valid model
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     matchedDevices = matchedDevices.filter((device)=>{
-      return modelsAvailable.includes(device.model);
+      let model = device.model.replace('N/', '');
+      return modelsAvailable.includes(model);
     });
     if (matchedDevices.length === 0) {
       return res.status(500).json({
