@@ -366,7 +366,7 @@ scheduleController.successDownload = async(function(mac) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
-  return await(markNextForUpdate());
+  return {success: true};
 });
 
 scheduleController.successUpdate = async(function(mac) {
@@ -400,7 +400,7 @@ scheduleController.successUpdate = async(function(mac) {
     removeSchedules();
     removeOfflineWatchdog();
   }
-  return {success: true};
+  return await(markNextForUpdate());
 });
 
 scheduleController.failedDownload = async(function(mac) {
