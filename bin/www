@@ -21,7 +21,7 @@ const tls = require('tls');
  * Get port from environment and store in Express.
  */
 
-let port = normalizePort(process.env.PORT || '8000');
+let port = normalizePort(process.env.FLM_WEB_PORT || '8000');
 app.set('port', port);
 
 /**
