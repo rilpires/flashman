@@ -268,7 +268,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   }
 
   let devId = req.body.id.toUpperCase();
-  DeviceModel.findById(devId, function(err, matchedDevice) {
+  DeviceModel.findById(devId).lean().exec(function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device '+devId+': ' + err);
       return res.status(500).end();
@@ -474,7 +474,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
-        Config.findOne({is_default: true}, function(err, matchedConfig) {
+        Config.findOne({is_default: true}).lean().exec(function(err, matchedConfig) {
           let zabbixFqdn = '';
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
@@ -517,7 +517,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         });
       }
     }
-  }).lean();
+  });
 };
 
 // Receive device firmware upgrade confirmation
