@@ -344,6 +344,25 @@ app.use(function(err, req, res, next) {
   }
 });
 
+/**
+ * Normalize a port into a number, string, or false.
+ */
+function normalizePort(val) {
+  let port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
 // Check device update schedule, if active must re-initialize
 Config.findOne({is_default: true}, function(err, matchedConfig) {
   if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
