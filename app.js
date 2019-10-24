@@ -352,7 +352,7 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
   deviceUpdater.recoverFromOffline(matchedConfig);
 }).lean();
 
-if (typeof process.env.FLM_SCHEDULER_ACTIVE !== 'undefined' &&
+if (typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
     (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
      process.env.FLM_SCHEDULER_ACTIVE === true)
 ) {
