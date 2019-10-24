@@ -276,11 +276,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
       if (matchedDevice == null) {
         createRegistry(req, res);
       } else {
+        let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
         // Update old entries
-        if (!matchedDevice.get('do_update_parameters')) {
-          matchedDevice.do_update_parameters = false;
+        if (!matchedDevice['do_update_parameters']) {
+          deviceSetQuery['do_update_parameters'] = false;
+          matchedDevice.do_update_parameters = false; // TODO: REMOVE
         }
 
         // Parameters only modified on first comm between device and flashman
@@ -290,21 +292,25 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
         if (matchedDevice.model == '' || matchedDevice.model == bodyModel) {
           // Legacy versions include only model so let's include model version
-          matchedDevice.model = bodyModel + bodyModelVer;
+          deviceSetQuery['model'] = bodyModel + bodyModelVer;
+          matchedDevice.model = bodyModel + bodyModelVer; // TODO: REMOVE
         }
         let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
         let lanNetmask = parseInt(returnObjOrNum(req.body.lan_netmask, 24));
         if (!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') {
-          matchedDevice.lan_subnet = lanSubnet;
+          deviceSetQuery['lan_subnet'] = lanSubnet;
+          matchedDevice.lan_subnet = lanSubnet; // TODO: REMOVE
         }
         if (!matchedDevice.lan_netmask) {
-          matchedDevice.lan_netmask = lanNetmask;
+          deviceSetQuery['lan_netmask'] = lanNetmask;
+          matchedDevice.lan_netmask = lanNetmask; // TODO: REMOVE
         }
 
         // Store if device has dual band capability
         const is5ghzCapable =
           (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
-        matchedDevice.wifi_is_5ghz_capable = is5ghzCapable;
+        deviceSetQuery['wifi_is_5ghz_capable'] = is5ghzCapable;
+        matchedDevice.wifi_is_5ghz_capable = is5ghzCapable; // TODO: REMOVE
 
         let sentVersion = returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
@@ -331,8 +337,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'mode', null, errors);
 
             if (errors.length < 1) {
-              matchedDevice.wifi_band = band;
-              matchedDevice.wifi_mode = mode;
+              deviceSetQuery['wifi_band'] = band;
+              deviceSetQuery['wifi_mode'] = mode;
+              matchedDevice.wifi_band = band; // TODO: REMOVE
+              matchedDevice.wifi_mode = mode; // TODO: REMOVE
             }
           }
           if ( permissionsSentVersion.grantWifi5ghz &&
@@ -365,35 +373,53 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'mode5ghz', null, errors);
 
             if (errors.length < 1) {
-              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
-              matchedDevice.wifi_password_5ghz = password5ghz;
-              matchedDevice.wifi_channel_5ghz = channel5ghz;
-              matchedDevice.wifi_band_5ghz = band5ghz;
-              matchedDevice.wifi_mode_5ghz = mode5ghz;
+              deviceSetQuery['wifi_ssid_5ghz'] = ssid5ghz;
+              deviceSetQuery['wifi_password_5ghz'] = password5ghz;
+              deviceSetQuery['wifi_channel_5ghz'] = channel5ghz;
+              deviceSetQuery['wifi_band_5ghz'] = band5ghz;
+              deviceSetQuery['wifi_mode_5ghz'] = mode5ghz;
+              matchedDevice.wifi_ssid_5ghz = ssid5ghz; // TODO: REMOVE
+              matchedDevice.wifi_password_5ghz = password5ghz; // TODO: REMOVE
+              matchedDevice.wifi_channel_5ghz = channel5ghz; // TODO: REMOVE
+              matchedDevice.wifi_band_5ghz = band5ghz; // TODO: REMOVE
+              matchedDevice.wifi_mode_5ghz = mode5ghz; // TODO: REMOVE
             }
           }
-          matchedDevice.version = sentVersion;
+          deviceSetQuery['version'] = sentVersion;
+          matchedDevice.version = sentVersion; // TODO: REMOVE
         }
 
         let sentNtp = returnObjOrEmptyStr(req.body.ntp).trim();
         if (matchedDevice.ntp_status != sentNtp) {
           console.log('Device '+ devId +' changed NTP STATUS to: '+ sentNtp);
-          matchedDevice.ntp_status = sentNtp;
+          deviceSetQuery['ntp_status'] = sentNtp;
+          matchedDevice.ntp_status = sentNtp; // TODO: REMOVE
         }
 
         // Parameters *NOT* available to be modified by REST API
+        deviceSetQuery['wan_ip'] = returnObjOrEmptyStr(req.body.wan_ip).trim();
         matchedDevice.wan_ip =
-        returnObjOrEmptyStr(req.body.wan_ip).trim();
-        matchedDevice.wan_negociated_speed =
+        returnObjOrEmptyStr(req.body.wan_ip).trim(); // TODO: REMOVE
+
+        deviceSetQuery['wan_negociated_speed'] =
         returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
-        matchedDevice.wan_negociated_duplex =
+        matchedDevice.wan_negociated_speed =
+        returnObjOrEmptyStr(req.body.wan_negociated_speed).trim(); // TODO: REMOVE
+
+        deviceSetQuery['wan_negociated_duplex'] =
         returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
-        matchedDevice.ip = ip;
-        matchedDevice.last_contact = Date.now();
+        matchedDevice.wan_negociated_duplex =
+        returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim(); // TODO: REMOVE
+
+        deviceSetQuery['ip'] = ip;
+        matchedDevice.ip = ip; // TODO: REMOVE
+        deviceSetQuery['last_contact'] = Date.now();
+        matchedDevice.last_contact = Date.now(); // TODO: REMOVE
 
         let hardReset = returnObjOrEmptyStr(req.body.hardreset).trim();
         if (hardReset == '1') {
-          matchedDevice.last_hardreset = Date.now();
+          deviceSetQuery['last_hardreset'] = Date.now();
+          matchedDevice.last_hardreset = Date.now(); // TODO: REMOVE
         }
 
         let upgradeInfo = returnObjOrEmptyStr(req.body.upgfirm).trim();
@@ -402,8 +428,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             console.log('Device ' + devId + ' upgraded successfuly');
             updateScheduler.successUpdate(matchedDevice._id);
             messaging.sendUpdateDoneMessage(matchedDevice);
-            matchedDevice.do_update = false;
-            matchedDevice.do_update_status = 1; // success
+            deviceSetQuery['do_update'] = false;
+            deviceSetQuery['do_update_status'] = 1; // success
+            matchedDevice.do_update = false; // TODO: REMOVE
+            matchedDevice.do_update_status = 1; // success // TODO: REMOVE
           } else {
             console.log(
               'WARNING: Device ' + devId +
@@ -413,19 +441,21 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         let sentRelease = returnObjOrEmptyStr(req.body.release_id).trim();
-        matchedDevice.installed_release = sentRelease;
+        deviceSetQuery['installed_release'] = sentRelease;
+        matchedDevice.installed_release = sentRelease; // TODO: REMOVE
 
         let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
         if (flmUpdater == '1' || flmUpdater == '') {
           // The syn came from flashman_updater (or old routers...)
 
           // We can disable since the device will receive the update
-          matchedDevice.do_update_parameters = false;
+          deviceSetQuery['do_update_parameters'] = false;
+          matchedDevice.do_update_parameters = false; // TODO: REMOVE
           // Remove notification to device using MQTT
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        matchedDevice.save();
+        // matchedDevice.save(); // TODO: REMOVE
         let blockedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
@@ -449,7 +479,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
           }
-          return res.status(200).json({
+          // Do not return yet, just respond to request so we can free socket
+          res.status(200).json({
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
             'mqtt_status': (matchedDevice._id in mqtt.clients),
@@ -479,10 +510,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
             'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
           });
+          // Now we push the changed fields to the database
+          DeviceModel.updateOne({'_id': matchedDevice._id}, {'$set': deviceSetQuery}, (err)=>{
+            if (err) console.log(err);
+          });
         });
       }
     }
-  });
+  }).lean();
 };
 
 // Receive device firmware upgrade confirmation
