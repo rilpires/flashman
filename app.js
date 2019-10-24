@@ -352,18 +352,24 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
   deviceUpdater.recoverFromOffline(matchedConfig);
 }).lean();
 
-app.listen(3000, function() {
-  let rule = new schedule.RecurrenceRule();
-  rule.hour = 20;
-  rule.minute = 0;
-  // Schedule automatic update
-  schedule.scheduleJob(rule, function() {
-    updater.update();
-    measurer.pingLicenseStatus();
-  });
+if (typeof process.env.FLM_SCHEDULER_ACTIVE !== 'undefined' &&
+    (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
+     process.env.FLM_SCHEDULER_ACTIVE === true)
+) {
+  let schedulePort = normalizePort(process.env.FLM_SCHEDULE_PORT || 3000);
+  app.listen(parseInt(schedulePort), function() {
+    let rule = new schedule.RecurrenceRule();
+    rule.hour = 20;
+    rule.minute = 0;
+    // Schedule automatic update
+    schedule.scheduleJob(rule, function() {
+      updater.update();
+      measurer.pingLicenseStatus();
+    });
 
-  // Force an update check to alert user on app startup
-  updater.checkUpdate();
-});
+    // Force an update check to alert user on app startup
+    updater.checkUpdate();
+  });
+}
 
 module.exports = app;
