@@ -344,25 +344,6 @@ app.use(function(err, req, res, next) {
   }
 });
 
-/**
- * Normalize a port into a number, string, or false.
- */
-function normalizePort(val) {
-  let port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
 // Check device update schedule, if active must re-initialize
 Config.findOne({is_default: true}, function(err, matchedConfig) {
   if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
@@ -375,7 +356,10 @@ if (typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
     (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
      process.env.FLM_SCHEDULER_ACTIVE === true)
 ) {
-  let schedulePort = normalizePort(process.env.FLM_SCHEDULE_PORT || 3000);
+  let schedulePort = 3000;
+  if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
+    schedulePort = process.env.FLM_SCHEDULE_PORT;
+  }
   app.listen(parseInt(schedulePort), function() {
     let rule = new schedule.RecurrenceRule();
     rule.hour = 20;
