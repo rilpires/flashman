@@ -3,6 +3,7 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
+const request = require('request');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
@@ -270,7 +271,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   let devId = req.body.id.toUpperCase();
   DeviceModel.findById(devId).lean().exec(function(err, matchedDevice) {
     if (err) {
-      console.log('Error finding device '+devId+': ' + err);
+      console.log('Error finding device ' + devId + ': ' + err);
       return res.status(500).end();
     } else {
       if (matchedDevice == null) {
@@ -478,6 +479,31 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           let zabbixFqdn = '';
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
+          }
+          // Send modified fields if device traps is activated
+          if (Object.keys(deviceSetQuery).length > 0 &&
+              matchedConfig.traps_callbacks &&
+              matchedConfig.traps_callbacks.device_crud) {
+            let requestOptions = {};
+            let callbackUrl = matchedConfig.traps_callbacks.device_crud.url;
+            let callbackAuthUser = matchedConfig.traps_callbacks.device_crud.user;
+            let callbackAuthSecret = matchedConfig.traps_callbacks.device_crud.secret;
+            if (callbackUrl) {
+              requestOptions.url = callbackUrl;
+              requestOptions.method = 'PUT';
+              requestOptions.json = {
+                'id': matchedDevice._id,
+                'type': 'device',
+                'changes': deviceSetQuery,
+              };
+              if (callbackAuthUser && callbackAuthSecret) {
+                requestOptions.auth = {
+                  user: callbackAuthUser,
+                  pass: callbackAuthSecret,
+                };
+              }
+              request(requestOptions);
+            }
           }
           // Do not return yet, just respond to request so we can free socket
           res.status(200).json({
