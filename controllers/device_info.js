@@ -283,6 +283,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
           deviceSetQuery.do_update_parameters = false;
+          matchedDevice.do_update_parameters = false; // Used in device response
         }
 
         // Parameters only modified on first comm between device and flashman
@@ -299,9 +300,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if ((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
             lanSubnet != '') {
           deviceSetQuery.lan_subnet = lanSubnet;
+          matchedDevice.lan_subnet = lanSubnet; // Used in device response
         }
         if (!matchedDevice.lan_netmask) {
           deviceSetQuery.lan_netmask = lanNetmask;
+          matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
 
         // Store if device has dual band capability
@@ -338,9 +341,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             if (errors.length < 1) {
               if (matchedDevice.wifi_band !== band) {
                 deviceSetQuery.wifi_band = band;
+                matchedDevice.wifi_band = band; // Used in device response
               }
               if (matchedDevice.wifi_mode !== mode) {
                 deviceSetQuery.wifi_mode = mode;
+                matchedDevice.wifi_mode = mode; // Used in device response
               }
             }
           }
@@ -376,18 +381,28 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             if (errors.length < 1) {
               if (matchedDevice.wifi_ssid_5ghz !== ssid5ghz) {
                 deviceSetQuery.wifi_ssid_5ghz = ssid5ghz;
+                // Used in device response
+                matchedDevice.wifi_ssid_5ghz = ssid5ghz;
               }
               if (matchedDevice.wifi_password_5ghz !== password5ghz) {
                 deviceSetQuery.wifi_password_5ghz = password5ghz;
+                // Used in device response
+                matchedDevice.wifi_password_5ghz = password5ghz;
               }
               if (matchedDevice.wifi_channel_5ghz !== channel5ghz) {
                 deviceSetQuery.wifi_channel_5ghz = channel5ghz;
+                // Used in device response
+                matchedDevice.wifi_channel_5ghz = channel5ghz;
               }
               if (matchedDevice.wifi_band_5ghz !== band5ghz) {
                 deviceSetQuery.wifi_band_5ghz = band5ghz;
+                // Used in device response
+                matchedDevice.wifi_band_5ghz = band5ghz;
               }
               if (matchedDevice.wifi_mode_5ghz !== mode5ghz) {
                 deviceSetQuery.wifi_mode_5ghz = mode5ghz;
+                // Used in device response
+                matchedDevice.wifi_mode_5ghz = mode5ghz;
               }
             }
           }
@@ -435,6 +450,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             updateScheduler.successUpdate(matchedDevice._id);
             messaging.sendUpdateDoneMessage(matchedDevice);
             deviceSetQuery.do_update = false;
+            matchedDevice.do_update = false; // Used in device response
             deviceSetQuery.do_update_status = 1; // success
           } else {
             console.log(
