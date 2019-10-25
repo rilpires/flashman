@@ -3,6 +3,7 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
+const request = require('request');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
@@ -268,19 +269,21 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
   }
 
   let devId = req.body.id.toUpperCase();
-  DeviceModel.findById(devId, function(err, matchedDevice) {
+  DeviceModel.findById(devId).lean().exec(function(err, matchedDevice) {
     if (err) {
-      console.log('Error finding device '+devId+': ' + err);
+      console.log('Error finding device ' + devId + ': ' + err);
       return res.status(500).end();
     } else {
       if (matchedDevice == null) {
         createRegistry(req, res);
       } else {
+        let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
         // Update old entries
-        if (!matchedDevice.get('do_update_parameters')) {
-          matchedDevice.do_update_parameters = false;
+        if (typeof matchedDevice.do_update_parameters === 'undefined') {
+          deviceSetQuery.do_update_parameters = false;
+          matchedDevice.do_update_parameters = false; // Used in device response
         }
 
         // Parameters only modified on first comm between device and flashman
@@ -290,25 +293,30 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
         if (matchedDevice.model == '' || matchedDevice.model == bodyModel) {
           // Legacy versions include only model so let's include model version
-          matchedDevice.model = bodyModel + bodyModelVer;
+          deviceSetQuery.model = bodyModel + bodyModelVer;
         }
         let lanSubnet = returnObjOrEmptyStr(req.body.lan_addr).trim();
         let lanNetmask = parseInt(returnObjOrNum(req.body.lan_netmask, 24));
-        if (!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') {
-          matchedDevice.lan_subnet = lanSubnet;
+        if ((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
+            lanSubnet != '') {
+          deviceSetQuery.lan_subnet = lanSubnet;
+          matchedDevice.lan_subnet = lanSubnet; // Used in device response
         }
         if (!matchedDevice.lan_netmask) {
-          matchedDevice.lan_netmask = lanNetmask;
+          deviceSetQuery.lan_netmask = lanNetmask;
+          matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
 
         // Store if device has dual band capability
         const is5ghzCapable =
           (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
-        matchedDevice.wifi_is_5ghz_capable = is5ghzCapable;
+        if (is5ghzCapable != matchedDevice.wifi_is_5ghz_capable) {
+          deviceSetQuery.wifi_is_5ghz_capable = is5ghzCapable;
+        }
 
         let sentVersion = returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
-          console.log('Device '+ devId +' changed version to: '+ sentVersion);
+          // console.log(devId + ' changed version to: '+ sentVersion);
 
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
@@ -331,8 +339,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'mode', null, errors);
 
             if (errors.length < 1) {
-              matchedDevice.wifi_band = band;
-              matchedDevice.wifi_mode = mode;
+              if (matchedDevice.wifi_band !== band) {
+                deviceSetQuery.wifi_band = band;
+                matchedDevice.wifi_band = band; // Used in device response
+              }
+              if (matchedDevice.wifi_mode !== mode) {
+                deviceSetQuery.wifi_mode = mode;
+                matchedDevice.wifi_mode = mode; // Used in device response
+              }
             }
           }
           if ( permissionsSentVersion.grantWifi5ghz &&
@@ -365,35 +379,68 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                             'mode5ghz', null, errors);
 
             if (errors.length < 1) {
-              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
-              matchedDevice.wifi_password_5ghz = password5ghz;
-              matchedDevice.wifi_channel_5ghz = channel5ghz;
-              matchedDevice.wifi_band_5ghz = band5ghz;
-              matchedDevice.wifi_mode_5ghz = mode5ghz;
+              if (matchedDevice.wifi_ssid_5ghz !== ssid5ghz) {
+                deviceSetQuery.wifi_ssid_5ghz = ssid5ghz;
+                // Used in device response
+                matchedDevice.wifi_ssid_5ghz = ssid5ghz;
+              }
+              if (matchedDevice.wifi_password_5ghz !== password5ghz) {
+                deviceSetQuery.wifi_password_5ghz = password5ghz;
+                // Used in device response
+                matchedDevice.wifi_password_5ghz = password5ghz;
+              }
+              if (matchedDevice.wifi_channel_5ghz !== channel5ghz) {
+                deviceSetQuery.wifi_channel_5ghz = channel5ghz;
+                // Used in device response
+                matchedDevice.wifi_channel_5ghz = channel5ghz;
+              }
+              if (matchedDevice.wifi_band_5ghz !== band5ghz) {
+                deviceSetQuery.wifi_band_5ghz = band5ghz;
+                // Used in device response
+                matchedDevice.wifi_band_5ghz = band5ghz;
+              }
+              if (matchedDevice.wifi_mode_5ghz !== mode5ghz) {
+                deviceSetQuery.wifi_mode_5ghz = mode5ghz;
+                // Used in device response
+                matchedDevice.wifi_mode_5ghz = mode5ghz;
+              }
             }
           }
-          matchedDevice.version = sentVersion;
+          if (matchedDevice.version !== sentVersion) {
+            deviceSetQuery.version = sentVersion;
+          }
         }
 
         let sentNtp = returnObjOrEmptyStr(req.body.ntp).trim();
         if (matchedDevice.ntp_status != sentNtp) {
-          console.log('Device '+ devId +' changed NTP STATUS to: '+ sentNtp);
-          matchedDevice.ntp_status = sentNtp;
+          // console.log('Device '+ devId +' changed NTP STATUS to: '+ sentNtp);
+          deviceSetQuery.ntp_status = sentNtp;
         }
 
         // Parameters *NOT* available to be modified by REST API
-        matchedDevice.wan_ip =
-        returnObjOrEmptyStr(req.body.wan_ip).trim();
-        matchedDevice.wan_negociated_speed =
+        let sentWanIp = returnObjOrEmptyStr(req.body.wan_ip).trim();
+        if (sentWanIp !== matchedDevice.wan_ip) {
+          deviceSetQuery.wan_ip = sentWanIp;
+        }
+        let sentWanNegociatedSpeed =
         returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
-        matchedDevice.wan_negociated_duplex =
+        if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
+          deviceSetQuery.wan_negociated_speed = sentWanNegociatedSpeed;
+        }
+        let sentWanNegociatedDuplex =
         returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
-        matchedDevice.ip = ip;
-        matchedDevice.last_contact = Date.now();
+        if (sentWanNegociatedDuplex !== matchedDevice.wan_negociated_duplex) {
+          deviceSetQuery.wan_negociated_duplex = sentWanNegociatedDuplex;
+        }
+        if (matchedDevice.ip !== ip) {
+          deviceSetQuery.ip = ip;
+        }
+
+        deviceSetQuery.last_contact = Date.now();
 
         let hardReset = returnObjOrEmptyStr(req.body.hardreset).trim();
         if (hardReset == '1') {
-          matchedDevice.last_hardreset = Date.now();
+          deviceSetQuery.last_hardreset = Date.now();
         }
 
         let upgradeInfo = returnObjOrEmptyStr(req.body.upgfirm).trim();
@@ -402,8 +449,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             console.log('Device ' + devId + ' upgraded successfuly');
             updateScheduler.successUpdate(matchedDevice._id);
             messaging.sendUpdateDoneMessage(matchedDevice);
-            matchedDevice.do_update = false;
-            matchedDevice.do_update_status = 1; // success
+            deviceSetQuery.do_update = false;
+            matchedDevice.do_update = false; // Used in device response
+            deviceSetQuery.do_update_status = 1; // success
           } else {
             console.log(
               'WARNING: Device ' + devId +
@@ -413,19 +461,22 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         }
 
         let sentRelease = returnObjOrEmptyStr(req.body.release_id).trim();
-        matchedDevice.installed_release = sentRelease;
+        if (sentRelease !== matchedDevice.installed_release) {
+          deviceSetQuery.installed_release = sentRelease;
+        }
 
         let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
         if (flmUpdater == '1' || flmUpdater == '') {
           // The syn came from flashman_updater (or old routers...)
 
           // We can disable since the device will receive the update
-          matchedDevice.do_update_parameters = false;
+          if (matchedDevice.do_update_parameters !== false) {
+            deviceSetQuery.do_update_parameters = false;
+          }
           // Remove notification to device using MQTT
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        matchedDevice.save();
         let blockedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
@@ -444,12 +495,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
-        Config.findOne({is_default: true}, function(err, matchedConfig) {
+        Config.findOne({is_default: true}).lean()
+        .exec(function(err, matchedConfig) {
           let zabbixFqdn = '';
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
           }
-          return res.status(200).json({
+          // Do not return yet, just respond to request so we can free socket
+          res.status(200).json({
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
             'mqtt_status': (matchedDevice._id in mqtt.clients),
@@ -479,6 +532,46 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
             'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
           });
+          // Now we push the changed fields to the database
+          DeviceModel.updateOne({'_id': matchedDevice._id},
+            {'$set': deviceSetQuery}, (err) => {
+              if (err) {
+                console.log(err);
+              } else {
+                // Convert to date string
+                deviceSetQuery.last_contact =
+                new Date(deviceSetQuery.last_contact).toISOString();
+                // Send modified fields if device traps are activated
+                if (Object.keys(deviceSetQuery).length > 0 &&
+                    matchedConfig.traps_callbacks &&
+                    matchedConfig.traps_callbacks.device_crud) {
+                  let requestOptions = {};
+                  let callbackUrl =
+                  matchedConfig.traps_callbacks.device_crud.url;
+                  let callbackAuthUser =
+                  matchedConfig.traps_callbacks.device_crud.user;
+                  let callbackAuthSecret =
+                  matchedConfig.traps_callbacks.device_crud.secret;
+                  if (callbackUrl) {
+                    requestOptions.url = callbackUrl;
+                    requestOptions.method = 'PUT';
+                    requestOptions.json = {
+                      'id': matchedDevice._id,
+                      'type': 'device',
+                      'changes': deviceSetQuery,
+                    };
+                    if (callbackAuthUser && callbackAuthSecret) {
+                      requestOptions.auth = {
+                        user: callbackAuthUser,
+                        pass: callbackAuthSecret,
+                      };
+                    }
+                    request(requestOptions);
+                  }
+                }
+              }
+            }
+          );
         });
       }
     }
