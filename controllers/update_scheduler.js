@@ -406,7 +406,7 @@ scheduleController.successUpdate = async(function(mac) {
 scheduleController.failedDownload = async(function(mac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
-  let count = device_update_schedule.device_count;
+  let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
