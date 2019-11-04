@@ -95,16 +95,10 @@ const checkValidRange = function(config) {
 };
 
 const scheduleOfflineWatchdog = function() {
-  // Check for online devices every 5 minutes
-  const interval = 5*60*1000;
+  // Check for update slots every minute
+  const interval = 1*60*1000;
   if (watchdogIntervalID) return;
-  watchdogIntervalID = setInterval(async(()=>{
-    let result = await(markNextForUpdate());
-    if (result.success && result.marked) {
-      // Marked one for update, may now exit watch mode
-      removeOfflineWatchdog();
-    }
-  }), interval);
+  watchdogIntervalID = setInterval(async(()=>markSeveral()), interval);
 };
 
 const removeOfflineWatchdog = function() {
@@ -162,7 +156,11 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
 };
 
 const markSeveral = async(function() {
-  for (let i = 0; i < maxDownloads; i++) {
+  let config = await(getConfig());
+  if (!config) return; // this should never happen
+  let inProgress = config.device_update_schedule.rule.in_progress_devices.length;
+  let slotsAvailable = maxDownloads - inProgress;
+  for (let i = 0; i < slotsAvailable; i++) {
     let result = await(markNextForUpdate());
     if (!result.success) {
       return;
@@ -173,14 +171,6 @@ const markSeveral = async(function() {
 });
 
 scheduleController.recoverFromOffline = async(function(config) {
-  // Schedule time ranges start times
-  config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
-    scheduleInitialize(
-      r.start_day,
-      parseInt(r.start_time.substring(0, 2)),
-      parseInt(r.start_time.substring(3, 5))
-    );
-  });
   // Move those in doing status downloading back to to_do
   let rule = config.device_update_schedule.rule;
   let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
@@ -195,32 +185,9 @@ scheduleController.recoverFromOffline = async(function(config) {
     }},
     {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
   ));
-  // Mark next for updates after 1 minute - we leave time for mqtt to return
-  setTimeout(markSeveral, 1*60*1000);
+  // Mark next for updates after 5 minutes - we leave time for mqtt to return
+  setTimeout(markSeveral, 5*60*1000);
 });
-
-const scheduleInitialize = function(day, hour, minute) {
-  let cronLikeTime = '' + minute + ' ' + hour + ' * * ' + day;
-  initSchedules.push(nodeSchedule.scheduleJob(cronLikeTime, async(()=>{
-    let config = await(getConfig());
-    // No active schedule - this should never happen, but if it does, cancel job
-    if (!config) {
-      removeSchedules();
-      return;
-    }
-    // There are still devices downloading in progress, no need to initialize
-    let remaining = config.device_update_schedule.rule.in_progress_devices
-    .reduce((s, d)=>s || d.state === 'downloading', false);
-    if (remaining) return;
-    // Initialize update for next devices
-    markSeveral();
-  })));
-};
-
-const removeSchedules = function() {
-  initSchedules.forEach((j)=>j.cancel());
-  initSchedules = [];
-};
 
 const markNextForUpdate = async(function() {
   // This function should not have 2 running instances at the same time, since
@@ -247,7 +214,6 @@ const markNextForUpdate = async(function() {
   if (!checkValidRange(config)) {
     mutexRelease();
     console.log('Scheduler: fora do horário válido');
-    removeOfflineWatchdog();
     return {success: true, marked: false};
   }
   let devices = config.device_update_schedule.rule.to_do_devices;
@@ -275,7 +241,6 @@ const markNextForUpdate = async(function() {
     }
     mutexRelease();
     console.log('Scheduler: não há dispositivos online');
-    scheduleOfflineWatchdog();
     return {success: true, marked: false};
   }
   try {
@@ -343,6 +308,7 @@ scheduleController.initialize = async(function(macList) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
+  scheduleOfflineWatchdog();
   return {success: true};
 });
 
@@ -397,10 +363,9 @@ scheduleController.successUpdate = async(function(mac) {
   }
   if (rule.done_devices.length+1 === count) {
     // This was last device to enter done state, schedule is done
-    removeSchedules();
     removeOfflineWatchdog();
   }
-  return await(markNextForUpdate());
+  return {success: true};
 });
 
 scheduleController.failedDownload = async(function(mac) {
@@ -419,7 +384,6 @@ scheduleController.failedDownload = async(function(mac) {
       };
       if (rule.done_devices.length+1 === count) {
         // This was last device to enter done state, schedule is done
-        removeSchedules();
         removeOfflineWatchdog();
       }
     }
@@ -459,7 +423,7 @@ scheduleController.failedDownload = async(function(mac) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
-  return await(markNextForUpdate());
+  return {success: true};
 });
 
 scheduleController.abortSchedule = async(function(req, res) {
@@ -506,7 +470,6 @@ scheduleController.abortSchedule = async(function(req, res) {
       message: 'Erro alterando base de dados',
     });
   }
-  removeSchedules();
   removeOfflineWatchdog();
   resetMutex();
   return res.status(200).json({
@@ -772,11 +735,6 @@ scheduleController.startSchedule = async(function(req, res) {
     }
     // Schedule job to init whenever a time range starts
     config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
-      scheduleInitialize(
-        r.start_day,
-        parseInt(r.start_time.substring(0, 2)),
-        parseInt(r.start_time.substring(3, 5))
-      );
     });
     return res.status(200).json({
       success: true,
