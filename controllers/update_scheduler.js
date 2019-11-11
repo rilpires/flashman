@@ -186,7 +186,10 @@ scheduleController.recoverFromOffline = async(function(config) {
     {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
   ));
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
-  setTimeout(markSeveral, 5*60*1000);
+  setTimeout(async(function() {
+    await(markSeveral());
+    scheduleOfflineWatchdog();
+  }), 5*60*1000);
 });
 
 const markNextForUpdate = async(function() {
