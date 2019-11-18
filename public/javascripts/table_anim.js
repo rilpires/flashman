@@ -357,7 +357,6 @@ $(document).ready(function() {
         let index = 0;
         // Fill remaining rows with devices
         for (let idx = 0; idx < res.devices.length; idx += 1) {
-          console.log(idx);
           let device = res.devices[idx];
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
@@ -612,7 +611,7 @@ $(document).ready(function() {
                   '</div>'+
                   '<input class="form-control py-0 added-margin" type="text" '+
                   'id="edit_external_reference-'+index+'" placeholder="ID do cliente (opcional)" '+
-                  'maxlength="64" value="$REPLACE_ID" $REPLACE_EN_ID>'+
+                  'maxlength="64" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
                   '</input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
@@ -635,13 +634,13 @@ $(document).ready(function() {
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
-            aboutTab = aboutTab.replace('$REPLACE_ID', '');
+            aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
           } else {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, '');
             if (device.external_reference) {
-              aboutTab = aboutTab.replace('$REPLACE_ID', device.external_reference.data);
+              aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
             } else {
-              aboutTab = aboutTab.replace('$REPLACE_ID', '');
+              aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
             }
           }
           if (!device.external_reference || device.external_reference.kind === 'CPF') {
@@ -697,7 +696,7 @@ $(document).ready(function() {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, '');
           }
 
-          let wanTab = '<div class="edit-tab" id="tab_wan-'+index+'">'+
+          let wanTab = '<div class="edit-tab d-none" id="tab_wan-'+index+'">'+
             '<div class="row">'+
               '<div class="col-4">'+
                 '<div class="md-form">'+
@@ -723,6 +722,8 @@ $(document).ready(function() {
                   '<input class="form-control" type="text" maxlength="32" '+
                   'value="'+device.wan_negociated_speed+'" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
+                '</div>'+
+                '<div class="md-form input-entry">'+
                   '<label class="active">Modo de Transmissão (Duplex)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
                   'value="'+device.wan_negociated_duplex+'" disabled></input>'+
@@ -743,12 +744,12 @@ $(document).ready(function() {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', '');
           }
 
-          let lanTab = '<div class="edit-tab d-none" id="tab_lan-"'+index+'>'+
+          let lanTab = '<div class="edit-tab d-none" id="tab_lan-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">IP da Rede</label>'+
-                  '<input class="form-control ip-mask-field" id="edit_lan_subnet-'+index+'" '+
+                  '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
@@ -803,7 +804,7 @@ $(document).ready(function() {
                   '<label class="active">SSID do Wi-Fi</label>'+
                   '<input class="form-control" type="text" id="edit_wifi_ssid-'+index+'" '+
                   'maxlength="32" value="'+device.wifi_ssid+'" $REPLACE_WIFI_EN></input>'+
-                  '<div class="invalid-feedback"></div>'
+                  '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<div class="input-group">'+
@@ -811,7 +812,7 @@ $(document).ready(function() {
                     '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
                     'maxlength="64" value="'+device.wifi_password+'" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
-                    '<div class="invalid-feedback"></div>'
+                    '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
               '</div>'+
@@ -890,7 +891,7 @@ $(document).ready(function() {
                   '<label class="active">SSID do Wi-Fi</label>'+
                   '<input class="form-control" type="text" id="edit_wifi5_ssid-'+index+'" '+
                   'maxlength="32" value="'+device.wifi_ssid_5ghz+'" $REPLACE_WIFI_EN></input>'+
-                  '<div class="invalid-feedback"></div>'
+                  '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<div class="input-group">'+
@@ -898,7 +899,7 @@ $(document).ready(function() {
                     '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
                     'maxlength="64" value="'+device.wifi_password_5ghz+'" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
-                    '<div class="invalid-feedback"></div>'
+                    '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
               '</div>'+
@@ -971,7 +972,7 @@ $(document).ready(function() {
 
           let removeDevice = '<div class="col-2 text-right">'+
             '<button class="btn btn-danger btn-trash m-0" type="button">'+
-              '<i class="fas fa-trash"><span>&nbsp Remover</span></i>'+
+              '<i class="fas fa-trash"></i><span>&nbsp Remover</span>'+
             '</button>'+
           '</div>';
 
@@ -1013,7 +1014,7 @@ $(document).ready(function() {
                 '<div class="row">'+
                   '<div class="col text-right">'+
                     '<button class="btn btn-primary mx-0" type="submit">'+
-                      '<i class="fas fa-check fa-lg"><span>&nbsp Editar</span></i>'+
+                      '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
                     '</button>'+
                   '</div>'+
                 '</div>'+
@@ -1076,9 +1077,7 @@ $(document).ready(function() {
           index += 1;
         }
         // Attach elements back to DOM after manipulation
-        document.getElementById("devices-table-content").innerHTML = finalHtml;
-        // deviceTableContent.html(finalHtml);
-        // $('#devices-table').append(deviceTableContent);
+        deviceTableContent.html(finalHtml);
         // Fill table pagination
         deviceTablePagination.append(
           $('<ul>').addClass('pagination pagination-lg').append(() => {
