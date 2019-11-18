@@ -300,9 +300,6 @@ $(document).ready(function() {
         }
         // Stop loading animation
         deviceTableContent.empty();
-        // Improve performance by working with table content
-        // outside DOM since there is o lot of manipulation ahead
-        deviceTableContent.detach();
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
@@ -1052,8 +1049,6 @@ $(document).ready(function() {
           }
 
           finalHtml += formRow;
-          // Attach elements back to DOM after manipulation
-          $('#devices-table').append(deviceTableContent);
 
           // Index variable has a global scope related to below function
           let localIdx = index;
@@ -1080,8 +1075,10 @@ $(document).ready(function() {
 
           index += 1;
         }
-        // document.getElementById("devices-table-content").innerHTML = finalHtml;
+        // Attach elements back to DOM after manipulation
+        document.getElementById("devices-table-content").innerHTML = finalHtml;
         // deviceTableContent.html(finalHtml);
+        // $('#devices-table').append(deviceTableContent);
         // Fill table pagination
         deviceTablePagination.append(
           $('<ul>').addClass('pagination pagination-lg').append(() => {
