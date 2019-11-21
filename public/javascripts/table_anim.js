@@ -680,7 +680,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (!device.connection_type || device.connection_type.toUpperCase() !== 'PPPoE') {
+          if (!device.connection_type || device.connection_type.toUpperCase() !== 'PPPOE') {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', 'd-none');
           } else {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', '');
@@ -703,10 +703,9 @@ $(document).ready(function() {
                   '<div class="input-group has-warning">'+
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Tipo de Conexão</label>'+
-                      '<select class="browser-default md-select" id="edit_connect_type-'+index+'" '+
-                      'value="$REPLACE_CONN_TYPE">'+
-                        '<option value="DHCP">DHCP</option>'+
-                        '<option value="PPPoE">PPPoE</option>'+
+                      '<select class="browser-default md-select" id="edit_connect_type-'+index+'">'+
+                        '<option value="DHCP" $REPLACE_SELECTED_DHCP$>DHCP</option>'+
+                        '<option value="PPPoE" $REPLACE_SELECTED_PPPOE$>PPPoE</option>'+
                       '</select>'+
                     '</div>'+
                     '<h7 class="orange-text d-none" id="edit_connect_type_warning-'+index+'">'+
@@ -733,11 +732,12 @@ $(document).ready(function() {
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
           '</div>';
-          if (device.connection_type && device.connection_type.toUpperCase() === 'PPPoE') {
-            wanTab = wanTab.replace('$REPLACE_CONN_TYPE', 'PPPoE');
+          if (device.connection_type && device.connection_type.toUpperCase() === 'PPPOE') {
+            wanTab = wanTab.replace('$REPLACE_SELECTED_PPPOE', 'selected="selected"');
           } else {
-            wanTab = wanTab.replace('$REPLACE_CONN_TYPE', 'DHCP');
+            wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP', 'selected="selected"');
           }
+          wanTab = wanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
           if (isSuperuser || grantPPPoEInfo >= 1) {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', pppoeForm);
           } else {
@@ -759,10 +759,10 @@ $(document).ready(function() {
                   '<div class="md-selectfield form-control my-0">'+
                     '<label class="active">Máscara</label>'+
                     '<select class="browser-default md-select" type="text" id="edit_lan_netmask-'+index+'" '+
-                    'maxlength="15" value="'+device.lan_netmask+'" $REPLACE_LAN_EN>'+
-                      '<option value="24">24</option>'+
-                      '<option value="25">25</option>'+
-                      '<option value="26">26</option>'+
+                    'maxlength="15" $REPLACE_LAN_EN>'+
+                      '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
+                      '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
+                      '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
                     '</select>'+
                   '</div>'+
                 '</div>'+
@@ -774,6 +774,9 @@ $(document).ready(function() {
           } else {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, '');
           }
+          let selectTarget = '$REPLACE_SELECTED_' + device.lan_netmask;
+          lanTab = lanTab.replace(selectTarget, 'selected="selected"');
+          lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
 
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
             '<div class="row">'+
@@ -783,19 +786,19 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Canal do Wi-Fi</label>'+
                       '<select class="browser-default md-select" id="edit_wifi_channel-'+index+'" '+
-                      'value="'+device.wifi_channel+'" $REPLACE_WIFI_EN>'+
-                        '<option value="auto">auto</option>'+
-                        '<option value="1">1</option>'+
-                        '<option value="2">2</option>'+
-                        '<option value="3">3</option>'+
-                        '<option value="4">4</option>'+
-                        '<option value="5">5</option>'+
-                        '<option value="6">6</option>'+
-                        '<option value="7">7</option>'+
-                        '<option value="8">8</option>'+
-                        '<option value="9">9</option>'+
-                        '<option value="10">10</option>'+
-                        '<option value="11">11</option>'+
+                      '$REPLACE_WIFI_EN>'+
+                        '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
+                        '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
+                        '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
+                        '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
+                        '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
+                        '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
+                        '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
+                        '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
+                        '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
+                        '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
+                        '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
+                        '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -822,9 +825,9 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
-                      'value="'+device.wifi_band+'" $REPLACE_WIFI_EN>'+
-                        '<option value="HT40">40 MHz</option>'+
-                        '<option value="HT20">20 MHz</option>'+
+                      '$REPLACE_WIFI_EN>'+
+                        '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
+                        '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -834,9 +837,9 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Modo de operação</label>'+
                       '<select class="browser-default md-select" id="edit_wifi_mode-'+index+'" '+
-                      'value="'+device.wifi_mode+'" $REPLACE_WIFI_BAND_EN>'+
-                        '<option value="11n">BGN</option>'+
-                        '<option value="11g">G</option>'+
+                      '$REPLACE_WIFI_BAND_EN>'+
+                        '<option value="11n" $REPLACE_SELECTED_MODE_11n$>BGN</option>'+
+                        '<option value="11g" $REPLACE_SELECTED_MODE_11g$>G</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -860,6 +863,18 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', '');
           }
 
+          selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+
+          selectTarget = '$REPLACE_SELECTED_BAND_' + device.wifi_band;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
+
+          selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
@@ -868,21 +883,21 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Canal do Wi-Fi</label>'+
                       '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
-                      'value="'+device.wifi_channel_5ghz+'" $REPLACE_WIFI_EN>'+
-                        '<option value="auto">auto</option>'+
-                        '<option value="36">36</option>'+
-                        '<option value="40">40</option>'+
-                        '<option value="44">44</option>'+
-                        '<option value="48">48</option>'+
-                        '<option value="52">52</option>'+
-                        '<option value="56">56</option>'+
-                        '<option value="60">60</option>'+
-                        '<option value="64">64</option>'+
-                        '<option value="149">149</option>'+
-                        '<option value="153">153</option>'+
-                        '<option value="157">157</option>'+
-                        '<option value="161">161</option>'+
-                        '<option value="165">165</option>'+
+                      '$REPLACE_WIFI_EN>'+
+                        '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
+                        '<option value="36" $REPLACE_SELECTED_CHANNEL_36$>36</option>'+
+                        '<option value="40" $REPLACE_SELECTED_CHANNEL_40$>40</option>'+
+                        '<option value="44" $REPLACE_SELECTED_CHANNEL_44$>44</option>'+
+                        '<option value="48" $REPLACE_SELECTED_CHANNEL_48$>48</option>'+
+                        '<option value="52" $REPLACE_SELECTED_CHANNEL_52$>52</option>'+
+                        '<option value="56" $REPLACE_SELECTED_CHANNEL_56$>56</option>'+
+                        '<option value="60" $REPLACE_SELECTED_CHANNEL_60$>60</option>'+
+                        '<option value="64" $REPLACE_SELECTED_CHANNEL_64$>64</option>'+
+                        '<option value="149" $REPLACE_SELECTED_CHANNEL_149$>149</option>'+
+                        '<option value="153" $REPLACE_SELECTED_CHANNEL_153$>153</option>'+
+                        '<option value="157" $REPLACE_SELECTED_CHANNEL_157$>157</option>'+
+                        '<option value="161" $REPLACE_SELECTED_CHANNEL_161$>161</option>'+
+                        '<option value="165" $REPLACE_SELECTED_CHANNEL_165$>165</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -909,10 +924,10 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
-                      'value="$REPLACE_WIFI_BAND_5GHZ" $REPLACE_WIFI_EN>'+
-                        '<option value="VHT80">80 MHz</option>'+
-                        '<option value="VHT40">40 MHz</option>'+
-                        '<option value="VHT20">20 MHz</option>'+
+                      '$REPLACE_WIFI_EN>'+
+                        '<option value="VHT80" $REPLACE_SELECTED_BAND_VHT80$>80 MHz</option>'+
+                        '<option value="VHT40" $REPLACE_SELECTED_BAND_VHT40$>40 MHz</option>'+
+                        '<option value="VHT20" $REPLACE_SELECTED_BAND_VHT20$>20 MHz</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -922,9 +937,9 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Modo de operação</label>'+
                       '<select class="browser-default md-select" id="edit_wifi5_mode-'+index+'" '+
-                      'value="'+device.wifi_mode_5ghz+'" $REPLACE_WIFI_BAND_EN>'+
-                        '<option value="11ac">AC</option>'+
-                        '<option value="11na">N</option>'+
+                      '$REPLACE_WIFI_BAND_EN>'+
+                        '<option value="11ac" $REPLACE_SELECTED_MODE_11ac$>AC</option>'+
+                        '<option value="11na" $REPLACE_SELECTED_MODE_11na$>N</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -947,11 +962,20 @@ $(document).ready(function() {
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', '');
           }
-          if (device.wifi_band_5ghz === 'HT20' || device.wifi_band_5ghz === 'HT40') {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_5GHZ', 'V'+device.wifi_band_5ghz);
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_5GHZ', device.wifi_band_5ghz);
-          }
+
+          selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
+          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
+          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+
+          let band = (device.wifi_band_5ghz === 'HT20' || device.wifi_band_5ghz === 'HT40')
+                      ? ('V'+device.wifi_band_5ghz) : device.wifi_band_5ghz;
+          selectTarget = '$REPLACE_SELECTED_BAND_' + band;
+          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
+          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
+
+          selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
+          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
+          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+
