@@ -70,6 +70,13 @@ router.route('/scheduler/upload').post(
   updaterScheduleController.uploadDevicesFile
 );
 
+// Factory reset device
+router.route('/factoryreset/:id').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantFactoryReset'),
+  deviceListController.factoryResetDevice
+);
+
 // Delete device
 router.route('/delete/:id').post(
   authController.ensureLogin(),
