@@ -549,6 +549,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
+          let factoryAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
+          .replace('$REPLACE_ICON', 'fa-skull-crossbones')
+          .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
+
           let devActions = '<button class="btn btn-primary dropdown-toggle" '+
           'type="button" data-toggle="dropdown">Opções</button>'+
           '<div class="dropdown-menu dropdown-menu-right" data-dropdown-in="fadeIn" '+
@@ -565,6 +570,7 @@ $(document).ready(function() {
             '$REPLACE_PORT_FORWARD_ACTION'+
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
+            '$REPLACE_FACTORY_ACTION'+
           '</div>';
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
             devActions = devActions.replace('$REPLACE_LOG_ACTION', logAction);
@@ -590,6 +596,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
+          }
+          if (isSuperuser || grantFactoryReset) {
+            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');
           }
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
@@ -1210,14 +1221,66 @@ $(document).ready(function() {
   $(document).on('click', '.btn-trash', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    $.ajax({
-      url: '/devicelist/delete/' + id,
-      type: 'post',
-      success: function(res) {
-        let pageNum = parseInt($('#curr-page-link').html());
-        let filterList = $('#devices-search-form .tags-input').val();
-        loadDevicesTable(pageNum, filterList);
-      },
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Tem certeza que deseja remover este cadastro?',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          url: '/devicelist/delete/' + id,
+          type: 'post',
+          success: function(res) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-form .tags-input').val();
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: 'success',
+              title: 'Cadastro removido com sucesso',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '.btn-factory', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Este roteador perderá todas as configurações. Esta ação só poderá '+
+      'ser desfeita com uma nova instalação através do Assistente Flashbox.',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          url: '/devicelist/factoryreset/' + id,
+          type: 'post',
+          success: function(res) {
+            swal({
+              type: 'success',
+              title: 'Processo iniciado com sucesso',
+              text: 'Aguarde o roteador reiniciar, e então segure o botão de '+
+                    'reset por 15 segundos.',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
     });
   });
 });
