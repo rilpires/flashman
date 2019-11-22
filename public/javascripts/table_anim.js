@@ -1267,6 +1267,12 @@ $(document).ready(function() {
       showCancelButton: true,
     }).then((result)=>{
       if (result.value) {
+        swal({
+          title: 'Preparando firmware de fábrica...',
+          onOpen: () => {
+            swal.showLoading();
+          },
+        });
         $.ajax({
           url: '/devicelist/factoryreset/' + id,
           type: 'post',
@@ -1274,6 +1280,7 @@ $(document).ready(function() {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-form .tags-input').val();
             loadDevicesTable(pageNum, filterList);
+            swal.close();
             swal({
               type: 'success',
               title: 'Processo iniciado com sucesso',
@@ -1283,6 +1290,17 @@ $(document).ready(function() {
               confirmButtonText: 'OK',
             });
           },
+          error: function(err) {
+            swal.close();
+            swal({
+              type: 'error',
+              title: 'Um erro ocorreu',
+              text: 'Não foi possível restaurar o roteador para o firmware de '+
+                    'fábrica. Por favor tente novamente.',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          }
         });
       }
     });
