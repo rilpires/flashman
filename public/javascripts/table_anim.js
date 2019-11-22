@@ -151,6 +151,7 @@ $(document).ready(function() {
   let grantLOGAccess = false;
   let grantLanAccess = false;
   let grantDeviceRemoval = false;
+  let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
 
@@ -167,6 +168,7 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
+    grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
   }
@@ -646,14 +648,13 @@ $(document).ready(function() {
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
-            aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
           } else {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, '');
-            if (device.external_reference) {
-              aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
-            } else {
-              aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
-            }
+          }
+          if (device.external_reference) {
+            aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
+          } else {
+            aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
           }
           if (!device.external_reference || device.external_reference.kind === 'CPF') {
             aboutTab = aboutTab.replace('$REPLACE_ID_CPF', 'primary-color active');
