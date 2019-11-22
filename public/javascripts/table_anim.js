@@ -409,12 +409,11 @@ $(document).ready(function() {
             '</div>'+
           '</a>';
 
-          let upgradeOpts = '<div>';
+          let upgradeOpts = '';
           for (let idx = 0; idx < device.releases.length; idx++) {
             let release = device.releases[idx];
             upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
           }
-          upgradeOpts += '</div>';
 
           let upgradeCol = '<td>'+
             '<div class="btn-group device-update">'+
@@ -423,15 +422,15 @@ $(document).ready(function() {
               '</button>'+
               '<div class="btn-group">'+
                 '<button class="btn btn-sm btn-primary dropdown-toggle"'+
-                ' type="button" data-toggle="dropdown" $NO_UPDATE>'+
+                ' type="button" data-toggle="dropdown" $NO_UPDATE_DROP>'+
                   '<span class="selected">$UP_RELEASE</span>'+
                 '</button>'+
                 '<div class="dropdown-menu refresh-selected">'+upgradeOpts+'</div>'+
               '</div>'+
               '<span class="ml-3 upgrade-status">'+
                 '<div class="fas fa-circle fa-2x white-text status-none $STATUS_NO"></div>'+
-                '<div class="fas fa-circle fa-2x fa-pulse status-waiting $STATUS_0"></div>'+
-                '<div class="fas fa-circle fa-2x green-text status-ok $STATUS_1"></div>'+
+                '<div class="fas fa-spinner fa-2x fa-pulse status-waiting $STATUS_0"></div>'+
+                '<div class="fas fa-check-circle fa-2x green-text status-ok $STATUS_1"></div>'+
                 '<a class="status-error $STATUS_2">'+
                   '<div class="fas fa-exclamation-circle fa-2x red-text"></div>'+
                 '</a>'+
@@ -441,7 +440,8 @@ $(document).ready(function() {
           if (device.do_update) {
             upgradeCol = upgradeCol.replace('$UP_CLASS', 'btn-danger');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
-            upgradeCol = upgradeCol.replace(/\$NO_UPDATE/g, '');
+            upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
+            upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
             upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
             if (device.do_update_status == 0) {
               upgradeCol = upgradeCol.replace('$STATUS_0', '');
@@ -459,7 +459,8 @@ $(document).ready(function() {
           } else {
             upgradeCol = upgradeCol.replace('$UP_CLASS', '');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
-            upgradeCol = upgradeCol.replace(/\$NO_UPDATE/g, 'disabled');
+            upgradeCol = upgradeCol.replace('$NO_UPDATE', 'disabled');
+            upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', '');
             upgradeCol = upgradeCol.replace('$STATUS_NO', '');
             upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
             upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
@@ -509,10 +510,10 @@ $(document).ready(function() {
           formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
-          formAttr += ' data-validate-wifi="'+isSuperuser || grantWifiInfo >= 1+'"';
-          formAttr += ' data-validate-pppoe="'+isSuperuser || grantPPPoEInfo >= 1+'"';
-          formAttr += ' data-validate-wifi-band="'+grantWifiBand && (isSuperuser || grantWifiInfo >= 1)+'"';
-          formAttr += ' data-validate-wifi-5ghz="'+grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1)+'"';
+          formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
+          formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
@@ -974,7 +975,7 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', '');
           }
 
-          selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
+          selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
 
@@ -984,7 +985,7 @@ $(document).ready(function() {
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
 
-          selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
+          selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
@@ -1270,6 +1271,9 @@ $(document).ready(function() {
           url: '/devicelist/factoryreset/' + id,
           type: 'post',
           success: function(res) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-form .tags-input').val();
+            loadDevicesTable(pageNum, filterList);
             swal({
               type: 'success',
               title: 'Processo iniciado com sucesso',
