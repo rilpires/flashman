@@ -283,6 +283,19 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Voltar Roteador para a Firmware de Fábrica'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-factory-reset').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Remoção de Registro de Roteador'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -388,6 +401,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-actions] option[value=' +
           roleObj.grantDeviceActions + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-factory-reset] option[value=' +
+          roleObj.grantFactoryReset + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-removal] option[value=' +
           roleObj.grantDeviceRemoval + ']')
