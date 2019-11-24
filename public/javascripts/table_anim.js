@@ -348,7 +348,7 @@ $(document).ready(function() {
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
           '</td><td></td><td></td><td></td><td></td><td></td>'+
-          '$REPLACE_ALLUPDATE'
+          '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
           statusRow = statusRow.replace('$REPLACE_ALLUPDATE', allUpgrade);
@@ -1076,14 +1076,14 @@ $(document).ready(function() {
             formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', '');
           }
           if (isSuperuser || grantDeviceActions) {
-            formRow = formRow.replace("$REPLACE_ACTIONS", devActions);
+            formRow = formRow.replace('$REPLACE_ACTIONS', devActions);
           } else {
-            formRow = formRow.replace("$REPLACE_ACTIONS", '');
+            formRow = formRow.replace('$REPLACE_ACTIONS', '');
           }
           if (isSuperuser || grantDeviceRemoval) {
-            formRow = formRow.replace("$REPLACE_DEVICE_REMOVE", removeDevice);
+            formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', removeDevice);
           } else {
-            formRow = formRow.replace("$REPLACE_DEVICE_REMOVE", '');
+            formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', '');
           }
 
           finalHtml += formRow;
@@ -1301,7 +1301,7 @@ $(document).ready(function() {
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });
-          }
+          },
         });
       }
     });
