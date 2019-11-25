@@ -23,28 +23,28 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
             span &nbsp #{username}
           .dropdown-menu(aria-labelledby="navbarDropdown")
             a.dropdown-item(href="/user/profile")
-              .fas.fa-user.fa-lg
-              span &nbsp Meu perfil
+              i.fas.fa-user.fa-lg.mr-2
+              | Meu perfil
             if (superuser || role.grantFirmwareManage)
               a.dropdown-item(href="/firmware")
-                .fas.fa-hdd.fa-lg
-                span &nbsp Firmwares
+                i.fas.fa-hdd.fa-lg.mr-2
+                | Firmwares
             if (superuser)
               a.dropdown-item(href="/user/showall")
-                .fas.fa-users.fa-lg
-                span &nbsp Gerenciar usuários
+                i.fas.fa-users.fa-lg.mr-2
+                | Gerenciar usuários
               a.dropdown-item(href="/user/roles")
-                .fas.fa-address-card.fa-lg
-                span &nbsp Gerenciar permissões
+                i.fas.fa-address-card.fa-lg.mr-2
+                | Gerenciar permissões
               a.dropdown-item.update
-                .fas.fa-arrow-circle-down.fa-lg
-                span &nbsp Atualizar Flashman
+                i.fas.fa-arrow-circle-down.fa-lg.mr-2
+                | Atualizar Flashman
               a.dropdown-item(
                 data-toggle="modal",
                 data-target="#config-flashman-menu"
               )
-                .fas.fa-cog.fa-lg
-                span &nbsp Configurações
+                i.fas.fa-cog.fa-lg.mr-2
+                | Configurações
         li.nav-item
           a.ml-4.nav-link.waves-effect.waves-light(href="/logout")
             i.fas.fa-sign-out-alt

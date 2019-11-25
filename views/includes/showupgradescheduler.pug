@@ -271,5 +271,8 @@
 block scripts
   script.
     if (!#{update_schedule.is_active}) {
-      document.getElementById('result-panel').style.display = 'none';
+      var resultPanel = document.getElementById('result-panel');
+      if (resultPanel != null) {
+        resultPanel.style.display = 'none';
+      }
     }

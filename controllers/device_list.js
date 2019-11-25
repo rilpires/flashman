@@ -10,7 +10,15 @@ const sio = require('../sio');
 let deviceListController = {};
 
 const fs = require('fs');
+const unzip = require('unzip');
+const request = require('request');
+const md5File = require('md5-file');
+const requestPromise = require('request-promise-native');
+const async = require('asyncawait/async');
+const await = require('asyncawait/await');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
+
+const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
 
 const intToWeekDayStr = function(day) {
   if (day === 0) return 'Domingo';
@@ -461,6 +469,85 @@ deviceListController.delDeviceReg = function(req, res) {
     device.remove();
     return res.status(200).json({success: true});
   });
+};
+
+const downloadStockFirmware = function(model) {
+  return new Promise(async((resolve, reject)=>{
+    let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
+    try {
+      // Download md5 hash
+      let targetMd5 = await(requestPromise({
+        url: remoteFileUrl + '.md5',
+        method: 'GET',
+      }));
+      let currentMd5 = '';
+      let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
+      // Check for local md5 hash
+      if (fs.existsSync(localMd5Path)) {
+        currentMd5 = fs.readFileSync(localMd5Path, 'utf8');
+      }
+      if (targetMd5 !== currentMd5) {
+        // Mismatch, download new zip file
+        console.log('UPDATE: Downloading factory reset fware for '+model+'...');
+        fs.writeFileSync(localMd5Path, targetMd5);
+        let responseStream = request({ url: remoteFileUrl, method: 'GET' })
+        .on('error', (err)=>{
+          console.log(err);
+          return resolve(false);
+        })
+        .on('response', (resp)=>{
+          if (resp.statusCode !== 200) {
+            return resolve(false);
+          }
+          responseStream.pipe(unzip.Parse()).on('entry', (entry)=>{
+            let fname = entry.path;
+            let writeStream = fs.createWriteStream(imageReleasesDir + fname);
+            writeStream.on('close', ()=>{
+              let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
+              let binfname = imageReleasesDir + fname;
+              let md5Checksum = md5File.sync(binfname);
+              fs.writeFileSync(md5fname, md5Checksum);
+              return resolve(true);
+            });
+            entry.pipe(writeStream);
+          });
+        });
+      } else {
+        // Hashes match, local file is ok
+        return resolve(true);
+      }
+    } catch (err) {
+      if (err.statusCode !== 404) {
+        console.log(err.statusCode);
+      }
+      return resolve(false);
+    }
+  }));
+};
+
+deviceListController.factoryResetDevice = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(), async((err, device)=>{
+    if (err || !device) {
+      return res.status(500).json({
+        success: false,
+        message: 'Roteador não encontrado na base de dados',
+      });
+    }
+    const model = device.model.replace('N/', '');
+    if (!(await(downloadStockFirmware(model)))) {
+      return res.status(500).json({
+        success: false,
+        msg: 'Erro baixando a firmware de fábrica',
+      });
+    }
+    device.do_update = true;
+    device.do_update_status = 0; // waiting
+    device.release = '9999-aix';
+    await(device.save());
+    console.log('UPDATE: Factory resetting router ' + device._id + '...');
+    mqtt.anlixMessageRouterUpdate(device._id);
+    return res.status(200).json({success: true});
+  }));
 };
 
 //
