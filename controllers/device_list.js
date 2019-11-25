@@ -12,6 +12,7 @@ let deviceListController = {};
 const fs = require('fs');
 const unzip = require('unzip');
 const request = require('request');
+const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -498,10 +499,17 @@ const downloadStockFirmware = function(model) {
           if (resp.statusCode !== 200) {
             return resolve(false);
           }
-          let unzipDest = unzip.Extract({ path: imageReleasesDir });
-          responseStream.pipe(unzipDest);
-          unzipDest.on('close', ()=>{
-            return resolve(true);
+          responseStream.pipe(unzip.Parse()).on('entry', (entry)=>{
+            let fname = entry.path;
+            let writeStream = fs.createWriteStream(imageReleasesDir + fname);
+            writeStream.on('close', ()=>{
+              let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
+              let binfname = imageReleasesDir + fname;
+              let md5Checksum = md5File.sync(binfname);
+              fs.writeFileSync(md5fname, md5Checksum);
+              return resolve(true);
+            });
+            entry.pipe(writeStream);
           });
         });
       } else {
