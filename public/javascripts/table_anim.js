@@ -676,7 +676,7 @@ $(document).ready(function() {
             '</div>'+
           '</div>';
 
-          let pppoeForm = '<div class="col-4 $REPLACE_IS_PPPOE" id="edit_pppoe_combo-"'+index+'>'+
+          let pppoeForm = '<div class="col-4 $REPLACE_IS_PPPOE" id="edit_pppoe_combo-'+index+'">'+
             '<div class="md-form input-entry">'+
               '<label class="active">Usuário PPPoE</label>'+
               '<input class="form-control" type="text" id="edit_pppoe_user-'+index+'" '+
@@ -703,7 +703,7 @@ $(document).ready(function() {
           } else {
             pppoeForm = pppoeForm.replace('$REPLACE_PPPOE_PASS', '');
           }
-          if (!superuser || grantPPPoEInfo <= 1) {
+          if (!isSuperuser && grantPPPoEInfo <= 1) {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, 'disabled');
           } else {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, '');
