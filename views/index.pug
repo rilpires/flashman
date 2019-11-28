@@ -64,27 +64,28 @@ block content
             .dropdown-menu.dont-close
               a.dropdown-item(href="#")
                 .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-4(type="checkbox", checked)
+                  input.custom-control-input#devices-column-4(type="checkbox")
                   label.custom-control-label(for="devices-column-4") Usuário PPPoE
               a.dropdown-item(href="#")
                 .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-5(type="checkbox", checked)
+                  input.custom-control-input#devices-column-5(type="checkbox")
                   label.custom-control-label(for="devices-column-5") Endereço MAC
               a.dropdown-item(href="#")
                 .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-6(type="checkbox", checked)
+                  input.custom-control-input#devices-column-6(type="checkbox")
                   label.custom-control-label(for="devices-column-6") IP WAN
               a.dropdown-item(href="#")
                 .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-7(type="checkbox", checked)
+                  input.custom-control-input#devices-column-7(type="checkbox")
                   label.custom-control-label(for="devices-column-7") IP Público
               a.dropdown-item(href="#")
                 .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-8(type="checkbox", checked)
+                  input.custom-control-input#devices-column-8(type="checkbox")
                   label.custom-control-label(for="devices-column-8") Firmware Instalado
               .dropdown-divider
-              .text-center
-                button#btn-save-columns-on-page.btn.btn-primary.btn-sm
+              .text-right
+                #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
+                button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
                   .fas.fa-save.fa-lg.mr-2
                   | Salvar
 

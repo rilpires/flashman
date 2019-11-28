@@ -231,6 +231,9 @@ $(document).ready(function() {
       traditional: true,
       data: {visiblecolumnsperpage: selColumns},
       success: function(res) {
+        $('#save-columns-confirm').fadeTo('fast', 1, function() {
+          $(this).fadeTo('slow', 0);
+        });
       },
     });
   });
@@ -292,17 +295,32 @@ $(document).ready(function() {
     });
   });
 
+  let changeDevicesColumnVisibility = function(changeTo, colNum) {
+    let statusHCol = $('table#devices-table th:nth-child(' + colNum +')');
+    let statusDCol = $('table#devices-table td:nth-child(' + colNum +')');
+    if (changeTo === 'invisible') {
+      statusHCol.hide();
+      statusDCol.hide();
+    } else if (changeTo === 'visible') {
+      statusHCol.show();
+      statusDCol.show();
+    }
+  };
+
   let applyVisibleColumns = function() {
-    let selColumns = [];
+    let allHideableCols = [];
     let elements = $('[id^=devices-column-]');
     elements.each(function(index) {
       let columnId = $(this).attr('id');
       let columnNumber = columnId.split('-')[2];
-      selColumns.push(columnNumber);
+      $('#devices-column-' + columnNumber).prop('checked', true);
+      changeDevicesColumnVisibility('visible', columnNumber);
+      allHideableCols.push(columnNumber);
     });
-    selColumns.forEach(function(index) {
+    allHideableCols.forEach(function(index) {
       if (!visibleColumnsOnPage.includes(parseInt(index))) {
-        $('#devices-column-' + index).click();
+        $('#devices-column-' + index).prop('checked', false);
+        changeDevicesColumnVisibility('invisible', index);
       }
     });
   };
@@ -1350,16 +1368,13 @@ $(document).ready(function() {
     let columnId = event.target.id;
     let columnNumber = columnId.split('-')[2];
     let statusHCol = $('table#devices-table th:nth-child(' + columnNumber +')');
-    let statusDCol = $('table#devices-table td:nth-child(' + columnNumber +')');
     if (statusHCol.is(':visible')) {
-      statusHCol.hide();
+      changeDevicesColumnVisibility('invisible', columnNumber);
+      visibleColumnsOnPage.splice(
+        visibleColumnsOnPage.indexOf(parseInt(columnNumber)), 1);
     } else {
-      statusHCol.show();
-    }
-    if (statusDCol.is(':visible')) {
-      statusDCol.hide();
-    } else {
-      statusDCol.show();
+      changeDevicesColumnVisibility('visible', columnNumber);
+      visibleColumnsOnPage.push(parseInt(columnNumber));
     }
   });
   $(document).on('click', '.dropdown-menu.dont-close', function(event) {
