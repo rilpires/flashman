@@ -334,7 +334,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '9')
+        $('<td>').attr('colspan', '10')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -544,7 +544,7 @@ $(document).ready(function() {
               device.installed_release+
             '</td>'+
             '</td><td class="text-center">'+
-              device.external_reference.data+
+              (device.external_reference ? device.external_reference.data : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
