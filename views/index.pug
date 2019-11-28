@@ -82,6 +82,10 @@ block content
                 .custom-control.custom-checkbox
                   input.custom-control-input#devices-column-8(type="checkbox")
                   label.custom-control-label(for="devices-column-8") Firmware Instalado
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-9(type="checkbox")
+                  label.custom-control-label(for="devices-column-9") Identificação
               .dropdown-divider
               .text-right
                 #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
@@ -152,6 +156,7 @@ block content
                   th.text-center IP WAN
                   th.text-center IP Público
                   th.text-center Firmware Instalado
+                  th.text-center Identificação
                   if (superuser || role.grantFirmwareUpgrade)
                     th.text-left Atualizar Firmware
               tbody#devices-table-content(

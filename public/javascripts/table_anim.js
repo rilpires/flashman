@@ -399,7 +399,7 @@ $(document).ready(function() {
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
-          '</td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
@@ -542,6 +542,9 @@ $(document).ready(function() {
               device.ip+
             '</td><td class="text-center device-installed-release">'+
               device.installed_release+
+            '</td>'+
+            '</td><td class="text-center">'+
+              device.external_reference.data+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
@@ -1361,9 +1364,7 @@ $(document).ready(function() {
     });
   });
 
-  $(document).on('click', '#devices-column-4, #devices-column-5, ' +
-                          '#devices-column-6, #devices-column-7, ' +
-                          '#devices-column-8',
+  $(document).on('click', '[id^=devices-column-]',
   function(event) {
     let columnId = event.target.id;
     let columnNumber = columnId.split('-')[2];
