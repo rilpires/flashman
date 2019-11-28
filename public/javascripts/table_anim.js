@@ -563,9 +563,11 @@ $(document).ready(function() {
             '</td><td class="text-center">'+
               (device.external_reference ? device.external_reference.data : '')+
             '</td><td class="text-center device-sys-up-time">'+
-              (device.sys_up_time ? secondsTimeSpanToHMS(parseInt(device.sys_up_time)) : '')+
+              (device.sys_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.sys_up_time)) : '') +
             '</td><td class="text-center device-wan-up-time">'+
-              (device.wan_up_time ? secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
+              (device.wan_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
