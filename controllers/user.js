@@ -48,6 +48,38 @@ userController.changeElementsPerPage = function(req, res) {
   });
 };
 
+userController.changeVisibleColumnsOnPage = function(req, res) {
+  if (!Array.isArray(req.body.visiblecolumnsperpage)) {
+    return res.json({
+      type: 'danger',
+      message: 'Valor inválido',
+    });
+  }
+  // Use the User model to find a specific user
+  User.findById(req.user._id, function(err, user) {
+    if (err) {
+      return res.json({
+        type: 'danger',
+        message: 'Erro ao encontrar usuário',
+      });
+    }
+
+    user.visibleColumnsOnPage = req.body.visiblecolumnsperpage;
+    user.save(function(err) {
+      if (err) {
+        return res.json({
+          type: 'danger',
+          message: 'Erro gravar alteração',
+        });
+      }
+      return res.json({
+        type: 'success',
+        message: 'Alteração feita com sucesso!',
+      });
+    });
+  });
+};
+
 userController.postUser = function(req, res) {
   let user = new User({
     name: req.body.name,

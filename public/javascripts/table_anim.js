@@ -141,6 +141,7 @@ $(document).ready(function() {
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
+  let visibleColumnsOnPage = $('#devices-table-content').data('visiblecolumnsonpage');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
@@ -216,6 +217,24 @@ $(document).ready(function() {
     });
   });
 
+  $(document).on('click', '#btn-save-columns-on-page', function(event) {
+    let selColumns = [];
+    let elements = $('.dropdown-menu.dont-close a :checked');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      selColumns.push(columnNumber);
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/user/visiblecolumnsperpage',
+      traditional: true,
+      data: {visiblecolumnsperpage: selColumns},
+      success: function(res) {
+      },
+    });
+  });
+
   $(document).on('click', '#export-csv', function(event) {
     exportTableToCSV('lista-de-roteadores-flashbox.csv');
   });
@@ -272,6 +291,21 @@ $(document).ready(function() {
       },
     });
   });
+
+  let applyVisibleColumns = function() {
+    let selColumns = [];
+    let elements = $('[id^=devices-column-]');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      selColumns.push(columnNumber);
+    });
+    selColumns.forEach(function(index) {
+      if (!visibleColumnsOnPage.includes(parseInt(index))) {
+        $('#devices-column-' + index).click();
+      }
+    });
+  };
 
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
     let deviceTableContent = $('#devices-table-content');
@@ -1115,6 +1149,8 @@ $(document).ready(function() {
         }
         // Attach elements back to DOM after manipulation
         deviceTableContent.html(finalHtml);
+        // Hide filtered columns
+        applyVisibleColumns();
         // Fill table pagination
         deviceTablePagination.append(
           $('<ul>').addClass('pagination pagination-lg').append(() => {
@@ -1305,5 +1341,29 @@ $(document).ready(function() {
         });
       }
     });
+  });
+
+  $(document).on('click', '#devices-column-4, #devices-column-5, ' +
+                          '#devices-column-6, #devices-column-7, ' +
+                          '#devices-column-8',
+  function(event) {
+    let columnId = event.target.id;
+    let columnNumber = columnId.split('-')[2];
+    let statusHCol = $('table#devices-table th:nth-child(' + columnNumber +')');
+    let statusDCol = $('table#devices-table td:nth-child(' + columnNumber +')');
+    if (statusHCol.is(':visible')) {
+      statusHCol.hide();
+    } else {
+      statusHCol.show();
+    }
+    if (statusDCol.is(':visible')) {
+      statusDCol.hide();
+    } else {
+      statusDCol.show();
+    }
+  });
+  $(document).on('click', '.dropdown-menu.dont-close', function(event) {
+    // Avoid closing the dropdown menu when clicking inside
+    event.stopPropagation();
   });
 });
