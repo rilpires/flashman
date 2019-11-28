@@ -627,6 +627,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'boot':
       case 'onlinedevs':
       case 'ping':
+      case 'upstatus':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
