@@ -264,6 +264,14 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    // Dispatch update for wan and sys uptime
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/upstatus',
+      type: 'post',
+      dataType: 'json',
+      success: function(res) {
+      },
+    });
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -542,14 +550,11 @@ $(document).ready(function() {
               device.ip+
             '</td><td class="text-center device-installed-release">'+
               device.installed_release+
-            '</td>'+
             '</td><td class="text-center">'+
               (device.external_reference ? device.external_reference.data : '')+
-            '</td>'+
-            '</td><td class="text-center">'+
+            '</td><td class="text-center device-sys-up-time">'+
               (device.sys_up_time ? device.sys_up_time : '')+
-            '</td>'+
-            '</td><td class="text-center">'+
+            '</td><td class="text-center device-wan-up-time">'+
               (device.wan_up_time ? device.wan_up_time : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
@@ -1264,6 +1269,16 @@ $(document).ready(function() {
         // Actions when a status change is received
         socket.on('DEVICESTATUS', function(macaddr, data) {
           changeDeviceStatusOnTable(deviceTableContent, macaddr, data);
+        });
+        // Important: include and initialize socket.io first using socket var
+        socket.on('UPSTATUS', function(macaddr, data) {
+          let row = $('[id="' + macaddr + '"]');
+          if (data.sysuptime) {
+            row.find('.device-sys-up-time').html(data.sysuptime);
+          }
+          if (data.wanuptime) {
+            row.find('.device-wan-up-time').html(data.wanuptime);
+          }
         });
       },
     });
