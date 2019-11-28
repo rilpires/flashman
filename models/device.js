@@ -107,6 +107,8 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  sys_up_time: {type: Number, default: 0},
+  wan_up_time: {type: Number, default: 0},
 });
 
 deviceSchema.plugin(mongoosePaginate);

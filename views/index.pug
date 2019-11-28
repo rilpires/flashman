@@ -86,6 +86,14 @@ block content
                 .custom-control.custom-checkbox
                   input.custom-control-input#devices-column-9(type="checkbox")
                   label.custom-control-label(for="devices-column-9") Identificação
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-10(type="checkbox")
+                  label.custom-control-label(for="devices-column-10") Tempo Ligado
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-11(type="checkbox")
+                  label.custom-control-label(for="devices-column-11") Tempo Conectado
               .dropdown-divider
               .text-right
                 #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
@@ -157,6 +165,8 @@ block content
                   th.text-center IP Público
                   th.text-center Firmware Instalado
                   th.text-center Identificação
+                  th.text-center Tempo Ligado
+                  th.text-center Tempo Conectado
                   if (superuser || role.grantFirmwareUpgrade)
                     th.text-left Atualizar Firmware
               tbody#devices-table-content(

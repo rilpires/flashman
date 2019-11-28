@@ -399,7 +399,7 @@ $(document).ready(function() {
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
-          '</td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
@@ -545,6 +545,12 @@ $(document).ready(function() {
             '</td>'+
             '</td><td class="text-center">'+
               (device.external_reference ? device.external_reference.data : '')+
+            '</td>'+
+            '</td><td class="text-center">'+
+              (device.sys_up_time ? device.sys_up_time : '')+
+            '</td>'+
+            '</td><td class="text-center">'+
+              (device.wan_up_time ? device.wan_up_time : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';

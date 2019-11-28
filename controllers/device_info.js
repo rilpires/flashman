@@ -84,6 +84,8 @@ const createRegistry = function(req, res) {
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
     (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
+  let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
+  let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -170,6 +172,8 @@ const createRegistry = function(req, res) {
         'last_contact': Date.now(),
         'do_update': false,
         'do_update_parameters': false,
+        'sys_up_time': sysUpTime,
+        'wan_up_time': wanUpTime,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -435,6 +439,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (matchedDevice.ip !== ip) {
           deviceSetQuery.ip = ip;
         }
+        let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
+        deviceSetQuery.sys_up_time = sysUpTime;
+        let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
+        deviceSetQuery.wan_up_time = wanUpTime;
 
         deviceSetQuery.last_contact = Date.now();
 
@@ -1039,7 +1047,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
         last_seen: Date.now(),
       });
     }
-    if (lanDevice.upnp_permission !== "reject") {
+    if (lanDevice.upnp_permission !== 'reject') {
       matchedDevice.upnp_requests.push(deviceMac); // add notification for app
     } else {
       console.log('Upnp request for device ' + id + ' ignored because of' +
@@ -1053,6 +1061,32 @@ deviceInfoController.receiveUpnp = function(req, res) {
     console.log('Upnp request for device ' + id +
       ' received successfully.');
 
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.receiveRouterUpStatus = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+    matchedDevice.sys_up_time = req.body.sysuptime;
+    matchedDevice.wan_up_time = req.body.wanuptime;
+    matchedDevice.save();
+    sio.anlixSendUpStatusNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
