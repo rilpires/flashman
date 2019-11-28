@@ -141,6 +141,7 @@ $(document).ready(function() {
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
+  let visibleColumnsOnPage = $('#devices-table-content').data('visiblecolumnsonpage');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
@@ -216,6 +217,27 @@ $(document).ready(function() {
     });
   });
 
+  $(document).on('click', '#btn-save-columns-on-page', function(event) {
+    let selColumns = [];
+    let elements = $('.dropdown-menu.dont-close a :checked');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      selColumns.push(columnNumber);
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/user/visiblecolumnsperpage',
+      traditional: true,
+      data: {visiblecolumnsperpage: selColumns},
+      success: function(res) {
+        $('#save-columns-confirm').fadeTo('fast', 1, function() {
+          $(this).fadeTo('slow', 0);
+        });
+      },
+    });
+  });
+
   $(document).on('click', '#export-csv', function(event) {
     exportTableToCSV('lista-de-roteadores-flashbox.csv');
   });
@@ -272,6 +294,36 @@ $(document).ready(function() {
       },
     });
   });
+
+  let changeDevicesColumnVisibility = function(changeTo, colNum) {
+    let statusHCol = $('table#devices-table th:nth-child(' + colNum +')');
+    let statusDCol = $('table#devices-table td:nth-child(' + colNum +')');
+    if (changeTo === 'invisible') {
+      statusHCol.hide();
+      statusDCol.hide();
+    } else if (changeTo === 'visible') {
+      statusHCol.show();
+      statusDCol.show();
+    }
+  };
+
+  let applyVisibleColumns = function() {
+    let allHideableCols = [];
+    let elements = $('[id^=devices-column-]');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      $('#devices-column-' + columnNumber).prop('checked', true);
+      changeDevicesColumnVisibility('visible', columnNumber);
+      allHideableCols.push(columnNumber);
+    });
+    allHideableCols.forEach(function(index) {
+      if (!visibleColumnsOnPage.includes(parseInt(index))) {
+        $('#devices-column-' + index).prop('checked', false);
+        changeDevicesColumnVisibility('invisible', index);
+      }
+    });
+  };
 
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
     let deviceTableContent = $('#devices-table-content');
@@ -347,7 +399,7 @@ $(document).ready(function() {
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
-          '</td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
@@ -490,6 +542,9 @@ $(document).ready(function() {
               device.ip+
             '</td><td class="text-center device-installed-release">'+
               device.installed_release+
+            '</td>'+
+            '</td><td class="text-center">'+
+              device.external_reference.data+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
@@ -1115,6 +1170,8 @@ $(document).ready(function() {
         }
         // Attach elements back to DOM after manipulation
         deviceTableContent.html(finalHtml);
+        // Hide filtered columns
+        applyVisibleColumns();
         // Fill table pagination
         deviceTablePagination.append(
           $('<ul>').addClass('pagination pagination-lg').append(() => {
@@ -1305,5 +1362,24 @@ $(document).ready(function() {
         });
       }
     });
+  });
+
+  $(document).on('click', '[id^=devices-column-]',
+  function(event) {
+    let columnId = event.target.id;
+    let columnNumber = columnId.split('-')[2];
+    let statusHCol = $('table#devices-table th:nth-child(' + columnNumber +')');
+    if (statusHCol.is(':visible')) {
+      changeDevicesColumnVisibility('invisible', columnNumber);
+      visibleColumnsOnPage.splice(
+        visibleColumnsOnPage.indexOf(parseInt(columnNumber)), 1);
+    } else {
+      changeDevicesColumnVisibility('visible', columnNumber);
+      visibleColumnsOnPage.push(parseInt(columnNumber));
+    }
+  });
+  $(document).on('click', '.dropdown-menu.dont-close', function(event) {
+    // Avoid closing the dropdown menu when clicking inside
+    event.stopPropagation();
   });
 });

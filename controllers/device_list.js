@@ -147,6 +147,7 @@ deviceListController.index = function(req, res) {
   }
   indexContent.username = req.user.name;
   indexContent.elementsperpage = elementsPerPage;
+  indexContent.visiblecolumnsonpage = req.user.visibleColumnsOnPage;
 
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {

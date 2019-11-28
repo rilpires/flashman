@@ -20,6 +20,7 @@ let userSchema = new mongoose.Schema({
   createdAt: {type: Date, default: new Date()},
   autoUpdate: {type: Boolean, default: true},
   maxElementsPerPage: {type: Number, default: 10},
+  visibleColumnsOnPage: {type: [Number], default: [4, 5, 6, 7, 8]},
   is_superuser: {type: Boolean, default: false},
   role: {type: String, required: false},
 });

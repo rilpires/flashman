@@ -55,7 +55,45 @@ block content
   .row.justify-content-center
     .col-12.mt-4
       .row
-        .col-12.col-lg-3.offset-lg-9
+        .col-12.col-lg-9
+          .dropdown
+            a.btn.btn-primary.dropdown-toggle(
+              href="#", role="button", data-toggle="dropdown").ml-0.mt-4
+              .fas.fa-filter.fa-lg.mr-2
+              | Editar Colunas
+            .dropdown-menu.dont-close
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-4(type="checkbox")
+                  label.custom-control-label(for="devices-column-4") Usuário PPPoE
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-5(type="checkbox")
+                  label.custom-control-label(for="devices-column-5") Endereço MAC
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-6(type="checkbox")
+                  label.custom-control-label(for="devices-column-6") IP WAN
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-7(type="checkbox")
+                  label.custom-control-label(for="devices-column-7") IP Público
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-8(type="checkbox")
+                  label.custom-control-label(for="devices-column-8") Firmware Instalado
+              a.dropdown-item(href="#")
+                .custom-control.custom-checkbox
+                  input.custom-control-input#devices-column-9(type="checkbox")
+                  label.custom-control-label(for="devices-column-9") Identificação
+              .dropdown-divider
+              .text-right
+                #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
+                button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
+                  .fas.fa-save.fa-lg.mr-2
+                  | Salvar
+
+        .col-12.col-lg-3
           .md-form.mb-0
             .input-group
               .md-selectfield.form-control
@@ -107,7 +145,7 @@ block content
                 )
                   th
                   th
-                  th.text-center
+                  th.text-left
                     span Status &nbsp
                     a.fas.fa-question-circle(
                       data-toggle="tooltip",
@@ -118,17 +156,19 @@ block content
                   th.text-center IP WAN
                   th.text-center IP Público
                   th.text-center Firmware Instalado
+                  th.text-center Identificação
                   if (superuser || role.grantFirmwareUpgrade)
                     th.text-left Atualizar Firmware
               tbody#devices-table-content(
                 data-role=role,
-                data-superuser=superuser ? "true" : "false")
+                data-superuser=superuser ? "true" : "false",
+                data-visiblecolumnsonpage=visiblecolumnsonpage)
       .row.mt-3.mb-3
         .col-md-9
           nav#devices-table-pagination
         .col-md-3
           .text-right
-            button#export-csv.btn.teal.lighten-2.mr-0.my-0
+            button#export-csv.btn.btn-primary.mr-0.my-0
               .fas.fa-file-excel.fa-lg
               span &nbsp Exportar CSV
 
