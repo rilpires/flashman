@@ -433,6 +433,7 @@ $(document).ready(function() {
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantLanEdit = device.permissions.grantLanEdit;
+          let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
           let grantPortOpenIpv6 = device.permissions.grantPortOpenIpv6;
           let grantViewLogs = device.permissions.grantViewLogs;
@@ -839,11 +840,20 @@ $(document).ready(function() {
             '<div class="row">'+
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">IP da Rede</label>'+
+                  '<label class="active">'+
+                    (grantLanGwEdit ? 'IP do Roteador' : 'IP da Rede')+
+                  '</label>'+
                   '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (grantLanGwEdit ?
+                  '<div class="alert alert-info">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>IP da rede será calculado a partir do IP do roteador e Máscara escolhidos</span>'+
+                  '</div>' :
+                  ''
+                )+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form input-group">'+

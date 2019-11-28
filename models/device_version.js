@@ -94,6 +94,16 @@ const grantLanEdit = function(version) {
   }
 };
 
+const grantLanGwEdit = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.23.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+  return false;
+};
+
 const grantLanDevices = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.14.0') >= 0);
@@ -124,6 +134,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   result.grantWifiBand = grantWifiBand(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
+  result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
   result.grantUpnp = grantUpnp(version);
   return result;
