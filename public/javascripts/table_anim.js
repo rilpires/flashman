@@ -375,7 +375,7 @@ $(document).ready(function() {
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
-            '<tr><td class="grey lighten-5 text-center" colspan="9">'+
+            '<tr><td class="grey lighten-5 text-center" colspan="12">'+
               '<h5>Nenhum roteador encontrado</h5>'+
             '</td></tr>'
           );
@@ -1102,7 +1102,7 @@ $(document).ready(function() {
           '</div>';
 
           let formRow = '<tr class="d-none" $REPLACE_ATTRIBUTES>'+
-            '<td class="grey lighten-5" colspan="9">'+
+            '<td class="grey lighten-5" colspan="12">'+
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
