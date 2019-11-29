@@ -75,11 +75,13 @@ const createRegistry = function(req, res) {
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
   let band = returnObjOrEmptyStr(req.body.wifi_band).trim();
   let mode = returnObjOrEmptyStr(req.body.wifi_mode).trim();
+  let wifiState = parseInt(returnObjOrNum(req.body.wifi_state, 1));
   let ssid5ghz = returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
   let band5ghz = returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
   let mode5ghz = returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+  let wifiState5ghz = parseInt(returnObjOrNum(req.body.wifi_state_5ghz, 1));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
@@ -159,12 +161,14 @@ const createRegistry = function(req, res) {
         'wifi_channel': channel,
         'wifi_band': band,
         'wifi_mode': mode,
+        'wifi_state': wifiState,
         'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
         'wifi_band_5ghz': band5ghz,
         'wifi_mode_5ghz': mode5ghz,
+        'wifi_state_5ghz': wifiState5ghz,
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
@@ -525,11 +529,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
             'wifi_band': returnObjOrEmptyStr(matchedDevice.wifi_band),
             'wifi_mode': returnObjOrEmptyStr(matchedDevice.wifi_mode),
+            'wifi_state': matchedDevice.wifi_state,
             'wifi_ssid_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
             'wifi_password_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
             'wifi_mode_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
+            'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
             'zabbix_psk': returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
             'zabbix_fqdn': zabbixFqdn,

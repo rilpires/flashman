@@ -799,11 +799,13 @@ deviceListController.setDeviceReg = function(req, res) {
       let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
       let band = returnObjOrEmptyStr(content.wifi_band).trim();
       let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+      let wifiState = parseInt(returnObjOrNum(content.wifi_state, 1));
       let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
       let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
       let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
       let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -946,6 +948,11 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.wifi_mode = mode;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('wifi_state') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_state = wifiState;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid5ghz !== '') {
@@ -974,6 +981,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 mode5ghz !== '') {
               matchedDevice.wifi_mode_5ghz = mode5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_state_5ghz') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_state_5ghz = wifiState5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_subnet') &&
