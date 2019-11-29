@@ -196,7 +196,7 @@ mqtts.anlixMessageRouterMeasure = function(id, status) {
     topic: 'flashman/update/' + id,
     payload: 'measure '+status,
   });
-  console.log('MQTT SEND Message MEASURE to '+id);
+  console.log('MQTT SEND Message MEASURE to '+ id);
 };
 
 mqtts.anlixMessageRouterPingTest = function(id) {
@@ -208,6 +208,17 @@ mqtts.anlixMessageRouterPingTest = function(id) {
       payload: 'ping',
     });
   console.log('MQTT SEND Message PING to ' + id);
+};
+
+mqtts.anlixMessageRouterUpStatus = function(id) {
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'status',
+    });
+  console.log('MQTT SEND Message STATUS to ' + id);
 };
 
 module.exports = mqtts;

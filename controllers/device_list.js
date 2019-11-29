@@ -627,6 +627,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'boot':
       case 'onlinedevs':
       case 'ping':
+      case 'upstatus':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
@@ -650,6 +651,11 @@ deviceListController.sendMqttMsg = function(req, res) {
               sio.anlixWaitForPingTestNotification(
                 req.sessionID, req.params.id.toUpperCase());
               mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+            }
+            if (msgtype == 'upstatus') {
+              sio.anlixWaitForUpStatusNotification(
+                req.sessionID, req.params.id.toUpperCase());
+              mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
             }
           } else {
             return res.status(200).json({

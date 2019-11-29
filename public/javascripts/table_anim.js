@@ -132,6 +132,14 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
   }
 };
 
+let secondsTimeSpanToHMS = function(s) {
+  let h = Math.floor(s / 3600); // Get whole hours
+  s -= h * 3600;
+  let m = Math.floor(s / 60); // Get remaining minutes
+  s -= m * 60;
+  return h + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+};
+
 $(document).ready(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
@@ -264,6 +272,16 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    // Dispatch update for wan and sys uptime
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/upstatus',
+      type: 'post',
+      dataType: 'json',
+      success: function(res) {
+        row.find('.device-sys-up-time').addClass('grey-text');
+        row.find('.device-wan-up-time').addClass('grey-text');
+      },
+    });
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -334,7 +352,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '10')
+        $('<td>').attr('colspan', '12')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -399,7 +417,7 @@ $(document).ready(function() {
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
-          '</td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
@@ -415,6 +433,7 @@ $(document).ready(function() {
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantLanEdit = device.permissions.grantLanEdit;
+          let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
           let grantPortOpenIpv6 = device.permissions.grantPortOpenIpv6;
           let grantViewLogs = device.permissions.grantViewLogs;
@@ -542,9 +561,14 @@ $(document).ready(function() {
               device.ip+
             '</td><td class="text-center device-installed-release">'+
               device.installed_release+
-            '</td>'+
             '</td><td class="text-center">'+
               (device.external_reference ? device.external_reference.data : '')+
+            '</td><td class="text-center device-sys-up-time">'+
+              (device.sys_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.sys_up_time)) : '') +
+            '</td><td class="text-center device-wan-up-time">'+
+              (device.wan_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
@@ -816,11 +840,20 @@ $(document).ready(function() {
             '<div class="row">'+
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">IP da Rede</label>'+
+                  '<label class="active">'+
+                    (grantLanGwEdit ? 'IP do Roteador' : 'IP da Rede')+
+                  '</label>'+
                   '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (grantLanGwEdit ?
+                  '<div class="alert alert-info">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>IP da rede será calculado a partir do IP do roteador e Máscara escolhidos</span>'+
+                  '</div>' :
+                  ''
+                )+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form input-group">'+
@@ -1258,6 +1291,24 @@ $(document).ready(function() {
         // Actions when a status change is received
         socket.on('DEVICESTATUS', function(macaddr, data) {
           changeDeviceStatusOnTable(deviceTableContent, macaddr, data);
+        });
+        // Important: include and initialize socket.io first using socket var
+        socket.on('UPSTATUS', function(macaddr, data) {
+          let row = $('[id="' + macaddr + '"]');
+          if (data.sysuptime) {
+            row.find('.device-sys-up-time')
+            .removeClass('grey-text')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.sysuptime))
+            );
+          }
+          if (data.wanuptime) {
+            row.find('.device-wan-up-time')
+            .removeClass('grey-text')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.wanuptime))
+            );
+          }
         });
       },
     });
