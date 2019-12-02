@@ -168,7 +168,7 @@ let updateDevice = function(event) {
         success: function(res) {
           if (res.success) {
             // Activate waiting status
-            let upgradeStatus = selBtnGroup.find('span.upgrade-status');
+            let upgradeStatus = selBtnGroup.siblings('span.upgrade-status');
             upgradeStatus.find('.status-none').addClass('d-none');
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             // Activate cancel button

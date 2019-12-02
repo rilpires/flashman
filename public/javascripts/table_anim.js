@@ -432,6 +432,7 @@ $(document).ready(function() {
           let device = res.devices[idx];
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
+          let grantWifiState = device.permissions.grantWifiState;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
@@ -945,6 +946,13 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
+                  'Ativar Wi-Fi 2.4GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
             '</div>'+
           '</div>';
@@ -957,6 +965,11 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -975,6 +988,9 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
             '<div class="row">'+
@@ -1045,6 +1061,13 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state_5ghz-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_state_5ghz-'+index+'">'+
+                  'Ativar Wi-Fi 5.0GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
             '</div>'+
           '</div>';
@@ -1057,6 +1080,11 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -1077,6 +1105,9 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
+          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+

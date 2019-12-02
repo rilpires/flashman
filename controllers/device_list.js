@@ -137,6 +137,14 @@ const returnObjOrEmptyStr = function(query) {
   }
 };
 
+const returnObjOrNum = function(query, num) {
+  if (typeof query !== 'undefined' && !isNaN(query)) {
+    return query;
+  } else {
+    return num;
+  }
+};
+
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -426,6 +434,11 @@ deviceListController.searchDeviceReg = function(req, res) {
         device.version,
         device.wifi_is_5ghz_capable
       );
+      // Fill default value if wi-fi state does not exist
+      if (device.wifi_state === undefined) {
+        device.wifi_state = 1;
+        device.wifi_state_5ghz = 1;
+      }
       return device;
     });
 
@@ -799,11 +812,13 @@ deviceListController.setDeviceReg = function(req, res) {
       let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
       let band = returnObjOrEmptyStr(content.wifi_band).trim();
       let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+      let wifiState = parseInt(returnObjOrNum(content.wifi_state, 1));
       let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
       let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
       let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
       let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -946,6 +961,11 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.wifi_mode = mode;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('wifi_state') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_state = wifiState;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid5ghz !== '') {
@@ -974,6 +994,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 mode5ghz !== '') {
               matchedDevice.wifi_mode_5ghz = mode5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_state_5ghz') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_state_5ghz = wifiState5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_subnet') &&
