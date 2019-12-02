@@ -238,6 +238,7 @@ updateController.getAutoConfig = function(req, res) {
       return res.status(200).json({
         auto: matchedConfig.autoUpdate,
         minlengthpasspppoe: matchedConfig.pppoePassLength,
+        measureServerIP: matchedConfig.measureServerIP,
       });
     } else {
       return res.status(200).json({
@@ -254,6 +255,15 @@ updateController.setAutoConfig = async(function(req, res) {
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
+    let measureServerIP = req.body['measure-server-ip'];
+    let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    if (measureServerIP && !measureServerIP.match(ipRegex)) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      });
+    }
+    config.measureServerIP = measureServerIP;
     let message = 'Salvo com sucesso!';
     let updateToken = (req.body.token_update === 'on') ? true : false;
     let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
