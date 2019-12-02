@@ -30,7 +30,7 @@ const returnObjOrStr = function(query, str) {
 };
 
 const returnObjOrNum = function(query, num) {
-  if (typeof query !== 'undefined' && query) {
+  if (typeof query !== 'undefined' && !isNaN(query)) {
     return query;
   } else {
     return num;

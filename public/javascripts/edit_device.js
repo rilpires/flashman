@@ -42,11 +42,13 @@ let validateEditDevice = function(event) {
   let channel = $('#edit_wifi_channel-' + index.toString()).val();
   let band = $('#edit_wifi_band-' + index.toString()).val();
   let mode = $('#edit_wifi_mode-' + index.toString()).val();
+  let wifiState = ($('#edit_wifi_state-' + index.toString()).is(':checked') ? 1 : 0);
   let ssid5ghz = $('#edit_wifi5_ssid-' + index.toString()).val();
   let password5ghz = $('#edit_wifi5_pass-' + index.toString()).val();
   let channel5ghz = $('#edit_wifi5_channel-' + index.toString()).val();
   let band5ghz = $('#edit_wifi5_band-' + index.toString()).val();
   let mode5ghz = $('#edit_wifi5_mode-' + index.toString()).val();
+  let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
@@ -156,6 +158,8 @@ let validateEditDevice = function(event) {
       data.content.lan_subnet = lanSubnet;
       data.content.lan_netmask = lanNetmask;
     }
+    data.content.wifi_state = wifiState;
+    data.content.wifi_state_5ghz = wifiState5ghz;
 
     $.ajax({
       type: 'POST',

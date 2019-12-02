@@ -137,6 +137,14 @@ const returnObjOrEmptyStr = function(query) {
   }
 };
 
+const returnObjOrNum = function(query, num) {
+  if (typeof query !== 'undefined' && !isNaN(query)) {
+    return query;
+  } else {
+    return num;
+  }
+};
+
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -426,6 +434,11 @@ deviceListController.searchDeviceReg = function(req, res) {
         device.version,
         device.wifi_is_5ghz_capable
       );
+      // Fill default value if wi-fi state does not exist
+      if (device.wifi_state === undefined) {
+        device.wifi_state = 1;
+        device.wifi_state_5ghz = 1;
+      }
       return device;
     });
 
