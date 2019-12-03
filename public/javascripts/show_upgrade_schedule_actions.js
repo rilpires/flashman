@@ -187,7 +187,7 @@ $(document).ready(function() {
           dropdown.html('');
           res.releases.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
             // Skip stock firmwares from being listed
-            if (release.id !== '9999-aix') {
+            if (release.id !== '9999-aix' && release.id !== 'STOCK') {
               dropdown.append(
                 $('<a>').addClass('dropdown-item text-center').html(release.id)
               );
