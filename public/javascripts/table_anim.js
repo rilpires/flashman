@@ -486,6 +486,10 @@ $(document).ready(function() {
           let upgradeOpts = '';
           for (let idx = 0; idx < device.releases.length; idx++) {
             let release = device.releases[idx];
+            // Skip stock firmwares from being listed
+            if (release.id === '9999-aix') {
+              continue;
+            }
             upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
           }
 
@@ -1062,9 +1066,9 @@ $(document).ready(function() {
                   '</div>'+
                 '</div>'+
                 '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state_5ghz-'+index+'" '+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
                   '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_state_5ghz-'+index+'">'+
+                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
                   'Ativar Wi-Fi 5.0GHz'+
                   '</label>'+
                 '</div>'+

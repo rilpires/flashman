@@ -186,9 +186,12 @@ $(document).ready(function() {
           let dropdown = $('#releases-dropdown');
           dropdown.html('');
           res.releases.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
-            dropdown.append(
-              $('<a>').addClass('dropdown-item text-center').html(release.id)
-            );
+            // Skip stock firmwares from being listed
+            if (release.id !== '9999-aix') {
+              dropdown.append(
+                $('<a>').addClass('dropdown-item text-center').html(release.id)
+              );
+            }
           });
           // Build missing firmware data
           $('#releases-dropdown a').unbind('click');
