@@ -107,6 +107,11 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  speedtest_results: [{
+    down_speed: String,
+    timestamp: String,
+    user: String,
+  }],
 });
 
 deviceSchema.plugin(mongoosePaginate);

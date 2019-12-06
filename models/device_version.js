@@ -2,6 +2,12 @@ let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 
+const speedTestCompatibleModels = [
+  'TL-WDR3500V1',
+  'TL-WDR3600V1',
+  'TL-WDR4300V1',
+];
+
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
@@ -113,7 +119,20 @@ const grantUpnp = function(version) {
   return false;
 };
 
-DeviceVersion.findByVersion = function(version, is5ghzCapable) {
+const grantSpeedTest = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !speedTestCompatibleModels.includes(model)) {
+      // Unspecified model or model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.10.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+}
+
+DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
@@ -126,6 +145,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable) {
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanDevices = grantLanDevices(version);
   result.grantUpnp = grantUpnp(version);
+  result.grantSpeedTest = grantSpeedTest(version, model);
   return result;
 };
 
