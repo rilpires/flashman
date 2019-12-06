@@ -373,6 +373,7 @@ $(document).ready(function() {
           let grantPingTest = device.permissions.grantPingTest;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantUpnpSupport = device.permissions.grantUpnp;
+          let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
 
           let csvAttr = 'id="'+device._id+'"';
           csvAttr += ' data-index="'+index+'"';
@@ -608,7 +609,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
           }
-          if (isSuperuser || grantSpeedMeasure >= 1) {
+          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
