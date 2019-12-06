@@ -104,7 +104,7 @@ exports.ensureAPIAccess = passport.authenticate('basic', {
   session: false,
 });
 
-exports.ensurePermission = function(permission) {
+exports.ensurePermission = function(permission, level=1) {
   return function(req, res, next) {
     if (req.user && req.user.is_superuser) {
       next();
@@ -124,7 +124,7 @@ exports.ensurePermission = function(permission) {
             });
           }
         }
-        if (role[permission] == true || role[permission] >= 1) {
+        if (role[permission] === true || role[permission] >= level) {
           next();
         } else {
           if (req.accepts('text/html') && !req.is('application/json')) {
