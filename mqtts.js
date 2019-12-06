@@ -210,4 +210,15 @@ mqtts.anlixMessageRouterPingTest = function(id) {
   console.log('MQTT SEND Message PING to ' + id);
 };
 
+mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'speedtest ' + ip + ' ' + user,
+    });
+  console.log('MQTT SEND Message SPEEDTEST to ' + id);
+};
+
 module.exports = mqtts;
