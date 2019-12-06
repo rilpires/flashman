@@ -16,6 +16,7 @@ router.route('/get/upnpdevices').post(deviceInfoController.getUpnpDevsPerm);
 router.route('/receive/upnp').post(deviceInfoController.receiveUpnp);
 router.route('/receive/devices').post(deviceInfoController.receiveDevices);
 router.route('/receive/pingresult').post(deviceInfoController.receivePingResult);
+router.route('/receive/speedtestresult').post(deviceInfoController.receiveSpeedtestResult);
 router.use('/app', require('./app_api'));
 
 module.exports = router;
