@@ -18,31 +18,16 @@
           #measure-test-div.pl-2.pr-2.grey.lighten-5.border
             .row.mt-4
               .col
-                h2#speed-test-placeholder.text-center.grey-text.mb-3
-                  i.fas.fa-tachometer-alt.fa-3x
+                h2.text-center.mb-3
+                  i#speed-test-shown-icon.grey-text.fas.fa-tachometer-alt.fa-3x
                   br
                   br
-                  span Clique no botão abaixo para começar a medição
-                h2#speed-test-waiting.text-center.grey-text.mb-3(style="display: none;")
-                  i.fas.fa-spinner.fa-pulse.fa-3x
-                  br
-                  br
-                  span Aguardando resposta do roteador...
-                h2#speed-test-error.text-center.mb-3.grey-text(style="display: none;")
-                  i.fas.fa-times.fa-3x
-                  br
-                  br
-                  span Falha na medição, por favor tente novamente
-                h2#speed-test-result.text-center.mb-3(style="display: none;")
-                  i.fas.fa-check.fa-3x.grey-text
-                  br
-                  br
-                  span.grey-text Velocidade medida:&nbsp;
-                  strong#speed-test-result-download 96.5 Mbps
+                  span#speed-test-shown-text.grey-text Clique no botão abaixo para começar a medição
+                  strong#speed-test-strong-text
             .row
               .col.p-0.text-center.mb-4
                 button.btn.btn-primary.btn-start-speed-test(type="button")
-                  span &nbsp; Iniciar teste
+                  span Iniciar teste
         .border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
           .col-1
             if (superuser || (role && role.grantMeasureDevices > 1))
@@ -53,7 +38,7 @@
             h5 Ver Resultados das Últimas Medições
         #measure-previous-div.pl-2.pr-2.grey.lighten-5.border
           h3#measure-previous-nodata.grey-text.text-center.my-3(style="display: none;") Não há medições registradas
-          .table-responsive
+          .table-responsive#measure-previous-table
             table.table.text-center
               thead
                 tr
@@ -61,3 +46,8 @@
                   th Data da Medição
                   th Usuário
               tbody#measure-previous-data
+          .row
+              .col.p-0.text-center.mb-3
+                button.btn.btn-primary.btn-sync-speed-table(type="button")
+                  i.fas.fa-sync-alt
+                  span &nbsp; Atualizar Tabela
