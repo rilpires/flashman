@@ -1027,21 +1027,25 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    let now = new Date();
-    let formattedDate = '' + now.getDate();
-    formattedDate += '/' + (now.getMonth()+1);
-    formattedDate += '/' + now.getFullYear();
-    formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
-    formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
-    matchedDevice.speedtest_results.push({
-      down_speed: req.body.downSpeed,
-      user: req.body.user,
-      timestamp: formattedDate,
-    });
-    if (matchedDevice.speedtest_results.length > 5) {
-      matchedDevice.speedtest_results.shift();
+    if (req.body.downSpeed && req.body.downSpeed !== 'Error') {
+      let now = new Date();
+      let formattedDate = '' + now.getDate();
+      formattedDate += '/' + (now.getMonth()+1);
+      formattedDate += '/' + now.getFullYear();
+      formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
+      formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
+      matchedDevice.speedtest_results.push({
+        down_speed: req.body.downSpeed,
+        user: req.body.user,
+        timestamp: formattedDate,
+      });
+      if (matchedDevice.speedtest_results.length > 5) {
+        matchedDevice.speedtest_results.shift();
+      }
+      matchedDevice.save();
+    } else {
+      req.body.downSpeed = '';
     }
-    matchedDevice.save();
 
     sio.anlixSendSpeedTestNotifications(id, req.body);
     console.log('Speedtest results for device ' +
