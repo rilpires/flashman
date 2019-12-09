@@ -216,7 +216,7 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'speedtest ' + ip + ' ' + user,
+      payload: 'speedtest ' + ip + ' ' + user.name,
     });
   console.log('MQTT SEND Message SPEEDTEST to ' + id);
 };
