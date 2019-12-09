@@ -116,13 +116,20 @@ $(document).ready(function() {
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
-        $('#speed-test-shown-text').html('Velocidade medida: ');
-        $('#speed-test-strong-text').html(data.downSpeed);
-        $('#speed-test-shown-icon')
-        .removeClass((i,c)=>c.match(/fa\-.*/))
-        .addClass('fa-3x fa-check');
+        if (data.downSpeed) {
+          $('#speed-test-shown-text').html('Velocidade medida: ');
+          $('#speed-test-strong-text').html(data.downSpeed);
+          $('#speed-test-shown-icon')
+          .removeClass((i,c)=>c.match(/fa\-.*/))
+          .addClass('fa-3x fa-check');
+          updateMeasuresTable(macaddr);
+        } else {
+          $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
+          $('#speed-test-shown-icon')
+          .removeClass((i,c)=>c.match(/fa\-.*/))
+          .addClass('fa-3x fa-times');
+        }
         $('.btn-start-speed-test').prop('disabled', false);
-        updateMeasuresTable(macaddr);
       }
     }
   });
@@ -136,5 +143,6 @@ $(document).ready(function() {
     .removeClass((i,c)=>c.match(/fa\-.*/))
     .addClass('fa-3x fa-tachometer-alt');
     $('#measure-previous-data').empty();
+    $('.btn-start-speed-test').prop('disabled', false);
   });
 });
