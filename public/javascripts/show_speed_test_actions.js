@@ -21,7 +21,10 @@ $(document).ready(function() {
           }
           $('#measure-previous-data').empty();
           pastMeasures.forEach((measure)=>{
-            console.log(measure.timestamp);
+            let downSpeed = parseInt(measure.down_speed);
+            if (downSpeed > 150) {
+              measure.down_speed = "Mais de 150 Mbps";
+            }
             $('#measure-previous-data').prepend(
               $('<tr>').append(
                 '<td>'+measure.down_speed+'</td>'+
@@ -81,33 +84,48 @@ $(document).ready(function() {
   $('.btn-start-speed-test').click(function(event) {
     let id = $('#speed-test-hlabel').text();
     $('.btn-start-speed-test').prop('disabled', true);
-    $.ajax({
-      url: '/devicelist/speedtest/' + id,
-      type: 'POST',
-      dataType: 'json',
-      success: function(res) {
-        if (res.success) {
-          $('#speed-test-strong-text').empty();
-          $('#speed-test-shown-text').html('Aguardando resposta do roteador...');
-          $('#speed-test-shown-icon')
-          .removeClass((i,c)=>c.match(/fa\-.*/))
-          .addClass('fa-3x fa-spinner fa-pulse');
-        } else {
-          $('#speed-test-strong-text').empty();
-          $('#speed-test-shown-text').html(res.message);
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Para garantir a precisão do teste de velocidade, o acesso à '+
+        'internet dos dispositivos do cliente é interrompido temporariamente.'+
+        ' Garanta que o cliente esteja ciente deste procedimento antes de '+
+        'inicia-lo!',
+      confirmButtonText: 'Prosseguir',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (!result.value) return;
+      $.ajax({
+        url: '/devicelist/speedtest/' + id,
+        type: 'POST',
+        dataType: 'json',
+        success: function(res) {
+          if (res.success) {
+            $('#speed-test-strong-text').empty();
+            $('#speed-test-shown-text').html('Aguardando resposta do roteador...');
+            $('#speed-test-shown-icon')
+            .removeClass((i,c)=>c.match(/fa\-.*/))
+            .addClass('fa-3x fa-spinner fa-pulse');
+          } else {
+            $('#speed-test-strong-text').empty();
+            $('#speed-test-shown-text').html(res.message);
+            $('#speed-test-shown-icon')
+            .removeClass((i,c)=>c.match(/fa\-.*/))
+            .addClass('fa-3x fa-times');
+            $('.btn-start-speed-test').prop('disabled', false);
+          }
+        },
+        error: function(xhr, status, error) {
+          $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
           $('#speed-test-shown-icon')
           .removeClass((i,c)=>c.match(/fa\-.*/))
           .addClass('fa-3x fa-times');
           $('.btn-start-speed-test').prop('disabled', false);
-        }
-      },
-      error: function(xhr, status, error) {
-        $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
-        $('#speed-test-shown-icon')
-        .removeClass((i,c)=>c.match(/fa\-.*/))
-        .addClass('fa-3x fa-times');
-        $('.btn-start-speed-test').prop('disabled', false);
-      },
+        },
+      });
     });
   });
 
@@ -117,6 +135,10 @@ $(document).ready(function() {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
         if (data.downSpeed) {
+          let downSpeed = parseInt(data.downSpeed);
+          if (downSpeed > 150) {
+            data.downSpeed = "Mais de 150 Mbps";
+          }
           $('#speed-test-shown-text').html('Velocidade medida: ');
           $('#speed-test-strong-text').html(data.downSpeed);
           $('#speed-test-shown-icon')
