@@ -89,8 +89,8 @@ $(document).ready(function() {
                               new Date(1970, 1, 1));
             const justNow = Date.now();
             const devTimeDiff = Math.abs(justNow - lastSeen);
-            const devTimeDiffSeconds = Math.floor(devTimeDiff / 3.6e3);
-            const offlineThresh = 5;
+            const devTimeDiffSeconds = Math.floor(devTimeDiff / 1000);
+            const offlineThresh = 10;
             // Skip if offline for too long. 24hrs
             if (devTimeDiffSeconds >= 86400) {
               return true;
