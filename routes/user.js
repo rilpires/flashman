@@ -15,6 +15,10 @@ router.route('/elementsperpage').post(
   authController.ensureLogin(),
   userController.changeElementsPerPage);
 
+router.route('/visiblecolumnsperpage').post(
+  authController.ensureLogin(),
+  userController.changeVisibleColumnsOnPage);
+
 router.route('/profile').get(
   authController.ensureLogin(),
   userController.getProfile);

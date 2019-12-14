@@ -30,7 +30,7 @@ const returnObjOrStr = function(query, str) {
 };
 
 const returnObjOrNum = function(query, num) {
-  if (typeof query !== 'undefined' && query) {
+  if (typeof query !== 'undefined' && !isNaN(query)) {
     return query;
   } else {
     return num;
@@ -75,15 +75,19 @@ const createRegistry = function(req, res) {
   let channel = returnObjOrEmptyStr(req.body.wifi_channel).trim();
   let band = returnObjOrEmptyStr(req.body.wifi_band).trim();
   let mode = returnObjOrEmptyStr(req.body.wifi_mode).trim();
+  let wifiState = parseInt(returnObjOrNum(req.body.wifi_state, 1));
   let ssid5ghz = returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
   let band5ghz = returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
   let mode5ghz = returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+  let wifiState5ghz = parseInt(returnObjOrNum(req.body.wifi_state_5ghz, 1));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
     (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
+  let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
+  let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -157,12 +161,14 @@ const createRegistry = function(req, res) {
         'wifi_channel': channel,
         'wifi_band': band,
         'wifi_mode': mode,
+        'wifi_state': wifiState,
         'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
         'wifi_band_5ghz': band5ghz,
         'wifi_mode_5ghz': mode5ghz,
+        'wifi_state_5ghz': wifiState5ghz,
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
@@ -170,6 +176,8 @@ const createRegistry = function(req, res) {
         'last_contact': Date.now(),
         'do_update': false,
         'do_update_parameters': false,
+        'sys_up_time': sysUpTime,
+        'wan_up_time': wanUpTime,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -435,6 +443,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         if (matchedDevice.ip !== ip) {
           deviceSetQuery.ip = ip;
         }
+        let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
+        deviceSetQuery.sys_up_time = sysUpTime;
+        let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
+        deviceSetQuery.wan_up_time = wanUpTime;
 
         deviceSetQuery.last_contact = Date.now();
 
@@ -517,11 +529,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_channel': returnObjOrEmptyStr(matchedDevice.wifi_channel),
             'wifi_band': returnObjOrEmptyStr(matchedDevice.wifi_band),
             'wifi_mode': returnObjOrEmptyStr(matchedDevice.wifi_mode),
+            'wifi_state': matchedDevice.wifi_state,
             'wifi_ssid_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
             'wifi_password_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
             'wifi_mode_5ghz': returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
+            'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': returnObjOrEmptyStr(matchedDevice.app_password),
             'zabbix_psk': returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
             'zabbix_fqdn': zabbixFqdn,
@@ -1039,7 +1053,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
         last_seen: Date.now(),
       });
     }
-    if (lanDevice.upnp_permission !== "reject") {
+    if (lanDevice.upnp_permission !== 'reject') {
       matchedDevice.upnp_requests.push(deviceMac); // add notification for app
     } else {
       console.log('Upnp request for device ' + id + ' ignored because of' +
@@ -1053,6 +1067,32 @@ deviceInfoController.receiveUpnp = function(req, res) {
     console.log('Upnp request for device ' + id +
       ' received successfully.');
 
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.receiveRouterUpStatus = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+    matchedDevice.sys_up_time = req.body.sysuptime;
+    matchedDevice.wan_up_time = req.body.wanuptime;
+    matchedDevice.save();
+    sio.anlixSendUpStatusNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };

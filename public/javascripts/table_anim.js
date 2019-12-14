@@ -132,6 +132,14 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
   }
 };
 
+let secondsTimeSpanToHMS = function(s) {
+  let h = Math.floor(s / 3600); // Get whole hours
+  s -= h * 3600;
+  let m = Math.floor(s / 60); // Get remaining minutes
+  s -= m * 60;
+  return h + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+};
+
 $(document).ready(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
@@ -141,6 +149,7 @@ $(document).ready(function() {
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
+  let visibleColumnsOnPage = $('#devices-table-content').data('visiblecolumnsonpage');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
@@ -216,6 +225,27 @@ $(document).ready(function() {
     });
   });
 
+  $(document).on('click', '#btn-save-columns-on-page', function(event) {
+    let selColumns = [];
+    let elements = $('.dropdown-menu.dont-close a :checked');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      selColumns.push(columnNumber);
+    });
+    $.ajax({
+      type: 'POST',
+      url: '/user/visiblecolumnsperpage',
+      traditional: true,
+      data: {visiblecolumnsperpage: selColumns},
+      success: function(res) {
+        $('#save-columns-confirm').fadeTo('fast', 1, function() {
+          $(this).fadeTo('slow', 0);
+        });
+      },
+    });
+  });
+
   $(document).on('click', '#export-csv', function(event) {
     exportTableToCSV('lista-de-roteadores-flashbox.csv');
   });
@@ -242,6 +272,16 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    // Dispatch update for wan and sys uptime
+    $.ajax({
+      url: '/devicelist/command/' + deviceId + '/upstatus',
+      type: 'post',
+      dataType: 'json',
+      success: function(res) {
+        row.find('.device-sys-up-time').addClass('grey-text');
+        row.find('.device-wan-up-time').addClass('grey-text');
+      },
+    });
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -273,6 +313,36 @@ $(document).ready(function() {
     });
   });
 
+  let changeDevicesColumnVisibility = function(changeTo, colNum) {
+    let statusHCol = $('table#devices-table th:nth-child(' + colNum +')');
+    let statusDCol = $('table#devices-table td:nth-child(' + colNum +')');
+    if (changeTo === 'invisible') {
+      statusHCol.hide();
+      statusDCol.hide();
+    } else if (changeTo === 'visible') {
+      statusHCol.show();
+      statusDCol.show();
+    }
+  };
+
+  let applyVisibleColumns = function() {
+    let allHideableCols = [];
+    let elements = $('[id^=devices-column-]');
+    elements.each(function(index) {
+      let columnId = $(this).attr('id');
+      let columnNumber = columnId.split('-')[2];
+      $('#devices-column-' + columnNumber).prop('checked', true);
+      changeDevicesColumnVisibility('visible', columnNumber);
+      allHideableCols.push(columnNumber);
+    });
+    allHideableCols.forEach(function(index) {
+      if (!visibleColumnsOnPage.includes(parseInt(index))) {
+        $('#devices-column-' + index).prop('checked', false);
+        changeDevicesColumnVisibility('invisible', index);
+      }
+    });
+  };
+
   let loadDevicesTable = function(selelectedPage=1, filterList='') {
     let deviceTableContent = $('#devices-table-content');
     let deviceTablePagination = $('#devices-table-pagination');
@@ -282,7 +352,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '9')
+        $('<td>').attr('colspan', '12')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -305,7 +375,7 @@ $(document).ready(function() {
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
-            '<tr><td class="grey lighten-5 text-center" colspan="9">'+
+            '<tr><td class="grey lighten-5 text-center" colspan="12">'+
               '<h5>Nenhum roteador encontrado</h5>'+
             '</td></tr>'
           );
@@ -347,7 +417,7 @@ $(document).ready(function() {
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
             '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
-          '</td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
@@ -362,7 +432,9 @@ $(document).ready(function() {
           let device = res.devices[idx];
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
+          let grantWifiState = device.permissions.grantWifiState;
           let grantLanEdit = device.permissions.grantLanEdit;
+          let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
           let grantPortOpenIpv6 = device.permissions.grantPortOpenIpv6;
           let grantViewLogs = device.permissions.grantViewLogs;
@@ -414,6 +486,10 @@ $(document).ready(function() {
           let upgradeOpts = '';
           for (let idx = 0; idx < device.releases.length; idx++) {
             let release = device.releases[idx];
+            // Skip stock firmwares from being listed
+            if (release.id === '9999-aix') {
+              continue;
+            }
             upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
           }
 
@@ -490,6 +566,14 @@ $(document).ready(function() {
               device.ip+
             '</td><td class="text-center device-installed-release">'+
               device.installed_release+
+            '</td><td class="text-center">'+
+              (device.external_reference ? device.external_reference.data : '')+
+            '</td><td class="text-center device-sys-up-time">'+
+              (device.sys_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.sys_up_time)) : '') +
+            '</td><td class="text-center device-wan-up-time">'+
+              (device.wan_up_time && device.status_color !== 'grey-text' ?
+                secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
             '</td>'+
             '$REPLACE_UPGRADE'+
           '</tr>';
@@ -761,11 +845,20 @@ $(document).ready(function() {
             '<div class="row">'+
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">IP da Rede</label>'+
+                  '<label class="active">'+
+                    (grantLanGwEdit ? 'IP do Roteador' : 'IP da Rede')+
+                  '</label>'+
                   '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (grantLanGwEdit ?
+                  '<div class="alert alert-info">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>IP da rede será calculado a partir do IP do roteador e Máscara escolhidos</span>'+
+                  '</div>' :
+                  ''
+                )+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form input-group">'+
@@ -857,6 +950,13 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
+                  'Ativar Wi-Fi 2.4GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
             '</div>'+
           '</div>';
@@ -869,6 +969,11 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -887,6 +992,9 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
             '<div class="row">'+
@@ -957,6 +1065,13 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
+                  'Ativar Wi-Fi 5.0GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
             '</div>'+
           '</div>';
@@ -969,6 +1084,11 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -989,6 +1109,9 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
+          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+
@@ -1014,7 +1137,7 @@ $(document).ready(function() {
           '</div>';
 
           let formRow = '<tr class="d-none" $REPLACE_ATTRIBUTES>'+
-            '<td class="grey lighten-5" colspan="9">'+
+            '<td class="grey lighten-5" colspan="12">'+
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
@@ -1115,6 +1238,8 @@ $(document).ready(function() {
         }
         // Attach elements back to DOM after manipulation
         deviceTableContent.html(finalHtml);
+        // Hide filtered columns
+        applyVisibleColumns();
         // Fill table pagination
         deviceTablePagination.append(
           $('<ul>').addClass('pagination pagination-lg').append(() => {
@@ -1201,6 +1326,24 @@ $(document).ready(function() {
         // Actions when a status change is received
         socket.on('DEVICESTATUS', function(macaddr, data) {
           changeDeviceStatusOnTable(deviceTableContent, macaddr, data);
+        });
+        // Important: include and initialize socket.io first using socket var
+        socket.on('UPSTATUS', function(macaddr, data) {
+          let row = $('[id="' + macaddr + '"]');
+          if (data.sysuptime) {
+            row.find('.device-sys-up-time')
+            .removeClass('grey-text')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.sysuptime))
+            );
+          }
+          if (data.wanuptime) {
+            row.find('.device-wan-up-time')
+            .removeClass('grey-text')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.wanuptime))
+            );
+          }
         });
       },
     });
@@ -1305,5 +1448,24 @@ $(document).ready(function() {
         });
       }
     });
+  });
+
+  $(document).on('click', '[id^=devices-column-]',
+  function(event) {
+    let columnId = event.target.id;
+    let columnNumber = columnId.split('-')[2];
+    let statusHCol = $('table#devices-table th:nth-child(' + columnNumber +')');
+    if (statusHCol.is(':visible')) {
+      changeDevicesColumnVisibility('invisible', columnNumber);
+      visibleColumnsOnPage.splice(
+        visibleColumnsOnPage.indexOf(parseInt(columnNumber)), 1);
+    } else {
+      changeDevicesColumnVisibility('visible', columnNumber);
+      visibleColumnsOnPage.push(parseInt(columnNumber));
+    }
+  });
+  $(document).on('click', '.dropdown-menu.dont-close', function(event) {
+    // Avoid closing the dropdown menu when clicking inside
+    event.stopPropagation();
   });
 });

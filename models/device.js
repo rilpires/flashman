@@ -26,12 +26,14 @@ let deviceSchema = new Schema({
   wifi_channel: String,
   wifi_band: String,
   wifi_mode: String,
+  wifi_state: {type: Number, default: 1},
   wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,
   wifi_band_5ghz: String,
   wifi_mode_5ghz: String,
+  wifi_state_5ghz: {type: Number, default: 1},
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
@@ -107,6 +109,8 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  sys_up_time: {type: Number, default: 0},
+  wan_up_time: {type: Number, default: 0},
 });
 
 deviceSchema.plugin(mongoosePaginate);

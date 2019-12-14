@@ -7,6 +7,7 @@ const SIO_NOTIFICATION_LIVELOG = 'LIVELOG';
 const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
+const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 
 sio.anlixConnections = {};
 sio.anlixNotifications = {};
@@ -231,6 +232,26 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
     console.log('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
+  return found;
+};
+
+sio.anlixWaitForUpStatusNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+  if (!macaddr) {
+    return false;
+  }
+  registerNotification(session, SIO_NOTIFICATION_UP_STATUS, macaddr);
+  return true;
+};
+
+sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
+  if (!macaddr) {
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_UP_STATUS,
+                               macaddr, upStatusData, macaddr);
   return found;
 };
 
