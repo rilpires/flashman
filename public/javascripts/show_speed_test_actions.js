@@ -97,7 +97,10 @@ $(document).ready(function() {
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
-      if (!result.value) return;
+      if (!result.value) {
+        $('.btn-start-speed-test').prop('disabled', false);
+        return;
+      }
       $.ajax({
         url: '/devicelist/speedtest/' + id,
         type: 'POST',
