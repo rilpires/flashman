@@ -631,7 +631,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     if (config && config.measureServerIP) {
       // Send mqtt message to perform speedtest
       mqtt.anlixMessageRouterSpeedTest(
-        req.body.id, config.measureServerIP, 'App Cliente'
+        req.body.id, config.measureServerIP, {name: 'App_Cliente'}
       );
     }
 
