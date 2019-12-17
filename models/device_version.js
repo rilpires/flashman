@@ -155,7 +155,7 @@ const grantUpnp = function(version) {
 
 const grantSpeedTest = function(version, model) {
   if (version.match(versionRegex)) {
-    if (!model || !speedTestCompatibleModels.includes(model)) {
+    if (!model || !(model in speedTestCompatibleModels)) {
       // Unspecified model or model is not compatible with feature
       return false;
     }
@@ -164,7 +164,14 @@ const grantSpeedTest = function(version, model) {
     // Development version, enable everything by default
     return true;
   }
-}
+};
+
+const grantSpeedTestLimit = function(version, model) {
+  if (grantSpeedTest(version, model)) {
+    return speedTestCompatibleModels[model];
+  }
+  return 0;
+};
 
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
@@ -180,6 +187,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantLanDevices = grantLanDevices(version);
   result.grantUpnp = grantUpnp(version);
   result.grantSpeedTest = grantSpeedTest(version, model);
+  result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   return result;
 };
 
