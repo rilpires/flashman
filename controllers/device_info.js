@@ -1043,6 +1043,12 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
         matchedDevice.speedtest_results.shift();
       }
       matchedDevice.save();
+      let permissions = DeviceVersion.findByVersion(
+        matchedDevice.version,
+        matchedDevice.wifi_is_5ghz_capable,
+        matchedDevice.model
+      );
+      req.body.limit = permissions.grantSpeedTestLimit;
     } else {
       req.body.downSpeed = '';
     }

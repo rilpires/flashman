@@ -11,6 +11,7 @@ $(document).ready(function() {
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
+          let limit = res.limit;
           let pastMeasures = res.measures;
           if (!pastMeasures || pastMeasures.length === 0) {
             $('#measure-previous-nodata').show();
@@ -22,8 +23,8 @@ $(document).ready(function() {
           $('#measure-previous-data').empty();
           pastMeasures.forEach((measure)=>{
             let downSpeed = parseInt(measure.down_speed);
-            if (downSpeed > 150) {
-              measure.down_speed = 'Mais de 150 Mbps';
+            if (downSpeed > limit) {
+              measure.down_speed = 'Mais de ' + limit + ' Mbps';
             }
             let name = measure.user.replace(/_/g, ' ');
             $('#measure-previous-data').prepend(
@@ -140,8 +141,8 @@ $(document).ready(function() {
       if (id === macaddr) {
         if (data.downSpeed) {
           let downSpeed = parseInt(data.downSpeed);
-          if (downSpeed > 150) {
-            data.downSpeed = 'Mais de 150 Mbps';
+          if (downSpeed > data.limit) {
+            data.downSpeed = 'Mais de ' + data.limit + ' Mbps';
           }
           $('#speed-test-shown-text').html('Velocidade medida: ');
           $('#speed-test-strong-text').html(data.downSpeed);

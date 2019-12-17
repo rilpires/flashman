@@ -1500,9 +1500,17 @@ deviceListController.getSpeedtestResults = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
+
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model
+    );
+
     return res.status(200).json({
       success: true,
       measures: matchedDevice.speedtest_results,
+      limit: permissions.grantSpeedTestLimit,
     });
   });
 };
@@ -1522,12 +1530,12 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    // if (!mqtt.clients[mac]) {
-    //   return res.status(200).json({
-    //     success: false,
-    //     message: 'Roteador não está online!',
-    //   });
-    // }
+    if (!mqtt.clients[mac]) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não está online!',
+      });
+    }
     Config.findOne({is_default: true}, function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({

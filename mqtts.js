@@ -211,12 +211,14 @@ mqtts.anlixMessageRouterPingTest = function(id) {
 };
 
 mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+  let name = user.name.replace(/ /g, '_');
   mqtts.publish({
       cmd: 'publish',
       qos: 2,
       retain: false,
       topic: 'flashman/update/' + id,
-      payload: 'speedtest ' + ip + ' ' + user.name,
+      payload: 'speedtest ' + ip + ' ' + name + ' 3 20',
+      // Fix parallel connections to 3 and timeout to 20 seconds
     });
   console.log('MQTT SEND Message SPEEDTEST to ' + id);
 };
