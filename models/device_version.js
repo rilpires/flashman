@@ -17,6 +17,7 @@ const speedTestCompatibleModels = {
   'GWR-1200ACV1': 200,
   'NCLOUD': 100,
   'RE708V1': 200,
+  'TL-MR3020V1': 100,
   'TL-WDR3500V1': 150,
   'TL-WDR3600V1': 150,
   'TL-WDR4300V1': 150,
