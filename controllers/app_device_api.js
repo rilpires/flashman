@@ -710,24 +710,22 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
+      matchedDevice.model
     );
 
     let config;
     try {
       config = await(Config.findOne({is_default: true}).lean());
-      if (!config) throw {error: 'Config not found'};
+      if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
     }
 
     let speedtestInfo = {};
-    console.log(config);
-    console.log(config.measureServerIP);
-    console.log(permissions.grantSpeedTest);
     if (config && config.measureServerIP && permissions.grantSpeedTest) {
       speedtestInfo.server = config.measureServerIP;
       speedtestInfo.previous = matchedDevice.speedtest_results;
+      speedtestInfo.limit = permissions.grantSpeedTestLimit;
     }
 
     let wifiConfig = {
@@ -896,7 +894,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
     let config;
     try {
       config = await(Config.findOne({is_default: true}).lean());
-      if (!config) throw {error: 'Config not found'};
+      if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
     }
