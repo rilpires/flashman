@@ -23,14 +23,14 @@ $(document).ready(function() {
           pastMeasures.forEach((measure)=>{
             let downSpeed = parseInt(measure.down_speed);
             if (downSpeed > 150) {
-              measure.down_speed = "Mais de 150 Mbps";
+              measure.down_speed = 'Mais de 150 Mbps';
             }
             $('#measure-previous-data').prepend(
               $('<tr>').append(
                 '<td>'+measure.down_speed+'</td>'+
                 '<td>'+measure.timestamp+'</td>'+
                 '<td>'+measure.user+'</td>'
-              ),
+              )
             );
           });
           $('#measure-previous-nodata').hide();
