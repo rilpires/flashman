@@ -25,11 +25,12 @@ $(document).ready(function() {
             if (downSpeed > 150) {
               measure.down_speed = 'Mais de 150 Mbps';
             }
+            let name = measure.user.replace(/_/g, ' ');
             $('#measure-previous-data').prepend(
               $('<tr>').append(
                 '<td>'+measure.down_speed+'</td>'+
                 '<td>'+measure.timestamp+'</td>'+
-                '<td>'+measure.user+'</td>'
+                '<td>'+name+'</td>'
               )
             );
           });
@@ -110,13 +111,13 @@ $(document).ready(function() {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html('Aguardando resposta do roteador...');
             $('#speed-test-shown-icon')
-            .removeClass((i,c)=>c.match(/fa\-.*/))
+            .removeClass((i, c)=>c.match(/fa\-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');
           } else {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);
             $('#speed-test-shown-icon')
-            .removeClass((i,c)=>c.match(/fa\-.*/))
+            .removeClass((i, c)=>c.match(/fa\-.*/))
             .addClass('fa-3x fa-times');
             $('.btn-start-speed-test').prop('disabled', false);
           }
@@ -124,7 +125,7 @@ $(document).ready(function() {
         error: function(xhr, status, error) {
           $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
           $('#speed-test-shown-icon')
-          .removeClass((i,c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa\-.*/))
           .addClass('fa-3x fa-times');
           $('.btn-start-speed-test').prop('disabled', false);
         },
@@ -140,18 +141,18 @@ $(document).ready(function() {
         if (data.downSpeed) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > 150) {
-            data.downSpeed = "Mais de 150 Mbps";
+            data.downSpeed = 'Mais de 150 Mbps';
           }
           $('#speed-test-shown-text').html('Velocidade medida: ');
           $('#speed-test-strong-text').html(data.downSpeed);
           $('#speed-test-shown-icon')
-          .removeClass((i,c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa\-.*/))
           .addClass('fa-3x fa-check');
           updateMeasuresTable(macaddr);
         } else {
           $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
           $('#speed-test-shown-icon')
-          .removeClass((i,c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa\-.*/))
           .addClass('fa-3x fa-times');
         }
         $('.btn-start-speed-test').prop('disabled', false);
@@ -165,7 +166,7 @@ $(document).ready(function() {
     $('#speed-test-shown-text')
     .html('Clique no botão abaixo para começar a medição');
     $('#speed-test-shown-icon')
-    .removeClass((i,c)=>c.match(/fa\-.*/))
+    .removeClass((i, c)=>c.match(/fa\-.*/))
     .addClass('fa-3x fa-tachometer-alt');
     $('#measure-previous-data').empty();
     $('.btn-start-speed-test').prop('disabled', false);
