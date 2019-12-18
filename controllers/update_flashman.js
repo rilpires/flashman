@@ -239,6 +239,7 @@ updateController.getAutoConfig = function(req, res) {
         auto: matchedConfig.autoUpdate,
         minlengthpasspppoe: matchedConfig.pppoePassLength,
         measureServerIP: matchedConfig.measureServerIP,
+        measureServerPort: matchedConfig.measureServerPort,
       });
     } else {
       return res.status(200).json({
@@ -263,7 +264,19 @@ updateController.setAutoConfig = async(function(req, res) {
         message: 'Erro validando os campos',
       });
     }
+    let measureServerPort = parseInt(req.body['measure-server-port']);
+    if (isNaN(measureServerPort)) {
+      // No change
+      measureServerPort = config.measureServerPort;
+    }
+    if (measureServerPort && (measureServerPort < 1 || measureServerPort > 65535)) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      });
+    }
     config.measureServerIP = measureServerIP;
+    config.measureServerPort = measureServerPort;
     let message = 'Salvo com sucesso!';
     let updateToken = (req.body.token_update === 'on') ? true : false;
     let measureToken = returnStrOrEmptyStr(req.body['measure-token']);

@@ -48,6 +48,19 @@
                 placeholder="0.0.0.0"
               )
               .invalid-feedback Insira um IP válido
+              br
+              .input-entry
+              label Porta do servidor de medição de velocidade
+              input.form-control(
+                type="number",
+                name="measure-server-port",
+                id="measure-server-port",
+                min=1,
+                max=65535,
+                value=80,
+                placeholder="80"
+              )
+              .invalid-feedback Insira uma porta válida
               if (superuser || role && role.grantMonitorManage)
                 br
                 .input-entry

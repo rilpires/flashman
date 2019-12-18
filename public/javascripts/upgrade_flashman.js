@@ -123,6 +123,7 @@ $(document).ready(function() {
       $('#autoupdate').prop('checked', resp.auto).change();
       $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
       $('#measure-server-ip').val(resp.measureServerIP);
+      $('#measure-server-port').val(resp.measureServerPort);
     },
   });
 });

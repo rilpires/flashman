@@ -1549,9 +1549,10 @@ deviceListController.doSpeedTest = function(req, res) {
           message: 'Este serviço não foi configurado pelo administrador',
         });
       }
-      let ip = matchedConfig.measureServerIP;
+      let url = matchedConfig.measureServerIP + ':' +
+                matchedConfig.measureServerPort;
       sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
-      mqtt.anlixMessageRouterSpeedTest(mac, ip, req.user);
+      mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       return res.status(200).json({
         success: true
       });
