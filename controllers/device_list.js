@@ -1507,9 +1507,32 @@ deviceListController.getLanDevices = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
+
+    let enrichedLanDevs = matchedDevices.lan_devices.map((lanDevice) => {
+      let isOnline = false;
+      let lastSeen = ((lanDevice.last_seen) ?
+                        Date.parse(lanDevice.last_seen) :
+                        new Date(1970, 1, 1));
+      let justNow = Date.now();
+      let devTimeDiff = Math.abs(justNow - lastSeen);
+      let devTimeDiffSeconds = Math.floor(devTimeDiff / 1000);
+      let offlineThresh = 10;
+      // Skip if offline for too long. 24hrs
+      device.is_old = false;
+      if (devTimeDiffSeconds >= 86400) {
+        device.is_old = true;
+      } else if (devTimeDiffSeconds <= offlineThresh) {
+        isOnline = true;
+      } else {
+        isOnline = false;
+      }
+      device.is_online = isOnline;
+      return device;
+    });
+
     return res.status(200).json({
       success: true,
-      lan_devices: matchedDevice.lan_devices,
+      lan_devices: enrichedLanDevs,
     });
   });
 };
