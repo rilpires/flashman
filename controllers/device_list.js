@@ -1508,7 +1508,7 @@ deviceListController.getLanDevices = function(req, res) {
       });
     }
 
-    let enrichedLanDevs = matchedDevices.lan_devices.map((lanDevice) => {
+    let enrichedLanDevs = matchedDevice.lan_devices.map((lanDevice) => {
       let isOnline = false;
       let lastSeen = ((lanDevice.last_seen) ?
                         Date.parse(lanDevice.last_seen) :
