@@ -1518,16 +1518,16 @@ deviceListController.getLanDevices = function(req, res) {
       let devTimeDiffSeconds = Math.floor(devTimeDiff / 1000);
       let offlineThresh = 10;
       // Skip if offline for too long. 24hrs
-      device.is_old = false;
+      lanDevice.is_old = false;
       if (devTimeDiffSeconds >= 86400) {
-        device.is_old = true;
+        lanDevice.is_old = true;
       } else if (devTimeDiffSeconds <= offlineThresh) {
         isOnline = true;
       } else {
         isOnline = false;
       }
-      device.is_online = isOnline;
-      return device;
+      lanDevice.is_online = isOnline;
+      return lanDevice;
     });
 
     return res.status(200).json({
