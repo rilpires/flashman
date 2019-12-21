@@ -31,6 +31,10 @@ const intToWeekDayStr = function(day) {
   return '';
 };
 
+const deepCopyObject = function(obj) {
+  return JSON.parse(JSON.stringify(obj));
+};
+
 deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
@@ -1507,9 +1511,33 @@ deviceListController.getLanDevices = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
+
+    let enrichedLanDevs = deepCopyObject(matchedDevice.lan_devices)
+    .map((lanDevice) => {
+      let isOnline = false;
+      let lastSeen = ((lanDevice.last_seen) ?
+                        Date.parse(lanDevice.last_seen) :
+                        new Date(1970, 1, 1));
+      let justNow = Date.now();
+      let devTimeDiff = Math.abs(justNow - lastSeen);
+      let devTimeDiffSeconds = Math.floor(devTimeDiff / 1000);
+      let offlineThresh = 3;
+      // Skip if offline for too long. 24hrs
+      lanDevice.is_old = false;
+      if (devTimeDiffSeconds >= 86400) {
+        lanDevice.is_old = true;
+      } else if (devTimeDiffSeconds <= offlineThresh) {
+        isOnline = true;
+      } else {
+        isOnline = false;
+      }
+      lanDevice.is_online = isOnline;
+      return lanDevice;
+    });
+
     return res.status(200).json({
       success: true,
-      lan_devices: matchedDevice.lan_devices,
+      lan_devices: enrichedLanDevs,
     });
   });
 };

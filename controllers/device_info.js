@@ -854,7 +854,6 @@ deviceInfoController.receiveDevices = function(req, res) {
           if (!devReg.first_seen) {
             devReg.first_seen = Date.now();
           }
-          devReg.last_seen = Date.now();
           if (devReg.name && devReg.name != '') {
             outDev.hostname = devReg.name;
           } else {
@@ -867,8 +866,16 @@ deviceInfoController.receiveDevices = function(req, res) {
           if (Array.isArray(upConnDev.dhcpv6)) {
             devReg.dhcpv6 = upConnDev.dhcpv6;
           }
-          devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
-                              upConnDev.conn_type : null);
+          // If device change conn type to cable, check conn speed to be sure
+          if (devReg.conn_type === 1 && upConnDev.conn_type === 0) {
+            if (upConnDev.conn_speed >= 100) {
+              devReg.conn_type = upConnDev.conn_type;
+            }
+          } else {
+            devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
+                                upConnDev.conn_type : null);
+          }
+          devReg.last_seen = Date.now();
           devReg.conn_speed = upConnDev.conn_speed;
           devReg.wifi_signal = upConnDev.wifi_signal;
           devReg.wifi_snr = upConnDev.wifi_snr;
