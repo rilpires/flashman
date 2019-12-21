@@ -3,7 +3,7 @@ html
   head
     meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
     title Flashman
-      
+
     link(rel='stylesheet', href='/scripts/fontawesome/css/all.min.css')
     link(rel='stylesheet', href='/stylesheets/custom-bootstrap.min.css')
     link(rel='stylesheet', href='/scripts/tags-input/tags-input.css')
@@ -21,7 +21,7 @@ html
       include includes/configflashman
       include includes/alertsflashman
       block content
-    p.version-label 1.26.0
+    p.version-label 1.26.1
 
     script(src='/scripts/jquery/jquery.min.js')
     script(src='/scripts/jquery-mask/jquery.mask.min.js')
@@ -62,8 +62,8 @@ html
 
     // Preloader
     script.
-      $(window).on('load', function() { // makes sure the whole site is loaded 
-        $('#status').fadeOut(); // will first fade out the loading animation 
+      $(window).on('load', function() { // makes sure the whole site is loaded
+        $('#status').fadeOut(); // will first fade out the loading animation
         $('#preloader').delay(350).fadeOut('slow');
         $('body').delay(350).css({'overflow':'visible'});
       })
