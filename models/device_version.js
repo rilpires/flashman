@@ -14,6 +14,7 @@ const speedTestCompatibleModels = {
   'DWR-116A1': 100,
   'DWR-116A2': 100,
   'DWR-116A3': 100,
+  'EMG1702-T10AA1': 100,
   'GWR-1200ACV1': 200,
   'NCLOUD': 100,
   'RE708V1': 200,
@@ -160,7 +161,7 @@ const grantSpeedTest = function(version, model) {
       // Unspecified model or model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.10.0') >= 0);
+    return (versionCompare(version, '0.24.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
