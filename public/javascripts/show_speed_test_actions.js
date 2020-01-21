@@ -139,7 +139,7 @@ $(document).ready(function() {
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
-        if (data.downSpeed) {
+        if (data.downSpeed.includes('Mbps')) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > data.limit) {
             data.downSpeed = 'Mais de ' + data.limit + ' Mbps';
@@ -151,7 +151,11 @@ $(document).ready(function() {
           .addClass('fa-3x fa-check');
           updateMeasuresTable(macaddr);
         } else {
-          $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
+          if (req.body.downSpeed === 'Unavailable') {
+            $('#speed-test-shown-text').html('O servidor está lotado, tente mais tarde');
+          } else {
+            $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
+          }
           $('#speed-test-shown-icon')
           .removeClass((i, c)=>c.match(/fa\-.*/))
           .addClass('fa-3x fa-times');

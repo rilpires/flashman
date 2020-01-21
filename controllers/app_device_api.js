@@ -638,6 +638,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     return res.status(200).json({
       has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
       last_timestamp: previous[previous.length - 1].timestamp,
+      last_error_timestamp: matchedDevice.last_speedtest_error.timestamp,
     });
   }));
 };
@@ -905,6 +906,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
     let previous = matchedDevice.speedtest_results;
     reply.speedtest.previous = previous;
     reply.last_timestamp = previous[previous.length - 1].timestamp;
+    reply.last_error_timestamp = matchedDevice.last_speedtest_error.timestamp;
 
     return res.status(200).json(reply);
   }));

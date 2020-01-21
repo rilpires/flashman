@@ -1027,13 +1027,22 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    if (req.body.downSpeed && req.body.downSpeed !== 'Error') {
-      let now = new Date();
-      let formattedDate = '' + now.getDate();
-      formattedDate += '/' + (now.getMonth()+1);
-      formattedDate += '/' + now.getFullYear();
-      formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
-      formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
+    let now = new Date();
+    let formattedDate = '' + now.getDate();
+    formattedDate += '/' + (now.getMonth()+1);
+    formattedDate += '/' + now.getFullYear();
+    formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
+    formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
+
+    if (!req.body.downSpeed) {
+      req.body.downSpeed = 'Error';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Error';
+    } else if (req.body.downSpeed.includes('503 Server')) {
+      req.body.downSpeed = 'Unavailable';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Unavailable';
+    } else if (req.body.downSpeed.includes('Mbps')) {
       matchedDevice.speedtest_results.push({
         down_speed: req.body.downSpeed,
         user: req.body.user,
@@ -1042,7 +1051,6 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       if (matchedDevice.speedtest_results.length > 5) {
         matchedDevice.speedtest_results.shift();
       }
-      matchedDevice.save();
       let permissions = DeviceVersion.findByVersion(
         matchedDevice.version,
         matchedDevice.wifi_is_5ghz_capable,
@@ -1050,9 +1058,12 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       );
       req.body.limit = permissions.grantSpeedTestLimit;
     } else {
-      req.body.downSpeed = '';
+      req.body.downSpeed = 'Error';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Error';
     }
 
+    matchedDevice.save();
     sio.anlixSendSpeedTestNotifications(id, req.body);
     console.log('Speedtest results for device ' +
       id + ' received successfully.');

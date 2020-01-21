@@ -112,6 +112,10 @@ let deviceSchema = new Schema({
     timestamp: String,
     user: String,
   }],
+  last_speedtest_error: {
+    timestamp: String,
+    error: String,
+  }
 });
 
 deviceSchema.plugin(mongoosePaginate);
