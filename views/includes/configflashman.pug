@@ -34,6 +34,33 @@
                 label.custom-control-label(for="autoupdate")
                   | Deixar que o Flashman se atualize automaticamente
                 .invalid-feedback
+              br
+              .input-entry
+              label Endereço IP do servidor de medição de velocidade
+              input.form-control.ip-mask-field(
+                type="text",
+                name="measure-server-ip",
+                id="measure-server-ip",
+                minlength=7,
+                maxlength=15,
+                size=15,
+                pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+                placeholder="0.0.0.0"
+              )
+              .invalid-feedback Insira um IP válido
+              br
+              .input-entry
+              label Porta do servidor de medição de velocidade
+              input.form-control(
+                type="number",
+                name="measure-server-port",
+                id="measure-server-port",
+                min=1,
+                max=65535,
+                value=80,
+                placeholder="80"
+              )
+              .invalid-feedback Insira uma porta válida
               if (superuser || role && role.grantMonitorManage)
                 br
                 .input-entry

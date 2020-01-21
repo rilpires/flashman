@@ -1023,6 +1023,76 @@ deviceInfoController.receivePingResult = function(req, res) {
   });
 };
 
+deviceInfoController.receiveSpeedtestResult = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log(envsec);
+      console.log(req.app.locals.secret);
+      console.log('Error Receiving Speedtest: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Speedtest results for device ' +
+        id + ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Speedtest results for device ' +
+        id + ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+
+    let now = new Date();
+    let formattedDate = '' + now.getDate();
+    formattedDate += '/' + (now.getMonth()+1);
+    formattedDate += '/' + now.getFullYear();
+    formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
+    formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
+
+    if (!req.body.downSpeed) {
+      req.body.downSpeed = 'Error';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Error';
+    } else if (req.body.downSpeed.includes('503 Server')) {
+      req.body.downSpeed = 'Unavailable';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Unavailable';
+    } else if (req.body.downSpeed.includes('Mbps')) {
+      matchedDevice.speedtest_results.push({
+        down_speed: req.body.downSpeed,
+        user: req.body.user,
+        timestamp: formattedDate,
+      });
+      if (matchedDevice.speedtest_results.length > 5) {
+        matchedDevice.speedtest_results.shift();
+      }
+      let permissions = DeviceVersion.findByVersion(
+        matchedDevice.version,
+        matchedDevice.wifi_is_5ghz_capable,
+        matchedDevice.model
+      );
+      req.body.limit = permissions.grantSpeedTestLimit;
+    } else {
+      req.body.downSpeed = 'Error';
+      matchedDevice.last_speedtest_error.timestamp = formattedDate;
+      matchedDevice.last_speedtest_error.error = 'Error';
+    }
+
+    matchedDevice.save();
+    sio.anlixSendSpeedTestNotifications(id, req.body);
+    console.log('Speedtest results for device ' +
+      id + ' received successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
 deviceInfoController.receiveUpnp = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];

@@ -1,0 +1,53 @@
+#speed-test.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-tachometer-alt.fa-lg
+          strong &nbsp; Teste de Velocidade de Download para&nbsp;
+            label(name="speed-test-hlabel" id="speed-test-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        if (superuser || (role && role.grantMeasureDevices > 1))
+          .border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
+            .col-1
+              #measure-test-arrow.fas.fa-chevron-up.fa-lg.mt-1.text-primary
+            .col-11
+              h5 Realizar Teste de Velocidade
+          #measure-test-div.pl-2.pr-2.grey.lighten-5.border
+            .row.mt-4
+              .col
+                h2.text-center.mb-3
+                  i#speed-test-shown-icon.grey-text.fas.fa-tachometer-alt.fa-3x
+                  br
+                  br
+                  span#speed-test-shown-text.grey-text Clique no botão abaixo para começar a medição
+                  strong#speed-test-strong-text
+            .row
+              .col.p-0.text-center.mb-4
+                button.btn.btn-primary.btn-start-speed-test(type="button")
+                  span Iniciar teste
+        .border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
+          .col-1
+            if (superuser || (role && role.grantMeasureDevices > 1))
+              #measure-previous-arrow.fas.fa-chevron-down.fa-lg.mt-1
+            else
+              #measure-previous-arrow.fas.fa-chevron-up.fa-lg.mt-1.text-primary
+          .col-11
+            h5 Ver Resultados das Últimas Medições
+        #measure-previous-div.pl-2.pr-2.grey.lighten-5.border
+          h3#measure-previous-nodata.grey-text.text-center.my-3(style="display: none;") Não há medições registradas
+          .table-responsive#measure-previous-table
+            table.table.text-center
+              thead
+                tr
+                  th Velocidade Download
+                  th Data da Medição
+                  th Usuário
+              tbody#measure-previous-data
+          .row
+              .col.p-0.text-center.mb-3
+                button.btn.btn-primary.btn-sync-speed-table(type="button")
+                  i.fas.fa-sync-alt
+                  span &nbsp; Atualizar Tabela

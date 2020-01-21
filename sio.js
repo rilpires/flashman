@@ -8,6 +8,7 @@ const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
+const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 
 sio.anlixConnections = {};
 sio.anlixNotifications = {};
@@ -252,6 +253,38 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   }
   let found = emitNotification(SIO_NOTIFICATION_UP_STATUS,
                                macaddr, upStatusData, macaddr);
+  return found;
+};
+
+sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
+  if (!session) {
+    console.log('ERROR: SIO: ' +
+                'Try to add speedtest notification with an invalid session!');
+    return false;
+  }
+  if (!macaddr) {
+    console.log('ERROR: SIO: Try to add speedtest ' +
+                'notification with an invalid mac address!');
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_SPEED_TEST, macaddr);
+  return true;
+}
+
+sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
+  if (!macaddr) {
+    console.log('ERROR: SIO: ' +
+                'Try to send speedtest results notification ' +
+                'to an invalid mac address!');
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
+                               macaddr, testdata, macaddr);
+  if (!found) {
+    console.log('SIO: NO Session found for ' +
+                macaddr + '! Discarding message...');
+  }
   return found;
 };
 

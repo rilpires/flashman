@@ -436,7 +436,8 @@ deviceListController.searchDeviceReg = function(req, res) {
       // Device permissions
       device.permissions = DeviceVersion.findByVersion(
         device.version,
-        device.wifi_is_5ghz_capable
+        device.wifi_is_5ghz_capable,
+        device.model
       );
       // Fill default value if wi-fi state does not exist
       if (device.wifi_state === undefined) {
@@ -1538,6 +1539,82 @@ deviceListController.getLanDevices = function(req, res) {
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
+    });
+  });
+};
+
+deviceListController.getSpeedtestResults = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(), (err, matchedDevice)=>{
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({
+        success: false,
+        type: 'danger',
+        message: 'Roteador não encontrado',
+      });
+    }
+
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model
+    );
+
+    return res.status(200).json({
+      success: true,
+      measures: matchedDevice.speedtest_results,
+      limit: permissions.grantSpeedTestLimit,
+    });
+  });
+};
+
+deviceListController.doSpeedTest = function(req, res) {
+  let mac = req.params.id.toUpperCase();
+  DeviceModel.findById(mac, (err, matchedDevice)=>{
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno, por favor tente novamente',
+      });
+    }
+    if (!matchedDevice) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+    if (!mqtt.clients[mac]) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não está online!',
+      });
+    }
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        return res.status(200).json({
+          success: false,
+          message: 'Erro interno, por favor tente novamente',
+        });
+      }
+      if (!matchedConfig.measureServerIP) {
+        return res.status(200).json({
+          success: false,
+          message: 'Este serviço não foi configurado pelo administrador',
+        });
+      }
+      let url = matchedConfig.measureServerIP + ':' +
+                matchedConfig.measureServerPort;
+      sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
+      mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      return res.status(200).json({
+        success: true
+      });
     });
   });
 };

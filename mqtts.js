@@ -232,4 +232,17 @@ mqtts.anlixMessageRouterWifiState = function(id, state, wirelessRadio) {
   console.log('MQTT SEND Message WIFISTATE to '+ id);
 };
 
+mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+  let name = user.name.replace(/ /g, '_');
+  mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: false,
+      topic: 'flashman/update/' + id,
+      payload: 'speedtest ' + ip + ' ' + name + ' 3 15',
+      // Fix parallel connections to 3 and timeout to 15 seconds
+    });
+  console.log('MQTT SEND Message SPEEDTEST to ' + id);
+};
+
 module.exports = mqtts;
