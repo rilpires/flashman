@@ -151,7 +151,7 @@ $(document).ready(function() {
           .addClass('fa-3x fa-check');
           updateMeasuresTable(macaddr);
         } else {
-          if (req.body.downSpeed === 'Unavailable') {
+          if (data.downSpeed === 'Unavailable') {
             $('#speed-test-shown-text').html('O servidor está lotado, tente mais tarde');
           } else {
             $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
