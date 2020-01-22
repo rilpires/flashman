@@ -1,4 +1,7 @@
 $(document).ready(function() {
+  let socketIoTimeout = false;
+  let socketIoResponse = false;
+
   if (!$('#measure-previous-arrow').hasClass('text-primary')) {
     $('#measure-previous-div').hide();
   }
@@ -50,6 +53,7 @@ $(document).ready(function() {
   };
 
   $(document).on('click', '.btn-throughput-measure-modal', function(event) {
+    $('#speed-test-warn-text').hide();
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     updateMeasuresTable(id);
@@ -103,6 +107,9 @@ $(document).ready(function() {
         $('.btn-start-speed-test').prop('disabled', false);
         return;
       }
+      $('#speed-test-warn-text').hide();
+      socketIoTimeout = false;
+      socketIoResponse = false;
       $.ajax({
         url: '/devicelist/speedtest/' + id,
         type: 'POST',
@@ -114,6 +121,17 @@ $(document).ready(function() {
             $('#speed-test-shown-icon')
             .removeClass((i, c)=>c.match(/fa\-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');
+            // wait 20 seconds to timeout socket IO response
+            setTimeout(()=>{
+              // only do this if socket io didn't reply
+              if (socketIoResponse) return;
+              socketIoTimeout = true;
+              $('#speed-test-shown-text').html('Não houve resposta, por favor tente novamente');
+              $('#speed-test-shown-icon')
+              .removeClass((i, c)=>c.match(/fa\-.*/))
+              .addClass('fa-3x fa-times');
+              $('.btn-start-speed-test').prop('disabled', false);
+            }, 20*1000);
           } else {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);
@@ -136,6 +154,9 @@ $(document).ready(function() {
 
   // Important: include and initialize socket.io first using socket var
   socket.on('SPEEDTEST', function(macaddr, data) {
+    // only do this if timeout has not happened yet
+    if (socketIoTimeout) return;
+    socketIoResponse = true;
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
@@ -152,7 +173,8 @@ $(document).ready(function() {
           updateMeasuresTable(macaddr);
         } else {
           if (data.downSpeed === 'Unavailable') {
-            $('#speed-test-shown-text').html('O servidor está lotado, tente mais tarde');
+            $('#speed-test-shown-text').html('O servidor está ocupado, tente mais tarde');
+            $('#speed-test-warn-text').show();
           } else {
             $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
           }
@@ -167,6 +189,7 @@ $(document).ready(function() {
 
   // Restore default modal state
   $('#speed-test').on('hidden.bs.modal', function() {
+    $('#speed-test-warn-text').hide();
     $('#speed-test-strong-text').empty();
     $('#speed-test-shown-text')
     .html('Clique no botão abaixo para começar a medição');
