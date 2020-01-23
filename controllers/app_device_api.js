@@ -620,26 +620,43 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    let config;
-    try {
-      config = await(Config.findOne({is_default: true}).lean());
-      if (!config) throw {error: 'Config not found'};
-    } catch (err) {
-      console.log(err);
-    }
-
-    if (config && config.measureServerIP) {
-      // Send mqtt message to perform speedtest
-      let url = config.measureServerIP + ':' + config.measureServerPort;
-      mqtt.anlixMessageRouterSpeedTest(req.body.id, url, {name: 'App_Cliente'});
-    }
-
+    // Send reply first, then send mqtt message
+    let lastTimestamp;
+    let lastErrorTimestamp;
     let previous = matchedDevice.speedtest_results;
-    return res.status(200).json({
+    if (previous.length > 0) {
+      lastTimestamp = previous[previous.length - 1].timestamp;
+    } else {
+      lastTimestamp = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      lastErrorTimestamp = matchedDevice.last_speedtest_error.timestamp;
+    } else {
+      lastErrorTimestamp = '';
+    }
+    res.status(200).json({
       has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
-      last_timestamp: previous[previous.length - 1].timestamp,
-      last_error_timestamp: matchedDevice.last_speedtest_error.timestamp,
+      last_timestamp: lastTimestamp,
+      last_error_timestamp: lastErrorTimestamp,
     });
+
+    // Wait for a few seconds so the app can receive the reply
+    // We need to do this because the measurement blocks all traffic
+    setTimeout(async(()=>{
+      let config;
+      try {
+        config = await(Config.findOne({is_default: true}).lean());
+        if (!config) throw {error: 'Config not found'};
+      } catch (err) {
+        console.log(err);
+      }
+
+      if (config && config.measureServerIP) {
+        // Send mqtt message to perform speedtest
+        let url = config.measureServerIP + ':' + config.measureServerPort;
+        mqtt.anlixMessageRouterSpeedTest(req.body.id, url, {name: 'App_Cliente'});
+      }
+    }), 1.5*1000);
   }));
 };
 
@@ -905,8 +922,18 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
     }
     let previous = matchedDevice.speedtest_results;
     reply.speedtest.previous = previous;
-    reply.last_timestamp = previous[previous.length - 1].timestamp;
-    reply.last_error_timestamp = matchedDevice.last_speedtest_error.timestamp;
+    if (previous.length > 0) {
+      reply.last_timestamp = previous[previous.length - 1].timestamp;
+    } else {
+      reply.last_timestamp = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      reply.last_error_timestamp = matchedDevice.last_speedtest_error.timestamp;
+      reply.last_error = matchedDevice.last_speedtest_error.error;
+    } else {
+      reply.last_error_timestamp = '';
+      reply.last_error = '';
+    }
 
     return res.status(200).json(reply);
   }));
