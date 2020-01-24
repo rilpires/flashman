@@ -1,6 +1,7 @@
 $(document).ready(function() {
   let socketIoTimeout = false;
   let socketIoResponse = false;
+  let socketIoTimeoutTimerID = null;
 
   if (!$('#measure-previous-arrow').hasClass('text-primary')) {
     $('#measure-previous-div').hide();
@@ -122,7 +123,7 @@ $(document).ready(function() {
             .removeClass((i, c)=>c.match(/fa\-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');
             // wait 20 seconds to timeout socket IO response
-            setTimeout(()=>{
+            socketIoTimeoutTimerID = setTimeout(()=>{
               // only do this if socket io didn't reply
               if (socketIoResponse) return;
               socketIoTimeout = true;
@@ -157,6 +158,7 @@ $(document).ready(function() {
     // only do this if timeout has not happened yet
     if (socketIoTimeout) return;
     socketIoResponse = true;
+    clearTimeout(socketIoTimeoutTimerID);
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {

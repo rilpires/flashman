@@ -117,7 +117,7 @@ let deviceSchema = new Schema({
     user: String,
   }],
   last_speedtest_error: {
-    timestamp: String,
+    unique_id: String,
     error: String,
   },
 });

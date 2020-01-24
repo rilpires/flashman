@@ -621,23 +621,23 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     }
 
     // Send reply first, then send mqtt message
-    let lastTimestamp;
-    let lastErrorTimestamp;
+    let lastMeasureID;
+    let lastErrorID;
     let previous = matchedDevice.speedtest_results;
     if (previous.length > 0) {
-      lastTimestamp = previous[previous.length - 1].timestamp;
+      lastMeasureID = previous[previous.length - 1]._id;
     } else {
-      lastTimestamp = '';
+      lastMeasureID = '';
     }
     if (matchedDevice.last_speedtest_error) {
-      lastErrorTimestamp = matchedDevice.last_speedtest_error.timestamp;
+      lastErrorID = matchedDevice.last_speedtest_error.unique_id;
     } else {
-      lastErrorTimestamp = '';
+      lastErrorID = '';
     }
     res.status(200).json({
       has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
-      last_timestamp: lastTimestamp,
-      last_error_timestamp: lastErrorTimestamp,
+      last_uid: lastMeasureID,
+      last_error_uid: lastErrorID,
     });
 
     // Wait for a few seconds so the app can receive the reply
@@ -923,15 +923,15 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
     let previous = matchedDevice.speedtest_results;
     reply.speedtest.previous = previous;
     if (previous.length > 0) {
-      reply.last_timestamp = previous[previous.length - 1].timestamp;
+      reply.last_uid = previous[previous.length - 1]._id;
     } else {
-      reply.last_timestamp = '';
+      reply.last_uid = '';
     }
     if (matchedDevice.last_speedtest_error) {
-      reply.last_error_timestamp = matchedDevice.last_speedtest_error.timestamp;
+      reply.last_error_uid = matchedDevice.last_speedtest_error.unique_id;
       reply.last_error = matchedDevice.last_speedtest_error.error;
     } else {
-      reply.last_error_timestamp = '';
+      reply.last_error_uid = '';
       reply.last_error = '';
     }
 
