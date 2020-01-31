@@ -1599,6 +1599,17 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'Roteador não está online!',
       });
     }
+    let permissions = DeviceVersion.findByVersion(
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model
+    );
+    if (!permissions.grantSpeedTest) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não suporta este comando',
+      });
+    }
     Config.findOne({is_default: true}, function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
@@ -1614,7 +1625,9 @@ deviceListController.doSpeedTest = function(req, res) {
       }
       let url = matchedConfig.measureServerIP + ':' +
                 matchedConfig.measureServerPort;
-      sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
+      if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+        sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
+      }
       mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       return res.status(200).json({
         success: true
