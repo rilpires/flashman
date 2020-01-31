@@ -190,6 +190,17 @@ router.route('/portforward/:id').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setPortForward);
 
+// Set/Get Speed test results
+router.route('/speedtest/:id').get(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMeasureDevices'),
+  deviceListController.getSpeedtestResults
+).post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantMeasureDevices', 2),
+  deviceListController.doSpeedTest
+);
+
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(
   authController.ensureLogin(),

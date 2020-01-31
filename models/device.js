@@ -111,6 +111,15 @@ let deviceSchema = new Schema({
   },
   sys_up_time: {type: Number, default: 0},
   wan_up_time: {type: Number, default: 0},
+  speedtest_results: [{
+    down_speed: String,
+    timestamp: String,
+    user: String,
+  }],
+  last_speedtest_error: {
+    unique_id: String,
+    error: String,
+  },
 });
 
 deviceSchema.plugin(mongoosePaginate);

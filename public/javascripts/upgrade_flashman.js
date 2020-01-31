@@ -113,6 +113,7 @@ let configFlashman = function(event) {
 $(document).ready(function() {
   $(document).on('click', '.update', checkUpdateFlashman);
   $('#config-flashman-form').submit(configFlashman);
+  $('.ip-mask-field').mask('099.099.099.099');
 
   // Load configuration options
   $.ajax({
@@ -121,6 +122,8 @@ $(document).ready(function() {
     success: function(resp) {
       $('#autoupdate').prop('checked', resp.auto).change();
       $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
+      $('#measure-server-ip').val(resp.measureServerIP);
+      $('#measure-server-port').val(resp.measureServerPort);
     },
   });
 });

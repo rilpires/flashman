@@ -159,6 +159,7 @@ $(document).ready(function() {
   let grantDeviceActions = false;
   let grantLOGAccess = false;
   let grantLanAccess = false;
+  let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
@@ -180,6 +181,7 @@ $(document).ready(function() {
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
+    grantSpeedMeasure = role.grantMeasureDevices;
   }
 
   $(document).on('click', '#card-header', function(event) {
@@ -443,6 +445,7 @@ $(document).ready(function() {
           let grantPingTest = device.permissions.grantPingTest;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantUpnpSupport = device.permissions.grantUpnp;
+          let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
 
           let csvAttr = 'id="'+device._id+'"';
           csvAttr += ' data-index="'+index+'"';
@@ -636,6 +639,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
+          let measureAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
+          .replace('$REPLACE_ICON', 'fa-tachometer-alt')
+          .replace('$REPLACE_TEXT', 'Medição de Velocidade');
+
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
@@ -657,6 +665,7 @@ $(document).ready(function() {
             '$REPLACE_PORT_FORWARD_ACTION'+
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
+            '$REPLACE_MEASURE_ACTION'+
             '$REPLACE_FACTORY_ACTION'+
           '</div>';
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
@@ -683,6 +692,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
+          }
+          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
+            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
           if (isSuperuser || grantFactoryReset) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);

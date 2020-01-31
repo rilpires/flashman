@@ -192,9 +192,7 @@ $(document).ready(function() {
                           .text('Visualizar e editar')
                         )
                       )
-                    )
-                  ),
-                  $('<div></div>').addClass('col-12 col-lg-4').append(
+                    ),
                     $('<div></div>').addClass('md-form').append(
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
@@ -207,7 +205,9 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
-                    ),
+                    )
+                  ),
+                  $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
@@ -277,6 +277,23 @@ $(document).ready(function() {
                         )
                       )
                     ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Informações Sobre Medição de Velocidade'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-measure-devices').append(
+                          $('<option></option>').val(0)
+                          .text('Não visualizar'),
+                          $('<option></option>').val(1)
+                          .text('Visualizar'),
+                          $('<option></option>').val(2)
+                          .text('Visualizar e realizar ações')
+                        )
+                      )
+                    ),
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -322,7 +339,7 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Monitorar as Medições de Dispositivos'),
+                        .text('Monitorar a Ferramenta de Medições'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-monitor-manage').append(
@@ -431,6 +448,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-lan-devices] option[value=' +
           roleObj.grantLanDevices + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-measure-devices] option[value=' +
+          roleObj.grantMeasureDevices + ']')
         .attr('selected', 'selected');
       });
     } else {

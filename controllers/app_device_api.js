@@ -602,6 +602,64 @@ appDeviceAPIController.refreshInfo = function(req, res) {
   });
 };
 
+appDeviceAPIController.doSpeedtest = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    // Send reply first, then send mqtt message
+    let lastMeasureID;
+    let lastErrorID;
+    let previous = matchedDevice.speedtest_results;
+    if (previous.length > 0) {
+      lastMeasureID = previous[previous.length - 1]._id;
+    } else {
+      lastMeasureID = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      lastErrorID = matchedDevice.last_speedtest_error.unique_id;
+    } else {
+      lastErrorID = '';
+    }
+    res.status(200).json({
+      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+      last_uid: lastMeasureID,
+      last_error_uid: lastErrorID,
+    });
+
+    // Wait for a few seconds so the app can receive the reply
+    // We need to do this because the measurement blocks all traffic
+    setTimeout(async(()=>{
+      let config;
+      try {
+        config = await(Config.findOne({is_default: true}).lean());
+        if (!config) throw {error: 'Config not found'};
+      } catch (err) {
+        console.log(err);
+      }
+
+      if (config && config.measureServerIP) {
+        // Send mqtt message to perform speedtest
+        let url = config.measureServerIP + ':' + config.measureServerPort;
+        mqtt.anlixMessageRouterSpeedTest(req.body.id, url, {name: 'App_Cliente'});
+      }
+    }), 1.5*1000);
+  }));
+};
+
 appDeviceAPIController.appSetWifi = function(req, res) {
   appSet(req, res, processWifi);
 };
@@ -627,7 +685,7 @@ appDeviceAPIController.appSetConfig = function(req, res) {
 };
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
@@ -667,8 +725,25 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model
     );
+
+    let config;
+    try {
+      config = await(Config.findOne({is_default: true}).lean());
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+
+    let speedtestInfo = {};
+    if (config && config.measureServerIP && permissions.grantSpeedTest) {
+      speedtestInfo.server = config.measureServerIP;
+      speedtestInfo.previous = matchedDevice.speedtest_results;
+      speedtestInfo.limit = permissions.grantSpeedTestLimit;
+    }
 
     let wifiConfig = {
       '2ghz': {
@@ -712,6 +787,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
+      speedtest: speedtestInfo,
       notifications: notifications,
       model: matchedDevice.model,
       version: matchedDevice.version,
@@ -719,7 +795,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
     });
-  });
+  }));
 };
 
 appDeviceAPIController.appGetVersion = function(req, res) {
@@ -812,6 +888,55 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
       devices: devices,
     });
   });
+};
+
+appDeviceAPIController.appGetSpeedtest = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    let config;
+    try {
+      config = await(Config.findOne({is_default: true}).lean());
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+
+    let reply = {'speedtest': {}};
+    if (config && config.measureServerIP) {
+      reply.speedtest.server = config.measureServerIP;
+    }
+    let previous = matchedDevice.speedtest_results;
+    reply.speedtest.previous = previous;
+    if (previous.length > 0) {
+      reply.last_uid = previous[previous.length - 1]._id;
+    } else {
+      reply.last_uid = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      reply.last_error_uid = matchedDevice.last_speedtest_error.unique_id;
+      reply.last_error = matchedDevice.last_speedtest_error.error;
+    } else {
+      reply.last_error_uid = '';
+      reply.last_error = '';
+    }
+
+    return res.status(200).json(reply);
+  }));
 };
 
 module.exports = appDeviceAPIController;
