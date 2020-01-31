@@ -646,9 +646,13 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
+      case 'speedtest':
         if (!mqtt.clients[req.params.id.toUpperCase()]) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
+        }
+        if (msgtype == 'speedtest') {
+          return deviceListController.doSpeedTest(req, res);
         }
         if (msgtype == 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
