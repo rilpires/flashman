@@ -53,6 +53,13 @@ let validateEditDevice = function(event) {
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
+  let validateBridge = $('#edit_opmode-' + index.toString()).val() === 'Modo Bridge';
+  let bridgeEnabled = validateBridge;
+  let useBridgeFixIP = $('input[name="edit_opmode_fixip_en-'+
+                      index.toString()+'"]:checked').length > 0;
+  bridgeFixIP = (useBridgeFixIP) ? $('#edit_opmode_fixip-' + index.toString()).val() : '';
+  let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
+                              index.toString()+'"]:checked').length > 0;
 
   // Initialize error structure
   let errors = {
@@ -70,6 +77,7 @@ let validateEditDevice = function(event) {
     mode5ghz: {field: '#edit_wifi5_mode-' + index.toString()},
     lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
     lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
+    bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -120,6 +128,9 @@ let validateEditDevice = function(event) {
     genericValidate(lanNetmask,
                     validator.validateNetmask, errors.lan_netmask);
   }
+  if (validateBridge && useBridgeFixIP) {
+    genericValidate(bridgeFixIP, validator.validateIP, errors.bridge_fixed_ip);
+  }
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
@@ -158,6 +169,11 @@ let validateEditDevice = function(event) {
       data.content.lan_subnet = lanSubnet;
       data.content.lan_netmask = lanNetmask;
     }
+    if (validateBridge) {
+      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0;
+      data.content.bridgeFixIP = bridgeFixIP;
+    }
+    data.content.bridgeEnabled = bridgeEnabled ? 1 : 0;
     data.content.wifi_state = wifiState;
     data.content.wifi_state_5ghz = wifiState5ghz;
 
