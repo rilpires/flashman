@@ -828,6 +828,9 @@ deviceListController.setDeviceReg = function(req, res) {
       let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
       let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
+      let bridgeEnabled = parseInt(returnObjOrNum(content.bridgeEnabled, 1)) === 1;
+      let bridgeDisableSwitch = parseInt(returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
+      let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -903,6 +906,9 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
+        }
+        if (bridgeEnabled === 1 && bridgeFixIP) {
+          genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
         }
 
         if (errors.length < 1) {
@@ -1028,6 +1034,21 @@ deviceListController.setDeviceReg = function(req, res) {
                 content.external_reference.kind;
               matchedDevice.external_reference.data =
                 content.external_reference.data;
+            }
+            if (content.hasOwnProperty('bridgeEnabled') &&
+                (superuserGrant)) {
+              matchedDevice.bridge_mode_enabled = bridgeEnabled;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeDisableSwitch') &&
+                (superuserGrant)) {
+              matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant)) {
+              matchedDevice.bridge_mode_ip = bridgeFixIP;
+              updateParameters = true;
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
