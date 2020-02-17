@@ -21,7 +21,7 @@ const speedTestCompatibleModels = {
   'NCLOUD': 100,
   'RE708V1': 200,
   'TL-MR3020V1': 100,
-  'TL-WDR3500V1': 150,
+  'TL-WDR3500V1': 100,
   'TL-WDR3600V1': 150,
   'TL-WDR4300V1': 150,
   'TL-WR2543N/NDV1': 120,
@@ -198,6 +198,16 @@ const grantSpeedTestLimit = function(version, model) {
   return 0;
 };
 
+const grantOpmode = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.25.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+  return false;
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -215,6 +225,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantUpnp = grantUpnp(version);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
+  result.grantOpmode = grantOpmode(version);
   return result;
 };
 
