@@ -72,6 +72,8 @@ let deviceSchema = new Schema({
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: false},
   bridge_mode_ip: String,
+  bridge_mode_gateway: String,
+  bridge_mode_dns: String,
   wan_ip: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
