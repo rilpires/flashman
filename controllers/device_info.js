@@ -545,9 +545,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
             'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
-            'bridge_mode_enabled': returnObjOrEmptyStr(matchedDevice.bridge_mode_enabled),
-            'bridge_mode_switch_disable': returnObjOrEmptyStr(matchedDevice.bridge_mode_switch_disable),
+            'bridge_mode_enabled': (matchedDevice.bridge_mode_enabled) ? 'y' : 'n',
+            'bridge_mode_switch_disable': (matchedDevice.bridge_mode_switch_disable) ? 'y' : 'n',
             'bridge_mode_ip': returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
+            'bridge_mode_gateway': returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
+            'bridge_mode_dns': returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
