@@ -831,6 +831,8 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeEnabled = parseInt(returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
+      let bridgeFixGateway = returnObjOrEmptyStr(content.bridgeFixGateway).trim();
+      let bridgeFixDNS = returnObjOrEmptyStr(content.bridgeFixDNS).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -909,6 +911,8 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (bridgeEnabled === 1 && bridgeFixIP) {
           genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
+          genericValidate(bridgeFixGateway, validator.validateIP, 'bridge_fixed_gateway');
+          genericValidate(bridgeFixDNS, validator.validateIP, 'bridge_fixed_dns');
         }
 
         if (errors.length < 1) {
@@ -921,7 +925,8 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            if (connectionType != '' && (superuserGrant || role.grantWanType)) {
+            if (connectionType != '' && (superuserGrant || role.grantWanType) &&
+                !matchedDevice.bridge_mode_enabled) {
               if (connectionType === 'pppoe') {
                 if (pppoeUser !== '' && pppoePassword !== '') {
                   matchedDevice.connection_type = connectionType;
@@ -936,13 +941,13 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('pppoe_user') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoeUser !== '') {
+                pppoeUser !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.pppoe_user = pppoeUser;
               updateParameters = true;
             }
             if (content.hasOwnProperty('pppoe_password') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoePassword !== '') {
+                pppoePassword !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.pppoe_password = pppoePassword;
               updateParameters = true;
             }
@@ -1018,13 +1023,13 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('lan_subnet') &&
                 (superuserGrant || role.grantLanEdit) &&
-                lanSubnet !== '') {
+                lanSubnet !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.lan_subnet = lanSubnet;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_netmask') &&
                 (superuserGrant || role.grantLanEdit) &&
-                lanNetmask !== '') {
+                lanNetmask !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.lan_netmask = lanNetmask;
               updateParameters = true;
             }
@@ -1036,18 +1041,28 @@ deviceListController.setDeviceReg = function(req, res) {
                 content.external_reference.data;
             }
             if (content.hasOwnProperty('bridgeEnabled') &&
-                (superuserGrant)) {
+                (superuserGrant || role.grantOpmodeEdit)) {
               matchedDevice.bridge_mode_enabled = bridgeEnabled;
               updateParameters = true;
             }
             if (content.hasOwnProperty('bridgeDisableSwitch') &&
-                (superuserGrant)) {
+                (superuserGrant || role.grantOpmodeEdit)) {
               matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
               updateParameters = true;
             }
             if (content.hasOwnProperty('bridgeFixIP') &&
-                (superuserGrant)) {
+                (superuserGrant || role.grantOpmodeEdit)) {
               matchedDevice.bridge_mode_ip = bridgeFixIP;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_gateway = bridgeFixGateway;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_dns = bridgeFixDNS;
               updateParameters = true;
             }
             if (updateParameters) {
@@ -1226,6 +1241,13 @@ deviceListController.setPortForward = function(req, res) {
         success: false,
         message: 'Roteador não possui essa função',
       });
+    }
+    if (matchedDevice.bridge_mode_enabled) {
+      return res.status(200).json({
+        success: false,
+        message: 'Este roteador está em modo bridge, e portanto não pode '+
+                 'liberar acesso a portas',
+      })
     }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
