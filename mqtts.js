@@ -3,12 +3,32 @@ const aedes = require('aedes');
 const sio = require('./sio');
 const DeviceModel = require('./models/device');
 const Notification = require('./models/notification');
+const mq = require('mqemitter-redis')({
+  port: 6379,
+  host: '127.0.0.1',
+  db: 12,
+});
+const persistence = require('aedes-persistence-redis')({
+  port: 6379,
+  host: '127.0.0.1',
+  db: 12,
+  family: 4,
+});
 
-let mqtts = aedes();
+let mqtts = aedes({mq: mq, persistance: persistence});
 
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
   sio.anlixSendDeviceStatusNotification(client.id, 'online');
+});
+
+mqtts.subscribe('$SYS/+/new/clients', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const clientId = packet.payload.toString();
+  if (serverId !== mqtts.id) {
+    console.log('Notified on: ' + clientId);
+  }
+  done();
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
