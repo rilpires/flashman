@@ -3,19 +3,26 @@ const aedes = require('aedes');
 const sio = require('./sio');
 const DeviceModel = require('./models/device');
 const Notification = require('./models/notification');
-const mq = require('mqemitter-redis')({
-  port: 6379,
-  host: '127.0.0.1',
-  db: 12,
-});
-const persistence = require('aedes-persistence-redis')({
-  port: 6379,
-  host: '127.0.0.1',
-  db: 12,
-  family: 4,
-});
 
-let mqtts = aedes({mq: mq, persistance: persistence});
+let mqtts = null;
+if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
+    (process.env.FLM_USE_MQTT_PERSISTENCE === true ||
+     process.env.FLM_USE_MQTT_PERSISTENCE === 'true')) {
+
+    const mq = require('mqemitter-redis')({
+      port: 6379,
+      host: '127.0.0.1',
+      db: 12,
+    });
+    const persistence = require('aedes-persistence-redis')({
+      port: 6379,
+      host: '127.0.0.1',
+      db: 12,
+    });
+    mqtts = aedes({mq: mq, persistance: persistence});
+} else {
+  mqtts = aedes();
+}
 
 // This object will contain clients ids
 // from all flashman mqtt brokers
