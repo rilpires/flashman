@@ -1037,6 +1037,7 @@ $(document).ready(function() {
               opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
             }
           } else {
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
@@ -1398,7 +1399,8 @@ $(document).ready(function() {
               $('#edit_opmode_ip_combo-' + localIdx).hide();
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
-              $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false
+              $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = true;
             } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();

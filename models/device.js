@@ -70,7 +70,7 @@ let deviceSchema = new Schema({
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
   bridge_mode_enabled: {type: Boolean, default: false},
-  bridge_mode_switch_disable: {type: Boolean, default: false},
+  bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,
   bridge_mode_gateway: String,
   bridge_mode_dns: String,
