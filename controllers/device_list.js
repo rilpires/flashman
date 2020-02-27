@@ -87,7 +87,12 @@ const getOnlineCount = function(query) {
     status.recoverynum = 0;
     status.offlinenum = 0;
 
-    onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
+    const mqttClients = Object.values(mqtt.unifiedClientsMap)
+    .reduce((acc, curr) => {
+      return acc.concat(Object.keys(curr));
+    }, []);
+
+    onlineQuery.$and = [{_id: {$in: mqttClients}}, query];
     recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
     offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
 

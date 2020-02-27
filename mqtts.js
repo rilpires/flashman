@@ -17,23 +17,57 @@ const persistence = require('aedes-persistence-redis')({
 
 let mqtts = aedes({mq: mq, persistance: persistence});
 
+// This object will contain clients ids
+// from all flashman mqtt brokers
+mqtts.unifiedClientsMap = {};
+
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
   sio.anlixSendDeviceStatusNotification(client.id, 'online');
+  // Notify other Flashman MQTT broker instances
+  const rawMqttClients = Object.keys(mqtts.clients).reduce(
+    (accumulator, current) => {
+      accumulator[current] = true;
+      return accumulator;
+    }, {});
+  // Update unified map
+  mqtts.unifiedClientsMap[mqtts.id] = rawMqttClients;
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: true,
+    topic: '$SYS/' + mqtts.id + '/current/clients',
+    payload: Buffer.from(JSON.stringify(rawMqttClients)),
+  });
 });
 
-mqtts.subscribe('$SYS/+/new/clients', function(packet, done) {
+mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
   const serverId = packet.topic.split('/')[1];
-  const clientId = packet.payload.toString();
+  const rawMqttClients = JSON.parse(packet.payload.toString());
   if (serverId !== mqtts.id) {
-    console.log('Notified on: ' + clientId);
+    mqtts.unifiedClientsMap[serverId] = rawMqttClients;
   }
-  done();
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
   console.log('Router disconnected on MQTT: ' + client.id);
   sio.anlixSendDeviceStatusNotification(client.id, 'recovery');
+
+  // Notify other Flashman MQTT broker instances
+  const rawMqttClients = Object.keys(mqtts.clients).reduce(
+    (accumulator, current) => {
+      accumulator[current] = true;
+      return accumulator;
+    }, {});
+  // Update unified map
+  mqtts.unifiedClientsMap[mqtts.id] = rawMqttClients;
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: true,
+    topic: '$SYS/' + mqtts.id + '/current/clients',
+    payload: Buffer.from(JSON.stringify(rawMqttClients)),
+  });
 });
 
 mqtts.on('ack', function(packet, client, err) {
