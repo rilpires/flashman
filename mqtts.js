@@ -21,6 +21,30 @@ let mqtts = aedes({mq: mq, persistance: persistence});
 // from all flashman mqtt brokers
 mqtts.unifiedClientsMap = {};
 
+mqtts.subscribe('$SYS/+/add/client', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const clientId = packet.payload.toString();
+  if (serverId !== mqtts.id) {
+    sio.anlixSendDeviceStatusNotification(clientId, 'online');
+  }
+});
+
+mqtts.subscribe('$SYS/+/drop/client', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const clientId = packet.payload.toString();
+  if (serverId !== mqtts.id) {
+    sio.anlixSendDeviceStatusNotification(clientId, 'recovery');
+  }
+});
+
+mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const rawMqttClients = JSON.parse(packet.payload.toString());
+  if (serverId !== mqtts.id) {
+    mqtts.unifiedClientsMap[serverId] = rawMqttClients;
+  }
+});
+
 mqtts.on('client', function(client, err) {
   console.log('Router connected on MQTT: ' + client.id);
   sio.anlixSendDeviceStatusNotification(client.id, 'online');
@@ -46,30 +70,6 @@ mqtts.on('client', function(client, err) {
     topic: '$SYS/' + mqtts.id + '/add/client',
     payload: Buffer.from(client.id, 'utf8'),
   });
-});
-
-mqtts.subscribe('$SYS/+/add/client', function(packet, done) {
-  const serverId = packet.topic.split('/')[1];
-  const clientId = packet.payload.toString();
-  if (serverId !== mqtts.id) {
-    sio.anlixSendDeviceStatusNotification(clientId, 'online');
-  }
-});
-
-mqtts.subscribe('$SYS/+/drop/client', function(packet, done) {
-  const serverId = packet.topic.split('/')[1];
-  const clientId = packet.payload.toString();
-  if (serverId !== mqtts.id) {
-    sio.anlixSendDeviceStatusNotification(clientId, 'recovery');
-  }
-});
-
-mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
-  const serverId = packet.topic.split('/')[1];
-  const rawMqttClients = JSON.parse(packet.payload.toString());
-  if (serverId !== mqtts.id) {
-    mqtts.unifiedClientsMap[serverId] = rawMqttClients;
-  }
 });
 
 mqtts.on('clientDisconnect', function(client, err) {
