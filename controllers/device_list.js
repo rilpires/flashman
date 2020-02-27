@@ -302,6 +302,11 @@ deviceListController.searchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
 
+  const mqttClients = Object.values(mqtt.unifiedClientsMap)
+  .reduce((acc, curr) => {
+    return acc.concat(Object.keys(curr));
+  }, []);
+
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
   if (queryContents.includes('/ou')) {
@@ -317,7 +322,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {'last_contact': {$gte: lastHour}},
-        {'_id': {$in: Object.keys(mqtt.clients)}},
+        {'_id': {$in: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'instavel') {
@@ -326,7 +331,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {last_contact: {$gte: lastHour}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'offline') {
@@ -335,7 +340,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {last_contact: {$lt: lastHour}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     // Filter as offline if more than X hours
@@ -347,7 +352,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       hours.setHours(hours.getHours() - hourThreshold);
       field.$and = [
         {last_contact: {$lt: hours}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
@@ -429,10 +434,13 @@ deviceListController.searchDeviceReg = function(req, res) {
     let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
       const model = device.model.replace('N/', '');
       const devReleases = releases.filter((release) => release.model === model);
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[device._id.toUpperCase()];
+      });
       device.releases = devReleases;
       // Status color
       let deviceColor = 'grey-text';
-      if (mqtt.clients[device._id.toUpperCase()]) {
+      if (isDevOn) {
         deviceColor = 'green-text';
       } else if (device.last_contact.getTime() >= lastHour.getTime()) {
         deviceColor = 'red-text';
@@ -652,7 +660,10 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-        if (!mqtt.clients[req.params.id.toUpperCase()]) {
+        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+          return map[req.params.id.toUpperCase()];
+        });
+        if (!isDevOn) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
@@ -775,8 +786,10 @@ deviceListController.getDeviceReg = function(req, res) {
     if (matchedDevice.lastboot_log) {
       matchedDevice.lastboot_log = null;
     }
-
-    matchedDevice.online_status = (req.params.id in mqtt.clients);
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.params.id.toUpperCase()];
+    });
+    matchedDevice.online_status = (isDevOn);
     // Status color
     let lastHour = new Date();
     lastHour.setHours(lastHour.getHours() - 1);
@@ -1585,6 +1598,9 @@ deviceListController.getSpeedtestResults = function(req, res) {
 
 deviceListController.doSpeedTest = function(req, res) {
   let mac = req.params.id.toUpperCase();
+  const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[mac];
+  });
   DeviceModel.findById(mac, (err, matchedDevice)=>{
     if (err) {
       return res.status(200).json({
@@ -1598,7 +1614,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    if (!mqtt.clients[mac]) {
+    if (!isDevOn) {
       return res.status(200).json({
         success: false,
         message: 'Roteador não está online!',

@@ -39,6 +39,29 @@ mqtts.on('client', function(client, err) {
     topic: '$SYS/' + mqtts.id + '/current/clients',
     payload: Buffer.from(JSON.stringify(rawMqttClients)),
   });
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: false,
+    topic: '$SYS/' + mqtts.id + '/add/client',
+    payload: Buffer.from(client.id, 'utf8'),
+  });
+});
+
+mqtts.subscribe('$SYS/+/add/client', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const clientId = packet.payload.toString();
+  if (serverId !== mqtts.id) {
+    sio.anlixSendDeviceStatusNotification(clientId, 'online');
+  }
+});
+
+mqtts.subscribe('$SYS/+/drop/client', function(packet, done) {
+  const serverId = packet.topic.split('/')[1];
+  const clientId = packet.payload.toString();
+  if (serverId !== mqtts.id) {
+    sio.anlixSendDeviceStatusNotification(clientId, 'recovery');
+  }
 });
 
 mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
@@ -67,6 +90,13 @@ mqtts.on('clientDisconnect', function(client, err) {
     retain: true,
     topic: '$SYS/' + mqtts.id + '/current/clients',
     payload: Buffer.from(JSON.stringify(rawMqttClients)),
+  });
+  mqtts.publish({
+    cmd: 'publish',
+    qos: 2,
+    retain: false,
+    topic: '$SYS/' + mqtts.id + '/drop/client',
+    payload: Buffer.from(client.id, 'utf8'),
   });
 });
 
