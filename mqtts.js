@@ -16,6 +16,8 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
 } else {
   mqtts = aedes();
 }
+// Fix broker id in case of instance restart
+mqtts.id = process.env.name;
 
 // This object will contain clients ids
 // from all flashman mqtt brokers
