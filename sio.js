@@ -84,7 +84,9 @@ const emitNotification = function(type, macaddr, data, removeMeKey=null) {
             if (notification.macaddr == removeMeKey) {
               debug('SIO: Send ' + type +' of ' + macaddr +
                           ' information for ' + sessionId);
-              sio.anlixConnections[sessionId].emit(type, macaddr, data);
+              if (sio.anlixConnections[sessionId]) {
+                sio.anlixConnections[sessionId].emit(type, macaddr, data);
+              }
               found = true;
               // Remove from notifications array
               notifications.splice(nIdx, 1);
@@ -93,7 +95,9 @@ const emitNotification = function(type, macaddr, data, removeMeKey=null) {
           } else {
             debug('SIO: Send ' + type +' of ' + macaddr +
                         ' information for ' + sessionId);
-            sio.anlixConnections[sessionId].emit(type, macaddr, data);
+            if (sio.anlixConnections[sessionId]) {
+              sio.anlixConnections[sessionId].emit(type, macaddr, data);
+            }
             found = true;
             break;
           }
