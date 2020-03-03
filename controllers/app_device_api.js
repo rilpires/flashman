@@ -566,8 +566,12 @@ appDeviceAPIController.rebootRouter = function(req, res) {
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterReboot(req.body.id);
 
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.id.toUpperCase()];
+    });
+
     return res.status(200).json({
-      success: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+      success: isDevOn,
     });
   });
 };
@@ -595,8 +599,12 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
     }
 
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.id.toUpperCase()];
+    });
+
     return res.status(200).json({
-      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+      has_access: isDevOn,
       devices_timestamp: matchedDevice.last_devices_refresh,
     });
   });
@@ -634,8 +642,13 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     } else {
       lastErrorID = '';
     }
+
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.id.toUpperCase()];
+    });
+
     res.status(200).json({
-      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+      has_access: isDevOn,
       last_uid: lastMeasureID,
       last_error_uid: lastErrorID,
     });
@@ -783,6 +796,10 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     });
     let localMac = localDevice ? localDevice.mac : '';
 
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.id.toUpperCase()];
+    });
+
     return res.status(200).json({
       permissions: permissions,
       wifi: wifiConfig,
@@ -793,7 +810,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       version: matchedDevice.version,
       release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
-      has_access: mqtt.clients[req.body.id.toUpperCase()] ? true : false,
+      has_access: isDevOn,
     });
   }));
 };

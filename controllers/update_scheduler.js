@@ -228,7 +228,10 @@ const markNextForUpdate = async(function() {
   let nextDevice = null;
 
   for (let i = 0; i < devices.length; i++) {
-    if (devices[i].mac in mqtt.clients) {
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[devices[i].mac];
+    });
+    if (isDevOn) {
       nextDevice = devices[i];
       break;
     }
