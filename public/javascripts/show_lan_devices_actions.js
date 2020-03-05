@@ -66,6 +66,7 @@ $(document).ready(function() {
   const fetchLanDevices = function(deviceId, upnpSupport) {
     let isSuperuser = false;
     let grantLanDevices = 0;
+    let grantLanDevicesBlock = false;
 
     if ($('#devices-table-content').data('superuser')) {
       isSuperuser = $('#devices-table-content').data('superuser');
@@ -73,6 +74,10 @@ $(document).ready(function() {
     if ($('#devices-table-content').data('role')) {
       let role = $('#devices-table-content').data('role');
       grantLanDevices = role.grantLanDevices;
+    }
+    if ($('#devices-table-content').data('role')) {
+      let role = $('#devices-table-content').data('role');
+      grantLanDevicesBlock = role.grantLanDevicesBlock;
     }
     $.ajax({
       type: 'GET',
@@ -103,13 +108,17 @@ $(document).ready(function() {
                     ) :
                     $('<div></div>').addClass('col')
                   ),
-                  $('<div></div>').addClass('col text-right').append(
+                  $('<button>').addClass('btn btn-primary btn-sm my-0 col')
+                               .attr('type', 'button')
+                               .prop('disabled',
+                                     !(isSuperuser || grantLanDevicesBlock))
+                  .append(
                     (device.is_blocked) ?
-                      $('<i></i>').addClass('fas fa-lock fa-lg') :
-                      $('<i></i>').addClass('fas fa-lock-open fa-lg'),
+                      $('<i>').addClass('fas fa-lock fa-lg') :
+                      $('<i>').addClass('fas fa-lock-open fa-lg'),
                     (device.is_blocked) ?
-                      $('<span></span>').html('&nbsp Acesso bloqueado') :
-                      $('<span></span>').html('&nbsp Acesso liberado')
+                      $('<span>').html('&nbsp Internet bloqueada') :
+                      $('<span>').html('&nbsp Internet liberada')
                   )
                 ),
                 $('<div></div>').addClass('row pt-3').append(
