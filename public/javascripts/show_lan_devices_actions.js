@@ -63,6 +63,36 @@ $(document).ready(function() {
     });
   };
 
+  const setLanDevBlock = function(deviceId, lanDeviceId, isBlocked, btnStatus) {
+    $('.btn-lan-dev-block').prop('disabled', true);
+
+    isBlocked = !isBlocked;
+
+    $.ajax({
+      url: '/devicelist/landevice/block',
+      type: 'post',
+      dataType: 'json',
+      traditional: true,
+      data: {id: deviceId, lanid: lanDeviceId, isblocked: isBlocked},
+      success: function(res) {
+        if (res.success) {
+          btnStatus.removeClass('indigo-text red-text')
+                   .addClass(isBlocked ? 'red-text' : 'indigo-text')
+                   .html(isBlocked ? 'bloqueada' : 'liberada');
+          btnStatus.parent().data('blocked', isBlocked);
+          setTimeout(function() {
+            $('.btn-lan-dev-block').prop('disabled', false);
+          }, 3000);
+        } else {
+          $('.btn-lan-dev-block').prop('disabled', false);
+        }
+      },
+      error: function(xhr, status, error) {
+        $('.btn-lan-dev-block').prop('disabled', false);
+      },
+    });
+  };
+
   const fetchLanDevices = function(deviceId, upnpSupport) {
     let isSuperuser = false;
     let grantLanDevices = 0;
@@ -109,6 +139,9 @@ $(document).ready(function() {
                     $('<div></div>').addClass('col')
                   ),
                   $('<button>').addClass('btn btn-primary btn-sm my-0 col')
+                               .addClass('btn-lan-dev-block')
+                               .attr('data-mac', device.mac)
+                               .attr('data-blocked', device.is_blocked)
                                .attr('type', 'button')
                                .prop('disabled',
                                      !(isSuperuser || grantLanDevicesBlock))
@@ -116,9 +149,14 @@ $(document).ready(function() {
                     (device.is_blocked) ?
                       $('<i>').addClass('fas fa-lock fa-lg') :
                       $('<i>').addClass('fas fa-lock-open fa-lg'),
+                    $('<span>').html('&nbsp Internet &nbsp'),
                     (device.is_blocked) ?
-                      $('<span>').html('&nbsp Internet bloqueada') :
-                      $('<span>').html('&nbsp Internet liberada')
+                      $('<span>')
+                        .addClass('dev-block-status-text red-text')
+                        .html('bloqueada') :
+                      $('<span>')
+                        .addClass('dev-block-status-text indigo-text')
+                        .html('liberada')
                   )
                 ),
                 $('<div></div>').addClass('row pt-3').append(
@@ -260,6 +298,14 @@ $(document).ready(function() {
     let devId = $(this).data('mac');
     let upnpPermission = $(this).data('permission');
     setUpnp(id, devId, upnpPermission, currBtnStatus);
+  });
+
+  $(document).on('click', '.btn-lan-dev-block', function(event) {
+    let id = $('#lan-devices-hlabel').text();
+    let currBtnStatus = $(this).children('.dev-block-status-text');
+    let devId = $(this).data('mac');
+    let isDevBlocked = $(this).data('blocked');
+    setLanDevBlock(id, devId, isDevBlocked, currBtnStatus);
   });
 
   // Important: include and initialize socket.io first using socket var

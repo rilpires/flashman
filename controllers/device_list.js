@@ -1687,4 +1687,37 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
   });
 };
 
+deviceListController.setLanDeviceBlockState = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar roteador'});
+    }
+    let devFound = false;
+    for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+      if (matchedDevice.lan_devices[idx].mac === req.body.lanid) {
+        matchedDevice.lan_devices[idx].is_blocked = req.body.isblocked;
+        matchedDevice.blocked_devices_index = Date.now();
+        devFound = true;
+        break;
+      }
+    }
+    if (devFound) {
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao registrar atualização'});
+        }
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+        return res.status(200).json({'success': true});
+      });
+    } else {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar dispositivo'});
+    }
+  });
+};
+
 module.exports = deviceListController;
