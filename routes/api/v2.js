@@ -90,6 +90,12 @@ router.route('/device/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setDeviceCrudTrap);
 
+// Set LAN device block state
+router.route('/device/landevice/block').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantLanDevicesBlock'),
+  deviceListController.setLanDeviceBlockState);
+
 // *************
 // *** Users ***
 // *************
