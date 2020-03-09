@@ -13,16 +13,16 @@ block content
         .col-6
           ul.nav.nav-pills.nav-justified
             li.nav-item
-              a.nav-link.active(data-toggle="tab", role="tab", href="#panel1")
+              a.nav-link(data-toggle="tab", role="tab", href="#panel1")
                 .fas.fa-file
                 span &nbsp Arquivo
             li.nav-item
-              a.nav-link(data-toggle="tab", role="tab", href="#panel2")
+              a.nav-link.active(data-toggle="tab", role="tab", href="#panel2")
                 .fas.fa-globe
                 span &nbsp Conta da Anlix
     .card-body
       .tab-content
-        .tab-pane.fade.in.show.active(id="panel1", role="tabpanel")
+        .tab-pane.fade(id="panel1", role="tabpanel")
           form(method="post", action="/firmware/upload", name="firmwareform")
             .col
               .input-group
@@ -41,7 +41,7 @@ block content
                 )
                   .fas.fa-upload.fa-lg(id="btn-submit-icon")
                   span &nbsp Upload
-        .tab-pane.fade(id="panel2", role="tabpanel")
+        .tab-pane.fade.in.show.active(id="panel2", role="tabpanel")
           .col-8.offset-2.mb-5
             form.form-inline(method="post", action="/firmware/sync", name="firmwaresync")
               .md-form.mr-3.mt-2.mb-0

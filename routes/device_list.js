@@ -229,4 +229,9 @@ router.route('/uiupdate/:id').get(
   authController.ensureLogin(),
   deviceListController.getDeviceReg);
 
+router.route('/landevice/block').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantLanDevicesBlock'),
+  deviceListController.setLanDeviceBlockState);
+
 module.exports = router;

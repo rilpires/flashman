@@ -197,10 +197,10 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Controle do Tipo de Conexão'),
+                        .text('Controle de bloqueio de Internet nos dispositivos'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-type').append(
+                        .attr('name', 'grant-lan-devices-block').append(
                           $('<option></option>').val(false).text('Bloquear'),
                           $('<option></option>').val(true).text('Permitir')
                         )
@@ -294,6 +294,19 @@ $(document).ready(function() {
                         )
                       )
                     ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle do Tipo de Conexão'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-type').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    )
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -445,6 +458,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-lan-edit] option[value=' +
           roleObj.grantLanEdit + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-lan-devices-block] option[value=' +
+          roleObj.grantLanDevicesBlock + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-lan-devices] option[value=' +
           roleObj.grantLanDevices + ']')
