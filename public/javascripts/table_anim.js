@@ -413,15 +413,15 @@ $(document).ready(function() {
           '</td><td>'+
             '<div class="fas fa-circle green-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="online-status-sum">'+res.status.onlinenum+'</span>'+
+            '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
             '<br>'+
             '<div class="fas fa-circle red-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="recovery-status-sum">'+res.status.recoverynum+'</span>'+
+            '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
             '<br>'+
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
+            '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
           '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
@@ -1657,8 +1657,22 @@ $(document).ready(function() {
       visibleColumnsOnPage.push(parseInt(columnNumber));
     }
   });
+
   $(document).on('click', '.dropdown-menu.dont-close', function(event) {
     // Avoid closing the dropdown menu when clicking inside
     event.stopPropagation();
+  });
+
+  $(document).on('click', '#online-status-sum', function(event) {
+    $('.tags-input input').focus().val('online').blur();
+    loadDevicesTable(1, 'online');
+  });
+  $(document).on('click', '#recovery-status-sum', function(event) {
+    $('.tags-input input').focus().val('instavel').blur();
+    loadDevicesTable(1, 'instavel');
+  });
+  $(document).on('click', '#offline-status-sum', function(event) {
+    $('.tags-input input').focus().val('offline').blur();
+    loadDevicesTable(1, 'offline');
   });
 });

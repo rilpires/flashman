@@ -513,11 +513,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
           }
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[matchedDevice._id];
+          });
           // Do not return yet, just respond to request so we can free socket
           res.status(200).json({
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
-            'mqtt_status': (matchedDevice._id in mqtt.clients),
+            'mqtt_status': isDevOn,
             'release_id': returnObjOrEmptyStr(matchedDevice.release),
             'connection_type': returnObjOrEmptyStr(matchedDevice.connection_type),
             'pppoe_user': returnObjOrEmptyStr(matchedDevice.pppoe_user),

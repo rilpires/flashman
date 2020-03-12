@@ -89,6 +89,12 @@ block content
                     select.browser-default.md-select(name="grant-lan-edit")
                       option(value="false") Visualizar
                       option(value="true") Visualizar e editar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de bloqueio de Internet nos dispositivos
+                    select.browser-default.md-select(name="grant-lan-devices-block")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -142,6 +148,13 @@ block content
                   .md-selectfield.form-control.my-0
                     label Informações Sobre Dispositivos Conectados
                     select.browser-default.md-select(name="grant-lan-devices")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e realizar ações
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Informações Sobre Medição de Velocidade
+                    select.browser-default.md-select(name="grant-measure-devices")
                       option(value=0) Não visualizar
                       option(value=1) Visualizar
                       option(value=2) Visualizar e realizar ações
