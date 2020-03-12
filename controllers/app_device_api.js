@@ -730,6 +730,15 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       matchedDevice.model
     );
 
+    // Override some permissions if device in bridge mode
+    if (matchedDevice.bridge_mode_enabled) {
+      permissions.grantPortForward = false;
+      permissions.grantPortForwardAsym = false;
+      permissions.grantBlockDevices = false;
+    } else {
+      permissions.grantBlockDevices = true;
+    }
+
     let config;
     try {
       config = await(Config.findOne({is_default: true}).lean());
