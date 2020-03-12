@@ -212,6 +212,19 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Controle de Modo de Operação'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-opmode-edit').append(
+                          $('<option></option>').val(false).text('Visualizar'),
+                          $('<option></option>').val(true).text('Visualizar e editar')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Controle de Identificação do Roteador'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -425,6 +438,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-wan-type] option[value=' +
           roleObj.grantWanType + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-opmode-edit] option[value=' +
+          roleObj.grantOpmodeEdit + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-id] option[value=' +
           roleObj.grantDeviceId + ']')
