@@ -748,6 +748,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantPortForward = false;
       permissions.grantPortForwardAsym = false;
       permissions.grantBlockDevices = false;
+      permissions.grantUpnp = false;
     } else {
       permissions.grantBlockDevices = true;
     }
