@@ -426,6 +426,9 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-wan-type] option[value=' +
           roleObj.grantWanType + ']')
         .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-opmode-edit] option[value=' +
+          roleObj.grantOpmodeEdit + ']')
+        .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-id] option[value=' +
           roleObj.grantDeviceId + ']')
         .attr('selected', 'selected');

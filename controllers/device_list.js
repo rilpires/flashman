@@ -909,7 +909,7 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
-        if (bridgeEnabled === 1 && bridgeFixIP) {
+        if (bridgeEnabled && bridgeFixIP) {
           genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
           genericValidate(bridgeFixGateway, validator.validateIP, 'bridge_fixed_gateway');
           genericValidate(bridgeFixDNS, validator.validateIP, 'bridge_fixed_dns');
