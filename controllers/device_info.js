@@ -105,7 +105,7 @@ const createRegistry = function(req, res) {
     genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
     if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
         connectionType != '') {
-      return res.status(500);
+      return res.status(500).end();
     }
     if (pppoe) {
       genericValidate(pppoeUser, validator.validateUser,
