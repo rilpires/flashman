@@ -13,11 +13,11 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     const mq = require('mqemitter-redis')();
     const persistence = require('aedes-persistence-redis')();
     mqtts = aedes({mq: mq, persistance: persistence});
+    // Fix broker id in case of instance restart
+    mqtts.id = process.env.name;
 } else {
   mqtts = aedes();
 }
-// Fix broker id in case of instance restart
-mqtts.id = process.env.name;
 
 // This object will contain clients ids
 // from all flashman mqtt brokers
@@ -45,6 +45,8 @@ const toPublishPacket = function(serverId, packet) {
     topic: '$SYS/' + serverId + '/publish',
     payload: Buffer.from(JSON.stringify(packet)),
   });
+  debug('MQTT server id ' + serverId + ' publishing packet');
+  debug('Packet to publish is ' + JSON.stringify(packet));
 };
 
 mqtts.subscribe('$SYS/+/add/client', function(packet, done) {
@@ -53,6 +55,7 @@ mqtts.subscribe('$SYS/+/add/client', function(packet, done) {
   if (serverId !== mqtts.id) {
     sio.anlixSendDeviceStatusNotification(clientId, 'online');
   }
+  done();
 });
 
 mqtts.subscribe('$SYS/+/drop/client', function(packet, done) {
@@ -61,6 +64,7 @@ mqtts.subscribe('$SYS/+/drop/client', function(packet, done) {
   if (serverId !== mqtts.id) {
     sio.anlixSendDeviceStatusNotification(clientId, 'recovery');
   }
+  done();
 });
 
 mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
@@ -69,6 +73,7 @@ mqtts.subscribe('$SYS/+/current/clients', function(packet, done) {
   if (serverId !== mqtts.id) {
     mqtts.unifiedClientsMap[serverId] = rawMqttClients;
   }
+  done();
 });
 
 mqtts.subscribe('$SYS/' + mqtts.id + '/publish', function(packet, done) {
@@ -80,6 +85,8 @@ mqtts.subscribe('$SYS/' + mqtts.id + '/publish', function(packet, done) {
     topic: 'flashman/update/' + packetToSend.id,
     payload: packetToSend.payload,
   });
+  debug('Packet published: ' + packetToSend);
+  done();
 });
 
 mqtts.on('client', function(client, err) {
