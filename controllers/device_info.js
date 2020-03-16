@@ -88,6 +88,11 @@ const createRegistry = function(req, res) {
     (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
+  let bridgeEnabled = parseInt(returnObjOrNum(req.body.bridge_enabled, 0));
+  let bridgeSwitchDisable = parseInt(returnObjOrNum(req.body.bridge_switch_disable, 0));
+  let bridgeFixIP = returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
+  let bridgeFixGateway = returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
+  let bridgeFixDNS = returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -145,6 +150,15 @@ const createRegistry = function(req, res) {
                       'mode5ghz', null, errors);
     }
 
+    if (bridgeEnabled > 0 && bridgeFixIP !== "") {
+      genericValidate(bridgeFixIP, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+      genericValidate(bridgeFixGateway, validator.validateIP,
+                      'bridge_fix_gateway', null, errors);
+      genericValidate(bridgeFixDNS, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+    }
+
     if (errors.length < 1) {
       newDeviceModel = new DeviceModel({
         '_id': macAddr,
@@ -178,6 +192,11 @@ const createRegistry = function(req, res) {
         'do_update_parameters': false,
         'sys_up_time': sysUpTime,
         'wan_up_time': wanUpTime,
+        'bridge_mode_enabled': (bridgeEnabled > 0),
+        'bridge_mode_switch_disable': (bridgeSwitchDisable > 0),
+        'bridge_mode_ip': bridgeFixIP,
+        'bridge_mode_gateway': bridgeFixGateway,
+        'bridge_mode_dns': bridgeFixDNS,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;

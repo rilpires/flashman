@@ -292,7 +292,7 @@ $(document).ready(function() {
       success: function(res) {
         row.find('.device-status').removeClass('green-text red-text grey-text')
                                   .addClass(res.status_color + '-text');
-        let wanip = (res.bridge_mode_enabled) ? 'Bridge' : res.wan_ip;
+        let wanip = res.wan_ip;
         row.find('.device-wan-ip').html(wanip);
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
@@ -552,7 +552,7 @@ $(document).ready(function() {
             upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
           }
 
-          let wanip = (device.bridge_mode_enabled) ? 'Bridge' : device.wan_ip;
+          let wanip = device.wan_ip;
 
           let infoRow = '<tr class=" csv-export" $REPLACE_ATTRIBUTES>'+
             '<td class="pl-1 pr-0">'+
@@ -956,7 +956,7 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Desabilitar o switch da LAN'+
+                      'Desabilitar portas de rede LAN do roteador'+
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
