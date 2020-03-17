@@ -479,6 +479,7 @@ $(document).ready(function() {
           csvAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           csvAttr += ' data-device-release="'+(device.release ? device.release : '')+'"';
           csvAttr += ' data-do-update="'+(device.do_update ? 'Sim' : 'Não')+'"';
+          csvAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
 
           let statusClasses = 'fas fa-circle fa-lg device-status '+device.status_color;
           let statusAttributes = 'data-toggle="tooltip"';
