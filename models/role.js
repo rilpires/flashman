@@ -24,7 +24,9 @@ let roleSchema = new mongoose.Schema({
   grantNotificationPopups: {type: Boolean, required: true, default: true},
   grantLanEdit: {type: Boolean, required: true, default: true},
   grantLanDevices: {type: Number, required: true, default: 2},
+  grantLanDevicesBlock: {type: Boolean, required: true, default: false},
   grantMeasureDevices: {type: Number, required: true, default: 1},
+  grantOpmodeEdit: {type: Boolean, required: true, default: false},
 });
 
 // Hooks traps notifications

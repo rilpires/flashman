@@ -87,7 +87,12 @@ const getOnlineCount = function(query) {
     status.recoverynum = 0;
     status.offlinenum = 0;
 
-    onlineQuery.$and = [{_id: {$in: Object.keys(mqtt.clients)}}, query];
+    const mqttClients = Object.values(mqtt.unifiedClientsMap)
+    .reduce((acc, curr) => {
+      return acc.concat(Object.keys(curr));
+    }, []);
+
+    onlineQuery.$and = [{_id: {$in: mqttClients}}, query];
     recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
     offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
 
@@ -297,6 +302,11 @@ deviceListController.searchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
 
+  const mqttClients = Object.values(mqtt.unifiedClientsMap)
+  .reduce((acc, curr) => {
+    return acc.concat(Object.keys(curr));
+  }, []);
+
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
   if (queryContents.includes('/ou')) {
@@ -312,7 +322,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {'last_contact': {$gte: lastHour}},
-        {'_id': {$in: Object.keys(mqtt.clients)}},
+        {'_id': {$in: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'instavel') {
@@ -321,7 +331,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {last_contact: {$gte: lastHour}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if (queryContents[idx].toLowerCase() == 'offline') {
@@ -330,7 +340,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       lastHour.setHours(lastHour.getHours() - 1);
       field.$and = [
         {last_contact: {$lt: lastHour}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     // Filter as offline if more than X hours
@@ -342,7 +352,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       hours.setHours(hours.getHours() - hourThreshold);
       field.$and = [
         {last_contact: {$lt: hours}},
-        {_id: {$nin: Object.keys(mqtt.clients)}},
+        {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
     } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
@@ -424,10 +434,13 @@ deviceListController.searchDeviceReg = function(req, res) {
     let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
       const model = device.model.replace('N/', '');
       const devReleases = releases.filter((release) => release.model === model);
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[device._id.toUpperCase()];
+      });
       device.releases = devReleases;
       // Status color
       let deviceColor = 'grey-text';
-      if (mqtt.clients[device._id.toUpperCase()]) {
+      if (isDevOn) {
         deviceColor = 'green-text';
       } else if (device.last_contact.getTime() >= lastHour.getTime()) {
         deviceColor = 'red-text';
@@ -647,7 +660,10 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-        if (!mqtt.clients[req.params.id.toUpperCase()]) {
+        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+          return map[req.params.id.toUpperCase()];
+        });
+        if (!isDevOn) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
@@ -770,8 +786,10 @@ deviceListController.getDeviceReg = function(req, res) {
     if (matchedDevice.lastboot_log) {
       matchedDevice.lastboot_log = null;
     }
-
-    matchedDevice.online_status = (req.params.id in mqtt.clients);
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.params.id.toUpperCase()];
+    });
+    matchedDevice.online_status = (isDevOn);
     // Status color
     let lastHour = new Date();
     lastHour.setHours(lastHour.getHours() - 1);
@@ -828,6 +846,11 @@ deviceListController.setDeviceReg = function(req, res) {
       let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
       let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
+      let bridgeEnabled = parseInt(returnObjOrNum(content.bridgeEnabled, 1)) === 1;
+      let bridgeDisableSwitch = parseInt(returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
+      let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
+      let bridgeFixGateway = returnObjOrEmptyStr(content.bridgeFixGateway).trim();
+      let bridgeFixDNS = returnObjOrEmptyStr(content.bridgeFixDNS).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -904,6 +927,11 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
+        if (bridgeEnabled && bridgeFixIP) {
+          genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
+          genericValidate(bridgeFixGateway, validator.validateIP, 'bridge_fixed_gateway');
+          genericValidate(bridgeFixDNS, validator.validateIP, 'bridge_fixed_dns');
+        }
 
         if (errors.length < 1) {
           Role.findOne({name: returnObjOrEmptyStr(req.user.role)},
@@ -915,7 +943,8 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            if (connectionType != '' && (superuserGrant || role.grantWanType)) {
+            if (connectionType != '' && (superuserGrant || role.grantWanType) &&
+                !matchedDevice.bridge_mode_enabled) {
               if (connectionType === 'pppoe') {
                 if (pppoeUser !== '' && pppoePassword !== '') {
                   matchedDevice.connection_type = connectionType;
@@ -930,13 +959,13 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('pppoe_user') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoeUser !== '') {
+                pppoeUser !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.pppoe_user = pppoeUser;
               updateParameters = true;
             }
             if (content.hasOwnProperty('pppoe_password') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoePassword !== '') {
+                pppoePassword !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.pppoe_password = pppoePassword;
               updateParameters = true;
             }
@@ -1012,13 +1041,13 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('lan_subnet') &&
                 (superuserGrant || role.grantLanEdit) &&
-                lanSubnet !== '') {
+                lanSubnet !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.lan_subnet = lanSubnet;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_netmask') &&
                 (superuserGrant || role.grantLanEdit) &&
-                lanNetmask !== '') {
+                lanNetmask !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.lan_netmask = lanNetmask;
               updateParameters = true;
             }
@@ -1028,6 +1057,31 @@ deviceListController.setDeviceReg = function(req, res) {
                 content.external_reference.kind;
               matchedDevice.external_reference.data =
                 content.external_reference.data;
+            }
+            if (content.hasOwnProperty('bridgeEnabled') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_enabled = bridgeEnabled;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeDisableSwitch') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_ip = bridgeFixIP;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_gateway = bridgeFixGateway;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('bridgeFixIP') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.bridge_mode_dns = bridgeFixDNS;
+              updateParameters = true;
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
@@ -1205,6 +1259,13 @@ deviceListController.setPortForward = function(req, res) {
         success: false,
         message: 'Roteador não possui essa função',
       });
+    }
+    if (matchedDevice.bridge_mode_enabled) {
+      return res.status(200).json({
+        success: false,
+        message: 'Este roteador está em modo bridge, e portanto não pode '+
+                 'liberar acesso a portas',
+      })
     }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
@@ -1580,6 +1641,9 @@ deviceListController.getSpeedtestResults = function(req, res) {
 
 deviceListController.doSpeedTest = function(req, res) {
   let mac = req.params.id.toUpperCase();
+  const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[mac];
+  });
   DeviceModel.findById(mac, (err, matchedDevice)=>{
     if (err) {
       return res.status(200).json({
@@ -1593,7 +1657,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'Roteador não encontrado',
       });
     }
-    if (!mqtt.clients[mac]) {
+    if (!isDevOn) {
       return res.status(200).json({
         success: false,
         message: 'Roteador não está online!',
@@ -1662,6 +1726,39 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
           message: 'Endereço salvo com sucesso',
         });
       });
+    }
+  });
+};
+
+deviceListController.setLanDeviceBlockState = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar roteador'});
+    }
+    let devFound = false;
+    for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+      if (matchedDevice.lan_devices[idx].mac === req.body.lanid) {
+        matchedDevice.lan_devices[idx].is_blocked = req.body.isblocked;
+        matchedDevice.blocked_devices_index = Date.now();
+        devFound = true;
+        break;
+      }
+    }
+    if (devFound) {
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao registrar atualização'});
+        }
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+        return res.status(200).json({'success': true});
+      });
+    } else {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar dispositivo'});
     }
   });
 };

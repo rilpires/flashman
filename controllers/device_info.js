@@ -88,6 +88,11 @@ const createRegistry = function(req, res) {
     (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(returnObjOrNum(req.body.wanuptime, 0));
+  let bridgeEnabled = parseInt(returnObjOrNum(req.body.bridge_enabled, 0));
+  let bridgeSwitchDisable = parseInt(returnObjOrNum(req.body.bridge_switch_disable, 0));
+  let bridgeFixIP = returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
+  let bridgeFixGateway = returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
+  let bridgeFixDNS = returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -105,7 +110,7 @@ const createRegistry = function(req, res) {
     genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
     if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
         connectionType != '') {
-      return res.status(500);
+      return res.status(500).end();
     }
     if (pppoe) {
       genericValidate(pppoeUser, validator.validateUser,
@@ -145,6 +150,15 @@ const createRegistry = function(req, res) {
                       'mode5ghz', null, errors);
     }
 
+    if (bridgeEnabled > 0 && bridgeFixIP !== "") {
+      genericValidate(bridgeFixIP, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+      genericValidate(bridgeFixGateway, validator.validateIP,
+                      'bridge_fix_gateway', null, errors);
+      genericValidate(bridgeFixDNS, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+    }
+
     if (errors.length < 1) {
       newDeviceModel = new DeviceModel({
         '_id': macAddr,
@@ -178,6 +192,11 @@ const createRegistry = function(req, res) {
         'do_update_parameters': false,
         'sys_up_time': sysUpTime,
         'wan_up_time': wanUpTime,
+        'bridge_mode_enabled': (bridgeEnabled > 0),
+        'bridge_mode_switch_disable': (bridgeSwitchDisable > 0),
+        'bridge_mode_ip': bridgeFixIP,
+        'bridge_mode_gateway': bridgeFixGateway,
+        'bridge_mode_dns': bridgeFixDNS,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -513,11 +532,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
           }
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[matchedDevice._id];
+          });
           // Do not return yet, just respond to request so we can free socket
           res.status(200).json({
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
-            'mqtt_status': (matchedDevice._id in mqtt.clients),
+            'mqtt_status': isDevOn,
             'release_id': returnObjOrEmptyStr(matchedDevice.release),
             'connection_type': returnObjOrEmptyStr(matchedDevice.connection_type),
             'pppoe_user': returnObjOrEmptyStr(matchedDevice.pppoe_user),
@@ -545,6 +567,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'forward_index': returnObjOrEmptyStr(matchedDevice.forward_index),
             'blocked_devices_index': returnObjOrEmptyStr(matchedDevice.blocked_devices_index),
             'upnp_devices_index': returnObjOrEmptyStr(matchedDevice.upnp_devices_index),
+            'bridge_mode_enabled': (matchedDevice.bridge_mode_enabled) ? 'y' : 'n',
+            'bridge_mode_switch_disable': (matchedDevice.bridge_mode_switch_disable) ? 'y' : 'n',
+            'bridge_mode_ip': returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
+            'bridge_mode_gateway': returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
+            'bridge_mode_dns': returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},

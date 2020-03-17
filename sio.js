@@ -1,5 +1,6 @@
 const socketio = require('socket.io');
 const sharedsession = require('express-socket.io-session');
+const debug = require('debug')('SIO');
 
 let sio = socketio();
 
@@ -14,7 +15,7 @@ sio.anlixConnections = {};
 sio.anlixNotifications = {};
 
 sio.on('connection', function(socket) {
-  console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
+  debug(socket.handshake.address + ' (' + socket.handshake.sessionID +
               ') connected on Notification Broker');
   // just save connections of authenticated users
   if (socket.handshake.session.passport) {
@@ -25,14 +26,14 @@ sio.on('connection', function(socket) {
       if (sio.anlixNotifications[socket.handshake.sessionID]) {
         delete sio.anlixNotifications[socket.handshake.sessionID];
       }
-      console.log(oldsock.handshake.address + ' (' +
+      debug(oldsock.handshake.address + ' (' +
                   oldsock.handshake.sessionID +
                   ') disconnect from Notification Broker: Overwrite');
     }
     sio.anlixConnections[socket.handshake.sessionID] = socket;
   } else {
     socket.disconnect(true);
-    console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
+    debug(socket.handshake.address + ' (' + socket.handshake.sessionID +
                 ') BLOCKED: not authenticated!');
   }
 
@@ -43,7 +44,7 @@ sio.on('connection', function(socket) {
     if (sio.anlixNotifications[socket.handshake.sessionID]) {
       delete sio.anlixNotifications[socket.handshake.sessionID];
     }
-    console.log(socket.handshake.address + ' (' + socket.handshake.sessionID +
+    debug(socket.handshake.address + ' (' + socket.handshake.sessionID +
                 ') disconnect from Notification Broker: '+ reason);
   });
 });
@@ -81,18 +82,22 @@ const emitNotification = function(type, macaddr, data, removeMeKey=null) {
         if (notification.type == type) {
           if (removeMeKey) {
             if (notification.macaddr == removeMeKey) {
-              console.log('SIO: Send ' + type +' of ' + macaddr +
+              debug('SIO: Send ' + type +' of ' + macaddr +
                           ' information for ' + sessionId);
-              sio.anlixConnections[sessionId].emit(type, macaddr, data);
+              if (sio.anlixConnections[sessionId]) {
+                sio.anlixConnections[sessionId].emit(type, macaddr, data);
+              }
               found = true;
               // Remove from notifications array
               notifications.splice(nIdx, 1);
               break;
             }
           } else {
-            console.log('SIO: Send ' + type +' of ' + macaddr +
+            debug('SIO: Send ' + type +' of ' + macaddr +
                         ' information for ' + sessionId);
-            sio.anlixConnections[sessionId].emit(type, macaddr, data);
+            if (sio.anlixConnections[sessionId]) {
+              sio.anlixConnections[sessionId].emit(type, macaddr, data);
+            }
             found = true;
             break;
           }
@@ -108,7 +113,7 @@ const emitNotification = function(type, macaddr, data, removeMeKey=null) {
 
 sio.anlixSendDeviceStatusNotification = function(mac, data) {
   if (!mac) {
-    console.log(
+    debug(
       'ERROR: SIO: ' +
       'Try to send status notification to an invalid mac address!'
     );
@@ -116,7 +121,7 @@ sio.anlixSendDeviceStatusNotification = function(mac, data) {
   }
   let found = emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
   if (!found) {
-    console.log('SIO: NO Session found for ' + mac + '! Discarding message...');
+    debug('SIO: NO Session found for ' + mac + '! Discarding message...');
   }
   return found;
 };
@@ -129,12 +134,12 @@ sio.anlixBindSession = function(session) {
 
 sio.anlixWaitForLiveLogNotification = function(session, macaddr) {
   if (!session) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to add livelog notification with an invalid session!');
     return false;
   }
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to add livelog notification with an invalid mac address!');
     return false;
   }
@@ -145,14 +150,14 @@ sio.anlixWaitForLiveLogNotification = function(session, macaddr) {
 
 sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to send livelog notification to an invalid mac address!');
     return false;
   }
   let found = emitNotification(SIO_NOTIFICATION_LIVELOG,
                                macaddr, logdata, macaddr);
   if (!found) {
-    console.log('SIO: NO Session found for ' +
+    debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
   return found;
@@ -160,12 +165,12 @@ sio.anlixSendLiveLogNotifications = function(macaddr, logdata) {
 
 sio.anlixWaitForOnlineDevNotification = function(session, macaddr) {
   if (!session) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to add onlinedev notification with an invalid session!');
     return false;
   }
   if (!macaddr) {
-    console.log('ERROR: SIO: Try to add onlinedev ' +
+    debug('ERROR: SIO: Try to add onlinedev ' +
                 'notification with an invalid mac address!');
     return false;
   }
@@ -176,7 +181,7 @@ sio.anlixWaitForOnlineDevNotification = function(session, macaddr) {
 
 sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
   if (!macaddr) {
-    console.log(
+    debug(
       'ERROR: SIO: ' +
       'Try to send onlinedev notification to an invalid mac address!'
     );
@@ -186,7 +191,7 @@ sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
   let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
                                macaddr, devsData, macaddr);
   if (!found) {
-    console.log('SIO: NO Session found for ' +
+    debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
   return found;
@@ -194,24 +199,24 @@ sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
 
 sio.anlixWaitDeviceStatusNotification = function(session) {
   if (!session) {
-    console.log('ERROR: SIO: Try to add device status ' +
+    debug('ERROR: SIO: Try to add device status ' +
                 'notification with an invalid session!');
     return false;
   }
   registerNotification(session, SIO_NOTIFICATION_DEVICE_STATUS);
   // Debug
-  // console.log('SIO: Notification added to DEVICESTATUS of for ' + session);
+  // debug('SIO: Notification added to DEVICESTATUS of for ' + session);
   return true;
 };
 
 sio.anlixWaitForPingTestNotification = function(session, macaddr) {
   if (!session) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to add ping notification with an invalid session!');
     return false;
   }
   if (!macaddr) {
-    console.log('ERROR: SIO: Try to add ping ' +
+    debug('ERROR: SIO: Try to add ping ' +
                 'notification with an invalid mac address!');
     return false;
   }
@@ -222,7 +227,7 @@ sio.anlixWaitForPingTestNotification = function(session, macaddr) {
 
 sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to send ping test results notification ' +
                 'to an invalid mac address!');
     return false;
@@ -230,7 +235,7 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   let found = emitNotification(SIO_NOTIFICATION_PING_TEST,
                                macaddr, pingdata, macaddr);
   if (!found) {
-    console.log('SIO: NO Session found for ' +
+    debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
   return found;
@@ -258,12 +263,12 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
 
 sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
   if (!session) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to add speedtest notification with an invalid session!');
     return false;
   }
   if (!macaddr) {
-    console.log('ERROR: SIO: Try to add speedtest ' +
+    debug('ERROR: SIO: Try to add speedtest ' +
                 'notification with an invalid mac address!');
     return false;
   }
@@ -274,7 +279,7 @@ sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
 
 sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to send speedtest results notification ' +
                 'to an invalid mac address!');
     return false;
@@ -282,7 +287,7 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   let found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
                                macaddr, testdata, macaddr);
   if (!found) {
-    console.log('SIO: NO Session found for ' +
+    debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
   return found;

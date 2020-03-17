@@ -164,6 +164,7 @@ $(document).ready(function() {
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
+  let grantOpmodeEdit = false;
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
@@ -182,6 +183,7 @@ $(document).ready(function() {
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
+    grantOpmodeEdit = role.grantOpmodeEdit;
   }
 
   $(document).on('click', '#card-header', function(event) {
@@ -290,7 +292,8 @@ $(document).ready(function() {
       success: function(res) {
         row.find('.device-status').removeClass('green-text red-text grey-text')
                                   .addClass(res.status_color + '-text');
-        row.find('.device-wan-ip').html(res.wan_ip);
+        let wanip = res.wan_ip;
+        row.find('.device-wan-ip').html(wanip);
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
         row.find('.device-pppoe-user').html(res.pppoe_user);
@@ -410,15 +413,15 @@ $(document).ready(function() {
           '</td><td>'+
             '<div class="fas fa-circle green-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="online-status-sum">'+res.status.onlinenum+'</span>'+
+            '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
             '<br>'+
             '<div class="fas fa-circle red-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="recovery-status-sum">'+res.status.recoverynum+'</span>'+
+            '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
             '<br>'+
             '<div class="fas fa-circle grey-text"></div>'+
             '<span>&nbsp;</span>'+
-            '<span id="offline-status-sum">'+res.status.offlinenum+'</span>'+
+            '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
           '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
@@ -437,6 +440,7 @@ $(document).ready(function() {
           let grantWifiState = device.permissions.grantWifiState;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
+          let grantOpmode = device.permissions.grantOpmode;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
           let grantPortOpenIpv6 = device.permissions.grantPortOpenIpv6;
           let grantViewLogs = device.permissions.grantViewLogs;
@@ -548,6 +552,8 @@ $(document).ready(function() {
             upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
           }
 
+          let wanip = device.wan_ip;
+
           let infoRow = '<tr class=" csv-export" $REPLACE_ATTRIBUTES>'+
             '<td class="pl-1 pr-0">'+
               '<a class="device-row-refresher">'+
@@ -564,7 +570,7 @@ $(document).ready(function() {
             '</td><td class="text-center">'+
               device._id+
             '</td><td class="text-center device-wan-ip">'+
-              device.wan_ip+
+              wanip+
             '</td><td class="text-center device-ip">'+
               device.ip+
             '</td><td class="text-center device-installed-release">'+
@@ -673,12 +679,12 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_LOG_ACTION', '');
           }
-          if (grantResetDevices) {
+          if (!device.bridge_mode_enabled && grantResetDevices) {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', unblockAction);
           } else {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', '');
           }
-          if (grantPortForward) {
+          if (!device.bridge_mode_enabled && grantPortForward) {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', portForwardAction);
           } else {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', '');
@@ -801,20 +807,30 @@ $(document).ready(function() {
           } else {
             pppoeForm = pppoeForm.replace('$REPLACE_PPPOE_PASS', '');
           }
-          if (!isSuperuser && grantPPPoEInfo <= 1) {
+          if (device.bridge_mode_enabled || (!isSuperuser && grantPPPoEInfo <= 1)) {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, 'disabled');
           } else {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, '');
           }
 
           let wanTab = '<div class="edit-tab d-none" id="tab_wan-'+index+'">'+
+            '<div class="row" $REPLACE_BRIDGE_WARN>'+
+              '<div class="col-12">'+
+                '<div class="alert alert-warning text-center">'+
+                  '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
+                  '<span>'+
+                    'Este roteador está em modo bridge! Para alterar os dados da WAN, retire o roteador do modo bridge primeiro.'+
+                  '</span>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
             '<div class="row">'+
               '<div class="col-4">'+
                 '<div class="md-form">'+
                   '<div class="input-group has-warning">'+
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Tipo de Conexão</label>'+
-                      '<select class="browser-default md-select" id="edit_connect_type-'+index+'">'+
+                      '<select class="browser-default md-select" id="edit_connect_type-'+index+'" $REPLACE_EDIT_WAN>'+
                         '<option value="DHCP" $REPLACE_SELECTED_DHCP$>DHCP</option>'+
                         '<option value="PPPoE" $REPLACE_SELECTED_PPPOE$>PPPoE</option>'+
                       '</select>'+
@@ -848,6 +864,13 @@ $(document).ready(function() {
           } else {
             wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP', 'selected="selected"');
           }
+          if (device.bridge_mode_enabled) {
+            wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
+          } else {
+            wanTab = wanTab.replace('$REPLACE_EDIT_WAN', '');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
+          }
           wanTab = wanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
           if (isSuperuser || grantPPPoEInfo >= 1) {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', pppoeForm);
@@ -856,6 +879,16 @@ $(document).ready(function() {
           }
 
           let lanTab = '<div class="edit-tab d-none" id="tab_lan-'+index+'">'+
+            '<div class="row" $REPLACE_BRIDGE_WARN>'+
+              '<div class="col-12">'+
+                '<div class="alert alert-warning text-center">'+
+                  '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
+                  '<span>'+
+                    'Este roteador está em modo bridge! Para alterar os dados da LAN, retire o roteador do modo bridge primeiro.'+
+                  '</span>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
             '<div class="row">'+
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
@@ -889,14 +922,127 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (!isSuperuser && !grantLanEdit) {
+          if (device.bridge_mode_enabled || (!isSuperuser && !grantLanEdit)) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
           } else {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, '');
           }
+          if (device.bridge_mode_enabled) {
+            lanTab = lanTab.replace('$REPLACE_BRIDGE_WARN', '');
+          } else {
+            lanTab = lanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
+          }
           let selectTarget = '$REPLACE_SELECTED_' + device.lan_netmask;
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
           lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
+
+          let opmodeTab = '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
+            '<div class="row">'+
+              '<div class="col-6">'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">Modo de Operação</label>'+
+                      '<select class="browser-default md-select" type="text" id="edit_opmode-'+index+'" '+
+                      'maxlength="15" $REPLACE_OPMODE_EN>'+
+                        '<option value="Modo Roteador" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
+                        '<option value="Modo Bridge" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
+                '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
+                  '<div class="custom-control custom-checkbox pb-3">'+
+                    '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
+                    'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
+                    '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
+                      'Desabilitar portas de rede LAN do roteador'+
+                    '</label>'+
+                  '</div>'+
+                  '<div class="custom-control custom-checkbox pb-3">'+
+                    '<input class="custom-control-input" type="checkbox"  id="edit_opmode_fixip_en-'+index+'" '+
+                    'name="edit_opmode_fixip_en-'+index+'" $REPLACE_SELECTED_OPMODE_IP_STATE $REPLACE_OPMODE_EN></input>'+
+                    '<label class="custom-control-label" for="edit_opmode_fixip_en-'+index+'">'+
+                      'Fixar o IP do roteador em bridge'+
+                    '</label>'+
+                  '</div>'+
+                  '<div class="alert alert-info mt-3">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>'+
+                      'Para garantir o funcionamento em modo bridge, o dispositivo à frente do '+
+                      'Flashbox na sua rede deve possuir um servidor DHCP tanto para IPv4 quanto para IPv6'+
+                    '</span>'+
+                  '</div>'+
+                '</div>'+
+              '</div>'+
+              '<div class="col-6">'+
+                '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">'+
+                      'IP fixo do roteador em bridge'+
+                    '</label>'+
+                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip-'+index+'" '+
+                    'maxlength="15" value="$REPLACE_OPMODE_IP_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>'+
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">'+
+                      'IP do gateway para o roteador em bridge'+
+                    '</label>'+
+                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_gateway-'+index+'" '+
+                    'maxlength="15" value="$REPLACE_OPMODE_GATEWAY_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>'+
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">'+
+                      'IP do DNS para o roteador em bridge'+
+                    '</label>'+
+                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_dns-'+index+'" '+
+                    'maxlength="15" value="$REPLACE_OPMODE_DNS_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>'+
+                  '<div class="alert alert-warning">'+
+                    '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
+                    '<span>'+
+                      'Cuidado! Garanta que sua rede está configurada para entregar o IP fixo escolhido, '+
+                      'senão o roteador pode ficar inacessível!'+
+                    '</span>'+
+                  '</div>'+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+          if (!isSuperuser && !grantOpmodeEdit) {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, 'disabled');
+          } else {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, '');
+          }
+          if (device.bridge_mode_enabled) {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', 'selected="selected"');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', '');
+            if (device.bridge_mode_switch_disable) {
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+            } else {
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', '');
+            }
+            if (device.bridge_mode_ip !== '') {
+              opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, '');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', 'checked');
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_IP_VAL', device.bridge_mode_ip);
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_GATEWAY_VAL', device.bridge_mode_gateway);
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_DNS_VAL', device.bridge_mode_dns);
+            } else {
+              opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
+            }
+          } else {
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
+          }
 
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
             '<div class="row">'+
@@ -1136,6 +1282,10 @@ $(document).ready(function() {
           .replace('$REPLACE_TAB_TYPE', 'lan')
           .replace('$REPLACE_TAB_NAME', 'LAN');
 
+          let modeEdit = baseEdit
+          .replace('$REPLACE_TAB_TYPE', 'opmode')
+          .replace('$REPLACE_TAB_NAME', 'Modo')
+
           let wifiEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'wifi')
           .replace('$REPLACE_TAB_NAME', 'Wi-Fi');
@@ -1160,6 +1310,7 @@ $(document).ready(function() {
                       'data-tab-id="#tab_about-'+index+'">'+
                         'Sobre<input type="radio"></input>'+
                       '</label>'+
+                      '$REPLACE_MODE_EDIT'+
                       '<label class="btn btn-primary tab-switch-btn" '+
                       'data-tab-id="#tab_wan-'+index+'">'+
                         'WAN<input type="radio"></input>'+
@@ -1179,6 +1330,7 @@ $(document).ready(function() {
                 '<div class="row">'+
                   '<div class="col">'+
                     aboutTab+
+                    opmodeTab+
                     wanTab+
                     lanTab+
                     wifiTab+
@@ -1200,6 +1352,11 @@ $(document).ready(function() {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', lanEdit);
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
+          }
+          if (grantOpmode) {
+            formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
+          } else {
+            formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
           }
           if (isSuperuser || grantWifiInfo >= 1) {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', wifiEdit);
@@ -1225,7 +1382,7 @@ $(document).ready(function() {
 
           finalHtml += formRow;
 
-          // Index variable has a global scope related to below function
+          // Index variable has a global scope related to below functions
           let localIdx = index;
           $(document).on('change', '#edit_connect_type-' + localIdx,
           (event) => {
@@ -1234,6 +1391,28 @@ $(document).ready(function() {
               $('#edit_pppoe_combo-' + localIdx).removeClass('d-none');
             } else {
               $('#edit_pppoe_combo-' + localIdx).addClass('d-none');
+            }
+          });
+          $(document).on('change', '#edit_opmode-' + localIdx, (event)=>{
+            if ($('#edit_opmode-' + localIdx).val() === 'Modo Roteador') {
+              $('#edit_opmode_checkboxes-' + localIdx).hide();
+              $('#edit_opmode_ip_combo-' + localIdx).hide();
+              $('#edit_opmode_alert-' + localIdx).hide();
+              $('#edit_opmode_alert_ip-' + localIdx).hide();
+              $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = true;
+            } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
+              $('#edit_opmode_checkboxes-' + localIdx).show();
+              $('#edit_opmode_alert-' + localIdx).show();
+            }
+          });
+          $(document).on('change', '#edit_opmode_fixip_en-' + localIdx, (event)=>{
+            if ($('input[name="edit_opmode_fixip_en-'+localIdx+'"]:checked').length > 0) {
+              $('#edit_opmode_alert_ip-' + localIdx).show();
+              $('#edit_opmode_ip_combo-' + localIdx).show();
+            } else {
+              $('#edit_opmode_alert_ip-' + localIdx).hide();
+              $('#edit_opmode_ip_combo-' + localIdx).hide();
             }
           });
 
@@ -1478,8 +1657,22 @@ $(document).ready(function() {
       visibleColumnsOnPage.push(parseInt(columnNumber));
     }
   });
+
   $(document).on('click', '.dropdown-menu.dont-close', function(event) {
     // Avoid closing the dropdown menu when clicking inside
     event.stopPropagation();
+  });
+
+  $(document).on('click', '#online-status-sum', function(event) {
+    $('.tags-input input').focus().val('online').blur();
+    loadDevicesTable(1, 'online');
+  });
+  $(document).on('click', '#recovery-status-sum', function(event) {
+    $('.tags-input input').focus().val('instavel').blur();
+    loadDevicesTable(1, 'instavel');
+  });
+  $(document).on('click', '#offline-status-sum', function(event) {
+    $('.tags-input input').focus().val('offline').blur();
+    loadDevicesTable(1, 'offline');
   });
 });
