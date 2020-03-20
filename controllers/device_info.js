@@ -334,6 +334,23 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
 
+        // Update bridge parameters in case fixed ip config was changed
+        let sentBridgeIp = returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
+        if (sentBridgeIp !== matchedDevice.bridge_mode_ip) {
+          deviceSetQuery.bridge_mode_ip = sentBridgeIp;
+          matchedDevice.bridge_mode_ip = sentBridgeIp; // Used in device response
+        }
+        let sentBridgeGateway = returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
+        if (sentBridgeGateway !== matchedDevice.bridge_mode_gateway) {
+          deviceSetQuery.bridge_mode_gateway = sentBridgeGateway;
+          matchedDevice.bridge_mode_gateway = sentBridgeGateway; // Used in device response
+        }
+        let sentBridgeDns = returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
+        if (sentBridgeDns !== matchedDevice.bridge_mode_dns) {
+          deviceSetQuery.bridge_mode_dns = sentBridgeDns;
+          matchedDevice.bridge_mode_dns = sentBridgeDns; // Used in device response
+        }
+
         // Store if device has dual band capability
         const is5ghzCapable =
           (returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
