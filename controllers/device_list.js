@@ -404,8 +404,49 @@ deviceListController.searchDeviceQuery = function(queryContents) {
 deviceListController.searchDeviceReg = function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
-  // let queryContents = req.query.content.split(',');
   let queryContents = req.body.filter_list.split(',');
+  let sortKeys = {};
+  let sortTypeOrder = 1;
+  // Filter sort type order before filtering query
+  if (queryContents.includes('/sort-type-asc')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-type-asc');
+    sortTypeOrder = 1;
+  } else if (queryContents.includes('/sort-type-desc')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-type-desc');
+    sortTypeOrder = -1;
+  }
+  // Filter sort option before filtering query
+  if (queryContents.includes('/sort-pppoe-usr')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-pppoe-usr');
+    sortKeys.pppoe_user = sortTypeOrder;
+  } else if (queryContents.includes('/sort-mac-addr')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-mac-addr');
+    sortKeys._id = sortTypeOrder;
+  } else if (queryContents.includes('/sort-wan-ip')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-wan-ip');
+    sortKeys.wan_ip = sortTypeOrder;
+  } else if (queryContents.includes('/sort-public-ip')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-public-ip');
+    sortKeys.ip = sortTypeOrder;
+  } else if (queryContents.includes('/sort-release')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-release');
+    sortKeys.installed_release = sortTypeOrder;
+  } else if (queryContents.includes('/sort-ext-ref')) {
+    queryContents= queryContents.filter((query) => query !== '/sort-ext-ref');
+    sortKeys['external_reference.data'] = sortTypeOrder;
+  } else if (queryContents.includes('/sort-sys-uptime')) {
+    queryContents = queryContents.filter(
+      (query) => query !== '/sort-sys-uptime'
+    );
+    sortKeys.sys_up_time = sortTypeOrder;
+  } else if (queryContents.includes('/sort-wan-uptime')) {
+    queryContents = queryContents.filter(
+      (query) => query !== '/sort-wan-uptime'
+    );
+    sortKeys.wan_up_time = sortTypeOrder;
+  } else {
+    sortKeys._id = sortTypeOrder;
+  }
 
   let finalQuery = deviceListController.searchDeviceQuery(queryContents);
 
@@ -419,7 +460,7 @@ deviceListController.searchDeviceReg = function(req, res) {
   DeviceModel.paginate(finalQuery, {page: reqPage,
                             limit: elementsPerPage,
                             lean: true,
-                            sort: {_id: 1}}, function(err, matchedDevices) {
+                            sort: sortKeys}, function(err, matchedDevices) {
     if (err) {
       return res.json({
         success: false,

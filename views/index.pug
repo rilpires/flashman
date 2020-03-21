@@ -160,14 +160,22 @@ block content
                       data-toggle="tooltip",
                       title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
                     )
-                  th.text-center Usuário PPPoE
-                  th.text-center Endereço MAC
-                  th.text-center IP WAN
-                  th.text-center IP Público
-                  th.text-center Firmware Instalado
-                  th.text-center Identificação
-                  th.text-center Tempo Ligado
-                  th.text-center Tempo Conectado
+                  th.text-center
+                    a#sort-pppoe-usr Usuário PPPoE
+                  th.text-center
+                    a#sort-mac-addr Endereço MAC
+                  th.text-center
+                    a#sort-wan-ip IP WAN
+                  th.text-center
+                    a#sort-public-ip IP Público
+                  th.text-center
+                    a#sort-release Firmware Instalado
+                  th.text-center
+                    a#sort-ext-ref Identificação
+                  th.text-center
+                    a#sort-sys-uptime Tempo Ligado
+                  th.text-center
+                    a#sort-wan-uptime Tempo Conectado
                   if (superuser || role.grantFirmwareUpgrade)
                     th.text-left Atualizar Firmware
               tbody#devices-table-content(

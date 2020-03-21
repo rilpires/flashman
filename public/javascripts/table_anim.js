@@ -186,6 +186,11 @@ $(document).ready(function() {
     grantOpmodeEdit = role.grantOpmodeEdit;
   }
 
+  // Default column to sort rows
+  let columnToSort = '/sort-mac-addr';
+  let columnSortType = '/sort-type-asc';
+  $('#sort-mac-addr').append('\u2191').css('font-weight', 'Bold');
+
   $(document).on('click', '#card-header', function(event) {
     let plus = $(this).find('.fa-plus');
     let cross = $(this).find('.fa-times');
@@ -268,6 +273,7 @@ $(document).ready(function() {
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
     let filterList = $('#devices-search-form .tags-input').val();
+    filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
 
@@ -479,6 +485,7 @@ $(document).ready(function() {
           csvAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           csvAttr += ' data-device-release="'+(device.release ? device.release : '')+'"';
           csvAttr += ' data-do-update="'+(device.do_update ? 'Sim' : 'Não')+'"';
+          csvAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
 
           let statusClasses = 'fas fa-circle fa-lg device-status '+device.status_color;
           let statusAttributes = 'data-toggle="tooltip"';
@@ -1546,6 +1553,7 @@ $(document).ready(function() {
 
   $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-form .tags-input').val();
+    filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(1, filterList);
     return false;
   });
@@ -1553,6 +1561,7 @@ $(document).ready(function() {
   $(document).on('click', '.change-page-link', function(event) {
     let pageNum = parseInt($(event.target).html());
     let filterList = $('#devices-search-form .tags-input').val();
+    filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
 
@@ -1576,6 +1585,7 @@ $(document).ready(function() {
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-form .tags-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
               type: 'success',
@@ -1616,6 +1626,7 @@ $(document).ready(function() {
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-form .tags-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.close();
             swal({
@@ -1674,5 +1685,29 @@ $(document).ready(function() {
   $(document).on('click', '#offline-status-sum', function(event) {
     $('.tags-input input').focus().val('offline').blur();
     loadDevicesTable(1, 'offline');
+  });
+  // Table column sorts
+  $(document).on('click', '[id^=sort-]', function(event) {
+    let pageNum = parseInt($('#curr-page-link').html());
+    let filterList = $('#devices-search-form .tags-input').val();
+    // Reset other columns
+    $('[id^=sort-]').css('font-weight', '').each(function(index) {
+      let headerText = $(this).text().split('\u2191')[0];
+      headerText = headerText.split('\u2193')[0];
+      $(this).text(headerText);
+    });
+    // Set column sort visual
+    $(event.target).css('font-weight', 'Bold');
+    // Set sort tags
+    columnToSort = '/' + this.id;
+    if (columnSortType === '/sort-type-asc') {
+      $(event.target).append('\u2193');
+      columnSortType = '/sort-type-desc';
+    } else {
+      $(event.target).append('\u2191');
+      columnSortType = '/sort-type-asc';
+    }
+    filterList += ',' + columnToSort + ',' + columnSortType;
+    loadDevicesTable(pageNum, filterList);
   });
 });

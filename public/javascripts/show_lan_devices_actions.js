@@ -1,6 +1,6 @@
 
 $(document).ready(function() {
-  const refreshLanDevices = function(deviceId, upnpSupport) {
+  const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
     $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
@@ -14,14 +14,14 @@ $(document).ready(function() {
         } else {
           $('#lan-devices-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
-          fetchLanDevices(deviceId, upnpSupport);
+          fetchLanDevices(deviceId, upnpSupport, isBridge);
           $('.btn-sync-lan-devs').prop('disabled', true);
         }
       },
       error: function(xhr, status, error) {
         $('#lan-devices-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
-        fetchLanDevices(deviceId, upnpSupport);
+        fetchLanDevices(deviceId, upnpSupport, isBridge);
         $('.btn-sync-lan-devs').prop('disabled', true);
       },
     });
@@ -93,7 +93,7 @@ $(document).ready(function() {
     });
   };
 
-  const fetchLanDevices = function(deviceId, upnpSupport) {
+  const fetchLanDevices = function(deviceId, upnpSupport, isBridge) {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
@@ -144,7 +144,7 @@ $(document).ready(function() {
                                .attr('data-blocked', device.is_blocked)
                                .attr('type', 'button')
                                .prop('disabled',
-                                     !(isSuperuser || grantLanDevicesBlock))
+                                     isBridge || !(isSuperuser || grantLanDevicesBlock))
                   .append(
                     (device.is_blocked) ?
                       $('<i>').addClass('fas fa-lock fa-lg') :
@@ -282,14 +282,17 @@ $(document).ready(function() {
   $(document).on('click', '.btn-lan-devices-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let isBridge = row.data('bridge-enabled') === 'Sim';
+    $('#isBridgeDiv').html(row.data('bridge-enabled'));
     let upnpSupport = row.data('validate-upnp');
-    refreshLanDevices(id, upnpSupport); // Refresh devices status
+    refreshLanDevices(id, upnpSupport, isBridge); // Refresh devices status
   });
 
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
     let id = $('#lan-devices-hlabel').text();
     let upnpSupport = $('#lan-devices').data('validate-upnp');
-    refreshLanDevices(id, upnpSupport);
+    let isBridge = $('#isBridgeDiv').html() === 'Sim';
+    refreshLanDevices(id, upnpSupport, isBridge);
   });
 
   $(document).on('click', '.btn-upnp', function(event) {
