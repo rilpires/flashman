@@ -485,7 +485,6 @@ $(document).ready(function() {
           csvAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           csvAttr += ' data-device-release="'+(device.release ? device.release : '')+'"';
           csvAttr += ' data-do-update="'+(device.do_update ? 'Sim' : 'Não')+'"';
-          csvAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
 
           let statusClasses = 'fas fa-circle fa-lg device-status '+device.status_color;
           let statusAttributes = 'data-toggle="tooltip"';
@@ -621,6 +620,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
+          formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
 
           let baseAction = '<div class="dropdown-divider"></div>'+
           '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
