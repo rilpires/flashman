@@ -1,9 +1,10 @@
 extends layout
 
 block content
-  if message
-    h1 #{message}
-  if status
-    h2 #{status}
-  if stack
-    pre #{stack}
+  .row.mt-2.justify-content-center
+    if message
+      h1 #{message}
+    if status
+      h2 #{status}
+    if stack
+      pre #{stack}

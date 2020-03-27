@@ -120,6 +120,8 @@ userController.postRole = function(req, res) {
     grantDeviceAdd: req.body['grant-device-add'],
     grantMonitorManage: req.body['grant-monitor-manage'],
     grantFirmwareManage: req.body['grant-firmware-manage'],
+    grantUserManage: req.body['grant-user-manage'],
+    grantFlashmanManage: req.body['grant-flashman-manage'],
     grantAPIAccess: req.body['grant-api-access'],
     grantLOGAccess: req.body['grant-log-access'],
     grantNotificationPopups: req.body['grant-notification-popups'],
@@ -193,40 +195,56 @@ userController.editUser = function(req, res) {
         });
       }
     }
-    if (req.user.is_superuser) {
-      if ('is_superuser' in req.body) {
-        user.is_superuser = req.body.is_superuser;
-      }
-      if ('role' in req.body) {
-        user.role = req.body.role;
-      }
-    }
 
-    if (req.user.is_superuser || req.user._id.toString() === user._id.toString()) {
-      user.lastLogin = new Date();
-      user.save(function(err) {
-        if (err) {
-          console.log('Error saving user entry: ' + err);
-          return res.status(500).json({
-            success: false,
-            type: 'danger',
-            message: 'Erro ao salvar alterações',
-          });
-        } else {
-          return res.json({
-            success: true,
-            type: 'success',
-            message: 'Editado com sucesso!',
-          });
+    Role.findOne({name: req.user.role}, function(err, role) {
+      if (err || (!role && !req.user.is_superuser)) {
+        return res.status(500).json({
+          success: false,
+          type: 'danger',
+          message: 'Erro ao salvar alterações',
+        });
+      }
+
+      if (req.user.is_superuser) {
+        if ('is_superuser' in req.body) {
+          user.is_superuser = req.body.is_superuser;
         }
-      });
-    } else {
-      return res.status(403).json({
-        success: false,
-        type: 'danger',
-        message: 'Permissão negada',
-      });
-    }
+      }
+
+      if (req.user.is_superuser || role.grantUserManage) {
+        if ('role' in req.body) {
+          user.role = req.body.role;
+        }
+      }
+
+      if (req.user.is_superuser ||
+          role.grantUserManage ||
+          req.user._id.toString() === user._id.toString()) {
+        user.lastLogin = new Date();
+        user.save(function(err) {
+          if (err) {
+            console.log('Error saving user entry: ' + err);
+            return res.status(500).json({
+              success: false,
+              type: 'danger',
+              message: 'Erro ao salvar alterações',
+            });
+          } else {
+            return res.json({
+              success: true,
+              type: 'success',
+              message: 'Editado com sucesso!',
+            });
+          }
+        });
+      } else {
+        return res.status(403).json({
+          success: false,
+          type: 'danger',
+          message: 'Permissão negada',
+        });
+      }
+    });
   });
 };
 
@@ -253,6 +271,8 @@ userController.editRole = function(req, res) {
     role.grantDeviceAdd = req.body['grant-device-add'];
     role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];
+    role.grantUserManage = req.body['grant-user-manage'];
+    role.grantFlashmanManage = req.body['grant-flashman-manage'];
     role.grantAPIAccess = req.body['grant-api-access'];
     role.grantLOGAccess = req.body['grant-log-access'];
     role.grantNotificationPopups = req.body['grant-notification-popups'];
@@ -356,19 +376,32 @@ userController.getProfile = function(req, res) {
         let license = matchedConfig.measure_configs.is_license_active;
         indexContent.measure_license = license;
       }
-      Role.findOne({name: req.user.role}, function(err, role) {
-        indexContent.superuser = req.user.is_superuser;
-        indexContent.username = req.user.name;
-        indexContent.user = user;
-        indexContent.role = role;
+      indexContent.superuser = req.user.is_superuser;
+      indexContent.username = req.user.name;
+      indexContent.user = user;
 
-        // List roles only using superuser and not on profile
-        if (req.user.is_superuser && queryUserId != req.user._id) {
-          Role.find(function(err, roles) {
-            indexContent.roles = roles;
-            return res.render('profile', indexContent);
-          });
+      Role.find(function(err, roles) {
+        if (err) {
+          console.log(err);
+          indexContent.type = 'danger';
+          indexContent.message = 'Erro ao acessar base de dados';
+          return res.render('error', indexContent);
+        }
+        let userRole = roles.find(function(role) {
+          return role.name === req.user.role;
+        });
+        if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+          indexContent.type = 'danger';
+          indexContent.message = 'Permissão não encontrada';
+          return res.render('error', indexContent);
         } else {
+          indexContent.role = userRole;
+
+          // List roles if superuser or has permission and not on profile
+          if ((req.user.is_superuser || indexContent.role.grantUserManage) &&
+              queryUserId != req.user._id) {
+            indexContent.roles = roles;
+          }
           return res.render('profile', indexContent);
         }
       });
@@ -378,60 +411,102 @@ userController.getProfile = function(req, res) {
 
 userController.showAll = function(req, res) {
   let indexContent = {};
-  User.findOne({name: req.user.name}, function(err, user) {
-    if (err || !user) {
-      indexContent.superuser = false;
-    } else {
-      indexContent.superuser = user.is_superuser;
+
+  Role.find(function(err, roles) {
+    if (err) {
+      console.log(err);
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
     }
-
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
-      if (err || !matchedConfig) {
-        indexContent.update = false;
-      } else {
-        indexContent.update = matchedConfig.hasUpdate;
-        let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
-      }
-      indexContent.username = req.user.name;
-
-      Role.find(function(err, roles) {
-        indexContent.roles = roles;
-        return res.render('showusers', indexContent);
-      });
+    let userRole = roles.find(function(role) {
+      return role.name === req.user.role;
     });
+    if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    } else {
+      indexContent.roles = roles;
+      indexContent.role = userRole;
+
+      if (req.user.is_superuser || indexContent.role.grantUserManage) {
+        User.findOne({name: req.user.name}, function(err, user) {
+          if (err || !user) {
+            indexContent.superuser = false;
+          } else {
+            indexContent.superuser = user.is_superuser;
+          }
+
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            if (err || !matchedConfig) {
+              indexContent.update = false;
+            } else {
+              indexContent.update = matchedConfig.hasUpdate;
+              let active = matchedConfig.measure_configs.is_active;
+                indexContent.measure_active = active;
+                indexContent.measure_token = (active) ?
+                    matchedConfig.measure_configs.auth_token : '';
+              let license = matchedConfig.measure_configs.is_license_active;
+              indexContent.measure_license = license;
+            }
+            indexContent.username = req.user.name;
+
+            return res.render('showusers', indexContent);
+          });
+        });
+      } else {
+        indexContent.type = 'danger';
+        indexContent.message = 'Permissão negada';
+        return res.render('error', indexContent);
+      }
+    }
   });
 };
 
 userController.showRoles = function(req, res) {
   let indexContent = {};
-  User.findOne({name: req.user.name}, function(err, user) {
-    if (err || !user) {
-      indexContent.superuser = false;
-    } else {
-      indexContent.superuser = user.is_superuser;
+
+  Role.findOne({name: req.user.role}, function(err, role) {
+    if (err || (!role && !req.user.is_superuser)) {
+      console.log(err);
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
     }
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
-      if (err || !matchedConfig) {
-        indexContent.update = false;
-      } else {
-        indexContent.update = matchedConfig.hasUpdate;
-        let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
-      }
-      indexContent.username = req.user.name;
+    indexContent.role = role;
 
-      return res.render('showroles', indexContent);
-    });
+    if (req.user.is_superuser || indexContent.role.grantUserManage) {
+      User.findOne({name: req.user.name}, function(err, user) {
+        if (err || !user) {
+          indexContent.superuser = false;
+        } else {
+          indexContent.superuser = user.is_superuser;
+        }
+
+        Config.findOne({is_default: true}, function(err, matchedConfig) {
+          if (err || !matchedConfig) {
+            indexContent.update = false;
+          } else {
+            indexContent.update = matchedConfig.hasUpdate;
+            let active = matchedConfig.measure_configs.is_active;
+              indexContent.measure_active = active;
+              indexContent.measure_token = (active) ?
+                  matchedConfig.measure_configs.auth_token : '';
+            let license = matchedConfig.measure_configs.is_license_active;
+            indexContent.measure_license = license;
+          }
+          indexContent.username = req.user.name;
+
+          return res.render('showroles', indexContent);
+        });
+      });
+    } else {
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão negada';
+      return res.render('error', indexContent);
+    }
   });
 };
 

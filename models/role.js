@@ -19,6 +19,8 @@ let roleSchema = new mongoose.Schema({
   grantDeviceAdd: {type: Boolean, required: true, default: false},
   grantMonitorManage: {type: Boolean, required: true, default: false},
   grantFirmwareManage: {type: Boolean, required: true, default: false},
+  grantUserManage: {type: Boolean, required: true, default: false},
+  grantFlashmanManage: {type: Boolean, required: true, default: false},
   grantAPIAccess: {type: Boolean, required: true, default: false},
   grantLOGAccess: {type: Boolean, required: true, default: false},
   grantNotificationPopups: {type: Boolean, required: true, default: true},
