@@ -205,9 +205,7 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
-                    )
-                  ),
-                  $('<div></div>').addClass('col-12 col-lg-4').append(
+                    ),
                     $('<div></div>').addClass('md-form').append(
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
@@ -220,7 +218,9 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Visualizar e editar')
                         )
                       )
-                    ),
+                    )
+                  ),
+                  $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
@@ -391,6 +391,32 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Controle de Gerência de Usuários'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-user-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Configurações do Flashman'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-flashman-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Permitir Acesso a API REST'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -462,6 +488,12 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-manage] option[value=' +
           roleObj.grantFirmwareManage + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-user-manage] option[value=' +
+          roleObj.grantUserManage + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-flashman-manage] option[value=' +
+          roleObj.grantFlashmanManage + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-api-access] option[value=' +
           roleObj.grantAPIAccess + ']')

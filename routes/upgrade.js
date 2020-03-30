@@ -14,10 +14,10 @@ router.route('/force').post(authController.ensureLogin(),
                             upgradeController.apiForceUpdate);
 
 router.route('/config').get(authController.ensureLogin(),
-                            authController.ensurePermission('superuser'),
+                            authController.ensurePermission('grantFlashmanManage'),
                             upgradeController.getAutoConfig)
                        .post(authController.ensureLogin(),
-                             authController.ensurePermission('superuser'),
+                             authController.ensurePermission('grantFlashmanManage'),
                              upgradeController.setAutoConfig);
 
 module.exports = router;

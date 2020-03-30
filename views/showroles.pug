@@ -95,13 +95,13 @@ block content
                     select.browser-default.md-select(name="grant-lan-devices-block")
                       option(value="false") Bloquear
                       option(value="true") Permitir
-              .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Controle de Modo de Operação
                     select.browser-default.md-select(name="grant-opmode-edit")
                       option(value="false") Visualizar
                       option(value="true") Visualizar e editar
+              .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Acesso aos Logs dos Roteadores
@@ -130,6 +130,18 @@ block content
                   .md-selectfield.form-control.my-0
                     label Controle de Gerência de Firmwares
                     select.browser-default.md-select(name="grant-firmware-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Gerência de Usuários
+                    select.browser-default.md-select(name="grant-user-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Configurações do Flashman
+                    select.browser-default.md-select(name="grant-flashman-manage")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form

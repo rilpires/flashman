@@ -53,6 +53,17 @@ let removeFirmware = function(firmware) {
 firmwareController.index = function(req, res) {
   let indexContent = {};
   indexContent.username = req.user.name;
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;

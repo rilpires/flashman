@@ -29,7 +29,6 @@ router.route('/profile/:id').get(
 
 router.route('/showall').get(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.showAll);
 
 router.route('/roles').get(
@@ -47,7 +46,6 @@ router.route('/edit/:id').post(
 
 router.route('/get/all').get(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.getUsers)
 
 // ** DEPRECATED **
@@ -58,7 +56,6 @@ router.route('/get/all').get(
 
 router.route('/new').post(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.postUser)
 
 // ** DEPRECATED **
@@ -69,7 +66,6 @@ router.route('/new').post(
 
 router.route('/del').post(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.deleteUser)
 
 // ** DEPRECATED **
@@ -89,7 +85,6 @@ router.route('/role/get/all').get(
 
 router.route('/role/new').post(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.postRole)
 
 // ** DEPRECATED **
@@ -100,7 +95,6 @@ router.route('/role/new').post(
 
 router.route('/role/edit/:id').post(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.editRole)
 
 // ** DEPRECATED **
@@ -111,7 +105,6 @@ router.route('/role/edit/:id').post(
 
 router.route('/role/del').post(
   authController.ensureLogin(),
-  authController.ensurePermission('grantAPIAccess'),
   userController.deleteRole)
 
 // ** DEPRECATED **
