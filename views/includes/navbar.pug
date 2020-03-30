@@ -48,15 +48,16 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
                 i.fas.fa-address-card.fa-lg.mr-2
                 | Gerenciar permissões
             if (superuser || role.grantFlashmanManage)
-              a.dropdown-item.update
-                i.fas.fa-arrow-circle-down.fa-lg.mr-2
-                | Atualizar Flashman
               a.dropdown-item(
                 data-toggle="modal",
                 data-target="#config-flashman-menu"
               )
                 i.fas.fa-cog.fa-lg.mr-2
                 | Configurações
+            if ((superuser || role.grantFlashmanManage) && !disableAutoUpdate)
+              a.dropdown-item.update
+                i.fas.fa-arrow-circle-down.fa-lg.mr-2
+                | Atualizar Flashman
         li.nav-item
           a.ml-4.nav-link.waves-effect.waves-light(href="/logout")
             i.fas.fa-sign-out-alt

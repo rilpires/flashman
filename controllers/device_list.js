@@ -166,6 +166,16 @@ deviceListController.index = function(req, res) {
   indexContent.elementsperpage = elementsPerPage;
   indexContent.visiblecolumnsonpage = req.user.visibleColumnsOnPage;
 
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;

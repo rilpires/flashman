@@ -363,6 +363,16 @@ userController.getProfile = function(req, res) {
     queryUserId = req.params.id;
   }
 
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
   User.findById(queryUserId, function(err, user) {
     Config.findOne({is_default: true}, function(err, matchedConfig) {
       if (err || !matchedConfig) {
@@ -411,6 +421,16 @@ userController.getProfile = function(req, res) {
 
 userController.showAll = function(req, res) {
   let indexContent = {};
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
 
   Role.find(function(err, roles) {
     if (err) {
@@ -466,6 +486,16 @@ userController.showAll = function(req, res) {
 
 userController.showRoles = function(req, res) {
   let indexContent = {};
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
 
   Role.findOne({name: req.user.role}, function(err, role) {
     if (err || (!role && !req.user.is_superuser)) {
