@@ -22,6 +22,7 @@ const speedTestCompatibleModels = {
   'DWR-116A3': 100,
   'EMG1702-T10AA1': 100,
   'GWR1200ACV1': 200,
+  'GWR1200ACV2': 200,
   'NCLOUD': 100,
   'RE708V1': 200,
   'TL-MR3020V1': 100,
