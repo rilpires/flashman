@@ -425,6 +425,19 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Exportação de cadastros por CSV'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-csv-export').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
                     )
                   )
                 ),
@@ -515,6 +528,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-measure-devices] option[value=' +
           roleObj.grantMeasureDevices + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-csv-export] option[value=' +
+          roleObj.grantCsvExport + ']')
         .attr('selected', 'selected');
       });
     } else {

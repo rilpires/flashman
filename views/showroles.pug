@@ -170,6 +170,12 @@ block content
                       option(value=0) Não visualizar
                       option(value=1) Visualizar
                       option(value=2) Visualizar e realizar ações
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Exportação de cadastros por CSV
+                    select.browser-default.md-select(name="grant-csv-export")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
             .row
               .col.text-center
                 .form-buttons

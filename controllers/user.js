@@ -130,6 +130,7 @@ userController.postRole = function(req, res) {
     grantLanDevices: parseInt(req.body['grant-lan-devices']),
     grantLanDevicesBlock: req.body['grant-lan-devices-block'],
     grantMeasureDevices: parseInt(req.body['grant-measure-devices']),
+    grantCsvExport: req.body['grant-csv-export'],
   });
   role.save(function(err) {
     if (err) {
@@ -281,6 +282,8 @@ userController.editRole = function(req, res) {
     role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
     role.grantLanDevicesBlock = req.body['grant-lan-devices-block'];
     role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
+    role.grantCsvExport = req.body['grant-csv-export'];
+    role.grant = req.body['grant-lan-devices-block'];
 
     role.save(function(err) {
       if (err) {
