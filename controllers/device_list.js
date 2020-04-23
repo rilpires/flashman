@@ -467,10 +467,21 @@ deviceListController.searchDeviceReg = function(req, res) {
     elementsPerPage = req.user.maxElementsPerPage;
   }
 
-  DeviceModel.paginate(finalQuery, {page: reqPage,
-                            limit: elementsPerPage,
-                            lean: true,
-                            sort: sortKeys}, function(err, matchedDevices) {
+  let paginateOpts = {
+    page: reqPage,
+    limit: elementsPerPage,
+    lean: true,
+    sort: sortKeys,
+  };
+  // Keys to optionally filter returned results
+  if ('query_result_filter' in req.body) {
+    let queryResFilter = req.body.query_result_filter.split(',');
+    if (Array.isArray(queryResFilter) && queryResFilter.length) {
+      paginateOpts.select = queryResFilter;
+    }
+  }
+
+  DeviceModel.paginate(finalQuery, paginateOpts, function(err, matchedDevices) {
     if (err) {
       return res.json({
         success: false,
