@@ -60,6 +60,9 @@ let deviceSchema = new Schema({
     wifi_signal: Number, // dBm
     wifi_snr: Number, // dB
     wifi_mode: String, // G, N, AC
+    wifi_fingerprint: String, // from hostapd
+    dhcp_fingerprint: String,
+    dhcp_vendor_class: String,
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
     upnp_permission: {type: String, default: 'none', enum: [

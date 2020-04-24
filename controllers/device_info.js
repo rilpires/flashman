@@ -929,6 +929,9 @@ deviceInfoController.receiveDevices = function(req, res) {
           devReg.wifi_freq = upConnDev.wifi_freq;
           devReg.wifi_mode = (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
                               upConnDev.wifi_mode : null);
+          if(upConnDev.wifi_signature != '') devReg.wifi_fingerprint = upConnDev.wifi_signature;
+          if(upConnDev.dhcp_signature != '') devReg.dhcp_fingerprint = upConnDev.dhcp_signature;
+          if(upConnDev.dhcp_vendor_class != '') devReg.dhcp_vendor_class = upConnDev.dhcp_vendor_class;
         } else {
           let hostName = (upConnDev.hostname != '' &&
                           upConnDev.hostname != '!') ? upConnDev.hostname : '';
@@ -948,6 +951,9 @@ deviceInfoController.receiveDevices = function(req, res) {
             wifi_freq: upConnDev.wifi_freq,
             wifi_mode: (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
                         upConnDev.wifi_mode : null),
+            wifi_fingerprint: upConnDev.wifi_signature,
+            dhcp_fingerprint: upConnDev.dhcp_signature,
+            dhcp_vendor_class: upConnDev.dhcp_vendor_class,
           });
           outDev.hostname = hostName;
         }
