@@ -186,10 +186,11 @@ block content
         .col-md-9
           nav#devices-table-pagination
         .col-md-3
-          .text-right
-            button#export-csv.btn.btn-primary.mr-0.my-0
-              .fas.fa-file-excel.fa-lg
-              span &nbsp Exportar CSV
+          if (superuser || role.grantCsvExport)
+            .text-right
+              button#export-csv.btn.btn-primary.mr-0.my-0
+                .fas.fa-file-excel.fa-lg
+                span &nbsp Exportar CSV
 
 block scripts
   script(src='/scripts/tags-input/tags-input.js')

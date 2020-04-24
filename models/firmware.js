@@ -9,6 +9,8 @@ let firmwareSchema = new Schema({
   model: {type: String, required: true},
   version: {type: String, required: true},
   release: {type: String, required: true},
+  wan_proto: {type: String, default: ''},
+  flashbox_version: {type: String, default: ''},
   filename: {type: String, required: true},
 });
 

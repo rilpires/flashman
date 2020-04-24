@@ -12,7 +12,9 @@ const fetchLocalFirmwares = function(firmwaresTable) {
           $('<td></td>').html(firmware.vendor),
           $('<td></td>').html(firmware.model),
           $('<td></td>').html(firmware.version),
-          $('<td></td>').html(firmware.release)
+          $('<td></td>').html(firmware.release),
+          $('<td></td>').html(firmware.wan_proto),
+          $('<td></td>').html(firmware.flashbox_version)
         );
         firmwaresTable.row.add(firmwareRow).draw();
       });
@@ -91,7 +93,9 @@ $(document).ready(function() {
   $(document).on('click', '.btn-firmware-add', function(event) {
     let encoded = $('#avail-firmware-table').data('encoded');
     let company = $(this).data('company');
-    let firmwarefile = $(this).data('firmwarefile');
+    let firmwareFile = $(this).data('firmwarefile');
+    let wanProto = $(this).data('wanproto');
+    let flashboxVer = $(this).data('flashboxversion');
     let currBtn = $(this);
 
     currBtn.prop('disabled', true);
@@ -102,7 +106,8 @@ $(document).ready(function() {
       type: 'POST',
       url: '/firmware/add',
       traditional: true,
-      data: {encoded: encoded, company: company, firmwarefile: firmwarefile},
+      data: {encoded: encoded, company: company, firmwarefile: firmwareFile,
+             wanproto: wanProto, flashboxversion: flashboxVer},
       success: function(res) {
         currBtn.prop('disabled', false);
         currBtn.find('.btn-fw-add-icon')
@@ -190,12 +195,16 @@ $(document).ready(function() {
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.model),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.version),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.release),
+              $('<td></td>').addClass('text-center').html(firmwareInfoObj.wan_proto),
+              $('<td></td>').addClass('text-center').html(firmwareInfoObj.flashbox_version),
               $('<td></td>').addClass('text-center').append(
                 $('<button></button>').append(
                   $('<div></div>').addClass('fas fa-check btn-fw-add-icon'),
                   $('<span></span>').html('&nbsp Adicionar')
                 ).addClass('btn btn-sm my-0 teal lighten-2 btn-firmware-add')
                 .attr('data-firmwarefile', firmwareInfoObj.uri)
+                .attr('data-wanproto', firmwareInfoObj.wan_proto)
+                .attr('data-flashboxversion', firmwareInfoObj.flashbox_version)
                 .attr('data-company', firmwareInfoObj.company)
                 .attr('type', 'button')
               )
