@@ -254,7 +254,9 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
         return res.json({type: 'danger', message: 'Erro na requisição'});
       }
       if (response.statusCode === 200) {
-        let company = JSON.parse(body)['o'];
+        const resBody = JSON.parse(body);
+        const company = resBody.o;
+        const firmwareBuilds = resBody.firmware_builds;
         request({
             url: 'https://artifactory.anlix.io/' +
                  'artifactory/api/storage/upgrades/' + company,
@@ -271,19 +273,41 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
             if (response.statusCode === 200) {
               let firmwareNames = [];
               let firmwareList = JSON.parse(body)['children'];
-              firmwareList.forEach((firmwareEntry) => {
+              for (firmwareEntry of firmwareList) {
                 let fileName = firmwareEntry.uri;
                 let fileNameParts = fileName.split('_');
+                let vendor = fileNameParts[0].split('/')[1];
+                let model = fileNameParts[1];
+                let version = fileNameParts[2];
+                let release = fileNameParts[3].split('.')[0];
+                const matchedFirmwareInfo = firmwareBuilds.find(
+                  (firmwareInfo) => {
+                    return (firmwareInfo.model.toUpperCase() === model &&
+                            firmwareInfo.version.toUpperCase() === version &&
+                            firmwareInfo.release === release);
+                  }
+                );
                 let firmwareInfoObj = {
                   company: company,
-                  vendor: fileNameParts[0].split('/')[1],
-                  model: fileNameParts[1],
-                  version: fileNameParts[2],
-                  release: fileNameParts[3].split('.')[0],
+                  vendor: vendor,
+                  model: model,
+                  version: version,
+                  release: release,
                   uri: fileName,
                 };
+                if (matchedFirmwareInfo) {
+                  // Fields may not exist on ver old firmwares
+                  if (matchedFirmwareInfo.flashbox_version) {
+                    firmwareInfoObj.flashbox_version =
+                      matchedFirmwareInfo.flashbox_version;
+                  }
+                  if (matchedFirmwareInfo.wan_proto) {
+                    firmwareInfoObj.wan_proto =
+                     matchedFirmwareInfo.wan_proto.toUpperCase();
+                  }
+                }
                 firmwareNames.push(firmwareInfoObj);
-              });
+              };
               let encodedAuth = new Buffer(
                 req.body.name + ':' + req.body.password).toString('base64');
 
@@ -307,6 +331,14 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
 };
 
 firmwareController.addRemoteFirmwareFile = function(req, res) {
+  let wanProto = '';
+  let flashboxVer = '';
+  if ('wanproto' in req.body) {
+    wanProto = req.body.wanproto;
+  }
+  if ('flashboxversion' in req.body) {
+    flashboxVer = req.body.flashboxversion;
+  }
   let responseStream = request
     .get('https://artifactory.anlix.io/artifactory/upgrades/' +
       req.body.company + req.body.firmwarefile, {
@@ -372,6 +404,8 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
                     model: fnameFields.model,
                     version: fnameFields.version,
                     release: fnameFields.release,
+                    wan_proto: wanProto,
+                    flashbox_version: flashboxVer,
                     filename: firmwarefname,
                   });
                 } else {
@@ -380,6 +414,8 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
                   firmware.version = fnameFields.version;
                   firmware.release = fnameFields.release;
                   firmware.filename = firmwarefname;
+                  firmware.wan_proto = wanProto;
+                  firmware.flashbox_version = flashboxVer;
                 }
 
                 firmware.save(function(err) {
