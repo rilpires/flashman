@@ -913,6 +913,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
       let bridgeFixGateway = returnObjOrEmptyStr(content.bridgeFixGateway).trim();
       let bridgeFixDNS = returnObjOrEmptyStr(content.bridgeFixDNS).trim();
+      let meshMode = parseInt(returnObjOrNum(content.mesh_mode, 0));
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -1143,6 +1144,11 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('bridgeFixIP') &&
                 (superuserGrant || role.grantOpmodeEdit)) {
               matchedDevice.bridge_mode_dns = bridgeFixDNS;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('mesh_mode') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.mesh_mode = meshMode;
               updateParameters = true;
             }
             if (updateParameters) {

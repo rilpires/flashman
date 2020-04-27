@@ -72,6 +72,9 @@ let deviceSchema = new Schema({
     ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
+  mesh_mode: {type: Number, default: 0}, // changeMeshMode for allowed values (0 disable mesh)
+  mesh_master: String, // Used for slaves only (Master is null)
+  mesh_slaves: [String], // Used for master only (Slave is null)
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,

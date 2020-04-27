@@ -592,6 +592,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
+            'mesh_mode': matchedDevice.mesh_mode,
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},

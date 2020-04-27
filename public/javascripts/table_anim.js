@@ -958,6 +958,18 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">MESH</label>'+
+                      '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
+                      'maxlength="15" $REPLACE_OPMODE_EN>'+
+                        '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
+                        '<option value="1" $REPLACE_SELECTED_MESH_1$>Apenas Cabo</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
                 '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
@@ -1050,6 +1062,9 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
+          selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
+          opmodeTab = opmodeTab.replace(selectTarget, 'selected="selected"');
+          opmodeTab = opmodeTab.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
 
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
             '<div class="row">'+

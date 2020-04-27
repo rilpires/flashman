@@ -62,6 +62,7 @@ let validateEditDevice = function(event) {
   bridgeFixDNS = (useBridgeFixIP) ? $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
   let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
                               index.toString()+'"]:checked').length > 0;
+  let meshMode = $('#edit_meshMode-' + index.toString()).val();
 
   // Initialize error structure
   let errors = {
@@ -182,6 +183,7 @@ let validateEditDevice = function(event) {
       data.content.bridgeFixDNS = bridgeFixDNS;
     }
     data.content.bridgeEnabled = bridgeEnabled ? 1 : 0;
+    data.content.mesh_mode = meshMode;
     data.content.wifi_state = wifiState;
     data.content.wifi_state_5ghz = wifiState5ghz;
 
