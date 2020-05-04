@@ -407,13 +407,17 @@ scheduleController.failedDownload = async(function(mac) {
         },
       };
     } else if (config.is_aborted) {
-      // Schedule is aborted, add to done, status aborted
-      pushQuery = {
-        'device_update_schedule.rule.done_devices': {
-          'mac': mac,
-          'state': 'aborted',
-        },
-      };
+      // Avoid racing conditions by checking if device is already added
+      let device = rule.done_devices.find((d)=>d.mac === mac);
+      if (!device) {
+        // Schedule is aborted, add to done, status aborted
+        pushQuery = {
+          'device_update_schedule.rule.done_devices': {
+            'mac': mac,
+            'state': 'aborted',
+          },
+        };
+      }
     } else {
       // Will retry, add to to_do, status retry
       pushQuery = {
@@ -450,6 +454,11 @@ scheduleController.abortSchedule = async(function(req, res) {
       let state = 'aborted' + stateSuffix;
       pushArray.push({mac: d.mac, state: state});
     });
+    // Avoid repeated entries by rare race conditions
+    pushArray = pushArray.filter((item, idx) => {
+      return pushArray.indexOf(item) === idx;
+    });
+
     let setQuery = {
       'device_update_schedule.rule.to_do_devices': [],
       'device_update_schedule.rule.in_progress_devices': [],
