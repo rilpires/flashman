@@ -6,7 +6,8 @@
     "start": "node ./bin/www",
     "css:compile": "node-sass --output-style expanded --source-map true --source-map-contents true --precision 6 scss/custom-bootstrap.scss public/stylesheets/custom-bootstrap.css",
     "css:minify": "cleancss --level 1 --source-map --source-map-inline-sources --output public/stylesheets/custom-bootstrap.min.css public/stylesheets/custom-bootstrap.css",
-    "css": "npm run css:compile && npm run css:minify"
+    "css": "npm run css:compile && npm run css:minify",
+    "test": "jest"
   },
   "updater": {
     "jsonHost": "raw.githubusercontent.com",
@@ -73,7 +74,7 @@
   "devDependencies": {
     "clean-css-cli": "^4.3.0",
     "eslint-config-google": "^0.9.1",
-    "jest": "^26.0.1",
+    "jest": "^25.4.0",
     "mqtt": "^2.18.8",
     "node-sass": "^4.14.1",
     "nodemon": "^2.0.3"
