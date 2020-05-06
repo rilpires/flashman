@@ -31,7 +31,6 @@
     "csvtojson": "~2.0.10",
     "datatables.net-bs4": "~1.10.19",
     "debug": "~4.1.1",
-    "eslint": "~4.19.1",
     "event-stream": "3.3.4",
     "express": "~4.17.1",
     "express-fileupload": "~1.1.6",
@@ -73,6 +72,7 @@
   },
   "devDependencies": {
     "clean-css-cli": "^4.3.0",
+    "eslint": "^6.8.0",
     "eslint-config-google": "^0.9.1",
     "jest": "^25.4.0",
     "mqtt": "^2.18.8",
