@@ -2,6 +2,7 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
+const deviceHandlers = require('./handlers/devices');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 
@@ -393,13 +394,8 @@ let processAll = function(content, device, rollback) {
 
 let formatDevices = function(device) {
   let allRules = [];
-  const justNow = Date.now();
   let lanDevices = device.lan_devices.filter((device)=>{
-    const lastSeen = ((device.last_seen) ?
-                      device.last_seen : new Date(1970, 1, 1));
-    const timeDiff = Math.abs(justNow - lastSeen);
-    const timeDiffSeconds = Math.floor(timeDiff / 3600);
-    return (timeDiffSeconds < 86400);
+    return !deviceHandlers.isTooOld(device.last_seen);
   }).map((lanDevice)=>{
     let name = lanDevice.mac;
     if (lanDevice.name) {
@@ -419,11 +415,6 @@ let formatDevices = function(device) {
         out: lanDevice.router_port[i],
       });
     }
-    const lastSeen = ((lanDevice.last_seen) ?
-                      lanDevice.last_seen : new Date(1970, 1, 1));
-    const timeDiff = Math.abs(justNow - lastSeen);
-    const timeDiffSeconds = Math.floor(timeDiff / 3600);
-    let online = (timeDiffSeconds < 5);
     let upnpPermission = lanDevice.upnp_permission === 'accept';
     let signal = 'none';
     if (lanDevice.wifi_snr >= 35) signal = 'excellent';
@@ -440,7 +431,7 @@ let formatDevices = function(device) {
       name: name,
       dmz: lanDevice.dmz,
       rules: rules,
-      online: online,
+      online: deviceHandlers.isOnline(lanDevice.last_seen),
       signal: signal,
       is_wifi: isWifi,
       upnp_allow: upnpPermission,
