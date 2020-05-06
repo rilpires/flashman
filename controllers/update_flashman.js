@@ -52,19 +52,19 @@ const getLocalVersion = function() {
 const downloadUpdate = function(version) {
   return new Promise((resolve, reject)=>{
     exec('git add environment.config.json', (err, stdout, stderr) => {
-      if (err || stderr) {
+      if (err) {
         return reject();
       } else {
         exec('git checkout .', (err, stdout, stderr) => {
-          if (err || stderr) {
+          if (err) {
             return reject();
           } else {
             exec('git fetch', (err, stdout, stderr) => {
-              if (err || stderr) {
+              if (err) {
                 return reject();
               } else {
                 exec('git checkout ' + version, (err, stdout, stderr) => {
-                  if (err || stderr) {
+                  if (err) {
                     return reject();
                   } else {
                     return resolve();
