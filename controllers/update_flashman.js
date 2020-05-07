@@ -119,7 +119,7 @@ const isRunningUserOwnerOfDirectory = function() {
 };
 
 const rebootFlashman = function(version) {
-  exec('pm2 reload environment.config.json', (err, stdout, stderr) => {});
+  exec('pm2 reload environment.config.json &');
 };
 
 const errorCallback = function(res) {
