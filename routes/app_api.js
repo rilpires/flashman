@@ -1,7 +1,9 @@
 let express = require('express');
 
 let router = express.Router();
+let authController = require('../controllers/auth');
 let appAPIController = require('../controllers/app_device_api');
+let diagAPIController = require('../controllers/app_diagnostic_api');
 
 router.route('/add').post(appAPIController.registerApp);
 router.route('/del').post(appAPIController.removeApp);
@@ -21,5 +23,23 @@ router.route('/set/password').post(appAPIController.appSetPassword);
 router.route('/set/blacklist').post(appAPIController.appSetBlacklist);
 router.route('/set/whitelist').post(appAPIController.appSetWhitelist);
 router.route('/set/editdevice').post(appAPIController.appSetDeviceInfo);
+
+router.route('/diagnostic/login').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.sessionLogin,
+);
+
+router.route('/diagnostic/wifi').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.configureWifi,
+);
+
+router.route('/diagnostic/certificate').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.receiveCertification,
+);
 
 module.exports = router;
