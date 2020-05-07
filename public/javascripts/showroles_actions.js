@@ -319,7 +319,20 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
-                    )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Acesso ao App do Técnico'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-diag-app-access').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -510,6 +523,8 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-api-access] option[value=' +
           roleObj.grantAPIAccess + ']')
+        $(rowObj).find('[name=grant-diag-app-access] option[value=' +
+          roleObj.grantDiagAppAccess + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-log-access] option[value=' +
           roleObj.grantLOGAccess + ']')
