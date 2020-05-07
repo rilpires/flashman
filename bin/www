@@ -22,6 +22,7 @@ const tls = require('tls');
  */
 
 let port = normalizePort(process.env.FLM_WEB_PORT || '8000');
+port = port + parseInt(process.env.NODE_APP_INSTANCE);
 app.set('port', port);
 
 /**
@@ -215,7 +216,8 @@ function watchChangeCert(interval, filename, needrestart) {
 
 // Embedded MQTT server
 if (process.env.FLM_MQTT_PORT) {
-  mqttsPort = process.env.FLM_MQTT_PORT;
+  mqttsPort = parseInt(process.env.FLM_MQTT_PORT) +
+              parseInt(process.env.NODE_APP_INSTANCE);
 } else {
   let mqttsJsonParams = {};
   try {
@@ -232,7 +234,8 @@ if (process.env.FLM_MQTT_PORT) {
       throw err;
     }
   }
-  mqttsPort = mqttsJsonParams.port;
+  mqttsPort = parseInt(mqttsJsonParams.port) +
+              parseInt(process.env.NODE_APP_INSTANCE);
 }
 
 let mqttsDomain = '';
@@ -331,7 +334,7 @@ if (mqttSecure) {
         } else {
           console.log('Error getting new certificates! Using old ones...');
         }
-      };
+      }
     });
   }
 }
@@ -343,6 +346,5 @@ if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
     process.env.FLM_TEMPORARY_MQTT_BROKER_PORT, function() {
       console.log('Using a TEMPORARY INSECURE MQTT server on port ' +
                   process.env.FLM_TEMPORARY_MQTT_BROKER_PORT);
-    }
-  );
+  });
 }
