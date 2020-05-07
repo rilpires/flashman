@@ -26,7 +26,7 @@ deviceHandlers.diffDateUntilNowInSeconds = function(pastDate) {
 
 deviceHandlers.isOnline = function(dateLastSeen) {
   let isOnline = false;
-  let offlineThresh = 3; // seconds
+  let offlineThresh = 10; // seconds
 
   const diffInSeconds = deviceHandlers.diffDateUntilNowInSeconds(dateLastSeen);
 
