@@ -7,6 +7,7 @@ const Config = require('../models/config');
 const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
+const deviceHandlers = require('./handlers/devices');
 let deviceListController = {};
 
 const fs = require('fs');
@@ -1648,24 +1649,8 @@ deviceListController.getLanDevices = function(req, res) {
 
     let enrichedLanDevs = deepCopyObject(matchedDevice.lan_devices)
     .map((lanDevice) => {
-      let isOnline = false;
-      let lastSeen = ((lanDevice.last_seen) ?
-                        Date.parse(lanDevice.last_seen) :
-                        new Date(1970, 1, 1));
-      let justNow = Date.now();
-      let devTimeDiff = Math.abs(justNow - lastSeen);
-      let devTimeDiffSeconds = Math.floor(devTimeDiff / 1000);
-      let offlineThresh = 3;
-      // Skip if offline for too long. 24hrs
-      lanDevice.is_old = false;
-      if (devTimeDiffSeconds >= 86400) {
-        lanDevice.is_old = true;
-      } else if (devTimeDiffSeconds <= offlineThresh) {
-        isOnline = true;
-      } else {
-        isOnline = false;
-      }
-      lanDevice.is_online = isOnline;
+      lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
+      lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
       return lanDevice;
     });
 

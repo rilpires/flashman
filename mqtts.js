@@ -8,14 +8,15 @@ const debug = require('debug')('MQTT');
 let mqtts = null;
 if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     (process.env.FLM_USE_MQTT_PERSISTENCE === true ||
-     process.env.FLM_USE_MQTT_PERSISTENCE === 'true')) {
-
+     process.env.FLM_USE_MQTT_PERSISTENCE === 'true')
+) {
     const mq = require('mqemitter-redis')();
     const persistence = require('aedes-persistence-redis')();
     mqtts = aedes({mq: mq, persistance: persistence});
     // Fix broker id in case of instance restart
-    mqtts.id = process.env.name;
+    mqtts.id = process.env.name + process.env.NODE_APP_INSTANCE;
 } else {
+  debug('Instance ID is: ' + process.env.NODE_APP_INSTANCE);
   mqtts = aedes();
 }
 
@@ -26,9 +27,9 @@ mqtts.unifiedClientsMap = {};
 const findServerId = function(id) {
   let correctServerId = null;
   for (let serverId in mqtts.unifiedClientsMap) {
-    if (mqtts.unifiedClientsMap.hasOwnProperty(serverId)) {
+    if (Object.prototype.hasOwnProperty.call(mqtts.unifiedClientsMap, serverId)) {
       let clientsMap = mqtts.unifiedClientsMap[serverId];
-      if (clientsMap.hasOwnProperty(id)) {
+      if (Object.prototype.hasOwnProperty.call(clientsMap, id)) {
         correctServerId = serverId;
         break;
       }

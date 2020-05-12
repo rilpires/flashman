@@ -23,6 +23,23 @@ let userSchema = new mongoose.Schema({
   visibleColumnsOnPage: {type: [Number], default: [4, 5, 6, 7, 8]},
   is_superuser: {type: Boolean, default: false},
   role: {type: String, required: false},
+  deviceCertifications: [{
+    finished: {type: Boolean, default: true},
+    mac: {type: String},
+    timestamp: {type: Date, default: new Date()},
+    localEpochTimestamp: {type: Number},
+    didDiagnose: {type: Boolean, default: false},
+    didConfigureWan: {type: Boolean, default: false},
+    didConfigureWifi: {type: Boolean, default: false},
+    didConfigureMesh: {type: Boolean, default: false},
+    didConfigureContract: {type: Boolean, default: false},
+    didConfigureObservation: {type: Boolean, default: false},
+    contract: {type: String, required: false},
+    observations: {type: String, required: false},
+    cancelReason: {type: String, required: false},
+    latitude: {type: Number, default: 0},
+    longitude: {type: Number, default: 0},
+  }]
 });
 
 // Execute before each user.save() call

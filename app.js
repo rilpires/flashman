@@ -356,9 +356,10 @@ Config.findOne({is_default: true}, function(err, matchedConfig) {
   deviceUpdater.recoverFromOffline(matchedConfig);
 }).lean();
 
-if (typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
+if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
+    typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
     (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
-     process.env.FLM_SCHEDULER_ACTIVE === true)
+     process.env.FLM_SCHEDULER_ACTIVE === true))
 ) {
   let schedulePort = 3000;
   if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
