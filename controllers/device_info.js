@@ -93,6 +93,8 @@ const createRegistry = function(req, res) {
   let bridgeFixIP = returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
   let bridgeFixGateway = returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
+  let meshMode = parseInt(returnObjOrNum(req.body.mesh_mode, 0));
+  let meshMaster = returnObjOrEmptyStr(req.body.mesh_master).trim();
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -197,6 +199,8 @@ const createRegistry = function(req, res) {
         'bridge_mode_ip': bridgeFixIP,
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
+        'mesh_mode': meshMode,
+        'mesh_master': meshMaster,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -626,6 +630,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_gateway': returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
             'mesh_mode': matchedDevice.mesh_mode,
+            'mesh_master': matchedDevice.mesh_master,
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
@@ -771,6 +776,75 @@ deviceInfoController.registerMqtt = function(req, res) {
     });
   } else {
     console.log('Attempt to register MQTT secret for device ' +
+      req.body.id + ' failed: Client Secret not match!');
+    return res.status(401).json({is_registered: 0});
+  }
+};
+
+deviceInfoController.registerMeshSlave = function(req, res) {
+  if (req.body.secret == req.app.locals.secret) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+      if (err) {
+        console.log('Attempt to register mesh slave for device ' +
+          req.body.id + ' failed: Cant get device profile.');
+        return res.status(400).json({is_registered: 0});
+      }
+      if (!matchedDevice) {
+        console.log('Attempt to register mesh slave for device ' +
+          req.body.id + ' failed: No device found.');
+        return res.status(404).json({is_registered: 0});
+      }
+
+      // lookup if device is already registred
+      let slave = req.body.slave.toUpperCase();
+      let pos = matchedDevice.mesh_slaves.indexOf(slave)
+      if(pos<0){
+        // Not found, register
+        DeviceModel.findById(slave, function(err, slaveDevice) {
+          if (err) {
+            console.log('Attempt to register mesh slave '+ slave +' for device ' +
+              req.body.id + ' failed: cant get slave device.');
+            return res.status(400).json({is_registered: 0});
+          }
+          if (!slaveDevice) {
+            console.log('Attempt to register mesh slave '+ slave +' for device ' +
+              req.body.id + ' failed: Slave device not found.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          if (slaveDevice.mesh_master) {
+            console.log('Attempt to register mesh slave '+ slave +' for device ' +
+              req.body.id + ' failed: Slave device aready registred in other master.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          if (slaveDevice.mesh_mode != '0' && !slaveDevice.mesh_master) {
+            console.log('Attempt to register mesh slave '+ slave +' for device ' +
+              req.body.id + ' failed: Slave device is mesh master.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          slaveDevice.mesh_mode = matchedDevice.mesh_mode;
+          slaveDevice.mesh_master = matchedDevice._id;
+          slaveDevice.save();
+
+          matchedDevice.mesh_slaves.push(slave);
+          matchedDevice.save();
+
+          // Push updates to the Slave
+          mqtt.anlixMessageRouterUpdate(slave);
+
+          console.log('Slave ' + slave + ' registred on Master ' +
+            req.body.id + ' successfully.');
+          return res.status(200).json({is_registered: 1});
+        });
+      } else {
+        // already registred
+        return res.status(200).json({is_registered: 2});
+      }
+    });
+  } else {
+    console.log('Attempt to register mesh slave for device ' +
       req.body.id + ' failed: Client Secret not match!');
     return res.status(401).json({is_registered: 0});
   }
