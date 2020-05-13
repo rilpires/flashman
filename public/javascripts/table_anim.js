@@ -966,6 +966,9 @@ $(document).ready(function() {
                       'maxlength="15" $REPLACE_OPMODE_EN>'+
                         '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                         '<option value="1" $REPLACE_SELECTED_MESH_1$>Apenas Cabo</option>'+
+                        '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wifi 2.4 GHz</option>'+
+                        '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wifi 5 GHz</option>'+
+                        '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e Ambos Wifi</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
