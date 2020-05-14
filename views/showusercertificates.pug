@@ -1,0 +1,29 @@
+extends layout
+
+block stylesheets
+  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
+
+block content
+  include includes/showcertificate
+
+  .card.mt-4.mb-4
+    h4.card-header.teal.lighten-2.white-text
+      .fas.fa-file-alt.fa-lg
+      span &nbsp; Certificações
+    .card-body
+      h3#loading-users.text-center
+        i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
+      #users-table-wrapper.table-responsive(style="display: none;")
+        table#users-table.table
+          thead
+            tr
+              th.text-center Finalizado
+              th.text-center Endereço MAC
+              th.text-center Data do Atendimento
+              th.text-center Técnico
+              th.text-center
+
+block scripts
+  script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
+  script(src='/scripts/datatables.net-bs4/js/dataTables.bootstrap4.min.js')
+  script(src='/javascripts/showusercertificates_actions.js')

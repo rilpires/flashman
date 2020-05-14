@@ -159,6 +159,15 @@ userController.getUsers = function(req, res) {
   });
 };
 
+userController.getUserById = function(req, res) {
+  User.findById(req.params.id, function(err, user) {
+    if (err || !user) {
+      return res.json({success: false, type: 'danger', message: err});
+    }
+    return res.json({success: true, type: 'success', user: user});
+  });
+};
+
 userController.getRoles = function(req, res) {
   Role.find(function(err, roles) {
     if (err) {
@@ -421,6 +430,71 @@ userController.getProfile = function(req, res) {
         }
       });
     });
+  });
+};
+
+userController.showCertificates = function(req, res) {
+  let indexContent = {};
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
+  Role.find(function(err, roles) {
+    if (err) {
+      console.log(err);
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    }
+    let userRole = roles.find(function(role) {
+      return role.name === req.user.role;
+    });
+    if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    } else {
+      indexContent.roles = roles;
+      indexContent.role = userRole;
+
+      if (req.user.is_superuser) {
+        User.findOne({name: req.user.name}, function(err, user) {
+          if (err || !user) {
+            indexContent.superuser = false;
+          } else {
+            indexContent.superuser = user.is_superuser;
+          }
+
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            if (err || !matchedConfig) {
+              indexContent.update = false;
+            } else {
+              indexContent.update = matchedConfig.hasUpdate;
+              let active = matchedConfig.measure_configs.is_active;
+                indexContent.measure_active = active;
+                indexContent.measure_token = (active) ?
+                    matchedConfig.measure_configs.auth_token : '';
+              let license = matchedConfig.measure_configs.is_license_active;
+              indexContent.measure_license = license;
+            }
+            indexContent.username = req.user.name;
+
+            return res.render('showusercertificates', indexContent);
+          });
+        });
+      } else {
+        indexContent.type = 'danger';
+        indexContent.message = 'Permissão negada';
+        return res.render('error', indexContent);
+      }
+    }
   });
 };
 

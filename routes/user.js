@@ -27,6 +27,10 @@ router.route('/profile/:id').get(
   authController.ensureLogin(),
   userController.getProfile);
 
+router.route('/certificates').get(
+  authController.ensureLogin(),
+  userController.showCertificates);
+
 router.route('/showall').get(
   authController.ensureLogin(),
   userController.showAll);
@@ -47,6 +51,10 @@ router.route('/edit/:id').post(
 router.route('/get/all').get(
   authController.ensureLogin(),
   userController.getUsers)
+
+router.route('/get/one/:id').get(
+  authController.ensureLogin(),
+  userController.getUserById)
 
 // ** DEPRECATED **
                         .get(
