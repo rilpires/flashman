@@ -11,20 +11,62 @@ const deepCopyObject = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 };
 
+const convertDiagnostic = function(diagnostic) {
+  return {
+    wan: (diagnostic.wan === 0),
+    ipv4: (diagnostic.ipv4 === 0),
+    ipv6: (diagnostic.ipv6 === 0),
+    dns: (diagnostic.dns === 0),
+    anlix: (diagnostic.anlix === 0),
+    flashman: (diagnostic.flashman === 0),
+  };
+};
+
+const convertWifi = function(wifiConfig) {
+  let two = wifiConfig['2ghz'];
+  let five = wifiConfig['5ghz'];
+  return {
+    hasFive: wifiConfig.hasOwnProperty('5ghz'),
+    two: {
+      ssid: (two && two.ssid) ? two.ssid : '',
+      channel: (two && two.channel) ? two.channel : '',
+      band: (two && two.band) ? two.band : '',
+      mode: (two && two.mode) ? two.mode : '',
+    },
+    five: {
+      ssid: (five && five.ssid) ? five.ssid : '',
+      channel: (five && five.channel) ? five.channel : '',
+      band: (five && five.band) ? five.band : '',
+      mode: (five && five.mode) ? five.mode : '',
+    },
+  };
+};
+
 const pushCertification = function(arr, c, finished) {
   arr.push({
     finished: finished,
     mac: c.mac,
+    routerModel: (c.routerModel) ? c.routerModel : '',
+    routerVersion: (c.routerVersion) ? c.routerVersion : '',
+    routerRelease: (c.routerRelease) ? c.routerRelease : '',
     localEpochTimestamp: (c.timestamp) ? c.timestamp : 0,
     didDiagnose: (c.didDiagnose) ? c.didDiagnose : false,
+    diagnostic: convertDiagnostic(c.diagnostic),
     didConfigureWan: (c.didWan) ? c.didWan : false,
+    routerConnType: (c.routerConnType) ? c.routerConnType : '',
+    pppoeUser: (c.pppoeUser) ? c.pppoeUser : '',
+    bridgeIP: (c.bridgeIP) ? c.bridgeIP : '',
+    bridgeGateway: (c.bridgeGateway) ? c.bridgeGateway : '',
+    bridgeDNS: (c.bridgeDNS) ? c.bridgeDNS : '',
+    bridgeSwitch: (c.bridgeSwitch) ? c.bridgeSwitch : true,
     didConfigureWifi: (c.didWifi) ? c.didWifi : false,
+    wifiConfig: convertWifi(c.wifiConfig),
     didConfigureMesh: (c.didMesh) ? c.didMesh : false,
     didConfigureContract: (c.didContract) ? c.didContract : false,
     didConfigureObservation: (c.didObservation) ? c.didObservation : false,
-    contract: (c.contract) ? c.contract : "",
-    observations: (c.observations) ? c.observations : "",
-    cancelReason: (c.reason) ? c.reason : "",
+    contract: (c.contract) ? c.contract : '',
+    observations: (c.observations) ? c.observations : '',
+    cancelReason: (c.reason) ? c.reason : '',
     latitude: (c.latitude) ? c.latitude : 0,
     longitude: (c.longitude) ? c.longitude : 0,
   });
@@ -127,6 +169,12 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     }
     // Save current certification, if any
     if (content.current && content.current.mac) {
+      if (content.current.latitude && content.current.longitude) {
+        let device = await(DeviceModel.findById(content.current.mac));
+        device.latitude = content.current.latitude;
+        device.longitude = content.current.longitude;
+        await(device.save());
+      }
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
