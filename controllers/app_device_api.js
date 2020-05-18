@@ -3,6 +3,7 @@ const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 
@@ -84,7 +85,10 @@ let appSet = function(req, res, processFunction) {
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
       .then((done)=>{
-        if (done) return res.status(200).json({is_set: 1});
+        if (done) {
+          meshHandlers.syncSlaves(matchedDevice);
+          return res.status(200).json({is_set: 1});
+        } 
         doRollback(matchedDevice, rollbackValues);
         matchedDevice.save();
         return res.status(500).json({is_set: 0});

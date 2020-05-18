@@ -8,6 +8,7 @@ const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 let deviceListController = {};
 
 const fs = require('fs');
@@ -1176,6 +1177,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 console.log(err);
               }
               mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+              meshHandlers.syncSlaves(matchedDevice);
 
               matchedDevice.success = true;
               return res.status(200).json(matchedDevice);

@@ -9,6 +9,7 @@ const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
 const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
+const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 let deviceInfoController = {};
@@ -828,8 +829,8 @@ deviceInfoController.registerMeshSlave = function(req, res) {
             return res.status(404).json({is_registered: 0});
           }
 
-          slaveDevice.mesh_mode = matchedDevice.mesh_mode;
           slaveDevice.mesh_master = matchedDevice._id;
+          meshHandlers.syncSlave(matchedDevice, slaveDevice);
           slaveDevice.save();
 
           matchedDevice.mesh_slaves.push(slave);
