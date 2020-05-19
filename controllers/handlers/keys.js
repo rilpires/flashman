@@ -24,7 +24,7 @@ keyHandlers.generateAuthKeyPair = async(function() {
   return true;
 });
 
-keyHandlers.sendPublicKey = function(url) {
+keyHandlers.sendPublicKey = function(url, secret) {
   // Avoid using async/await inside Promise
   return new Promise((resolve, reject) => {
     Config.findOne({is_default: true}, (err, matchedConfig) => {
@@ -36,7 +36,7 @@ keyHandlers.sendPublicKey = function(url) {
         url: url,
         method: 'PUT',
         json: {
-          secret: App.locals.secret,
+          secret: secret,
           pubkey: matchedConfig.auth_pubkey,
         },
       }).then((resp) => {

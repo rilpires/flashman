@@ -71,7 +71,7 @@ const pushCertification = function(arr, c, finished) {
 };
 
 diagAppAPIController.sessionLogin = function(req, res) {
-  const sessionExpiration = 5; // In days
+  const sessionExpiration = 7; // In days
   // TODO: Verify if app send user name inside body
   UserModel.findOne({name: req.body.user}, function(err, user) {
     if (err || !user) {
@@ -96,7 +96,7 @@ diagAppAPIController.sessionLogin = function(req, res) {
       // This JSON format is dictated by auth inside firmware
       let expirationCredential = {user: user.name,
                                   expire: sessionExpirationDate};
-      let buff = new Buffer(expirationCredential);
+      let buff = new Buffer(JSON.stringify(expirationCredential));
       let b64Json = buff.toString('base64');
       let encryptedB64Json = keyHandlers.encryptMsg(b64Json);
       return res.status(200).json({success: true,
