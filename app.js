@@ -19,6 +19,7 @@ let session = require('express-session');
 let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
 let deviceUpdater = require('./controllers/update_scheduler');
+let keyHandlers = require('./controllers/handlers/keys');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
@@ -31,80 +32,96 @@ mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman',
   {useNewUrlParser: true,
    reconnectTries: Number.MAX_VALUE,
-   reconnectInterval: 1000}
-);
+   reconnectInterval: 1000,
+});
 mongoose.set('useCreateIndex', true);
 
-// check config existence
-Config.findOne({is_default: true}, function(err, matchedConfig) {
-  if (err || !matchedConfig) {
-    let newConfig = new Config({
-      is_default: true,
-      autoUpdate: true,
-      pppoePassLength: 8,
-    });
-    newConfig.save();
+// Only master instance should do DB checks
+if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+  let pubKeyUrl = 'http://localhost:9000/api/flashman/pubkey/register';
+  if (process.env.production) {
+    pubKeyUrl = 'https://controle.anlix.io/api/flashman/pubkey/register';
   }
-});
-
-// check administration user existence
-User.find({is_superuser: true}, function(err, matchedUsers) {
-  if (err || !matchedUsers || 0 === matchedUsers.length) {
-    let newSuperUser = new User({
-      name: process.env.FLM_ADM_USER,
-      password: process.env.FLM_ADM_PASS,
-      is_superuser: true,
-    });
-    newSuperUser.save();
-  }
-});
-
-// check default role existence
-Role.find({}, function(err, roles) {
-  if (err || !roles || 0 === roles.length) {
-    let managerRole = new Role({
-      name: 'Gerente',
-      grantWifiInfo: 2,
-      grantPPPoEInfo: 2,
-      grantPassShow: true,
-      grantFirmwareUpgrade: true,
-      grantWanType: true,
-      grantDeviceId: true,
-      grantDeviceActions: true,
-      grantDeviceRemoval: true,
-      grantDeviceAdd: true,
-      grantFirmwareManage: true,
-      grantAPIAccess: false,
-      grantNotificationPopups: true,
-      grantLanEdit: true,
-      grantLanDevices: 2,
-    });
-    managerRole.save();
-  }
-});
-
-// check migration for devices checked for upgrade
-Device.find({}, function(err, devices) {
-  if (!err && devices) {
-    for (let idx = 0; idx < devices.length; idx++) {
-      if (!devices[idx].installed_release) {
-        if (devices[idx].do_update == true) {
-          devices[idx].do_update_status = 0; // waiting
-        } else {
-          devices[idx].installed_release = devices[idx].release;
-        }
-        devices[idx].save();
+  // Check default config
+  Config.findOne({is_default: true}, async function(err, matchedConfig) {
+    // Check config existence and create one if not found
+    if (err || !matchedConfig) {
+      let newConfig = new Config({
+        is_default: true,
+        autoUpdate: true,
+        pppoePassLength: 8,
+      });
+      await newConfig.save();
+      // Generate key pair
+      await keyHandlers.generateAuthKeyPair();
+      // Send public key to be included in firmwares
+      await keyHandlers.sendPublicKey(pubKeyUrl);
+    } else {
+      // Check flashman key pair existence and generate it otherwise
+      if (matchedConfig.auth_privkey === '') {
+        await keyHandlers.generateAuthKeyPair();
+        // Send public key to be included in firmwares
+        await keyHandlers.sendPublicKey(pubKeyUrl);
       }
     }
-  }
-});
+  });
+  // Check administration user existence
+  User.find({is_superuser: true}, function(err, matchedUsers) {
+    if (err || !matchedUsers || 0 === matchedUsers.length) {
+      let newSuperUser = new User({
+        name: process.env.FLM_ADM_USER,
+        password: process.env.FLM_ADM_PASS,
+        is_superuser: true,
+      });
+      newSuperUser.save();
+    }
+  });
+  // Check default role existence
+  Role.find({}, function(err, roles) {
+    if (err || !roles || 0 === roles.length) {
+      let managerRole = new Role({
+        name: 'Gerente',
+        grantWifiInfo: 2,
+        grantPPPoEInfo: 2,
+        grantPassShow: true,
+        grantFirmwareUpgrade: true,
+        grantWanType: true,
+        grantDeviceId: true,
+        grantDeviceActions: true,
+        grantDeviceRemoval: true,
+        grantDeviceAdd: true,
+        grantFirmwareManage: true,
+        grantAPIAccess: false,
+        grantNotificationPopups: true,
+        grantLanEdit: true,
+        grantLanDevices: 2,
+      });
+      managerRole.save();
+    }
+  });
+  // Check migration for devices checked for upgrade
+  Device.find({}, function(err, devices) {
+    if (!err && devices) {
+      for (let idx = 0; idx < devices.length; idx++) {
+        if (!devices[idx].installed_release) {
+          if (devices[idx].do_update == true) {
+            devices[idx].do_update_status = 0; // waiting
+          } else {
+            devices[idx].installed_release = devices[idx].release;
+          }
+          devices[idx].save();
+        }
+      }
+    }
+  });
+}
 
-// release dir must exists
+// Release dir must exists
 if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
 }
 
-// temporary dir must exist
+// Temporary dir must exist
 if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp');
 }
@@ -131,55 +148,59 @@ if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = companySecret.secret;
 }
 
-// get message configs from control
-request({
-  url: 'https://controle.anlix.io/api/message/config',
-  method: 'POST',
-  json: {
-    secret: app.locals.secret,
-  },
-}).then((resp)=>{
-  if (resp && resp.token && resp.fqdn) {
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
-      if (err || !matchedConfig) {
-        console.log('Error obtaining message config!');
-        return;
-      }
-      matchedConfig.messaging_configs.secret_token = resp.token;
-      matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-      console.log('Obtained message config successfully!');
-      matchedConfig.save();
-    });
-  }
-}, (err)=>{
-  console.log('Error obtaining message config!');
-});
-
-// Check md5 file hashes on firmware directory
-fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
-  // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
-  let fnameSubStrings = filename.split('_');
-  let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
-  let releaseSubStringsRaw = releaseSubStringRaw.split('.');
-  if (releaseSubStringsRaw[1] == 'md5') {
-    // Skip MD5 hash files
-    return;
-  } else if (releaseSubStringsRaw[1] == 'bin') {
-    const md5fname = '.' + filename.replace('.bin', '.md5');
-    const md5fpath = path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname);
-    const filePath = path.join(process.env.FLM_IMG_RELEASE_DIR, filename);
-    if (!fs.existsSync(md5fpath)) {
-      // Generate MD5 file
-      const md5Checksum = md5File.sync(filePath);
-      fs.writeFile(md5fpath, md5Checksum, function(err) {
-        if (err) {
-          console.log('Error generating MD5 hash file: ' + md5fpath);
-          throw err;
+// Get message configs from control
+if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+  request({
+    url: 'https://controle.anlix.io/api/message/config',
+    method: 'POST',
+    json: {
+      secret: app.locals.secret,
+    },
+  }).then((resp)=>{
+    if (resp && resp.token && resp.fqdn) {
+      Config.findOne({is_default: true}, function(err, matchedConfig) {
+        if (err || !matchedConfig) {
+          console.log('Error obtaining message config!');
+          return;
         }
+        matchedConfig.messaging_configs.secret_token = resp.token;
+        matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
+        console.log('Obtained message config successfully!');
+        matchedConfig.save();
       });
     }
-  }
-});
+  }, (err)=>{
+    console.log('Error obtaining message config!');
+  });
+}
+
+// Check md5 file hashes on firmware directory
+if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+  fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
+    // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
+    let fnameSubStrings = filename.split('_');
+    let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
+    let releaseSubStringsRaw = releaseSubStringRaw.split('.');
+    if (releaseSubStringsRaw[1] == 'md5') {
+      // Skip MD5 hash files
+      return;
+    } else if (releaseSubStringsRaw[1] == 'bin') {
+      const md5fname = '.' + filename.replace('.bin', '.md5');
+      const md5fpath = path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname);
+      const filePath = path.join(process.env.FLM_IMG_RELEASE_DIR, filename);
+      if (!fs.existsSync(md5fpath)) {
+        // Generate MD5 file
+        const md5Checksum = md5File.sync(filePath);
+        fs.writeFile(md5fpath, md5Checksum, function(err) {
+          if (err) {
+            console.log('Error generating MD5 hash file: ' + md5fpath);
+            throw err;
+          }
+        });
+      }
+    }
+  });
+}
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -201,30 +222,28 @@ app.use('/stylesheets',
   serveStatic(path.join(__dirname, 'public/stylesheets'), {
     dotfiles: 'ignore',
     maxAge: false,
-  })
-);
+}));
 app.use('/javascripts',
   serveStatic(path.join(__dirname, 'public/javascripts'), {
     dotfiles: 'ignore',
     maxAge: false,
-  })
-);
+}));
 app.use('/images',
   serveStatic(path.join(__dirname, 'public/images'), {
     dotfiles: 'ignore',
     maxAge: '1d',
-  })
-);
+}));
 app.use('/firmwares',
   serveStatic(path.join(__dirname, 'public/firmwares'), {
     dotfiles: 'ignore',
     cacheControl: false,
     setHeaders: setMd5Sum,
-  })
-);
+}));
 
 /**
  * Generate MD5 hash for firmware files
+ * @param {string} res Response to be modified
+ * @param {string} filePath Path to file with MD5 sum pending
  */
 function setMd5Sum(res, filePath) {
   let md5Checksum;
@@ -349,12 +368,14 @@ app.use(function(err, req, res, next) {
 });
 
 // Check device update schedule, if active must re-initialize
-Config.findOne({is_default: true}, function(err, matchedConfig) {
-  if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
-  // Do nothing if no active schedule
-  if (!matchedConfig.device_update_schedule.is_active) return;
-  deviceUpdater.recoverFromOffline(matchedConfig);
-}).lean();
+if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
+    // Do nothing if no active schedule
+    if (!matchedConfig.device_update_schedule.is_active) return;
+    deviceUpdater.recoverFromOffline(matchedConfig);
+  }).lean();
+}
 
 if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
