@@ -78,7 +78,7 @@ diagAppAPIController.sessionLogin = function(req, res) {
       return res.status(404).json({success: false,
                                    message: 'Usuário não encontrado'});
     }
-    Role.findOne({name: user.role}, function(err, role) {
+    Role.findOne({name: user.role}, async(function(err, role) {
       if (err) {
         return res.status(500).json({success: false,
                                      message: 'Erro ao encontrar permissões'});
@@ -90,19 +90,23 @@ diagAppAPIController.sessionLogin = function(req, res) {
       let sessionExpirationDate = new Date();
       sessionExpirationDate.setTime(user.lastLogin.getTime() +
                                     sessionExpiration * 86400000);
-      debug('User last login is: ' + user.lastLogin);
-      debug('User expiration session is: ' + sessionExpirationDate);
+      debug('User last login (epoch) is: ' + (user.lastLogin.getTime() / 1000));
+      debug('User expiration session (epoch) is: ' +
+            (sessionExpirationDate.getTime() / 1000));
 
       // This JSON format is dictated by auth inside firmware
-      let expirationCredential = {user: user.name,
-                                  expire: sessionExpirationDate};
+      let expirationCredential = {
+        user: user.name,
+        // Must be epoch
+        expire: (Math.floor(sessionExpirationDate.getTime() / 1000)),
+      };
       let buff = new Buffer(JSON.stringify(expirationCredential));
       let b64Json = buff.toString('base64');
-      let encryptedB64Json = keyHandlers.encryptMsg(b64Json);
+      let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
       return res.status(200).json({success: true,
                                    credential: b64Json,
                                    sign: encryptedB64Json});
-    });
+    }));
   });
 };
 
