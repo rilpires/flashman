@@ -1,15 +1,13 @@
 const DeviceModel = require('../models/device');
 const UserModel = require('../models/user');
-const Config = require('../models/config');
+const Role = require('../models/role');
+const keyHandlers = require('./handlers/keys');
 const mqtt = require('../mqtts');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const debug = require('debug')('APP');
 
 let diagAppAPIController = {};
-
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
-};
 
 const convertDiagnostic = function(diagnostic) {
   return {
@@ -73,9 +71,39 @@ const pushCertification = function(arr, c, finished) {
 };
 
 diagAppAPIController.sessionLogin = function(req, res) {
-  // For now we simply return 200 with static data
-  // Eventually we must reply with the public key for router communication
-  return res.status(200).json({credential: 'temp'});
+  const sessionExpiration = 5; // In days
+  // TODO: Verify if app send user name inside body
+  UserModel.findOne({name: req.body.user}, function(err, user) {
+    if (err || !user) {
+      return res.status(404).json({success: false,
+                                   message: 'Usuário não encontrado'});
+    }
+    Role.findOne({name: user.role}, function(err, role) {
+      if (err) {
+        return res.status(500).json({success: false,
+                                     message: 'Erro ao encontrar permissões'});
+      }
+      if (!role.grantDiagAppAccess) {
+        return res.status(403).json({success: false,
+                                     message: 'Permissão negada'});
+      }
+      let sessionExpirationDate = new Date();
+      sessionExpirationDate.setTime(user.lastLogin.getTime() +
+                                    sessionExpiration * 86400000);
+      debug('User last login is: ' + user.lastLogin);
+      debug('User expiration session is: ' + sessionExpirationDate);
+
+      // This JSON format is dictated by auth inside firmware
+      let expirationCredential = {user: user.name,
+                                  expire: sessionExpirationDate};
+      let buff = new Buffer(expirationCredential);
+      let b64Json = buff.toString('base64');
+      let encryptedB64Json = keyHandlers.encryptMsg(b64Json);
+      return res.status(200).json({success: true,
+                                   credential: b64Json,
+                                   sign: encryptedB64Json});
+    });
+  });
 };
 
 diagAppAPIController.configureWifi = async(function(req, res) {
