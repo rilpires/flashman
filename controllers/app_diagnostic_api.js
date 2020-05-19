@@ -75,7 +75,7 @@ const pushCertification = function(arr, c, finished) {
 diagAppAPIController.sessionLogin = function(req, res) {
   // For now we simply return 200 with static data
   // Eventually we must reply with the public key for router communication
-  return res.status(200).json({credential: "temp"});
+  return res.status(200).json({credential: 'temp'});
 };
 
 diagAppAPIController.configureWifi = async(function(req, res) {
@@ -85,7 +85,7 @@ diagAppAPIController.configureWifi = async(function(req, res) {
       // Fetch device from database
       let device = await(DeviceModel.findById(req.body.mac));
       if (!device) {
-        return res.status(404).json({"error": "MAC not found"});
+        return res.status(404).json({'error': 'MAC not found'});
       }
       let content = req.body;
       let updateParameters = false;
@@ -132,19 +132,19 @@ diagAppAPIController.configureWifi = async(function(req, res) {
       }
       // If no fields were changed, we can safely reply here
       if (!updateParameters) {
-        return res.status(200).json({"success": true});
+        return res.status(200).json({'success': true});
       }
       // Apply changes to database and send mqtt message
       device.do_update_parameters = true;
       await(device.save());
       mqtt.anlixMessageRouterUpdate(device._id);
-      return res.status(200).json({"success": true});
+      return res.status(200).json({'success': true});
     } else {
-      return res.status(403).json({"error": "Did not specify MAC"});
+      return res.status(403).json({'error': 'Did not specify MAC'});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({"error": "Internal error"});
+    return res.status(500).json({'error': 'Internal error'});
   }
 });
 
@@ -152,7 +152,7 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
   try {
     let result = await(UserModel.find({'name': req.body.user}));
     if (!result) {
-      return res.status(404).json({"error": "User not found"});
+      return res.status(404).json({'error': 'User not found'});
     }
     let user = result[0]; // Should only match one since name is unique
     let content = req.body;
@@ -179,10 +179,10 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     }
     // Save changes to database and respond
     await(user.save());
-    return res.status(200).json({"success": true});
-  } catch(err) {
+    return res.status(200).json({'success': true});
+  } catch (err) {
     console.log(err);
-    return res.status(500).json({"error": "Internal error"});
+    return res.status(500).json({'error': 'Internal error'});
   }
 });
 
