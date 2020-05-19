@@ -36,6 +36,38 @@ mongoose.connect(
 });
 mongoose.set('useCreateIndex', true);
 
+// Release dir must exists
+if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
+  fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
+}
+
+// Temporary dir must exist
+if (!fs.existsSync('./tmp')) {
+  fs.mkdirSync('./tmp');
+}
+
+if (process.env.FLM_COMPANY_SECRET) {
+  app.locals.secret = process.env.FLM_COMPANY_SECRET;
+} else {
+  // check secret file and load if available
+  let companySecret = {};
+  try {
+    let fileContents = fs.readFileSync('./secret.json', 'utf8');
+    companySecret = JSON.parse(fileContents);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log('Shared secret file not found!');
+      companySecret['secret'] = '';
+    } else if (err.code === 'EACCES') {
+      console.log('Cannot open shared secret file!');
+      companySecret['secret'] = '';
+    } else {
+      throw err;
+    }
+  }
+  app.locals.secret = companySecret.secret;
+}
+
 // Only master instance should do DB checks
 if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   let pubKeyUrl = 'http://localhost:9000/api/flashman/pubkey/register';
@@ -55,13 +87,13 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       // Generate key pair
       await keyHandlers.generateAuthKeyPair();
       // Send public key to be included in firmwares
-      await keyHandlers.sendPublicKey(pubKeyUrl);
+      await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
     } else {
       // Check flashman key pair existence and generate it otherwise
       if (matchedConfig.auth_privkey === '') {
         await keyHandlers.generateAuthKeyPair();
         // Send public key to be included in firmwares
-        await keyHandlers.sendPublicKey(pubKeyUrl);
+        await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
       }
     }
   });
@@ -114,38 +146,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
     }
   });
-}
-
-// Release dir must exists
-if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
-  fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
-}
-
-// Temporary dir must exist
-if (!fs.existsSync('./tmp')) {
-  fs.mkdirSync('./tmp');
-}
-
-if (process.env.FLM_COMPANY_SECRET) {
-  app.locals.secret = process.env.FLM_COMPANY_SECRET;
-} else {
-  // check secret file and load if available
-  let companySecret = {};
-  try {
-    let fileContents = fs.readFileSync('./secret.json', 'utf8');
-    companySecret = JSON.parse(fileContents);
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.log('Shared secret file not found!');
-      companySecret['secret'] = '';
-    } else if (err.code === 'EACCES') {
-      console.log('Cannot open shared secret file!');
-      companySecret['secret'] = '';
-    } else {
-      throw err;
-    }
-  }
-  app.locals.secret = companySecret.secret;
 }
 
 // Get message configs from control
