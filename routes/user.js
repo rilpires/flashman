@@ -27,6 +27,10 @@ router.route('/profile/:id').get(
   authController.ensureLogin(),
   userController.getProfile);
 
+router.route('/certificates/del').post(
+  authController.ensureLogin(),
+  userController.deleteCertificates);
+
 router.route('/certificates').get(
   authController.ensureLogin(),
   userController.showCertificates);

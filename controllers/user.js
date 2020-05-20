@@ -2,6 +2,8 @@
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
+const async = require('asyncawait/async');
+const await = require('asyncawait/await');
 let userController = {};
 
 userController.changePassword = function(req, res) {
@@ -316,6 +318,56 @@ userController.editRole = function(req, res) {
   });
 };
 
+userController.deleteCertificates = async(function(req, res) {
+  let items = req.body.items;
+  if (!items) return res.status(500).json({
+    success: false,
+    type: 'danger',
+    message: 'Erro interno ao deletar certificações. '+
+    'Entre em contato com o desenvolvedor',
+  });
+  items = JSON.parse(items);
+  let itemsById = {};
+  let idList = [];
+  items.forEach((item)=>{
+    if (itemsById.hasOwnProperty(item.user)) {
+      itemsById[item.user].push(item.timestamp);
+    } else {
+      idList.push(item.user);
+      itemsById[item.user] = [item.timestamp];
+    }
+  });
+  try {
+    idList.forEach((userId)=>{
+      let user = await(User.findById(userId));
+      if (!user) throw("Usuário não existe");
+      let timestamps = itemsById[userId];
+      timestamps.forEach((timestamp)=>{
+        let idx = user.deviceCertifications.findIndex(
+          (c)=>c.localEpochTimestamp === parseInt(timestamp)
+        );
+        if (idx != -1) {
+          user.deviceCertifications.splice(idx, 1);
+        }
+      });
+      await(user.save());
+    });
+    return res.status(200).json({
+      success: true,
+      type: 'success',
+      message: 'Certificações deletadas com sucesso',
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao deletar certificações. '+
+      'Entre em contato com o desenvolvedor',
+    });
+  }
+});
+
 userController.deleteUser = function(req, res) {
   User.find({'_id': {$in: req.body.ids}}, function(err, users) {
     if (err || !users) {
@@ -466,7 +518,7 @@ userController.showCertificates = function(req, res) {
       indexContent.roles = roles;
       indexContent.role = userRole;
 
-      if (req.user.is_superuser) {
+      if (req.user.is_superuser || indexContent.role.grantCertificationAccess) {
         User.findOne({name: req.user.name}, function(err, user) {
           if (err || !user) {
             indexContent.superuser = false;
