@@ -17,7 +17,10 @@ block content
         table#users-table.table
           thead
             tr
-              th.text-center Finalizado
+              if (superuser || role.grantCertificationAccess > 1)
+                th#checkboxHeader.text-center
+                  input.checkbox(type="checkbox" id="checkall")
+              th.text-center Concluído
               th.text-center Endereço MAC
               th.text-center Data do Atendimento
               th.text-center Técnico
