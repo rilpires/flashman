@@ -124,6 +124,7 @@ userController.postRole = function(req, res) {
     grantFlashmanManage: req.body['grant-flashman-manage'],
     grantAPIAccess: req.body['grant-api-access'],
     grantDiagAppAccess: req.body['grant-diag-app-access'],
+    grantCertificationAccess: req.body['grant-certification-access'],
     grantLOGAccess: req.body['grant-log-access'],
     grantNotificationPopups: req.body['grant-notification-popups'],
     grantLanEdit: req.body['grant-lan-edit'],
@@ -286,6 +287,7 @@ userController.editRole = function(req, res) {
     role.grantFlashmanManage = req.body['grant-flashman-manage'];
     role.grantAPIAccess = req.body['grant-api-access'];
     role.grantDiagAppAccess = req.body['grant-diag-app-access'];
+    role.grantCertificationAccess = req.body['grant-certification-access'];
     role.grantLOGAccess = req.body['grant-log-access'];
     role.grantNotificationPopups = req.body['grant-notification-popups'];
     role.grantLanEdit = req.body['grant-lan-edit'];
