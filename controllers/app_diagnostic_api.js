@@ -72,7 +72,6 @@ const pushCertification = function(arr, c, finished) {
 
 diagAppAPIController.sessionLogin = function(req, res) {
   const sessionExpiration = 7; // In days
-  // TODO: Verify if app send user name inside body
   UserModel.findOne({name: req.body.user}, function(err, user) {
     if (err || !user) {
       return res.status(404).json({success: false,
@@ -212,6 +211,37 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     // Save changes to database and respond
     await(user.save());
     return res.status(200).json({'success': true});
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.verifyFlashman = async(function(req, res) {
+  try {
+    // Make sure we have a mac to verify in database
+    console.log(req.body);
+    if (req.body.mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.mac));
+      if (!device) {
+        return res.status(200).json({
+          'success': true,
+          'isRegister': false,
+          'isOnline': false,
+        });
+      }
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.body.mac.toUpperCase()];
+      });
+      return res.status(200).json({
+        'success': true,
+        'isRegister': true,
+        'isOnline': isDevOn,
+      });
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
   } catch (err) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
