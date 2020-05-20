@@ -220,7 +220,6 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
 diagAppAPIController.verifyFlashman = async(function(req, res) {
   try {
     // Make sure we have a mac to verify in database
-    console.log(req.body);
     if (req.body.mac) {
       // Fetch device from database
       let device = await(DeviceModel.findById(req.body.mac));
