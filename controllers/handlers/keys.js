@@ -55,7 +55,7 @@ keyHandlers.encryptMsg = async(function(b64Message) {
   }
   let privKey = new NodeRSA();
   privKey.importKey(config.auth_privkey);
-  const encryptedMsg = privKey.encrypt(b64Message, 'base64');
+  const encryptedMsg = privKey.sign(b64Message, 'base64');
 
   return encryptedMsg;
 });

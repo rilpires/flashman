@@ -101,7 +101,7 @@ diagAppAPIController.sessionLogin = function(req, res) {
       };
       let buff = new Buffer(JSON.stringify(expirationCredential));
       let b64Json = buff.toString('base64');
-      let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
+      let encryptedB64Json = await(keyHandlers.encryptMsg(buff));
       return res.status(200).json({success: true,
                                    credential: b64Json,
                                    sign: encryptedB64Json});
