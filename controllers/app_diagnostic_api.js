@@ -11,20 +11,20 @@ let diagAppAPIController = {};
 
 const convertDiagnostic = function(diagnostic) {
   return {
-    wan: (diagnostic.wan === 0),
-    ipv4: (diagnostic.ipv4 === 0),
-    ipv6: (diagnostic.ipv6 === 0),
-    dns: (diagnostic.dns === 0),
-    anlix: (diagnostic.anlix === 0),
-    flashman: (diagnostic.flashman === 0),
+    wan: (diagnostic && diagnostic.wan === 0),
+    ipv4: (diagnostic && diagnostic.ipv4 === 0),
+    ipv6: (diagnostic && diagnostic.ipv6 === 0),
+    dns: (diagnostic && diagnostic.dns === 0),
+    anlix: (diagnostic && diagnostic.anlix === 0),
+    flashman: (diagnostic && diagnostic.flashman === 0),
   };
 };
 
 const convertWifi = function(wifiConfig) {
-  let two = wifiConfig['2ghz'];
-  let five = wifiConfig['5ghz'];
+  let two = (wifiConfig) ? wifiConfig['2ghz'] : null;
+  let five = (wifiConfig) ? wifiConfig['5ghz'] : null;
   return {
-    hasFive: wifiConfig.hasOwnProperty('5ghz'),
+    hasFive: (five) ? true : false,
     two: {
       ssid: (two && two.ssid) ? two.ssid : '',
       channel: (two && two.channel) ? two.channel : '',
