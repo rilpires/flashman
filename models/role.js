@@ -22,6 +22,8 @@ let roleSchema = new mongoose.Schema({
   grantUserManage: {type: Boolean, required: true, default: false},
   grantFlashmanManage: {type: Boolean, required: true, default: false},
   grantAPIAccess: {type: Boolean, required: true, default: false},
+  grantDiagAppAccess: {type: Boolean, required: true, default: false},
+  grantCertificationAccess: {type: Number, required: true, default: 0},
   grantLOGAccess: {type: Boolean, required: true, default: false},
   grantNotificationPopups: {type: Boolean, required: true, default: true},
   grantLanEdit: {type: Boolean, required: true, default: true},

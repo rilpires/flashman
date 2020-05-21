@@ -47,6 +47,10 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
               a.dropdown-item(href="/user/roles")
                 i.fas.fa-address-card.fa-lg.mr-2
                 | Gerenciar permissões
+            if (superuser || role.grantCertificationAccess > 0)
+              a.dropdown-item(href="/user/certificates")
+                i.fas.fa-file-alt.fa-lg.mr-2
+                | Ver Certificações
             if (superuser || role.grantFlashmanManage)
               a.dropdown-item(
                 data-toggle="modal",

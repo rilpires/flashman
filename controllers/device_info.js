@@ -334,6 +334,43 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
 
+        // Update WAN configuration if it was sent by device
+        let changeWAN = returnObjOrEmptyStr(req.body.local_change_wan).trim();
+        let sentConnType = returnObjOrEmptyStr(req.body.connection_type).trim();
+        let sentBridgeEnabled = returnObjOrEmptyStr(req.body.bridge_enabled).trim();
+        if (typeof req.body.local_change_wan !== 'undefined' && changeWAN === "1") {
+          if (sentBridgeEnabled === "1") {
+            // Device was set to bridge mode, change relevant fields
+            // IP, Gateway and DNS are changed separately to treat legacy case
+            let sentSwitch = returnObjOrEmptyStr(req.body.bridge_switch_disable).trim();
+            sentSwitch = (sentSwitch === "1"); // Cast to bool value
+            deviceSetQuery.bridge_mode_enabled = true;
+            deviceSetQuery.bridge_mode_switch_disable = sentSwitch;
+            matchedDevice.bridge_mode_enabled = true; // Used in device response
+            matchedDevice.bridge_mode_switch_disable = sentSwitch; // Used in device response
+          } else if (sentConnType === "dhcp") {
+            // Device was set to DHCP, change relevant fields
+            deviceSetQuery.bridge_mode_enabled = false;
+            deviceSetQuery.connection_type = "dhcp";
+            matchedDevice.bridge_mode_enabled = false; // Used in device response
+            matchedDevice.connection_type = "dhcp"; // Used in device response
+          } else if (sentConnType === "pppoe") {
+            // Device was set to PPPoE, change relevant fields
+            let sentUser = returnObjOrEmptyStr(req.body.pppoe_user).trim();
+            let sentPass = returnObjOrEmptyStr(req.body.pppoe_password).trim();
+            if (sentUser !== "" && sentPass !== "") {
+              deviceSetQuery.bridge_mode_enabled = false;
+              deviceSetQuery.connection_type = "pppoe";
+              deviceSetQuery.pppoe_user = sentUser;
+              deviceSetQuery.pppoe_password = sentPass;
+              matchedDevice.bridge_mode_enabled = false; // Used in device response
+              matchedDevice.connection_type = "pppoe"; // Used in device response
+              matchedDevice.pppoe_user = sentUser; // Used in device response
+              matchedDevice.pppoe_password = sentPass; // Used in device response
+            }
+          }
+        }
+
         // Update bridge parameters in case fixed ip config was changed
         let sentBridgeIp = returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
         if (typeof req.body.bridge_fix_ip !== 'undefined' &&

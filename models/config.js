@@ -46,7 +46,7 @@ let configSchema = new mongoose.Schema({
       }],
       done_devices: [{
         mac: {type: String, required: true},
-        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off', 
+        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off',
           'aborted_down', 'aborted_update']},
       }],
     },
@@ -56,6 +56,8 @@ let configSchema = new mongoose.Schema({
     user_crud: {url: String, user: String, secret: String},
     role_crud: {url: String, user: String, secret: String},
   },
+  auth_pubkey: {type: String, default: ''},
+  auth_privkey: {type: String, default: ''},
 });
 
 let config = mongoose.model('config', configSchema);

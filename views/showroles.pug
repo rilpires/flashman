@@ -101,6 +101,19 @@ block content
                     select.browser-default.md-select(name="grant-opmode-edit")
                       option(value="false") Visualizar
                       option(value="true") Visualizar e editar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Acesso ao App do Técnico
+                    select.browser-default.md-select(name="grant-diag-app-access")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Acesso às Certificações de Roteadores
+                    select.browser-default.md-select(name="grant-certification-access")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e editar
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
