@@ -125,6 +125,8 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
+  latitude: {type: Number, default: 0},
+  longitude: {type: Number, default: 0},
 });
 
 deviceSchema.plugin(mongoosePaginate);

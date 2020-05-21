@@ -1,0 +1,133 @@
+#show-certificate.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-info-circle.fa-lg
+          strong &nbsp;&nbsp;Detalhes da Certificação
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body.pt-2
+        #details-placeholder
+          .col
+            h2.text-center.grey-text.my-3
+              i.fas.fa-spinner.fa-pulse.fa-3x
+              br
+              br
+              span Buscando detalhes...
+        #details-error
+          .col
+            h2.text-center.grey-text.my-3
+              i.fas.fa-times.fa-3x
+              br
+              br
+              span Erro acessando os dados
+        #details-info.text-center.px-20
+          .row
+            .col-md-12
+              h2.mt-3
+                i#done-icon.fas.fa-check-circle
+                span#done-text &nbsp;&nbsp;Certificação Concluída
+              #details-cancel
+                strong Motivo:
+                span#details-cancel-text
+          hr
+          .row
+            .col-md-6
+              h4 Dados do Atendimento
+              ul.list-inline
+                li
+                  strong Técnico:
+                  span#user-name
+                li
+                  strong Data:
+                  span#user-date
+                li
+                  strong Contrato:
+                  span#user-contract
+            .col-md-6
+              h4 Dados do Roteador
+              ul.list-inline
+                li
+                  strong MAC:
+                  span#router-mac
+                li
+                  strong Modelo:
+                  span#router-model
+                li
+                  strong Versão:
+                  span#router-version
+                li
+                  strong Release:
+                  span#router-release
+          hr
+          #wan-config-none
+            h4 A configuração da WAN não foi alterada
+          #wan-config-done
+            h4 Configuração da WAN
+            #wan-config-list
+          hr
+          #diagnostic-none
+            h4 O diagnóstico do roteador não foi feito
+          #diagnostic-done
+            h4 Diagnóstico do Roteador
+            ul.list-inline
+              li
+                strong Acesso WAN:
+                span#diagnostic-wan
+              li
+                strong Acesso IPv4:
+                span#diagnostic-ip4
+              li
+                strong Acesso IPv6:
+                span#diagnostic-ip6
+              li
+                strong Acesso DNS:
+                span#diagnostic-dns
+              li
+                strong Licença Anlix:
+                span#diagnostic-anlix
+              li
+                strong Comunicação com Flashman:
+                span#diagnostic-flashman
+          hr
+          #wifi-config-none
+            h4 A configuração Wi-Fi não foi alterada
+          #wifi-config-done
+            .row
+              #wifi-2ghz.col-md-6
+                h4 Configuração Wi-Fi 2.4 GHz
+                ul.list-inline
+                  li
+                    strong SSID:
+                    span#wifi-2-ssid
+                  li
+                    strong Canal:
+                    span#wifi-2-channel
+                  li
+                    strong Largura de Banda:
+                    span#wifi-2-band
+                  li
+                    strong Modo de Operação:
+                    span#wifi-2-mode
+              #wifi-5ghz.col-md-6
+                h4 Configuração Wi-Fi 5.0 GHz
+                ul.list-inline
+                  li
+                    strong SSID:
+                    span#wifi-5-ssid
+                  li
+                    strong Canal:
+                    span#wifi-5-channel
+                  li
+                    strong Largura de Banda:
+                    span#wifi-5-band
+                  li
+                    strong Modo de Operação:
+                    span#wifi-5-mode
+          hr
+          #observations-none
+            h4 Não foram feitas observações adicionais
+          #observations-done
+            h4 Observações Adicionais
+            p#observations-field
