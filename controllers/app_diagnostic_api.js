@@ -70,6 +70,22 @@ const pushCertification = function(arr, c, finished) {
   });
 };
 
+const generateSessionCredential = function(user) {
+  let sessionExpirationDate = new Date().getTime();
+  sessionExpirationDate += (7*24*60*60*1000); // 7 days
+  debug('User expiration session (epoch) is: ' + sessionExpirationDate);
+  // This JSON format is dictated by auth inside firmware
+  let expirationCredential = {
+    user: user,
+    // Must be epoch
+    expire: sessionExpirationDate,
+  };
+  let buff = new Buffer(JSON.stringify(expirationCredential));
+  let b64Json = buff.toString('base64');
+  let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
+  return {credential: b64Json, sign: encryptedB64Json};
+};
+
 diagAppAPIController.sessionLogin = function(req, res) {
   const sessionExpiration = 7; // In days
   UserModel.findOne({name: req.body.user}, function(err, user) {
@@ -86,25 +102,9 @@ diagAppAPIController.sessionLogin = function(req, res) {
         return res.status(403).json({success: false,
                                      message: 'Permissão negada'});
       }
-      let sessionExpirationDate = new Date();
-      sessionExpirationDate.setTime(user.lastLogin.getTime() +
-                                    sessionExpiration * 86400000);
-      debug('User last login (epoch) is: ' + (user.lastLogin.getTime() / 1000));
-      debug('User expiration session (epoch) is: ' +
-            (sessionExpirationDate.getTime() / 1000));
-
-      // This JSON format is dictated by auth inside firmware
-      let expirationCredential = {
-        user: user.name,
-        // Must be epoch
-        expire: (Math.floor(sessionExpirationDate.getTime() / 1000)),
-      };
-      let buff = new Buffer(JSON.stringify(expirationCredential));
-      let b64Json = buff.toString('base64');
-      let encryptedB64Json = await(keyHandlers.encryptMsg(buff));
-      return res.status(200).json({success: true,
-                                   credential: b64Json,
-                                   sign: encryptedB64Json});
+      let session = generateSessionCredential(user.name);
+      session.success = true;
+      return res.status(200).json(session);
     }));
   });
 };
@@ -210,7 +210,9 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     }
     // Save changes to database and respond
     await(user.save());
-    return res.status(200).json({'success': true});
+    let session = generateSessionCredential(user.name);
+    session.success = true;
+    return res.status(200).json(session);
   } catch (err) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
