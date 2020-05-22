@@ -2,6 +2,8 @@
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
+const async = require('asyncawait/async');
+const await = require('asyncawait/await');
 let userController = {};
 
 userController.changePassword = function(req, res) {
@@ -124,6 +126,7 @@ userController.postRole = function(req, res) {
     grantFlashmanManage: req.body['grant-flashman-manage'],
     grantAPIAccess: req.body['grant-api-access'],
     grantDiagAppAccess: req.body['grant-diag-app-access'],
+    grantCertificationAccess: req.body['grant-certification-access'],
     grantLOGAccess: req.body['grant-log-access'],
     grantNotificationPopups: req.body['grant-notification-popups'],
     grantLanEdit: req.body['grant-lan-edit'],
@@ -156,6 +159,15 @@ userController.getUsers = function(req, res) {
       return res.json({success: false, type: 'danger', message: err});
     }
     return res.json({success: true, type: 'success', users: users});
+  });
+};
+
+userController.getUserById = function(req, res) {
+  User.findById(req.params.id, function(err, user) {
+    if (err || !user) {
+      return res.json({success: false, type: 'danger', message: err});
+    }
+    return res.json({success: true, type: 'success', user: user});
   });
 };
 
@@ -277,6 +289,7 @@ userController.editRole = function(req, res) {
     role.grantFlashmanManage = req.body['grant-flashman-manage'];
     role.grantAPIAccess = req.body['grant-api-access'];
     role.grantDiagAppAccess = req.body['grant-diag-app-access'];
+    role.grantCertificationAccess = req.body['grant-certification-access'];
     role.grantLOGAccess = req.body['grant-log-access'];
     role.grantNotificationPopups = req.body['grant-notification-popups'];
     role.grantLanEdit = req.body['grant-lan-edit'];
@@ -304,6 +317,56 @@ userController.editRole = function(req, res) {
     });
   });
 };
+
+userController.deleteCertificates = async(function(req, res) {
+  let items = req.body.items;
+  if (!items) return res.status(500).json({
+    success: false,
+    type: 'danger',
+    message: 'Erro interno ao deletar certificações. '+
+    'Entre em contato com o desenvolvedor',
+  });
+  items = JSON.parse(items);
+  let itemsById = {};
+  let idList = [];
+  items.forEach((item)=>{
+    if (itemsById.hasOwnProperty(item.user)) {
+      itemsById[item.user].push(item.timestamp);
+    } else {
+      idList.push(item.user);
+      itemsById[item.user] = [item.timestamp];
+    }
+  });
+  try {
+    idList.forEach((userId)=>{
+      let user = await(User.findById(userId));
+      if (!user) throw("Usuário não existe");
+      let timestamps = itemsById[userId];
+      timestamps.forEach((timestamp)=>{
+        let idx = user.deviceCertifications.findIndex(
+          (c)=>c.localEpochTimestamp === parseInt(timestamp)
+        );
+        if (idx != -1) {
+          user.deviceCertifications.splice(idx, 1);
+        }
+      });
+      await(user.save());
+    });
+    return res.status(200).json({
+      success: true,
+      type: 'success',
+      message: 'Certificações deletadas com sucesso',
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao deletar certificações. '+
+      'Entre em contato com o desenvolvedor',
+    });
+  }
+});
 
 userController.deleteUser = function(req, res) {
   User.find({'_id': {$in: req.body.ids}}, function(err, users) {
@@ -421,6 +484,71 @@ userController.getProfile = function(req, res) {
         }
       });
     });
+  });
+};
+
+userController.showCertificates = function(req, res) {
+  let indexContent = {};
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
+  Role.find(function(err, roles) {
+    if (err) {
+      console.log(err);
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    }
+    let userRole = roles.find(function(role) {
+      return role.name === req.user.role;
+    });
+    if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    } else {
+      indexContent.roles = roles;
+      indexContent.role = userRole;
+
+      if (req.user.is_superuser || indexContent.role.grantCertificationAccess) {
+        User.findOne({name: req.user.name}, function(err, user) {
+          if (err || !user) {
+            indexContent.superuser = false;
+          } else {
+            indexContent.superuser = user.is_superuser;
+          }
+
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            if (err || !matchedConfig) {
+              indexContent.update = false;
+            } else {
+              indexContent.update = matchedConfig.hasUpdate;
+              let active = matchedConfig.measure_configs.is_active;
+                indexContent.measure_active = active;
+                indexContent.measure_token = (active) ?
+                    matchedConfig.measure_configs.auth_token : '';
+              let license = matchedConfig.measure_configs.is_license_active;
+              indexContent.measure_license = license;
+            }
+            indexContent.username = req.user.name;
+
+            return res.render('showusercertificates', indexContent);
+          });
+        });
+      } else {
+        indexContent.type = 'danger';
+        indexContent.message = 'Permissão negada';
+        return res.render('error', indexContent);
+      }
+    }
   });
 };
 

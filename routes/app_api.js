@@ -30,6 +30,12 @@ router.route('/diagnostic/login').post(
   diagAPIController.sessionLogin,
 );
 
+router.route('/diagnostic/verify').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.verifyFlashman,
+);
+
 router.route('/diagnostic/wifi').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
