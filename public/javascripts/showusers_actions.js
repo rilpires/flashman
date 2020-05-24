@@ -27,6 +27,10 @@ const fetchUsers = function(usersTable) {
           $('<td></td>').html(userObj.name),
           $('<td></td>').html(userObj.role),
           $('<td></td>').html(new Date(userObj.createdAt).toLocaleString()),
+          (userObj.lastLogin ?
+            $('<td></td>').html(new Date(userObj.lastLogin).toLocaleString()) :
+            $('<td></td>')
+          ),
           $('<td></td>').append(
             $('<button></button>').append(
               $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
