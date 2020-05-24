@@ -64,11 +64,11 @@ $(document).ready(function() {
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0]},
     ],
-    'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">' +
-           '       <"col-sm-12 col-md-6"f>               >' +
-           '<"row" t>                                     ' +
-           '<"row" <"col-sm-12 col-md-6"l>                ' +
-           '       <"col-sm-12 col-md-6"p>               >',
+    'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">  ' +
+           '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
+           '<"row" t>                                          ' +
+           '<"row" <"col-6"l>                                  ' +
+           '       <"col-6"p>                                 >',
   });
   // Initialize custom options on dataTable
   $('.dt-users-table-btns').append(

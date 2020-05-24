@@ -43,11 +43,11 @@ $(document).ready(function() {
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0]},
     ],
-    'dom': '<"row" <"col-sm-12 col-md-6 dt-firm-table-btns">' +
-           '       <"col-sm-12 col-md-6"f>               >' +
-           '<"row" t>                                     ' +
-           '<"row" <"col-sm-12 col-md-6"l>                ' +
-           '       <"col-sm-12 col-md-6"p>               >',
+    'dom': '<"row" <"col-12 col-md-6 dt-firm-table-btns">      ' +
+           '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
+           '<"row" t>                                          ' +
+           '<"row" <"col-6"l>                                  ' +
+           '       <"col-6"p>                                 >',
   });
   // Initialize custom options on dataTable
   $('.dt-firm-table-btns').append(
@@ -201,7 +201,7 @@ $(document).ready(function() {
                 $('<button></button>').append(
                   $('<div></div>').addClass('fas fa-check btn-fw-add-icon'),
                   $('<span></span>').html('&nbsp Adicionar')
-                ).addClass('btn btn-sm my-0 teal lighten-2 btn-firmware-add')
+                ).addClass('btn btn-sm my-0 btn-primary btn-firmware-add')
                 .attr('data-firmwarefile', firmwareInfoObj.uri)
                 .attr('data-wanproto', firmwareInfoObj.wan_proto)
                 .attr('data-flashboxversion', firmwareInfoObj.flashbox_version)
@@ -227,11 +227,11 @@ $(document).ready(function() {
           },
           'order': [[0, 'asc'], [1, 'asc'], [2, 'asc'], [3, 'desc']],
           'columnDefs': [{className: 'text-center', targets: ['_all']}],
-          'dom': '<"row" <"col-sm-12 col-md-6">' +
-                 '       <"col-sm-12 col-md-6"f>               >' +
-                 '<"row" t>                                     ' +
-                 '<"row" <"col-sm-12 col-md-6"l>                ' +
-                 '       <"col-sm-12 col-md-6"p>               >',
+          'dom': '<"row" <"col-12 col-md-6">                         ' +
+                 '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
+                 '<"row" t>                                          ' +
+                 '<"row" <"col-6"l>                                  ' +
+                 '       <"col-6"p>                                 >',
         });
       } else {
         displayAlertMsg({

@@ -317,7 +317,7 @@ $(document).ready(function() {
             upgradeStatus.find('.status-error').addClass('d-none');
             // Deactivate cancel button
             row.find('.btn-group .btn-cancel-update')
-               .removeClass('btn-danger').attr('disabled', true);
+               .attr('disabled', true);
           }
         }
       },
@@ -508,7 +508,7 @@ $(document).ready(function() {
 
           let upgradeCol = '<td>'+
             '<div class="btn-group device-update">'+
-              '<button class="btn btn-sm px-2 btn-cancel-update $UP_CLASS" $NO_UPDATE>'+
+              '<button class="btn btn-sm px-2 btn-cancel-update btn-danger" $NO_UPDATE>'+
                 '<div class="fas fa-times"></div>'+
               '</button>'+
               '<div class="btn-group">'+
@@ -529,7 +529,6 @@ $(document).ready(function() {
             '</div>'+
           '</td>';
           if (device.do_update) {
-            upgradeCol = upgradeCol.replace('$UP_CLASS', 'btn-danger');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
             upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
             upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
@@ -548,7 +547,6 @@ $(document).ready(function() {
               upgradeCol = upgradeCol.replace('$STATUS_2', '');
             }
           } else {
-            upgradeCol = upgradeCol.replace('$UP_CLASS', '');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
             upgradeCol = upgradeCol.replace('$NO_UPDATE', 'disabled');
             upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', '');

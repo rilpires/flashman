@@ -63,8 +63,7 @@ let updateAllDevices = function(event) {
             upgradeStatus.find('.status-none').addClass('d-none');
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             // Activate cancel button
-            selBtnGroup.siblings('.btn-cancel-update')
-              .addClass('btn-danger').attr('disabled', false);
+            selBtnGroup.siblings('.btn-cancel-update').attr('disabled', false);
             // Update device row data
             $('#' + $.escapeSelector(deviceId)).data('do-update', 'Sim');
           });
@@ -125,7 +124,7 @@ let cancelAllDeviceUpdates = function(event) {
             upgradeStatus.find('.status-ok').addClass('d-none');
             upgradeStatus.find('.status-error').addClass('d-none');
             // Deactivate cancel button
-            selBtnCancel.removeClass('btn-danger').attr('disabled', true);
+            selBtnCancel.attr('disabled', true);
             // Update device row data
             $('#' + $.escapeSelector(deviceId)).data('do-update', 'Não');
           });
@@ -172,8 +171,7 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-none').addClass('d-none');
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             // Activate cancel button
-            selBtnGroup.siblings('.btn-cancel-update')
-              .addClass('btn-danger').attr('disabled', false);
+            selBtnGroup.siblings('.btn-cancel-update').attr('disabled', false);
             // Update device row data
             row.data('do-update', 'Sim');
           }
@@ -188,7 +186,7 @@ let updateDevice = function(event) {
 
 let cancelDeviceUpdate = function(event) {
   // Deactivate cancel button
-  $(this).removeClass('btn-danger').attr('disabled', true);
+  $(this).attr('disabled', true);
 
   let selBtnGroup = $(event.target).closest('.btn-group');
   let selRelease = selBtnGroup.find('.dropdown-toggle .selected').text();
