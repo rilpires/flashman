@@ -650,7 +650,7 @@ deviceListController.factoryResetDevice = function(req, res) {
 //
 
 deviceListController.sendMqttMsg = function(req, res) {
-  msgtype = req.params.msg.toLowerCase();
+  let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findById(req.params.id.toUpperCase(),
   function(err, matchedDevice) {
@@ -722,7 +722,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'speedtest':
+      case 'speedtest': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -730,42 +730,48 @@ deviceListController.sendMqttMsg = function(req, res) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
-        if (msgtype == 'speedtest') {
+        if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
-        }
-        if (msgtype == 'boot') {
+        } else if (msgtype === 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
-        } else {
+        } else if (msgtype === 'onlinedevs') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForOnlineDevNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+        } else if (msgtype === 'ping') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPingTestNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+        } else if (msgtype === 'upstatus') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForUpStatusNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+        } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
-            if (msgtype == 'log') {
-              sio.anlixWaitForLiveLogNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
-            } else
-            if (msgtype == 'onlinedevs') {
-              sio.anlixWaitForOnlineDevNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-            }
-            if (msgtype == 'ping') {
-              sio.anlixWaitForPingTestNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
-            }
-            if (msgtype == 'upstatus') {
-              sio.anlixWaitForUpStatusNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            }
+            sio.anlixWaitForLiveLogNotification(
+              req.sessionID, req.params.id.toUpperCase());
+            mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
           } else {
             return res.status(200).json({
               success: false,
               message: 'Esse comando somente funciona em uma sessão!',
             });
           }
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Esse comando não existe',
+          });
         }
         break;
+      }
       default:
         // Message not implemented
         console.log('REST API MQTT Message not recognized (' + msgtype + ')');
@@ -1713,7 +1719,7 @@ deviceListController.doSpeedTest = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
@@ -1741,7 +1747,7 @@ deviceListController.doSpeedTest = function(req, res) {
       }
       mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       return res.status(200).json({
-        success: true
+        success: true,
       });
     });
   });
