@@ -4,7 +4,6 @@ const await = require('asyncawait/await');
 const request = require('request-promise-native');
 const NodeRSA = require('node-rsa');
 const Config = require('../../models/config');
-const App = require('../../app');
 
 let keyHandlers = {};
 
