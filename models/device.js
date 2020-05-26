@@ -116,6 +116,7 @@ let deviceSchema = new Schema({
   },
   sys_up_time: {type: Number, default: 0},
   wan_up_time: {type: Number, default: 0},
+  wan_bytes: Object,
   speedtest_results: [{
     down_speed: String,
     timestamp: String,

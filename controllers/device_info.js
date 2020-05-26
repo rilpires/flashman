@@ -11,6 +11,7 @@ const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const util = require('./handlers/util');
 let deviceInfoController = {};
 
 const returnObjOrEmptyStr = function(query) {
@@ -1253,6 +1254,9 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.sys_up_time = req.body.sysuptime;
     matchedDevice.wan_up_time = req.body.wanuptime;
+    if (util.isJSONObject(req.body.wanbytes)) {
+      matchedDevice.wan_bytes = req.body.wanbytes;
+    }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
     return res.status(200).json({processed: 1});
