@@ -217,10 +217,6 @@ const serializeNamed = function(devices) {
   return devices.map((device)=>device.mac + '|' + device.name);
 };
 
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
-};
-
 deviceInfoController.syncDate = function(req, res) {
   // WARNING: This api is open.
   let devId;
@@ -550,7 +546,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        let blockedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
+        let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
               return true;
@@ -559,7 +555,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
-        let namedDevices = deepCopyObject(matchedDevice.lan_devices).filter(
+        let namedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if ('name' in lanDevice && lanDevice.name != '') {
               return true;

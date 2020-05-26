@@ -29,4 +29,8 @@ utilHandlers.returnObjOrNum = function(query, num) {
   }
 };
 
+utilHandlers.deepCopyObject = function(obj) {
+  return JSON.parse(JSON.stringify(obj));
+};
+
 module.exports = utilHandlers;

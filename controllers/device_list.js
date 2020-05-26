@@ -34,10 +34,6 @@ const intToWeekDayStr = function(day) {
   return '';
 };
 
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
-};
-
 deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
@@ -1620,7 +1616,7 @@ deviceListController.getLanDevices = function(req, res) {
       });
     }
 
-    let enrichedLanDevs = deepCopyObject(matchedDevice.lan_devices)
+    let enrichedLanDevs = util.deepCopyObject(matchedDevice.lan_devices)
     .map((lanDevice) => {
       lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
