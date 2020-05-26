@@ -29,6 +29,14 @@ utilHandlers.returnObjOrNum = function(query, num) {
   }
 };
 
+utilHandlers.returnObjOrStr = function(query, str) {
+  if (typeof query !== 'undefined' && query) {
+    return query;
+  } else {
+    return str;
+  }
+};
+
 utilHandlers.deepCopyObject = function(obj) {
   return JSON.parse(JSON.stringify(obj));
 };

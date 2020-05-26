@@ -12,15 +12,8 @@ const DeviceVersion = require('../models/device_version');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const util = require('./handlers/util');
-let deviceInfoController = {};
 
-const returnObjOrStr = function(query, str) {
-  if (typeof query !== 'undefined' && query) {
-    return query;
-  } else {
-    return str;
-  }
-};
+let deviceInfoController = {};
 
 const genericValidate = function(field, func, key, minlength, errors) {
   let validField = func(field, minlength);
@@ -64,8 +57,8 @@ const createRegistry = function(req, res) {
   let ssid5ghz = util.returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = util.returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = util.returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
-  let band5ghz = returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
-  let mode5ghz = returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+  let band5ghz = util.returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
+  let mode5ghz = util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
   let wifiState5ghz = parseInt(util.returnObjOrNum(req.body.wifi_state_5ghz, 1));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
@@ -145,7 +138,7 @@ const createRegistry = function(req, res) {
     }
 
     if (errors.length < 1) {
-      newDeviceModel = new DeviceModel({
+      let newDeviceModel = new DeviceModel({
         '_id': macAddr,
         'model': model,
         'version': version,
@@ -319,33 +312,33 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         let changeWAN = util.returnObjOrEmptyStr(req.body.local_change_wan).trim();
         let sentConnType = util.returnObjOrEmptyStr(req.body.connection_type).trim();
         let sentBridgeEnabled = util.returnObjOrEmptyStr(req.body.bridge_enabled).trim();
-        if (typeof req.body.local_change_wan !== 'undefined' && changeWAN === "1") {
-          if (sentBridgeEnabled === "1") {
+        if (typeof req.body.local_change_wan !== 'undefined' && changeWAN === '1') {
+          if (sentBridgeEnabled === '1') {
             // Device was set to bridge mode, change relevant fields
             // IP, Gateway and DNS are changed separately to treat legacy case
             let sentSwitch = util.returnObjOrEmptyStr(req.body.bridge_switch_disable).trim();
-            sentSwitch = (sentSwitch === "1"); // Cast to bool value
+            sentSwitch = (sentSwitch === '1'); // Cast to bool value
             deviceSetQuery.bridge_mode_enabled = true;
             deviceSetQuery.bridge_mode_switch_disable = sentSwitch;
             matchedDevice.bridge_mode_enabled = true; // Used in device response
             matchedDevice.bridge_mode_switch_disable = sentSwitch; // Used in device response
-          } else if (sentConnType === "dhcp") {
+          } else if (sentConnType === 'dhcp') {
             // Device was set to DHCP, change relevant fields
             deviceSetQuery.bridge_mode_enabled = false;
-            deviceSetQuery.connection_type = "dhcp";
+            deviceSetQuery.connection_type = 'dhcp';
             matchedDevice.bridge_mode_enabled = false; // Used in device response
-            matchedDevice.connection_type = "dhcp"; // Used in device response
-          } else if (sentConnType === "pppoe") {
+            matchedDevice.connection_type = 'dhcp'; // Used in device response
+          } else if (sentConnType === 'pppoe') {
             // Device was set to PPPoE, change relevant fields
             let sentUser = util.returnObjOrEmptyStr(req.body.pppoe_user).trim();
             let sentPass = util.returnObjOrEmptyStr(req.body.pppoe_password).trim();
-            if (sentUser !== "" && sentPass !== "") {
+            if (sentUser !== '' && sentPass !== '') {
               deviceSetQuery.bridge_mode_enabled = false;
-              deviceSetQuery.connection_type = "pppoe";
+              deviceSetQuery.connection_type = 'pppoe';
               deviceSetQuery.pppoe_user = sentUser;
               deviceSetQuery.pppoe_password = sentPass;
               matchedDevice.bridge_mode_enabled = false; // Used in device response
-              matchedDevice.connection_type = "pppoe"; // Used in device response
+              matchedDevice.connection_type = 'pppoe'; // Used in device response
               matchedDevice.pppoe_user = sentUser; // Used in device response
               matchedDevice.pppoe_password = sentPass; // Used in device response
             }
@@ -423,9 +416,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             let channel5ghz =
               util.returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
             let band5ghz =
-              returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
+              util.returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
             let mode5ghz =
-              returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+              util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
 
             genericValidate(ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
@@ -524,8 +517,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           } else {
             console.log(
               'WARNING: Device ' + devId +
-              ' sent a upgrade ack but was not marked as upgradable!'
-            );
+              ' sent a upgrade ack but was not marked as upgradable!');
           }
         }
 
@@ -831,7 +823,7 @@ deviceInfoController.getPortForward = function(req, res) {
 
       let outData = [];
       for (let i = 0; i < resOut.length; i++) {
-        tmpData = {};
+        let tmpData = {};
         tmpData.mac = resOut[i].mac;
         tmpData.port = resOut[i].port;
         tmpData.dmz = resOut[i].dmz;
@@ -1035,7 +1027,7 @@ deviceInfoController.getUpnpDevsPerm = function(req, res) {
 
       let outData = [];
       for (let i = 0; i < matchedDevice.lan_devices.length; i++) {
-        tmpData = {};
+        let tmpData = {};
         tmpData.mac = matchedDevice.lan_devices[i].mac;
         tmpData.dmz = matchedDevice.lan_devices[i].dmz;
         tmpData.upnp = matchedDevice.lan_devices[i].upnp_permission;
