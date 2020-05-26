@@ -320,6 +320,9 @@ app.use('/scripts/datatables.net',
 app.use('/scripts/datatables.net-bs4',
   express.static(path.join(__dirname, 'node_modules/datatables.net-bs4'))
 );
+app.use('/scripts/apexcharts',
+  express.static(path.join(__dirname, 'node_modules/apexcharts/dist'))
+);
 app.use('/scripts/fontawesome/css',
   express.static(path.join(
     __dirname,
