@@ -1182,7 +1182,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
       lanDevice.last_seen = Date.now();
     } else {
       matchedDevice.lan_devices.push({
-        mac: blackMacDevice,
+        mac: deviceMac,
         upnp_name: deviceName,
         first_seen: Date.now(),
         last_seen: Date.now(),
