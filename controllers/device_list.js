@@ -8,6 +8,8 @@ const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const util = require('./handlers/util');
+
 let deviceListController = {};
 
 const fs = require('fs');
@@ -124,35 +126,6 @@ const getOnlineCount = function(query) {
       }
     });
   });
-};
-
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
-
-const isJsonString = function(str) {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
-
-const returnObjOrEmptyStr = function(query) {
-  if (typeof query !== 'undefined' && query) {
-    return query;
-  } else {
-    return '';
-  }
-};
-
-const returnObjOrNum = function(query, num) {
-  if (typeof query !== 'undefined' && !isNaN(query)) {
-    return query;
-  } else {
-    return num;
-  }
 };
 
 // Main page
@@ -892,34 +865,34 @@ deviceListController.setDeviceReg = function(req, res) {
       });
     }
 
-    if (isJSONObject(req.body.content)) {
+    if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
       let validator = new Validator();
 
       let errors = [];
-      let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
-      let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
-      let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
-      let lanSubnet = returnObjOrEmptyStr(content.lan_subnet).trim();
-      let lanNetmask = returnObjOrEmptyStr(content.lan_netmask).trim();
-      let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
-      let password = returnObjOrEmptyStr(content.wifi_password).trim();
-      let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
-      let band = returnObjOrEmptyStr(content.wifi_band).trim();
-      let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
-      let wifiState = parseInt(returnObjOrNum(content.wifi_state, 1));
-      let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
-      let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
-      let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
-      let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
-      let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
-      let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
-      let bridgeEnabled = parseInt(returnObjOrNum(content.bridgeEnabled, 1)) === 1;
-      let bridgeDisableSwitch = parseInt(returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
-      let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
-      let bridgeFixGateway = returnObjOrEmptyStr(content.bridgeFixGateway).trim();
-      let bridgeFixDNS = returnObjOrEmptyStr(content.bridgeFixDNS).trim();
+      let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
+      let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
+      let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+      let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).trim();
+      let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).trim();
+      let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
+      let password = util.returnObjOrEmptyStr(content.wifi_password).trim();
+      let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
+      let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
+      let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+      let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
+      let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
+      let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
+      let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
+      let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
+      let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
+      let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
+      let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
+      let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
+      let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
+      let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -1003,7 +976,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
 
         if (errors.length < 1) {
-          Role.findOne({name: returnObjOrEmptyStr(req.user.role)},
+          Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
           function(err, role) {
             if (err) {
               console.log(err);
@@ -1184,22 +1157,22 @@ deviceListController.setDeviceReg = function(req, res) {
 };
 
 deviceListController.createDeviceReg = function(req, res) {
-  if (isJSONObject(req.body.content)) {
+  if (util.isJSONObject(req.body.content)) {
     const content = req.body.content;
     const macAddr = content.mac_address.trim().toUpperCase();
     const extReference = content.external_reference;
     const validator = new Validator();
 
     let errors = [];
-    let release = returnObjOrEmptyStr(content.release).trim();
-    let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
-    let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
-    let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
-    let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
-    let password = returnObjOrEmptyStr(content.wifi_password).trim();
-    let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
-    let band = returnObjOrEmptyStr(content.wifi_band).trim();
-    let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+    let release = util.returnObjOrEmptyStr(content.release).trim();
+    let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
+    let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
+    let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+    let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
+    let password = util.returnObjOrEmptyStr(content.wifi_password).trim();
+    let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
+    let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
+    let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -1334,11 +1307,11 @@ deviceListController.setPortForward = function(req, res) {
         success: false,
         message: 'Este roteador está em modo bridge, e portanto não pode '+
                  'liberar acesso a portas',
-      })
+      });
     }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
-    if (isJsonString(req.body.content)) {
+    if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
 
       let usedAsymPorts = [];
@@ -1599,7 +1572,7 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
-    if (isJsonString(req.body.content)) {
+    if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
       let approvedHosts = [];
       content.hosts.forEach((host) => {

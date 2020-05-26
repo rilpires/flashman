@@ -5,12 +5,9 @@ const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
-
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
 
 const deepCopyObject = function(obj) {
   return JSON.parse(JSON.stringify(obj));
@@ -61,7 +58,7 @@ let appSet = function(req, res, processFunction) {
       return res.status(404).json({is_set: 0});
     }
 
-    if (isJSONObject(req.body.content)) {
+    if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
 
