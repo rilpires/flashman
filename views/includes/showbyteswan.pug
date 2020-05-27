@@ -1,0 +1,41 @@
+#wan-bytes.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-chart-line.fa-lg
+          strong &nbsp; Tráfego WAN de&nbsp;
+            label(name="wan-bytes-hlabel" id="wan-bytes-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          .col.p-0.text-right
+            button#btn-wan-bytes-refresh.btn.btn-primary.btn-sm
+              i.fas.fa-sync-alt.fa-lg
+              span &nbsp Atualizar
+        .row#wan-bytes-placeholder-ready
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span Atualize os dados para visualizar
+        .row#wan-bytes-placeholder-progress
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              span Atualizando bytes trafegados...
+        .row#wan-bytes-placeholder-none
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span Nenhum dado encontrado
+        #wan-bytes-graphs
+          #wan-bytes-down-graph
+          hr
+          #wan-bytes-up-graph

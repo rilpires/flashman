@@ -655,6 +655,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
+          let wanBytesAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          .replace('$REPLACE_ICON', 'fa-chart-line')
+          .replace('$REPLACE_TEXT', 'Tráfego WAN');
+
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
@@ -677,6 +682,7 @@ $(document).ready(function() {
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
             '$REPLACE_MEASURE_ACTION'+
+            '$REPLACE_WAN_BYTES_ACTION'+
             '$REPLACE_FACTORY_ACTION'+
           '</div>';
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
@@ -708,6 +714,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
+          }
+          if (isSuperuser) {
+            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
           }
           if (isSuperuser || grantFactoryReset) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
