@@ -3,7 +3,7 @@ extends layout
 block content
   .row
     .col-md-6.offset-md-3.col-12
-      .card.mt-4
+      .card.mt-5
         h4.card-header.teal.lighten-2.white-text
           .fas.fa-info.fa-lg
           span &nbsp Perfil
@@ -45,7 +45,7 @@ block content
                           option(value=role.name) #{role.name}
             .col-12.mt-3.text-center
               .form-buttons
-                button.btn.btn-lg.teal.lighten-2(type="submit") Atualizar
+                button.btn.btn-primary(type="submit") Atualizar
 
 block scripts
   script(src='/javascripts/profile_actions.js')

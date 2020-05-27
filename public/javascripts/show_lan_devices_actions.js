@@ -14,6 +14,7 @@ $(document).ready(function() {
         } else {
           $('#lan-devices-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
+          $('#lan-devices-placeholder-none').hide();
           fetchLanDevices(deviceId, upnpSupport, isBridge);
           $('.btn-sync-lan-devs').prop('disabled', true);
         }
@@ -21,6 +22,7 @@ $(document).ready(function() {
       error: function(xhr, status, error) {
         $('#lan-devices-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
+        $('#lan-devices-placeholder-none').hide();
         fetchLanDevices(deviceId, upnpSupport, isBridge);
         $('.btn-sync-lan-devs').prop('disabled', true);
       },
@@ -269,6 +271,10 @@ $(document).ready(function() {
               lanDevsRow.append($('<div></div>').addClass('w-100'));
             }
           });
+          // Placeholder if empty
+          if ( lanDevsRow.is(':empty') ) {
+            $('#lan-devices-placeholder-none').show();
+          }
         } else {
           displayAlertMsg(res);
         }
@@ -285,6 +291,7 @@ $(document).ready(function() {
     let isBridge = row.data('bridge-enabled') === 'Sim';
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     let upnpSupport = row.data('validate-upnp');
+    $('#lan-devices-placeholder-none').hide();
     refreshLanDevices(id, upnpSupport, isBridge); // Refresh devices status
   });
 
@@ -321,6 +328,7 @@ $(document).ready(function() {
         // Clear old data
         $('#lan-devices-body').empty();
         $('#lan-devices-placeholder').show();
+        $('#lan-devices-placeholder-none').hide();
         fetchLanDevices(id, upnpSupport);
       }
     }
@@ -330,6 +338,7 @@ $(document).ready(function() {
   $('#lan-devices').on('hidden.bs.modal', function() {
     $('#lan-devices-body').empty();
     $('#lan-devices-placeholder').show();
+    $('#lan-devices-placeholder-none').hide();
     $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-lan-devs').prop('disabled', false);
   });

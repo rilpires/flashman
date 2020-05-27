@@ -216,6 +216,15 @@ const grantOpmode = function(version) {
   return false;
 };
 
+const grantWanBytesSupport = function(version, model) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.25.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -234,6 +243,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantOpmode = grantOpmode(version);
+  result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   return result;
 };
 

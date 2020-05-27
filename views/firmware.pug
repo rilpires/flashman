@@ -4,13 +4,13 @@ block stylesheets
   link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
 
 block content
-  .card.mt-4
+  .card.mt-5
     h4.card-header.teal.lighten-2.white-text
       .row
-        .col-6
+        .col-12.col-md-6
           .fas.fa-exchange-alt.fa-lg.mt-1
           span &nbsp Upload de novo firmware
-        .col-6
+        .col-12.col-md-6.mt-3.mt-md-0
           ul.nav.nav-pills.nav-justified
             li.nav-item
               a.nav-link(data-toggle="tab", role="tab", href="#panel1")
@@ -35,14 +35,14 @@ block content
 
             .col.mt-4.text-center
               .form-buttons
-                button.btn.btn-lg.teal.lighten-2(
+                button.btn.btn-lg.btn-primary(
                   type="submit",
                   id="btn-submit-upload"
                 )
                   .fas.fa-upload.fa-lg(id="btn-submit-icon")
                   span &nbsp Upload
         .tab-pane.fade.in.show.active(id="panel2", role="tabpanel")
-          .col-8.offset-2.mb-5
+          .d-flex.justify-content-center.mb-5
             form.form-inline(method="post", action="/firmware/sync", name="firmwaresync")
               .md-form.mr-3.mt-2.mb-0
                 i.fas.fa-user.prefix.grey-text
@@ -53,7 +53,7 @@ block content
                 input#password.form-control(type="password", name="password")
                 label(for="password") Senha
               .form-buttons
-                button.btn.btn-md.mt-0.my-0.teal.lighten-2(
+                button.btn.btn-md.ml-0.mt-3.my-md-0.btn-primary(
                   type="submit",
                   id="btn-firmware-sync"
                 )

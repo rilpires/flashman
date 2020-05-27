@@ -2,6 +2,7 @@ const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const request = require('request-promise-native');
 const mqtt = require('../mqtts');
+const util = require('./handlers/util');
 
 const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
@@ -10,8 +11,6 @@ let measureController = {};
 
 const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
 
-const isJSONObject = (val) => val instanceof Object ? true : false;
-
 const isArrayObject = (val) => val instanceof Array ? true : false;
 
 const returnStrOrEmptyStr = (query) =>
@@ -19,7 +18,7 @@ const returnStrOrEmptyStr = (query) =>
 
 // This should check request json and company secret validity (API only)
 const genericRequestErrorHandler = async(function(req) {
-  if (!isJSONObject(req.body)) {
+  if (!util.isJSONObject(req.body)) {
     return [500, 'Erro no JSON recebido'];
   }
   try {

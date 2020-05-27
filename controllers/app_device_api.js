@@ -5,16 +5,9 @@ const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
-
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
-
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
-};
 
 let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
   return new Promise((resolve, reject)=>{
@@ -61,7 +54,7 @@ let appSet = function(req, res, processFunction) {
       return res.status(404).json({is_set: 0});
     }
 
-    if (isJSONObject(req.body.content)) {
+    if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
 
@@ -181,7 +174,7 @@ let processBlacklist = function(content, device, rollback) {
       content.blacklist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Transform dhcp name in case it's a single *
     let dhcpLease = content.blacklist_device.id;
@@ -222,7 +215,7 @@ let processBlacklist = function(content, device, rollback) {
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let blackMacDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
@@ -255,7 +248,7 @@ let processWhitelist = function(content, device, rollback) {
       content.whitelist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Search device to unblock
     let whiteMacDevice = content.whitelist_device.mac.toLowerCase();
@@ -277,7 +270,7 @@ let processWhitelist = function(content, device, rollback) {
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let blackMacDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
@@ -300,7 +293,7 @@ let processDeviceInfo = function(content, device, rollback) {
       content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let newLanDevice = true;
     let configs = content.device_configs;
@@ -345,10 +338,10 @@ let processUpnpInfo = function(content, device, rollback) {
       content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Deep copy upnp requests for rollback
-    rollback.upnp_requests = deepCopyObject(device.upnp_requests);
+    rollback.upnp_requests = util.deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
     let macDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {

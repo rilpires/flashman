@@ -463,7 +463,10 @@ scheduleController.abortSchedule = async(function(req, res) {
       'device_update_schedule.rule.to_do_devices': [],
       'device_update_schedule.rule.in_progress_devices': [],
     };
-    if (rule.done_devices.length + pushArray.length === count) {
+    // We allow device counting to be greater than assigned schedule count
+    // due to some rare racing conditions that count the same device more
+    // then once. No harm.
+    if ((rule.done_devices.length + pushArray.length) >= count) {
       setQuery['device_update_schedule.is_active'] = false;
     }
     await(configQuery(
