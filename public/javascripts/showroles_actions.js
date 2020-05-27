@@ -218,6 +218,19 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Visualizar e editar')
                         )
                       )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Acesso a gráficos de tráfego na WAN'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-bytes').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
                     )
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
@@ -539,7 +552,7 @@ $(document).ready(function() {
           roleObj.grantFlashmanManage + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-api-access] option[value=' +
-          roleObj.grantAPIAccess + ']')
+          roleObj.grantAPIAccess + ']');
         $(rowObj).find('[name=grant-diag-app-access] option[value=' +
           roleObj.grantDiagAppAccess + ']')
         .attr('selected', 'selected');
@@ -566,6 +579,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-csv-export] option[value=' +
           roleObj.grantCsvExport + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-wan-bytes] option[value=' +
+          roleObj.grantWanBytesView + ']')
         .attr('selected', 'selected');
       });
     } else {

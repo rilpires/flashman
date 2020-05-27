@@ -3,7 +3,7 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const mqtt = require('../mqtts');
-const request = require('request');
+const request = require('request-promise-native');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
@@ -637,11 +637,17 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                         pass: callbackAuthSecret,
                       };
                     }
-                    request(requestOptions);
+                    request(requestOptions).then((resp) => {
+                      // Ignore API response
+                      return;
+                    }, (err) => {
+                      // Ignore API endpoint errors
+                      return;
+                    });
                   }
                 }
               }
-            }
+            },
           );
         });
       }
@@ -1103,7 +1109,13 @@ deviceInfoController.receivePingResult = function(req, res) {
                 pass: callbackAuthSecret,
               };
             }
-            request(requestOptions);
+            request(requestOptions).then((resp) => {
+              // Ignore API response
+              return;
+            }, (err) => {
+              // Ignore API endpoint errors
+              return;
+            });
           }
         }
       }

@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-const request = require('request');
+const request = require('request-promise-native');
 
 const Config = require('./config');
 
@@ -31,6 +31,7 @@ let roleSchema = new mongoose.Schema({
   grantLanDevicesBlock: {type: Boolean, required: true, default: false},
   grantMeasureDevices: {type: Number, required: true, default: 1},
   grantOpmodeEdit: {type: Boolean, required: true, default: false},
+  grantWanBytesView: {type: Boolean, required: true, default: false},
   grantCsvExport: {type: Boolean, required: true, default: true},
 });
 
@@ -69,7 +70,13 @@ roleSchema.pre('save', function(callback) {
             pass: callbackAuthSecret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     });
   }
@@ -103,7 +110,13 @@ roleSchema.post('remove', function(role, callback) {
           pass: callbackAuthSecret,
         };
       }
-      request(requestOptions);
+      request(requestOptions).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     }
   });
   callback();

@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 const mongoosePaginate = require('mongoose-paginate');
-const request = require('request');
+const request = require('request-promise-native');
 
 const Config = require('./config');
 
@@ -172,7 +172,13 @@ deviceSchema.pre('save', function(callback) {
             pass: callbackAuthSecret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     });
   }
@@ -205,7 +211,13 @@ deviceSchema.post('remove', function(device, callback) {
           pass: callbackAuthSecret,
         };
       }
-      request(requestOptions);
+      request(requestOptions).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     }
   });
   callback();

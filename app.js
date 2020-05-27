@@ -127,6 +127,11 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantNotificationPopups: true,
         grantLanEdit: true,
         grantLanDevices: 2,
+        grantLanDevicesBlock: true,
+        grantMeasureDevices: 2,
+        grantOpmodeEdit: true,
+        grantWanBytesView: true,
+        grantCsvExport: true,
       });
       managerRole.save();
     }
@@ -319,6 +324,9 @@ app.use('/scripts/datatables.net',
 );
 app.use('/scripts/datatables.net-bs4',
   express.static(path.join(__dirname, 'node_modules/datatables.net-bs4'))
+);
+app.use('/scripts/apexcharts',
+  express.static(path.join(__dirname, 'node_modules/apexcharts/dist'))
 );
 app.use('/scripts/fontawesome/css',
   express.static(path.join(
