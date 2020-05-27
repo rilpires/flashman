@@ -94,11 +94,11 @@ diagAppAPIController.sessionLogin = function(req, res) {
                                    message: 'Usuário não encontrado'});
     }
     Role.findOne({name: user.role}, async(function(err, role) {
-      if (err) {
+      if (err || (!user.is_superuser && !role)) {
         return res.status(500).json({success: false,
                                      message: 'Erro ao encontrar permissões'});
       }
-      if (!role.grantDiagAppAccess) {
+      if (!user.is_superuser && !role.grantDiagAppAccess) {
         return res.status(403).json({success: false,
                                      message: 'Permissão negada'});
       }

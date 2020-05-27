@@ -1,7 +1,7 @@
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt-nodejs');
-const request = require('request');
+const request = require('request-promise-native');
 
 const Config = require('./config');
 
@@ -122,7 +122,13 @@ userSchema.pre('save', function(callback) {
             pass: callbackAuthSecret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     });
   }
@@ -157,7 +163,13 @@ userSchema.post('remove', function(user, callback) {
           pass: callbackAuthSecret,
         };
       }
-      request(requestOptions);
+      request(requestOptions).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     }
   });
   callback();

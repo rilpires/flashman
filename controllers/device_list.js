@@ -9,6 +9,8 @@ const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
+const util = require('./handlers/util');
+
 let deviceListController = {};
 
 const fs = require('fs');
@@ -31,10 +33,6 @@ const intToWeekDayStr = function(day) {
   if (day === 5) return 'Sexta';
   if (day === 6) return 'Sábado';
   return '';
-};
-
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
 };
 
 deviceListController.getReleases = function(modelAsArray=false) {
@@ -125,35 +123,6 @@ const getOnlineCount = function(query) {
       }
     });
   });
-};
-
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
-
-const isJsonString = function(str) {
-  try {
-    JSON.parse(str);
-  } catch (e) {
-    return false;
-  }
-  return true;
-};
-
-const returnObjOrEmptyStr = function(query) {
-  if (typeof query !== 'undefined' && query) {
-    return query;
-  } else {
-    return '';
-  }
-};
-
-const returnObjOrNum = function(query, num) {
-  if (typeof query !== 'undefined' && !isNaN(query)) {
-    return query;
-  } else {
-    return num;
-  }
 };
 
 // Main page
@@ -667,7 +636,7 @@ deviceListController.factoryResetDevice = function(req, res) {
 //
 
 deviceListController.sendMqttMsg = function(req, res) {
-  msgtype = req.params.msg.toLowerCase();
+  let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findById(req.params.id.toUpperCase(),
   function(err, matchedDevice) {
@@ -739,7 +708,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'speedtest':
+      case 'speedtest': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -747,42 +716,48 @@ deviceListController.sendMqttMsg = function(req, res) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
-        if (msgtype == 'speedtest') {
+        if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
-        }
-        if (msgtype == 'boot') {
+        } else if (msgtype === 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
-        } else {
+        } else if (msgtype === 'onlinedevs') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForOnlineDevNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+        } else if (msgtype === 'ping') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPingTestNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+        } else if (msgtype === 'upstatus') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForUpStatusNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+        } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
-            if (msgtype == 'log') {
-              sio.anlixWaitForLiveLogNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
-            } else
-            if (msgtype == 'onlinedevs') {
-              sio.anlixWaitForOnlineDevNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-            }
-            if (msgtype == 'ping') {
-              sio.anlixWaitForPingTestNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
-            }
-            if (msgtype == 'upstatus') {
-              sio.anlixWaitForUpStatusNotification(
-                req.sessionID, req.params.id.toUpperCase());
-              mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            }
+            sio.anlixWaitForLiveLogNotification(
+              req.sessionID, req.params.id.toUpperCase());
+            mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
           } else {
             return res.status(200).json({
               success: false,
               message: 'Esse comando somente funciona em uma sessão!',
             });
           }
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Esse comando não existe',
+          });
         }
         break;
+      }
       default:
         // Message not implemented
         console.log('REST API MQTT Message not recognized (' + msgtype + ')');
@@ -903,35 +878,35 @@ deviceListController.setDeviceReg = function(req, res) {
       });
     }
 
-    if (isJSONObject(req.body.content)) {
+    if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
       let validator = new Validator();
 
       let errors = [];
-      let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
-      let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
-      let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
-      let lanSubnet = returnObjOrEmptyStr(content.lan_subnet).trim();
-      let lanNetmask = returnObjOrEmptyStr(content.lan_netmask).trim();
-      let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
-      let password = returnObjOrEmptyStr(content.wifi_password).trim();
-      let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
-      let band = returnObjOrEmptyStr(content.wifi_band).trim();
-      let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
-      let wifiState = parseInt(returnObjOrNum(content.wifi_state, 1));
-      let ssid5ghz = returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
-      let password5ghz = returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
-      let channel5ghz = returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
-      let band5ghz = returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
-      let mode5ghz = returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
-      let wifiState5ghz = parseInt(returnObjOrNum(content.wifi_state_5ghz, 1));
-      let bridgeEnabled = parseInt(returnObjOrNum(content.bridgeEnabled, 1)) === 1;
-      let bridgeDisableSwitch = parseInt(returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
-      let bridgeFixIP = returnObjOrEmptyStr(content.bridgeFixIP).trim();
-      let bridgeFixGateway = returnObjOrEmptyStr(content.bridgeFixGateway).trim();
-      let bridgeFixDNS = returnObjOrEmptyStr(content.bridgeFixDNS).trim();
-      let meshMode = parseInt(returnObjOrNum(content.mesh_mode, 0));
+      let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
+      let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
+      let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+      let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).trim();
+      let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).trim();
+      let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
+      let password = util.returnObjOrEmptyStr(content.wifi_password).trim();
+      let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
+      let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
+      let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+      let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
+      let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
+      let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
+      let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
+      let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
+      let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
+      let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
+      let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
+      let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
+      let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
+      let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
+      let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -1009,13 +984,16 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
         if (bridgeEnabled && bridgeFixIP) {
-          genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
-          genericValidate(bridgeFixGateway, validator.validateIP, 'bridge_fixed_gateway');
-          genericValidate(bridgeFixDNS, validator.validateIP, 'bridge_fixed_dns');
+          genericValidate(bridgeFixIP, validator.validateIP,
+                          'bridge_fixed_ip');
+          genericValidate(bridgeFixGateway, validator.validateIP,
+                          'bridge_fixed_gateway');
+          genericValidate(bridgeFixDNS, validator.validateIP,
+                          'bridge_fixed_dns');
         }
 
         if (errors.length < 1) {
-          Role.findOne({name: returnObjOrEmptyStr(req.user.role)},
+          Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
           function(err, role) {
             if (err) {
               console.log(err);
@@ -1203,22 +1181,22 @@ deviceListController.setDeviceReg = function(req, res) {
 };
 
 deviceListController.createDeviceReg = function(req, res) {
-  if (isJSONObject(req.body.content)) {
+  if (util.isJSONObject(req.body.content)) {
     const content = req.body.content;
     const macAddr = content.mac_address.trim().toUpperCase();
     const extReference = content.external_reference;
     const validator = new Validator();
 
     let errors = [];
-    let release = returnObjOrEmptyStr(content.release).trim();
-    let connectionType = returnObjOrEmptyStr(content.connection_type).trim();
-    let pppoeUser = returnObjOrEmptyStr(content.pppoe_user).trim();
-    let pppoePassword = returnObjOrEmptyStr(content.pppoe_password).trim();
-    let ssid = returnObjOrEmptyStr(content.wifi_ssid).trim();
-    let password = returnObjOrEmptyStr(content.wifi_password).trim();
-    let channel = returnObjOrEmptyStr(content.wifi_channel).trim();
-    let band = returnObjOrEmptyStr(content.wifi_band).trim();
-    let mode = returnObjOrEmptyStr(content.wifi_mode).trim();
+    let release = util.returnObjOrEmptyStr(content.release).trim();
+    let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
+    let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
+    let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+    let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
+    let password = util.returnObjOrEmptyStr(content.wifi_password).trim();
+    let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
+    let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
+    let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -1276,7 +1254,7 @@ deviceListController.createDeviceReg = function(req, res) {
             errors.push({mac: 'Endereço MAC já cadastrado'});
           }
           if (errors.length < 1) {
-            newDeviceModel = new DeviceModel({
+            let newDeviceModel = new DeviceModel({
               '_id': macAddr,
               'external_reference': extReference,
               'model': '',
@@ -1353,11 +1331,11 @@ deviceListController.setPortForward = function(req, res) {
         success: false,
         message: 'Este roteador está em modo bridge, e portanto não pode '+
                  'liberar acesso a portas',
-      })
+      });
     }
 
     console.log('Updating Port Forward for ' + matchedDevice._id);
-    if (isJsonString(req.body.content)) {
+    if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
 
       let usedAsymPorts = [];
@@ -1618,7 +1596,7 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
-    if (isJsonString(req.body.content)) {
+    if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
       let approvedHosts = [];
       content.hosts.forEach((host) => {
@@ -1666,7 +1644,7 @@ deviceListController.getLanDevices = function(req, res) {
       });
     }
 
-    let enrichedLanDevs = deepCopyObject(matchedDevice.lan_devices)
+    let enrichedLanDevs = util.deepCopyObject(matchedDevice.lan_devices)
     .map((lanDevice) => {
       lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
@@ -1700,7 +1678,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
 
     return res.status(200).json({
@@ -1738,7 +1716,7 @@ deviceListController.doSpeedTest = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
@@ -1766,7 +1744,7 @@ deviceListController.doSpeedTest = function(req, res) {
       }
       mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       return res.status(200).json({
-        success: true
+        success: true,
       });
     });
   });

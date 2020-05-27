@@ -6,16 +6,9 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
+const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
-
-const isJSONObject = function(val) {
-  return val instanceof Object ? true : false;
-};
-
-const deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
-};
 
 let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
   return new Promise((resolve, reject)=>{
@@ -62,7 +55,7 @@ let appSet = function(req, res, processFunction) {
       return res.status(404).json({is_set: 0});
     }
 
-    if (isJSONObject(req.body.content)) {
+    if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
 
@@ -88,7 +81,7 @@ let appSet = function(req, res, processFunction) {
         if (done) {
           meshHandlers.syncSlaves(matchedDevice);
           return res.status(200).json({is_set: 1});
-        } 
+        }
         doRollback(matchedDevice, rollbackValues);
         matchedDevice.save();
         return res.status(500).json({is_set: 0});
@@ -185,7 +178,7 @@ let processBlacklist = function(content, device, rollback) {
       content.blacklist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Transform dhcp name in case it's a single *
     let dhcpLease = content.blacklist_device.id;
@@ -226,7 +219,7 @@ let processBlacklist = function(content, device, rollback) {
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let blackMacDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
@@ -259,7 +252,7 @@ let processWhitelist = function(content, device, rollback) {
       content.whitelist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Search device to unblock
     let whiteMacDevice = content.whitelist_device.mac.toLowerCase();
@@ -281,7 +274,7 @@ let processWhitelist = function(content, device, rollback) {
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let blackMacDevice = content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
@@ -304,7 +297,7 @@ let processDeviceInfo = function(content, device, rollback) {
       content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     let newLanDevice = true;
     let configs = content.device_configs;
@@ -349,15 +342,16 @@ let processUpnpInfo = function(content, device, rollback) {
       content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
-      rollback.lan_devices = deepCopyObject(device.lan_devices);
+      rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Deep copy upnp requests for rollback
-    rollback.upnp_requests = deepCopyObject(device.upnp_requests);
+    rollback.upnp_requests = util.deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
     let macDevice = content.device_configs.mac.toLowerCase();
+    let allow = 'none';
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
-        let allow = 'none';
+        allow = 'none';
         if (content.device_configs.upnp_allow === true) {
           allow = 'accept';
         } else if (content.device_configs.upnp_allow === false) {
@@ -462,8 +456,7 @@ appDeviceAPIController.registerApp = function(req, res) {
         });
         if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
           deviceObj.app_uid = req.body.app_id;
-        }
-        else if (!deviceObj) {
+        } else if (!deviceObj) {
           matchedDevice.lan_devices.push({
             mac: req.body.app_mac,
             app_uid: req.body.app_id,
@@ -662,7 +655,8 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       if (config && config.measureServerIP) {
         // Send mqtt message to perform speedtest
         let url = config.measureServerIP + ':' + config.measureServerPort;
-        mqtt.anlixMessageRouterSpeedTest(req.body.id, url, {name: 'App_Cliente'});
+        mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
+                                         {name: 'App_Cliente'});
       }
     }), 1.5*1000);
   }));
@@ -735,7 +729,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
 
     // Override some permissions if device in bridge mode
@@ -839,7 +833,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
     }
 
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
     );
     return res.status(200).json({
       permissions: permissions,

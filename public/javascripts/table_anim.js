@@ -165,6 +165,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
+  let grantWanBytes = false;
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
@@ -184,6 +185,7 @@ $(document).ready(function() {
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
+    grantWanBytes = role.grantWanBytesView;
   }
 
   // Default column to sort rows
@@ -317,7 +319,7 @@ $(document).ready(function() {
             upgradeStatus.find('.status-error').addClass('d-none');
             // Deactivate cancel button
             row.find('.btn-group .btn-cancel-update')
-               .removeClass('btn-danger').attr('disabled', true);
+               .attr('disabled', true);
           }
         }
       },
@@ -456,6 +458,7 @@ $(document).ready(function() {
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
+          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
 
           let csvAttr = 'id="'+device._id+'"';
           csvAttr += ' data-index="'+index+'"';
@@ -508,7 +511,7 @@ $(document).ready(function() {
 
           let upgradeCol = '<td>'+
             '<div class="btn-group device-update">'+
-              '<button class="btn btn-sm px-2 btn-cancel-update $UP_CLASS" $NO_UPDATE>'+
+              '<button class="btn btn-sm px-2 btn-cancel-update btn-danger" $NO_UPDATE>'+
                 '<div class="fas fa-times"></div>'+
               '</button>'+
               '<div class="btn-group">'+
@@ -529,7 +532,6 @@ $(document).ready(function() {
             '</div>'+
           '</td>';
           if (device.do_update) {
-            upgradeCol = upgradeCol.replace('$UP_CLASS', 'btn-danger');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
             upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
             upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
@@ -548,7 +550,6 @@ $(document).ready(function() {
               upgradeCol = upgradeCol.replace('$STATUS_2', '');
             }
           } else {
-            upgradeCol = upgradeCol.replace('$UP_CLASS', '');
             upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
             upgradeCol = upgradeCol.replace('$NO_UPDATE', 'disabled');
             upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', '');
@@ -657,6 +658,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
+          let wanBytesAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          .replace('$REPLACE_ICON', 'fa-chart-line')
+          .replace('$REPLACE_TEXT', 'Tráfego WAN');
+
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
@@ -679,6 +685,7 @@ $(document).ready(function() {
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
             '$REPLACE_MEASURE_ACTION'+
+            '$REPLACE_WAN_BYTES_ACTION'+
             '$REPLACE_FACTORY_ACTION'+
           '</div>';
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
@@ -710,6 +717,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
+          }
+          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
           }
           if (isSuperuser || grantFactoryReset) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
