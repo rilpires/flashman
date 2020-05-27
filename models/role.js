@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-const request = require('request');
+const request = require('request-promise-native');
 
 const Config = require('./config');
 
@@ -69,7 +69,13 @@ roleSchema.pre('save', function(callback) {
             pass: callbackAuthSecret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     });
   }
@@ -103,7 +109,13 @@ roleSchema.post('remove', function(role, callback) {
           pass: callbackAuthSecret,
         };
       }
-      request(requestOptions);
+      request(requestOptions).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     }
   });
   callback();
