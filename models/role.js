@@ -31,6 +31,7 @@ let roleSchema = new mongoose.Schema({
   grantLanDevicesBlock: {type: Boolean, required: true, default: false},
   grantMeasureDevices: {type: Number, required: true, default: 1},
   grantOpmodeEdit: {type: Boolean, required: true, default: false},
+  grantWanBytesView: {type: Boolean, required: true, default: false},
   grantCsvExport: {type: Boolean, required: true, default: true},
 });
 

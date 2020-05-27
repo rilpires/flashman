@@ -165,6 +165,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
+  let grantWanBytes = false;
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
@@ -184,6 +185,7 @@ $(document).ready(function() {
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
+    grantWanBytes = role.grantWanBytesView;
   }
 
   // Default column to sort rows
@@ -456,6 +458,7 @@ $(document).ready(function() {
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
+          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
 
           let csvAttr = 'id="'+device._id+'"';
           csvAttr += ' data-index="'+index+'"';
@@ -715,7 +718,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
-          if (isSuperuser) {
+          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);
           } else {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');

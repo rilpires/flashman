@@ -127,6 +127,11 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantNotificationPopups: true,
         grantLanEdit: true,
         grantLanDevices: 2,
+        grantLanDevicesBlock: true,
+        grantMeasureDevices: 2,
+        grantOpmodeEdit: true,
+        grantWanBytesView: true,
+        grantCsvExport: true,
       });
       managerRole.save();
     }
