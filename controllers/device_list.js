@@ -107,9 +107,14 @@ const getOnlineCount = function(query) {
             DeviceModel.count(offlineQuery, function(err, count) {
               if (!err) {
                 status.offlinenum = count;
-                status.totalnum = (status.offlinenum + status.recoverynum +
-                                   status.onlinenum);
-                return resolve(status);
+                getOnlineCountMesh(query).then((extraStatus)=>{
+                  status.onlinenum += extraStatus.onlinenum;
+                  status.recoverynum += extraStatus.recoverynum;
+                  status.offlinenum += extraStatus.offlinenum;
+                  status.totalnum = (status.offlinenum + status.recoverynum +
+                                     status.onlinenum);
+                  return resolve(status);
+                });
               } else {
                 return reject(err);
               }
@@ -117,6 +122,37 @@ const getOnlineCount = function(query) {
           } else {
             return reject(err);
           }
+        });
+      } else {
+        return reject(err);
+      }
+    });
+  });
+};
+
+const getOnlineCountMesh = function(query) {
+  return new Promise((resolve, reject)=> {
+    let meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
+    let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    lastHour = lastHour.getTime();
+    let options = {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1};
+
+    const mqttClients = Object.values(mqtt.unifiedClientsMap)
+    .reduce((acc, curr) => {
+      return acc.concat(Object.keys(curr));
+    }, []);
+
+    DeviceModel.find(meshQuery, options, function(err, devices) {
+      if (!err) {
+        meshHandlers.enhanceSearchResult(devices).then((extra)=>{
+          extra.forEach((e)=>{
+            if (mqttClients.includes(e._id)) status.onlinenum += 1;
+            else if (e.last_contact >= lastHour) status.recoverynum += 1;
+            else status.offlinenum += 1;
+          });
+          return resolve(status);
         });
       } else {
         return reject(err);
