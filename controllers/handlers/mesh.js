@@ -51,7 +51,46 @@ meshHandlers.syncSlaves = function(master, slaveReferences=null) {
         mqtt.anlixMessageRouterUpdate(slaveMac);
       }
     });
-  });
+  }
+}
+
+meshHandlers.enhanceSearchResult = async function(result) {
+  // Add mesh siblings/master if they are not in the results
+  // Convert result array to object with mac keys for O(1) search
+  let addedMacs = {};
+  result.forEach((r)=>{addedMacs[r._id]=true;});
+  let extraResults = [];
+  for (let i = 0; i < result.length; i++) {
+    try {
+      let device = result[i];
+      let masterMac = device.mesh_master;
+      if (masterMac != "" && !addedMacs[masterMac]) {
+        // Slave is in results, but master isnt - add master and other slaves
+        addedMacs[masterMac] = true;
+        let masterReg = await DeviceModel.findById(masterMac).lean();
+        if (masterReg) {
+          extraResults.push(masterReg);
+          device = masterReg; // Update device for next step, to add slaves
+        }
+      }
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        // Master is in results, make sure all slaves are as well
+        for (let s = 0; s < device.mesh_slaves.length; s++) {
+          let slaveMac = device.mesh_slaves[s];
+          if (!addedMacs[slaveMac]) {
+            addedMacs[slaveMac] = true;
+            let slaveReg = await DeviceModel.findById(slaveMac).lean();
+            if (slaveReg) {
+              extraResults.push(slaveReg);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  return extraResults;
 }
 
 module.exports = meshHandlers;
