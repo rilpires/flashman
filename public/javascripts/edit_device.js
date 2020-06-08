@@ -13,6 +13,15 @@ let renderEditErrors = function(errors) {
   }
 };
 
+const validateEditDeviceMesh = function(event) {
+  let row = $(event.target).parents('tr');
+  let slaveCount = parseInt(row.data('slave-count'));
+  for (let i = 0; i < (slaveCount*2)+1; i++) {
+    row = row.prev();
+  }
+  row.find('form').submit();
+};
+
 let validateEditDevice = function(event) {
   $('.form-control').blur(); // Remove focus from form
   $('.edit-form input').each(function() {
@@ -23,6 +32,7 @@ let validateEditDevice = function(event) {
 
   let row = $(event.target).parents('tr');
   let index = row.data('index');
+  let slaveCount = row.prev().data('slave-count');
 
   // Get form values
   let mac = row.data('deviceid');
@@ -63,6 +73,15 @@ let validateEditDevice = function(event) {
   let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
                               index.toString()+'"]:checked').length > 0;
   let meshMode = $('#edit_meshMode-' + index.toString()).val();
+
+  let slaveReferences = [];
+  if (slaveCount > 0) {
+    for (let i = 0; i < slaveCount; i++) {
+      let referenceType = $('#edit_ext_ref_type_selected-'+index+'-'+i).html();
+      let referenceData = $('#edit_external_reference-' +index+'-'+i).val();
+      slaveReferences.push({kind: referenceType, data: referenceData});
+    }
+  }
 
   // Initialize error structure
   let errors = {
@@ -151,6 +170,7 @@ let validateEditDevice = function(event) {
         kind: externalReferenceType,
         data: externalReferenceData,
       },
+      'slave_references': JSON.stringify(slaveReferences),
     }};
     if (validatePppoe) {
       data.content.pppoe_user = (pppoe) ? pppoeUser : '';
