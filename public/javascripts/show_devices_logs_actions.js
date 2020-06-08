@@ -111,8 +111,33 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
 
+    let slaveCount = parseInt(row.data('slave-count'));
+    $('#mesh-change-div').html('');
+    if (slaveCount > 0) {
+      let slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
+      let deviceOpts = '<a class="dropdown-item text-center">'+id+'</a>';
+      slaves.forEach((slave)=>{
+        deviceOpts += '<a class="dropdown-item text-center">'+slave+'</a>';
+      });
+      $('#mesh-change-div').html(deviceOpts);
+      $('#mesh-change-button').show();
+    } else {
+      $('#mesh-change-button').hide();
+      $('#mesh-change-div').hide();
+    }
+
     $('#logRouterid_label').text(id);
     $('#analyse-logs').modal('show');
+  });
+
+  $(document).on('click', '#mesh-change-div a', function(event) {
+    let target = $(event.target).html();
+    if (target === $('#logRouterid_label').text()) return;
+    $('#logRouterid_label').text(target);
+    $('#export-log').addClass('disabled');
+    $('#logArea').hide('fast', function() {
+      $('#logs-placeholder').show('fast');
+    });
   });
 
   $(document).on('click', '.btn-log-live', function(event) {
