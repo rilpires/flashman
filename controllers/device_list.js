@@ -736,11 +736,23 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
         } else if (msgtype === 'upstatus') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForUpStatusNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID,
+              req.params.id.toUpperCase()
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForUpStatusNotification(
+                req.sessionID,
+                slave.toUpperCase()
+              );
+            })
           }
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+          })
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
