@@ -250,43 +250,157 @@ let validateEditDevice = function(event) {
   return false;
 };
 
+const rebootNetwork = function(id, success, error) {
+  $.ajax({
+    url: '/devicelist/command/' + id + '/boot',
+    type: 'post',
+    success: success,
+    error: error,
+  });
+};
+
+const rebootNetworkMesh = function(ids, index, results=[]) {
+  if (index < 0) {
+    if (results.every((r)=>r.success)) {
+      $('#reboot-loading').hide('fast', ()=>{
+        $('#reboot-done').show('fast');
+        $('#reboot-mesh-button').hide();
+        $('#reboot-done-button').show();
+      });
+    } else {
+      $('#reboot-error-div').html('');
+      for (let i = 0; i < ids.length; i++) {
+        if (results[i].success) {
+          $('#reboot-error-div').append(
+            $('<h5></h5>').html(ids[i] + ' - Sucesso!')
+          );
+        } else {
+          $('#reboot-error-div').append(
+            $('<h5></h5>').html(ids[i] + ' - ' + results[i].message)
+          );
+        }
+      }
+      $('#reboot-loading').hide('fast', ()=>{
+        $('#reboot-error').show('fast');
+        $('#reboot-mesh-button').hide();
+        $('#reboot-error-button').show();
+      });
+    }
+    return;
+  }
+  rebootNetwork(ids[index], (res)=>{
+    results.unshift(res);
+    rebootNetworkMesh(ids, index-1, results);
+  }, (xhr, status, error)=>{
+    results.unshift({success: false, message: status});
+    rebootNetworkMesh(ids, index-1, results);
+  });
+};
+
 $(document).ready(function() {
   $(document).on('submit', '.edit-form', validateEditDevice);
+  $(document).on('click', '.edit-form-mesh', validateEditDeviceMesh);
 
   $(document).on('click', '.btn-reboot', function(event) {
-    let row = $(event.target).parents('tr');
+    let target = $(event.target);
+    let row = target.parents('tr');
     let id = row.data('deviceid');
-    $.ajax({
-      url: '/devicelist/command/' + id + '/boot',
-      type: 'post',
-      success: function(res) {
-        let badge;
-        if (res.success) {
-          badge = $(event.target).closest('.actions-opts')
-                                     .find('.badge-success');
-        } else {
-          badge = $(event.target).closest('.actions-opts')
-                                     .find('.badge-warning');
+    let slaveCount = parseInt(row.data('slave-count'));
+    if (slaveCount > 0 ){
+      $('#reboot-master-label').html(id);
+      $('#reboot-options').html('');
+      let slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
+      let s = 0;
+      slaves.forEach((slave)=>{
+        $('#reboot-options').append(
+          $('<div></div>').addClass('custom-control custom-checkbox').append(
+            $('<input></input>')
+            .addClass('mesh-router custom-control-input')
+            .attr('id', 'select-reboot-slave-'+s)
+            .attr('type', 'checkbox'),
+            $('<label></label>')
+            .addClass('custom-control-label')
+            .attr('for', 'select-reboot-slave-'+s)
+            .html(slave)
+          )
+        );
+        s++;
+      });
+      $('.mesh-router').off('change');
+      $('.mesh-router').on('change', (event)=>{
+        let ok = $('.mesh-router').toArray().some((r)=>r.checked);
+        $('.btn-reboot-mesh').prop('disabled', !ok);
+      });
+      $('.btn-reboot-mesh').off('click');
+      $('.btn-reboot-mesh').on('click', (event)=>{
+        $('.btn-reboot-mesh').prop('disabled', true);
+        $('#reboot-select').hide('fast', ()=>{
+          $('#reboot-loading').show('fast');
+          let ids = [];
+          if ($('#select-reboot-master').prop('checked')) {
+            ids.push(id);
+          }
+          for (let i = 0; i < slaveCount; i++) {
+            if ($('#select-reboot-slave-'+i).prop('checked')) {
+              ids.push(slaves[i]);
+            }
+          }
+          rebootNetworkMesh(ids, ids.length-1);
+        });
+      });
+      $('.mesh-router').prop('checked', false);
+      $('#select-reboot-all').prop('checked', false);
+      $('.btn-reboot-mesh').prop('disabled', true);
+      $('#reboot-select').show();
+      $('#reboot-mesh-button').show();
+      $('#reboot-loading').hide();
+      $('#reboot-error').hide();
+      $('#reboot-error-button').hide();
+      $('#reboot-done').hide();
+      $('#reboot-done-button').hide();
+      $('#reboot-mesh.modal').modal('show');
+    } else {
+      rebootNetwork(id, (res)=>{
+        let badge = target.closest('.actions-opts').find('.badge-success');
+        if (!res.success) {
+          badge = target.closest('.actions-opts').find('.badge-warning');
           if (res.message) {
             badge.text(res.message);
           }
         }
-
         badge.removeClass('d-none');
         setTimeout(function() {
           badge.addClass('d-none');
         }, 1500);
-      },
-      error: function(xhr, status, error) {
-        let badge = $(event.target).closest('.actions-opts')
-                                   .find('.badge-warning');
+      }, (xhr, status, error)=>{
+        let badge = target.closest('.actions-opts').find('.badge-warning');
         badge.text(status);
         badge.removeClass('d-none');
         setTimeout(function() {
           badge.addClass('d-none');
         }, 1500);
-      },
+      });
+    }
+  });
+
+  $('.btn-reboot-mesh-retry').on('click', (event)=>{
+    $('#reboot-error').hide('fast', ()=>{
+      $('#reboot-select').show('fast');
+      $('.btn-reboot-mesh').prop('disabled', false);
     });
+    $('#reboot-error-button').hide();
+    $('#reboot-mesh-button').show();
+  });
+
+  $('.btn-reboot-mesh-close').on('click', (event)=>{
+    $('.mesh-router').prop('checked', false);
+    $('#select-reboot-all').prop('checked', false);
+    $('#reboot-mesh.modal').modal('hide');
+  });
+
+  $('#select-reboot-all').on('change', (event)=>{
+    $('.mesh-router').prop('checked', event.target.checked);
+    $('.btn-reboot-mesh').prop('disabled', !event.target.checked);
   });
 
   $(document).on('click', '.btn-reset-app', function(event) {
