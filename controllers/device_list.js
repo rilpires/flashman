@@ -464,7 +464,7 @@ deviceListController.searchDeviceReg = function(req, res) {
     let releases = deviceListController.getReleases();
     lastHour.setHours(lastHour.getHours() - 1);
 
-    let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
+    let enrichDevice = function(device) {
       const model = device.model.replace('N/', '');
       const devReleases = releases.filter((release) => release.model === model);
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -491,32 +491,35 @@ deviceListController.searchDeviceReg = function(req, res) {
         device.wifi_state_5ghz = 1;
       }
       return device;
-    });
+    };
 
-    User.findOne({name: req.user.name}, function(err, user) {
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
-        getOnlineCount(finalQuery).then((onlineStatus) => {
-          // Counters
-          let status = {};
-          status = Object.assign(status, onlineStatus);
-          // Filter data using user permissions
-          return res.json({
-            success: true,
-            type: 'success',
-            limit: req.user.maxElementsPerPage,
-            page: matchedDevices.page,
-            pages: matchedDevices.pages,
-            min_length_pass_pppoe: matchedConfig.pppoePassLength,
-            status: status,
-            single_releases: deviceListController.getReleases(true),
-            filter_list: req.body.filter_list,
-            devices: enrichedMatchedDevs,
-          });
-        }, (error) => {
-          return res.json({
-            success: false,
-            type: 'danger',
-            message: err.message,
+    meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
+      let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
+      User.findOne({name: req.user.name}, function(err, user) {
+        Config.findOne({is_default: true}, function(err, matchedConfig) {
+          getOnlineCount(finalQuery).then((onlineStatus) => {
+            // Counters
+            let status = {};
+            status = Object.assign(status, onlineStatus);
+            // Filter data using user permissions
+            return res.json({
+              success: true,
+              type: 'success',
+              limit: req.user.maxElementsPerPage,
+              page: matchedDevices.page,
+              pages: matchedDevices.pages,
+              min_length_pass_pppoe: matchedConfig.pppoePassLength,
+              status: status,
+              single_releases: deviceListController.getReleases(true),
+              filter_list: req.body.filter_list,
+              devices: allDevices,
+            });
+          }, (error) => {
+            return res.json({
+              success: false,
+              type: 'danger',
+              message: err.message,
+            });
           });
         });
       });
