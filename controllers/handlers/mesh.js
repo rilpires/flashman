@@ -3,7 +3,7 @@ const mqtt = require('../../mqtts');
 
 let meshHandlers = {};
 
-meshHandlers.syncSlave = function(master, slave) {
+meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.mesh_mode = master.mesh_mode;
   slave.wifi_ssid = master.wifi_ssid;
   slave.wifi_password = master.wifi_password;
@@ -21,23 +21,34 @@ meshHandlers.syncSlave = function(master, slave) {
   }
 }
 
-meshHandlers.syncSlaves = function(master) {
+meshHandlers.syncSlaveReference = function(slave, reference) {
+  if (reference.hasOwnProperty('kind') && reference.kind !== '' &&
+      reference.hasOwnProperty('data') && reference.data !== '') {
+    slave.external_reference.kind = reference.kind;
+    slave.external_reference.data = reference.data;
+  }
+}
 
-  master.mesh_slaves.forEach(function (s) {
-    DeviceModel.findById(s, function(err, slaveDevice) {
+meshHandlers.syncSlaves = function(master, slaveReferences=null) {
+  for (let i = 0; i < master.mesh_slaves.length; i++) {
+    let slaveMac = master.mesh_slaves[i];
+    DeviceModel.findById(slaveMac, function(err, slaveDevice) {
       if (err) {
-        console.log('Attempt to modify mesh slave '+ s +' from master ' +
+        console.log('Attempt to modify mesh slave '+ slaveMac +' from master ' +
           master._id + ' failed: cant get slave device.');
       } else 
       if (!slaveDevice) {
-        console.log('Attempt to modify mesh slave '+ s +' from master ' +
+        console.log('Attempt to modify mesh slave '+ slaveMac +' from master ' +
           master._id + ' failed: cant get slave device.');
       } else {
-        meshHandlers.syncSlave(master,slaveDevice);
+        if (slaveReferences && slaveReferences[i]) {
+          meshHandlers.syncSlaveReference(slaveDevice, slaveReferences[i]);
+        }
+        meshHandlers.syncSlaveWifi(master, slaveDevice);
         slaveDevice.save();
 
         // Push updates to the Slave
-        mqtt.anlixMessageRouterUpdate(s);
+        mqtt.anlixMessageRouterUpdate(slaveMac);
       }
     });
   });
