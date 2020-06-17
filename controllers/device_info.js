@@ -841,7 +841,7 @@ deviceInfoController.registerMeshSlave = function(req, res) {
           }
 
           slaveDevice.mesh_master = matchedDevice._id;
-          meshHandlers.syncSlave(matchedDevice, slaveDevice);
+          meshHandlers.syncSlaveWifi(matchedDevice, slaveDevice);
           slaveDevice.save();
 
           matchedDevice.mesh_slaves.push(slave);
