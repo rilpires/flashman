@@ -732,7 +732,9 @@ deviceListController.factoryResetDevice = function(req, res) {
     await(device.save());
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
-    return res.status(200).json({success: true});
+    res.status(200).json({success: true});
+    // Start ack timeout
+    deviceHandlers.timeoutUpdateAck(device._id);
   }));
 };
 
