@@ -688,16 +688,33 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         }
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          updateScheduler.successDownload(req.body.id);
+          if (!matchedDevice.mesh_master || matchedDevice.mesh_master === '') {
+            // Only regular devices and mesh masters report download complete
+            updateScheduler.successDownload(req.body.id);
+          }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
           matchedDevice.do_update_status = 10; // ack received
         } else if (upgStatus == '0') {
-          updateScheduler.failedDownload(req.body.id);
+          if (matchedDevice.mesh_master) {
+            // Mesh slaves call update schedules function with their master mac
+            updateScheduler.failedDownload(
+              matchedDevice.mesh_master, req.body.id
+            );
+          } else {
+            updateScheduler.failedDownload(req.body.id);
+          }
           console.log('WARNING: Device ' + req.body.id +
                       ' failed in firmware check!');
           matchedDevice.do_update_status = 3; // img check failed
         } else if (upgStatus == '2') {
-          updateScheduler.failedDownload(req.body.id);
+          if (matchedDevice.mesh_master) {
+            // Mesh slaves call update schedules function with their master mac
+            updateScheduler.failedDownload(
+              matchedDevice.mesh_master, req.body.id
+            );
+          } else {
+            updateScheduler.failedDownload(req.body.id);
+          }
           console.log('WARNING: Device ' + req.body.id +
                       ' failed to download firmware!');
           matchedDevice.do_update_status = 2; // img download failed
