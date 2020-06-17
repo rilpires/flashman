@@ -225,14 +225,39 @@ deviceListController.index = function(req, res) {
               };
             });
           indexContent.update_schedule['release'] = params.rule.release;
-          indexContent.update_schedule['device_to_do'] =
-            rule.to_do_devices.length + rule.in_progress_devices.length;
+          let todo = rule.to_do_devices.length;
+          rule.to_do_devices.forEach((d)=>{
+            if (d.slave_count > 0) {
+              todo += d.slave_count;
+            }
+          });
+          let inProgress = rule.in_progress_devices.length;
+          rule.in_progress_devices.forEach((d)=>{
+            if (d.slave_count > 0) {
+              inProgress += d.slave_count;
+            }
+          });
+          let doneList = rule.done_devices.filter((d)=>d.state==='ok');
+          let done = doneList.length;
+          doneList.forEach((d)=>{
+            if (d.slave_count > 0) {
+              done += d.slave_count;
+            }
+          });
+          let errorList = rule.done_devices.filter((d)=>d.state!=='ok');
+          let derror = errorList.length;
+          errorList.forEach((d)=>{
+            if (d.slave_count > 0) {
+              derror += d.slave_count;
+            }
+          });
           indexContent.update_schedule['device_doing'] =
             rule.in_progress_devices.length;
-          indexContent.update_schedule['device_done'] =
-            rule.done_devices.filter((d)=>d.state==='ok').length;
-          indexContent.update_schedule['device_error'] =
-            rule.done_devices.filter((d)=>d.state!=='ok').length;
+          indexContent.update_schedule['device_to_do'] = todo + inProgress;
+          indexContent.update_schedule['device_done'] = done;
+          indexContent.update_schedule['device_error'] = derror;
+          indexContent.update_schedule['device_total'] =
+            todo + inProgress + done + derror;
         }
       }
 
