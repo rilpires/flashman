@@ -298,6 +298,82 @@ $(document).ready(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
+  const updateSlavesRecursively = function(row, iter, update, status, remain, mac='') {
+    if (iter < 0) {
+      if (!update) {
+        // Activate dropdown
+        row.find('.device-update .dropdown-toggle .selected').text('Escolher');
+        row.find('.device-update .dropdown-toggle').attr('disabled', false);
+        // Deactivate waiting status
+        let upgradeStatus = row.find('span.upgrade-status');
+        upgradeStatus.find('.status-none').removeClass('d-none');
+        upgradeStatus.find('.status-waiting').addClass('d-none');
+        upgradeStatus.find('.status-ok').addClass('d-none');
+        upgradeStatus.find('.status-error').addClass('d-none');
+        // Deactivate cancel button
+        row.find('.btn-group .btn-cancel-update').attr('disabled', true);
+      } else {
+        // Deactivate dropdown
+        row.find('.device-update .dropdown-toggle').attr('disabled', true);
+        // Update waiting status
+        let upgradeStatus = row.find('span.upgrade-status');
+        upgradeStatus.find('.status-none').addClass('d-none');
+        upgradeStatus.find('.status-waiting').addClass('d-none');
+        upgradeStatus.find('.status-ok').addClass('d-none');
+        upgradeStatus.find('.status-error').addClass('d-none');
+        if (status == 0 || status == 10) {
+          upgradeStatus.find('.status-waiting').removeClass('d-none');
+          let slaveCount = row.data('slave-count');
+          let tooltip = 'Atualizando roteador...';
+          if (remain === slaveCount+1) {
+            tooltip = 'Atualizando roteador mestre...';
+          } else if (remain > 0) {
+            let current = slaveCount - remain + 1;
+            tooltip = 'Atualizando roteador slave '+current+' de '+slaveCount+'...';
+          }
+          upgradeStatus.find('.status-waiting').attr('title', tooltip);
+        } else if (status == 1) {
+          upgradeStatus.find('.status-ok').removeClass('d-none');
+        } else if (status >= 2) {
+          let slaveCount = row.data('slave-count');
+          let progress = (remain === slaveCount+1) ? 0 : slaveCount - remain + 1;
+          let errorAnchor = upgradeStatus.find('.status-error');
+          errorAnchor.attr('data-progress', progress);
+          errorAnchor.attr('data-mac', mac);
+          errorAnchor.removeClass('d-none');
+        }
+        // Activate cancel button
+        row.find('.btn-group .btn-cancel-update').attr('disabled', false);
+      }
+      return;
+    }
+    let slaveRow = row;
+    for (let i = 0; i <= iter; i++) {
+      slaveRow = slaveRow.next().next();
+    }
+    let localDeviceId = slaveRow.data('deviceid');
+    $.ajax({
+      url: '/devicelist/uiupdate/' + localDeviceId,
+      type: 'GET',
+      success: function(res) {
+        slaveRow.find('.device-status').removeClass('green-text red-text grey-text')
+                                       .addClass(res.status_color + '-text');
+        slaveRow.find('.device-wan-ip').html(res.wan_ip);
+        slaveRow.find('.device-ip').html(res.ip);
+        slaveRow.find('.device-installed-release').html(res.installed_release);
+        let localUpdate = update;
+        let localStatus = status;
+        let localMac = mac;
+        if (!localUpdate) {
+          localUpdate = res.do_update;
+          localStatus = res.do_update_status;
+          localMac = res._id;
+        }
+        updateSlavesRecursively(row, iter-1, localUpdate, localStatus, remain, localMac);
+      }
+    });
+  };
+
   // Refresh single row
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
@@ -324,42 +400,17 @@ $(document).ready(function() {
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
         row.find('.device-pppoe-user').html(res.pppoe_user);
-        if (deviceDoUpdate != res.do_update) {
-          if (res.do_update == false) {
-            // Activate dropdown
-            row.find('.device-update .dropdown-toggle .selected')
-               .text('Escolher');
-            row.find('.device-update .dropdown-toggle').attr('disabled', false);
-            // Deactivate waiting status
-            let upgradeStatus = row.find('span.upgrade-status');
-            upgradeStatus.find('.status-none').removeClass('d-none');
-            upgradeStatus.find('.status-waiting').addClass('d-none');
-            upgradeStatus.find('.status-ok').addClass('d-none');
-            upgradeStatus.find('.status-error').addClass('d-none');
-            // Deactivate cancel button
-            row.find('.btn-group .btn-cancel-update')
-               .attr('disabled', true);
-          }
-        }
         let slaveCount = row.data('slave-count');
         let resSlaveCount = (res.mesh_slaves) ? res.mesh_slaves.length : 0;
         if (slaveCount !== resSlaveCount) return;
-        for (let i = 0; i < slaveCount; i++) {
-          row = row.next().next(); // Skip to next slave row
-          let localDeviceId = row.data('deviceid');
-          let localRow = row;
-          $.ajax({
-            url: '/devicelist/uiupdate/' + localDeviceId,
-            type: 'GET',
-            success: function(res) {
-              localRow.find('.device-status').removeClass('green-text red-text grey-text')
-                                             .addClass(res.status_color + '-text');
-              localRow.find('.device-wan-ip').html(res.wan_ip);
-              localRow.find('.device-ip').html(res.ip);
-              localRow.find('.device-installed-release').html(res.installed_release);
-            }
-          });
-        }
+        updateSlavesRecursively(
+          row,
+          slaveCount-1,
+          res.do_update,
+          res.do_update_status,
+          res.do_update_mesh_remaining,
+          deviceId
+        );
       },
     });
   });
@@ -443,7 +494,7 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildUpgradeCol = function(device) {
+  const buildUpgradeCol = function(device, slaves=[]) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -451,6 +502,14 @@ $(document).ready(function() {
       if (release.id === '9999-aix') {
         continue;
       }
+      let slaveHasRelease = true;
+      slaves.forEach((slave)=>{
+        if (!slaveHasRelease) return;
+        if (!slave.releases.find((r)=>r.id===release.id)) {
+          // slaveHasRelease = false;
+        }
+      });
+      if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
     let upgradeCol = '<td>'+
@@ -467,31 +526,63 @@ $(document).ready(function() {
         '</div>'+
         '<span class="ml-3 upgrade-status">'+
           '<div class="fas fa-circle fa-2x white-text status-none $STATUS_NO"></div>'+
-          '<div class="fas fa-spinner fa-2x fa-pulse status-waiting $STATUS_0"></div>'+
+          '<div class="fas fa-spinner fa-2x fa-pulse status-waiting $STATUS_0" data-toggle="tooltip", title="$TOOLTIP"></div>'+
           '<div class="fas fa-check-circle fa-2x green-text status-ok $STATUS_1"></div>'+
-          '<a class="status-error $STATUS_2">'+
+          '<a class="status-error $STATUS_2" $MESH_PARAMS>'+
             '<div class="fas fa-exclamation-circle fa-2x red-text"></div>'+
           '</a>'+
         '</span>'+
       '</div>'+
     '</td>';
-    if (device.do_update) {
+    let inProgress = device.do_update;
+    let status = device.do_update_status;
+    let meshCount = device.do_update_mesh_remaining;
+    let slaveCount = slaves.length;
+    let currentSlave = device._id;
+    let currentSlaveNum = 0;
+    let tooltipMsg = 'Atualizando roteador...';
+    if (slaveCount > 0) {
+      slaves.forEach((slave)=>{
+        if (inProgress) return;
+        inProgress = slave.do_update;
+        status = slave.do_update_status;
+        currentSlave = slave._id;
+      });
+      if (meshCount === slaveCount+1) {
+        tooltipMsg = 'Atualizando roteador mestre...';
+      } else {
+        currentSlaveNum = slaveCount - meshCount + 1;
+        tooltipMsg = 'Atualizando roteador slave '+currentSlaveNum+' de '+slaveCount+'...';
+      }
+    }
+    if (inProgress) {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
       upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
-      if (device.do_update_status == 0) {
+      if (status == 0 || status == 10) {
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
-      } else if (device.do_update_status == 1) {
+        upgradeCol = upgradeCol.replace('$TOOLTIP', tooltipMsg);
+        upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+      } else if (status == 1) {
         upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_1', '');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
-      } else if (device.do_update_status >= 2) {
+        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+        upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+      } else if (status >= 2) {
         upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', '');
+        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+        if (slaveCount > 0) {
+          let meshParams = 'data-progress="'+currentSlaveNum+'" data-mac="'+currentSlave+'"';
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
+        } else {
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+        }
       }
     } else {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
@@ -501,6 +592,8 @@ $(document).ready(function() {
       upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
+      upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+      upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
     }
     return upgradeCol;
   };
@@ -545,8 +638,9 @@ $(document).ready(function() {
     return infoRow;
   };
 
-  const buildRemoveDevice = function() {
-    return '<button class="btn btn-danger btn-trash m-0" type="button">'+
+  const buildRemoveDevice = function(small=false) {
+    let smallClass = (small) ? 'btn-sm' : '';
+    return '<button class="btn btn-danger '+smallClass+' btn-trash m-0" type="button">'+
       '<i class="fas fa-trash"></i><span>&nbsp Remover</span>'+
     '</button>';
   };
@@ -730,13 +824,18 @@ $(document).ready(function() {
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantMeshMode = device.permissions.grantMeshMode;
 
           let csvAttr = buildCsvData(device, index);
           let statusClasses = buildStatusClasses(device);
           let statusAttributes = buildStatusAttributes(device);
           let notifications = buildNotification();
 
-          let upgradeCol = buildUpgradeCol(device);
+          let slaves = [];
+          if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
+          }
+          let upgradeCol = buildUpgradeCol(device, slaves);
           let infoRow = buildTableRowInfo(device);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
@@ -1047,6 +1146,22 @@ $(document).ready(function() {
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
           lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
 
+          let meshForm = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">MESH</label>'+
+                '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
+                'maxlength="15" $REPLACE_OPMODE_EN>'+
+                  '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
+                  '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
+                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Wifi 2.4 GHz</option>'+
+                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Wifi 5 GHz</option>'+
+                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Ambos Wifi</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+
           let opmodeTab = '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
@@ -1062,21 +1177,7 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">MESH</label>'+
-                      '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
-                      'maxlength="15" $REPLACE_OPMODE_EN>'+
-                        '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
-                        '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
-                        '<option value="2" $REPLACE_SELECTED_MESH_2$>Wifi 2.4 GHz</option>'+
-                        '<option value="3" $REPLACE_SELECTED_MESH_3$>Wifi 5 GHz</option>'+
-                        '<option value="4" $REPLACE_SELECTED_MESH_4$>Ambos Wifi</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
+                '$REPLACE_MESH_MODE'+
                 '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
@@ -1140,8 +1241,10 @@ $(document).ready(function() {
           '</div>';
           if (!isSuperuser && !grantOpmodeEdit) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, 'disabled');
+            meshForm = meshForm.replace(/\$REPLACE_OPMODE_EN/g, 'disabled');
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, '');
+            meshForm = meshForm.replace(/\$REPLACE_OPMODE_EN/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
@@ -1169,9 +1272,14 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
-          opmodeTab = opmodeTab.replace(selectTarget, 'selected="selected"');
-          opmodeTab = opmodeTab.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
+          if (grantMeshMode) {
+            selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
+            meshForm = meshForm.replace(selectTarget, 'selected="selected"');
+            meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
+            opmodeTab = opmodeTab.replace('$REPLACE_MESH_MODE', meshForm);
+          } else {
+            opmodeTab = opmodeTab.replace('$REPLACE_MESH_MODE', '');
+          }
 
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
             '<div class="row">'+
@@ -1501,7 +1609,7 @@ $(document).ready(function() {
           } else {
             formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', removeDevice);
           }
-          if (!device.mesh_slaves) {
+          if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
             let editButtonRow = buildFormSubmit();
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', editButtonRow);
           } else {
@@ -1518,7 +1626,7 @@ $(document).ready(function() {
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
-              let removeButton = '<td>'+buildRemoveDevice()+'</td>';
+              let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
 
               let upgradeCol = buildUpgradeCol(slaveDev);
               let infoRow = buildTableRowInfo(slaveDev, true, index);
