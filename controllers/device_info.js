@@ -510,12 +510,23 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           deviceSetQuery.last_hardreset = Date.now();
         }
 
+        let sentRelease = util.returnObjOrEmptyStr(req.body.release_id).trim();
+        if (sentRelease !== matchedDevice.installed_release) {
+          deviceSetQuery.installed_release = sentRelease;
+        }
+
         let upgradeInfo = util.returnObjOrEmptyStr(req.body.upgfirm).trim();
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
             console.log('Device ' + devId + ' upgraded successfuly');
-            updateScheduler.successUpdate(matchedDevice._id);
+            if (matchedDevice.mesh_master) {
+              // Mesh slaves call the success function with their master's mac
+              updateScheduler.successUpdate(matchedDevice.mesh_master);
+            } else {
+              updateScheduler.successUpdate(matchedDevice._id);
+            }
             messaging.sendUpdateDoneMessage(matchedDevice);
+            meshHandlers.syncUpdate(matchedDevice, deviceSetQuery, sentRelease);
             deviceSetQuery.do_update = false;
             matchedDevice.do_update = false; // Used in device response
             deviceSetQuery.do_update_status = 1; // success
@@ -524,11 +535,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
               'WARNING: Device ' + devId +
               ' sent a upgrade ack but was not marked as upgradable!');
           }
-        }
-
-        let sentRelease = util.returnObjOrEmptyStr(req.body.release_id).trim();
-        if (sentRelease !== matchedDevice.installed_release) {
-          deviceSetQuery.installed_release = sentRelease;
         }
 
         let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
