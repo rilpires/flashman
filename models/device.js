@@ -96,7 +96,10 @@ let deviceSchema = new Schema({
     2, // error, image download failed
     3, // error, image check failed
     4, // error, update aborted manually
+    5, // error, ack not received in time
+    10, // ack recevied
   ]},
+  do_update_mesh_remaining: {type: Number, default: 0},
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
