@@ -675,10 +675,16 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         matchedDevice.ip = ip;
         matchedDevice.last_contact = Date.now();
+        if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
+          // Ack timeout already happened, abort update
+          matchedDevice.save();
+          return res.status(500).end();
+        }
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
           updateScheduler.successDownload(req.body.id);
           console.log('Device ' + req.body.id + ' is going on upgrade...');
+          matchedDevice.do_update_status = 10; // ack received
         } else if (upgStatus == '0') {
           updateScheduler.failedDownload(req.body.id);
           console.log('WARNING: Device ' + req.body.id +
