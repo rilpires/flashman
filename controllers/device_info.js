@@ -673,10 +673,10 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device: ' + err);
-      return res.status(500).end();
+      return res.status(500).json({proceed: 0});
     } else {
       if (matchedDevice == null) {
-        return res.status(500).end();
+        return res.status(500).json({proceed: 0});
       } else {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         matchedDevice.ip = ip;
@@ -684,8 +684,9 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
           matchedDevice.save();
-          return res.status(500).end();
+          return res.status(500).json({proceed: 0});
         }
+        let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
           if (!matchedDevice.mesh_master || matchedDevice.mesh_master === '') {
@@ -694,6 +695,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
           matchedDevice.do_update_status = 10; // ack received
+          proceed = 1;
         } else if (upgStatus == '0') {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
@@ -723,10 +725,11 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
                       ' ack update on an old firmware! Reseting upgrade...');
           matchedDevice.do_update = false;
           matchedDevice.do_update_status = 1; // success
+          proceed = 1;
         }
 
         matchedDevice.save();
-        return res.status(200).end();
+        return res.status(200).json({proceed: proceed});
       }
     }
   });
