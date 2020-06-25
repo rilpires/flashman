@@ -8,11 +8,11 @@ const deviceHandlers = require('./devices');
 let meshHandlers = {};
 
 meshHandlers.genMeshID = function() {
-  return crypto.randomBytes(10).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '')
+  return crypt.randomBytes(10).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '')
 }
 
 meshHandlers.genMeshKey = function() {
-  return crypto.randomBytes(20).toString('base64').replace(/\//g, '!').replace(/\=/g, '')
+  return crypt.randomBytes(20).toString('base64').replace(/\//g, '!').replace(/\=/g, '')
 }
 
 meshHandlers.syncSlaveWifi = function(master, slave) {

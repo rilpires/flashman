@@ -178,7 +178,7 @@ const createRegistry = function(req, res) {
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
         'mesh_mode': meshMode,
-        'mesh_id': meshHandlers.genMeshId(),
+        'mesh_id': meshHandlers.genMeshID(),
         'mesh_key': meshHandlers.genMeshKey(),
       });
       if (connectionType != '') {
