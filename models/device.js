@@ -72,9 +72,17 @@ let deviceSchema = new Schema({
     ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
-  mesh_mode: {type: Number, default: 0}, // (0 disable mesh)
+  mesh_mode: {type: Number, default: 0, enum: [
+    0, // disable mesh
+    1, // Cable only
+    2, // Wifi 2.4Ghz as backhaul
+    3, // Wifi 5Ghz as backhaul
+    4, // Use both wifi
+  ]},
   mesh_master: String, // Used for slaves only (Master is null)
   mesh_slaves: [String], // Used for master only (Slave is null)
+  mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
+  mesh_key: String, // Security key in mesh network (key for backhaul)
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,

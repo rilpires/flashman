@@ -1,13 +1,24 @@
 const DeviceModel = require('../../models/device');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
+const crypt = require('crypto');
 const updateScheduler = require('../update_scheduler');
 const deviceHandlers = require('./devices');
 
 let meshHandlers = {};
 
+meshHandlers.genMeshID = function() {
+  return crypto.randomBytes(10).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '')
+}
+
+meshHandlers.genMeshKey = function() {
+  return crypto.randomBytes(20).toString('base64').replace(/\//g, '!').replace(/\=/g, '')
+}
+
 meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.mesh_mode = master.mesh_mode;
+  slave.mesh_id = master.mesh_id;
+  slave.mesh_key = master.mesh_key;
   slave.wifi_ssid = master.wifi_ssid;
   slave.wifi_password = master.wifi_password;
   slave.wifi_channel = master.wifi_channel;

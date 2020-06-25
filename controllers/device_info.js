@@ -73,7 +73,6 @@ const createRegistry = function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
-  let meshMaster = util.returnObjOrEmptyStr(req.body.mesh_master).trim();
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -179,7 +178,8 @@ const createRegistry = function(req, res) {
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
         'mesh_mode': meshMode,
-        'mesh_master': meshMaster,
+        'mesh_id': meshHandlers.genMeshId(),
+        'mesh_key': meshHandlers.genMeshKey(),
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -615,6 +615,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
             'mesh_mode': matchedDevice.mesh_mode,
             'mesh_master': matchedDevice.mesh_master,
+            'mesh_id': matchedDevice.mesh_id,
+            'mesh_key': matchedDevice.mesh_key,
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
