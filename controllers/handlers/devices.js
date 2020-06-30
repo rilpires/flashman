@@ -126,4 +126,24 @@ deviceHandlers.timeoutUpdateAck = function(mac) {
   }, timeout);
 }
 
+deviceHandlers.removeDeviceFromDatabase = function(device) {
+  let mesh_master = device.mesh_master;
+  // Use this .remove method so middleware post hook receives object info
+  device.remove();
+  if (mesh_master) {
+    // This is a mesh slave. Remove master registration
+    DeviceModel.findById(mesh_master, function(err, masterDevice) {
+      if (!err && masterDevice){
+        let index = masterDevice.mesh_slaves.indexOf(device._id.toUpperCase());
+        if (index > -1) {
+          masterDevice.mesh_slaves.splice(index, 1);
+        }
+        masterDevice.save();
+        console.log('Slave ' + device._id.toUpperCase() +
+          ' removed from Master ' +mesh_master+ ' successfully.');
+      }
+    });
+  }
+}
+
 module.exports = deviceHandlers;
