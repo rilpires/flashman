@@ -1,7 +1,10 @@
 const DeviceModel = require('../models/device');
+const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
 const Role = require('../models/role');
 const keyHandlers = require('./handlers/keys');
+const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const mqtt = require('../mqtts');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -168,6 +171,7 @@ diagAppAPIController.configureWifi = async(function(req, res) {
       // Apply changes to database and send mqtt message
       device.do_update_parameters = true;
       await(device.save());
+      meshHandlers.syncSlaves(device);
       mqtt.anlixMessageRouterUpdate(device._id);
       return res.status(200).json({'success': true});
     } else {
@@ -235,10 +239,21 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
+      let permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable,
+        device.model,
+      );
       return res.status(200).json({
         'success': true,
         'isRegister': true,
         'isOnline': isDevOn,
+        'permissions': permissions,
+        'deviceInfo': {
+          'mesh_mode': device.mesh_mode,
+          'mesh_master': device.mesh_master,
+          'mesh_slaves': device.mesh_slaves,
+        }
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
