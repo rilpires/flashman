@@ -183,6 +183,89 @@ diagAppAPIController.configureWifi = async(function(req, res) {
   }
 });
 
+diagAppAPIController.configureMeshMode = async(function(req, res) {
+  try {
+    // Make sure we have a mac to verify in database
+    if (req.body.mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      let content = req.body;
+      let targetMode = parseInt(req.body.mesh_mode)
+      if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
+        if (targetMode === 0 && device.mesh_slaves.length > 0) {
+          // Cannot disable mesh mode with registered slaves
+          return res.status(500).json({
+            'error': 'Cannot disable mesh with reigstered slaves'
+          });
+        }
+        device.mesh_mode = targetMode;
+      }
+      // Apply changes to database and send mqtt message
+      device.do_update_parameters = true;
+      await(device.save());
+      meshHandlers.syncSlaves(device);
+      mqtt.anlixMessageRouterUpdate(device._id);
+      return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.checkMeshStatus = async(function(req, res) {
+  try {
+    // Make sure we have a mac to verify in database
+    if (req.body.mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
+        return res.status(200).json({'count': 0, 'slaves': []});
+      }
+      return res.status(200).json({
+        'count': device.mesh_slaves.length,
+        'slaves': device.mesh_slaves,
+      });
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.removeMeshSlave = async(function(req, res) {
+  try {
+    // Make sure we have a mac to remove from database
+    if (req.body.remove_mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.remove_mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      if (!device.mesh_master) {
+        return res.status(403).json({'error': 'Device is not a mesh slave!'});
+      }
+      deviceHandlers.removeDeviceFromDatabase(device);
+      return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
 diagAppAPIController.receiveCertification = async(function(req, res) {
   try {
     let result = await(UserModel.find({'name': req.body.user}));
