@@ -43,6 +43,20 @@ const convertWifi = function(wifiConfig) {
   };
 };
 
+const convertStringList = function(list) {
+  return list.filter((element)=>typeof element === 'string');
+}
+
+const convertMesh = function(mesh) {
+  return {
+    mode: (mesh && mesh.mode) ? mesh.mode : 0,
+    updatedSlaves: (mesh && mesh.updatedSlaves) ?
+                   convertStringList(mesh.updatedSlaves) : [],
+    originalSlaves: (mesh && mesh.originalSlaves) ?
+                    convertStringList(mesh.originalSlaves) : [],
+  };
+};
+
 const pushCertification = function(arr, c, finished) {
   arr.push({
     finished: finished,
@@ -63,6 +77,7 @@ const pushCertification = function(arr, c, finished) {
     didConfigureWifi: (c.didWifi) ? c.didWifi : false,
     wifiConfig: convertWifi(c.wifiConfig),
     didConfigureMesh: (c.didMesh) ? c.didMesh : false,
+    mesh: convertMesh(c.mesh),
     didConfigureContract: (c.didContract) ? c.didContract : false,
     didConfigureObservation: (c.didObservation) ? c.didObservation : false,
     contract: (c.contract) ? c.contract : '',
