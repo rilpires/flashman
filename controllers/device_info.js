@@ -569,9 +569,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         );
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          let zabbixFqdn = '';
-          if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
-            zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
+          let measureFqdn = '';
+          if (matchedConfig && matchedConfig.measure_configs.measure_fqdn) {
+            measureFqdn = matchedConfig.measure_configs.measure_fqdn;
           }
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
@@ -600,9 +600,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
-            'zabbix_fqdn': zabbixFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'measure_fqdn': measureFqdn,
+            'measure_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1406,38 +1405,34 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
   });
 };
 
-deviceInfoController.getZabbixConfig = async(function(req, res) {
+deviceInfoController.getMeasureConfig = async(function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   // Check secret to authenticate api call
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec !== req.app.locals.secret) {
-      console.log('Router ' + id + ' Get Zabbix Conf fail: Secret not match');
+      console.log('Router ' + id + ' Get Measure Conf fail: Secret not match');
       return res.status(403).json({success: 0});
     }
   }
 
   try {
-    // Check if zabbix fqdn config is set
+    // Check if measure fqdn config is set
     let config = await(Config.findOne({is_default: true}));
     if (!config) throw new {message: 'Config not found'};
-    if (!config.measure_configs.zabbix_fqdn) {
-      throw new {message: 'Zabbix FQDN not configured'};
+    if (!config.measure_configs.measure_fqdn) {
+      throw new {message: 'Measure FQDN not configured'};
     }
 
-    // Check if device has a zabbix psk configured
+    // Check if device exists
     let device = await(DeviceModel.findById(id));
     if (!device) throw new {message: 'Device ' + id + ' not found'};
-    if (!device.measure_config.measure_psk) {
-      throw new {message: 'Device ' + id + ' has no psk configured'};
-    }
 
-    // Reply with zabbix fqdn and device zabbix psk
+    // Reply with measure fqdn
     return res.status(200).json({
       success: 1,
-      psk: device.measure_config.measure_psk,
-      fqdn: config.measure_configs.zabbix_fqdn,
+      fqdn: config.measure_configs.measure_fqdn,
       is_active: device.measure_config.is_active,
     });
   } catch (err) {

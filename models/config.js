@@ -14,9 +14,8 @@ let configSchema = new mongoose.Schema({
   measure_configs: {
     is_active: {type: Boolean, default: false},
     is_license_active: {type: Boolean, default: false},
-    auth_token: {type: String},
     controller_fqdn: String,
-    zabbix_fqdn: String,
+    measure_fqdn: String,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},

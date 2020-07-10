@@ -58,12 +58,8 @@ measureController.activateDevices = async(function(req, res) {
     return content.device_list.reduce((status, device) => {
       if (status[0] != 200) return status;
       let mac = returnStrOrEmptyStr(device.mac).toUpperCase();
-      let psk = returnStrOrEmptyStr(device.psk);
       if (!mac) {
         return [500, 'Um elemento da lista não forneceu endereço MAC'];
-      }
-      if (!psk) {
-        return [500, 'Um elemento da lista não forneceu chave de segurança'];
       }
       if (!mac.match(macRegex)) {
         return [500, 'Um endereço MAC fornecido não é válido'];
@@ -89,14 +85,12 @@ measureController.activateDevices = async(function(req, res) {
     });
   }
 
-  // For each device, register new PSK and send MQTT message
+  // For each device, send MQTT message
   let deviceList = req.body.device_list;
   try {
     deviceList.forEach((dev)=>{
       let mac = dev.mac.toUpperCase();
-      let psk = dev.psk;
       let device = await(DeviceModel.findById(mac));
-      device.measure_config.measure_psk = psk;
       device.measure_config.is_active = true;
       await(device.save());
       mqtt.anlixMessageRouterMeasure(mac.toUpperCase(), 'on');
