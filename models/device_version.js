@@ -242,7 +242,7 @@ const grantWanBytesSupport = function(version) {
   }
 };
 
-const grantMeshCompatibility = function(version, model) {
+const grantMeshMode = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !meshCompatibleModels.includes(model)) {
       // Unspecified model or model is not compatible with feature
@@ -253,13 +253,6 @@ const grantMeshCompatibility = function(version, model) {
     // Development version, enable everything by default
     return true;
   }
-};
-
-const grantMeshMode = function(version, model) {
-  if (grantMeshCompatibility(version, model)) {
-    return speedTestCompatibleModels[model];
-  }
-  return 0;
 };
 
 const grantUpdateAck = function(version) {
