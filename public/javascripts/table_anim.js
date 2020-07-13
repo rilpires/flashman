@@ -1149,7 +1149,7 @@ $(document).ready(function() {
           let meshForm = '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="active">MESH</label>'+
+                '<label class="active">Mesh</label>'+
                 '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
