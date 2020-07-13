@@ -14,6 +14,7 @@ const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const request = require('request-promise-native');
+const meshHandlers = require('./controllers/handlers/mesh');
 let session = require('express-session');
 
 let measurer = require('./controllers/measure');
@@ -137,6 +138,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
     }
   });
   // Check migration for devices checked for upgrade
+  // Check mesh key existence or generate it
   Device.find({}, function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
@@ -146,6 +148,11 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
           } else {
             devices[idx].installed_release = devices[idx].release;
           }
+          devices[idx].save();
+        }
+        if (!devices[idx].mesh_key || !devices[idx].mesh_id) {
+          devices[idx].mesh_id = meshHandlers.genMeshID();
+          devices[idx].mesh_key = meshHandlers.genMeshKey();
           devices[idx].save();
         }
       }
