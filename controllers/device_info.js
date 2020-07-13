@@ -130,13 +130,19 @@ const createRegistry = function(req, res) {
                       'mode5ghz', null, errors);
     }
 
-    if (bridgeEnabled > 0 && bridgeFixIP !== '') {
-      genericValidate(bridgeFixIP, validator.validateIP,
-                      'bridge_fix_ip', null, errors);
-      genericValidate(bridgeFixGateway, validator.validateIP,
-                      'bridge_fix_gateway', null, errors);
-      genericValidate(bridgeFixDNS, validator.validateIP,
-                      'bridge_fix_ip', null, errors);
+    if (bridgeEnabled > 0) {
+      // Make sure that connection type is DHCP. Avoids bugs in version
+      // 0.26.0 of Flashbox firmware
+      connectionType = 'dhcp';
+
+      if (bridgeFixIP !== '') {
+        genericValidate(bridgeFixIP, validator.validateIP,
+                        'bridge_fix_ip', null, errors);
+        genericValidate(bridgeFixGateway, validator.validateIP,
+                        'bridge_fix_gateway', null, errors);
+        genericValidate(bridgeFixDNS, validator.validateIP,
+                        'bridge_fix_ip', null, errors);
+      }
     }
 
     if (errors.length < 1) {
