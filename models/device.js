@@ -60,6 +60,9 @@ let deviceSchema = new Schema({
     wifi_signal: Number, // dBm
     wifi_snr: Number, // dB
     wifi_mode: String, // G, N, AC
+    wifi_fingerprint: String, // from hostapd
+    dhcp_fingerprint: String,
+    dhcp_vendor_class: String,
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
     upnp_permission: {type: String, default: 'none', enum: [
@@ -69,6 +72,17 @@ let deviceSchema = new Schema({
     ]},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
+  mesh_mode: {type: Number, default: 0, enum: [
+    0, // disable mesh
+    1, // Cable only
+    2, // Wifi 2.4Ghz as backhaul
+    3, // Wifi 5Ghz as backhaul
+    4, // Use both wifi
+  ]},
+  mesh_master: String, // Used for slaves only (Master is null)
+  mesh_slaves: [String], // Used for master only (Slave is null)
+  mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
+  mesh_key: String, // Security key in mesh network (key for backhaul)
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,
@@ -90,7 +104,10 @@ let deviceSchema = new Schema({
     2, // error, image download failed
     3, // error, image check failed
     4, // error, update aborted manually
+    5, // error, ack not received in time
+    10, // ack recevied
   ]},
+  do_update_mesh_remaining: {type: Number, default: 0},
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,

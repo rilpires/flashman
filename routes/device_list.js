@@ -10,6 +10,12 @@ let router = express.Router();
 router.route('/').get(authController.ensureLogin(),
                       deviceListController.index);
 
+// Force mesh slave to do a device update
+router.route('/updatemesh/:id/:release').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantFirmwareUpgrade'),
+  deviceListController.changeUpdateMesh);
+
 // Change device update status
 router.route('/update/:id/:release').post(
   authController.ensureLogin(),

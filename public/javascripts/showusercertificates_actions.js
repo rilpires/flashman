@@ -153,6 +153,63 @@ const fetchCertification = function(id, name, timestamp) {
         $('#diagnostic-done').hide();
         $('#diagnostic-none').show();
       }
+      // Change mesh info
+      if (cert.didConfigureMesh && cert.mesh && cert.mesh.mode) {
+        let modeStr = '';
+        switch(cert.mesh.mode){
+          case 0:
+            modeStr = 'Desativado';
+            break;
+          case 1:
+            modeStr = 'Cabo';
+            break;
+          case 2:
+            modeStr = 'WiFi 2.4 GHz';
+            break;
+          case 3:
+            modeStr = 'WiFi 5.0 GHz';
+            break;
+          case 4:
+            modeStr = 'Ambos WiFi';
+            break;
+          default:
+            modeStr = 'Desconhecido';
+        }
+        $('#mesh-mode').html('&nbsp;'+modeStr);
+        $('#mesh-slave-list').html('');
+        $('#mesh-remove-list').html('');
+        if (cert.mesh.updatedSlaves && cert.mesh.updatedSlaves.length > 0) {
+          $('#mesh-slave-head').html('Roteadores secundários:');
+          cert.mesh.updatedSlaves.forEach((slave)=>{
+            $('#mesh-slave-list').append('<li>'+slave+'</li>');
+          });
+        } else {
+          $('#mesh-slave-head').html('A rede Mesh não possui roteadores secundários');
+        }
+        if (cert.mesh.originalSlaves && cert.mesh.originalSlaves.length > 0) {
+          let removedRouters = cert.mesh.originalSlaves;
+          if (cert.mesh.updatedSlaves && cert.mesh.updatedSlaves.length > 0) {
+            removedRouters = removedRouters.filter((slave)=>{
+              return (!cert.mesh.updatedSlaves.includes(slave));
+            });
+          }
+          if (removedRouters.length > 0) {
+            $('#mesh-remove-head').html('Roteadores secundários removidos:');
+            removedRouters.forEach((slave)=>{
+              $('#mesh-remove-list').append('<li>'+slave+'</li>');
+            });
+          } else {
+            $('#mesh-remove-head').html('Nenhum roteador secundário foi removido');
+          }
+        } else {
+          $('#mesh-remove-head').html('Nenhum roteador secundário foi removido');
+        }
+        $('#mesh-config-none').hide();
+        $('#mesh-config-done').show();
+      } else {
+        $('#mesh-config-done').hide();
+        $('#mesh-config-none').show();
+      }
       // Change wifi info
       if (cert.didConfigureWifi && cert.wifiConfig && cert.wifiConfig.two) {
         $('#wifi-2ghz').removeClass('offset-md-3');

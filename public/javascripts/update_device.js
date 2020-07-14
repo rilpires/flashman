@@ -137,13 +137,24 @@ let cancelAllDeviceUpdates = function(event) {
 let updateDevice = function(event) {
   let selRelease = $(this).text();
   let selBtnGroup = $(event.target).closest('.btn-group');
+  let row = $(event.target).closest('tr');
+  let slaveCount = row.data('slave-count');
+
+  let warningText = 'A atualização de firmware dura aproximadamente 3 ' +
+      'minutos. O roteador não deverá ser desligado durante esse procedimento. ' +
+      'Comunique seu usuário antes de prosseguir.';
+  if (slaveCount > 0) {
+    warningText = 'A atualização de firmware dura aproximadamente 3 minutos ' +
+    'para cada roteador. Esta atualização afetará todos os '+(slaveCount+1)+
+    ' roteadores da rede mesh, e durará cerca de '+(slaveCount+1)*3+
+    ' minutos no total. Nenhum roteador deverá ser desligado durante esse '+
+    'procedimento. Comunique seu usuário antes de prosseguir.';
+  }
 
   swal({
     type: 'warning',
     title: 'Atenção!',
-    text: 'A atualização de firmware dura aproximadamente 3 minutos. ' +
-    'O roteador não deverá ser desligado durante esse procedimento. ' +
-    'Comunique seu usuário antes de prosseguir.',
+    text: warningText,
     confirmButtonText: 'Prosseguir',
     confirmButtonColor: '#4db6ac',
     cancelButtonText: 'Cancelar',
@@ -159,6 +170,7 @@ let updateDevice = function(event) {
       // Submit update
       let row = $(event.target).closest('tr');
       let id = row.prop('id');
+      let slaveCount = row.data('slave-count');
       $.ajax({
         url: '/devicelist/update/' + id + '/' + selRelease,
         type: 'post',
@@ -170,6 +182,15 @@ let updateDevice = function(event) {
             let upgradeStatus = selBtnGroup.siblings('span.upgrade-status');
             upgradeStatus.find('.status-none').addClass('d-none');
             upgradeStatus.find('.status-waiting').removeClass('d-none');
+            if (slaveCount > 0) {
+              upgradeStatus.find('.status-waiting').attr('title',
+                'Atualizando roteador mestre...'
+              );
+            } else {
+              upgradeStatus.find('.status-waiting').attr('title',
+                'Atualizando roteador...'
+              );
+            }
             // Activate cancel button
             selBtnGroup.siblings('.btn-cancel-update').attr('disabled', false);
             // Update device row data
@@ -193,6 +214,7 @@ let cancelDeviceUpdate = function(event) {
   // Submit update
   let row = $(event.target).closest('tr');
   let id = row.prop('id');
+  let slaveCount = row.data('slave-count');
   $.ajax({
     url: '/devicelist/update/' + id + '/' + selRelease,
     type: 'post',
@@ -209,6 +231,18 @@ let cancelDeviceUpdate = function(event) {
         upgradeStatus.find('.status-waiting').addClass('d-none');
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
+        if (slaveCount > 0) {
+          swal({
+            type: 'warning',
+            title: 'Atenção!',
+            text: 'O processo de atualização da rede mesh foi interrompido. '+
+              'Não recomendamos deixar os roteadores mesh da mesma rede em '+
+              'versões diferentes, portanto certifique-se que esta '+
+              'atualização seja retomada em breve.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#4db6ac',
+          });
+        }
       }
     },
     error: function(xhr, status, error) {
@@ -241,13 +275,52 @@ $(function() {
   });
   // Display message on update error
   $(document).on('click', '.status-error', function() {
-    swal({
-      type: 'error',
-      title: 'Erro',
-      text: 'Houve um erro ao realizar a transferência do firmware. ' +
-      'Cancele o procedimento e tente novamente.',
-      confirmButtonText: 'Ok',
-      confirmButtonColor: '#4db6ac',
-    });
+    let row = $(event.target).closest('tr');
+    let slaveCount = row.data('slave-count');
+    if (slaveCount > 0) {
+      let errorAnchor = $(event.target).closest('.status-error');
+      let progress = errorAnchor.data('progress');
+      let errorMac = errorAnchor.data('mac');
+      let routerType = (progress > 0) ? 'slave' : 'mestre';
+      swal({
+        type: 'error',
+        title: 'Erro',
+        text: 'Houve um erro ao realizar a transferência do firmware do '+
+          'roteador '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
+          'novamente ou cancele o procedimento.',
+        confirmButtonText: 'Tentar novamente',
+        confirmButtonColor: '#4db6ac',
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#f2ab63',
+        showCancelButton: true,
+      }).then((result)=>{
+        if (result.value) {
+          // Send update message to backend and refresh row
+          let selBtnGroup = row.find('.dropdown-menu.refresh-selected').parent();
+          let release = selBtnGroup.find('.dropdown-toggle .selected').text();
+          $.ajax({
+            url: '/devicelist/updatemesh/' + errorMac + '/' + release,
+            type: 'post',
+            traditional: true,
+            data: {do_update: true},
+            complete: function() {
+              row.find('.device-row-refresher').trigger('click');
+            }
+          });
+        } else if (result.dismiss === 'cancel') {
+          // Trigger cancel button
+          row.find('.btn-cancel-update').trigger('click');
+        }
+      });
+    } else {
+      swal({
+        type: 'error',
+        title: 'Erro',
+        text: 'Houve um erro ao realizar a transferência do firmware. ' +
+        'Cancele o procedimento e tente novamente.',
+        confirmButtonText: 'Ok',
+        confirmButtonColor: '#4db6ac',
+      });
+    }
   });
 });

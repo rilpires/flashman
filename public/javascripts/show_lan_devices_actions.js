@@ -10,8 +10,13 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
+          $('#lan-devices').attr('data-cleanup', true);
+          // If exists
+          $('#lan-devices').data('cleanup', true);
           $('.btn-sync-lan-devs > i').addClass('animated rotateOut infinite');
         } else {
+          $('#lan-devices').removeAttr('data-lan-devices-list');
+          $('#lan-devices').removeData('lan-devices-list');
           $('#lan-devices-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
           $('#lan-devices-placeholder-none').hide();
@@ -20,6 +25,8 @@ $(document).ready(function() {
         }
       },
       error: function(xhr, status, error) {
+        $('#lan-devices').removeAttr('data-lan-devices-list');
+        $('#lan-devices').removeData('lan-devices-list');
         $('#lan-devices-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
         $('#lan-devices-placeholder-none').hide();
@@ -120,7 +127,44 @@ $(document).ready(function() {
           $('#lan-devices-placeholder').hide();
           let lanDevsRow = $('#lan-devices-body');
           let countAddedDevs = 0;
-          $.each(res.lan_devices, function(idx, device) {
+
+          let lanDevices = $('#lan-devices').data('lan-devices-list');
+          if (lanDevices) {
+            for (let newDevice of res.lan_devices) {
+              let matchedDev = lanDevices.find(function(device) {
+                if (device.mac === newDevice.mac) {
+                  let doReplace = false;
+                  if (device.conn_type === undefined &&
+                      newDevice.conn_type !== undefined
+                  ) {
+                    doReplace = true;
+                  } else if (newDevice.conn_type == 1 && newDevice.wifi_signal) {
+                    doReplace = true;
+                  } else if (newDevice.conn_type == 0 && newDevice.conn_speed) {
+                    doReplace = true;
+                  }
+                  if (doReplace) {
+                    let idx = lanDevices.indexOf(device);
+                    lanDevices.splice(idx, 1);
+                    lanDevices.push(newDevice);
+                  }
+                  return true;
+                } else {
+                  return false;
+                }
+              });
+              if (!matchedDev) {
+                lanDevices.push(newDevice);
+              }
+            }
+            $('#lan-devices').data('lan-devices-list', lanDevices);
+          } else {
+            lanDevices = res.lan_devices;
+            $('#lan-devices').attr('data-lan-devices-list',
+                                   JSON.stringify(lanDevices));
+          }
+
+          $.each(lanDevices, function(idx, device) {
             // Skip if offline for too long
             if (device.is_old) {
               return true;
@@ -286,13 +330,20 @@ $(document).ready(function() {
   };
 
   $(document).on('click', '.btn-lan-devices-modal', function(event) {
+    let slaves = [];
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
-    $('#isBridgeDiv').html(row.data('bridge-enabled'));
+    let slaveCount = parseInt(row.data('slave-count'));
+    if (slaveCount > 0) {
+      slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
+    }
     let upnpSupport = row.data('validate-upnp');
+    $('#lan-devices').attr('data-slaves', slaves);
+    $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
-    refreshLanDevices(id, upnpSupport, isBridge); // Refresh devices status
+    // Refresh devices status
+    refreshLanDevices(id, upnpSupport, isBridge);
   });
 
   $(document).on('click', '.btn-sync-lan-devs', function(event) {
@@ -321,21 +372,32 @@ $(document).ready(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('ONLINEDEVS', function(macaddr, data) {
     if (($('#lan-devices').data('bs.modal') || {})._isShown) {
-      let id = $('#lan-devices-hlabel').text();
-      let upnpSupport = $('#lan-devices').data('validate-upnp');
-      if (id == macaddr) {
-        $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
+      if ($('#lan-devices').data('cleanup') == true) {
         // Clear old data
+        $('#lan-devices').data('cleanup', false);
+        $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
+        $('#lan-devices').removeAttr('data-lan-devices-list');
+        $('#lan-devices').removeData('lan-devices-list');
         $('#lan-devices-body').empty();
         $('#lan-devices-placeholder').show();
         $('#lan-devices-placeholder-none').hide();
-        fetchLanDevices(id, upnpSupport);
+      } else {
+        $('#lan-devices-body').empty();
+      }
+      let id = $('#lan-devices-hlabel').text();
+      let upnpSupport = $('#lan-devices').data('validate-upnp');
+      let slaves = $('#lan-devices').data('slaves');
+      let isBridge = $('#isBridgeDiv').html() === 'Sim';
+      if (id == macaddr || slaves.includes(macaddr)) {
+        fetchLanDevices(macaddr, upnpSupport, isBridge);
       }
     }
   });
 
   // Restore default modal state
   $('#lan-devices').on('hidden.bs.modal', function() {
+    $('#lan-devices').removeAttr('data-lan-devices-list');
+    $('#lan-devices').removeData('lan-devices-list');
     $('#lan-devices-body').empty();
     $('#lan-devices-placeholder').show();
     $('#lan-devices-placeholder-none').hide();

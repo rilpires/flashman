@@ -9,6 +9,7 @@ router.route('/ack').post(deviceInfoController.confirmDeviceUpdate);
 router.route('/logs').post(deviceInfoController.receiveLog);
 router.route('/ntp').post(deviceInfoController.syncDate);
 router.route('/mqtt/add').post(deviceInfoController.registerMqtt);
+router.route('/mesh/add').post(deviceInfoController.registerMeshSlave);
 router.route('/get/portforward').post(deviceInfoController.getPortForward);
 router.route('/get/pinghosts').post(deviceInfoController.getPingHosts);
 router.route('/get/measureconfig').post(deviceInfoController.getZabbixConfig);

@@ -22,12 +22,14 @@
         .col-6.p-0
           button#export-log.btn.btn-primary.btn-sm.disabled
             .fas.fa-file-excel.fa-lg
-            span &nbsp Exportar log
+            span &nbsp; Exportar log
+          button#mesh-change-button.btn.btn-primary.btn-sm.dropdown-toggle(data-toggle="dropdown") Trocar Roteador
+          #mesh-change-div.dropdown-menu(data-dropdown-in="fadeIn", data-dropdown-out="fadeOut")
         .col-6.p-0.text-right
           .btn-group.btn-group-sm(role="group")
               button.btn.btn-primary.btn-sm.btn-log-upgrade(type="button")
-                span &nbsp Primeiro boot
+                span &nbsp; Primeiro boot
               button.btn.btn-primary.btn-sm.btn-log-init(type="button")
-                span &nbsp Boot
+                span &nbsp; Boot
               button.btn.btn-primary.btn-sm.btn-log-live(type="button")
-                span &nbsp Ao Vivo
+                span &nbsp; Ao Vivo

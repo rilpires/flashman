@@ -42,6 +42,24 @@ router.route('/diagnostic/wifi').post(
   diagAPIController.configureWifi,
 );
 
+router.route('/diagnostic/meshmode').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.configureMeshMode,
+);
+
+router.route('/diagnostic/meshstatus').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.checkMeshStatus,
+);
+
+router.route('/diagnostic/meshremove').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.removeMeshSlave,
+);
+
 router.route('/diagnostic/certificate').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),

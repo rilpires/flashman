@@ -3,6 +3,7 @@ const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const util = require('./handlers/util');
@@ -77,7 +78,10 @@ let appSet = function(req, res, processFunction) {
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
       .then((done)=>{
-        if (done) return res.status(200).json({is_set: 1});
+        if (done) {
+          meshHandlers.syncSlaves(matchedDevice);
+          return res.status(200).json({is_set: 1});
+        }
         doRollback(matchedDevice, rollbackValues);
         matchedDevice.save();
         return res.status(500).json({is_set: 0});
@@ -344,9 +348,10 @@ let processUpnpInfo = function(content, device, rollback) {
     rollback.upnp_requests = util.deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
     let macDevice = content.device_configs.mac.toLowerCase();
+    let allow = 'none';
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
-        let allow = 'none';
+        allow = 'none';
         if (content.device_configs.upnp_allow === true) {
           allow = 'accept';
         } else if (content.device_configs.upnp_allow === false) {
@@ -451,8 +456,7 @@ appDeviceAPIController.registerApp = function(req, res) {
         });
         if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
           deviceObj.app_uid = req.body.app_id;
-        }
-        else if (!deviceObj) {
+        } else if (!deviceObj) {
           matchedDevice.lan_devices.push({
             mac: req.body.app_mac,
             app_uid: req.body.app_id,
@@ -651,7 +655,8 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       if (config && config.measureServerIP) {
         // Send mqtt message to perform speedtest
         let url = config.measureServerIP + ':' + config.measureServerPort;
-        mqtt.anlixMessageRouterSpeedTest(req.body.id, url, {name: 'App_Cliente'});
+        mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
+                                         {name: 'App_Cliente'});
       }
     }), 1.5*1000);
   }));
@@ -724,7 +729,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
 
     // Override some permissions if device in bridge mode
@@ -828,7 +833,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
     }
 
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
     );
     return res.status(200).json({
       permissions: permissions,

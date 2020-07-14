@@ -9,6 +9,7 @@ const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
 const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
+const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const util = require('./handlers/util');
@@ -71,6 +72,7 @@ const createRegistry = function(req, res) {
   let bridgeFixIP = util.returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
+  let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -128,13 +130,19 @@ const createRegistry = function(req, res) {
                       'mode5ghz', null, errors);
     }
 
-    if (bridgeEnabled > 0 && bridgeFixIP !== "") {
-      genericValidate(bridgeFixIP, validator.validateIP,
-                      'bridge_fix_ip', null, errors);
-      genericValidate(bridgeFixGateway, validator.validateIP,
-                      'bridge_fix_gateway', null, errors);
-      genericValidate(bridgeFixDNS, validator.validateIP,
-                      'bridge_fix_ip', null, errors);
+    if (bridgeEnabled > 0) {
+      // Make sure that connection type is DHCP. Avoids bugs in version
+      // 0.26.0 of Flashbox firmware
+      connectionType = 'dhcp';
+
+      if (bridgeFixIP !== '') {
+        genericValidate(bridgeFixIP, validator.validateIP,
+                        'bridge_fix_ip', null, errors);
+        genericValidate(bridgeFixGateway, validator.validateIP,
+                        'bridge_fix_gateway', null, errors);
+        genericValidate(bridgeFixDNS, validator.validateIP,
+                        'bridge_fix_ip', null, errors);
+      }
     }
 
     if (errors.length < 1) {
@@ -175,6 +183,9 @@ const createRegistry = function(req, res) {
         'bridge_mode_ip': bridgeFixIP,
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
+        'mesh_mode': meshMode,
+        'mesh_id': meshHandlers.genMeshID(),
+        'mesh_key': meshHandlers.genMeshKey(),
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -505,12 +516,23 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           deviceSetQuery.last_hardreset = Date.now();
         }
 
+        let sentRelease = util.returnObjOrEmptyStr(req.body.release_id).trim();
+        if (sentRelease !== matchedDevice.installed_release) {
+          deviceSetQuery.installed_release = sentRelease;
+        }
+
         let upgradeInfo = util.returnObjOrEmptyStr(req.body.upgfirm).trim();
         if (upgradeInfo == '1') {
           if (matchedDevice.do_update) {
             console.log('Device ' + devId + ' upgraded successfuly');
-            updateScheduler.successUpdate(matchedDevice._id);
+            if (matchedDevice.mesh_master) {
+              // Mesh slaves call the success function with their master's mac
+              updateScheduler.successUpdate(matchedDevice.mesh_master);
+            } else {
+              updateScheduler.successUpdate(matchedDevice._id);
+            }
             messaging.sendUpdateDoneMessage(matchedDevice);
+            meshHandlers.syncUpdate(matchedDevice, deviceSetQuery, sentRelease);
             deviceSetQuery.do_update = false;
             matchedDevice.do_update = false; // Used in device response
             deviceSetQuery.do_update_status = 1; // success
@@ -519,11 +541,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
               'WARNING: Device ' + devId +
               ' sent a upgrade ack but was not marked as upgradable!');
           }
-        }
-
-        let sentRelease = util.returnObjOrEmptyStr(req.body.release_id).trim();
-        if (sentRelease !== matchedDevice.installed_release) {
-          deviceSetQuery.installed_release = sentRelease;
         }
 
         let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
@@ -602,6 +619,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
+            'mesh_mode': matchedDevice.mesh_mode,
+            'mesh_master': matchedDevice.mesh_master,
+            'mesh_id': matchedDevice.mesh_id,
+            'mesh_key': matchedDevice.mesh_key,
           });
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
@@ -660,25 +681,50 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device: ' + err);
-      return res.status(500).end();
+      return res.status(500).json({proceed: 0});
     } else {
       if (matchedDevice == null) {
-        return res.status(500).end();
+        return res.status(500).json({proceed: 0});
       } else {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         matchedDevice.ip = ip;
         matchedDevice.last_contact = Date.now();
+        if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
+          // Ack timeout already happened, abort update
+          matchedDevice.save();
+          return res.status(500).json({proceed: 0});
+        }
+        let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          updateScheduler.successDownload(req.body.id);
+          if (!matchedDevice.mesh_master || matchedDevice.mesh_master === '') {
+            // Only regular devices and mesh masters report download complete
+            updateScheduler.successDownload(req.body.id);
+          }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
+          matchedDevice.do_update_status = 10; // ack received
+          proceed = 1;
         } else if (upgStatus == '0') {
-          updateScheduler.failedDownload(req.body.id);
+          if (matchedDevice.mesh_master) {
+            // Mesh slaves call update schedules function with their master mac
+            updateScheduler.failedDownload(
+              matchedDevice.mesh_master, req.body.id
+            );
+          } else {
+            updateScheduler.failedDownload(req.body.id);
+          }
           console.log('WARNING: Device ' + req.body.id +
                       ' failed in firmware check!');
           matchedDevice.do_update_status = 3; // img check failed
         } else if (upgStatus == '2') {
-          updateScheduler.failedDownload(req.body.id);
+          if (matchedDevice.mesh_master) {
+            // Mesh slaves call update schedules function with their master mac
+            updateScheduler.failedDownload(
+              matchedDevice.mesh_master, req.body.id
+            );
+          } else {
+            updateScheduler.failedDownload(req.body.id);
+          }
           console.log('WARNING: Device ' + req.body.id +
                       ' failed to download firmware!');
           matchedDevice.do_update_status = 2; // img download failed
@@ -687,10 +733,11 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
                       ' ack update on an old firmware! Reseting upgrade...');
           matchedDevice.do_update = false;
           matchedDevice.do_update_status = 1; // success
+          proceed = 1;
         }
 
         matchedDevice.save();
-        return res.status(200).end();
+        return res.status(200).json({proceed: proceed});
       }
     }
   });
@@ -753,6 +800,78 @@ deviceInfoController.registerMqtt = function(req, res) {
     });
   } else {
     console.log('Attempt to register MQTT secret for device ' +
+      req.body.id + ' failed: Client Secret not match!');
+    return res.status(401).json({is_registered: 0});
+  }
+};
+
+deviceInfoController.registerMeshSlave = function(req, res) {
+  if (req.body.secret == req.app.locals.secret) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+      if (err) {
+        console.log('Attempt to register mesh slave for device ' +
+          req.body.id + ' failed: Cant get device profile.');
+        return res.status(400).json({is_registered: 0});
+      }
+      if (!matchedDevice) {
+        console.log('Attempt to register mesh slave for device ' +
+          req.body.id + ' failed: No device found.');
+        return res.status(404).json({is_registered: 0});
+      }
+
+      // lookup if device is already registered
+      let slave = req.body.slave.toUpperCase();
+      let pos = matchedDevice.mesh_slaves.indexOf(slave);
+      if (pos < 0) {
+        // Not found, register
+        DeviceModel.findById(slave, function(err, slaveDevice) {
+          if (err) {
+            console.log('Attempt to register mesh slave ' + slave +
+              ' for device ' + req.body.id + ' failed: cant get slave device.');
+            return res.status(400).json({is_registered: 0});
+          }
+          if (!slaveDevice) {
+            console.log('Attempt to register mesh slave ' + slave +
+              ' for device ' + req.body.id +
+              ' failed: Slave device not found.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          if (slaveDevice.mesh_master) {
+            console.log('Attempt to register mesh slave ' + slave +
+              ' for device ' + req.body.id +
+              ' failed: Slave device aready registred in other master.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          if (slaveDevice.mesh_mode != '0' && !slaveDevice.mesh_master) {
+            console.log('Attempt to register mesh slave ' + slave +
+              ' for device ' + req.body.id +
+              ' failed: Slave device is mesh master.');
+            return res.status(404).json({is_registered: 0});
+          }
+
+          slaveDevice.mesh_master = matchedDevice._id;
+          meshHandlers.syncSlaveWifi(matchedDevice, slaveDevice);
+          slaveDevice.save();
+
+          matchedDevice.mesh_slaves.push(slave);
+          matchedDevice.save();
+
+          // Push updates to the Slave
+          mqtt.anlixMessageRouterUpdate(slave);
+
+          console.log('Slave ' + slave + ' registred on Master ' +
+            req.body.id + ' successfully.');
+          return res.status(200).json({is_registered: 1});
+        });
+      } else {
+        // already registred
+        return res.status(200).json({is_registered: 2});
+      }
+    });
+  } else {
+    console.log('Attempt to register mesh slave for device ' +
       req.body.id + ' failed: Client Secret not match!');
     return res.status(401).json({is_registered: 0});
   }
@@ -945,6 +1064,15 @@ deviceInfoController.receiveDevices = function(req, res) {
           devReg.wifi_freq = upConnDev.wifi_freq;
           devReg.wifi_mode = (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
                               upConnDev.wifi_mode : null);
+          if (upConnDev.wifi_signature != '') {
+            devReg.wifi_fingerprint = upConnDev.wifi_signature;
+          }
+          if (upConnDev.dhcp_signature != '') {
+            devReg.dhcp_fingerprint = upConnDev.dhcp_signature;
+          }
+          if (upConnDev.dhcp_vendor_class != '') {
+            devReg.dhcp_vendor_class = upConnDev.dhcp_vendor_class;
+          }
         } else {
           let hostName = (upConnDev.hostname != '' &&
                           upConnDev.hostname != '!') ? upConnDev.hostname : '';
@@ -964,6 +1092,9 @@ deviceInfoController.receiveDevices = function(req, res) {
             wifi_freq: upConnDev.wifi_freq,
             wifi_mode: (['G', 'N', 'AC'].includes(upConnDev.wifi_mode) ?
                         upConnDev.wifi_mode : null),
+            wifi_fingerprint: upConnDev.wifi_signature,
+            dhcp_fingerprint: upConnDev.dhcp_signature,
+            dhcp_vendor_class: upConnDev.dhcp_vendor_class,
           });
           outDev.hostname = hostName;
         }
