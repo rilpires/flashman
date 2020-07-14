@@ -5,6 +5,7 @@ const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 const speedTestCompatibleModels = {
   'ACTIONRF1200V1': 100,
   'ACTIONRG1200V1': 200,
+  'ARCHERC2V1': 300,
   'ARCHERC5V4': 300,
   'ARCHERC20V1': 100,
   'ARCHERC20V4': 100,
@@ -55,6 +56,25 @@ const speedTestCompatibleModels = {
   'TL-WR845NV3': 100,
   'TL-WR845NV4': 100,
 };
+
+const meshCompatibleModels = [
+  'ARCHERC2V1',
+  'ARCHERC5V4',
+  'ARCHERC20V1',
+  'ARCHERC20V4',
+  'ARCHERC20V5',
+  'ARCHERC20V5PRESET',
+  'ARCHERC50V3',
+  'ARCHERC50V4',
+  'ARCHERC60V2',
+  'ARCHERC6V2US',
+  'DIR-819A1',
+  'COVR-C1200A1',
+  'EMG1702-T10AA1',
+  'TL-WDR3500V1',
+  'TL-WDR3600V1',
+  'TL-WDR4300V1',
+];
 
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
@@ -164,7 +184,6 @@ const grantLanGwEdit = function(version) {
     // Development version, enable everything by default
     return true;
   }
-  return false;
 };
 
 const grantLanDevices = function(version) {
@@ -183,7 +202,6 @@ const grantUpnp = function(version) {
     // Development version, enable everything by default
     return true;
   }
-  return false;
 };
 
 const grantSpeedTest = function(version, model) {
@@ -213,15 +231,36 @@ const grantOpmode = function(version) {
     // Development version, enable everything by default
     return true;
   }
-  return false;
 };
 
-const grantWanBytesSupport = function(version, model) {
+const grantWanBytesSupport = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.25.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
+  }
+};
+
+const grantMeshMode = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !meshCompatibleModels.includes(model)) {
+      // Unspecified model or model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.27.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantUpdateAck = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.27.0') >= 0);
+  } else {
+    // Development version, no way to know version so disable by default
+    return false;
   }
 };
 
@@ -243,7 +282,9 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantOpmode = grantOpmode(version);
-  result.grantWanBytesSupport = grantWanBytesSupport(version, model);
+  result.grantWanBytesSupport = grantWanBytesSupport(version);
+  result.grantMeshMode = grantMeshMode(version, model);
+  result.grantUpdateAck = grantUpdateAck(version);
   return result;
 };
 

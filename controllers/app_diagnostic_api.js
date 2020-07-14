@@ -1,7 +1,10 @@
 const DeviceModel = require('../models/device');
+const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
 const Role = require('../models/role');
 const keyHandlers = require('./handlers/keys');
+const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const mqtt = require('../mqtts');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -40,6 +43,20 @@ const convertWifi = function(wifiConfig) {
   };
 };
 
+const convertStringList = function(list) {
+  return list.filter((element)=>typeof element === 'string');
+}
+
+const convertMesh = function(mesh) {
+  return {
+    mode: (mesh && mesh.mode) ? mesh.mode : 0,
+    updatedSlaves: (mesh && mesh.updatedSlaves) ?
+                   convertStringList(mesh.updatedSlaves) : [],
+    originalSlaves: (mesh && mesh.originalSlaves) ?
+                    convertStringList(mesh.originalSlaves) : [],
+  };
+};
+
 const pushCertification = function(arr, c, finished) {
   arr.push({
     finished: finished,
@@ -60,6 +77,7 @@ const pushCertification = function(arr, c, finished) {
     didConfigureWifi: (c.didWifi) ? c.didWifi : false,
     wifiConfig: convertWifi(c.wifiConfig),
     didConfigureMesh: (c.didMesh) ? c.didMesh : false,
+    mesh: convertMesh(c.mesh),
     didConfigureContract: (c.didContract) ? c.didContract : false,
     didConfigureObservation: (c.didObservation) ? c.didObservation : false,
     contract: (c.contract) ? c.contract : '',
@@ -168,7 +186,91 @@ diagAppAPIController.configureWifi = async(function(req, res) {
       // Apply changes to database and send mqtt message
       device.do_update_parameters = true;
       await(device.save());
+      meshHandlers.syncSlaves(device);
       mqtt.anlixMessageRouterUpdate(device._id);
+      return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.configureMeshMode = async(function(req, res) {
+  try {
+    // Make sure we have a mac to verify in database
+    if (req.body.mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      let content = req.body;
+      let targetMode = parseInt(req.body.mesh_mode)
+      if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
+        if (targetMode === 0 && device.mesh_slaves.length > 0) {
+          // Cannot disable mesh mode with registered slaves
+          return res.status(500).json({
+            'error': 'Cannot disable mesh with reigstered slaves'
+          });
+        }
+        device.mesh_mode = targetMode;
+      }
+      // Apply changes to database and send mqtt message
+      device.do_update_parameters = true;
+      await(device.save());
+      meshHandlers.syncSlaves(device);
+      mqtt.anlixMessageRouterUpdate(device._id);
+      return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.checkMeshStatus = async(function(req, res) {
+  try {
+    // Make sure we have a mac to verify in database
+    if (req.body.mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
+        return res.status(200).json({'count': 0, 'slaves': []});
+      }
+      return res.status(200).json({
+        'count': device.mesh_slaves.length,
+        'slaves': device.mesh_slaves,
+      });
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+});
+
+diagAppAPIController.removeMeshSlave = async(function(req, res) {
+  try {
+    // Make sure we have a mac to remove from database
+    if (req.body.remove_mac) {
+      // Fetch device from database
+      let device = await(DeviceModel.findById(req.body.remove_mac));
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      if (!device.mesh_master) {
+        return res.status(403).json({'error': 'Device is not a mesh slave!'});
+      }
+      deviceHandlers.removeDeviceFromDatabase(device);
       return res.status(200).json({'success': true});
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
@@ -235,10 +337,21 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
+      let permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable,
+        device.model,
+      );
       return res.status(200).json({
         'success': true,
         'isRegister': true,
         'isOnline': isDevOn,
+        'permissions': permissions,
+        'deviceInfo': {
+          'mesh_mode': device.mesh_mode,
+          'mesh_master': device.mesh_master,
+          'mesh_slaves': device.mesh_slaves,
+        }
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});

@@ -64,6 +64,11 @@ let userSchema = new mongoose.Schema({
       },
     },
     didConfigureMesh: {type: Boolean, default: false},
+    mesh: {
+      mode: {type: Number, default: 0},
+      updatedSlaves: [String],
+      originalSlaves: [String],
+    },
     didConfigureContract: {type: Boolean, default: false},
     didConfigureObservation: {type: Boolean, default: false},
     contract: {type: String, required: false},

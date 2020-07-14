@@ -8,6 +8,7 @@ const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 
 let deviceListController = {};
@@ -106,9 +107,14 @@ const getOnlineCount = function(query) {
             DeviceModel.count(offlineQuery, function(err, count) {
               if (!err) {
                 status.offlinenum = count;
-                status.totalnum = (status.offlinenum + status.recoverynum +
-                                   status.onlinenum);
-                return resolve(status);
+                getOnlineCountMesh(query).then((extraStatus)=>{
+                  status.onlinenum += extraStatus.onlinenum;
+                  status.recoverynum += extraStatus.recoverynum;
+                  status.offlinenum += extraStatus.offlinenum;
+                  status.totalnum = (status.offlinenum + status.recoverynum +
+                                     status.onlinenum);
+                  return resolve(status);
+                });
               } else {
                 return reject(err);
               }
@@ -116,6 +122,37 @@ const getOnlineCount = function(query) {
           } else {
             return reject(err);
           }
+        });
+      } else {
+        return reject(err);
+      }
+    });
+  });
+};
+
+const getOnlineCountMesh = function(query) {
+  return new Promise((resolve, reject)=> {
+    let meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
+    let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    lastHour = lastHour.getTime();
+    let options = {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1};
+
+    const mqttClients = Object.values(mqtt.unifiedClientsMap)
+    .reduce((acc, curr) => {
+      return acc.concat(Object.keys(curr));
+    }, []);
+
+    DeviceModel.find(meshQuery, options, function(err, devices) {
+      if (!err) {
+        meshHandlers.enhanceSearchResult(devices).then((extra)=>{
+          extra.forEach((e)=>{
+            if (mqttClients.includes(e._id)) status.onlinenum += 1;
+            else if (e.last_contact >= lastHour) status.recoverynum += 1;
+            else status.offlinenum += 1;
+          });
+          return resolve(status);
         });
       } else {
         return reject(err);
@@ -188,14 +225,39 @@ deviceListController.index = function(req, res) {
               };
             });
           indexContent.update_schedule['release'] = params.rule.release;
-          indexContent.update_schedule['device_to_do'] =
-            rule.to_do_devices.length + rule.in_progress_devices.length;
+          let todo = rule.to_do_devices.length;
+          rule.to_do_devices.forEach((d)=>{
+            if (d.slave_count > 0) {
+              todo += d.slave_count;
+            }
+          });
+          let inProgress = rule.in_progress_devices.length;
+          rule.in_progress_devices.forEach((d)=>{
+            if (d.slave_count > 0) {
+              inProgress += d.slave_count;
+            }
+          });
+          let doneList = rule.done_devices.filter((d)=>d.state==='ok');
+          let done = doneList.length;
+          doneList.forEach((d)=>{
+            if (d.slave_count > 0) {
+              done += d.slave_count;
+            }
+          });
+          let errorList = rule.done_devices.filter((d)=>d.state!=='ok');
+          let derror = errorList.length;
+          errorList.forEach((d)=>{
+            if (d.slave_count > 0) {
+              derror += d.slave_count;
+            }
+          });
           indexContent.update_schedule['device_doing'] =
             rule.in_progress_devices.length;
-          indexContent.update_schedule['device_done'] =
-            rule.done_devices.filter((d)=>d.state==='ok').length;
-          indexContent.update_schedule['device_error'] =
-            rule.done_devices.filter((d)=>d.state!=='ok').length;
+          indexContent.update_schedule['device_to_do'] = todo + inProgress;
+          indexContent.update_schedule['device_done'] = done;
+          indexContent.update_schedule['device_error'] = derror;
+          indexContent.update_schedule['device_total'] =
+            todo + inProgress + done + derror;
         }
       }
 
@@ -224,13 +286,33 @@ deviceListController.changeUpdate = function(req, res) {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar dispositivo'});
     }
-    matchedDevice.do_update = req.body.do_update;
-    if (req.body.do_update) {
+    // Cast to boolean so that javascript works as intended
+    let doUpdate = req.body.do_update;
+    if (typeof req.body.do_update === 'string') {
+      doUpdate = (req.body.do_update === 'true');
+    }
+    // Reject update command to mesh slave, use command on mesh master instead
+    if (matchedDevice.mesh_master && doUpdate) {
+      return res.status(500).json({
+        success: false,
+        message: 'Este roteador é um slave de uma rede mesh, sua atualização '+
+                 'deve ser feita a partir do mestre de sua rede',
+      });
+    }
+    matchedDevice.do_update = doUpdate;
+    if (doUpdate) {
       matchedDevice.do_update_status = 0; // waiting
       matchedDevice.release = req.params.release.trim();
       messaging.sendUpdateMessage(matchedDevice);
+      // Set mesh master's remaining updates field to keep track of network
+      // update progress. This is only a helper value for the frontend.
+      if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+        let slaveCount = matchedDevice.mesh_slaves.length;
+        matchedDevice.do_update_mesh_remaining = slaveCount + 1;
+      }
     } else {
       matchedDevice.do_update_status = 1; // success
+      meshHandlers.syncUpdateCancel(matchedDevice);
     }
     matchedDevice.save(function(err) {
       if (err) {
@@ -242,8 +324,54 @@ deviceListController.changeUpdate = function(req, res) {
       }
 
       mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      res.status(200).json({'success': true});
 
-      return res.status(200).json({'success': true});
+      // Start ack timeout
+      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
+    });
+  });
+};
+
+deviceListController.changeUpdateMesh = function(req, res) {
+  DeviceModel.findById(req.params.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      let indexContent = {};
+      indexContent.type = 'danger';
+      indexContent.message = err.message;
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar dispositivo'});
+    }
+    // Cast to boolean so that javascript works as intended
+    let doUpdate = req.body.do_update;
+    if (typeof req.body.do_update === 'string') {
+      doUpdate = (req.body.do_update === 'true');
+    }
+    // Reject update cancel command to mesh slave, use above function instead
+    if (!req.body.do_update) {
+      return res.status(500).json({
+        success: false,
+        message: 'Esta função só deve ser usada para marcar um slave para '+
+          'atualizar, não para cancelar a atualização',
+      });
+    }
+    matchedDevice.do_update = true;
+    matchedDevice.do_update_status = 0; // waiting
+    matchedDevice.release = req.params.release.trim();
+    messaging.sendUpdateMessage(matchedDevice);
+    matchedDevice.save(function(err) {
+      if (err) {
+        let indexContent = {};
+        indexContent.type = 'danger';
+        indexContent.message = err.message;
+        return res.status(500).json({success: false,
+                                     message: 'Erro ao registrar atualização'});
+      }
+
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      res.status(200).json({'success': true});
+
+      // Start ack timeout
+      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
     });
   });
 };
@@ -463,7 +591,7 @@ deviceListController.searchDeviceReg = function(req, res) {
     let releases = deviceListController.getReleases();
     lastHour.setHours(lastHour.getHours() - 1);
 
-    let enrichedMatchedDevs = matchedDevices.docs.map((device) => {
+    let enrichDevice = function(device) {
       const model = device.model.replace('N/', '');
       const devReleases = releases.filter((release) => release.model === model);
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -490,32 +618,35 @@ deviceListController.searchDeviceReg = function(req, res) {
         device.wifi_state_5ghz = 1;
       }
       return device;
-    });
+    };
 
-    User.findOne({name: req.user.name}, function(err, user) {
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
-        getOnlineCount(finalQuery).then((onlineStatus) => {
-          // Counters
-          let status = {};
-          status = Object.assign(status, onlineStatus);
-          // Filter data using user permissions
-          return res.json({
-            success: true,
-            type: 'success',
-            limit: req.user.maxElementsPerPage,
-            page: matchedDevices.page,
-            pages: matchedDevices.pages,
-            min_length_pass_pppoe: matchedConfig.pppoePassLength,
-            status: status,
-            single_releases: deviceListController.getReleases(true),
-            filter_list: req.body.filter_list,
-            devices: enrichedMatchedDevs,
-          });
-        }, (error) => {
-          return res.json({
-            success: false,
-            type: 'danger',
-            message: err.message,
+    meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
+      let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
+      User.findOne({name: req.user.name}, function(err, user) {
+        Config.findOne({is_default: true}, function(err, matchedConfig) {
+          getOnlineCount(finalQuery).then((onlineStatus) => {
+            // Counters
+            let status = {};
+            status = Object.assign(status, onlineStatus);
+            // Filter data using user permissions
+            return res.json({
+              success: true,
+              type: 'success',
+              limit: req.user.maxElementsPerPage,
+              page: matchedDevices.page,
+              pages: matchedDevices.pages,
+              min_length_pass_pppoe: matchedConfig.pppoePassLength,
+              status: status,
+              single_releases: deviceListController.getReleases(true),
+              filter_list: req.body.filter_list,
+              devices: allDevices,
+            });
+          }, (error) => {
+            return res.json({
+              success: false,
+              type: 'danger',
+              message: err.message,
+            });
           });
         });
       });
@@ -529,8 +660,7 @@ deviceListController.delDeviceReg = function(req, res) {
       return res.status(500).json({success: false,
                                    message: 'Entrada não pode ser removida'});
     }
-    // Use this .remove method so middleware post hook receives object info
-    device.remove();
+    deviceHandlers.removeDeviceFromDatabase(device);
     return res.status(200).json({success: true});
   });
 };
@@ -610,7 +740,9 @@ deviceListController.factoryResetDevice = function(req, res) {
     await(device.save());
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
-    return res.status(200).json({success: true});
+    res.status(200).json({success: true});
+    // Start ack timeout
+    deviceHandlers.timeoutUpdateAck(device._id);
   }));
 };
 
@@ -622,16 +754,15 @@ deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (device == null) {
       return res.status(200).json({success: false,
                                    message: 'Roteador não encontrado'});
     }
-    let device = matchedDevice;
     let permissions = DeviceVersion.findByVersion(device.version,
                                                   device.wifi_is_5ghz_capable);
 
@@ -704,11 +835,23 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
         } else if (msgtype === 'onlinedevs') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForOnlineDevNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForOnlineDevNotification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
           }
           mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -716,11 +859,23 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
         } else if (msgtype === 'upstatus') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForUpStatusNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForUpStatusNotification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
           }
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+          });
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
@@ -889,6 +1044,16 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
       let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
       let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
+      let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
+      let slaveReferences = [];
+      try {
+        slaveReferences = JSON.parse(content.slave_references);
+        if (slaveReferences.length !== matchedDevice.mesh_slaves.length) {
+          slaveReferences = [];
+        }
+      } catch (err) {
+        slaveReferences = [];
+      }
 
       let genericValidate = function(field, func, key, minlength) {
         let validField = func(field, minlength);
@@ -966,9 +1131,12 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
         if (bridgeEnabled && bridgeFixIP) {
-          genericValidate(bridgeFixIP, validator.validateIP, 'bridge_fixed_ip');
-          genericValidate(bridgeFixGateway, validator.validateIP, 'bridge_fixed_gateway');
-          genericValidate(bridgeFixDNS, validator.validateIP, 'bridge_fixed_dns');
+          genericValidate(bridgeFixIP, validator.validateIP,
+                          'bridge_fixed_ip');
+          genericValidate(bridgeFixGateway, validator.validateIP,
+                          'bridge_fixed_gateway');
+          genericValidate(bridgeFixDNS, validator.validateIP,
+                          'bridge_fixed_dns');
         }
 
         if (errors.length < 1) {
@@ -1121,14 +1289,21 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.bridge_mode_dns = bridgeFixDNS;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('mesh_mode') &&
+                (superuserGrant || role.grantOpmodeEdit)) {
+              matchedDevice.mesh_mode = meshMode;
+              updateParameters = true;
+            }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
             }
-            matchedDevice.save(function(err) {
+            matchedDevice.save(async function(err) {
               if (err) {
                 console.log(err);
               }
               mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+              meshHandlers.syncSlaves(matchedDevice, slaveReferences);
 
               matchedDevice.success = true;
               return res.status(200).json(matchedDevice);
@@ -1226,7 +1401,7 @@ deviceListController.createDeviceReg = function(req, res) {
             errors.push({mac: 'Endereço MAC já cadastrado'});
           }
           if (errors.length < 1) {
-            newDeviceModel = new DeviceModel({
+            let newDeviceModel = new DeviceModel({
               '_id': macAddr,
               'external_reference': extReference,
               'model': '',
@@ -1650,7 +1825,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
       matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model
+      matchedDevice.model,
     );
 
     return res.status(200).json({

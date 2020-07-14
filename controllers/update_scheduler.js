@@ -3,6 +3,8 @@ const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
+const meshHandler = require('./handlers/mesh');
+const deviceHandlers = require('./handlers/devices');
 
 const nodeSchedule = require('node-schedule');
 const csvParse = require('csvtojson');
@@ -260,6 +262,8 @@ const markNextForUpdate = async(function() {
           'mac': nextDevice.mac,
           'state': 'downloading',
           'retry_count': nextDevice.retry_count,
+          'slave_count': nextDevice.slave_count,
+          'slave_updates_remaining': nextDevice.slave_count,
         },
       }
     ));
@@ -276,9 +280,11 @@ const markNextForUpdate = async(function() {
     device.do_update = true;
     device.do_update_status = 0;
     device.release = config.device_update_schedule.rule.release;
+    await(device.save());
     messaging.sendUpdateMessage(device);
     mqtt.anlixMessageRouterUpdate(device._id);
-    await(device.save());
+    // Start ack timeout
+    deviceHandlers.timeoutUpdateAck(device._id);
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
@@ -286,11 +292,16 @@ const markNextForUpdate = async(function() {
   return {success: true, marked: true};
 });
 
-scheduleController.initialize = async(function(macList) {
+scheduleController.initialize = async(function(macList, slaveCountPerMac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   devices = macList.map((mac)=>{
-    return {mac: mac.toUpperCase(), state: 'update', retry_count: 0};
+    return {
+      mac: mac.toUpperCase(),
+      state: 'update',
+      slave_count: slaveCountPerMac[mac],
+      retry_count: 0
+    };
   });
   try {
     await(configQuery(
@@ -350,16 +361,82 @@ scheduleController.successUpdate = async(function(mac) {
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status updating to ok
   try {
+    if (device.state !== 'slave') {
+      // This is a mesh master, simply update status to "slave" and reset retry
+      // Mesh handler will properly propagate update to next slave
+      await(Config.updateOne({
+        'is_default': true,
+        'device_update_schedule.rule.in_progress_devices.mac': mac,
+      }, {
+        '$set': {
+          'device_update_schedule.rule.in_progress_devices.$.state': 'slave',
+          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
+        },
+      }));
+    } else if (device.slave_updates_remaining > 1) {
+      // This is a mesh slave, and not the last slave in the network.
+      // Decrement remain counter and reset retry count, mesh handler propagates
+      let remain = device.slave_updates_remaining - 1;
+      await(Config.updateOne({
+        'is_default': true,
+        'device_update_schedule.rule.in_progress_devices.mac': mac,
+      }, {
+        '$set': {
+          'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
+          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
+        },
+      }));
+    } else {
+      // This is either a regular router or the last slave in a mesh network
+      // Move from in progress to done, with status ok
+      await(configQuery(
+        // Make schedule inactive if this is last device to enter done state
+        {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
+        // Remove from in progress state
+        {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
+        // Add to done, status ok
+        {
+          'device_update_schedule.rule.done_devices': {
+            'mac': mac,
+            'state': 'ok',
+            'slave_count': device.slave_count,
+            'slave_updates_remaining': 0,
+          },
+        }
+      ));
+    }
+  } catch (err) {
+    console.log(err);
+    return {success: false, error: 'Erro alterando base de dados'};
+  }
+  if (rule.done_devices.length+1 === count) {
+    // This was last device to enter done state, schedule is done
+    removeOfflineWatchdog();
+  }
+  return {success: true};
+});
+
+scheduleController.failedDownloadAck = async(function(mac) {
+  let config = await(getConfig());
+  if (!config) return {success: false, error: 'Não há um agendamento ativo'};
+  let count = config.device_update_schedule.device_count;
+  let rule = config.device_update_schedule.rule;
+  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
+  if (!device) return {success: false, error: 'MAC não encontrado'};
+  try {
+    // Move from in progress to done, with status error
     await(configQuery(
       // Make schedule inactive if this is last device to enter done state
       {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
       // Remove from in progress state
       {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
-      // Add to done, status ok
+      // Add to done, status error
       {
         'device_update_schedule.rule.done_devices': {
           'mac': mac,
-          'state': 'ok',
+          'state': 'error',
+          'slave_count': device.slave_count,
+          'slave_updates_remaining': device.slave_updates_remaining,
         },
       }
     ));
@@ -374,7 +451,7 @@ scheduleController.successUpdate = async(function(mac) {
   return {success: true};
 });
 
-scheduleController.failedDownload = async(function(mac) {
+scheduleController.failedDownload = async(function(mac, slave='') {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let count = config.device_update_schedule.device_count;
@@ -383,6 +460,7 @@ scheduleController.failedDownload = async(function(mac) {
   if (!device) return {success: false, error: 'MAC não encontrado'};
   try {
     let setQuery = null;
+    let pullQuery = null;
     if (device.retry_count >= maxRetries || config.is_aborted) {
       // Will not try again or move to to_do, so check if last device to update
       setQuery = {
@@ -392,11 +470,17 @@ scheduleController.failedDownload = async(function(mac) {
         // This was last device to enter done state, schedule is done
         removeOfflineWatchdog();
       }
+      // Force remove from in progress regardless of slave or not
+      pullQuery = {
+        'device_update_schedule.rule.in_progress_devices': {'mac': mac},
+      };
     }
-    // Remove from in progress state
-    let pullQuery = {
-      'device_update_schedule.rule.in_progress_devices': {'mac': mac},
-    };
+    // Remove from in progress state only if not a slave
+    if (slave === '') {
+      pullQuery = {
+        'device_update_schedule.rule.in_progress_devices': {'mac': mac},
+      };
+    }
     let pushQuery = null;
     if (device.retry_count >= maxRetries) {
       // Too many retries, add to done, status error
@@ -404,6 +488,8 @@ scheduleController.failedDownload = async(function(mac) {
         'device_update_schedule.rule.done_devices': {
           'mac': mac,
           'state': 'error',
+          'slave_count': device.slave_count,
+          'slave_updates_remaining': device.slave_updates_remaining,
         },
       };
     } else if (config.is_aborted) {
@@ -415,9 +501,24 @@ scheduleController.failedDownload = async(function(mac) {
           'device_update_schedule.rule.done_devices': {
             'mac': mac,
             'state': 'aborted',
+            'slave_count': device.slave_count,
+            'slave_updates_remaining': device.slave_updates_remaining,
           },
         };
       }
+    } else if (slave !== '') {
+      // Is a mesh slave, will retry immediately
+      let retry = device.retry_count + 1;
+      await(Config.updateOne({
+        'is_default': true,
+        'device_update_schedule.rule.in_progress_devices.mac': mac,
+      }, {
+        '$set': {
+          'device_update_schedule.rule.in_progress_devices.$.retry_count': retry,
+        },
+      }));
+      meshHandler.propagateUpdate(slave, rule.release);
+      return {success: true};
     } else {
       // Will retry, add to to_do, status retry
       pushQuery = {
@@ -447,12 +548,27 @@ scheduleController.abortSchedule = async(function(req, res) {
     let rule = config.device_update_schedule.rule;
     let pushArray = rule.to_do_devices.map((d)=>{
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
-      return {mac: d.mac, state: state};
+      return {
+        mac: d.mac,
+        state: state,
+        slave_count: d.slave_count,
+        slave_updates_remaining: d.slave_updates_remaining,
+      };
     });
     rule.in_progress_devices.forEach((d)=>{
-      let stateSuffix = (d.state === 'downloading') ? '_down' : '_update';
+      let stateSuffix = '_update';
+      if (d.state === 'downloading') {
+        stateSuffix = '_down';
+      } else if (d.state === 'slave') {
+        stateSuffix = '_slave';
+      }
       let state = 'aborted' + stateSuffix;
-      pushArray.push({mac: d.mac, state: state});
+      pushArray.push({
+        mac: d.mac,
+        state: state,
+        slave_count: d.slave_count,
+        slave_updates_remaining: d.slave_updates_remaining,
+      });
     });
     // Avoid repeated entries by rare race conditions
     pushArray = pushArray.filter((item, idx) => {
@@ -480,6 +596,7 @@ scheduleController.abortSchedule = async(function(req, res) {
       device.do_update = false;
       device.do_update_status = 4;
       await(device.save());
+      meshHandler.syncUpdateCancel(d, 4);
     }));
   } catch (err) {
     console.log(err);
@@ -547,29 +664,47 @@ scheduleController.getDevicesReleases = async(function(req, res) {
     let releasesAvailable = deviceListController.getReleases(true);
     let modelsNeeded = {};
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-    matchedDevices.forEach((device)=>{
-      let model = device.model.replace('N/', '');
-      if (model in modelsNeeded) {
-        modelsNeeded[model] += 1;
-      } else {
-        modelsNeeded[model] = 1;
-      }
-    });
-    let releasesMissing = releasesAvailable.map((release)=>{
-      let modelsMissing = [];
-      for (let model in modelsNeeded) {
-        if (!release.model.includes(model)) {
-          modelsMissing.push({model: model, count: modelsNeeded[model]});
+    meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
+      matchedDevices = matchedDevices.concat(extraDevices);
+      matchedDevices.forEach((device)=>{
+        let model = device.model.replace('N/', '');
+        let weight = 1;
+        if (device.mesh_master) return; // Ignore mesh slaves
+        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+          // Increase model weight for each router in mesh network
+          weight += device.mesh_slaves.length;
+          device.mesh_slaves.forEach((slave)=>{
+            let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+            let slaveModel = slaveDevice.model.replace('N/', '');
+            if (slaveModel in modelsNeeded) {
+              modelsNeeded[slaveModel] += weight;
+            } else {
+              modelsNeeded[slaveModel] = weight;
+            }
+          });
         }
-      }
-      return {
-        id: release.id,
-        models: modelsMissing,
-      };
-    });
-    return res.status(200).json({
-      success: true,
-      releases: releasesMissing,
+        if (model in modelsNeeded) {
+          modelsNeeded[model] += weight;
+        } else {
+          modelsNeeded[model] = weight;
+        }
+      });
+      let releasesMissing = releasesAvailable.map((release)=>{
+        let modelsMissing = [];
+        for (let model in modelsNeeded) {
+          if (!release.model.includes(model)) {
+            modelsMissing.push({model: model, count: modelsNeeded[model]});
+          }
+        }
+        return {
+          id: release.id,
+          models: modelsMissing,
+        };
+      });
+      return res.status(200).json({
+        success: true,
+        releases: releasesMissing,
+      });
     });
   }, (err)=>{
     console.log(err);
@@ -682,7 +817,21 @@ scheduleController.startSchedule = async(function(req, res) {
     modelsAvailable = modelsAvailable.model;
     // Filter devices that have a valid model
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+    let extraDevices = await(meshHandler.enhanceSearchResult(matchedDevices));
+    matchedDevices = matchedDevices.concat(extraDevices);
     matchedDevices = matchedDevices.filter((device)=>{
+      if (device.mesh_master) return false; // Discard mesh slaves
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        // Discard master if any slave has incompatible model
+        let valid = true;
+        device.mesh_slaves.forEach((slave)=>{
+          if (!valid) return;
+          let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+          let slaveModel = slaveDevice.model.replace('N/', '');
+          valid = modelsAvailable.includes(slaveModel);
+        });
+        if (!valid) return false;
+      }
       let model = device.model.replace('N/', '');
       return modelsAvailable.includes(model);
     });
@@ -692,7 +841,15 @@ scheduleController.startSchedule = async(function(req, res) {
         message: 'Erro ao processar os parâmetros: nenhum roteador encontrado',
       });
     }
-    let macList = matchedDevices.map((device)=>device._id);
+    let slaveCount = {};
+    let macList = matchedDevices.map((device)=>{
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        slaveCount[device._id] = device.mesh_slaves.length;
+      } else {
+        slaveCount[device._id] = 0;
+      }
+      return device._id;
+    });
     // Save scheduler configs to database
     let config = null;
     try {
@@ -744,7 +901,7 @@ scheduleController.startSchedule = async(function(req, res) {
       });
     }
     // Start updating
-    let result = await(scheduleController.initialize(macList));
+    let result = await(scheduleController.initialize(macList, slaveCount));
     if (!result.success) {
       return res.status(500).json({
         success: false,
@@ -774,12 +931,38 @@ scheduleController.updateScheduleStatus = async(function(req, res) {
     });
   }
   let rule = config.device_update_schedule.rule;
+  let todo = rule.to_do_devices.length;
+  let inProgress = rule.in_progress_devices.length;
+  let doneList = rule.done_devices.filter((d)=>d.state==='ok');
+  let done = doneList.length;
+  let errorList = rule.done_devices.filter((d)=>d.state!=='ok');
+  let error = errorList.length;
+  rule.to_do_devices.forEach((d)=>{
+    if (d.slave_count > 0) {
+      todo += d.slave_count;
+    }
+  });
+  rule.in_progress_devices.forEach((d)=>{
+    if (d.slave_count > 0) {
+      inProgress += d.slave_count;
+    }
+  });
+  doneList.forEach((d)=>{
+    if (d.slave_count > 0) {
+      done += d.slave_count;
+    }
+  });
+  errorList.forEach((d)=>{
+    if (d.slave_count > 0) {
+      error += d.slave_count;
+    }
+  });
   return res.status(200).json({
-    total: config.device_update_schedule.device_count,
-    todo: rule.to_do_devices.length + rule.in_progress_devices.length,
+    total: todo + inProgress + done + error,
+    todo: todo + inProgress,
     doing: rule.in_progress_devices.length > 0,
-    done: rule.done_devices.filter((d)=>d.state==='ok').length,
-    error: rule.done_devices.filter((d)=>d.state!=='ok').length,
+    done: done,
+    error: error,
   });
 });
 
@@ -789,12 +972,14 @@ const translateState = function(state) {
   if (state === 'offline') return 'Roteador offline';
   if (state === 'downloading') return 'Baixando firmware';
   if (state === 'updating') return 'Atualizando firmware';
+  if (state === 'slave') return 'Atualizando roteador slave';
   if (state === 'ok') return 'Atualizado com sucesso';
   if (state === 'error') return 'Ocorreu um erro na atualização';
   if (state === 'aborted') return 'Atualização abortada';
   if (state === 'aborted_off') return 'Atualização abortada - roteador estava offline';
   if (state === 'aborted_down') return 'Atualização abortada - roteador estava baixando firmware';
   if (state === 'aborted_update') return 'Atualização abortada - roteador estava instalando firmware';
+  if (state === 'aborted_slave') return 'Atualização abortada - atualizando roteador slave';
   return 'Status desconhecido';
 };
 
@@ -811,10 +996,24 @@ scheduleController.scheduleResult = async(function(req, res) {
     csvData += d.mac + ',' + translateState(d.state) + '\n';
   });
   rule.in_progress_devices.forEach((d)=>{
-    csvData += d.mac + ',' + translateState(d.state) + '\n';
+    let state = translateState(d.state);
+    if (d.slave_count > 0 && d.state === 'slave') {
+      let current = d.slave_count - d.slave_updates_remaining + 1;
+      state += ' ' + current + ' de ' + d.slave_count;
+    }
+    csvData += d.mac + ',' + state + '\n';
   });
   rule.done_devices.forEach((d)=>{
-    csvData += d.mac + ',' + translateState(d.state) + '\n';
+    let state = translateState(d.state);
+    if (d.slave_count > 0) {
+      let current = d.slave_count - d.slave_updates_remaining + 1;
+      if (d.state === 'error') {
+        state += ' do roteador slave ' + current + ' de ' + d.slave_count;
+      } else if (d.state === 'aborted_slave') {
+        state += ' ' + current + ' de ' + d.slave_count;
+      }
+    }
+    csvData += d.mac + ',' + state + '\n';
   });
   res.set('Content-Disposition', 'attachment; filename=agendamento.csv');
   res.set('Content-Type', 'text/csv');

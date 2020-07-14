@@ -14,6 +14,7 @@ const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const request = require('request-promise-native');
+const meshHandlers = require('./controllers/handlers/mesh');
 let session = require('express-session');
 
 let measurer = require('./controllers/measure');
@@ -137,15 +138,34 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
     }
   });
   // Check migration for devices checked for upgrade
+  // Check mesh key existence or generate it
   Device.find({}, function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
+        let saveDevice = false;
         if (!devices[idx].installed_release) {
           if (devices[idx].do_update == true) {
             devices[idx].do_update_status = 0; // waiting
           } else {
             devices[idx].installed_release = devices[idx].release;
           }
+          saveDevice = true;
+        }
+        // Check mesh key existence or generate it
+        if (!devices[idx].mesh_key || !devices[idx].mesh_id) {
+          devices[idx].mesh_id = meshHandlers.genMeshID();
+          devices[idx].mesh_key = meshHandlers.genMeshKey();
+          saveDevice = true;
+        }
+        // Fix bugs of bridge mode present in version 0.26.0
+        // of Flashbox firmware
+        if (devices[idx].bridge_mode_enabled === true &&
+            devices[idx].connection_type === 'pppoe'
+        ) {
+          devices[idx].connection_type = 'dhcp';
+          saveDevice = true;
+        }
+        if (saveDevice) {
           devices[idx].save();
         }
       }

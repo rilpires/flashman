@@ -21,7 +21,7 @@ sio.on('connection', function(socket) {
   if (socket.handshake.session.passport) {
     // We keep only one connection for each session
     if (sio.anlixConnections[socket.handshake.sessionID]) {
-      oldsock = sio.anlixConnections[socket.handshake.sessionID];
+      let oldsock = sio.anlixConnections[socket.handshake.sessionID];
       oldsock.disconnect(true);
       if (sio.anlixNotifications[socket.handshake.sessionID]) {
         delete sio.anlixNotifications[socket.handshake.sessionID];
@@ -275,7 +275,7 @@ sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
 
   registerNotification(session, SIO_NOTIFICATION_SPEED_TEST, macaddr);
   return true;
-}
+};
 
 sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   if (!macaddr) {

@@ -1,0 +1,53 @@
+#reboot-mesh.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-sync-alt.fa-lg
+          strong &nbsp;&nbsp; Reiniciar roteadores em rede mesh&nbsp;
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        #reboot-select.text-center
+          .row
+            .col
+              h4 Selecione quais roteadores da rede devem ser reiniciados
+          .my-3.custom-control.custom-checkbox
+            input#select-reboot-all.custom-control-input(type="checkbox")
+            label.custom-control-label(for="select-reboot-all") Todos os roteadores
+          .custom-control.custom-checkbox
+            input#select-reboot-master.mesh-router.custom-control-input(type="checkbox")
+            label#reboot-master-label.custom-control-label(for="select-reboot-master")
+          #reboot-options
+        #reboot-loading.text-center
+          h3.text-center.grey-text.mb-3
+            i.fas.fa-spinner.fa-pulse.fa-2x
+            br
+            br
+            span Enviando comando para os roteadores...
+        #reboot-error.text-center
+          h3.text-center.grey-text.mb-3
+            i.fas.fa-times.fa-2x
+            br
+            span Não foi possível enviar um ou mais comandos!
+          #reboot-error-div.mt-3
+        #reboot-done.text-center
+          h3.text-center.grey-text.mb-3
+            i.fas.fa-check.fa-2x
+            br
+            span Comando enviado com sucesso!
+      #reboot-mesh-button.row.text-center.mb-3
+        .col
+          button.btn.btn-primary.btn-reboot-mesh(type="button" disabled)
+            i.fas.fa-check.fa-lg
+            span &nbsp; Reiniciar
+      #reboot-error-button.row.text-center.mb-3
+        .col
+          button.btn.btn-primary.btn-reboot-mesh-retry(type="button")
+            i.fas.fa-sync-alt.fa-lg
+            span &nbsp; Tentar Novamente
+      #reboot-done-button.row.text-center.mb-3
+        .col
+          button.btn.btn-primary.btn-reboot-mesh-close(type="button")
+            i.fas.fa-check.fa-lg
+            span &nbsp; OK
