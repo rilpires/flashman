@@ -754,16 +754,15 @@ deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (device == null) {
       return res.status(200).json({success: false,
                                    message: 'Roteador não encontrado'});
     }
-    let device = matchedDevice;
     let permissions = DeviceVersion.findByVersion(device.version,
                                                   device.wifi_is_5ghz_capable);
 
@@ -836,11 +835,23 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
         } else if (msgtype === 'onlinedevs') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForOnlineDevNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForOnlineDevNotification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
           }
           mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -852,19 +863,19 @@ deviceListController.sendMqttMsg = function(req, res) {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForUpStatusNotification(
               req.sessionID,
-              req.params.id.toUpperCase()
+              req.params.id.toUpperCase(),
             );
             slaves.forEach((slave)=>{
               sio.anlixWaitForUpStatusNotification(
                 req.sessionID,
-                slave.toUpperCase()
+                slave.toUpperCase(),
               );
-            })
+            });
           }
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-          })
+          });
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
