@@ -2,18 +2,19 @@ const DeviceModel = require('../../models/device');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
-const updateScheduler = require('../update_scheduler');
 const deviceHandlers = require('./devices');
 
 let meshHandlers = {};
 
 meshHandlers.genMeshID = function() {
-  return crypt.randomBytes(10).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '')
-}
+  return crypt.randomBytes(10).toString('base64')
+              .replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '');
+};
 
 meshHandlers.genMeshKey = function() {
-  return crypt.randomBytes(20).toString('base64').replace(/\//g, '!').replace(/\=/g, '')
-}
+  return crypt.randomBytes(20).toString('base64')
+              .replace(/\//g, '!').replace(/\=/g, '');
+};
 
 meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.mesh_mode = master.mesh_mode;
@@ -25,7 +26,7 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.wifi_band = master.wifi_band;
   slave.wifi_mode = master.wifi_mode;
   slave.wifi_state = master.wifi_state;
-  if(slave.wifi_is_5ghz_capable) {
+  if (slave.wifi_is_5ghz_capable) {
     slave.wifi_ssid_5ghz = master.wifi_ssid_5ghz;
     slave.wifi_password_5ghz = master.wifi_password_5ghz;
     slave.wifi_channel_5ghz = master.wifi_channel_5ghz;
@@ -33,7 +34,7 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
     slave.wifi_mode_5ghz = master.wifi_mode_5ghz;
     slave.wifi_state_5ghz = master.wifi_state_5ghz;
   }
-}
+};
 
 meshHandlers.syncSlaveReference = function(slave, reference) {
   if (reference.hasOwnProperty('kind') && reference.kind !== '' &&
@@ -41,7 +42,7 @@ meshHandlers.syncSlaveReference = function(slave, reference) {
     slave.external_reference.kind = reference.kind;
     slave.external_reference.data = reference.data;
   }
-}
+};
 
 meshHandlers.syncSlaves = function(master, slaveReferences=null) {
   for (let i = 0; i < master.mesh_slaves.length; i++) {
@@ -65,19 +66,21 @@ meshHandlers.syncSlaves = function(master, slaveReferences=null) {
       }
     });
   }
-}
+};
 
 meshHandlers.enhanceSearchResult = async function(result) {
   // Add mesh siblings/master if they are not in the results
   // Convert result array to object with mac keys for O(1) search
   let addedMacs = {};
-  result.forEach((r)=>{addedMacs[r._id]=true;});
+  result.forEach((r)=> {
+    addedMacs[r._id]=true;
+  });
   let extraResults = [];
   for (let i = 0; i < result.length; i++) {
     try {
       let device = result[i];
       let masterMac = device.mesh_master;
-      if (masterMac != "" && !addedMacs[masterMac]) {
+      if (masterMac != '' && !addedMacs[masterMac]) {
         // Slave is in results, but master isnt - add master and other slaves
         addedMacs[masterMac] = true;
         let masterReg = await DeviceModel.findById(masterMac).lean();
@@ -104,7 +107,7 @@ meshHandlers.enhanceSearchResult = async function(result) {
     }
   }
   return extraResults;
-}
+};
 
 meshHandlers.propagateUpdate = async function(targetMac, release) {
   DeviceModel.findById(targetMac, function(err, device) {
@@ -128,7 +131,7 @@ meshHandlers.propagateUpdate = async function(targetMac, release) {
       });
     }
   });
-}
+};
 
 meshHandlers.updateMaster = async function(slaveMac, masterMac, release) {
   DeviceModel.findById(masterMac, function(err, masterDevice) {
@@ -148,7 +151,7 @@ meshHandlers.updateMaster = async function(slaveMac, masterMac, release) {
       }
     }
   });
-}
+};
 
 meshHandlers.syncUpdate = function(device, setQuery, release) {
   // Only change information if device has slaves or a master
@@ -168,7 +171,7 @@ meshHandlers.syncUpdate = function(device, setQuery, release) {
   if (device.mesh_master) {
     meshHandlers.updateMaster(device._id, device.mesh_master, release);
   }
-}
+};
 
 meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
   if (!masterDevice.mesh_slaves || masterDevice.mesh_slaves.length === 0) {
@@ -190,6 +193,6 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
       }
     });
   });
-}
+};
 
 module.exports = meshHandlers;
