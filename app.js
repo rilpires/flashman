@@ -26,8 +26,12 @@ let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
 let index = require('./routes/index');
+let packageJson = require('./package.json');
 
 let app = express();
+
+// Specify some variables available to all views
+app.locals.appVersion = packageJson.version;
 
 mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman',
