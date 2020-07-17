@@ -361,7 +361,7 @@ scheduleController.successUpdate = async(function(mac) {
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status updating to ok
   try {
-    if (device.state !== 'slave') {
+    if (device.slave_updates_remaining > 0 && device.state !== 'slave') {
       // This is a mesh master, simply update status to "slave" and reset retry
       // Mesh handler will properly propagate update to next slave
       await(Config.updateOne({
