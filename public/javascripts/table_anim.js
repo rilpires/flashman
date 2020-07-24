@@ -946,6 +946,9 @@ $(document).ready(function() {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
             isSelectableRow = false;
           }
+          if (!isSuperuser && !grantDeviceRemoval) {
+            isSelectableRow = false;
+          }
           let upgradeCol = buildUpgradeCol(device, slaves);
           let infoRow = buildTableRowInfo(device, isSelectableRow);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);

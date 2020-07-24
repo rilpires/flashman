@@ -105,10 +105,11 @@ block content
                     button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
                       .fas.fa-save.fa-lg.mr-2
                       | Salvar
-            .col-12.col-lg-9
-              button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
-                i.fas.fa-trash
-                span &nbsp; Remover vários
+            if (superuser || role.grantDeviceRemoval)
+              .col-12.col-lg-9
+                button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
+                  i.fas.fa-trash
+                  span &nbsp; Remover vários
 
         .col-12.col-lg-3
           .md-form.mb-0
