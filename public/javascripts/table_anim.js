@@ -268,7 +268,7 @@ $(document).ready(function() {
     event.stopPropagation();
   });
 
-  $(document).on('click', '.tr-device-row', function(event) {
+  $(document).on('click', '.selectable-device-row', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     if (row.hasClass('device-row-selected')) {
@@ -354,7 +354,8 @@ $(document).ready(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  const updateSlavesRecursively = function(row, iter, update, status, remain, mac='') {
+  const updateSlavesRecursively = function(row, iter, update,
+                                           status, remain, mac='') {
     if (iter < 0) {
       if (!update) {
         // Activate dropdown
@@ -426,7 +427,7 @@ $(document).ready(function() {
           localMac = res._id;
         }
         updateSlavesRecursively(row, iter-1, localUpdate, localStatus, remain, localMac);
-      }
+      },
     });
   };
 
@@ -655,14 +656,16 @@ $(document).ready(function() {
     return upgradeCol;
   };
 
-  const buildTableRowInfo = function(device, meshSlave=false, index=0) {
+  const buildTableRowInfo = function(device, selectable,
+                                     meshSlave=false, index=0) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
+    let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
-    let infoRow = '<tr class="tr-device-row csv-export '+rowClass+'" $REPLACE_ATTRIBUTES>'+
+    let infoRow = '<tr class="csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+
@@ -878,7 +881,7 @@ $(document).ready(function() {
             '</div>'+
           '</div>'+
         '</td>';
-        let statusRow = '<tr class="tr-device-summary-row">'+
+        let statusRow = '<tr class="not-selectable-device-row">'+
           '<td class="pl-1 pr-0">'+
             '<a id="refresh-table-content">'+
               '<div class="fas fa-sync-alt fa-lg mt-2 hover-effect"></div>'+
@@ -938,11 +941,13 @@ $(document).ready(function() {
           let notifications = buildNotification();
 
           let slaves = [];
+          let isSelectableRow = true;
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
+            isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
-          let infoRow = buildTableRowInfo(device);
+          let infoRow = buildTableRowInfo(device, isSelectableRow);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
@@ -959,7 +964,7 @@ $(document).ready(function() {
 
           finalHtml += infoRow;
 
-          formAttr = 'id="form-'+index+'"';
+          let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
@@ -1496,7 +1501,7 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
-          currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
+          let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
@@ -1613,7 +1618,7 @@ $(document).ready(function() {
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
-          currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
+          let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
           wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
@@ -1733,9 +1738,7 @@ $(document).ready(function() {
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
               let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
-
-              let upgradeCol = buildUpgradeCol(slaveDev);
-              let infoRow = buildTableRowInfo(slaveDev, true, index);
+              let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);

@@ -197,12 +197,12 @@
 }
 
 // Device rows on index table
-.tr-device-row {
+.selectable-device-row {
 
   cursor: pointer;
 }
 
-.tr-device-summary-row:hover {
+.not-selectable-device-row:hover {
 
   background-color: $white !important;
 }

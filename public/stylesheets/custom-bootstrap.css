@@ -21042,11 +21042,11 @@ ul.stepper li.active a .label, ul.stepper li.completed a .label {
   color: #4db6ac;
 }
 
-.tr-device-row {
+.selectable-device-row {
   cursor: pointer;
 }
 
-.tr-device-summary-row:hover {
+.not-selectable-device-row:hover {
   background-color: #fff !important;
 }
 
