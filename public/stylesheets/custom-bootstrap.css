@@ -12471,7 +12471,7 @@ a.text-dark:hover, a.text-dark:focus {
 }
 
 .primary-color-dark {
-  background-color: #0d47a1 !important;
+  background-color: #3d8f87 !important;
 }
 
 .secondary-color {
@@ -21040,6 +21040,18 @@ ul.stepper li.active a .label, ul.stepper li.completed a .label {
 .device-row-refresher > .fas:active,
 #refresh-table-content > .fas:active {
   color: #4db6ac;
+}
+
+.tr-device-row {
+  cursor: pointer;
+}
+
+.tr-device-summary-row:hover {
+  background-color: #fff !important;
+}
+
+.hover-effect:hover {
+  color: #3d8f87;
 }
 
 /*# sourceMappingURL=custom-bootstrap.css.map */

@@ -655,13 +655,23 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
-    if (err || !device) {
-      return res.status(500).json({success: false,
-                                   message: 'Entrada não pode ser removida'});
+  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
+    if (err || !devices) {
+      console.log('User delete error: ' + err);
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro interno ao remover cadastro(s)',
+      });
     }
-    deviceHandlers.removeDeviceFromDatabase(device);
-    return res.status(200).json({success: true});
+    devices.forEach((device) => {
+      deviceHandlers.removeDeviceFromDatabase(device);
+    });
+    return res.json({
+      success: true,
+      type: 'success',
+      message: 'Cadastro(s) removido(s) com sucesso!',
+    });
   });
 };
 

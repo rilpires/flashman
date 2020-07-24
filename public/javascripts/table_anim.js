@@ -191,6 +191,9 @@ $(document).ready(function() {
   let grantOpmodeEdit = false;
   let grantWanBytes = false;
 
+  // For actions applied to multiple routers
+  let selectedDevices = [];
+
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
   }
@@ -238,6 +241,8 @@ $(document).ready(function() {
     }
     $(event.target).removeClass('fa-chevron-down')
                    .addClass('fa-chevron-up text-primary');
+    // Stop event from reaching tr element
+    event.stopPropagation();
   });
 
   $(document).on('click', '.fa-chevron-up.device-table-row', function(event) {
@@ -259,6 +264,31 @@ $(document).ready(function() {
     }
     $(event.target).removeClass('fa-chevron-up text-primary')
                    .addClass('fa-chevron-down');
+    // Stop event from reaching tr element
+    event.stopPropagation();
+  });
+
+  $(document).on('click', '.tr-device-row', function(event) {
+    let row = $(event.target).parents('tr');
+    let deviceId = row.data('deviceid');
+    if (row.hasClass('device-row-selected')) {
+      row.removeClass('device-row-selected');
+      row.css('background-color', '');
+      // Remove device from action list
+      let deviceIdx = selectedDevices.indexOf(deviceId);
+      if (deviceIdx != -1) {
+        selectedDevices.splice(deviceIdx, 1);
+        if (selectedDevices.length == 0) {
+          $('#btn-trash-multiple').addClass('disabled');
+        }
+      }
+    } else {
+      row.addClass('device-row-selected');
+      row.css('background-color', 'gainsboro');
+      // Add device to action list
+      selectedDevices.push(deviceId.toUpperCase());
+      $('#btn-trash-multiple').removeClass('disabled');
+    }
   });
 
   $(document).on('click', '.ext-ref-type a', refreshExtRefType);
@@ -404,6 +434,8 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    // Stop event from reaching tr element
+    event.stopPropagation();
     // Dispatch update for wan and sys uptime
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/upstatus',
@@ -628,13 +660,13 @@ $(document).ready(function() {
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
-      '<div class="fas fa-sync-alt fa-lg"></div>'+
+      '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
-    let infoRow = '<tr class=" csv-export '+rowClass+'" $REPLACE_ATTRIBUTES>'+
+    let infoRow = '<tr class="tr-device-row csv-export '+rowClass+'" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+
-        '<div class="fas fa-chevron-down fa-lg device-table-row '+chevClass+'"></div>'+
+        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect'+chevClass+'"></div>'+
       '</td><td>'+
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
@@ -846,10 +878,10 @@ $(document).ready(function() {
             '</div>'+
           '</div>'+
         '</td>';
-        let statusRow = '<tr>'+
+        let statusRow = '<tr class="tr-device-summary-row">'+
           '<td class="pl-1 pr-0">'+
             '<a id="refresh-table-content">'+
-              '<div class="fas fa-sync-alt fa-lg mt-2"></div>'+
+              '<div class="fas fa-sync-alt fa-lg mt-2 hover-effect"></div>'+
             '</a>'+
           '</td><td class="text-center">'+
             res.status.totalnum+' total'+
@@ -1927,7 +1959,7 @@ $(document).ready(function() {
     swal({
       type: 'warning',
       title: 'Atenção!',
-      text: 'Tem certeza que deseja remover este cadastro?',
+      text: 'Tem certeza que deseja remover esse cadastro?',
       confirmButtonText: 'OK',
       confirmButtonColor: '#4db6ac',
       cancelButtonText: 'Cancelar',
@@ -1936,16 +1968,53 @@ $(document).ready(function() {
     }).then((result)=>{
       if (result.value) {
         $.ajax({
-          url: '/devicelist/delete/' + id,
+          url: '/devicelist/delete',
           type: 'post',
+          traditional: true,
+          data: {ids: [id]},
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-form .tags-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
-              type: 'success',
-              title: 'Cadastro removido com sucesso',
+              type: res.type,
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '#btn-trash-multiple', function(event) {
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Tem certeza que deseja remover esses cadastros?',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: selectedDevices},
+          success: function(res) {
+            $('#btn-trash-multiple').addClass('disabled');
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-form .tags-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: res.type,
+              title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });

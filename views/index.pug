@@ -59,50 +59,56 @@ block content
     .col-12.mt-4
       .row
         .col-12.col-lg-9
-          .dropdown
-            a.btn.btn-primary.dropdown-toggle(
-              href="#", role="button", data-toggle="dropdown").ml-0.mt-4
-              .fas.fa-filter.fa-lg.mr-2
-              | Editar Colunas
-            .dropdown-menu.dont-close
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-4(type="checkbox")
-                  label.custom-control-label(for="devices-column-4") Usuário PPPoE
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-5(type="checkbox")
-                  label.custom-control-label(for="devices-column-5") Endereço MAC
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-6(type="checkbox")
-                  label.custom-control-label(for="devices-column-6") IP WAN
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-7(type="checkbox")
-                  label.custom-control-label(for="devices-column-7") IP Público
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-8(type="checkbox")
-                  label.custom-control-label(for="devices-column-8") Firmware Instalado
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-9(type="checkbox")
-                  label.custom-control-label(for="devices-column-9") Identificação
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-10(type="checkbox")
-                  label.custom-control-label(for="devices-column-10") Tempo Ligado
-              a.dropdown-item(href="#")
-                .custom-control.custom-checkbox
-                  input.custom-control-input#devices-column-11(type="checkbox")
-                  label.custom-control-label(for="devices-column-11") Tempo Conectado
-              .dropdown-divider
-              .text-right
-                #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
-                button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
-                  .fas.fa-save.fa-lg.mr-2
-                  | Salvar
+          .row.mt-4
+            .col-12.col-lg-3.pr-0
+              .dropdown
+                a.btn.btn-primary.dropdown-toggle(
+                  href="#", role="button", data-toggle="dropdown").ml-0
+                  .fas.fa-filter.fa-lg.mr-2
+                  | Editar Colunas
+                .dropdown-menu.dont-close
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-4(type="checkbox")
+                      label.custom-control-label(for="devices-column-4") Usuário PPPoE
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-5(type="checkbox")
+                      label.custom-control-label(for="devices-column-5") Endereço MAC
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-6(type="checkbox")
+                      label.custom-control-label(for="devices-column-6") IP WAN
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-7(type="checkbox")
+                      label.custom-control-label(for="devices-column-7") IP Público
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-8(type="checkbox")
+                      label.custom-control-label(for="devices-column-8") Firmware Instalado
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-9(type="checkbox")
+                      label.custom-control-label(for="devices-column-9") Identificação
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-10(type="checkbox")
+                      label.custom-control-label(for="devices-column-10") Tempo Ligado
+                  a.dropdown-item(href="#")
+                    .custom-control.custom-checkbox
+                      input.custom-control-input#devices-column-11(type="checkbox")
+                      label.custom-control-label(for="devices-column-11") Tempo Conectado
+                  .dropdown-divider
+                  .text-right
+                    #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
+                    button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
+                      .fas.fa-save.fa-lg.mr-2
+                      | Salvar
+            .col-12.col-lg-9
+              button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
+                i.fas.fa-trash
+                span &nbsp; Remover vários
 
         .col-12.col-lg-3
           .md-form.mb-0
@@ -123,7 +129,7 @@ block content
       .card
         .card-body.px-3
           .table-responsive
-            table.table#devices-table
+            table.table.table-hover#devices-table
               thead
                 tr.csv-export(
                   data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
