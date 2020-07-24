@@ -1403,6 +1403,7 @@ deviceListController.createDeviceReg = function(req, res) {
           if (errors.length < 1) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
+              'created_at': new Date(),
               'external_reference': extReference,
               'model': '',
               'release': release,

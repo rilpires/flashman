@@ -404,7 +404,6 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
-    let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
     // Dispatch update for wan and sys uptime
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/upstatus',
@@ -684,7 +683,15 @@ $(document).ready(function() {
 
   const buildAboutTab = function(device, index, mesh=-1) {
     let idIndex = (mesh > -1) ? index + '-' + mesh : index;
+    let createdDateStr = '';
     let resetDateStr = '';
+    if (isNaN(Date.parse(device.created_at))) {
+      createdDateStr = 'Não disponível';
+    } else {
+      let createdDate = new Date(device.created_at);
+      createdDateStr = createdDate.toLocaleDateString(navigator.language,
+        {hour: '2-digit', minute: '2-digit'});
+    }
     if (isNaN(Date.parse(device.last_hardreset))) {
       resetDateStr = 'Não disponível';
     } else {
@@ -694,6 +701,12 @@ $(document).ready(function() {
     }
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
+        '<div class="md-form input-entry pt-1">'+
+          '<label class="active">Registro do roteador criado em</label>'+
+          '<input class="form-control" type="text" '+
+          'disabled value="'+createdDateStr+'">'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
         '<div class="md-form input-group input-entry">'+
           '<div class="input-group-btn">'+
             '<button class="btn btn-primary dropdown-toggle ml-0 my-0" '+
@@ -732,7 +745,7 @@ $(document).ready(function() {
       '</div>'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Último reset realizado em</label>'+
+          '<label class="active">Último reset no roteador realizado em</label>'+
           '<input class="form-control" type="text" '+
           'disabled value="'+resetDateStr+'">'+
           '<div class="invalid-feedback"></div>'+

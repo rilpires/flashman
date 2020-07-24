@@ -9,6 +9,7 @@ let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
   _id: String,
+  created_at: {type: Date},
   external_reference: {kind: String, data: String},
   model: String,
   version: {type: String, default: '0.0.0'},
