@@ -684,6 +684,14 @@ $(document).ready(function() {
 
   const buildAboutTab = function(device, index, mesh=-1) {
     let idIndex = (mesh > -1) ? index + '-' + mesh : index;
+    let resetDateStr = '';
+    if (isNaN(Date.parse(device.last_hardreset))) {
+      resetDateStr = 'Não disponível';
+    } else {
+      let resetDate = new Date(device.last_hardreset);
+      resetDateStr = resetDate.toLocaleDateString(navigator.language,
+        {hour: '2-digit', minute: '2-digit'});
+    }
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-group input-entry">'+
@@ -723,6 +731,12 @@ $(document).ready(function() {
         '</div>'+
       '</div>'+
       '<div class="col-6">'+
+        '<div class="md-form input-entry pt-1">'+
+          '<label class="active">Último reset realizado em</label>'+
+          '<input class="form-control" type="text" '+
+          'disabled value="'+resetDateStr+'">'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
@@ -851,7 +865,7 @@ $(document).ready(function() {
         // Fill remaining rows with devices
         for (let idx = 0; idx < res.devices.length; idx += 1) {
           let device = res.devices[idx];
-          if (device.mesh_master !== "" && device.mesh_master !== undefined) {
+          if (device.mesh_master !== '' && device.mesh_master !== undefined) {
             // Skip mesh slaves, master draws their form
             continue;
           }
