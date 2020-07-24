@@ -63,6 +63,30 @@ let refreshExtRefType = function(event) {
   }
 };
 
+let refreshLicenseStatus = function(event) {
+  let row = $(event.target).parents('tr');
+  let deviceId = row.data('deviceid');
+  let inputField = $(event.target).closest('.input-group').find('input');
+  let thisBtn = $(this);
+  thisBtn.attr('disabled', true);
+  $.ajax({
+    type: 'POST',
+    url: '/devicelist/license',
+    traditional: true,
+    data: {id: deviceId},
+    success: function(res) {
+      thisBtn.attr('disabled', false);
+      if (res.status === undefined) {
+        inputField.val('Desconhecido');
+      } else if (res.status === true) {
+        inputField.val('Ativa');
+      } else {
+        inputField.val('Bloqueada');
+      }
+    },
+  });
+};
+
 let changeDeviceStatusOnTable = function(table, macaddr, data) {
   let deviceOnTable = table.find('#' + $.escapeSelector(macaddr));
   let statusOnlineSum = table.find('#online-status-sum');
@@ -238,6 +262,8 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '.ext-ref-type a', refreshExtRefType);
+
+  $(document).on('click', '.btn-license-status-refresh', refreshLicenseStatus);
 
   $(document).on('click', '#btn-elements-per-page', function(event) {
     $.ajax({
@@ -680,6 +706,21 @@ $(document).ready(function() {
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        '<div class="md-form input-group input-entry">'+
+          '<div class="input-group-prepend">'+
+            '<span class="input-group-text md-addon font-weight-light">Status da licença é</span>' +
+          '</div>'+
+          '<input class="form-control py-0 added-margin" type="text" '+
+          'id="edit_license_status-'+idIndex+'" placeholder="Desconhecido" '+
+          'disabled value="$REPLACE_LICENSE_STATUS_VAL">'+
+          '</input>'+
+          '<div class="input-group-append">'+
+            '<button class="btn btn-primary btn-sm btn-license-status-refresh" type="button">' +
+              '<i class="fas fa-sync-alt fa-lg"></i><span>&nbsp Atualizar</span>'+
+            '</button>'+
+          '</div>'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
       '</div>'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
@@ -700,6 +741,12 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
     } else {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
+    }
+    if (device.is_license_active !== undefined) {
+      let licenseStatusStr = device.is_license_active ? 'Ativa':'Bloqueada';
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', licenseStatusStr);
+    } else {
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', 'Desconhecido');
     }
     if (!device.external_reference || device.external_reference.kind === 'CPF') {
       aboutTab = aboutTab.replace('$REPLACE_ID_CPF', 'primary-color active');

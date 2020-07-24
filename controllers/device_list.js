@@ -1960,4 +1960,45 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   });
 };
 
+deviceListController.updateLicenseStatus = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar roteador'});
+    }
+    request({
+      url: 'https://controle.anlix.io/api/device/list',
+      method: 'POST',
+      json: {
+        'secret': process.env.FLM_COMPANY_SECRET,
+        'all': false,
+        'mac': matchedDevice._id,
+      },
+    },
+    function(error, response, body) {
+      if (error) {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+      if (response.statusCode === 200) {
+        if (body.success) {
+          let isBlocked = (body.device.is_blocked === true ||
+                           body.device.is_blocked === 'true');
+          if (matchedDevice.is_license_active === undefined) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          } else if ((!isBlocked) !== matchedDevice.is_license_active) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          }
+          return res.json({success: true, status: !isBlocked});
+        } else {
+          return res.json({success: false, message: body.message});
+        }
+      } else {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+    });
+  });
+};
+
 module.exports = deviceListController;

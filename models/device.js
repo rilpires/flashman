@@ -14,6 +14,7 @@ let deviceSchema = new Schema({
   version: {type: String, default: '0.0.0'},
   installed_release: String,
   release: String,
+  is_license_active: Boolean,
   measure_config: {
     measure_psk: String,
     is_active: {type: Boolean, default: false},

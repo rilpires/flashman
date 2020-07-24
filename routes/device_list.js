@@ -240,4 +240,8 @@ router.route('/landevice/block').post(
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
 
+router.route('/license').post(
+  authController.ensureLogin(),
+  deviceListController.updateLicenseStatus);
+
 module.exports = router;
