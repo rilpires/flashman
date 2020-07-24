@@ -87,7 +87,7 @@ const syncUpdateScheduler = async function(mac) {
     console.log(err);
     return;
   }
-}
+};
 
 deviceHandlers.timeoutUpdateAck = function(mac) {
   // Default timeout is 3 minutes, enough time to download 16MB over a 1Mbps
@@ -124,26 +124,26 @@ deviceHandlers.timeoutUpdateAck = function(mac) {
       }
     });
   }, timeout);
-}
+};
 
 deviceHandlers.removeDeviceFromDatabase = function(device) {
-  let mesh_master = device.mesh_master;
+  let meshMaster = device.mesh_master;
   // Use this .remove method so middleware post hook receives object info
   device.remove();
-  if (mesh_master) {
+  if (meshMaster) {
     // This is a mesh slave. Remove master registration
-    DeviceModel.findById(mesh_master, function(err, masterDevice) {
-      if (!err && masterDevice){
+    DeviceModel.findById(meshMaster, function(err, masterDevice) {
+      if (!err && masterDevice) {
         let index = masterDevice.mesh_slaves.indexOf(device._id.toUpperCase());
         if (index > -1) {
           masterDevice.mesh_slaves.splice(index, 1);
         }
         masterDevice.save();
         console.log('Slave ' + device._id.toUpperCase() +
-          ' removed from Master ' +mesh_master+ ' successfully.');
+          ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
   }
-}
+};
 
 module.exports = deviceHandlers;
