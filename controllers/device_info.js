@@ -148,6 +148,7 @@ const createRegistry = function(req, res) {
     if (errors.length < 1) {
       let newDeviceModel = new DeviceModel({
         '_id': macAddr,
+        'created_at': new Date(),
         'model': model,
         'version': version,
         'installed_release': installedRelease,
@@ -201,7 +202,7 @@ const createRegistry = function(req, res) {
         }
       });
     } else {
-      console.log('Error creating entry: ' + errors);
+      console.log('Error creating entry: ' + JSON.stringify(errors));
       return res.status(500).end();
     }
   });

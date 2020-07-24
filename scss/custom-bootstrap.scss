@@ -195,3 +195,19 @@
 #refresh-table-content > .fas:active {
   color: $primary-color;
 }
+
+// Device rows on index table
+.selectable-device-row {
+
+  cursor: pointer;
+}
+
+.not-selectable-device-row:hover {
+
+  background-color: $white !important;
+}
+
+.hover-effect:hover {
+
+  color: $primary-color-dark;
+}

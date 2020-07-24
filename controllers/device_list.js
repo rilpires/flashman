@@ -655,13 +655,23 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
-    if (err || !device) {
-      return res.status(500).json({success: false,
-                                   message: 'Entrada não pode ser removida'});
+  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
+    if (err || !devices) {
+      console.log('User delete error: ' + err);
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro interno ao remover cadastro(s)',
+      });
     }
-    deviceHandlers.removeDeviceFromDatabase(device);
-    return res.status(200).json({success: true});
+    devices.forEach((device) => {
+      deviceHandlers.removeDeviceFromDatabase(device);
+    });
+    return res.json({
+      success: true,
+      type: 'success',
+      message: 'Cadastro(s) removido(s) com sucesso!',
+    });
   });
 };
 
@@ -1403,6 +1413,7 @@ deviceListController.createDeviceReg = function(req, res) {
           if (errors.length < 1) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
+              'created_at': new Date(),
               'external_reference': extReference,
               'model': '',
               'release': release,
@@ -1957,6 +1968,47 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar dispositivo'});
     }
+  });
+};
+
+deviceListController.updateLicenseStatus = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar roteador'});
+    }
+    request({
+      url: 'https://controle.anlix.io/api/device/list',
+      method: 'POST',
+      json: {
+        'secret': process.env.FLM_COMPANY_SECRET,
+        'all': false,
+        'mac': matchedDevice._id,
+      },
+    },
+    function(error, response, body) {
+      if (error) {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+      if (response.statusCode === 200) {
+        if (body.success) {
+          let isBlocked = (body.device.is_blocked === true ||
+                           body.device.is_blocked === 'true');
+          if (matchedDevice.is_license_active === undefined) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          } else if ((!isBlocked) !== matchedDevice.is_license_active) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          }
+          return res.json({success: true, status: !isBlocked});
+        } else {
+          return res.json({success: false, message: body.message});
+        }
+      } else {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+    });
   });
 };
 
