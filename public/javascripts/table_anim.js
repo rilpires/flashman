@@ -63,6 +63,30 @@ let refreshExtRefType = function(event) {
   }
 };
 
+let refreshLicenseStatus = function(event) {
+  let row = $(event.target).parents('tr');
+  let deviceId = row.data('deviceid');
+  let inputField = $(event.target).closest('.input-group').find('input');
+  let thisBtn = $(this);
+  thisBtn.attr('disabled', true);
+  $.ajax({
+    type: 'POST',
+    url: '/devicelist/license',
+    traditional: true,
+    data: {id: deviceId},
+    success: function(res) {
+      thisBtn.attr('disabled', false);
+      if (res.status === undefined) {
+        inputField.val('Desconhecido');
+      } else if (res.status === true) {
+        inputField.val('Ativa');
+      } else {
+        inputField.val('Bloqueada');
+      }
+    },
+  });
+};
+
 let changeDeviceStatusOnTable = function(table, macaddr, data) {
   let deviceOnTable = table.find('#' + $.escapeSelector(macaddr));
   let statusOnlineSum = table.find('#online-status-sum');
@@ -167,6 +191,9 @@ $(document).ready(function() {
   let grantOpmodeEdit = false;
   let grantWanBytes = false;
 
+  // For actions applied to multiple routers
+  let selectedDevices = [];
+
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
   }
@@ -214,6 +241,8 @@ $(document).ready(function() {
     }
     $(event.target).removeClass('fa-chevron-down')
                    .addClass('fa-chevron-up text-primary');
+    // Stop event from reaching tr element
+    event.stopPropagation();
   });
 
   $(document).on('click', '.fa-chevron-up.device-table-row', function(event) {
@@ -235,9 +264,36 @@ $(document).ready(function() {
     }
     $(event.target).removeClass('fa-chevron-up text-primary')
                    .addClass('fa-chevron-down');
+    // Stop event from reaching tr element
+    event.stopPropagation();
+  });
+
+  $(document).on('click', '.selectable-device-row', function(event) {
+    let row = $(event.target).parents('tr');
+    let deviceId = row.data('deviceid');
+    if (row.hasClass('device-row-selected')) {
+      row.removeClass('device-row-selected');
+      row.css('background-color', '');
+      // Remove device from action list
+      let deviceIdx = selectedDevices.indexOf(deviceId);
+      if (deviceIdx != -1) {
+        selectedDevices.splice(deviceIdx, 1);
+        if (selectedDevices.length == 0) {
+          $('#btn-trash-multiple').addClass('disabled');
+        }
+      }
+    } else {
+      row.addClass('device-row-selected');
+      row.css('background-color', 'gainsboro');
+      // Add device to action list
+      selectedDevices.push(deviceId.toUpperCase());
+      $('#btn-trash-multiple').removeClass('disabled');
+    }
   });
 
   $(document).on('click', '.ext-ref-type a', refreshExtRefType);
+
+  $(document).on('click', '.btn-license-status-refresh', refreshLicenseStatus);
 
   $(document).on('click', '#btn-elements-per-page', function(event) {
     $.ajax({
@@ -298,7 +354,8 @@ $(document).ready(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  const updateSlavesRecursively = function(row, iter, update, status, remain, mac='') {
+  const updateSlavesRecursively = function(row, iter, update,
+                                           status, remain, mac='') {
     if (iter < 0) {
       if (!update) {
         // Activate dropdown
@@ -370,7 +427,7 @@ $(document).ready(function() {
           localMac = res._id;
         }
         updateSlavesRecursively(row, iter-1, localUpdate, localStatus, remain, localMac);
-      }
+      },
     });
   };
 
@@ -378,7 +435,8 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
-    let deviceDoUpdate = (row.data('do-update') == 'Sim' ? true : false);
+    // Stop event from reaching tr element
+    event.stopPropagation();
     // Dispatch update for wan and sys uptime
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/upstatus',
@@ -598,18 +656,20 @@ $(document).ready(function() {
     return upgradeCol;
   };
 
-  const buildTableRowInfo = function(device, meshSlave=false, index=0) {
+  const buildTableRowInfo = function(device, selectable,
+                                     meshSlave=false, index=0) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
+    let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
-      '<div class="fas fa-sync-alt fa-lg"></div>'+
+      '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
-    let infoRow = '<tr class=" csv-export '+rowClass+'" $REPLACE_ATTRIBUTES>'+
+    let infoRow = '<tr class="csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+
-        '<div class="fas fa-chevron-down fa-lg device-table-row '+chevClass+'"></div>'+
+        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect'+chevClass+'"></div>'+
       '</td><td>'+
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
@@ -658,8 +718,30 @@ $(document).ready(function() {
 
   const buildAboutTab = function(device, index, mesh=-1) {
     let idIndex = (mesh > -1) ? index + '-' + mesh : index;
+    let createdDateStr = '';
+    let resetDateStr = '';
+    if (isNaN(Date.parse(device.created_at))) {
+      createdDateStr = 'Não disponível';
+    } else {
+      let createdDate = new Date(device.created_at);
+      createdDateStr = createdDate.toLocaleDateString(navigator.language,
+        {hour: '2-digit', minute: '2-digit'});
+    }
+    if (isNaN(Date.parse(device.last_hardreset))) {
+      resetDateStr = 'Não disponível';
+    } else {
+      let resetDate = new Date(device.last_hardreset);
+      resetDateStr = resetDate.toLocaleDateString(navigator.language,
+        {hour: '2-digit', minute: '2-digit'});
+    }
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
+        '<div class="md-form input-entry pt-1">'+
+          '<label class="active">Registro do roteador criado em</label>'+
+          '<input class="form-control" type="text" '+
+          'disabled value="'+createdDateStr+'">'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
         '<div class="md-form input-group input-entry">'+
           '<div class="input-group-btn">'+
             '<button class="btn btn-primary dropdown-toggle ml-0 my-0" '+
@@ -680,8 +762,29 @@ $(document).ready(function() {
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        '<div class="md-form input-group input-entry">'+
+          '<div class="input-group-prepend">'+
+            '<span class="input-group-text md-addon font-weight-light">Status da licença é</span>' +
+          '</div>'+
+          '<input class="form-control py-0 added-margin" type="text" '+
+          'id="edit_license_status-'+idIndex+'" placeholder="Desconhecido" '+
+          'disabled value="$REPLACE_LICENSE_STATUS_VAL">'+
+          '</input>'+
+          '<div class="input-group-append">'+
+            '<button class="btn btn-primary btn-sm btn-license-status-refresh" type="button">' +
+              '<i class="fas fa-sync-alt fa-lg"></i><span>&nbsp Atualizar</span>'+
+            '</button>'+
+          '</div>'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
       '</div>'+
       '<div class="col-6">'+
+        '<div class="md-form input-entry pt-1">'+
+          '<label class="active">Último reset no roteador realizado em</label>'+
+          '<input class="form-control" type="text" '+
+          'disabled value="'+resetDateStr+'">'+
+          '<div class="invalid-feedback"></div>'+
+        '</div>'+
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
@@ -700,6 +803,12 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
     } else {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
+    }
+    if (device.is_license_active !== undefined) {
+      let licenseStatusStr = device.is_license_active ? 'Ativa':'Bloqueada';
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', licenseStatusStr);
+    } else {
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', 'Desconhecido');
     }
     if (!device.external_reference || device.external_reference.kind === 'CPF') {
       aboutTab = aboutTab.replace('$REPLACE_ID_CPF', 'primary-color active');
@@ -772,10 +881,10 @@ $(document).ready(function() {
             '</div>'+
           '</div>'+
         '</td>';
-        let statusRow = '<tr>'+
+        let statusRow = '<tr class="not-selectable-device-row">'+
           '<td class="pl-1 pr-0">'+
             '<a id="refresh-table-content">'+
-              '<div class="fas fa-sync-alt fa-lg mt-2"></div>'+
+              '<div class="fas fa-sync-alt fa-lg mt-2 hover-effect"></div>'+
             '</a>'+
           '</td><td class="text-center">'+
             res.status.totalnum+' total'+
@@ -804,7 +913,7 @@ $(document).ready(function() {
         // Fill remaining rows with devices
         for (let idx = 0; idx < res.devices.length; idx += 1) {
           let device = res.devices[idx];
-          if (device.mesh_master !== "" && device.mesh_master !== undefined) {
+          if (device.mesh_master !== '' && device.mesh_master !== undefined) {
             // Skip mesh slaves, master draws their form
             continue;
           }
@@ -832,11 +941,16 @@ $(document).ready(function() {
           let notifications = buildNotification();
 
           let slaves = [];
+          let isSelectableRow = true;
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
+            isSelectableRow = false;
+          }
+          if (!isSuperuser && !grantDeviceRemoval) {
+            isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
-          let infoRow = buildTableRowInfo(device);
+          let infoRow = buildTableRowInfo(device, isSelectableRow);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
@@ -853,7 +967,7 @@ $(document).ready(function() {
 
           finalHtml += infoRow;
 
-          formAttr = 'id="form-'+index+'"';
+          let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
@@ -1390,7 +1504,7 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
-          currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
+          let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
@@ -1507,7 +1621,7 @@ $(document).ready(function() {
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
-          currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
+          let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
           wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
@@ -1627,9 +1741,7 @@ $(document).ready(function() {
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
               let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
-
-              let upgradeCol = buildUpgradeCol(slaveDev);
-              let infoRow = buildTableRowInfo(slaveDev, true, index);
+              let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
@@ -1853,7 +1965,7 @@ $(document).ready(function() {
     swal({
       type: 'warning',
       title: 'Atenção!',
-      text: 'Tem certeza que deseja remover este cadastro?',
+      text: 'Tem certeza que deseja remover esse cadastro?',
       confirmButtonText: 'OK',
       confirmButtonColor: '#4db6ac',
       cancelButtonText: 'Cancelar',
@@ -1862,16 +1974,53 @@ $(document).ready(function() {
     }).then((result)=>{
       if (result.value) {
         $.ajax({
-          url: '/devicelist/delete/' + id,
+          url: '/devicelist/delete',
           type: 'post',
+          traditional: true,
+          data: {ids: [id]},
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-form .tags-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
-              type: 'success',
-              title: 'Cadastro removido com sucesso',
+              type: res.type,
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '#btn-trash-multiple', function(event) {
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Tem certeza que deseja remover esses cadastros?',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: selectedDevices},
+          success: function(res) {
+            $('#btn-trash-multiple').addClass('disabled');
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-form .tags-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: res.type,
+              title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });

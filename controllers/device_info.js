@@ -148,6 +148,7 @@ const createRegistry = function(req, res) {
     if (errors.length < 1) {
       let newDeviceModel = new DeviceModel({
         '_id': macAddr,
+        'created_at': new Date(),
         'model': model,
         'version': version,
         'installed_release': installedRelease,
@@ -201,7 +202,7 @@ const createRegistry = function(req, res) {
         }
       });
     } else {
-      console.log('Error creating entry: ' + errors);
+      console.log('Error creating entry: ' + JSON.stringify(errors));
       return res.status(500).end();
     }
   });
@@ -1401,8 +1402,10 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
-    matchedDevice.sys_up_time = req.body.sysuptime;
-    matchedDevice.wan_up_time = req.body.wanuptime;
+    let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
+    matchedDevice.sys_up_time = sysUpTime;
+    let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
+    matchedDevice.wan_up_time = wanUpTime;
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }

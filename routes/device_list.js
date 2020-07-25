@@ -84,7 +84,7 @@ router.route('/factoryreset/:id').post(
 );
 
 // Delete device
-router.route('/delete/:id').post(
+router.route('/delete').post(
   authController.ensureLogin(),
   authController.ensurePermission('grantDeviceRemoval'),
   deviceListController.delDeviceReg)
@@ -239,5 +239,9 @@ router.route('/landevice/block').post(
   authController.ensureLogin(),
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
+
+router.route('/license').post(
+  authController.ensureLogin(),
+  deviceListController.updateLicenseStatus);
 
 module.exports = router;
