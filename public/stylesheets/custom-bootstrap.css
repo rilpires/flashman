@@ -21047,7 +21047,7 @@ ul.stepper li.active a .label, ul.stepper li.completed a .label {
 }
 
 .not-selectable-device-row:hover {
-  background-color: #fff !important;
+  background-color: transparent !important;
 }
 
 .hover-effect:hover {
