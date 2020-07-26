@@ -1981,7 +1981,7 @@ deviceListController.updateLicenseStatus = function(req, res) {
       url: 'https://controle.anlix.io/api/device/list',
       method: 'POST',
       json: {
-        'secret': process.env.FLM_COMPANY_SECRET,
+        'secret': req.app.locals.secret,
         'all': false,
         'mac': matchedDevice._id,
       },
