@@ -435,6 +435,10 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    // If undefined it is a mesh slave entry
+    if (deviceId == undefined) {
+      deviceId = row.prev().data('deviceid');
+    }
     // Stop event from reaching tr element
     event.stopPropagation();
     // Dispatch update for wan and sys uptime
