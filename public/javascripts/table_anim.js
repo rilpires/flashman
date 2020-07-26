@@ -665,11 +665,11 @@ $(document).ready(function() {
     '<a class="device-row-refresher">'+
       '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
-    let infoRow = '<tr class="csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
+    let infoRow = '<tr class=" csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+
-        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect'+chevClass+'"></div>'+
+        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect '+chevClass+'"></div>'+
       '</td><td>'+
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
