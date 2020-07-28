@@ -59,6 +59,12 @@ let appSet = function(req, res, processFunction) {
       let content = req.body.content;
       let rollbackValues = {};
 
+      // Update location data if present
+      if (content.latitude && content.longitude) {
+        matchedDevice.latitude = content.latitude;
+        matchedDevice.longitude = content.longitude;
+      }
+
       if (processFunction(content, matchedDevice, rollbackValues)) {
         matchedDevice.do_update_parameters = true;
       }
@@ -719,17 +725,27 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
 
-    // Check if FCM ID has changed, update if so
+    // Check if FCM ID has changed or if location info provided, update if so
     let appid = req.body.app_id;
     let fcmid = req.body.content.fcmToken;
+    let latitude = req.body.content.latitude;
+    let longitude = req.body.content.longitude;
     let lanDevice = matchedDevice.lan_devices.find((d)=>d.app_uid===appid);
-    if (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid) {
+    let mustUpdateFCM = (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid);
+    let mustUpdateLocation = (latitude && longitude);
+    if (mustUpdateFCM || mustUpdateLocation) {
       // Query again but this time without .lean() so we can edit register
       DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
         if (err || !matchedDeviceEdit) return;
-        let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
-        device.fcm_uid = fcmid;
-        device.last_seen = Date.now();
+        if (mustUpdateFCM) {
+          let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+          device.fcm_uid = fcmid;
+          device.last_seen = Date.now();
+        }
+        if (mustUpdateLocation) {
+          matchedDeviceEdit.latitude = latitude;
+          matchedDeviceEdit.longitude = longitude;
+        }
         matchedDeviceEdit.save();
       });
     }
