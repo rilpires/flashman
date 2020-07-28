@@ -964,4 +964,40 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
   }));
 };
 
+appDeviceAPIController.resetPassword = function(req, res) {
+  if (!req.body.content || !req.body.content.reset_mac ||
+      !req.body.content.reset_secret) {
+    return res.status(500).json({message: 'Erro nos parâmetros'});
+  }
+  DeviceModel.findById(req.body.content.reset_mac).exec(async((err, device)=>{
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!device) {
+      return res.status(404).json({message: 'Device não encontrado'});
+    }
+    let appObj = device.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({
+        message: 'App não encontrado',
+        secret: true,
+      });
+    }
+    if (appObj[0].secret != req.body.content.reset_secret) {
+      return res.status(403).json({
+        message: 'App não autorizado',
+        secret: true,
+      });
+    }
+
+    device.app_password = undefined;
+    await(device.save());
+    mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
+
+    return res.status(200).json({success: true});
+  }));
+}
+
 module.exports = appDeviceAPIController;
