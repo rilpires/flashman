@@ -698,13 +698,22 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({
+        message: 'App não encontrado',
+        secret: true,
+      });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({
+        message: 'App não autorizado',
+        secret: true,
+      });
     }
     if (req.body.content.password !== matchedDevice.app_password) {
-      return res.status(403).json({message: 'Senha errada'});
+      return res.status(403).json({
+        message: 'Senha errada',
+        password: true,
+      });
     }
 
     // Send mqtt message to update devices on flashman db
