@@ -8,6 +8,7 @@ let diagAPIController = require('../controllers/app_diagnostic_api');
 router.route('/add').post(appAPIController.registerApp);
 router.route('/del').post(appAPIController.removeApp);
 router.route('/addpass').post(appAPIController.registerPassword);
+router.route('/resetpass').post(appAPIController.resetPassword);
 router.route('/reboot').post(appAPIController.rebootRouter);
 router.route('/refreshinfo').post(appAPIController.refreshInfo);
 router.route('/speedtest').post(appAPIController.doSpeedtest);

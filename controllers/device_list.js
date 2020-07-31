@@ -655,13 +655,23 @@ deviceListController.searchDeviceReg = function(req, res) {
 };
 
 deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), function(err, device) {
-    if (err || !device) {
-      return res.status(500).json({success: false,
-                                   message: 'Entrada não pode ser removida'});
+  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
+    if (err || !devices) {
+      console.log('User delete error: ' + err);
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro interno ao remover cadastro(s)',
+      });
     }
-    deviceHandlers.removeDeviceFromDatabase(device);
-    return res.status(200).json({success: true});
+    devices.forEach((device) => {
+      deviceHandlers.removeDeviceFromDatabase(device);
+    });
+    return res.json({
+      success: true,
+      type: 'success',
+      message: 'Cadastro(s) removido(s) com sucesso!',
+    });
   });
 };
 
@@ -754,16 +764,15 @@ deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (device == null) {
       return res.status(200).json({success: false,
                                    message: 'Roteador não encontrado'});
     }
-    let device = matchedDevice;
     let permissions = DeviceVersion.findByVersion(device.version,
                                                   device.wifi_is_5ghz_capable);
 
@@ -836,11 +845,23 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'boot') {
           mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
         } else if (msgtype === 'onlinedevs') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForOnlineDevNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForOnlineDevNotification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
           }
           mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -852,19 +873,19 @@ deviceListController.sendMqttMsg = function(req, res) {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForUpStatusNotification(
               req.sessionID,
-              req.params.id.toUpperCase()
+              req.params.id.toUpperCase(),
             );
             slaves.forEach((slave)=>{
               sio.anlixWaitForUpStatusNotification(
                 req.sessionID,
-                slave.toUpperCase()
+                slave.toUpperCase(),
               );
-            })
+            });
           }
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-          })
+          });
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
@@ -1392,6 +1413,7 @@ deviceListController.createDeviceReg = function(req, res) {
           if (errors.length < 1) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
+              'created_at': new Date(),
               'external_reference': extReference,
               'model': '',
               'release': release,
@@ -1946,6 +1968,47 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar dispositivo'});
     }
+  });
+};
+
+deviceListController.updateLicenseStatus = function(req, res) {
+  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      return res.status(500).json({success: false,
+                                   message: 'Erro ao encontrar roteador'});
+    }
+    request({
+      url: 'https://controle.anlix.io/api/device/list',
+      method: 'POST',
+      json: {
+        'secret': req.app.locals.secret,
+        'all': false,
+        'mac': matchedDevice._id,
+      },
+    },
+    function(error, response, body) {
+      if (error) {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+      if (response.statusCode === 200) {
+        if (body.success) {
+          let isBlocked = (body.device.is_blocked === true ||
+                           body.device.is_blocked === 'true');
+          if (matchedDevice.is_license_active === undefined) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          } else if ((!isBlocked) !== matchedDevice.is_license_active) {
+            matchedDevice.is_license_active = !isBlocked;
+            matchedDevice.save();
+          }
+          return res.json({success: true, status: !isBlocked});
+        } else {
+          return res.json({success: false, message: body.message});
+        }
+      } else {
+        return res.json({success: false, message: 'Erro na requisição'});
+      }
+    });
   });
 };
 

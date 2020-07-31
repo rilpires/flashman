@@ -9,11 +9,13 @@ let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
   _id: String,
+  created_at: {type: Date},
   external_reference: {kind: String, data: String},
   model: String,
   version: {type: String, default: '0.0.0'},
   installed_release: String,
   release: String,
+  is_license_active: Boolean,
   measure_config: {
     is_active: {type: Boolean, default: false},
   },
