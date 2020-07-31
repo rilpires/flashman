@@ -607,7 +607,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'measure_is_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'is_measure_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
             'measure_fqdn': measureFqdn,
             'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
             'zabbix_fqdn': measureFqdn,
