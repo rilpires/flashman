@@ -576,9 +576,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         );
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          let measureFqdn = '';
-          if (matchedConfig && matchedConfig.measure_configs.measure_fqdn) {
-            measureFqdn = matchedConfig.measure_configs.measure_fqdn;
+          let dataCollectingFqdn = '';
+          if (matchedConfig && matchedConfig.measure_configs.data_collecting_fqdn) {
+            dataCollectingFqdn = matchedConfig.measure_configs.data_collecting_fqdn;
           }
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
@@ -607,10 +607,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'is_measure_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
-            'measure_fqdn': measureFqdn,
+            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'data_collecting_fqdn': dataCollectingFqdn,
             'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
-            'zabbix_fqdn': measureFqdn,
+            'zabbix_fqdn': dataCollectingFqdn,
             'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
@@ -1433,7 +1433,7 @@ deviceInfoController.getMeasureConfig = async(function(req, res) {
     // Check if measure fqdn config is set
     let config = await(Config.findOne({is_default: true}));
     if (!config) throw new {message: 'Config not found'};
-    if (!config.measure_configs.measure_fqdn) {
+    if (!config.measure_configs.data_collecting_fqdn) {
       throw new {message: 'Measure FQDN not configured'};
     }
 
@@ -1444,7 +1444,7 @@ deviceInfoController.getMeasureConfig = async(function(req, res) {
     // Reply with measure fqdn
     return res.status(200).json({
       success: 1,
-      fqdn: config.measure_configs.measure_fqdn,
+      fqdn: config.measure_configs.data_collecting_fqdn,
       is_active: device.measure_config.is_active,
     });
   } catch (err) {

@@ -306,7 +306,8 @@ updateController.setAutoConfig = async(function(req, res) {
       config.measure_configs.is_license_active = true;
       config.measure_configs.auth_token = measureToken;
       config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
-      config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
+      config.measure_configs.zabbix_fqdn = controlResp.data_collecting_fqdn;
+      config.measure_configs.data_collecting_fqdn = controlResp.data_collecting_fqdn;
       message += ' Seus dispositivos começarão a medir em breve.';
     }
     await(config.save());

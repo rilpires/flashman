@@ -15,7 +15,7 @@ let configSchema = new mongoose.Schema({
     is_active: {type: Boolean, default: false},
     is_license_active: {type: Boolean, default: false},
     controller_fqdn: String,
-    measure_fqdn: String,
+    data_collecting_fqdn: String,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
