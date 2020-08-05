@@ -14,11 +14,9 @@ utilHandlers.isJsonString = function(str) {
 };
 
 utilHandlers.returnObjOrEmptyStr = function(query) {
-  if (typeof query !== 'undefined' && query) {
-    return query;
-  } else {
-    return '';
-  }
+  if (query === undefined || query === null)
+    return ''
+  return query
 };
 
 utilHandlers.returnObjOrNum = function(query, num) {
