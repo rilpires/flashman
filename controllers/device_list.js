@@ -406,7 +406,22 @@ deviceListController.changeAllUpdates = function(req, res) {
   });
 };
 
-deviceListController.searchDeviceQuery = function(queryContents) {
+deviceListController.simpleSearchDeviceQuery = function(queryContents) {
+  let finalQuery = {};
+  let queryContentNoCase = new RegExp('^' + queryContents[0] + '$', 'i');
+  if (queryContents[0].length > 0) {
+    finalQuery.$or = [
+      {pppoe_user: queryContentNoCase},
+      {_id: queryContentNoCase},
+      {'external_reference.data': queryContentNoCase},
+    ];
+  } else {
+    finalQuery = {_id: ''};
+  }
+  return finalQuery;
+};
+
+deviceListController.complexSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
 
@@ -509,7 +524,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
   return finalQuery;
 };
 
-deviceListController.searchDeviceReg = function(req, res) {
+deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
   let queryContents = req.body.filter_list.split(',');
@@ -556,7 +571,15 @@ deviceListController.searchDeviceReg = function(req, res) {
     sortKeys._id = sortTypeOrder;
   }
 
-  let finalQuery = deviceListController.searchDeviceQuery(queryContents);
+  const userRole = await Role.findOne({
+    name: util.returnObjOrEmptyStr(req.user.role)
+  });
+  let finalQuery;
+  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+  } else {
+    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+  }
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -1546,7 +1569,7 @@ deviceListController.setPortForward = function(req, res) {
           let localAsymPorts = r.router_port.map((p) => parseInt(p));
           // Get unique port set
           let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-          if (localUniqueAsymPorts.lenght != localAsymPorts.lenght) {
+          if (localUniqueAsymPorts.length != localAsymPorts.length) {
             return res.status(200).json({
               success: false,
               message: 'Portas Externas Repetidas no JSON',
