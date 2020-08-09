@@ -114,6 +114,13 @@ block content
                       option(value=0) Não visualizar
                       option(value=1) Visualizar
                       option(value=2) Visualizar e editar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Busca de roteadores
+                    select.browser-default.md-select(name="grant-search-level")
+                      option(value=0) Não permitir busca e visualização
+                      option(value=1) Busca simples
+                      option(value=2) Busca completa com filtros especiais
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -195,6 +202,12 @@ block content
                     select.browser-default.md-select(name="grant-wan-bytes")
                       option(value="false") Bloquear
                       option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Total sobre status de roteadores
+                    select.browser-default.md-select(name="grant-search-summary")
+                      option(value="false") Não visualizar
+                      option(value="true") Visualizar
             .row
               .col.text-center
                 .form-buttons
