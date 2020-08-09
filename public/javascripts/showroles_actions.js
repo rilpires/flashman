@@ -425,6 +425,19 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Remoção de Registro de Roteadores em Massa'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-device-mass-removal').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Adição de Registro de Roteador'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -565,6 +578,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-removal] option[value=' +
           roleObj.grantDeviceRemoval + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-device-mass-removal] option[value=' +
+          roleObj.grantDeviceMassRemoval + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-add] option[value=' +
           roleObj.grantDeviceAdd + ']')

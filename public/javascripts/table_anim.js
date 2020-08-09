@@ -189,6 +189,7 @@ $(document).ready(function() {
   let grantLanAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
+  let grantDeviceMassRemoval = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
@@ -212,6 +213,7 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
+    grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
@@ -963,7 +965,7 @@ $(document).ready(function() {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
             isSelectableRow = false;
           }
-          if (!isSuperuser && !grantDeviceRemoval) {
+          if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
