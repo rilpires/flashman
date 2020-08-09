@@ -118,6 +118,7 @@ userController.postRole = function(req, res) {
     grantDeviceId: req.body['grant-device-id'],
     grantDeviceActions: req.body['grant-device-actions'],
     grantDeviceRemoval: req.body['grant-device-removal'],
+    grantDeviceMassRemoval: req.body['grant-device-mass-removal'],
     grantFactoryReset: req.body['grant-factory-reset'],
     grantDeviceAdd: req.body['grant-device-add'],
     grantMonitorManage: req.body['grant-monitor-manage'],
@@ -136,6 +137,8 @@ userController.postRole = function(req, res) {
     grantMeasureDevices: parseInt(req.body['grant-measure-devices']),
     grantCsvExport: req.body['grant-csv-export'],
     grantWanBytesView: req.body['grant-wan-bytes'],
+    grantSearchLevel: parseInt(req.body['grant-search-level']),
+    grantShowSearchSummary: req.body['grant-search-summary'],
   });
   role.save(function(err) {
     if (err) {
@@ -283,6 +286,7 @@ userController.editRole = function(req, res) {
     role.grantDeviceActions = req.body['grant-device-actions'];
     role.grantFactoryReset = req.body['grant-factory-reset'];
     role.grantDeviceRemoval = req.body['grant-device-removal'];
+    role.grantDeviceMassRemoval = req.body['grant-device-mass-removal'];
     role.grantDeviceAdd = req.body['grant-device-add'];
     role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];
@@ -300,7 +304,8 @@ userController.editRole = function(req, res) {
     role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
     role.grantCsvExport = req.body['grant-csv-export'];
     role.grantWanBytesView = req.body['grant-wan-bytes'];
-    role.grant = req.body['grant-lan-devices-block'];
+    role.grantSearchLevel = parseInt(req.body['grant-search-level']);
+    role.grantShowSearchSummary = req.body['grant-search-summary'];
 
     role.save(function(err) {
       if (err) {

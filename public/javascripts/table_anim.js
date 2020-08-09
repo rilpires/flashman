@@ -189,11 +189,13 @@ $(document).ready(function() {
   let grantLanAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
+  let grantDeviceMassRemoval = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantWanBytes = false;
+  let grantShowSearchSummary = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -211,12 +213,14 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
+    grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantWanBytes = role.grantWanBytesView;
+    grantShowSearchSummary = role.grantShowSearchSummary;
   }
 
   // Default column to sort rows
@@ -353,7 +357,7 @@ $(document).ready(function() {
   // Refresh table content
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
@@ -885,28 +889,39 @@ $(document).ready(function() {
             '</div>'+
           '</div>'+
         '</td>';
+        let searchSummary = '<td class="text-center">'+
+          res.status.totalnum+' total'+
+        '</td><td>'+
+          '<div class="fas fa-circle green-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
+          '<br>'+
+          '<div class="fas fa-circle red-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
+          '<br>'+
+          '<div class="fas fa-circle grey-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
+        '</td>';
+
         let statusRow = '<tr class="not-selectable-device-row">'+
           '<td class="pl-1 pr-0">'+
             '<a id="refresh-table-content">'+
               '<div class="fas fa-sync-alt fa-lg mt-2 hover-effect"></div>'+
             '</a>'+
-          '</td><td class="text-center">'+
-            res.status.totalnum+' total'+
-          '</td><td>'+
-            '<div class="fas fa-circle green-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
-            '<br>'+
-            '<div class="fas fa-circle red-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
-            '<br>'+
-            '<div class="fas fa-circle grey-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
-          '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td>'+
+          '$REPLACE_SEARCHSUMMARY'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
+        if (isSuperuser || grantShowSearchSummary) {
+          statusRow = statusRow.replace('$REPLACE_SEARCHSUMMARY',
+                                        searchSummary);
+        } else {
+          statusRow = statusRow.replace('$REPLACE_SEARCHSUMMARY',
+                                        '<td></td><td></td>');
+        }
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
           statusRow = statusRow.replace('$REPLACE_ALLUPDATE', allUpgrade);
         } else {
@@ -950,7 +965,7 @@ $(document).ready(function() {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
             isSelectableRow = false;
           }
-          if (!isSuperuser && !grantDeviceRemoval) {
+          if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
@@ -1950,7 +1965,7 @@ $(document).ready(function() {
   loadDevicesTable();
 
   $(document).on('submit', '#devices-search-form', function(event) {
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(1, filterList);
     return false;
@@ -1958,7 +1973,7 @@ $(document).ready(function() {
 
   $(document).on('click', '.change-page-link', function(event) {
     let pageNum = parseInt($(event.target).html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
@@ -1984,7 +1999,7 @@ $(document).ready(function() {
           data: {ids: [id]},
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
@@ -2019,7 +2034,7 @@ $(document).ready(function() {
           success: function(res) {
             $('#btn-trash-multiple').addClass('disabled');
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
@@ -2060,7 +2075,7 @@ $(document).ready(function() {
           type: 'post',
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.close();
@@ -2124,7 +2139,7 @@ $(document).ready(function() {
   // Table column sorts
   $(document).on('click', '[id^=sort-]', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     // Reset other columns
     $('[id^=sort-]').css('font-weight', '').each(function(index) {
       let headerText = $(this).text().split('\u2191')[0];

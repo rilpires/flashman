@@ -17,189 +17,206 @@ block content
   include includes/showupgradescheduler
   include includes/showrebootmesh
 
-  .row.justify-content-center
-    .col-12.col-lg-8.mt-4
-      form#devices-search-form(action="/devicelist/search")
-        .mt-4.input-group
-          input.form-control.tags-input(type="tags", name="content",
-                                        placeholder="Buscar...")
-          .input-group-append(
-            data-toggle="tooltip",
-            title="Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
-          )
-            span.input-group-text.md-addon
-              .fas.fa-question-circle.fa-lg
-          .input-group-btn
-            button.my-0.btn.btn-primary(type="submit")
-              .fas.fa-search.fa-lg
-        a.badge.teal.lighten-2.bounceIn(
-          data-toggle="modal",
-          data-target="#special-search-terms"
-        )
-          | Filtros Especiais &nbsp
-          .fas.fa-plus-circle
-
-  if (superuser || role.grantDeviceAdd)
-    .row.justify-content-center
-      .col-12.col-lg-8.mt-5
-        .card
-          h4.card-header.teal.lighten-2.white-text(id="card-header",
-                                                    data-toggle="collapse",
-                                                    data-target="#deviceCard",
-                                                    style="cursor: pointer;")
-            .row
-              .col-1
-                .fas.fa-plus
-              .col-10.text-center
-                span.card-title Adicionar novo roteador
-          .card-body.collapse.out(id="deviceCard")
-            include includes/newdeviceform
-
-  .row.justify-content-center
-    .col-12.mt-4
-      .row
-        .col-12.col-lg-9
-          .row.mt-4
-            .col-12.col-lg-3.pr-0
-              .dropdown
-                a.btn.btn-primary.dropdown-toggle(
-                  href="#", role="button", data-toggle="dropdown").ml-0
-                  .fas.fa-filter.fa-lg.mr-2
-                  | Editar Colunas
-                .dropdown-menu.dont-close
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-4(type="checkbox")
-                      label.custom-control-label(for="devices-column-4") Usuário PPPoE
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-5(type="checkbox")
-                      label.custom-control-label(for="devices-column-5") Endereço MAC
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-6(type="checkbox")
-                      label.custom-control-label(for="devices-column-6") IP WAN
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-7(type="checkbox")
-                      label.custom-control-label(for="devices-column-7") IP Público
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-8(type="checkbox")
-                      label.custom-control-label(for="devices-column-8") Firmware Instalado
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-9(type="checkbox")
-                      label.custom-control-label(for="devices-column-9") Identificação
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-10(type="checkbox")
-                      label.custom-control-label(for="devices-column-10") Tempo Ligado
-                  a.dropdown-item(href="#")
-                    .custom-control.custom-checkbox
-                      input.custom-control-input#devices-column-11(type="checkbox")
-                      label.custom-control-label(for="devices-column-11") Tempo Conectado
-                  .dropdown-divider
-                  .text-right
-                    #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
-                    button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
-                      .fas.fa-save.fa-lg.mr-2
-                      | Salvar
-            if (superuser || role.grantDeviceRemoval)
-              .col-12.col-lg-9
-                button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
-                  i.fas.fa-trash
-                  span &nbsp; Remover vários
-
-        .col-12.col-lg-3
-          .md-form.mb-0
-            .input-group
-              .md-selectfield.form-control
-                label Registros por página
-                select.browser-default.md-select(id="input-elements-pp")
-                  option(value="" disabled selected) Selecione...
-                  option(value=10 selected=(elementsperpage == 10)) 10
-                  option(value=50 selected=(elementsperpage == 50)) 50
-                  option(value=100 selected=(elementsperpage == 100)) 100
-                  option(value=250 selected=(elementsperpage == 250)) 250
-                  option(value=500 selected=(elementsperpage == 500)) 500
+  if (superuser || (role.grantSearchLevel >= 1))
+    if (superuser || (role.grantSearchLevel == 2))
+      .row.justify-content-center
+        .col-12.col-lg-8.mt-4
+          form#devices-search-form(action="/devicelist/search")
+            .mt-4.input-group
+              input#devices-search-input.form-control.tags-input(type="tags", name="content",
+                                                                 placeholder="Buscar...")
+              .input-group-append(
+                data-toggle="tooltip",
+                title="Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)"
+              )
+                span.input-group-text.md-addon
+                  .fas.fa-question-circle.fa-lg
               .input-group-btn
-                button.btn.btn-primary.mr-0.my-0(
-                  type="button",
-                  id="btn-elements-per-page") Ok
-      .card
-        .card-body.px-3
-          .table-responsive
-            table.table.table-hover#devices-table
-              thead
-                tr.csv-export(
-                  data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
-                  data-deviceid="Endereço MAC",
-                  data-connection-type="Tipo de Conexão WAN",
-                  data-user="Usuário PPPoE",
-                  data-pass="Senha PPPoE",
-                  data-lan-subnet="Subrede LAN",
-                  data-lan-netmask="Máscara LAN",
-                  data-ssid="WiFi SSID",
-                  data-wifi-pass="WiFi Senha",
-                  data-channel="WiFi Canal",
-                  data-band="Largura de banda",
-                  data-mode="Modo de operação",
-                  data-ssid-5ghz="WiFi SSID 5GHz",
-                  data-wifi-pass-5ghz="WiFi Senha 5GHz",
-                  data-channel-5ghz="WiFi Canal 5GHz",
-                  data-band-5ghz="Largura de banda 5GHz",
-                  data-mode-5ghz="Modo de operação 5GHz",
-                  data-ext-wan="IP Público",
-                  data-int-wan="IP WAN",
-                  data-wan-speed="Velocidade WAN negociada"
-                  data-wan-duplex="Modo de transmissão WAN (duplex)"
-                  data-external-ref-type="Tipo de ID do cliente",
-                  data-external-ref="ID do cliente",
-                  data-device-model="Modelo do roteador",
-                  data-device-version="Versão do Flashbox",
-                  data-device-release="Release",
-                  data-do-update="Atualizar Firmware"
-                )
-                  th
-                  th
-                  th.text-left
-                    span Status &nbsp
-                    a.fas.fa-question-circle(
-                      data-toggle="tooltip",
-                      title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
-                    )
-                  th.text-center
-                    a#sort-pppoe-usr Usuário PPPoE
-                  th.text-center
-                    a#sort-mac-addr Endereço MAC
-                  th.text-center
-                    a#sort-wan-ip IP WAN
-                  th.text-center
-                    a#sort-public-ip IP Público
-                  th.text-center
-                    a#sort-release Firmware Instalado
-                  th.text-center
-                    a#sort-ext-ref Identificação
-                  th.text-center
-                    a#sort-sys-uptime Tempo Ligado
-                  th.text-center
-                    a#sort-wan-uptime Tempo Conectado
-                  if (superuser || role.grantFirmwareUpgrade)
-                    th.text-left Atualizar Firmware
-              tbody#devices-table-content(
-                data-role=role,
-                data-superuser=superuser ? "true" : "false",
-                data-visiblecolumnsonpage=visiblecolumnsonpage)
-      .row.mt-3.mb-3
-        .col-md-9
-          nav#devices-table-pagination
-        .col-md-3
-          if (superuser || role.grantCsvExport)
-            .text-right
-              button#export-csv.btn.btn-primary.mr-0.my-0
-                .fas.fa-file-excel.fa-lg
-                span &nbsp Exportar CSV
+                button.my-0.btn.btn-primary(type="submit")
+                  .fas.fa-search.fa-lg
+            a.badge.teal.lighten-2.bounceIn(
+              data-toggle="modal",
+              data-target="#special-search-terms"
+            )
+              | Filtros Especiais &nbsp
+              .fas.fa-plus-circle
+    else
+      .row.justify-content-center
+        .col-12.col-lg-8.mt-4
+          form#devices-search-form(action="/devicelist/search")
+            .md-form.input-group
+              input#devices-search-input.form-control(type="text", name="content",
+                                                      placeholder="Buscar por MAC, identificação ou usuário PPPoE...")
+              .input-group-btn
+                button.my-0.btn.btn-primary(type="submit")
+                  .fas.fa-search.fa-lg
+
+    if (superuser || role.grantDeviceAdd)
+      .row.justify-content-center
+        .col-12.col-lg-8.mt-5
+          .card
+            h4.card-header.teal.lighten-2.white-text(id="card-header",
+                                                      data-toggle="collapse",
+                                                      data-target="#deviceCard",
+                                                      style="cursor: pointer;")
+              .row
+                .col-1
+                  .fas.fa-plus
+                .col-10.text-center
+                  span.card-title Adicionar novo roteador
+            .card-body.collapse.out(id="deviceCard")
+              include includes/newdeviceform
+
+    .row.justify-content-center
+      .col-12.mt-4
+        .row
+          .col-12.col-lg-9
+            .row.mt-4
+              .col-12.col-lg-3.pr-0
+                .dropdown
+                  a.btn.btn-primary.dropdown-toggle(
+                    href="#", role="button", data-toggle="dropdown").ml-0
+                    .fas.fa-filter.fa-lg.mr-2
+                    | Editar Colunas
+                  .dropdown-menu.dont-close
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-4(type="checkbox")
+                        label.custom-control-label(for="devices-column-4") Usuário PPPoE
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-5(type="checkbox")
+                        label.custom-control-label(for="devices-column-5") Endereço MAC
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-6(type="checkbox")
+                        label.custom-control-label(for="devices-column-6") IP WAN
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-7(type="checkbox")
+                        label.custom-control-label(for="devices-column-7") IP Público
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-8(type="checkbox")
+                        label.custom-control-label(for="devices-column-8") Firmware Instalado
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-9(type="checkbox")
+                        label.custom-control-label(for="devices-column-9") Identificação
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-10(type="checkbox")
+                        label.custom-control-label(for="devices-column-10") Tempo Ligado
+                    a.dropdown-item(href="#")
+                      .custom-control.custom-checkbox
+                        input.custom-control-input#devices-column-11(type="checkbox")
+                        label.custom-control-label(for="devices-column-11") Tempo Conectado
+                    .dropdown-divider
+                    .text-right
+                      #save-columns-confirm.fas.fa-check-circle.green-text.mr-1(style="opacity: 0;")
+                      button#btn-save-columns-on-page.btn.btn-primary.btn-sm.z-depth-1.mr-3
+                        .fas.fa-save.fa-lg.mr-2
+                        | Salvar
+              if (superuser || role.grantDeviceMassRemoval)
+                .col-12.col-lg-9
+                  button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
+                    i.fas.fa-trash
+                    span &nbsp; Remover vários
+
+          .col-12.col-lg-3
+            .md-form.mb-0
+              .input-group
+                .md-selectfield.form-control
+                  label Registros por página
+                  select.browser-default.md-select(id="input-elements-pp")
+                    option(value="" disabled selected) Selecione...
+                    option(value=10 selected=(elementsperpage == 10)) 10
+                    option(value=50 selected=(elementsperpage == 50)) 50
+                    option(value=100 selected=(elementsperpage == 100)) 100
+                    option(value=250 selected=(elementsperpage == 250)) 250
+                    option(value=500 selected=(elementsperpage == 500)) 500
+                .input-group-btn
+                  button.btn.btn-primary.mr-0.my-0(
+                    type="button",
+                    id="btn-elements-per-page") Ok
+        .card
+          .card-body.px-3
+            .table-responsive
+              table.table.table-hover#devices-table
+                thead
+                  tr.csv-export(
+                    data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
+                    data-deviceid="Endereço MAC",
+                    data-connection-type="Tipo de Conexão WAN",
+                    data-user="Usuário PPPoE",
+                    data-pass="Senha PPPoE",
+                    data-lan-subnet="Subrede LAN",
+                    data-lan-netmask="Máscara LAN",
+                    data-ssid="WiFi SSID",
+                    data-wifi-pass="WiFi Senha",
+                    data-channel="WiFi Canal",
+                    data-band="Largura de banda",
+                    data-mode="Modo de operação",
+                    data-ssid-5ghz="WiFi SSID 5GHz",
+                    data-wifi-pass-5ghz="WiFi Senha 5GHz",
+                    data-channel-5ghz="WiFi Canal 5GHz",
+                    data-band-5ghz="Largura de banda 5GHz",
+                    data-mode-5ghz="Modo de operação 5GHz",
+                    data-ext-wan="IP Público",
+                    data-int-wan="IP WAN",
+                    data-wan-speed="Velocidade WAN negociada"
+                    data-wan-duplex="Modo de transmissão WAN (duplex)"
+                    data-external-ref-type="Tipo de ID do cliente",
+                    data-external-ref="ID do cliente",
+                    data-device-model="Modelo do roteador",
+                    data-device-version="Versão do Flashbox",
+                    data-device-release="Release",
+                    data-do-update="Atualizar Firmware"
+                  )
+                    th
+                    th
+                    th.text-left
+                      span Status &nbsp
+                      a.fas.fa-question-circle(
+                        data-toggle="tooltip",
+                        title="Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
+                      )
+                    th.text-center
+                      a#sort-pppoe-usr Usuário PPPoE
+                    th.text-center
+                      a#sort-mac-addr Endereço MAC
+                    th.text-center
+                      a#sort-wan-ip IP WAN
+                    th.text-center
+                      a#sort-public-ip IP Público
+                    th.text-center
+                      a#sort-release Firmware Instalado
+                    th.text-center
+                      a#sort-ext-ref Identificação
+                    th.text-center
+                      a#sort-sys-uptime Tempo Ligado
+                    th.text-center
+                      a#sort-wan-uptime Tempo Conectado
+                    if (superuser || role.grantFirmwareUpgrade)
+                      th.text-left Atualizar Firmware
+                tbody#devices-table-content(
+                  data-role=role,
+                  data-superuser=superuser ? "true" : "false",
+                  data-visiblecolumnsonpage=visiblecolumnsonpage)
+        .row.mt-3.mb-3
+          .col-md-9
+            nav#devices-table-pagination
+          .col-md-3
+            if (superuser || role.grantCsvExport)
+              .text-right
+                button#export-csv.btn.btn-primary.mr-0.my-0
+                  .fas.fa-file-excel.fa-lg
+                  span &nbsp Exportar CSV
+  else
+    h2.text-center.grey-text.mt-5
+      i.fas.fa-exclamation-triangle.fa-4x.mb-4
+      br
+      span Não há informações disponíveis
 
 block scripts
   script(src='/scripts/tags-input/tags-input.js')

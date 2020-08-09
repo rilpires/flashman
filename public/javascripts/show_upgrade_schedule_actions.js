@@ -168,7 +168,7 @@ $(document).ready(function() {
       let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = $('#devices-search-form .tags-input').val();
+      let filterList = $('#devices-search-input').val();
       let useAll = (useCsv) ? false :
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       $.ajax({
@@ -277,9 +277,9 @@ $(document).ready(function() {
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = $('#devices-search-form .tags-input').val();
+      let filterList = $('#devices-search-input').val();
       let release = $('#selected-release').html();
-      let value = $('#devices-search-form input').val();
+      let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : 'Nenhum filtro utilizado';
       let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
@@ -379,8 +379,8 @@ $(document).ready(function() {
       $('#when-btn-next').prop('disabled', !isWhenPartValidated());
     });
 
-    $('#devices-search-form input').on('change textInput input', (event)=>{
-      let value = $('#devices-search-form input').val();
+    $('#devices-search-input').on('change textInput input', (event)=>{
+      let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : 'Nenhum filtro utilizado';
       $('#searchTags').html(tags);
