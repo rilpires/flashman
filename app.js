@@ -51,6 +51,19 @@ if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp');
 }
 
+let deploymentConfig = 'config/config.js'
+fs.access(file, fs.constants.F_OK, (err) => {
+  let default_license_control_fqdn = "controle.anlix.io"
+
+  if (err) {
+    process.env.LC_FQDN = default_license_control_fqdn
+  }
+
+  let config = require(deploymentConfig);
+  process.env.LC_FQDN = config.license_control_fqdn || default_license_control_fqdn
+});
+
+
 if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = process.env.FLM_COMPANY_SECRET;
 } else {
