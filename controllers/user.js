@@ -449,11 +449,11 @@ userController.getProfile = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
-        let active = matchedConfig.measure_configs.is_active;
+        let active = matchedConfig.data_collecting_configs.is_active;
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
+              matchedConfig.data_collecting_configs.auth_token : '';
+        let license = matchedConfig.data_collecting_configs.is_license_active;
         indexContent.measure_license = license;
       }
       indexContent.superuser = req.user.is_superuser;
@@ -533,11 +533,11 @@ userController.showCertificates = function(req, res) {
               indexContent.update = false;
             } else {
               indexContent.update = matchedConfig.hasUpdate;
-              let active = matchedConfig.measure_configs.is_active;
+              let active = matchedConfig.data_collecting_configs.is_active;
                 indexContent.measure_active = active;
                 indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
+                    matchedConfig.data_collecting_configs.auth_token : '';
+              let license = matchedConfig.data_collecting_configs.is_license_active;
               indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
@@ -598,11 +598,11 @@ userController.showAll = function(req, res) {
               indexContent.update = false;
             } else {
               indexContent.update = matchedConfig.hasUpdate;
-              let active = matchedConfig.measure_configs.is_active;
+              let active = matchedConfig.data_collecting_configs.is_active;
                 indexContent.measure_active = active;
                 indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
+                    matchedConfig.data_collecting_configs.auth_token : '';
+              let license = matchedConfig.data_collecting_configs.is_license_active;
               indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
@@ -655,11 +655,11 @@ userController.showRoles = function(req, res) {
             indexContent.update = false;
           } else {
             indexContent.update = matchedConfig.hasUpdate;
-            let active = matchedConfig.measure_configs.is_active;
+            let active = matchedConfig.data_collecting_configs.is_active;
               indexContent.measure_active = active;
               indexContent.measure_token = (active) ?
-                  matchedConfig.measure_configs.auth_token : '';
-            let license = matchedConfig.measure_configs.is_license_active;
+                  matchedConfig.data_collecting_configs.auth_token : '';
+            let license = matchedConfig.data_collecting_configs.is_license_active;
             indexContent.measure_license = license;
           }
           indexContent.username = req.user.name;

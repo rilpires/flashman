@@ -342,7 +342,7 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   }
 };
 
-mqtts.anlixMessageRouterMeasure = function(id, status) {
+mqtts.anlixMessageRouterDataCollecting = function(id, status) {
   const serverId = findServerId(id);
   if (serverId !== null) {
     const packet = {

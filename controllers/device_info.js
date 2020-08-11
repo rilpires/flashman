@@ -577,8 +577,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
           let dataCollectingFqdn = '';
-          if (matchedConfig && matchedConfig.measure_configs.data_collecting_fqdn) {
-            dataCollectingFqdn = matchedConfig.measure_configs.data_collecting_fqdn;
+          if (matchedConfig && matchedConfig.data_collecting_configs.fqdn) {
+            dataCollectingFqdn = matchedConfig.data_collecting_configs.fqdn;
           }
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
@@ -608,10 +608,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
             'data_collecting_fqdn': dataCollectingFqdn,
-            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
-            'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
+            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.is_active),
+            // 'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.measure_psk),
             'zabbix_fqdn': dataCollectingFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.is_active),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1417,35 +1417,35 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
   });
 };
 
-deviceInfoController.getMeasureConfig = async(function(req, res) {
+deviceInfoController.getDataCollectingConfig = async(function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   // Check secret to authenticate api call
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec !== req.app.locals.secret) {
-      console.log('Router ' + id + ' Get Measure Conf fail: Secret not match');
+      console.log('Router ' + id + ' Get Data Collecting Conf fail: Secret not match');
       return res.status(403).json({success: 0});
     }
   }
 
   try {
-    // Check if measure fqdn config is set
+    // Check if data collecting fqdn config is set
     let config = await(Config.findOne({is_default: true}));
     if (!config) throw new {message: 'Config not found'};
-    if (!config.measure_configs.data_collecting_fqdn) {
-      throw new {message: 'Measure FQDN not configured'};
+    if (!config.data_collecting_configs.fqdn) {
+      throw new {message: 'Data Collecting FQDN not configured'};
     }
 
     // Check if device exists
     let device = await(DeviceModel.findById(id));
     if (!device) throw new {message: 'Device ' + id + ' not found'};
 
-    // Reply with measure fqdn
+    // Reply with data collecting fqdn
     return res.status(200).json({
       success: 1,
-      fqdn: config.measure_configs.data_collecting_fqdn,
-      is_active: device.measure_config.is_active,
+      fqdn: config.data_collecting_configs.fqdn,
+      is_active: device.data_collecting_config.is_active,
     });
   } catch (err) {
     console.log(err);

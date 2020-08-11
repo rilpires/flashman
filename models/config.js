@@ -11,11 +11,11 @@ let configSchema = new mongoose.Schema({
     functions_fqdn: String,
     secret_token: String,
   },
-  measure_configs: {
+  data_collecting_configs: {
     is_active: {type: Boolean, default: false},
     is_license_active: {type: Boolean, default: false},
     controller_fqdn: String,
-    data_collecting_fqdn: String,
+    fqdn: String,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},

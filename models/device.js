@@ -16,7 +16,7 @@ let deviceSchema = new Schema({
   installed_release: String,
   release: String,
   is_license_active: Boolean,
-  measure_config: {
+  data_collecting_config: {
     is_active: {type: Boolean, default: false},
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
