@@ -265,7 +265,7 @@ dataCollectingController.updateDataCollectingServerFqdn = async(function(req, re
   })
 });
 
-// request body expects an object where keys are MACs and values are booleans.
+// expects a request body being an object where keys are MACs and values are booleans.
 dataCollectingController.setLicenses = async(function(req, res) {
   let checks = [checkDevices]
   if (!handleErrors(checks)) return
@@ -279,13 +279,22 @@ dataCollectingController.setLicenses = async(function(req, res) {
 
   // check if devices exist in flashman.
   let existingDevices = {}
-  await(DeviceModel.find({_id: {$in: macs}}, {_id: 1}, (docs, err) => {
+  let existingChangedDevices = {}
+  let unchangedDevices = []
+  await(DeviceModel.find({_id: {$in: macs}}, {_id: 1, 'data_collecting_config.is_active': 1}, (docs, err) => {
     if (err)
       return res.status(500).json({message: "Erro ao acessar os dispotivos localmente."})
 
     // only existing devices will have returned.
-    for (let i = 0; i < docs.length; i ++) 
-      existingDevices[docs[i]._id] = devices[docs[i]._id]
+    let device
+    for (let i = 0; i < docs.length; i++) {
+      device = docs[i]
+      existingDevices[device._id] = true
+      if (device.data_collecting_config.is_active !== devices[device._id])
+        existingChangedDevices[device._id] = devices[device._id]
+      else 
+        unchangedDevices.push(device._id)
+    }
   }))
 
   // saving unknown devices to return them with an error message later.
@@ -294,15 +303,15 @@ dataCollectingController.setLicenses = async(function(req, res) {
     if (existingDevices[mac] === undefined)
       unknownDevices.push(mac)
 
-  if (Object.keys(existingDevices).length > 0) { // if there is at least one device.
+  let licenseControlBody = {}
+  if (Object.keys(existingChangedDevices).length > 0) { // if there is at least one device.
     // send devices to license-control
-    let licenseControlBody = {}
     try {
       licenseControlBody = await(request({
         url: "https://"+process.env.LC_FQDN+"/data_collecting/license/set",
         method: 'POST',
         json: {
-          'devices': existingDevices,
+          'devices': existingChangedDevices,
           'secret': process.env.FLM_COMPANY_SECRET,
         },
       }));
@@ -331,9 +340,10 @@ dataCollectingController.setLicenses = async(function(req, res) {
       {macs: disabledDevices, val: false}
     ]
     for (let i = 0; i < objs.length; i++) {
+      let obj = objs[i]
       // update locally for enabled devices and then disabled devices.
-      await(DeviceModel.update({_id: {$in: objs.macs}}, {
-        '$set': {'data_collecting_config.is_active': objs.val}
+      await(DeviceModel.update({_id: {$in: obj.macs}}, {
+        '$set': {'data_collecting_config.is_active': obj.val}
       }, err => {
         if (err) res.status(500).json({message: 'error ao atualizar licensas no flashman.'})
       }))
@@ -342,8 +352,12 @@ dataCollectingController.setLicenses = async(function(req, res) {
 
   // complement with unknown devices.
   if (unknownDevices.length > 0)
-    for (let i = 0; i < unknownDevices.length; i ++)
+    for (let i = 0; i < unknownDevices.length; i++)
       licenseControlBody[unknownDevices[i]] = 'inexistente no flashman.'
+  if (unchangedDevices.length > 0)
+    for (let i = 0; i < unchangedDevices.length; i++)
+      licenseControlBody[unchangedDevices[i]] = devices[unchangedDevices[i]] // repeating received value.
+
 
   res.json(licenseControlBody) // devices with problems in license-control will also be returned here.
 });
