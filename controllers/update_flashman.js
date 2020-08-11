@@ -184,18 +184,18 @@ const updateFlashman = function(automatic, res) {
   }, () => errorCallback(res));
 };
 
-const sendTokenControl = function(req, token) {
-  return request({
-    url: 'https://controle.anlix.io/api/measure/token',
-    method: 'POST',
-    json: {
-      'token': token,
-    },
-  }).then(
-    (resp)=>Promise.resolve(resp),
-    (err)=>Promise.reject({message: 'Erro no token fornecido'}),
-  );
-};
+// const sendTokenControl = function(req, token) {
+//   return request({
+//     url: 'https://controle.anlix.io/api/measure/token',
+//     method: 'POST',
+//     json: {
+//       'token': token,
+//     },
+//   }).then(
+//     (resp)=>Promise.resolve(resp),
+//     (err)=>Promise.reject({message: 'Erro no token fornecido'}),
+//   );
+// };
 
 updateController.update = function() {
   if (process.env.FLM_DISABLE_AUTO_UPDATE !== 'true') {
@@ -263,65 +263,65 @@ updateController.getAutoConfig = function(req, res) {
   });
 };
 
-updateController.setAutoConfig = async(function(req, res) {
-  try {
-    let config = await(Config.findOne({is_default: true}));
-    if (!config) throw new {message: 'Erro ao encontrar configuração base'};
-    config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
-    config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
-    let measureServerIP = req.body['measure-server-ip'];
-    let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    if (measureServerIP && !measureServerIP.match(ipRegex)) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro validando os campos',
-      });
-    }
-    let measureServerPort = parseInt(req.body['measure-server-port']);
-    if (isNaN(measureServerPort)) {
-      // No change
-      measureServerPort = config.measureServerPort;
-    }
-    if (measureServerPort && (measureServerPort < 1 || measureServerPort > 65535)) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro validando os campos',
-      });
-    }
-    config.measureServerIP = measureServerIP;
-    config.measureServerPort = measureServerPort;
-    let message = 'Salvo com sucesso!';
-    let updateToken = (req.body.token_update === 'on') ? true : false;
-    let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
-    // Update configs if either no token is set and form sets one, or
-    // if one is already set and checkbox to update was marked
-    if ((!config.measure_configs.auth_token || updateToken) &&
-        measureToken !== '') {
-      let controlResp = await(sendTokenControl(req, measureToken));
-      if (!('controller_fqdn' in controlResp) ||
-          !('zabbix_fqdn' in controlResp)) {
-        throw new {};
-      }
-      config.measure_configs.is_active = true;
-      config.measure_configs.is_license_active = true;
-      config.measure_configs.auth_token = measureToken;
-      config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
-      config.measure_configs.zabbix_fqdn = controlResp.data_collecting_fqdn;
-      config.measure_configs.data_collecting_fqdn = controlResp.data_collecting_fqdn;
-      message += ' Seus dispositivos começarão a medir em breve.';
-    }
-    await(config.save());
-    return res.status(200).json({
-      type: 'success',
-      message: message,
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({
-      type: 'danger',
-      message: (err.message) ? err.message : 'Erro salvando configurações',
-    });
-  }
-});
+// updateController.setAutoConfig = async(function(req, res) {
+//   try {
+//     let config = await(Config.findOne({is_default: true}));
+//     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
+//     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
+//     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
+//     let measureServerIP = req.body['measure-server-ip'];
+//     let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+//     if (measureServerIP && !measureServerIP.match(ipRegex)) {
+//       return res.status(500).json({
+//         type: 'danger',
+//         message: 'Erro validando os campos',
+//       });
+//     }
+//     let measureServerPort = parseInt(req.body['measure-server-port']);
+//     if (isNaN(measureServerPort)) {
+//       // No change
+//       measureServerPort = config.measureServerPort;
+//     }
+//     if (measureServerPort && (measureServerPort < 1 || measureServerPort > 65535)) {
+//       return res.status(500).json({
+//         type: 'danger',
+//         message: 'Erro validando os campos',
+//       });
+//     }
+//     config.measureServerIP = measureServerIP;
+//     config.measureServerPort = measureServerPort;
+//     let message = 'Salvo com sucesso!';
+//     let updateToken = (req.body.token_update === 'on') ? true : false;
+//     let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
+//     // Update configs if either no token is set and form sets one, or
+//     // if one is already set and checkbox to update was marked
+//     if ((!config.measure_configs.auth_token || updateToken) &&
+//         measureToken !== '') {
+//       let controlResp = await(sendTokenControl(req, measureToken));
+//       if (!('controller_fqdn' in controlResp) ||
+//           !('zabbix_fqdn' in controlResp)) {
+//         throw new {};
+//       }
+//       config.measure_configs.is_active = true;
+//       config.measure_configs.is_license_active = true;
+//       config.measure_configs.auth_token = measureToken;
+//       config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
+//       config.measure_configs.zabbix_fqdn = controlResp.data_collecting_fqdn;
+//       config.measure_configs.data_collecting_fqdn = controlResp.data_collecting_fqdn;
+//       message += ' Seus dispositivos começarão a medir em breve.';
+//     }
+//     await(config.save());
+//     return res.status(200).json({
+//       type: 'success',
+//       message: message,
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     return res.status(500).json({
+//       type: 'danger',
+//       message: (err.message) ? err.message : 'Erro salvando configurações',
+//     });
+//   }
+// });
 
 module.exports = updateController;

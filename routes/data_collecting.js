@@ -2,15 +2,12 @@ let express = require('express');
 
 let router = express.Router();
 const authController = require('../controllers/auth');
-let measureController = require('../controllers/measure');
+let dataCollectingController = require('../controllers/data_collecting');
 
-router.route('/activate')
-.post(measureController.activateDevices);
+router.route('/fqdn')
+.post(dataCollectingController.updateDataCollectingServerFqdn);
 
-router.route('/deactivate')
-.post(measureController.deactivateDevices);
-
-router.route('/license')
-.post(measureController.updateLicenseStatus);
+router.route('/set')
+.post(dataCollectingController.setLicenses);
 
 module.exports = router;

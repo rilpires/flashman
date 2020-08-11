@@ -17,7 +17,7 @@ const request = require('request-promise-native');
 const meshHandlers = require('./controllers/handlers/mesh');
 let session = require('express-session');
 
-let measurer = require('./controllers/measure');
+let data_collecting = require('./controllers/data_collecting');
 let updater = require('./controllers/update_flashman');
 let deviceUpdater = require('./controllers/update_scheduler');
 let keyHandlers = require('./controllers/handlers/keys');
@@ -51,16 +51,20 @@ if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp');
 }
 
-let deploymentConfig = 'config/config.js'
-fs.access(file, fs.constants.F_OK, (err) => {
+// configurations related to deployment are in an untracked file.
+let deploymentConfigurations = 'config/configs.js'
+fs.access(deploymentConfigurations, fs.constants.F_OK, function (err) { // check file accessibility.
   let default_license_control_fqdn = "controle.anlix.io"
 
-  if (err) {
+  if (err) { // if file doesn't exist or isn't accessible. use default values.
     process.env.LC_FQDN = default_license_control_fqdn
+    return
   }
 
-  let config = require(deploymentConfig);
-  process.env.LC_FQDN = config.license_control_fqdn || default_license_control_fqdn
+  // if file exist, get configurations from it. 
+  // if a configuration doesn't exist in file, use default value.
+  let configs = require(deploymentConfigurations); 
+  process.env.LC_FQDN = configs.license_control_fqdn || default_license_control_fqdn 
 });
 
 
@@ -438,7 +442,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     // Schedule automatic update
     schedule.scheduleJob(rule, function() {
       updater.update();
-      measurer.pingLicenseStatus();
+      // data_collecting.pingLicenseStatus();
     });
 
     // Force an update check to alert user on app startup
