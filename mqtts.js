@@ -349,7 +349,7 @@ mqtts.anlixMessageRouterDataCollecting = function(id, status) {
       id: id,
       qos: 2,
       retain: true,
-      payload: 'measure ' + status,
+      payload: 'datacollecting ' + status,
     };
     toPublishPacket(serverId, packet);
     debug('MQTT SEND Message MEASURE to '+ id);
