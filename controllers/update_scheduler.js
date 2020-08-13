@@ -623,7 +623,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.searchDeviceQuery(queryContents);
+    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
   } else {
     try {
       let csvContents = await(
@@ -766,7 +766,7 @@ scheduleController.startSchedule = async(function(req, res) {
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.searchDeviceQuery(queryContents);
+    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
   } else {
     try {
       let csvContents = await(
