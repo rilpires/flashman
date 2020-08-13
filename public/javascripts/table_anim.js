@@ -443,18 +443,27 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    let thisBtn = $(this);
+    let sysUptime = row.find('.device-sys-up-time')
+    let wanUptime = row.find('.device-wan-up-time')
     // Stop event from reaching tr element
     event.stopPropagation();
-    // Dispatch update for wan and sys uptime
-    $.ajax({
-      url: '/devicelist/command/' + deviceId + '/upstatus',
-      type: 'post',
-      dataType: 'json',
-      success: function(res) {
-        row.find('.device-sys-up-time').addClass('grey-text');
-        row.find('.device-wan-up-time').addClass('grey-text');
-      },
-    });
+    // Block button until response has been received
+    thisBtn.prop('disabled', true).css('color', 'grey');
+    thisBtn.find('.icon-row-refresh').addClass('fa-spinner fa-pulse');
+    // Dispatch update for wan and sys uptime only if not pending
+    if (!sysUptime.hasClass('pending-update') &&
+        !wanUptime.hasClass('pending-update')) {
+      $.ajax({
+        url: '/devicelist/command/' + deviceId + '/upstatus',
+        type: 'post',
+        dataType: 'json',
+        success: function(res) {
+          sysUptime.addClass('grey-text pending-update');
+          wanUptime.addClass('grey-text pending-update');
+        },
+      });
+    }
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -477,6 +486,10 @@ $(document).ready(function() {
           res.do_update_mesh_remaining,
           deviceId
         );
+      },
+      complete: function(xhr, status) {
+        thisBtn.prop('disabled', false).css('color', 'black');
+        thisBtn.find('.icon-row-refresh').removeClass('fa-spinner fa-pulse');
       },
     });
   });
@@ -671,7 +684,7 @@ $(document).ready(function() {
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
-      '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
+      '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
     let infoRow = '<tr class=" csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
@@ -1945,14 +1958,14 @@ $(document).ready(function() {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
-            .removeClass('grey-text')
+            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.sysuptime))
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
-            .removeClass('grey-text')
+            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime))
             );
