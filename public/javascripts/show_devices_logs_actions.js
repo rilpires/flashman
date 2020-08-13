@@ -6,6 +6,7 @@ let logBodyRawContent = '';
 socket.on('LIVELOG', function(macaddr, data) {
   if (($('#analyse-logs').data('bs.modal') || {})._isShown) {
     let id = $('#logRouterid_label').text();
+    $('.btn-log-live').prop('disabled', false);
     if (id == macaddr) {
       let textarea = $('#logArea');
       if (textarea.text() == 'Aguardando resposta do roteador...') {
@@ -143,6 +144,7 @@ $(document).ready(function() {
   $(document).on('click', '.btn-log-live', function(event) {
     let textarea = $('#logArea');
     let id = $('#logRouterid_label').text();
+    $('.btn-log-live').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + id + '/log',
       type: 'post',
@@ -185,6 +187,7 @@ $(document).ready(function() {
     $('#logs-placeholder').show();
     $('#logArea').hide();
     $('#export-log').addClass('disabled');
+    $('.btn-log-live').prop('disabled', false);
   });
 
   $('#export-log').click(function(event) {

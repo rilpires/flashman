@@ -4,6 +4,7 @@ $(document).ready(function() {
     $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
+    $('.btn-sync-lan-devs').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -21,7 +22,6 @@ $(document).ready(function() {
           $('#lan-devices-placeholder').show();
           $('#lan-devices-placeholder-none').hide();
           fetchLanDevices(deviceId, upnpSupport, isBridge);
-          $('.btn-sync-lan-devs').prop('disabled', true);
         }
       },
       error: function(xhr, status, error) {
@@ -31,7 +31,6 @@ $(document).ready(function() {
         $('#lan-devices-placeholder').show();
         $('#lan-devices-placeholder-none').hide();
         fetchLanDevices(deviceId, upnpSupport, isBridge);
-        $('.btn-sync-lan-devs').prop('disabled', true);
       },
     });
   };
@@ -375,6 +374,7 @@ $(document).ready(function() {
       if ($('#lan-devices').data('cleanup') == true) {
         // Clear old data
         $('#lan-devices').data('cleanup', false);
+        $('.btn-sync-lan-devs').prop('disabled', false);
         $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
         $('#lan-devices').removeAttr('data-lan-devices-list');
         $('#lan-devices').removeData('lan-devices-list');

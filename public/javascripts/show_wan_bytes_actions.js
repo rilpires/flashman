@@ -16,6 +16,7 @@ $(document).ready(function() {
   };
 
   const refreshWanBytes = function(deviceId) {
+    $('#btn-wan-bytes-refresh').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/upstatus',
       type: 'post',
@@ -29,6 +30,7 @@ $(document).ready(function() {
             $('#wan-bytes-placeholder-none').hide();
           }
         } else {
+          $('#btn-wan-bytes-refresh').prop('disabled', false);
           if ($('#wan-bytes-graphs').is(':hidden')) {
             $('#wan-bytes-placeholder-ready').show();
             $('#wan-bytes-placeholder-progress').hide();
@@ -37,6 +39,7 @@ $(document).ready(function() {
         }
       },
       error: function(xhr, status, error) {
+        $('#btn-wan-bytes-refresh').prop('disabled', false);
         if ($('#wan-bytes-graphs').is(':hidden')) {
           $('#wan-bytes-placeholder-ready').show();
           $('#wan-bytes-placeholder-progress').hide();
@@ -107,6 +110,7 @@ $(document).ready(function() {
         ApexCharts.exec(chartUpId, 'updateOptions', upOptions, false, true);
       }
       // Adjust modal content
+      $('#btn-wan-bytes-refresh').prop('disabled', false);
       $('#btn-wan-bytes-refresh > i').removeClass('animated rotateOut infinite');
       $('#wan-bytes-placeholder-ready').hide();
       $('#wan-bytes-placeholder-progress').hide();
@@ -137,6 +141,7 @@ $(document).ready(function() {
   $('#wan-bytes').on('hidden.bs.modal', function() {
     chartDownId = '';
     chartUpId = '';
+    $('#btn-wan-bytes-refresh').prop('disabled', false);
     $('#btn-wan-bytes-refresh > i').removeClass('animated rotateOut infinite');
     $('#wan-bytes-placeholder-ready').show();
     $('#wan-bytes-placeholder-progress').hide();
