@@ -164,13 +164,13 @@ const fetchCertification = function(id, name, timestamp) {
             modeStr = 'Cabo';
             break;
           case 2:
-            modeStr = 'WiFi 2.4 GHz';
+            modeStr = 'Cabo e Wi-Fi 2.4 GHz';
             break;
           case 3:
-            modeStr = 'WiFi 5.0 GHz';
+            modeStr = 'Cabo e Wi-Fi 5.0 GHz';
             break;
           case 4:
-            modeStr = 'Ambos WiFi';
+            modeStr = 'Cabo e ambos Wi-Fi';
             break;
           default:
             modeStr = 'Desconhecido';

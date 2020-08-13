@@ -1300,9 +1300,9 @@ $(document).ready(function() {
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
-                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Wifi 2.4 GHz</option>'+
-                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Wifi 5 GHz</option>'+
-                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Ambos Wifi</option>'+
+                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
+                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
+                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
