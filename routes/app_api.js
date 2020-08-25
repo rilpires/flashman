@@ -12,6 +12,7 @@ router.route('/resetpass').post(appAPIController.resetPassword);
 router.route('/reboot').post(appAPIController.rebootRouter);
 router.route('/refreshinfo').post(appAPIController.refreshInfo);
 router.route('/speedtest').post(appAPIController.doSpeedtest);
+router.route('/wps/activate').post(appAPIController.activateWpsButton);
 router.route('/get/logininfo').post(appAPIController.appGetLoginInfo);
 router.route('/get/devices').post(appAPIController.appGetDevices);
 router.route('/get/version').post(appAPIController.appGetVersion);
