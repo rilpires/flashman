@@ -923,7 +923,15 @@ deviceListController.sendMqttMsg = function(req, res) {
             });
           }
         } else if (msgtype === 'wps') {
-          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase());
+          if (!('activate' in req.params) ||
+              !(typeof req.params.activate === 'boolean')
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: 'Erro na requisição'});
+          }
+          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
+                                           req.params.activate);
         } else {
           return res.status(200).json({
             success: false,
