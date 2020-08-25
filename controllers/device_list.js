@@ -855,7 +855,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'speedtest': {
+      case 'speedtest':
+      case 'wps': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -921,6 +922,8 @@ deviceListController.sendMqttMsg = function(req, res) {
               message: 'Esse comando somente funciona em uma sessão!',
             });
           }
+        } else if (msgtype === 'wps') {
+          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase());
         } else {
           return res.status(200).json({
             success: false,

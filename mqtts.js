@@ -414,4 +414,18 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
   }
 };
 
+mqtts.anlixMessageRouterWpsButton = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'wps',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message WPS to ' + id);
+  }
+};
+
 module.exports = mqtts;
