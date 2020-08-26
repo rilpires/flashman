@@ -24,16 +24,44 @@ curl -i 'http://localhost:7557/presets/inform' -X PUT --data \
 
 const now = Date.now();
 
+const updateConfiguration = function(fields) {
+  // Request field updates from the CPE
+  let result = {};
+  Object.keys(fields).forEach((key)=>{
+    let resp = declare(fields[key], {value: now});
+    if (resp.value) {
+      let value = resp.value[0];
+      result[key] = value;
+    }
+  });
+  return result;
+};
+
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
-let model = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
+let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 let serial = declare('DeviceID.SerialNumber', {value: 1}).value[0];
-let genieID = oui + '-' + model + '-' + serial;
-let mac = declare('InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.MACAddress', {value: 1}).value[0];
+let genieID = oui + '-' + modelClass + '-' + serial;
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
-let args = {mac: mac, acs_id: genieID};
-let result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+let args = {oui: oui, model: modelClass};
+let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
+if (!result.success || !result.fields) {
+  log('Provision sync for device ' + genieID + ' failed: ' + result.message);
+  return;
+}
+let fields = result.fields;
+
+let data = {
+  common: updateConfiguration(fields.common),
+  wan: updateConfiguration(fields.wan),
+  lan: updateConfiguration(fields.lan),
+  wifi2: updateConfiguration(fields.wifi2),
+  wifi5: updateConfiguration(fields.wifi5),
+};
+
+args = {acs_id: genieID, data: data};
+result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
 }
