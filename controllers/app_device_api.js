@@ -1033,14 +1033,14 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
     if (appObj.secret !== req.body.app_secret) {
       return res.status(403).json({message: 'App não autorizado'});
     }
-    if (!('activate' in req.body) ||
-        !(typeof req.body.activate === 'boolean')
+    if (!('content' in req.body) || !('activate' in req.body.content) ||
+        !(typeof req.body.content.activate === 'boolean')
     ) {
       return res.status(500).json({message: 'Erro na requisição'});
     }
 
     // Send mqtt message to activate WPS push button
-    mqtt.anlixMessageRouterWpsButton(req.body.id, req.body.activate);
+    mqtt.anlixMessageRouterWpsButton(req.body.id, req.body.content.activate);
 
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
       return map[req.body.id.toUpperCase()];
