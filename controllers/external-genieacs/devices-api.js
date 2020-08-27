@@ -108,13 +108,13 @@ const syncDeviceData = function(args, callback) {
       } else {
         return callback(null, {
           success: false,
-          message: 'Error in Flashman processing',
+          message: (body.message) ? body.message : 'Error in Flashman process',
         });
       }
     } else {
       return callback(null, {
         success: false,
-        message: 'Error in Flashman request',
+        message: (body.message) ? body.message : 'Error in Flashman request',
       });
     }
   });
