@@ -14,6 +14,7 @@ const getDefaultFields = function() {
       model: 'InternetGatewayDevice.DeviceInfo.ModelName',
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
+      ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
       pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
