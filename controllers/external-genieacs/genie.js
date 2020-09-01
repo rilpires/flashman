@@ -7,7 +7,6 @@ const http = require('http');
 
 
 const request = (options, body) => {
-  options.path = encodeURIComponent(options.path)
   return new Promise((resolve, reject) => {
     let req = http.request(options, res => {
       res.setEncoding('utf8')
@@ -23,6 +22,16 @@ const request = (options, body) => {
 
 let GENIEHOST = 'localhost'
 let GENIEPORT = 7557
+
+function postTask (deviceid, task, timeout, shouldRequestConnection) {
+  return request({ method: "POST", hostname: GENIEHOST, port: GENIEPORT,
+    path: '/devices/'+deviceid+'/tasks?timeout='+timeout+(shouldRequestConnection ? '&connection_request' : '')
+  }, JSON.stringify(task))
+}
+
+function deleteTask (taskid) {
+  return request({ method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path: '/tasks/'+taskid })
+}
 
 let taskParameterIdFromType = {
   getParameterValues: "parameterNames",
@@ -101,15 +110,6 @@ function joinAllTasks(tasks) {
   // console.log(taskIdsForType)
   // console.log(createNewTaskForType)
 
-  // tasksToDelete = []
-  // tasksToAdd = []
-  // for (let name in createNewTaskForType) {
-  //   for (let i = 0; i < taskIdsForType[name].length; i++)
-  //     tasksToDelete.push(taskIdsForType[name][i])
-  //   newTask = {name: name}
-  //   newTask[taskParameterIdFromType[name]] = types[name]
-  //   tasksToAdd.push(newTask)
-  // }
   tasksToDelete = {}
   tasksToAdd = []
   for (let name in createNewTaskForType) {
@@ -121,24 +121,13 @@ function joinAllTasks(tasks) {
   return [tasksToAdd, tasksToDelete]
 }
 
-function postTask (deviceid, task, timeout, shouldRequestConnection) {
-  return request({ method: "POST", hostname: GENIEHOST, port: GENIEPORT,
-    path: '/devices/'+deviceid+'/tasks?timeout='+10000+(true ? '&connection_request' : '')
-  }, JSON.stringify(task))
-}
-
-function deleteTask (taskid) {
-  return request({ method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path: '/tasks/'+taskid })
-}
-
-
 // refer to https://github.com/genieacs/genieacs/wiki/API-Reference#tasks
-// 'deviceid' is a string. 'taskobj' is an object which structure is the given 
+// 'deviceid' is a string. 'task' is an object which structure is the given 
 // task with its parameters already set. 'timeout' is a number in 
 // milliseconds. 'shouldRequestConnection' is a boolean that tells GenieACS to 
 // initiate a connection to the CPE.
 const addTask = async function (deviceid, task, timeout, shouldRequestConnection) {
-  if (!checkTask(task)) return false
+  if (!checkTask(task)) return [null, 'task not valid.']
 
   // getting older tasks for this deviceid.
   let query = {device: deviceid}
@@ -148,54 +137,45 @@ const addTask = async function (deviceid, task, timeout, shouldRequestConnection
   .catch(e => '[]')
 
   var tasks = JSON.parse(dataString)
-  tasks.push(task)
+  tasks.push(task) // adding the new task as one more older task.
 
-  let tasksToDelete = []
+  let tasksToDelete = {}
   if (tasks.length > 1) // if there was at least one task, plus the current task being added.
     [tasks, tasksToDelete] = joinAllTasks(tasks)
-  // console.log(tasks)
-  // console.log(tasksToDelete)
-
-  // let promises = []
-  // for (var i = 0; i < tasks.length; i++)
-  //   promises.push(postTask(deviceid, tasks[i], timeout, shouldRequestConnection))
-  // let results = await Promises.allSettled(promises)
-  // for (let i = 0; i < results.length; i++) {
-  //   if (results[i].reason)
-  // }
-  // if (tasksToDelete.length > 0) {
-  //   promises = []
-  //   for (var i = 0; i < tasksToDelete.length; i++)
-  //     promises.push(deleteTask(tasksToDelete[i]))
-  //   results = await Promises.allSettled(promises)
-  // }
   
   let promises = []
   for (var i = 0; i < tasks.length; i++)
     promises.push(postTask(deviceid, tasks[i], timeout, shouldRequestConnection))
-  let results = await Promises.allSettled(promises)
-  let shouldAbort = false
-  for (let i = 0; i < results.length; i++) {
+  let results = await Promise.allSettled(promises)
+  let errormsg
+  for (let i = 0; i < results.length; i++)
     if (results[i].reason) {
-      if (tasksToDelete !== undefined) delete tasksToDelete[tasks[i].name]
+      delete tasksToDelete[tasks[i].name] // this is why we don't delete older tasks before adding substituting tasks.
       if (tasks[i].name === task.name) {
-        console.log('Error when adding new task in genieacs rest api for device '+deviceid)
-        shouldAbort = true
+        errormsg = 'Error when adding new task in genieacs rest api for device '+deviceid
       } else {
-        console.log('Error when adding a joined task in genieacs rest api in substitution of older tasks.')
+        console.log('Error when adding a joined task in genieacs rest api in substitution of older tasks for device '+deviceid)
       }
     }
-  }
+
   if (Object.keys(tasksToDelete).length > 0) {
     promises = []
     for (let name in tasksToDelete)
-      for (var i = 0; i < tasksToDelete.length; i++)
+      for (let i = 0; i < tasksToDelete[name].length; i++)
         promises.push(deleteTask(tasksToDelete[name][i]))
-    await Promises.allSettled(promises)
+    results = await Promise.allSettled(promises)
+    for (let i = 0; i < results.length; i++)
+      if (results[i].reason)
+        console.log('Error when deleting older tasks in genieacs rest api for device '+deviceid)
   }
 
-  if (shouldAbort)
-    return false
-  return true
+  if (errormsg) return [null, errormsg]
+  return [true, null]
 
 }
+
+let deviceid = '202BC1-BM632w-00000'
+let task = {"name":"getParameterValues","parameterNames":["InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnectionNumberOfEntries","InternetGatewayDevice.Time.NTPServer1","InternetGatewayDevice.Time.Status"]}
+addTask(deviceid, task, 10000, true)
+
+// deleteTask("5f4d8d0bb465ab6c13c5a98f").then(console.log)
