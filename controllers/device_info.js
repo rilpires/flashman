@@ -1436,16 +1436,16 @@ deviceInfoController.receiveWpsResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    if (!('wpsinform' in req.body) || !('wpscontent' in req.body)) {
+    if (!('wps_inform' in req.body) || !('wps_content' in req.body)) {
       console.log('Wps: ' + id + ' wrong request body');
       return res.status(500).json({processed: 0});
     }
 
-    if (req.body.wpsinform === 0) {
-      matchedDevice.wps_is_active = req.body.wpscontent;
-    } else if (req.body.wpsinform === 2) {
+    if (req.body.wps_inform === 0) {
+      matchedDevice.wps_is_active = req.body.wps_content;
+    } else if (req.body.wps_inform === 2) {
       let errors = [];
-      let macAddr = req.body.wpscontent.trim().toUpperCase();
+      let macAddr = req.body.wps_content.trim().toUpperCase();
       const validator = new Validator();
 
       genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
