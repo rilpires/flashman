@@ -147,6 +147,9 @@ let deviceSchema = new Schema({
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  wps_is_active: {type: Boolean, default: false},
+  wps_last_connected_date: {type: Date},
+  wps_last_connected_mac: {type: String, default: ''},
 });
 
 deviceSchema.plugin(mongoosePaginate);

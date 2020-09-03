@@ -1415,6 +1415,54 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
   });
 };
 
+deviceInfoController.receiveWpsResult = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Wps: Secrets do not match');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Wps: Error fetching database');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Wps: ' + id + ' not found');
+      return res.status(404).json({processed: 0});
+    }
+
+    if (!('wpsinform' in req.body) || !('wpscontent' in req.body)) {
+      console.log('Wps: ' + id + ' wrong request body');
+      return res.status(500).json({processed: 0});
+    }
+
+    if (req.body.wpsinform === 0) {
+      matchedDevice.wps_is_active = req.body.wpscontent;
+    } else if (req.body.wpsinform === 2) {
+      let errors = [];
+      let macAddr = req.body.wpscontent.trim().toUpperCase();
+      const validator = new Validator();
+
+      genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
+      if (errors.length < 1) {
+        matchedDevice.wps_last_connected_date = Date.now();
+        matchedDevice.wps_last_connected_mac = macAddr;
+      } else {
+        console.log('Wps: ' + id + ' wrong content format');
+        return res.status(500).json({processed: 0});
+      }
+    }
+    matchedDevice.save();
+    console.log('Wps: ' + id + ' received successfully');
+    return res.status(200).json({processed: 1});
+  });
+};
+
 deviceInfoController.getZabbixConfig = async(function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
