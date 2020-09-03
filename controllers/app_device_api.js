@@ -980,6 +980,32 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
   }));
 };
 
+appDeviceAPIController.appGetWpsState = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Roteador não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    return res.status(200).json({
+      is_active: matchedDevice.wps_is_active,
+      last_conn_date: matchedDevice.wps_last_connected_date,
+      last_conn_mac: matchedDevice.wps_last_connected_mac,
+    });
+  });
+};
+
 appDeviceAPIController.resetPassword = function(req, res) {
   if (!req.body.content || !req.body.content.reset_mac ||
       !req.body.content.reset_secret) {

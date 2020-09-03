@@ -18,6 +18,7 @@ router.route('/get/devices').post(appAPIController.appGetDevices);
 router.route('/get/version').post(appAPIController.appGetVersion);
 router.route('/get/portforward').post(appAPIController.appGetPortForward);
 router.route('/get/speedtest').post(appAPIController.appGetSpeedtest);
+router.route('/get/wps').post(appAPIController.appGetWpsState);
 router.route('/set').post(appAPIController.appSetWifi);
 router.route('/set/config').post(appAPIController.appSetConfig);
 router.route('/set/wifi').post(appAPIController.appSetWifi);
