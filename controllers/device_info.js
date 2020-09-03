@@ -67,6 +67,7 @@ const createRegistry = function(req, res) {
     (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
+  let wpsState = (parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
   let bridgeEnabled = parseInt(util.returnObjOrNum(req.body.bridge_enabled, 0));
   let bridgeSwitchDisable = parseInt(util.returnObjOrNum(req.body.bridge_switch_disable, 0));
   let bridgeFixIP = util.returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
@@ -187,6 +188,7 @@ const createRegistry = function(req, res) {
         'mesh_mode': meshMode,
         'mesh_id': meshHandlers.genMeshID(),
         'mesh_key': meshHandlers.genMeshKey(),
+        'wps_is_active': wpsState,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -509,6 +511,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         deviceSetQuery.sys_up_time = sysUpTime;
         let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
         deviceSetQuery.wan_up_time = wanUpTime;
+        let wpsState = (
+          parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
+        deviceSetQuery.wps_is_active = wpsState;
 
         deviceSetQuery.last_contact = Date.now();
 
@@ -1442,7 +1447,7 @@ deviceInfoController.receiveWpsResult = function(req, res) {
     }
 
     if (req.body.wps_inform === 0) {
-      matchedDevice.wps_is_active = req.body.wps_content;
+      matchedDevice.wps_is_active = (parseInt(req.body.wps_content) === 1);
     } else if (req.body.wps_inform === 2) {
       let errors = [];
       let macAddr = req.body.wps_content.trim().toUpperCase();
