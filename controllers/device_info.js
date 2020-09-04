@@ -1445,10 +1445,11 @@ deviceInfoController.receiveWpsResult = function(req, res) {
       console.log('Wps: ' + id + ' wrong request body');
       return res.status(500).json({processed: 0});
     }
+    const wpsInform = parseInt(req.body.wps_inform);
 
-    if (req.body.wps_inform === 0) {
+    if (wpsInform === 0) {
       matchedDevice.wps_is_active = (parseInt(req.body.wps_content) === 1);
-    } else if (req.body.wps_inform === 2) {
+    } else if (wpsInform === 2) {
       let errors = [];
       let macAddr = req.body.wps_content.trim().toUpperCase();
       const validator = new Validator();
