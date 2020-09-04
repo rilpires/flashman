@@ -264,6 +264,15 @@ const grantUpdateAck = function(version) {
   }
 };
 
+const grantWpsFunction = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.28.0') >= 0);
+  } else {
+    // Development version, no way to know version so disable by default
+    return false;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -285,6 +294,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWanBytesSupport = grantWanBytesSupport(version);
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
+  result.grantWpsFunction = grantWpsFunction(version);
   return result;
 };
 
