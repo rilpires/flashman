@@ -10,6 +10,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const acsDeviceInfo = require('./acs_device_info.js');
 
 let deviceListController = {};
 
@@ -859,14 +860,18 @@ deviceListController.sendMqttMsg = function(req, res) {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
-        if (!isDevOn) {
+        if (device && !device.use_tr069 && !isDevOn) {
           return res.status(200).json({success: false,
                                      message: 'Roteador não esta online!'});
         }
         if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
         } else if (msgtype === 'boot') {
-          mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
+          if (device && device.use_tr069) {
+            acsDeviceInfo.rebootDevice(device);
+          } else {
+            mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'onlinedevs') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -914,7 +919,11 @@ deviceListController.sendMqttMsg = function(req, res) {
           if (sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForLiveLogNotification(
               req.sessionID, req.params.id.toUpperCase());
-            mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
+            if (device && device.use_tr069) {
+              acsDeviceInfo.requestLogs(device);
+            } else {
+              mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
+            }
           } else {
             return res.status(200).json({
               success: false,

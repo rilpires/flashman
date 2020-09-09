@@ -1,4 +1,8 @@
 const DeviceModel = require('../models/device');
+const sio = require('../sio');
+
+const pako = require('pako');
+const http = require('http');
 
 let acsDeviceInfoController = {};
 
@@ -231,6 +235,93 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   //                changes from CPE that are not synced with Flashman
   await device.save();
   return res.status(200).json({success: true});
+};
+
+acsDeviceInfoController.rebootDevice = function(device) {
+  // TODO: Use tasks framework instead of requesting manually
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let acsID = device.acs_id;
+  let options = {
+    method: 'POST',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
+  };
+  let body = {name: 'reboot'};
+  let req = http.request(options);
+  req.write(JSON.stringify(body));
+  req.end();
+};
+
+const fetchLogFromGenie = function(mac, acsID) {
+  let query = {_id: acsID};
+  let projection = 'InternetGatewayDevice.DeviceInfo.DeviceLog';
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (!data || !data.InternetGatewayDevice ||
+          !data.InternetGatewayDevice.DeviceInfo ||
+          !data.InternetGatewayDevice.DeviceInfo.DeviceLog ||
+          !data.InternetGatewayDevice.DeviceInfo.DeviceLog._value) {
+        data = 'Log não disponível!';
+      } else {
+        success = true;
+        data = data.InternetGatewayDevice.DeviceInfo.DeviceLog._value;
+      }
+      let compressedLog = pako.gzip(data);
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        deviceEdit.lastboot_date = Date.now();
+        deviceEdit.lastboot_log = Buffer.from(compressedLog);
+        await deviceEdit.save();
+      }
+      sio.anlixSendLiveLogNotifications(mac, compressedLog);
+    });
+  });
+  req.end();
+};
+
+acsDeviceInfoController.requestLogs = function(device) {
+  // TODO: Use tasks framework instead of requesting manually
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let options = {
+    method: 'POST',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
+  };
+  let body = {
+    name: 'getParameterValues',
+    parameterNames: ['InternetGatewayDevice.DeviceInfo.DeviceLog'],
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    resp.on('data', (data)=>{});
+    resp.on('end', ()=>{
+      fetchLogFromGenie(mac, acsID);
+    });
+  });
+  req.write(JSON.stringify(body));
+  req.end();
 };
 
 module.exports = acsDeviceInfoController;
