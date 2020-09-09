@@ -63,7 +63,7 @@ const createRegistry = async function(req) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let newDevice = new DeviceModel({
-    _id: data.common.mac,
+    _id: data.common.mac.toUpperCase(),
     use_tr069: true,
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
@@ -112,7 +112,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     });
   }
 
-  let device = await DeviceModel.findById(data.common.mac);
+  let device = await DeviceModel.findById(data.common.mac.toUpperCase());
   if (!device) {
     if (await createRegistry(req)) {
       return res.status(200).json({success: true});
@@ -255,6 +255,7 @@ acsDeviceInfoController.rebootDevice = function(device) {
   req.end();
 };
 
+// TODO: Move this function to external-genieacs?
 const fetchLogFromGenie = function(mac, acsID) {
   let query = {_id: acsID};
   let projection = 'InternetGatewayDevice.DeviceInfo.DeviceLog';
@@ -317,6 +318,8 @@ acsDeviceInfoController.requestLogs = function(device) {
     resp.setEncoding('utf8');
     resp.on('data', (data)=>{});
     resp.on('end', ()=>{
+      // TODO: Only call this function after task is executed (handle 202 resp)
+      //       Will be done when integrated with tasks framewowrk
       fetchLogFromGenie(mac, acsID);
     });
   });
