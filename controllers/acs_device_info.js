@@ -1,3 +1,4 @@
+const DevicesAPI = require('.devices-api');
 const DeviceModel = require('../models/device');
 const sio = require('../sio');
 
@@ -5,6 +6,28 @@ const pako = require('pako');
 const http = require('http');
 
 let acsDeviceInfoController = {};
+
+const checkForNestedKey = function(data, key) {
+  if (!data) return false;
+  let current = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    if (!current[splitKey[i]]) return false;
+    current = current[splitKey[i]];
+  }
+  return true;
+};
+
+const getFromNestedKey = function(data, key) {
+  if (!data) return undefined;
+  let current = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    if (!current[splitKey[i]]) return undefined;
+    current = current[splitKey[i]];
+  }
+  return current;
+};
 
 const convertSubnetMaskToInt = function(mask) {
   if (mask === '255.255.255.0') {
@@ -257,9 +280,10 @@ acsDeviceInfoController.rebootDevice = function(device) {
 
 // TODO: Move this function to external-genieacs?
 const fetchLogFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
   let query = {_id: acsID};
-  let projection = 'InternetGatewayDevice.DeviceInfo.DeviceLog';
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
   let options = {
     method: 'GET',
     hostname: 'localhost',
@@ -274,14 +298,11 @@ const fetchLogFromGenie = function(mac, acsID) {
     resp.on('end', async ()=>{
       data = JSON.parse(data)[0];
       let success = false;
-      if (!data || !data.InternetGatewayDevice ||
-          !data.InternetGatewayDevice.DeviceInfo ||
-          !data.InternetGatewayDevice.DeviceInfo.DeviceLog ||
-          !data.InternetGatewayDevice.DeviceInfo.DeviceLog._value) {
+      if (!checkForNestedKey(data, logField+'._value')) {
         data = 'Log não disponível!';
       } else {
         success = true;
-        data = data.InternetGatewayDevice.DeviceInfo.DeviceLog._value;
+        data = getFromNestedKey(data, logField+'._value');
       }
       let compressedLog = pako.gzip(data);
       if (success) {
@@ -303,6 +324,8 @@ acsDeviceInfoController.requestLogs = function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
   let options = {
     method: 'POST',
     hostname: 'localhost',
@@ -312,7 +335,7 @@ acsDeviceInfoController.requestLogs = function(device) {
   };
   let body = {
     name: 'getParameterValues',
-    parameterNames: ['InternetGatewayDevice.DeviceInfo.DeviceLog'],
+    parameterNames: [logField],
   };
   let req = http.request(options, (resp)=>{
     resp.setEncoding('utf8');

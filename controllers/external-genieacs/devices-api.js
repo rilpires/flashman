@@ -23,6 +23,8 @@ const getDefaultFields = function() {
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.DuplexMode',
       wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Uptime',
+      recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
+      sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -42,23 +44,17 @@ const getDefaultFields = function() {
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
     },
+    log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
   };
 };
 
-const getDeviceFields = function(args, callback) {
-  let params = JSON.parse(args[0]);
-  if (!params || !params.oui || !params.model) {
-    return callback(null, {
-      success: false,
-      message: 'Incomplete arguments',
-    });
-  }
+const getModelFields = function(oui, model) {
   let success = false;
   let message = 'Unknown error';
   let fields = {};
-  switch (params.oui) {
+  switch (oui) {
     case '0C8063':
-      switch (params.model) {
+      switch (model) {
         case 'IGD':
           success = true;
           message = '';
@@ -71,11 +67,22 @@ const getDeviceFields = function(args, callback) {
     default:
       message = 'Unknown OUI';
   }
-  return callback(null, {
+  return {
     success: success,
     message: message,
     fields: fields,
-  });
+  };
+};
+
+const getDeviceFields = function(args, callback) {
+  let params = JSON.parse(args[0]);
+  if (!params || !params.oui || !params.model) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+  return callback(null, getModelFields(params.oui, params.model));
 };
 
 const syncDeviceData = function(args, callback) {
@@ -121,5 +128,6 @@ const syncDeviceData = function(args, callback) {
   });
 };
 
+exports.getModelFields = getModelFields;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
