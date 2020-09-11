@@ -1,6 +1,6 @@
 const express = require('express');
 let genieDeviceInfoController = require('../controllers/acs_device_info');
-let genieCalls = require('../controllers/genie.js');
+let genieCalls = require('../controllers/acs_device_info/genie.js');
 
 let router = express.Router();
 
