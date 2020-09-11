@@ -15,7 +15,7 @@ let GENIEPORT = 7557
 let tasksCollection
 mongodb.MongoClient.connect('mongodb://localhost:27017', 
   {useUnifiedTopology: true}).then(async client => {
-	tasksCollection = client.db('genieacs').collection('tasks')
+  tasksCollection = client.db('genieacs').collection('tasks')
   await run().catch(e => console.log(e))
   // client.close()
 })
@@ -47,7 +47,7 @@ const request = (options, body) => {
 function postTask (deviceid, task, timeout, shouldRequestConnection) {
   let taskstring = JSON.stringify(task)
   return request({ 
-  	method: "POST", hostname: GENIEHOST, port: GENIEPORT,
+    method: "POST", hostname: GENIEHOST, port: GENIEPORT,
     path: '/devices/'+deviceid+'/tasks?timeout='+timeout+(shouldRequestConnection ? '&connection_request' : ''),
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(taskstring)}
   }, taskstring)
@@ -89,9 +89,9 @@ function checkTask (task) {
 }
 
 function joinAllTasks(tasks) {
-  let types = {}
-  let createNewTaskForType = {}
-  let taskIdsForType = {}
+  let types = {} // map of task types (names) to their respective parameters. all parameters including old and new tasks.
+  let taskIdsForType = {} // map of task types to tasks ids of the same type, including old and new tasks.
+  let createNewTaskForType = {} // a set of task types need to be added, or re-added, to genie.
   for (let i = 0; i < tasks.length; i++) {
     let name = tasks[i].name // task type is defined by its "name".
     let parameterId = taskParameterIdFromType[name] // each task type has its parameters under an attribute with different name.
@@ -99,16 +99,18 @@ function joinAllTasks(tasks) {
     if (tasks[i][parameterId].constructor !== Array) // if parameters can't be joined.
       continue // move to next task.
 
-    if (!types[name]) { // there may be, or may not be, more tasks of this type.
-      types[name] = tasks[i][parameterId]
-      taskIdsForType[name] = [tasks[i]._id]
-      if (tasks[i]._id === undefined) // if the new task's type didn't exist before.
-        createNewTaskForType[name] = true
+    if (!types[name]) { // if we haven't seen this task type before. this is the first of its type.
+      types[name] = tasks[i][parameterId] // save this task's type and all its parameters.
+      if (tasks[i]._id) { // testing id existence. old tasks already have an id.
+        // save this task's type and its id, because we may need to delete it if it needs to be joined.
+        taskIdsForType[name] = [tasks[i]._id] 
+      } else { // if a task is new, it doesn't have an id yet, because it has never been added to genie.
+        createNewTaskForType[name] = true // a new task certainly needs to be added to genie.
+      }
       continue // first task of its type means nothing to join. move to next task.
     }
 
     // this part is reached if current task is not the first one found for its type.
-    
     if (tasks[i]._id !== undefined) // for any task except the last one.
       taskIdsForType[name].push(tasks[i]._id) // remembering current task id because it will be joined.
     createNewTaskForType[name] = true // joined tasks always result in creating a new task.
@@ -131,17 +133,19 @@ function joinAllTasks(tasks) {
         types[name][foundAtIndex] = parameter // substitute if with current value.
     }
   }
-  // console.log(types)
-  // console.log(taskIdsForType)
-  // console.log(createNewTaskForType)
+  // console.log('types', types)
+  // console.log('createNewTaskForType', createNewTaskForType)
+  // console.log('taskIdsForType', taskIdsForType)
 
-  tasksToDelete = {}
-  tasksToAdd = []
-  for (let name in createNewTaskForType) {
-    tasksToDelete[name] = taskIdsForType[name]
-    newTask = {name: name}
-    newTask[taskParameterIdFromType[name]] = types[name]
-    tasksToAdd.push(newTask)
+  tasksToDelete = {} // map of task types to ids of tasks that have the same type.
+  tasksToAdd = [] // array of new tasks, joined tasks or completely new.
+  for (let name in createNewTaskForType) { // for each task type to be created, or recreated.
+    let ids = taskIdsForType[name] // getting ids that have the same type.
+    if (ids && ids.length > 0) // if there is at least one id.
+      tasksToDelete[name] = taskIdsForType[name] // save to list of tasks to delete.
+    let newTask = {name: name} // create a new task of current type.
+    newTask[taskParameterIdFromType[name]] = types[name] // add the joined parameters for current task type.
+    tasksToAdd.push(newTask) // save to list of tasks to be added.
   }
   return [tasksToAdd, tasksToDelete]
 }
@@ -179,42 +183,56 @@ async function sendTasks (deviceid, tasks, timeout, shouldRequestConnection) {
     } else {
       let response = results[i].value
       console.log(`response ${i})`, response.statusCode, response.statusMessage)
-      if (response.statusMessage === 'No such device')
+      if (response.statusMessage === 'No such device') {
         errormsg = `Device ${deviceid} doesn't exist.`
-      else if (response.statusCode !== 200)
-        pendingTasks.push(JSON.parse(response.data)._id)
-      // else
-      //   sio.anlixSendGenieAcsTaskNotifications(deviceid, 
-      //     {finished: true, taskid: JSON.parse(response.data)._id})
-      else
-        console.log({deviceid, finished: true, taskid: JSON.parse(response.data)._id, source: 'request'})
+      } else if (response.statusMessage === 'Device is offline') {
+        // sio.anlixSendGenieAcsTaskNotifications(deviceid, 
+        //   {finished: true, taskid: JSON.parse(response.data)._id})
+        console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'request', 
+          message: response.statusMessage})
+      } else if (response.statusCode !== 200) {
+        pendingTasks.push(JSON.parse(response.data))
+      } else {
+        // sio.anlixSendGenieAcsTaskNotifications(deviceid, 
+        //   {finished: true, taskid: JSON.parse(response.data)._id})
+        console.log({deviceid, finished: true, taskid: JSON.parse(response.data)._id, source: 'request', 
+          message: 'task executed.'})
+      }
     }
   }
-  return [pendingTasks, errormsg]
+  return [errormsg, pendingTasks]
 }
 
-async function watchPendingTask (pendingTasks, deviceid) {
-  let taskid = pendingTasks[pendingTasks.length-1]
+async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
+  let task = pendingTasks.pop()
+  let watchTime = watchTimes.shift()
   let changeStream = tasksCollection.watch([ 
-    {$match: {operationType: "delete", 'documentKey._id': mongodb.ObjectID(taskid)}} 
+    {$match: {operationType: "delete", 'documentKey._id': mongodb.ObjectID(task._id)}} 
   ])
   let taskTimer = setTimeout(async function () { 
-    if (await tasksCollection.countDocuments({_id: mongodb.ObjectID(taskid)}) === 0) {
-      changeStream.close()
-      // sio.anlixSendGenieAcsTaskNotifications(deviceid, {
-      //  finished: true, taskid: taskid })
-      console.log({deviceid, finished: true, taskid: taskid, source: 'timer'})
-    } else {
-      console.log({deviceid, finished: false, taskid: taskid, source: 'timer'})
-    }
-  }, 600000)
+    if (await tasksCollection.countDocuments({_id: mongodb.ObjectID(taskid)}) === 0) { return }
+    console.log('run out of time. retying.')
+    // let dumTask = {name: getParameterValues, 
+    //   parameterNames: ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesSent"]}
+    changeStream.close()
+    addTask(deviceid, task, 5000, true, watchTimes)
+    // let [errormsg, pendingTasks] = await sendTasks(deviceid, [task], 5000, true, watchTimes)
+    // if (pendingTasks.length === 0) { return }
+    // taskTimer = setTimeout(async function () {
+    //   if (await tasksCollection.countDocuments({_id: mongodb.ObjectID(task._id)}) === 0) { return }
+    //   // sio.anlixSendGenieAcsTaskNotifications(deviceid, {
+    //   //  finished: true, taskid: task._id })
+    //   console.log({deviceid, finished: false, taskid: task._id, source: 'dumb task timer', 
+    //     message: `task never executed in ${(watchTime/1000 +120).toFixed(0)} seconds.`})
+    // }, 120000)
+  }, watchTime)
   if (await changeStream.hasNext()) { // waiting for only one.
     let change = await changeStream.next()
     changeStream.close()
     clearTimeout(taskTimer)
     // sio.anlixSendGenieAcsTaskNotifications(deviceid, {
-    //   finished: true, taskid: taskid })
-    console.log({deviceid, finished: true, taskid: taskid, source: 'change stream'})
+    //   finished: true, taskid: task._id })
+    console.log({deviceid, finished: true, taskid: task._id, source: 'change stream', message: 'task executed.'})
   }
 }
 
@@ -223,10 +241,12 @@ async function watchPendingTask (pendingTasks, deviceid) {
 'timeout' is a number in milliseconds. 
 'shouldRequestConnection' is a boolean that tells GenieACS to initiate a connection to the CPE and execute the task. 
 'resquest' is the users request that initiate the task. */
-const addTask = async function (deviceid, task, timeout, shouldRequestConnection) {
+const addTask = async function (deviceid, task, timeout=5000, shouldRequestConnection, watchTimes=[600000, 120000]) {
+  if (watchTimes.length === 0) { return }
+
   console.log("-- starting to send task.")
 
-  if (!checkTask(task)) return [undefined, 'task not valid.']
+  if (!checkTask(task)) return ['task not valid.', undefined]
 
   console.log("-- getting older tasks.")
   // getting older tasks for this deviceid.
@@ -234,8 +254,9 @@ const addTask = async function (deviceid, task, timeout, shouldRequestConnection
   let response = await request({ method: 'GET', hostname: GENIEHOST, port: GENIEPORT, 
     path: '/tasks/?query='+encodeURIComponent(JSON.stringify(query))
   }).catch(e => e)
-  if (response.constructor === Error)
-    return [undefined, `${results[i].reason.code} when getting old tasks from genieacs rest api, for device ${deviceid}.`]
+  if (response.constructor === Error) {
+    return [`${response.code} when getting old tasks from genieacs rest api, for device ${deviceid}.`, undefined]
+  }
 
   console.log("-- parsing older tasks.")
   let tasks = JSON.parse(response.data) // parsing older tasks.
@@ -254,22 +275,23 @@ const addTask = async function (deviceid, task, timeout, shouldRequestConnection
   
   console.log("-- sending tasks.")
   // send the new task and the old tasks being substituted.
-  let [pendingTasks, errormsg] = await sendTasks(deviceid, tasks, timeout, shouldRequestConnection)
-  if (errormsg) return [undefined, errormsg]
+  let [errormsg, pendingTasks] = await sendTasks(deviceid, tasks, timeout, shouldRequestConnection)
+  if (errormsg) return [errormsg, undefined]
 
   if (pendingTasks.length > 0) { // if genie didn't execute the task before the timeout.
     console.log("-- watching pending tasks.")
-    watchPendingTask(pendingTasks, deviceid) // watch tasks collection and wait for the new task to be deleted.
+    watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes) // watch tasks collection and wait for the new task to be deleted.
   }
 
-  return [true, undefined]
+  return [undefined, true]
 }
 
 async function run () {
   // let deviceid = 'E01954-F670L-ZTE0QHEL4M05104'
-  // let deviceid = 'E01954-F670L-ZTWDWDWDWDWDWD'
   let deviceid = '00259E-HG8245Q2-4857544380B0B09E'
-  // let deviceid = '000AC2-HG6245D-FHTT951DCBA'
+  // let deviceid = '000AC2-HG6245D-FHTT951DCBA0'
+  // let deviceid = '202BC1-BM632w-000000'
+
 
   // let results = await Promise.allSettled([
   //   postTask(deviceid, {
@@ -290,24 +312,28 @@ async function run () {
 
   let task = {
     name: 'setParameterValues',
-    // parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel", 10]],
-    parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable", true]],
+    // parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel", 4]],
+    // parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel", 1],["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable", true]],
+    // parameterValues: [["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable", true]],
     // name: 'setParameterValues',
-    // parameterValues: [
-    //   ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",'my second wifi name'],
-    //   ["InternetGatewayDevice.ManagementServer.UpgradesManaged",true]
-    // ],
+    parameterValues: [
+      // ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",'another wifi name'],
+      ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",'HUAWEI-2.4G-fpkf'],
+      // ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.WPS.Enable", false],
+    ],
     // name: 'download',
     // file: 'http://anlix.io/thisFile.firmware'
-  //   name: 'getParameterValues',
-  //   parameterNames: [
-  //     "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesSent",
-  //     "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesReceived",
-  //     "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalPacketsSent",
-  //     "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalPacketsReceived",
-  //   ]
+    // name: 'getParameterValues',
+    // parameterNames: [
+    //   "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
+    //   "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesSent",
+    //   "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesReceived",
+    //   "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalPacketsSent",
+    //   "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalPacketsReceived",
+    // ]
   }
 
-  let ret = await addTask(deviceid, task, 5000, true)
+  let ret = await addTask(deviceid, task, 5000, true, [5*60*1000, 2*60*1000])
+  // let ret = await sendTasks(deviceid, [task], 5000, true)
   console.log(ret[0], ret[1])
 }
