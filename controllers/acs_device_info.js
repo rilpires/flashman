@@ -122,11 +122,11 @@ const createRegistry = async function(req) {
     lan_subnet: data.lan.router_ip,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
-    wan_ip: data.wan.wan_ip,
+    wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp : data.wan.wan_ip,
     wan_negociated_speed: data.wan.rate,
     wan_negociated_duplex: data.wan.duplex,
     sys_up_time: data.common.uptime,
-    wan_up_time: data.wan.uptime,
+    wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp : data.wan.uptime,
     created_at: Date.now(),
     last_contact: Date.now(),
   });
@@ -267,11 +267,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       data.wan.sent_bytes,
     );
   }
-  if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
   if (data.common.uptime) device.sys_up_time = data.common.uptime;
-  if (data.wan.uptime) device.wan_up_time = data.wan.uptime;
+  if (hasPPPoE && data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
+  else if (!hasPPPoE && data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
+  if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
+  else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
   device.last_contact = Date.now();
   // Possibly TODO: Save changes object in the device if supposed to accept
