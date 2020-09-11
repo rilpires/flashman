@@ -75,7 +75,7 @@ const appendBytesMeasure = function(original, recv, sent) {
   let now = Math.floor(Date.now()/1000);
   if (!original) original = {};
   let bytes = JSON.parse(JSON.stringify(original));
-  if (Object.keys(bytes).length >= 200) {
+  if (Object.keys(bytes).length >= 300) {
     let keysNum = Object.keys(bytes).map((k)=>parseInt(k));
     let smallest = Math.min(...keysNum);
     delete bytes[smallest];
@@ -437,10 +437,7 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   };
   let body = {
     name: 'getParameterValues',
-    parameterNames: [
-      recvField,
-      sentField,
-    ],
+    parameterNames: [recvField, sentField],
   };
   let req = http.request(options, (resp)=>{
     resp.setEncoding('utf8');
