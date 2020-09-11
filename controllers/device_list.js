@@ -910,10 +910,14 @@ deviceListController.sendMqttMsg = function(req, res) {
               );
             });
           }
-          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-          });
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestWanBytes(device);
+          } else {
+            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+            slaves.forEach((slave)=>{
+              mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+            });
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {

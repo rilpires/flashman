@@ -71,6 +71,19 @@ const convertWifiBand = function(band, mode) {
   }
 };
 
+const appendBytesMeasure = function(original, recv, sent) {
+  let now = Math.floor(Date.now()/1000);
+  if (!original) original = {};
+  let bytes = JSON.parse(JSON.stringify(original));
+  if (Object.keys(bytes).length >= 200) {
+    let keysNum = Object.keys(bytes).map((k)=>parseInt(k));
+    let smallest = Math.min(...keysNum);
+    delete bytes[smallest];
+  }
+  bytes[now] = [recv, sent];
+  return bytes;
+};
+
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
   let doubleSlash = url.indexOf('//');
@@ -247,6 +260,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else if (device.lan_netmask !== subnetNumber) {
     changes['lan_netmask'] = subnetNumber;
   }
+  if (data.wan.recv_bytes && data.wan.sent_bytes) {
+    device.wan_bytes = appendBytesMeasure(
+      device.wan_bytes,
+      data.wan.recv_bytes,
+      data.wan.sent_bytes,
+    );
+  }
   if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
@@ -318,6 +338,55 @@ const fetchLogFromGenie = function(mac, acsID) {
   req.end();
 };
 
+// TODO: Move this function to external-genieacs?
+const fetchWanBytesFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let recvField = fields.wan.recv_bytes;
+  let sentField = fields.wan.sent_bytes;
+  let query = {_id: acsID};
+  let projection = recvField + ',' + sentField;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let wanBytes = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, recvField+'._value') &&
+          checkForNestedKey(data, sentField+'._value')) {
+        success = true;
+        wanBytes = {
+          recv: getFromNestedKey(data, recvField+'._value'),
+          sent: getFromNestedKey(data, sentField+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        wanBytes = appendBytesMeasure(
+          deviceEdit.wan_bytes,
+          wanBytes.recv,
+          wanBytes.sent,
+        );
+        deviceEdit.wan_bytes = wanBytes;
+        await deviceEdit.save();
+      }
+      sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
+    });
+  });
+  req.end();
+};
+
 acsDeviceInfoController.requestLogs = function(device) {
   // TODO: Use tasks framework instead of requesting manually
   // Make sure we only work with TR-069 devices with a valid ID
@@ -344,6 +413,42 @@ acsDeviceInfoController.requestLogs = function(device) {
       // TODO: Only call this function after task is executed (handle 202 resp)
       //       Will be done when integrated with tasks framewowrk
       fetchLogFromGenie(mac, acsID);
+    });
+  });
+  req.write(JSON.stringify(body));
+  req.end();
+};
+
+acsDeviceInfoController.requestWanBytes = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let recvField = fields.wan.recv_bytes;
+  let sentField = fields.wan.sent_bytes;
+  let options = {
+    method: 'POST',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
+  };
+  let body = {
+    name: 'getParameterValues',
+    parameterNames: [
+      recvField,
+      sentField,
+    ],
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    resp.on('data', (data)=>{});
+    resp.on('end', ()=>{
+      // TODO: Only call this function after task is executed (handle 202 resp)
+      //       Will be done when integrated with tasks framewowrk
+      fetchWanBytesFromGenie(mac, acsID);
     });
   });
   req.write(JSON.stringify(body));
