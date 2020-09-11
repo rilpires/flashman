@@ -311,7 +311,7 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
 };
 
 sio.anlixSendGenieAcsTaskNotifications = function(deviceid, taskInfo) {
-  if (!macaddr) {
+  if (!deviceid) {
     debug('ERROR: SIO: Tried to send genie task notification ' 
       +`to an invalid deviceid! ${deviceid}`);
     return false;
