@@ -49,12 +49,12 @@ const getDefaultFields = function() {
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
       hosts: 'InternetGatewayDevice.LANDevice.1.Hosts',
+      hosts_template: 'InternetGatewayDevice.LANDevice.1.Hosts.Host',
       host_mac: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.MACAddress',
       host_name: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName',
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
-      wlan_count: 'InternetGatewayDevice.LANDevice.1.LANWLANConfigurationNumberOfEntries',
-      assoc_count: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice',
+      assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
   };

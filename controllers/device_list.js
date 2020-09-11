@@ -886,10 +886,14 @@ deviceListController.sendMqttMsg = function(req, res) {
               );
             });
           }
-          mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-          });
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestConnectedDevices(device);
+          } else {
+            mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+            slaves.forEach((slave)=>{
+              mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+            });
+          }
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(

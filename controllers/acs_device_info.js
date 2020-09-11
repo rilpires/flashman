@@ -1,4 +1,4 @@
-const DevicesAPI = require('.devices-api');
+const DevicesAPI = require('./external-genieacs/devices-api');
 const DeviceModel = require('../models/device');
 const sio = require('../sio');
 
@@ -93,6 +93,35 @@ const processHostFromURL = function(url) {
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
   return hostAndPort.split(':')[0];
+};
+
+const saveDeviceData = async function(mac, landevices) {
+  if (!mac || !landevices || !landevices.length) return;
+  let device = await DeviceModel.findById(mac.toUpperCase());
+  landevices.forEach((lanDev)=>{
+    let lanMac = lanDev.mac.toUpperCase();
+    let registered = device.lan_devices.find((d)=>d.mac===lanMac);
+    if (registered) {
+      registered.dhcp_name = lanDev.name;
+      registered.ip = lanDev.ip;
+      registered.conn_type = (lanDev.wifi) ? 1 : 0;
+      if (lanDev.rssi) registered.wifi_signal = lanDev.rssi;
+      if (lanDev.snr) registered.wifi_snr = lanDev.snr;
+      registered.last_seen = Date.now();
+    } else {
+      device.lan_devices.push({
+        mac: lanMac,
+        dhcp_name: lanDev.name,
+        ip: lanDev.ip,
+        conn_type: (lanDev.wifi) ? 1 : 0,
+        wifi_signal: (lanDev.rssi) ? lanDev.rssi : undefined,
+        wifi_snr: (lanDev.snr) ? lanDev.snr : undefined,
+        last_seen: Date.now(),
+        first_seen: Date.now(),
+      });
+    }
+  });
+  await device.save();
 };
 
 const createRegistry = async function(req) {
@@ -391,6 +420,99 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
+// TODO: Move this function to external-genieacs?
+const fetchDevicesFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let hostsField = fields.devices.hosts;
+  let assocField = fields.devices.associated;
+  assocField = assocField.substring(0, assocField.indexOf('*')-1);
+  let query = {_id: acsID};
+  let projection = hostsField + ',' + assocField;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = true;
+      let hostCount = 0;
+      let hostCountField = hostsField+'.HostNumberOfEntries._value';
+      // Make sure we have a host count and assodicated devices fields
+      if (checkForNestedKey(data, hostCountField) &&
+          checkForNestedKey(data, assocField)) {
+        hostCount = getFromNestedKey(data, hostCountField);
+        let hostBaseField = fields.devices.hosts_template;
+        if (!hostCount) hostCount = 0;
+        // Make sure every host has an entry
+        for (let i = 1; i < hostCount+1; i++) {
+          if (!checkForNestedKey(data, hostBaseField+'.'+i)) success = false;
+        }
+      } else {
+        success = false;
+      }
+      if (success) {
+        let devices = [];
+        for (let i = 1; i < hostCount+1; i++) {
+          let device = {};
+          // Collect device mac
+          let macKey = fields.devices.host_mac.replace('*', i);
+          device.mac = getFromNestedKey(data, macKey+'._value');
+          // Collect device hostname
+          let nameKey = fields.devices.host_name.replace('*', i);
+          device.name = getFromNestedKey(data, nameKey+'._value');
+          // Collect device ip
+          let ipKey = fields.devices.host_ip.replace('*', i);
+          device.ip = getFromNestedKey(data, ipKey+'._value');
+          // Push basic device information
+          devices.push(device);
+        }
+        // Filter wlan interfaces
+        let interfaces = Object.keys(getFromNestedKey(data, assocField));
+        interfaces = interfaces.filter((i)=>i[0]!='_');
+        interfaces.forEach((interface)=>{
+          // Find out how many devices are associated in this interface
+          let totalField = fields.devices.assoc_total.replace('*', interface);
+          let assocCount = getFromNestedKey(data, totalField+'._value');
+          for (let i = 1; i < assocCount+1; i++) {
+            // Collect associated mac
+            let macKey = fields.devices.assoc_mac;
+            macKey = macKey.replace('*', interface).replace('*', i);
+            let macVal = getFromNestedKey(data, macKey+'._value');
+            let device = devices.find((d)=>d.mac===macVal);
+            if (!device) continue;
+            // Mark device as a wifi device
+            device.wifi = true;
+            // Collect rssi, if available
+            if (fields.devices.host_rssi) {
+              let rssiKey = fields.devices.host_rssi;
+              rssiKey = rssiKey.replace('*', interface).replace('*', i);
+              device.rssi = getFromNestedKey(data, rssiKey);
+            }
+            // Collect snr, if available
+            if (fields.devices.host_snr) {
+              let snrKey = fields.devices.host_snr;
+              snrKey = snrKey.replace('*', interface).replace('*', i);
+              device.snr = getFromNestedKey(data, snrKey);
+            }
+          }
+        });
+        await saveDeviceData(mac, devices);
+      }
+      sio.anlixSendOnlineDevNotifications(mac, null);
+    });
+  });
+  req.end();
+};
+
 acsDeviceInfoController.requestLogs = function(device) {
   // TODO: Use tasks framework instead of requesting manually
   // Make sure we only work with TR-069 devices with a valid ID
@@ -450,6 +572,39 @@ acsDeviceInfoController.requestWanBytes = function(device) {
       // TODO: Only call this function after task is executed (handle 202 resp)
       //       Will be done when integrated with tasks framewowrk
       fetchWanBytesFromGenie(mac, acsID);
+    });
+  });
+  req.write(JSON.stringify(body));
+  req.end();
+};
+
+acsDeviceInfoController.requestConnectedDevices = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let hostsField = fields.devices.hosts;
+  let assocField = fields.devices.associated;
+  let options = {
+    method: 'POST',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
+  };
+  let body = {
+    name: 'getParameterValues',
+    parameterNames: [hostsField, assocField],
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    resp.on('data', (data)=>{});
+    resp.on('end', ()=>{
+      // TODO: Only call this function after task is executed (handle 202 resp)
+      //       Will be done when integrated with tasks framewowrk
+      fetchDevicesFromGenie(mac, acsID);
     });
   });
   req.write(JSON.stringify(body));
