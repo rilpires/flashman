@@ -33,7 +33,7 @@ if (Promise.allSettled === undefined) { // if allSettled is not defined in Promi
 }
 
 /* promisifying a nodejs http request. 'options' are the http.request option as defined by nodejs api. 'body' is the content 
-of the request (should be a string) and it up to the caller to set the correct header in case body is used.*/
+of the request (should be a string) and it up to the caller to set the correct header in case body is used. */
 const request = (options, body) => {
   return new Promise((resolve, reject) => {
     let req = http.request(options, res => {
@@ -60,7 +60,7 @@ function postTask (deviceid, task, timeout, shouldRequestConnection) {
 }
 
 /* simple request to delete a task, by its id, in GenieACS and get a promise the resolves to the request response or rejects 
-to request error.  */
+to request error. */
 function deleteTask (taskid) {
   return request({ method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path: '/tasks/'+taskid })
 }
@@ -158,8 +158,8 @@ function joinAllTasks(tasks) {
     }
   }
 
-  tasksToDelete = {} // map of task types to ids of tasks that have the same type.
-  tasksToAdd = [] // array of new tasks, joined tasks or completely new.
+  let tasksToDelete = {} // map of task types to ids of tasks that have the same type.
+  let tasksToAdd = [] // array of new tasks, joined tasks or completely new.
   for (let name in createNewTaskForType) { // for each task type to be created, or recreated.
     let ids = taskIdsForType[name] // getting ids that have the same type.
     if (ids && ids.length > 0) // if there is at least one id.
@@ -204,7 +204,7 @@ async function sendTasks (deviceid, tasks, timeout, shouldRequestConnection) {
     if (results[i].reason) { // if there was a reason it was rejected. print error message.
       if (tasks[i].name === tasks[results.length-1].name) // if this task is brand new. last task has no _id field.
         errormsg += results[i].reason.code
-          + ` when adding new task in genieacs rest api, for device ${devicei}.`
+          + ` when adding new task in genieacs rest api, for device ${deviceid}.`
       else // if it's not the brand new task.
         errormsg += results[i].reason.code
           + ` when adding a joined task, in substitution of older tasks, in genieacs rest api, for device ${deviceid}.`
@@ -248,7 +248,7 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
   ]) // filtered by document._id match.
   let taskTimer = setTimeout(async function () { // starts a timeout
     // if there are zero documents matching task._id. it measn task was executed and change stream probably saw it first.
-    if (await tasksCollection.countDocuments({_id: mongodb.ObjectID(taskid._id)}) === 0) { return }
+    if (await tasksCollection.countDocuments({_id: mongodb.ObjectID(task._id)}) === 0) { return }
 
     // let dumTask = {name: getParameterValues, 
     //   parameterNames: ["InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalBytesSent"]}
@@ -267,14 +267,14 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
     // console.log('-- run out of time. retrying.') // for debugging.
     changeStream.close() // close change stream.
     if (watchTimes.length > 0) { // if there are more watchTimes in array.
-      addTask(deviceid, task, 5000, true, watchTimes) // repeat the whole process of adding a task with one less watch time.
+      genie.addTask(deviceid, task, 5000, true, watchTimes) // repeat the whole process of adding a task with one less watch time.
       /* we don't need to repeat the whole process using all tasks because when GenieACS execute one task, all tasks are 
       also executed. We actually only implement a retry because genie fails in its attempt to retry tasks. This is a 
       Genie hiccup. The result of our retry is the last task will be joined with itself and will be removed and re added.*/ 
     } else { // if there no more watch times we won't retry anymore.
       // sending a socket.io message saying it wasn't executed.
       sio.anlixSendGenieAcsTaskNotifications(deviceid, 
-        {finished: false, taskid: JSON.parse(response.data)._id, source: 'timer', 
+        {finished: false, taskid: task._id, source: 'timer', 
         message: `task never executed for deviceid ${deviceid}`})
       // console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'timer', 
       //   message: `task never executed for deviceid ${deviceid}`})
@@ -284,7 +284,7 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
   // waiting for only one match on the change stream. simply because we filter by _id, which is unique.
   // if the last task was execute, it's high likely the previous tasks were also executed.
   if (await changeStream.hasNext()) {
-    let change = await changeStream.next()
+    await changeStream.next()
     changeStream.close() // close this change stream.
     clearTimeout(taskTimer) // clear setTimeout
     // sending a socket.io message saying it was executed.
