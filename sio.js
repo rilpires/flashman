@@ -301,8 +301,8 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
     return false;
   }
   if (!deviceid) {
-    debug('ERROR: SIO: Tried to add speedtest ' 
-      +'notification with an invalid mac address!');
+    debug('ERROR: SIO: Tried to add genie task ' 
+      +'notification with an invalid deviceid!');
     return false;
   }
 
