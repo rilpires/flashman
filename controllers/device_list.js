@@ -886,10 +886,14 @@ deviceListController.sendMqttMsg = function(req, res) {
               );
             });
           }
-          mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-          });
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestConnectedDevices(device);
+          } else {
+            mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+            slaves.forEach((slave)=>{
+              mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+            });
+          }
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -910,10 +914,14 @@ deviceListController.sendMqttMsg = function(req, res) {
               );
             });
           }
-          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-          });
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestWanBytes(device);
+          } else {
+            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+            slaves.forEach((slave)=>{
+              mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+            });
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
