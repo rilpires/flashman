@@ -210,22 +210,22 @@ async function sendTasks (deviceid, tasks, timeout, shouldRequestConnection) {
           + ` when adding a joined task, in substitution of older tasks, in genieacs rest api, for device ${deviceid}.`
     } else if (i === results.length-1) { // if request wasn't rejected and it is the last task in the array of tasks.
       let response = results[i].value // referencing only promise's value.
-      console.log(`response ${i})`, response.statusCode, response.statusMessage) // for debugging.
+      // console.log(`response ${i})`, response.statusCode, response.statusMessage) // for debugging.
       if (response.statusMessage === 'No such device') { // if Genie responded saying device doesn't exist.
         errormsg += `Device ${deviceid} doesn't exist.`
       } else if (response.statusMessage === 'Device is offline') { // if Genie responded saying device is off-line.
         // user probably already knows when device is off line.
         sio.anlixSendGenieAcsTaskNotifications(deviceid, 
           {finished: false, taskid: JSON.parse(response.data)._id, source: 'request', message: response.statusMessage})
-        console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'request', 
-          message: response.statusMessage})
+        // console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'request', 
+        //   message: response.statusMessage})
       } else if (response.statusCode !== 200) { // if Genie didn't respond with code 200, it scheduled the task for latter.
         pendingTasks.push(JSON.parse(response.data)) // parse task to javascript object and add it to array of pending tasks.
       } else { // case where Genie responded with status code 200, this means task has execute before 'timeout'. 
         sio.anlixSendGenieAcsTaskNotifications(deviceid, 
           {finished: true, taskid: JSON.parse(response.data)._id, source: 'request', message: 'task executed.'})
-        console.log({deviceid, finished: true, taskid: JSON.parse(response.data)._id, source: 'request', 
-          message: 'task executed.'})
+        // console.log({deviceid, finished: true, taskid: JSON.parse(response.data)._id, source: 'request', 
+        //   message: 'task executed.'})
       }
     }
   }
@@ -264,7 +264,7 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
     // }, 120000)
 
     // if there is a document still in database matching task._id.
-    console.log('-- run out of time. retrying.') // for debugging.
+    // console.log('-- run out of time. retrying.') // for debugging.
     changeStream.close() // close change stream.
     if (watchTimes.length > 0) { // if there are more watchTimes in array.
       addTask(deviceid, task, 5000, true, watchTimes) // repeat the whole process of adding a task with one less watch time.
@@ -276,8 +276,8 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
       sio.anlixSendGenieAcsTaskNotifications(deviceid, 
         {finished: false, taskid: JSON.parse(response.data)._id, source: 'timer', 
         message: `task never executed for deviceid ${deviceid}`})
-      console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'timer', 
-        message: `task never executed for deviceid ${deviceid}`})
+      // console.log({deviceid, finished: false, taskid: JSON.parse(response.data)._id, source: 'timer', 
+      //   message: `task never executed for deviceid ${deviceid}`})
     }
   }, watchTime) // amount of time to wait before executing setTimeout.
 
@@ -290,8 +290,8 @@ async function watchPendingTaskAndRetry (pendingTasks, deviceid, watchTimes) {
     // sending a socket.io message saying it was executed.
     sio.anlixSendGenieAcsTaskNotifications(deviceid, 
       {finished: true, taskid: task._id, source: 'change stream', message: 'task executed.'})
-    console.log({deviceid, finished: true, taskid: task._id, source: 'change stream', 
-      message: `task executed for deviceid ${deviceid}`})
+    // console.log({deviceid, finished: true, taskid: task._id, source: 'change stream', 
+    //   message: `task executed for deviceid ${deviceid}`})
   }
 }
 
@@ -315,11 +315,11 @@ Having 2 or more numbers in this array means one or more retries to genie, for t
 on its own. After all retries sent to genie, if the retried task doesn't disappear from its database, a message saying the 
 task has not executed is emitted through socket.io.*/
 genie.addTask = async function (deviceid, task, timeout=5000, shouldRequestConnection, watchTimes=[600000, 120000]) {
-  console.log("-- starting to send task.") // for debugging.
+  // console.log("-- starting to send task.") // for debugging.
 
   if (!checkTask(task)) return ['task not valid.', null] // checking task format and data types.
 
-  console.log("-- getting older tasks.")
+  // console.log("-- getting older tasks.")
   // getting older tasks for this deviceid.
   let query = {device: deviceid} // selecting all tasks for a given deviceid.
   let response = await request({ method: 'GET', hostname: GENIEHOST, port: GENIEPORT, 
@@ -329,12 +329,12 @@ genie.addTask = async function (deviceid, task, timeout=5000, shouldRequestConne
     return [`${response.code} when getting old tasks from genieacs rest api, for device ${deviceid}.`, null]
   } // if no errors, move on.
 
-  console.log("-- parsing older tasks.") // for debugging.
+  // console.log("-- parsing older tasks.") // for debugging.
   let tasks = JSON.parse(response.data) // parsing older tasks. they are always object inside an array.
   tasks.push(task) // adding the new task as one more older task to tasks array.
 
   if (tasks.length > 1) { // if there was at least one task plus the current task being added in tasks array.
-    console.log("-- joining tasks tasks.") // for debugging.
+    // console.log("-- joining tasks tasks.") // for debugging.
     let tasksToDelete // declaring variable that will hold array of tasks to be delete/substituted.
     [tasks, tasksToDelete] = joinAllTasks(tasks) // substitutes tasks array with arrays of tasks to be added to genie.
 
@@ -342,18 +342,18 @@ genie.addTask = async function (deviceid, task, timeout=5000, shouldRequestConne
     we add their joined counterpart, in which case deleting it would give make genie return task not found. So we delete old 
     tasks as fast as we can. Adding a task makes us wait at least a 'timeout' amount of milliseconds, so it isn't fast. */
     if (Object.keys(tasksToDelete).length > 0) {// if there are tasks being substituted by new ones, 
-      console.log("-- deleting tasks tasks.") // for debugging.
+      // console.log("-- deleting tasks tasks.") // for debugging.
       await deleteOldTaks(tasksToDelete) // there will be tasks to be deleted.
     }
   }
   
-  console.log("-- sending tasks.") // for debugging.
+  // console.log("-- sending tasks.") // for debugging.
   // send the new task and the old tasks being substituted.
   let [errormsg, pendingTasks] = await sendTasks(deviceid, tasks, timeout, shouldRequestConnection)
   if (errormsg) return [errormsg, null]
 
   if (pendingTasks.length > 0) { // if genie didn't execute the task before the timeout.
-    console.log("-- watching pending tasks.") // for debugging.
+    // console.log("-- watching pending tasks.") // for debugging.
     watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes) // watch tasks collection for the new task to be deleted.
     // not awaiting this function call because it will emit its result using socket.io (web sockets).
     return [null, null] // returning no error and no true value because result is still being produced.
