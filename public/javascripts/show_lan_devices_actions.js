@@ -101,7 +101,8 @@ $(document).ready(function() {
     });
   };
 
-  const fetchLanDevices = function(deviceId, upnpSupport, isBridge) {
+  const fetchLanDevices = function(deviceId, upnpSupport,
+                                   isBridge, hasSlaves=false) {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
@@ -220,6 +221,12 @@ $(document).ready(function() {
                     ) : ''
                   )
                 ),
+                (hasSlaves ?
+                  $('<div>').addClass('row pt-2').append(
+                    $('<div>').addClass('col').append(
+                      $('<div>').addClass('badge primary-color').html('Conectado no roteador ' + device.gateway_mac),
+                    ),
+                ) : ''),
                 $('<div>').addClass('row pt-2').append(
                   $('<div>').addClass('col').append(
                     $('<button>').addClass('btn btn-primary btn-sm mx-0')
@@ -387,9 +394,10 @@ $(document).ready(function() {
       let id = $('#lan-devices-hlabel').text();
       let upnpSupport = $('#lan-devices').data('validate-upnp');
       let slaves = $('#lan-devices').data('slaves');
+      let hasSlaves = slaves ? true : false;
       let isBridge = $('#isBridgeDiv').html() === 'Sim';
       if (id == macaddr || slaves.includes(macaddr)) {
-        fetchLanDevices(macaddr, upnpSupport, isBridge);
+        fetchLanDevices(macaddr, upnpSupport, isBridge, hasSlaves);
       }
     }
   });
@@ -398,6 +406,7 @@ $(document).ready(function() {
   $('#lan-devices').on('hidden.bs.modal', function() {
     $('#lan-devices').removeAttr('data-lan-devices-list');
     $('#lan-devices').removeData('lan-devices-list');
+    $('#lan-devices').removeData('slaves');
     $('#lan-devices-body').empty();
     $('#lan-devices-placeholder').show();
     $('#lan-devices-placeholder-none').hide();
