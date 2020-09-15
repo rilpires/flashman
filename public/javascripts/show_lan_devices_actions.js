@@ -4,7 +4,7 @@ $(document).ready(function() {
     $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
-    $('.btn-sync-lan-devs').prop('disabled', true);
+    $('.btn-sync-lan').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -14,7 +14,7 @@ $(document).ready(function() {
           $('#lan-devices').attr('data-cleanup', true);
           // If exists
           $('#lan-devices').data('cleanup', true);
-          $('.btn-sync-lan-devs > i').addClass('animated rotateOut infinite');
+          $('.btn-sync-lan > i').addClass('animated rotateOut infinite');
         } else {
           $('#lan-devices').removeAttr('data-lan-devices-list');
           $('#lan-devices').removeData('lan-devices-list');
@@ -364,16 +364,35 @@ $(document).ready(function() {
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
+    // Progress info when syncing with multiple routers in mesh
     $('#lan-devices-placeholder-counter').text('0 de ' + totalRouters);
+    // Only display if mesh mode is active with multiple routers
+    if (slaveCount == 0) $('.btn-group-lan-opts').hide();
     // Refresh devices status
     refreshLanDevices(id, upnpSupport, isBridge);
   });
 
-  $(document).on('click', '.btn-sync-lan-devs', function(event) {
+  $(document).on('click', '.btn-sync-lan', function(event) {
     let id = $('#lan-devices-hlabel').text();
     let upnpSupport = $('#lan-devices').data('validate-upnp');
     let isBridge = $('#isBridgeDiv').html() === 'Sim';
+
+    $('#lan-devices').data('routers-synced', 0);
     refreshLanDevices(id, upnpSupport, isBridge);
+  });
+
+  $(document).on('click', '.btn-show-lan-routers', function(event) {
+    $('#lan-devices-body').hide();
+    $('#lan-routers-body').show();
+    $('.btn-show-lan-devs').removeClass('active');
+    $('.btn-show-lan-routers').addClass('active');
+  });
+
+  $(document).on('click', '.btn-show-lan-devs', function(event) {
+    $('#lan-routers-body').hide();
+    $('#lan-devices-body').show();
+    $('.btn-show-lan-routers').removeClass('active');
+    $('.btn-show-lan-devs').addClass('active');
   });
 
   $(document).on('click', '.btn-upnp', function(event) {
@@ -398,8 +417,8 @@ $(document).ready(function() {
       if ($('#lan-devices').data('cleanup') == true) {
         // Clear old data
         $('#lan-devices').data('cleanup', false);
-        $('.btn-sync-lan-devs').prop('disabled', false);
-        $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
+        $('.btn-sync-lan').prop('disabled', false);
+        $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
         $('#lan-devices').removeAttr('data-lan-devices-list');
         $('#lan-devices').removeData('lan-devices-list');
         $('#lan-devices-body').empty();
@@ -431,7 +450,10 @@ $(document).ready(function() {
     $('#lan-devices-body').empty();
     $('#lan-devices-placeholder').show();
     $('#lan-devices-placeholder-none').hide();
-    $('.btn-sync-lan-devs > i').removeClass('animated rotateOut infinite');
-    $('.btn-sync-lan-devs').prop('disabled', false);
+    $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
+    $('.btn-sync-lan').prop('disabled', false);
+    $('.btn-group-lan-opts').show();
+    $('.btn-show-lan-routers').removeClass('active');
+    $('.btn-show-lan-devs').addClass('active');
   });
 });
