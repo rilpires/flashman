@@ -169,19 +169,19 @@ $(document).ready(function() {
               return true;
             }
             lanDevsRow.append(
-              $('<div></div>')
+              $('<div>')
               .addClass('col-lg m-1 grey lighten-4').append(
-                $('<div></div>').addClass('row pt-2').append(
+                $('<div>').addClass('row pt-2').append(
                   ((device.conn_type != undefined) ?
-                    $('<div></div>').addClass('col').append(
+                    $('<div>').addClass('col').append(
                       (device.conn_type == 0) ?
-                        $('<i></i>').addClass('fas fa-ethernet fa-lg') :
-                        $('<i></i>').addClass('fas fa-wifi fa-lg'),
+                        $('<i>').addClass('fas fa-ethernet fa-lg') :
+                        $('<i>').addClass('fas fa-wifi fa-lg'),
                       (device.conn_type == 0) ?
-                        $('<span></span>').html('&nbsp Cabo') :
-                        $('<span></span>').html('&nbsp Wi-Fi')
+                        $('<span>').html('&nbsp Cabo') :
+                        $('<span>').html('&nbsp Wi-Fi')
                     ) :
-                    $('<div></div>').addClass('col')
+                    $('<div>').addClass('col')
                   ),
                   $('<button>').addClass('btn btn-primary btn-sm my-0 col')
                                .addClass('btn-lan-dev-block')
@@ -204,18 +204,18 @@ $(document).ready(function() {
                         .html('liberada')
                   )
                 ),
-                $('<div></div>').addClass('row pt-3').append(
-                  $('<div></div>').addClass('col-4').append(
+                $('<div>').addClass('row pt-3').append(
+                  $('<div>').addClass('col-4').append(
                     (device.is_online ?
-                      $('<i></i>').addClass('fas fa-circle green-text') :
-                      $('<i></i>').addClass('fas fa-circle red-text')),
+                      $('<i>').addClass('fas fa-circle green-text') :
+                      $('<i>').addClass('fas fa-circle red-text')),
                     (device.is_online ?
-                      $('<span></span>').html('&nbsp Online') :
-                      $('<span></span>').html('&nbsp Offline'))
+                      $('<span>').html('&nbsp Online') :
+                      $('<span>').html('&nbsp Offline'))
                   ),
                   (device.conn_speed && device.is_online ?
-                    $('<div></div>').addClass('col-8 text-right').append(
-                      $('<h6></h6>').text('Velocidade Máx. ' +
+                    $('<div>').addClass('col-8 text-right').append(
+                      $('<h6>').text('Velocidade Máx. ' +
                                           device.conn_speed + ' Mbps')
                     ) : ''
                   )
@@ -281,26 +281,26 @@ $(document).ready(function() {
                     )
                   )
                 ),
-                $('<div></div>').addClass('row pt-3 mb-2').append(
-                  $('<div></div>').addClass('col').append(
-                    $('<h6></h6>').text(device.name),
-                    $('<h6></h6>').text(device.dhcp_name),
-                    $('<h6></h6>').text(device.mac)
+                $('<div>').addClass('row pt-3 mb-2').append(
+                  $('<div>').addClass('col').append(
+                    $('<h6>').text(device.name),
+                    $('<h6>').text(device.dhcp_name),
+                    $('<h6>').text(device.mac)
                   ),
                   (device.conn_type == 1 && device.wifi_signal &&
                    device.is_online) ?
-                  $('<div></div>').addClass('col').append(
-                    $('<h6></h6>').text(device.wifi_freq + ' GHz'),
-                    $('<h6></h6>').text('Modo: ' + device.wifi_mode),
-                    $('<h6></h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
-                    $('<h6></h6>').text('SNR: ' + device.wifi_snr + ' dB')
+                  $('<div>').addClass('col').append(
+                    $('<h6>').text(device.wifi_freq + ' GHz'),
+                    $('<h6>').text('Modo: ' + device.wifi_mode),
+                    $('<h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
+                    $('<h6>').text('SNR: ' + device.wifi_snr + ' dB')
                     .append(
-                      $('<span></span>').html('&nbsp'),
+                      $('<span>').html('&nbsp'),
                       ((device.wifi_snr >= 25) ?
-                       $('<i></i>').addClass('fas fa-circle green-text') :
+                       $('<i>').addClass('fas fa-circle green-text') :
                        (device.wifi_snr >= 15) ?
-                       $('<i></i>').addClass('fas fa-circle yellow-text') :
-                       $('<i></i>').addClass('fas fa-circle red-text')
+                       $('<i>').addClass('fas fa-circle yellow-text') :
+                       $('<i>').addClass('fas fa-circle red-text')
                       )
                     )
                   ) :
