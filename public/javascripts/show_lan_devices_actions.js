@@ -106,6 +106,8 @@ $(document).ready(function() {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
+    let totalRouters = parseInt($('#lan-devices').data('slaves-count')) + 1;
+    let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
     if ($('#devices-table-content').data('superuser')) {
       isSuperuser = $('#devices-table-content').data('superuser');
@@ -124,10 +126,6 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          $('#lan-devices-placeholder').hide();
-          let lanDevsRow = $('#lan-devices-body');
-          let countAddedDevs = 0;
-
           let lanDevices = $('#lan-devices').data('lan-devices-list');
           if (lanDevices) {
             for (let newDevice of res.lan_devices) {
@@ -164,166 +162,173 @@ $(document).ready(function() {
                                    JSON.stringify(lanDevices));
           }
 
-          $.each(lanDevices, function(idx, device) {
-            // Skip if offline for too long
-            if (device.is_old) {
-              return true;
-            }
-            lanDevsRow.append(
-              $('<div>')
-              .addClass('col-lg m-1 grey lighten-4').append(
-                $('<div>').addClass('row pt-2').append(
-                  ((device.conn_type != undefined) ?
-                    $('<div>').addClass('col').append(
-                      (device.conn_type == 0) ?
-                        $('<i>').addClass('fas fa-ethernet fa-lg') :
-                        $('<i>').addClass('fas fa-wifi fa-lg'),
-                      (device.conn_type == 0) ?
-                        $('<span>').html('&nbsp Cabo') :
-                        $('<span>').html('&nbsp Wi-Fi')
-                    ) :
-                    $('<div>').addClass('col')
+          // Exhibit devices if all routers have already answered
+          if (syncedRouters == totalRouters) {
+            $('#lan-devices-placeholder').hide();
+            let lanDevsRow = $('#lan-devices-body');
+            let countAddedDevs = 0;
+
+            $.each(lanDevices, function(idx, device) {
+              // Skip if offline for too long
+              if (device.is_old) {
+                return true;
+              }
+              lanDevsRow.append(
+                $('<div>')
+                .addClass('col-lg m-1 grey lighten-4').append(
+                  $('<div>').addClass('row pt-2').append(
+                    ((device.conn_type != undefined) ?
+                      $('<div>').addClass('col').append(
+                        (device.conn_type == 0) ?
+                          $('<i>').addClass('fas fa-ethernet fa-lg') :
+                          $('<i>').addClass('fas fa-wifi fa-lg'),
+                        (device.conn_type == 0) ?
+                          $('<span>').html('&nbsp Cabo') :
+                          $('<span>').html('&nbsp Wi-Fi')
+                      ) :
+                      $('<div>').addClass('col')
+                    ),
+                    $('<button>').addClass('btn btn-primary btn-sm my-0 col')
+                                 .addClass('btn-lan-dev-block')
+                                 .attr('data-mac', device.mac)
+                                 .attr('data-blocked', device.is_blocked)
+                                 .attr('type', 'button')
+                                 .prop('disabled',
+                                       isBridge || !(isSuperuser || grantLanDevicesBlock))
+                    .append(
+                      (device.is_blocked) ?
+                        $('<i>').addClass('fas fa-lock fa-lg') :
+                        $('<i>').addClass('fas fa-lock-open fa-lg'),
+                      $('<span>').html('&nbsp Internet &nbsp'),
+                      (device.is_blocked) ?
+                        $('<span>')
+                          .addClass('dev-block-status-text red-text')
+                          .html('bloqueada') :
+                        $('<span>')
+                          .addClass('dev-block-status-text indigo-text')
+                          .html('liberada')
+                    )
                   ),
-                  $('<button>').addClass('btn btn-primary btn-sm my-0 col')
-                               .addClass('btn-lan-dev-block')
-                               .attr('data-mac', device.mac)
-                               .attr('data-blocked', device.is_blocked)
-                               .attr('type', 'button')
-                               .prop('disabled',
-                                     isBridge || !(isSuperuser || grantLanDevicesBlock))
-                  .append(
-                    (device.is_blocked) ?
-                      $('<i>').addClass('fas fa-lock fa-lg') :
-                      $('<i>').addClass('fas fa-lock-open fa-lg'),
-                    $('<span>').html('&nbsp Internet &nbsp'),
-                    (device.is_blocked) ?
-                      $('<span>')
-                        .addClass('dev-block-status-text red-text')
-                        .html('bloqueada') :
-                      $('<span>')
-                        .addClass('dev-block-status-text indigo-text')
-                        .html('liberada')
-                  )
-                ),
-                $('<div>').addClass('row pt-3').append(
-                  $('<div>').addClass('col-4').append(
-                    (device.is_online ?
-                      $('<i>').addClass('fas fa-circle green-text') :
-                      $('<i>').addClass('fas fa-circle red-text')),
-                    (device.is_online ?
-                      $('<span>').html('&nbsp Online') :
-                      $('<span>').html('&nbsp Offline'))
+                  $('<div>').addClass('row pt-3').append(
+                    $('<div>').addClass('col-4').append(
+                      (device.is_online ?
+                        $('<i>').addClass('fas fa-circle green-text') :
+                        $('<i>').addClass('fas fa-circle red-text')),
+                      (device.is_online ?
+                        $('<span>').html('&nbsp Online') :
+                        $('<span>').html('&nbsp Offline'))
+                    ),
+                    (device.conn_speed && device.is_online ?
+                      $('<div>').addClass('col-8 text-right').append(
+                        $('<h6>').text('Velocidade Máx. ' +
+                                            device.conn_speed + ' Mbps')
+                      ) : ''
+                    )
                   ),
-                  (device.conn_speed && device.is_online ?
-                    $('<div>').addClass('col-8 text-right').append(
-                      $('<h6>').text('Velocidade Máx. ' +
-                                          device.conn_speed + ' Mbps')
-                    ) : ''
-                  )
-                ),
-                (hasSlaves ?
+                  (hasSlaves ?
+                    $('<div>').addClass('row pt-2').append(
+                      $('<div>').addClass('col').append(
+                        $('<div>').addClass('badge primary-color').html('Conectado no roteador ' + device.gateway_mac),
+                      ),
+                  ) : ''),
                   $('<div>').addClass('row pt-2').append(
                     $('<div>').addClass('col').append(
-                      $('<div>').addClass('badge primary-color').html('Conectado no roteador ' + device.gateway_mac),
-                    ),
-                ) : ''),
-                $('<div>').addClass('row pt-2').append(
-                  $('<div>').addClass('col').append(
-                    $('<button>').addClass('btn btn-primary btn-sm mx-0')
-                                 .attr('type', 'button')
-                                 .attr('data-toggle', 'collapse')
-                                 .attr('data-target', '#ipv4-collapse-' + idx)
-                                 .prop('disabled', !device.ip)
-                    .append(
-                      $('<i>').addClass('fas fa-search'),
-                      $('<span>').html('&nbsp IPv4')
-                    ),
-                    $('<button>').addClass('btn btn-primary btn-sm')
-                                 .attr('type', 'button')
-                                 .attr('data-toggle', 'collapse')
-                                 .attr('data-target', '#ipv6-collapse-' + idx)
-                                 .prop('disabled', device.ipv6.length == 0)
-                    .append(
-                      $('<i>').addClass('fas fa-search'),
-                      $('<span>').html('&nbsp IPv6')
-                    ),
-                    ((isSuperuser || grantLanDevices > 1) && upnpSupport ?
-                      $('<button>').addClass('btn btn-primary btn-sm ' +
-                                             'ml-0 btn-upnp')
+                      $('<button>').addClass('btn btn-primary btn-sm mx-0')
                                    .attr('type', 'button')
-                                   .attr('data-mac', device.mac)
-                                   .attr('data-permission',
-                                         device.upnp_permission)
-                                   .prop('disabled', false)
+                                   .attr('data-toggle', 'collapse')
+                                   .attr('data-target', '#ipv4-collapse-' + idx)
+                                   .prop('disabled', !device.ip)
                       .append(
-                        $('<span>').html('UPnP &nbsp'),
-                        $('<span>')
-                          .addClass('upnp-status-text')
-                          .addClass(device.upnp_permission == 'accept' ?
-                                    'indigo-text' : 'red-text')
-                          .html(device.upnp_permission == 'accept' ?
-                                'Liberado' : 'Bloqueado')
-                      ) :
-                      ''
-                    ),
-                    // IPv4 section
-                    $('<div>').addClass('collapse')
-                              .attr('id', 'ipv4-collapse-' + idx)
-                    .append(
-                      $('<div>').addClass('mt-2').append(
-                        $('<h6>').text(device.ip)
+                        $('<i>').addClass('fas fa-search'),
+                        $('<span>').html('&nbsp IPv4')
+                      ),
+                      $('<button>').addClass('btn btn-primary btn-sm')
+                                   .attr('type', 'button')
+                                   .attr('data-toggle', 'collapse')
+                                   .attr('data-target', '#ipv6-collapse-' + idx)
+                                   .prop('disabled', device.ipv6.length == 0)
+                      .append(
+                        $('<i>').addClass('fas fa-search'),
+                        $('<span>').html('&nbsp IPv6')
+                      ),
+                      ((isSuperuser || grantLanDevices > 1) && upnpSupport ?
+                        $('<button>').addClass('btn btn-primary btn-sm ' +
+                                               'ml-0 btn-upnp')
+                                     .attr('type', 'button')
+                                     .attr('data-mac', device.mac)
+                                     .attr('data-permission',
+                                           device.upnp_permission)
+                                     .prop('disabled', false)
+                        .append(
+                          $('<span>').html('UPnP &nbsp'),
+                          $('<span>')
+                            .addClass('upnp-status-text')
+                            .addClass(device.upnp_permission == 'accept' ?
+                                      'indigo-text' : 'red-text')
+                            .html(device.upnp_permission == 'accept' ?
+                                  'Liberado' : 'Bloqueado')
+                        ) :
+                        ''
+                      ),
+                      // IPv4 section
+                      $('<div>').addClass('collapse')
+                                .attr('id', 'ipv4-collapse-' + idx)
+                      .append(
+                        $('<div>').addClass('mt-2').append(
+                          $('<h6>').text(device.ip)
+                        )
+                      ),
+                      // IPv6 section
+                      $('<div>').addClass('collapse')
+                                .attr('id', 'ipv6-collapse-' + idx)
+                      .append(
+                        $('<div>').addClass('mt-2').append(() => {
+                          let opts = $('<div>');
+                          device.ipv6.forEach((ipv6) => {
+                            opts.append($('<h6>').text(ipv6));
+                          });
+                          return opts.html();
+                        })
                       )
-                    ),
-                    // IPv6 section
-                    $('<div>').addClass('collapse')
-                              .attr('id', 'ipv6-collapse-' + idx)
-                    .append(
-                      $('<div>').addClass('mt-2').append(() => {
-                        let opts = $('<div>');
-                        device.ipv6.forEach((ipv6) => {
-                          opts.append($('<h6>').text(ipv6));
-                        });
-                        return opts.html();
-                      })
                     )
-                  )
-                ),
-                $('<div>').addClass('row pt-3 mb-2').append(
-                  $('<div>').addClass('col').append(
-                    $('<h6>').text(device.name),
-                    $('<h6>').text(device.dhcp_name),
-                    $('<h6>').text(device.mac)
                   ),
-                  (device.conn_type == 1 && device.wifi_signal &&
-                   device.is_online) ?
-                  $('<div>').addClass('col').append(
-                    $('<h6>').text(device.wifi_freq + ' GHz'),
-                    $('<h6>').text('Modo: ' + device.wifi_mode),
-                    $('<h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
-                    $('<h6>').text('SNR: ' + device.wifi_snr + ' dB')
-                    .append(
-                      $('<span>').html('&nbsp'),
-                      ((device.wifi_snr >= 25) ?
-                       $('<i>').addClass('fas fa-circle green-text') :
-                       (device.wifi_snr >= 15) ?
-                       $('<i>').addClass('fas fa-circle yellow-text') :
-                       $('<i>').addClass('fas fa-circle red-text')
+                  $('<div>').addClass('row pt-3 mb-2').append(
+                    $('<div>').addClass('col').append(
+                      $('<h6>').text(device.name),
+                      $('<h6>').text(device.dhcp_name),
+                      $('<h6>').text(device.mac)
+                    ),
+                    (device.conn_type == 1 && device.wifi_signal &&
+                     device.is_online) ?
+                    $('<div>').addClass('col').append(
+                      $('<h6>').text(device.wifi_freq + ' GHz'),
+                      $('<h6>').text('Modo: ' + device.wifi_mode),
+                      $('<h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
+                      $('<h6>').text('SNR: ' + device.wifi_snr + ' dB')
+                      .append(
+                        $('<span>').html('&nbsp'),
+                        ((device.wifi_snr >= 25) ?
+                         $('<i>').addClass('fas fa-circle green-text') :
+                         (device.wifi_snr >= 15) ?
+                         $('<i>').addClass('fas fa-circle yellow-text') :
+                         $('<i>').addClass('fas fa-circle red-text')
+                        )
                       )
-                    )
-                  ) :
-                  ''
+                    ) :
+                    ''
+                  )
                 )
-              )
-            );
-            countAddedDevs += 1;
-            // Line break every 2 columns
-            if (countAddedDevs % 2 == 0) {
-              lanDevsRow.append($('<div></div>').addClass('w-100'));
+              );
+              countAddedDevs += 1;
+              // Line break every 2 columns
+              if (countAddedDevs % 2 == 0) {
+                lanDevsRow.append($('<div></div>').addClass('w-100'));
+              }
+            });
+            // Placeholder if empty
+            if ( lanDevsRow.is(':empty') ) {
+              $('#lan-devices-placeholder-none').show();
             }
-          });
-          // Placeholder if empty
-          if ( lanDevsRow.is(':empty') ) {
-            $('#lan-devices-placeholder-none').show();
           }
         } else {
           displayAlertMsg(res);
@@ -346,6 +351,10 @@ $(document).ready(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     $('#lan-devices').attr('data-slaves', slaves);
+    $('#lan-devices').attr('data-slaves-count', slaveCount);
+    // Controls device exhibition after all data has arrived in mesh mode
+    $('#lan-devices').attr('data-routers-synced', 0);
+
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
     // Refresh devices status
@@ -397,6 +406,8 @@ $(document).ready(function() {
       let hasSlaves = slaves ? true : false;
       let isBridge = $('#isBridgeDiv').html() === 'Sim';
       if (id == macaddr || slaves.includes(macaddr)) {
+        let totalSynced = $('#lan-devices').data('routers-synced');
+        $('#lan-devices').data('routers-synced', totalSynced + 1);
         fetchLanDevices(macaddr, upnpSupport, isBridge, hasSlaves);
       }
     }
@@ -407,6 +418,8 @@ $(document).ready(function() {
     $('#lan-devices').removeAttr('data-lan-devices-list');
     $('#lan-devices').removeData('lan-devices-list');
     $('#lan-devices').removeData('slaves');
+    $('#lan-devices').removeData('slaves-count');
+    $('#lan-devices').removeData('routers-synced');
     $('#lan-devices-body').empty();
     $('#lan-devices-placeholder').show();
     $('#lan-devices-placeholder-none').hide();
