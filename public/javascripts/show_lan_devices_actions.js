@@ -109,6 +109,9 @@ $(document).ready(function() {
     let totalRouters = parseInt($('#lan-devices').data('slaves-count')) + 1;
     let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
+    $('#lan-devices-placeholder-counter').text(
+      syncedRouters + ' de ' + totalRouters);
+
     if ($('#devices-table-content').data('superuser')) {
       isSuperuser = $('#devices-table-content').data('superuser');
     }
@@ -329,6 +332,9 @@ $(document).ready(function() {
             if ( lanDevsRow.is(':empty') ) {
               $('#lan-devices-placeholder-none').show();
             }
+          } else {
+            $('#lan-devices-placeholder-counter').text(
+              syncedRouters + ' de ' + totalRouters);
           }
         } else {
           displayAlertMsg(res);
@@ -346,6 +352,7 @@ $(document).ready(function() {
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
     let slaveCount = parseInt(row.data('slave-count'));
+    let totalRouters = slaveCount + 1;
     if (slaveCount > 0) {
       slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
     }
@@ -357,6 +364,7 @@ $(document).ready(function() {
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
+    $('#lan-devices-placeholder-counter').text('0 de ' + totalRouters);
     // Refresh devices status
     refreshLanDevices(id, upnpSupport, isBridge);
   });
