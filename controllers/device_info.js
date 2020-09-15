@@ -998,9 +998,20 @@ deviceInfoController.receiveDevices = function(req, res) {
         id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
+    if (!('Devices' in req.body)) {
+      console.log('Devices Receiving for device ' +
+        id + ' failed: Invalid JSON.');
+      return res.status(400).json({processed: 0});
+    }
+
     const validator = new Validator();
     let devsData = req.body.Devices;
     let outData = [];
+    let routersData = undefined;
+
+    if ('Routers' in req.body) {
+      routersData = req.body.Routers;
+    }
 
     for (let connDeviceMac in devsData) {
       if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
@@ -1103,6 +1114,58 @@ deviceInfoController.receiveDevices = function(req, res) {
                              upConnDev.dhcpv6.length > 0 ? true : false);
         outDev.mac = upConnDevMac;
         outData.push(outDev);
+      }
+    }
+
+    if (routersData) {
+      for (let connRouter in routersData) {
+        if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
+          let upConnRouterMac = connRouter.toLowerCase();
+          let upConnRouter = routersData[upConnRouterMac];
+          // Skip if not lowercase
+          if (!upConnRouter) continue;
+
+          let routerReg = matchedDevice.getRouterDevice(upConnRouterMac);
+          if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
+            upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
+            upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
+          }
+          if (upConnRouter.signal) {
+            upConnRouter.signal = parseFloat(upConnRouter.signal);
+          }
+          if (upConnRouter.rx_bytes && upConnRouter.tx_bytes) {
+            upConnRouter.rx_bytes = parseInt(upConnRouter.rx_bytes);
+            upConnRouter.tx_bytes = parseInt(upConnRouter.tx_bytes);
+          }
+          if (upConnRouter.conn_time) {
+            upConnRouter.conn_time = parseInt(upConnRouter.conn_time);
+          }
+          if (upConnRouter.latency) {
+            upConnRouter.latency = parseInt(upConnRouter.latency);
+          }
+          if (routerReg) {
+            routerReg.last_seen = Date.now();
+            routerReg.conn_time = upConnRouter.conn_time;
+            routerReg.rx_bytes = upConnRouter.rx_bytes;
+            routerReg.tx_bytes = upConnRouter.tx_bytes;
+            routerReg.signal = upConnRouter.signal;
+            routerReg.rx_bit = upConnRouter.rx_bit;
+            routerReg.tx_bit = upConnRouter.tx_bit;
+            routerReg.latency = upConnRouter.latency;
+          } else {
+            matchedDevice.mesh_routers.push({
+              mac: upConnRouterMac,
+              last_seen: Date.now(),
+              conn_time: upConnRouter.conn_time,
+              rx_bytes: upConnRouter.rx_bytes,
+              tx_bytes: upConnRouter.tx_bytes,
+              signal: upConnRouter.signal,
+              rx_bit: upConnRouter.rx_bit,
+              tx_bit: upConnRouter.tx_bit,
+              latency: upConnRouter.latency,
+            });
+          }
+        }
       }
     }
 

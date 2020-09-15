@@ -85,6 +85,17 @@ let deviceSchema = new Schema({
   mesh_slaves: [String], // Used for master only (Slave is null)
   mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
   mesh_key: String, // Security key in mesh network (key for backhaul)
+  mesh_routers: [{ // Info from a point of view of each AP connected to mesh
+    mac: String,
+    last_seen: {type: Date},
+    conn_time: {type: Number, default: 0}, // seconds
+    rx_bytes: {type: Number, default: 0}, // bytes
+    tx_bytes: {type: Number, default: 0}, // bytes
+    signal: {type: Number, default: 0}, // dBm
+    rx_bit: {type: Number, default: 0}, // Mbps
+    tx_bit: {type: Number, default: 0}, // Mbps
+    latency: {type: Number, default: 0}, // ms
+  }],
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,
