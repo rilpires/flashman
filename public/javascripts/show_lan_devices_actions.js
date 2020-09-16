@@ -18,7 +18,10 @@ $(document).ready(function() {
         } else {
           $('#lan-devices').removeAttr('data-lan-devices-list');
           $('#lan-devices').removeData('lan-devices-list');
+          $('#lan-devices').removeAttr('data-lan-routers-list');
+          $('#lan-devices').removeData('lan-routers-list');
           $('#lan-devices-body').empty(); // Clear old data
+          $('#lan-routers-body').empty(); // Clear old data
           $('#lan-devices-placeholder').show();
           $('#lan-devices-placeholder-none').hide();
           fetchLanDevices(deviceId, upnpSupport, isBridge);
@@ -27,7 +30,10 @@ $(document).ready(function() {
       error: function(xhr, status, error) {
         $('#lan-devices').removeAttr('data-lan-devices-list');
         $('#lan-devices').removeData('lan-devices-list');
+        $('#lan-devices').removeAttr('data-lan-routers-list');
+        $('#lan-devices').removeData('lan-routers-list');
         $('#lan-devices-body').empty(); // Clear old data
+        $('#lan-routers-body').empty(); // Clear old data
         $('#lan-devices-placeholder').show();
         $('#lan-devices-placeholder-none').hide();
         fetchLanDevices(deviceId, upnpSupport, isBridge);
@@ -130,6 +136,7 @@ $(document).ready(function() {
       success: function(res) {
         if (res.success) {
           let lanDevices = $('#lan-devices').data('lan-devices-list');
+          let lanRouters = $('#lan-devices').data('lan-routers-list');
           if (lanDevices) {
             for (let newDevice of res.lan_devices) {
               let matchedDev = lanDevices.find(function(device) {
@@ -163,6 +170,53 @@ $(document).ready(function() {
             lanDevices = res.lan_devices;
             $('#lan-devices').attr('data-lan-devices-list',
                                    JSON.stringify(lanDevices));
+          }
+
+          if (lanRouters) {
+            lanRouters[deviceId] = res.mesh_routers;
+            $('#lan-devices').data('lan-routers-list', lanRouters);
+          } else {
+            lanRouters = {};
+            lanRouters[deviceId] = res.mesh_routers;
+            $('#lan-devices').attr('data-lan-routers-list-list',
+                                   JSON.stringify(lanRouters));
+          }
+
+          let lanRoutersRow = $('#lan-routers-body');
+          let countAddedRouters = 0;
+          // eslint-disable-next-line guard-for-in
+          for (let routerMacKey in lanRouters) {
+            let lanRouterCard = $('<div>')
+            .addClass('col-lg m-1 grey lighten-4').append(
+              $('<div>').addClass('row pt-2').append(
+                $('<div>').addClass('col').append(
+                  $('<h6>').text('Conexões de ' + routerMacKey),
+                ),
+              ),
+            );
+            $.each(lanRouters[routerMacKey], function(idx, router) {
+              lanRouterCard.append(
+                $('<div>').addClass('row pt-2').append(
+                  $('<div>').addClass('col').append(
+                    $('<h6>').text('Conexão com ' + router.mac),
+                    $('<h6>').text('Bytes recebidos: ' + router.rx_bytes),
+                    $('<h6>').text('Bytes enviados: ' + router.tx_bytes),
+                  ),
+                  $('<div>').addClass('col').append(
+                    $('<h6>').text('Sinal: ' + router.signal +' dBm'),
+                    $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' bps'),
+                    $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' bps'),
+                    $('<h6>').text('Latência: ' + router.latency +' ms'),
+                  ),
+                ),
+              );
+            });
+            lanRoutersRow.append(lanRouterCard);
+            countAddedRouters += 1;
+            // Line break every 2 columns
+            if (countAddedRouters % 2 == 0) {
+              lanRoutersRow.append($('<div>').addClass('w-100'));
+            }
           }
 
           // Exhibit devices if all routers have already answered
@@ -368,6 +422,8 @@ $(document).ready(function() {
     $('#lan-devices-placeholder-counter').text('0 de ' + totalRouters);
     // Only display if mesh mode is active with multiple routers
     if (slaveCount == 0) $('.btn-group-lan-opts').hide();
+    // Trigger lan device view
+    $('.btn-show-lan-devs').trigger('click');
     // Refresh devices status
     refreshLanDevices(id, upnpSupport, isBridge);
   });
@@ -421,11 +477,15 @@ $(document).ready(function() {
         $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
         $('#lan-devices').removeAttr('data-lan-devices-list');
         $('#lan-devices').removeData('lan-devices-list');
+        $('#lan-devices').removeAttr('data-lan-routers-list');
+        $('#lan-devices').removeData('lan-routers-list');
         $('#lan-devices-body').empty();
+        $('#lan-routers-body').empty();
         $('#lan-devices-placeholder').show();
         $('#lan-devices-placeholder-none').hide();
       } else {
         $('#lan-devices-body').empty();
+        $('#lan-routers-body').empty();
       }
       let id = $('#lan-devices-hlabel').text();
       let upnpSupport = $('#lan-devices').data('validate-upnp');
@@ -444,10 +504,13 @@ $(document).ready(function() {
   $('#lan-devices').on('hidden.bs.modal', function() {
     $('#lan-devices').removeAttr('data-lan-devices-list');
     $('#lan-devices').removeData('lan-devices-list');
+    $('#lan-devices').removeAttr('data-lan-routers-list');
+    $('#lan-devices').removeData('lan-routers-list');
     $('#lan-devices').removeData('slaves');
     $('#lan-devices').removeData('slaves-count');
     $('#lan-devices').removeData('routers-synced');
     $('#lan-devices-body').empty();
+    $('#lan-routers-body').empty();
     $('#lan-devices-placeholder').show();
     $('#lan-devices-placeholder-none').hide();
     $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
