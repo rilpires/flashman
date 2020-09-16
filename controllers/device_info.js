@@ -1118,6 +1118,9 @@ deviceInfoController.receiveDevices = function(req, res) {
     }
 
     if (routersData) {
+      // Erasing existing data of previous mesh routers
+      matchedDevice.mesh_routers = [];
+
       for (let connRouter in routersData) {
         if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
           let upConnRouterMac = connRouter.toLowerCase();
@@ -1125,7 +1128,6 @@ deviceInfoController.receiveDevices = function(req, res) {
           // Skip if not lowercase
           if (!upConnRouter) continue;
 
-          let routerReg = matchedDevice.getRouterDevice(upConnRouterMac);
           if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
             upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
             upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
@@ -1145,28 +1147,26 @@ deviceInfoController.receiveDevices = function(req, res) {
           } else {
             upConnRouter.latency = 0;
           }
-          if (routerReg) {
-            routerReg.last_seen = Date.now();
-            routerReg.conn_time = upConnRouter.conn_time;
-            routerReg.rx_bytes = upConnRouter.rx_bytes;
-            routerReg.tx_bytes = upConnRouter.tx_bytes;
-            routerReg.signal = upConnRouter.signal;
-            routerReg.rx_bit = upConnRouter.rx_bit;
-            routerReg.tx_bit = upConnRouter.tx_bit;
-            routerReg.latency = upConnRouter.latency;
+          if (upConnRouter.iface) {
+            let ifaceMode = 1;
+            if (upConnRouter.iface === 'mesh0') ifaceMode = 2;
+            if (upConnRouter.iface === 'mesh1') ifaceMode = 3;
+            upConnRouter.iface = ifaceMode;
           } else {
-            matchedDevice.mesh_routers.push({
-              mac: upConnRouterMac,
-              last_seen: Date.now(),
-              conn_time: upConnRouter.conn_time,
-              rx_bytes: upConnRouter.rx_bytes,
-              tx_bytes: upConnRouter.tx_bytes,
-              signal: upConnRouter.signal,
-              rx_bit: upConnRouter.rx_bit,
-              tx_bit: upConnRouter.tx_bit,
-              latency: upConnRouter.latency,
-            });
+            upConnRouter.iface = 1;
           }
+          matchedDevice.mesh_routers.push({
+            mac: upConnRouterMac,
+            last_seen: Date.now(),
+            conn_time: upConnRouter.conn_time,
+            rx_bytes: upConnRouter.rx_bytes,
+            tx_bytes: upConnRouter.tx_bytes,
+            signal: upConnRouter.signal,
+            rx_bit: upConnRouter.rx_bit,
+            tx_bit: upConnRouter.tx_bit,
+            latency: upConnRouter.latency,
+            iface: upConnRouter.iface,
+          });
         }
       }
     }

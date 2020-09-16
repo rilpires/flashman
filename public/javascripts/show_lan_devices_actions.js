@@ -415,6 +415,15 @@ $(document).ready(function() {
               $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' Mbps'),
               $('<h6>').text('Latência: ' +
                 (router.latency > 0 ? router.latency + ' ms' : 'N/D')),
+              $('<div>').addClass('mt-2').append(
+                (router.iface == 1) ?
+                  $('<i>').addClass('fas fa-ethernet fa-lg') :
+                  $('<i>').addClass('fas fa-wifi fa-lg'),
+                (router.iface == 1) ?
+                  $('<span>').html('&nbsp; Cabo') :
+                  $('<span>').html('&nbsp; Wi-Fi ' +
+                                   (router.iface == 2 ? '2.4' : '5.0') + 'GHz')
+              ),
             ),
           ),
         );
