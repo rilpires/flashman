@@ -1009,8 +1009,8 @@ deviceInfoController.receiveDevices = function(req, res) {
     let outData = [];
     let routersData = undefined;
 
-    if ('Routers' in req.body) {
-      routersData = req.body.Routers;
+    if ('mesh_routers' in req.body) {
+      routersData = req.body.mesh_routers;
     }
 
     for (let connDeviceMac in devsData) {
@@ -1142,6 +1142,8 @@ deviceInfoController.receiveDevices = function(req, res) {
           }
           if (upConnRouter.latency) {
             upConnRouter.latency = parseInt(upConnRouter.latency);
+          } else {
+            upConnRouter.latency = 0;
           }
           if (routerReg) {
             routerReg.last_seen = Date.now();

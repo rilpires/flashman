@@ -1837,6 +1837,7 @@ deviceListController.getLanDevices = function(req, res) {
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
+      mesh_routers: matchedDevice.mesh_routers,
     });
   });
 };
