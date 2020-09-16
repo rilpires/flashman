@@ -178,52 +178,17 @@ $(document).ready(function() {
           } else {
             lanRouters = {};
             lanRouters[deviceId] = res.mesh_routers;
-            $('#lan-devices').attr('data-lan-routers-list-list',
+            $('#lan-devices').attr('data-lan-routers-list',
                                    JSON.stringify(lanRouters));
           }
 
-          let lanRoutersRow = $('#lan-routers-body');
-          let countAddedRouters = 0;
-          // eslint-disable-next-line guard-for-in
-          for (let routerMacKey in lanRouters) {
-            let lanRouterCard = $('<div>')
-            .addClass('col-lg m-1 grey lighten-4').append(
-              $('<div>').addClass('row pt-2').append(
-                $('<div>').addClass('col').append(
-                  $('<h6>').text('Conexões de ' + routerMacKey),
-                ),
-              ),
-            );
-            $.each(lanRouters[routerMacKey], function(idx, router) {
-              lanRouterCard.append(
-                $('<div>').addClass('row pt-2').append(
-                  $('<div>').addClass('col').append(
-                    $('<h6>').text('Conexão com ' + router.mac),
-                    $('<h6>').text('Bytes recebidos: ' + router.rx_bytes),
-                    $('<h6>').text('Bytes enviados: ' + router.tx_bytes),
-                  ),
-                  $('<div>').addClass('col').append(
-                    $('<h6>').text('Sinal: ' + router.signal +' dBm'),
-                    $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' bps'),
-                    $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' bps'),
-                    $('<h6>').text('Latência: ' + router.latency +' ms'),
-                  ),
-                ),
-              );
-            });
-            lanRoutersRow.append(lanRouterCard);
-            countAddedRouters += 1;
-            // Line break every 2 columns
-            if (countAddedRouters % 2 == 0) {
-              lanRoutersRow.append($('<div>').addClass('w-100'));
-            }
-          }
-
-          // Exhibit devices if all routers have already answered
+          // Exhibit devices and routers if all routers have already answered
           if (syncedRouters == totalRouters) {
             $('#lan-devices-placeholder').hide();
             let lanDevsRow = $('#lan-devices-body');
             let countAddedDevs = 0;
+            let lanRoutersRow = $('#lan-routers-body');
+            let countAddedRouters = 0;
 
             $.each(lanDevices, function(idx, device) {
               // Skip if offline for too long
@@ -382,8 +347,51 @@ $(document).ready(function() {
                 lanDevsRow.append($('<div></div>').addClass('w-100'));
               }
             });
+
+            // Exhibit mesh routers if a mesh network exists
+            // eslint-disable-next-line guard-for-in
+            for (let routerMacKey in lanRouters) {
+              let lanRouterCard = $('<div>')
+              .addClass('col-lg m-1 pb-2 grey lighten-4').append(
+                $('<div>').addClass('row pt-2').append(
+                  $('<div>').addClass('col text-right').append(
+                    $('<div>').addClass('badge primary-color')
+                              .html('Conexões de ' + routerMacKey),
+                  ),
+                ),
+              );
+              $.each(lanRouters[routerMacKey], function(idx, router) {
+                lanRouterCard.append(
+                  $('<div>').addClass('row m-0 mt-2').append(
+                    $('<div>').addClass('col p-0').append(
+                      $('<div>').addClass('badge primary-color-dark z-depth-0')
+                                .html('Conexão com ' + router.mac),
+                    ),
+                  ),
+                  $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
+                    $('<div>').addClass('col').append(
+                      $('<h6>').text('Bytes recebidos: ' + router.rx_bytes),
+                      $('<h6>').text('Bytes enviados: ' + router.tx_bytes),
+                      $('<h6>').text('Sinal: ' + router.signal +' dBm'),
+                    ),
+                    $('<div>').addClass('col').append(
+                      $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' bps'),
+                      $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' bps'),
+                      $('<h6>').text('Latência: ' + router.latency +' ms'),
+                    ),
+                  ),
+                );
+              });
+              lanRoutersRow.append(lanRouterCard);
+              countAddedRouters += 1;
+              // Line break every 2 columns
+              if (countAddedRouters % 2 == 0) {
+                lanRoutersRow.append($('<div>').addClass('w-100'));
+              }
+            }
+
             // Placeholder if empty
-            if ( lanDevsRow.is(':empty') ) {
+            if ( lanDevsRow.is(':empty') && lanRoutersRow.is(':empty') ) {
               $('#lan-devices-placeholder-none').show();
             }
           } else {
