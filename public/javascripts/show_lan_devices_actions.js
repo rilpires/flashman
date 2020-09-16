@@ -405,14 +405,16 @@ $(document).ready(function() {
           ),
           $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
             $('<div>').addClass('col').append(
+              $('<h6>').text('Tempo conectado: ' + secondsTimeSpanToHMS(router.conn_time)),
               $('<h6>').text('Bytes recebidos: ' + router.rx_bytes),
               $('<h6>').text('Bytes enviados: ' + router.tx_bytes),
               $('<h6>').text('Sinal: ' + router.signal +' dBm'),
             ),
             $('<div>').addClass('col').append(
-              $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' bps'),
-              $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' bps'),
-              $('<h6>').text('Latência: ' + router.latency +' ms'),
+              $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' Mbps'),
+              $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' Mbps'),
+              $('<h6>').text('Latência: ' +
+                (router.latency > 0 ? router.latency + ' ms' : 'N/D')),
             ),
           ),
         );

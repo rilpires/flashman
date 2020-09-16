@@ -160,14 +160,6 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
   }
 };
 
-let secondsTimeSpanToHMS = function(s) {
-  let h = Math.floor(s / 3600); // Get whole hours
-  s -= h * 3600;
-  let m = Math.floor(s / 60); // Get remaining minutes
-  s -= m * 60;
-  return h + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
-};
-
 $(document).ready(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
