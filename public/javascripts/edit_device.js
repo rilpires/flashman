@@ -306,7 +306,7 @@ $(document).ready(function() {
     let row = target.parents('tr');
     let id = row.data('deviceid');
     let slaveCount = parseInt(row.data('slave-count'));
-    if (slaveCount > 0 ){
+    if (slaveCount > 0 ) {
       $('#reboot-master-label').html(id);
       $('#reboot-options').html('');
       let slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));

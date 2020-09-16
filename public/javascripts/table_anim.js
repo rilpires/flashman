@@ -1308,7 +1308,7 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Modo de Operação</label>'+
                       '<select class="browser-default md-select" type="text" id="edit_opmode-'+index+'" '+
-                      'maxlength="15" $REPLACE_OPMODE_EN>'+
+                      'maxlength="15" $REPLACE_OPMODE_EN $REPLACE_MESH_OPMODE_EN>'+
                         '<option value="Modo Roteador" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
                         '<option value="Modo Bridge" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
                       '</select>'+
@@ -1383,6 +1383,12 @@ $(document).ready(function() {
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, '');
             meshForm = meshForm.replace(/\$REPLACE_OPMODE_EN/g, '');
+          }
+          // Disable mode if there are routers in mesh connected
+          if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, 'disabled');
+          } else {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
