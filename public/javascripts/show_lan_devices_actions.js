@@ -538,6 +538,7 @@ $(document).ready(function() {
       if (id == macaddr || slaves.includes(macaddr)) {
         let totalSynced = $('#lan-devices').data('routers-synced');
         $('#lan-devices').data('routers-synced', totalSynced + 1);
+        clearTimeout(lanDevicesGlobalTimer);
         fetchLanDevices(macaddr, upnpSupport, isBridge, hasSlaves);
       }
     }
