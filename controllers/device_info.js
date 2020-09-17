@@ -1003,9 +1003,20 @@ deviceInfoController.receiveDevices = function(req, res) {
         id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
+    if (!('Devices' in req.body)) {
+      console.log('Devices Receiving for device ' +
+        id + ' failed: Invalid JSON.');
+      return res.status(400).json({processed: 0});
+    }
+
     const validator = new Validator();
     let devsData = req.body.Devices;
     let outData = [];
+    let routersData = undefined;
+
+    if ('mesh_routers' in req.body) {
+      routersData = req.body.mesh_routers;
+    }
 
     for (let connDeviceMac in devsData) {
       if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
@@ -1108,6 +1119,60 @@ deviceInfoController.receiveDevices = function(req, res) {
                              upConnDev.dhcpv6.length > 0 ? true : false);
         outDev.mac = upConnDevMac;
         outData.push(outDev);
+      }
+    }
+
+    if (routersData) {
+      // Erasing existing data of previous mesh routers
+      matchedDevice.mesh_routers = [];
+
+      for (let connRouter in routersData) {
+        if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
+          let upConnRouterMac = connRouter.toLowerCase();
+          let upConnRouter = routersData[upConnRouterMac];
+          // Skip if not lowercase
+          if (!upConnRouter) continue;
+
+          if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
+            upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
+            upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
+          }
+          if (upConnRouter.signal) {
+            upConnRouter.signal = parseFloat(upConnRouter.signal);
+          }
+          if (upConnRouter.rx_bytes && upConnRouter.tx_bytes) {
+            upConnRouter.rx_bytes = parseInt(upConnRouter.rx_bytes);
+            upConnRouter.tx_bytes = parseInt(upConnRouter.tx_bytes);
+          }
+          if (upConnRouter.conn_time) {
+            upConnRouter.conn_time = parseInt(upConnRouter.conn_time);
+          }
+          if (upConnRouter.latency) {
+            upConnRouter.latency = parseInt(upConnRouter.latency);
+          } else {
+            upConnRouter.latency = 0;
+          }
+          if (upConnRouter.iface) {
+            let ifaceMode = 1;
+            if (upConnRouter.iface === 'mesh0') ifaceMode = 2;
+            if (upConnRouter.iface === 'mesh1') ifaceMode = 3;
+            upConnRouter.iface = ifaceMode;
+          } else {
+            upConnRouter.iface = 1;
+          }
+          matchedDevice.mesh_routers.push({
+            mac: upConnRouterMac,
+            last_seen: Date.now(),
+            conn_time: upConnRouter.conn_time,
+            rx_bytes: upConnRouter.rx_bytes,
+            tx_bytes: upConnRouter.tx_bytes,
+            signal: upConnRouter.signal,
+            rx_bit: upConnRouter.rx_bit,
+            tx_bit: upConnRouter.tx_bit,
+            latency: upConnRouter.latency,
+            iface: upConnRouter.iface,
+          });
+        }
       }
     }
 

@@ -1840,12 +1840,15 @@ deviceListController.getLanDevices = function(req, res) {
     .map((lanDevice) => {
       lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
+      // Ease up gateway reference when in Mesh mode
+      lanDevice.gateway_mac = matchedDevice._id;
       return lanDevice;
     });
 
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
+      mesh_routers: matchedDevice.mesh_routers,
     });
   });
 };
