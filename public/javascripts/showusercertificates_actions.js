@@ -34,7 +34,7 @@ const fetchUsers = function(usersTable, hasTrash) {
             ),
             $('<td>').html(cert.mac),
             $('<td>').html(
-              new Date(cert.localEpochTimestamp).toLocaleString()
+              new Date(cert.localEpochTimestamp).toLocaleString('en-US')
             ),
             $('<td>').html(userObj.name),
             $('<td class="btn-detail">').append(
