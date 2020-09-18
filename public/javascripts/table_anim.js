@@ -188,6 +188,7 @@ $(document).ready(function() {
   let grantOpmodeEdit = false;
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
+  let grantWanType = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -213,6 +214,7 @@ $(document).ready(function() {
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
+    grantWanType = role.grantWanType;
   }
 
   // Default column to sort rows
@@ -1215,6 +1217,9 @@ $(document).ready(function() {
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
+          } else if (!isSuperuser && !grantWanType) {
+            wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
           } else {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', '');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
