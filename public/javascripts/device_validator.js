@@ -52,6 +52,13 @@
       };
     };
 
+    Validator.prototype.validatePower = function(power) {
+      return {
+        valid: ['25', '50', '75', '100', 25, 50, 75, 100].includes(power),
+        err: ['Somente são aceitos os valores 25%, 50%, 75% e 100%'],
+      };
+    };
+
     Validator.prototype.validateUser = function(user) {
       const messages = [
         'Este campo é obrigatório',

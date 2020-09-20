@@ -946,6 +946,7 @@ $(document).ready(function() {
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
+          let grantWifiPower = device.permissions.grantWifiPower;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
@@ -1002,6 +1003,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
           formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-power="'+(grantWifiPower && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
@@ -1470,6 +1472,13 @@ $(document).ready(function() {
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
+                  'Ativar Wi-Fi 2.4GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1496,12 +1505,19 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
-                  'Ativar Wi-Fi 2.4GHz'+
-                  '</label>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">Potência do sinal</label>'+
+                      '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
+                      '$REPLACE_WIFI_POWER_EN>'+
+                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -1521,6 +1537,11 @@ $(document).ready(function() {
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
+          if (!grantWifiPower || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', '');
+          }
           if (isSuperuser || grantPassShow) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', passwordToggle);
           } else {
@@ -1538,6 +1559,10 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
 
           let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
@@ -1584,6 +1609,13 @@ $(document).ready(function() {
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
+                  'Ativar Wi-Fi 5.0GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1611,12 +1643,19 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
-                  'Ativar Wi-Fi 5.0GHz'+
-                  '</label>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">Potência do sinal</label>'+
+                      '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
+                      '$REPLACE_WIFI_POWER_EN>'+
+                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -1635,6 +1674,11 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
+          }
+          if (!grantWifiPower || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -1655,6 +1699,10 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+
+          selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power_5ghz;
+          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
+          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
 
           let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
           wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);

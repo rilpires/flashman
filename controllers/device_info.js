@@ -54,12 +54,14 @@ const createRegistry = function(req, res) {
   let channel = util.returnObjOrEmptyStr(req.body.wifi_channel).trim();
   let band = util.returnObjOrEmptyStr(req.body.wifi_band).trim();
   let mode = util.returnObjOrEmptyStr(req.body.wifi_mode).trim();
+  let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
   let wifiState = parseInt(util.returnObjOrNum(req.body.wifi_state, 1));
   let ssid5ghz = util.returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = util.returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = util.returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
   let band5ghz = util.returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
   let mode5ghz = util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+  let power5ghz = parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
   let wifiState5ghz = parseInt(util.returnObjOrNum(req.body.wifi_state_5ghz, 1));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
@@ -113,6 +115,10 @@ const createRegistry = function(req, res) {
       genericValidate(mode, validator.validateMode,
                       'mode', null, errors);
     }
+    if (permissions.grantWifiPower) {
+      genericValidate(power, validator.validatePower,
+                      'power', null, errors);
+    }
     if (permissions.grantWifi5ghz) {
       genericValidate(ssid5ghz, validator.validateSSID,
                       'ssid5ghz', null, errors);
@@ -129,6 +135,10 @@ const createRegistry = function(req, res) {
       }
       genericValidate(mode5ghz, validator.validateMode,
                       'mode5ghz', null, errors);
+      if (permissions.grantWifiPower) {
+        genericValidate(power5ghz, validator.validatePower,
+                        'power5ghz', null, errors);
+      }
     }
 
     if (bridgeEnabled > 0) {
@@ -163,6 +173,7 @@ const createRegistry = function(req, res) {
         'wifi_channel': channel,
         'wifi_band': band,
         'wifi_mode': mode,
+        'wifi_power': power,
         'wifi_state': wifiState,
         'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
@@ -170,6 +181,7 @@ const createRegistry = function(req, res) {
         'wifi_channel_5ghz': channel5ghz,
         'wifi_band_5ghz': band5ghz,
         'wifi_mode_5ghz': mode5ghz,
+        'wifi_power_5ghz': power5ghz,
         'wifi_state_5ghz': wifiState5ghz,
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
@@ -475,6 +487,32 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                 deviceSetQuery.wifi_mode_5ghz = mode5ghz;
                 // Used in device response
                 matchedDevice.wifi_mode_5ghz = mode5ghz;
+              }
+            }
+          }
+          if ( permissionsSentVersion.grantWifiPower &&
+              !permissionsCurrVersion.grantWifiPower) {
+            let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
+            genericValidate(power, validator.validatePower,
+                            'power', null, errors);
+            if (errors.length < 1) {
+              if (matchedDevice.wifi_power !== power) {
+                deviceSetQuery.wifi_power = power;
+                matchedDevice.wifi_power = power; // Used in device response
+              }
+            }
+
+            if ( permissionsSentVersion.grantWifi5ghz &&
+                !permissionsCurrVersion.grantWifi5ghz) {
+              let power5ghz =
+                parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
+              genericValidate(power5ghz, validator.validatePower,
+                              'power5ghz', null, errors);
+              if (errors.length < 1) {
+                if (matchedDevice.wifi_power_5ghz !== power5ghz) {
+                  deviceSetQuery.wifi_power_5ghz = power5ghz;
+                  matchedDevice.wifi_power_5ghz = power5ghz; // Device response
+                }
               }
             }
           }

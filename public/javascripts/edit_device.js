@@ -39,6 +39,7 @@ let validateEditDevice = function(event) {
   let validateWifi = row.data('validateWifi');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
+  let validateWifiPower = row.data('validate-wifi-power');
   let validatePppoe = row.data('validatePppoe');
   let validateLan = row.data('validate-lan');
   let pppoe = $('#edit_connect_type-' + index.toString()).val() === 'PPPoE';
@@ -52,12 +53,14 @@ let validateEditDevice = function(event) {
   let channel = $('#edit_wifi_channel-' + index.toString()).val();
   let band = $('#edit_wifi_band-' + index.toString()).val();
   let mode = $('#edit_wifi_mode-' + index.toString()).val();
+  let power = $('#edit_wifi_power-' + index.toString()).val();
   let wifiState = ($('#edit_wifi_state-' + index.toString()).is(':checked') ? 1 : 0);
   let ssid5ghz = $('#edit_wifi5_ssid-' + index.toString()).val();
   let password5ghz = $('#edit_wifi5_pass-' + index.toString()).val();
   let channel5ghz = $('#edit_wifi5_channel-' + index.toString()).val();
   let band5ghz = $('#edit_wifi5_band-' + index.toString()).val();
   let mode5ghz = $('#edit_wifi5_mode-' + index.toString()).val();
+  let power5ghz = $('#edit_wifi5_power-' + index.toString()).val();
   let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
@@ -67,9 +70,9 @@ let validateEditDevice = function(event) {
   let bridgeEnabled = validateBridge;
   let useBridgeFixIP = $('input[name="edit_opmode_fixip_en-'+
                       index.toString()+'"]:checked').length > 0;
-  bridgeFixIP = (useBridgeFixIP) ? $('#edit_opmode_fixip-' + index.toString()).val() : '';
-  bridgeFixGateway = (useBridgeFixIP) ? $('#edit_opmode_fixip_gateway-' + index.toString()).val() : '';
-  bridgeFixDNS = (useBridgeFixIP) ? $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
+  let bridgeFixIP = (useBridgeFixIP) ? $('#edit_opmode_fixip-' + index.toString()).val() : '';
+  let bridgeFixGateway = (useBridgeFixIP) ? $('#edit_opmode_fixip_gateway-' + index.toString()).val() : '';
+  let bridgeFixDNS = (useBridgeFixIP) ? $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
   let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
                               index.toString()+'"]:checked').length > 0;
   let meshMode = $('#edit_meshMode-' + index.toString()).val();
@@ -92,11 +95,13 @@ let validateEditDevice = function(event) {
     channel: {field: '#edit_wifi_channel-' + index.toString()},
     band: {field: '#edit_wifi_band-' + index.toString()},
     mode: {field: '#edit_wifi_mode-' + index.toString()},
+    power: {field: '#edit_wifi_power-' + index.toString()},
     ssid5ghz: {field: '#edit_wifi5_ssid-' + index.toString()},
     password5ghz: {field: '#edit_wifi5_pass-' + index.toString()},
     channel5ghz: {field: '#edit_wifi5_channel-' + index.toString()},
     band5ghz: {field: '#edit_wifi5_band-' + index.toString()},
     mode5ghz: {field: '#edit_wifi5_mode-' + index.toString()},
+    power5ghz: {field: '#edit_wifi5_power-' + index.toString()},
     lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
     lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
     bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
@@ -131,6 +136,9 @@ let validateEditDevice = function(event) {
     genericValidate(band, validator.validateBand, errors.band);
     genericValidate(mode, validator.validateMode, errors.mode);
   }
+  if (validateWifiPower) {
+    genericValidate(power, validator.validatePower, errors.power);
+  }
   if (validateWifi5ghz) {
     genericValidate(ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
@@ -142,6 +150,9 @@ let validateEditDevice = function(event) {
                     validator.validateBand, errors.band5ghz);
     genericValidate(mode5ghz,
                     validator.validateMode, errors.mode5ghz);
+    if (validateWifiPower) {
+      genericValidate(power5ghz, validator.validatePower, errors.power5ghz);
+    }
   }
   if (validateLan) {
     genericValidate(lanSubnet,
@@ -185,12 +196,18 @@ let validateEditDevice = function(event) {
       data.content.wifi_band = band;
       data.content.wifi_mode = mode;
     }
+    if (validateWifiPower) {
+      data.content.wifi_power = power;
+    }
     if (validateWifi5ghz) {
       data.content.wifi_ssid_5ghz = ssid5ghz;
       data.content.wifi_password_5ghz = password5ghz;
       data.content.wifi_channel_5ghz = channel5ghz;
       data.content.wifi_band_5ghz = band5ghz;
       data.content.wifi_mode_5ghz = mode5ghz;
+      if (validateWifiPower) {
+        data.content.wifi_power_5ghz = power5ghz;
+      }
     }
     if (validateLan) {
       data.content.lan_subnet = lanSubnet;
@@ -228,11 +245,13 @@ let validateEditDevice = function(event) {
             channel: errors.channel,
             band: errors.band,
             mode: errors.mode,
+            power: errors.power,
             ssid5ghz: errors.ssid5ghz,
             password5ghz: errors.password5ghz,
             channel5ghz: errors.channel5ghz,
             band5ghz: errors.band5ghz,
             mode5ghz: errors.mode5ghz,
+            power5ghz: errors.power5ghz,
           };
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];

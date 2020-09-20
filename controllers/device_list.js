@@ -633,12 +633,17 @@ deviceListController.searchDeviceReg = async function(req, res) {
       device.permissions = DeviceVersion.findByVersion(
         device.version,
         device.wifi_is_5ghz_capable,
-        device.model
+        device.model,
       );
       // Fill default value if wi-fi state does not exist
       if (device.wifi_state === undefined) {
         device.wifi_state = 1;
         device.wifi_state_5ghz = 1;
+      }
+      // Fill default value if wi-fi power does not exist
+      if (device.wifi_power === undefined) {
+        device.wifi_power = 100;
+        device.wifi_power_5ghz = 100;
       }
       return device;
     };
@@ -1076,12 +1081,14 @@ deviceListController.setDeviceReg = function(req, res) {
       let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
       let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
       let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+      let power = parseInt(util.returnObjOrNum(content.wifi_power, 100));
       let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
       let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
       let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
       let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
       let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
@@ -1149,6 +1156,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_mode')) {
           genericValidate(mode, validator.validateMode, 'mode');
         }
+        if (content.hasOwnProperty('wifi_power')) {
+          genericValidate(power, validator.validatePower, 'power');
+        }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
           genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
         }
@@ -1165,6 +1175,9 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('wifi_mode_5ghz')) {
           genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
+        }
+        if (content.hasOwnProperty('wifi_power_5ghz')) {
+          genericValidate(power5ghz, validator.validatePower, 'power5ghz');
         }
         if (content.hasOwnProperty('lan_subnet')) {
           genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
@@ -1254,6 +1267,12 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.wifi_state = wifiState;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('wifi_power') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                power !== '') {
+              matchedDevice.wifi_power = power;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid5ghz !== '') {
@@ -1287,6 +1306,12 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wifi_state_5ghz') &&
                (superuserGrant || role.grantWifiInfo > 1)) {
               matchedDevice.wifi_state_5ghz = wifiState5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_power_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                power5ghz !== '') {
+              matchedDevice.wifi_power_5ghz = power5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_subnet') &&
