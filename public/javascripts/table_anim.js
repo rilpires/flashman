@@ -1479,6 +1479,13 @@ $(document).ready(function() {
                   'Ativar Wi-Fi 2.4GHz'+
                   '</label>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
+                  '></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
+                  'Ocultar SSID 2.4GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1614,6 +1621,13 @@ $(document).ready(function() {
                   '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
                   '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
                   'Ativar Wi-Fi 5.0GHz'+
+                  '</label>'+
+                '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
+                  '></input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
+                  'Ocultar SSID 5.0GHz'+
                   '</label>'+
                 '</div>'+
               '</div>'+
