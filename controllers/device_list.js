@@ -868,7 +868,8 @@ deviceListController.sendMqttMsg = function(req, res) {
           return deviceListController.doSpeedTest(req, res);
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
-            acsDeviceInfo.rebootDevice(device);
+            // acs integration will respond to request
+            return acsDeviceInfo.rebootDevice(device, res);
           } else {
             mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
           }

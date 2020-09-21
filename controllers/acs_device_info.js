@@ -1,4 +1,5 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/genie');
 const DeviceModel = require('../models/device');
 const sio = require('../sio');
 
@@ -313,26 +314,32 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   return res.status(200).json({success: true});
 };
 
-acsDeviceInfoController.rebootDevice = function(device) {
-  // TODO: Use tasks framework instead of requesting manually
+acsDeviceInfoController.rebootDevice = function(device, res) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {name: 'reboot'};
-  let req = http.request(options);
-  req.write(JSON.stringify(body));
-  req.end();
+  let task = {name: 'reboot'};
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'reboot') return;
+    if (result.finished) res.status(200).json({success: true});
+    else {
+      res.status(200).json({
+        success: false,
+        message: 'Dispositivos não respondeu à requisição',
+      });
+    }
+  });
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchLogFromGenie = function(mac, acsID) {
+const fetchLogFromGenie = function(success, mac, acsID) {
+  if (!success) {
+    // Return with log unavailable
+    let data = 'Log não disponível!';
+    let compressedLog = pako.gzip(data);
+    sio.anlixSendLiveLogNotifications(mac, compressedLog);
+    return;
+  }
   let splitID = acsID.split('-');
   let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
   let query = {_id: acsID};
@@ -514,35 +521,20 @@ const fetchDevicesFromGenie = function(mac, acsID) {
 };
 
 acsDeviceInfoController.requestLogs = function(device) {
-  // TODO: Use tasks framework instead of requesting manually
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchLogFromGenie(mac, acsID);
-    });
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    fetchLogFromGenie(result.finished, mac, acsID);
   });
-  req.write(JSON.stringify(body));
-  req.end();
 };
 
 acsDeviceInfoController.requestWanBytes = function(device) {
@@ -554,28 +546,14 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [recvField, sentField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchWanBytesFromGenie(mac, acsID);
-    });
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchWanBytesFromGenie(mac, acsID);
   });
-  req.write(JSON.stringify(body));
-  req.end();
 };
 
 acsDeviceInfoController.requestConnectedDevices = function(device) {
@@ -587,28 +565,14 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [hostsField, assocField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchDevicesFromGenie(mac, acsID);
-    });
+  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchDevicesFromGenie(mac, acsID);
   });
-  req.write(JSON.stringify(body));
-  req.end();
 };
 
 module.exports = acsDeviceInfoController;
