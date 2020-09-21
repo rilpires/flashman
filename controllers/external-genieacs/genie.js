@@ -78,8 +78,12 @@ const deleteTask = function(taskid) {
 /* a map structure that holds task attribute names where the keys are the task
  names and the values are the task parameters respected to the task name. */
 let taskParameterIdFromType = {
-  getParameterValues: 'parameterNames', setParameterValues: 'parameterValues',
-  refreshObject: 'objectName', addObject: 'objectName', download: 'file',
+  getParameterValues: 'parameterNames',
+  setParameterValues: 'parameterValues',
+  refreshObject: 'objectName',
+  addObject: 'objectName',
+  download: 'file',
+  reboot: null,
 };
 
 /* return true if task has the correct format or false otherwise. 'task' should
@@ -119,7 +123,7 @@ const checkTask = function(task) {
       // that value has to be a string (tr069 parameter name).
       if (task[parameterId][i].constructor !== String) return false;
     }
-  } else if (task[parameterId].constructor !== String) { // all other task
+  } else if (parameterId && task[parameterId].constructor !== String) {
   // names/types have a string as parameter.
     return false;
   }
@@ -155,13 +159,15 @@ const joinAllTasks = function(tasks) {
     // each task type has its parameters under an attribute with different name.
 
     // if parameters can't be joined and task isn't new.
-    if (tasks[i][parameterId].constructor !== Array
+    if (parameterId && tasks[i][parameterId].constructor !== Array
         && tasks[i]._id !== undefined) continue; // move to next task.
 
     // if we haven't seen this task type before. this is the first of its type.
     if (!types[name]) {
       // save this task's type and all its parameters.
-      types[name] = tasks[i][parameterId];
+      if (parameterId) {
+        types[name] = tasks[i][parameterId];
+      }
       // testing id existence. old tasks already have an id.
       if (tasks[i]._id) {
         // save this task's type and its id, because we may need to delete it
@@ -222,16 +228,18 @@ const joinAllTasks = function(tasks) {
   // for each task type to be created, or recreated.
   for (let name in createNewTaskForType) {
     if (name === name) {
-    let ids = taskIdsForType[name]; // getting ids that have the same type.
-    if (ids && ids.length > 0) {// if there is at least one id.
-tasksToDelete[name] = taskIdsForType[name];
-} // save to list of tasks to delete.
-    let newTask = {name: name}; // create a new task of current type.
-    // add the joined parameters for current task type.
-    newTask[taskParameterIdFromType[name]] = types[name];
-    tasksToAdd.push(newTask); // save to list of tasks to be added.
+      let ids = taskIdsForType[name]; // getting ids that have the same type.
+      if (ids && ids.length > 0) { // if there is at least one id.
+        tasksToDelete[name] = taskIdsForType[name];
+      } // save to list of tasks to delete.
+      let newTask = {name: name}; // create a new task of current type.
+      // add the joined parameters for current task type.
+      if (taskParameterIdFromType[name]) {
+        newTask[taskParameterIdFromType[name]] = types[name];
+      }
+      tasksToAdd.push(newTask); // save to list of tasks to be added.
+    }
   }
-}
   return [tasksToAdd, tasksToDelete];
 };
 
