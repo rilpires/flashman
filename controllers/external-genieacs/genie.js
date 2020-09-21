@@ -527,16 +527,29 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
   // console.log("-- sending tasks.") // for debugging.
   // send the new task and the old tasks being substituted.
   let [errormsg, pendingTasks] = await sendTasks(deviceid, tasks, timeout,
-   shouldRequestConnection);
+   shouldRequestConnection, callback);
   if (errormsg) return [errormsg, null];
 
   // if genie didn't execute the task before the timeout.
   if (pendingTasks.length > 0) {
     // console.log("-- watching pending tasks.") // for debugging.
-    // watch tasks collection for the new task to be deleted.
-    watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes);
-    // not awaiting this function call because it will emit its result using
-    // socket.io (web sockets).
+    // if there are no watch times, simply reply with task failed to execute
+    if (!watchTimes || watchTimes.length === 0) {
+      pendingTasks.forEach((task)=>{
+        if (callback) {
+          callback({finished: false, task: task});
+        } else {
+          sio.anlixSendGenieAcsTaskNotifications(deviceid,
+            {finished: false, taskid: task._id, source:
+             'pending reject', message: 'no watch times defined'});
+        }
+      });
+    } else {
+      // watch tasks collection for the new task to be deleted.
+      watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes, callback);
+      // not awaiting this function call because it will emit its result using
+      // socket.io (web sockets).
+    }
     // returning no error and no true value because result is still being
     // produced.
     return [null, null];
