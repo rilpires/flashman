@@ -1333,13 +1333,18 @@ deviceListController.setDeviceReg = function(req, res) {
             matchedDevice.save(async function(err) {
               if (err) {
                 console.log(err);
+                return res.status(500).json({
+                  success: false,
+                  message: 'Erro ao salvar dados na base',
+                });
+              } else {
+                mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+                meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+
+                matchedDevice.success = true;
+                return res.status(200).json(matchedDevice);
               }
-              mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-              meshHandlers.syncSlaves(matchedDevice, slaveReferences);
-
-              matchedDevice.success = true;
-              return res.status(200).json(matchedDevice);
             });
           });
         } else {
