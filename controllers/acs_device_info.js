@@ -1,5 +1,5 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/genie');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const DeviceModel = require('../models/device');
 const sio = require('../sio');
 
