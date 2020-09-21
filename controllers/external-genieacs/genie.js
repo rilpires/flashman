@@ -282,7 +282,7 @@ const deleteOldTaks = async function(tasksToDelete, deviceid) {
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
 const sendTasks = async function(deviceid, tasks, timeout,
- shouldRequestConnection) {
+ shouldRequestConnection, callback) {
   let promises = []; // array that will hold http request promises.
   for (let i = 0; i < tasks.length; i++) {// for each task.
     promises.push(postTask(deviceid, tasks[i], timeout,
@@ -317,9 +317,13 @@ const sendTasks = async function(deviceid, tasks, timeout,
       } else if (response.statusMessage === 'Device is offline') { // if Genie
       // responded saying device is off-line.
         // user probably already knows when device is off line.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-          {finished: false, taskid: JSON.parse(response.data)._id, source:
-           'request', message: response.statusMessage});
+        if (callback) {
+          callback({finished: false, task: JSON.parse(response.data)});
+        } else {
+          sio.anlixSendGenieAcsTaskNotifications(deviceid,
+            {finished: false, taskid: JSON.parse(response.data)._id, source:
+             'request', message: response.statusMessage});
+        }
         // console.log({deviceid, finished: false, taskid:
         // JSON.parse(response.data)._id, source: 'request',
         //   message: response.statusMessage})
@@ -330,9 +334,13 @@ const sendTasks = async function(deviceid, tasks, timeout,
         pendingTasks.push(JSON.parse(response.data));
       } else { // case where Genie responded with status code 200, this means
       // task has execute before 'timeout'.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-          {finished: true, taskid: JSON.parse(response.data)._id, source:
-          'request', message: 'task executed.'});
+        if (callback) {
+          callback({finished: true, task: JSON.parse(response.data)});
+        } else {
+          sio.anlixSendGenieAcsTaskNotifications(deviceid,
+            {finished: true, taskid: JSON.parse(response.data)._id, source:
+            'request', message: 'task executed.'});
+        }
         // console.log({deviceid, finished: true, taskid:
         // JSON.parse(response.data)._id, source: 'request',
         //   message: 'task executed.'})
@@ -356,7 +364,7 @@ const sendTasks = async function(deviceid, tasks, timeout,
  'watchTimes' has no more values, emits a message saying task was not executed.
  */
 const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
- watchTimes) {
+ watchTimes, callback) {
   let task = pendingTasks.pop(); // removed last task out of the array.
   let watchTime = watchTimes.shift(); // removed first value out of the array.
   // starts a change stream in task collection from GenieACS database.
@@ -405,9 +413,13 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
        joined with itself and will be removed and re added.*/
     } else { // if there no more watch times we won't retry anymore.
       // sending a socket.io message saying it wasn't executed.
-      sio.anlixSendGenieAcsTaskNotifications(deviceid,
-        {finished: false, taskid: task._id, source: 'timer',
-        message: `task never executed for deviceid ${deviceid}`});
+      if (callback) {
+        callback({finished: false, task: task});
+      } else {
+        sio.anlixSendGenieAcsTaskNotifications(deviceid,
+          {finished: false, taskid: task._id, source: 'timer',
+          message: `task never executed for deviceid ${deviceid}`});
+      }
       // console.log({deviceid, finished: false, taskid:
       // JSON.parse(response.data)._id, source: 'timer',
       // message: `task never executed for deviceid ${deviceid}`})
@@ -423,9 +435,13 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
     changeStream.close(); // close this change stream.
     clearTimeout(taskTimer); // clear setTimeout
     // sending a socket.io message saying it was executed.
-    sio.anlixSendGenieAcsTaskNotifications(deviceid,
-      {finished: true, taskid: task._id, source: 'change stream', message:
-      'task executed.'});
+    if (callback) {
+      callback({finished: false, task: task});
+    } else {
+      sio.anlixSendGenieAcsTaskNotifications(deviceid,
+        {finished: true, taskid: task._id, source: 'change stream', message:
+        'task executed.'});
+    }
     // console.log({deviceid, finished: true, taskid: task._id,
     // source: 'change stream',
     //   message: `task executed for deviceid ${deviceid}`})
@@ -458,8 +474,8 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  the cases when genie can't retry a task on its own. After all retries sent to
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
-genie.addTask = async function(deviceid, task, timeout=5000,
- shouldRequestConnection, watchTimes=[600000, 120000]) {
+genie.addTask = async function(deviceid, task, shouldRequestConnection,
+  timeout=5000, watchTimes=[60000, 120000], callback=null) {
   // console.log("-- starting to send task.") // for debugging.
 
   // checking task format and data types.
