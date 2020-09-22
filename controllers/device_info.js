@@ -157,6 +157,8 @@ const createRegistry = function(req, res) {
     }
 
     if (errors.length < 1) {
+      let newMeshId = meshHandlers.genMeshID();
+      let newMeshKey = meshHandlers.genMeshKey();
       let newDeviceModel = new DeviceModel({
         '_id': macAddr,
         'created_at': new Date(),
@@ -198,8 +200,8 @@ const createRegistry = function(req, res) {
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
         'mesh_mode': meshMode,
-        'mesh_id': meshHandlers.genMeshID(),
-        'mesh_key': meshHandlers.genMeshKey(),
+        'mesh_id': newMeshId,
+        'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
       });
       if (connectionType != '') {
@@ -212,7 +214,10 @@ const createRegistry = function(req, res) {
         } else {
           return res.status(200).json({'do_update': false,
                                        'do_newprobe': true,
-                                       'release_id:': installedRelease});
+                                       'release_id:': installedRelease,
+                                       'mesh_mode': meshMode,
+                                       'mesh_id': newMeshId,
+                                       'mesh_key': newMeshKey});
         }
       });
     } else {
