@@ -11,6 +11,11 @@ let configSchema = new mongoose.Schema({
     functions_fqdn: String,
     secret_token: String,
   },
+  tr069: {
+    inform_interval: {type: Number, required: true, default: 10*60*1000},// ms.
+    recovery_threshold: {type: Number, required: true, default: 1},//intervals.
+    offline_threshold: {type: Number, required: true, default: 3}, //intervals.
+  },
   measure_configs: {
     is_active: {type: Boolean, default: false},
     is_license_active: {type: Boolean, default: false},
