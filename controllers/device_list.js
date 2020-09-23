@@ -102,8 +102,8 @@ const getOnlineCount = function(query) {
     // getting tr069 inform parameters.
     let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
       +'parameters in database to build status count.');
-    let onlyFlashbox = {use_tr069: {$ne: true}}; // querying flashbox devices.
-    let onlyTR069 = {use_tr069: true}; // querying tr069 devices.
+    let onlyFlashbox = {use_tr069: {$ne: true}}; // selecting flashbox devices.
+    let onlyTR069 = {use_tr069: true}; // selecting tr069 devices.
     // time when devices are considered in recovery for tr069.
     let tr069ORecoveryTime = new Date(Date.now() -
       tr069Configs.inform_interval*tr069Configs.recovery_threshold);
@@ -114,17 +114,18 @@ const getOnlineCount = function(query) {
     // counting tr069 devices for each status. 
     // when error, we count 0 documents.
     let results = await Promise.allSettled([
-      DeviceModel.countDocuments({$and:
+      DeviceModel.countDocuments({$and: // online devices.
       [{last_contact: {$gt: tr069ORecoveryTime}}, onlyTR069, query]}).exec()
       .catch(err => 0),
-      DeviceModel.countDocuments({$and:
+      DeviceModel.countDocuments({$and: // recovery devices.
       [{last_contact: {$lt: tr069ORecoveryTime, $gte: tr069OfflineTime}},
       onlyTR069, query]}).exec()
       .catch(err => 0),
-      DeviceModel.countDocuments({$and:
+      DeviceModel.countDocuments({$and: // offline devices.
       [{last_contact: {$lt: tr069OfflineTime}}, onlyTR069, query]}).exec()
       .catch(err => 0)
     ]);
+    // adding each count to their respective status.
     status.onlinenum += results[0].value;
     status.recoverynum += results[1].value;
     status.offlinenum += results[2].value;
@@ -502,7 +503,8 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
   queryContents = queryContents.filter((query) => query !== '/e');
 
   for (let idx=0; idx < queryContents.length; idx++) {
-    if (queryContents[idx].toLowerCase() == 'online') {
+    let tag = queryContents[idx].toLowerCase()
+    if (tag == 'online') {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
@@ -511,7 +513,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
         {'_id': {$in: mqttClients}},
       ];
       finalQueryArray.push(field);
-    } else if (queryContents[idx].toLowerCase() == 'instavel') {
+    } else if (tag == 'instavel') {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
@@ -520,7 +522,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
         {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
-    } else if (queryContents[idx].toLowerCase() == 'offline') {
+    } else if (tag == 'offline') {
       let field = {};
       let lastHour = new Date();
       lastHour.setHours(lastHour.getHours() - 1);
@@ -530,7 +532,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
       ];
       finalQueryArray.push(field);
     // Filter as offline if more than X hours
-    } else if (queryContents[idx].toLowerCase().includes('offline >')) {
+    } else if (tag.includes('offline >')) {
       let field = {};
       let hours = new Date();
       const parsedHour = parseInt(queryContents[idx].split('>')[1]);
@@ -541,16 +543,18 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
         {_id: {$nin: mqttClients}},
       ];
       finalQueryArray.push(field);
-    } else if ((queryContents[idx].toLowerCase() == 'upgrade on') ||
-               (queryContents[idx].toLowerCase() == 'update on')) {
+    } else if ((tag == 'upgrade on') || (tag == 'update on')) {
       let field = {};
       field.do_update = {$eq: true};
       finalQueryArray.push(field);
-    } else if ((queryContents[idx].toLowerCase() == 'upgrade off') ||
-               (queryContents[idx].toLowerCase() == 'update off')) {
+    } else if ((tag == 'upgrade off') || (tag == 'update off')) {
       let field = {};
       field.do_update = {$eq: false};
       finalQueryArray.push(field);
+    } else if (tag === 'onu') { // roteadores do tipo ONU.
+      finalQueryArray.push({use_tr069: true});
+    } else if (tag === 'flashbox') { // roteadores com firmwire anlix Flashbox.
+      finalQueryArray.push({use_tr069: {$ne: true}});
     } else {
       let query = {};
       let queryArray = [];
