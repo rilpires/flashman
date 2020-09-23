@@ -104,14 +104,15 @@ const checkTask = function(task) {
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has also to be an array.
       if (task[parameterId][i].constructor !== Array) return false;
-      // that sub array has to have length 2.
-      if (task[parameterId][i].length !== 2) return false;
+      // that sub array has to have length 3.
+      if (task[parameterId][i].length !== 3) return false;
       // first position has to be a string (tr069 parameter name).
       if (task[parameterId][i][0].constructor !== String
           // second position can be a string, a number or a boolean.
           || (task[parameterId][i][1].constructor !== String
               && task[parameterId][i][1].constructor !== Number
               && task[parameterId][i][1].constructor !== Boolean)
+          // third position has to be a string (tr069 type).
           ) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
@@ -314,19 +315,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
       if (response.statusMessage === 'No such device') { // if Genie responded
       // saying device doesn't exist.
         errormsg += `Device ${deviceid} doesn't exist.`;
-      } else if (response.statusMessage === 'Device is offline') { // if Genie
-      // responded saying device is off-line.
-        // user probably already knows when device is off line.
-        if (callback) {
-          callback({finished: false, task: JSON.parse(response.data)});
-        } else {
-          sio.anlixSendGenieAcsTaskNotifications(deviceid,
-            {finished: false, taskid: JSON.parse(response.data)._id, source:
-             'request', message: response.statusMessage});
-        }
-        // console.log({deviceid, finished: false, taskid:
-        // JSON.parse(response.data)._id, source: 'request',
-        //   message: response.statusMessage})
       } else if (response.statusCode !== 200) { // if Genie didn't respond with
       // code 200, it scheduled the task for latter.
         // parse task to javascript object and add it to array of pending
@@ -470,6 +458,8 @@ Arguments:
  for scheduled tasks to disappear from GenieACS database, used only if the
  request 'timeout', sent to genie, runs out without an answer confirm the task
  execution.
+'callback' is a callback to override the default behaviour of calling the sio
+ event handler
 Having 2 or more numbers in this array means one or more retries to genie, for
  the cases when genie can't retry a task on its own. After all retries sent to
  genie, if the retried task doesn't disappear from its database, a message
