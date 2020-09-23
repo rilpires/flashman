@@ -36,6 +36,17 @@ const intToWeekDayStr = function(day) {
   return '';
 };
 
+// if allSettled is not defined in Promise, we define it here.
+if (Promise.allSettled === undefined) {
+  Promise.allSettled = function allSettled(promises) {
+    let wrappedPromises = promises.map((p) => Promise.resolve(p)
+        .then(
+            (val) => ({status: 'fulfilled', value: val}),
+            (err) => ({status: 'rejected', reason: err})));
+    return Promise.all(wrappedPromises);
+  };
+}
+
 deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
@@ -102,16 +113,22 @@ const getOnlineCount = function(query) {
 
     // counting tr069 devices for each status. 
     // when error, we count 0 documents.
-    status.onlinenum += await DeviceModel.countDocuments({$and:
+    let results = await Promise.allSettled([
+      DeviceModel.countDocuments({$and:
       [{last_contact: {$gt: tr069ORecoveryTime}}, onlyTR069, query]}).exec()
-      .catch(err => 0);
-    status.recoverynum += await DeviceModel.countDocuments({$and:
+      .catch(err => 0),
+      DeviceModel.countDocuments({$and:
       [{last_contact: {$lt: tr069ORecoveryTime, $gte: tr069OfflineTime}},
       onlyTR069, query]}).exec()
-      .catch(err => 0);
-    status.offlinenum += await DeviceModel.countDocuments({$and:
+      .catch(err => 0),
+      DeviceModel.countDocuments({$and:
       [{last_contact: {$lt: tr069OfflineTime}}, onlyTR069, query]}).exec()
-      .catch(err => 0);
+      .catch(err => 0)
+    ]);
+    status.onlinenum += results[0].value;
+    status.recoverynum += results[1].value;
+    status.offlinenum += results[2].value;
+
 
     const mqttClients = Object.values(mqtt.unifiedClientsMap)
     .reduce((acc, curr) => {
