@@ -1200,8 +1200,11 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
+            let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
             if (connectionType != '' && (superuserGrant || role.grantWanType) &&
-                !matchedDevice.bridge_mode_enabled) {
+                !matchedDevice.bridge_mode_enabled &&
+                !matchedDevice.use_tr069) {
+              // Only alter connection type if not in bridge mode and not tr-069
               if (connectionType === 'pppoe') {
                 if (pppoeUser !== '' && pppoePassword !== '') {
                   matchedDevice.connection_type = connectionType;
@@ -1217,94 +1220,142 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('pppoe_user') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
                 pppoeUser !== '' && !matchedDevice.bridge_mode_enabled) {
+              if (matchedDevice.pppoe_user !== pppoeUser) {
+                changes.wan.pppoe_user = pppoeUser;
+              }
               matchedDevice.pppoe_user = pppoeUser;
               updateParameters = true;
             }
             if (content.hasOwnProperty('pppoe_password') &&
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
                 pppoePassword !== '' && !matchedDevice.bridge_mode_enabled) {
+              if (matchedDevice.pppoe_password !== pppoePassword) {
+                changes.wan.pppoe_pass = pppoePassword;
+              }
               matchedDevice.pppoe_password = pppoePassword;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid !== '') {
+              if (matchedDevice.wifi_ssid !== ssid) {
+                changes.wifi2.ssid = ssid;
+              }
               matchedDevice.wifi_ssid = ssid;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_password') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 password !== '') {
+              if (matchedDevice.wifi_password !== password) {
+                changes.wifi2.password = password;
+              }
               matchedDevice.wifi_password = password;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_channel') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 channel !== '') {
+              if (matchedDevice.wifi_channel !== channel) {
+                changes.wifi2.channel = channel;
+              }
               matchedDevice.wifi_channel = channel;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_band') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 band !== '') {
+              if (matchedDevice.wifi_band !== band) {
+                changes.wifi2.band = band;
+              }
               matchedDevice.wifi_band = band;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_mode') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 mode !== '') {
+              if (matchedDevice.wifi_mode !== mode) {
+                changes.wifi2.mode = mode;
+              }
               matchedDevice.wifi_mode = mode;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_state') &&
                (superuserGrant || role.grantWifiInfo > 1)) {
+              if (matchedDevice.wifi_state !== wifiState) {
+                changes.wifi2.enable = wifiState;
+              }
               matchedDevice.wifi_state = wifiState;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid5ghz !== '') {
+              if (matchedDevice.wifi_ssid_5ghz !== ssid5ghz) {
+                changes.wifi5.ssid = ssid5ghz;
+              }
               matchedDevice.wifi_ssid_5ghz = ssid5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_password_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 password5ghz !== '') {
+              if (matchedDevice.wifi_password_5ghz !== password5ghz) {
+                changes.wifi5.password = password5ghz;
+              }
               matchedDevice.wifi_password_5ghz = password5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_channel_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 channel5ghz !== '') {
+              if (matchedDevice.wifi_channel_5ghz !== channel5ghz) {
+                changes.wifi5.channel = channel5ghz;
+              }
               matchedDevice.wifi_channel_5ghz = channel5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 band5ghz !== '') {
+              if (matchedDevice.wifi_band_5ghz !== band5ghz) {
+                changes.wifi5.band = band5ghz;
+              }
               matchedDevice.wifi_band_5ghz = band5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 mode5ghz !== '') {
+              if (matchedDevice.wifi_mode_5ghz !== mode5ghz) {
+                changes.wifi5.mode = mode5ghz;
+              }
               matchedDevice.wifi_mode_5ghz = mode5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_state_5ghz') &&
                (superuserGrant || role.grantWifiInfo > 1)) {
+              if (matchedDevice.wifi_state_5ghz !== wifiState5ghz) {
+                changes.wifi5.enable = wifiState5ghz;
+              }
               matchedDevice.wifi_state_5ghz = wifiState5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_subnet') &&
                 (superuserGrant || role.grantLanEdit) &&
                 lanSubnet !== '' && !matchedDevice.bridge_mode_enabled) {
+              if (matchedDevice.lan_subnet !== lanSubnet) {
+                changes.lan.router_ip = lanSubnet;
+              }
               matchedDevice.lan_subnet = lanSubnet;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_netmask') &&
                 (superuserGrant || role.grantLanEdit) &&
                 lanNetmask !== '' && !matchedDevice.bridge_mode_enabled) {
+              if (matchedDevice.lan_netmask !== parseInt(lanNetmask)) {
+                changes.lan.subnet_mask = parseInt(lanNetmask);
+              }
               matchedDevice.lan_netmask = lanNetmask;
               updateParameters = true;
             }
@@ -1316,7 +1367,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 content.external_reference.data;
             }
             if (content.hasOwnProperty('bridgeEnabled') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
+                (superuserGrant || role.grantOpmodeEdit) &&
+                !matchedDevice.use_tr069) {
               matchedDevice.bridge_mode_enabled = bridgeEnabled;
               updateParameters = true;
             }
@@ -1341,7 +1393,8 @@ deviceListController.setDeviceReg = function(req, res) {
               updateParameters = true;
             }
             if (content.hasOwnProperty('mesh_mode') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
+                (superuserGrant || role.grantOpmodeEdit) &&
+                !matchedDevice.use_tr069) {
               matchedDevice.mesh_mode = meshMode;
               updateParameters = true;
             }
@@ -1352,9 +1405,14 @@ deviceListController.setDeviceReg = function(req, res) {
               if (err) {
                 console.log(err);
               }
-              mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-              meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+              if (!matchedDevice.use_tr069) {
+                // flashbox device, call mqtt
+                mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+                meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+              } else {
+                // tr-069 device, call acs
+                acsDeviceInfo.updateInfo(matchedDevice, changes);
+              }
 
               matchedDevice.success = true;
               return res.status(200).json(matchedDevice);

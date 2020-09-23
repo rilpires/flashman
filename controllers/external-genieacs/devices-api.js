@@ -7,6 +7,86 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 const API_URL = 'http://localhost:8000/acs/';
 const request = require('request');
 
+const getFieldType = function(masterKey, key) {
+  switch (masterKey+'-'+key) {
+    case 'wifi2-channel':
+    case 'wifi5-channel':
+      return 'xsd:unsignedInt';
+    case 'wifi2-enable':
+    case 'wifi5-enable':
+      return 'xsd:boolean';
+    default:
+      return 'xsd:string';
+  }
+};
+
+const convertSubnetIntToMask = function(mask) {
+  if (mask === 24) {
+    return '255.255.255.0';
+  } else if (mask === 25) {
+    return '255.255.255.128';
+  } else if (mask === 26) {
+    return '255.255.255.192';
+  }
+  return '';
+};
+
+const convertWifiMode = function(mode, oui, model) {
+  let ouiModelStr = oui + '-' + model;
+  switch (mode) {
+    case '11g':
+      return 'g';
+    case '11n':
+    case '11na':
+      if (ouiModelStr === '0C8063-IGD') return 'n';
+      else return '11bgn';
+    case '11ac':
+      if (ouiModelStr === '0C8063-IGD') return 'ac';
+      else return '11ac';
+    default:
+      return '';
+  }
+};
+
+const convertWifiBand = function(band) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    default:
+      return '';
+  }
+};
+
+const convertField = function(masterKey, key, oui, model, value) {
+  let result = {value: null, type: getFieldType(masterKey, key)};
+  switch (masterKey+'-'+key) {
+    case 'lan-subnet_mask':
+      result.value = convertSubnetIntToMask(value); // convert to ip subnet
+      break;
+    case 'wifi2-enable':
+    case 'wifi5-enable':
+      result.value = (value > 0) ? true : false; // convert to boolean
+      break;
+    case 'wifi2-mode':
+    case 'wifi5-mode':
+      result.value = convertWifiMode(value, oui, model); // convert to TR-069
+      break;
+    case 'wifi2-band':
+    case 'wifi5-band':
+      result.value = convertWifiBand(value); // convert to TR-069 format
+      break;
+    default:
+      result.value = value; // no transformation necessary
+  }
+  return result;
+};
+
 const getDefaultFields = function() {
   return {
     common: {
@@ -161,6 +241,7 @@ const syncDeviceData = function(args, callback) {
   });
 };
 
+exports.convertField = convertField;
 exports.getModelFields = getModelFields;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
