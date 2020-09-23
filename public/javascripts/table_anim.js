@@ -946,7 +946,8 @@ $(document).ready(function() {
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
-          let grantWifiPower = device.permissions.grantWifiPower;
+          let grantWifiPowerHiddenIpv6Box =
+            device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
@@ -1003,7 +1004,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
           formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-power="'+(grantWifiPower && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-power="'+(grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
@@ -1481,7 +1482,7 @@ $(document).ready(function() {
                 '</div>'+
                 '<div class="custom-control custom-checkbox">'+
                   '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
-                  '></input>'+
+                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
                   '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
                   'Ocultar SSID 2.4GHz'+
                   '</label>'+
@@ -1544,7 +1545,14 @@ $(document).ready(function() {
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
-          if (!grantWifiPower || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
+          }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', '');
@@ -1573,6 +1581,9 @@ $(document).ready(function() {
 
           let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
+
+          let currWifiHidden = (parseInt(device.wifi_hidden) == 1 ? 'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
             '<div class="row">'+
@@ -1625,7 +1636,7 @@ $(document).ready(function() {
                 '</div>'+
                 '<div class="custom-control custom-checkbox">'+
                   '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
-                  '></input>'+
+                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
                   '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
                   'Ocultar SSID 5.0GHz'+
                   '</label>'+
@@ -1689,7 +1700,14 @@ $(document).ready(function() {
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
-          if (!grantWifiPower || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
+          }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', '');
@@ -1720,6 +1738,9 @@ $(document).ready(function() {
 
           let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
           wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
+
+          let currWifiHidden5ghz = (parseInt(device.wifi_hidden_5ghz) == 1 ? 'checked' : '');
+          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+

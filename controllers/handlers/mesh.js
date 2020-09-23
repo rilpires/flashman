@@ -26,6 +26,7 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.wifi_band = master.wifi_band;
   slave.wifi_mode = master.wifi_mode;
   slave.wifi_state = master.wifi_state;
+  slave.wifi_hidden = master.wifi_hidden;
   if (slave.wifi_is_5ghz_capable) {
     slave.wifi_ssid_5ghz = master.wifi_ssid_5ghz;
     slave.wifi_password_5ghz = master.wifi_password_5ghz;
@@ -33,6 +34,7 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
     slave.wifi_band_5ghz = master.wifi_band_5ghz;
     slave.wifi_mode_5ghz = master.wifi_mode_5ghz;
     slave.wifi_state_5ghz = master.wifi_state_5ghz;
+    slave.wifi_hidden_5ghz = master.wifi_hidden_5ghz;
   }
 };
 

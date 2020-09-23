@@ -150,7 +150,7 @@ const grantWifiBand = function(version) {
   }
 };
 
-const grantWifiPower = function(version) {
+const grantWifiPowerHiddenIpv6 = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.28.0') >= 0);
   } else {
@@ -292,7 +292,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
   result.grantWifiState = grantWifiState(version);
-  result.grantWifiPower = grantWifiPower(version);
+  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);

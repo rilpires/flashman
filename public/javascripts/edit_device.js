@@ -55,6 +55,7 @@ let validateEditDevice = function(event) {
   let mode = $('#edit_wifi_mode-' + index.toString()).val();
   let power = $('#edit_wifi_power-' + index.toString()).val();
   let wifiState = ($('#edit_wifi_state-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiHidden = ($('#edit_wifi_hidden-' + index.toString()).is(':checked') ? 1 : 0);
   let ssid5ghz = $('#edit_wifi5_ssid-' + index.toString()).val();
   let password5ghz = $('#edit_wifi5_pass-' + index.toString()).val();
   let channel5ghz = $('#edit_wifi5_channel-' + index.toString()).val();
@@ -62,6 +63,7 @@ let validateEditDevice = function(event) {
   let mode5ghz = $('#edit_wifi5_mode-' + index.toString()).val();
   let power5ghz = $('#edit_wifi5_power-' + index.toString()).val();
   let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiHidden5ghz = ($('#edit_wifi5_hidden-' + index.toString()).is(':checked') ? 1 : 0);
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
@@ -223,6 +225,8 @@ let validateEditDevice = function(event) {
     data.content.mesh_mode = meshMode;
     data.content.wifi_state = wifiState;
     data.content.wifi_state_5ghz = wifiState5ghz;
+    data.content.wifi_hidden = wifiHidden;
+    data.content.wifi_hidden_5ghz = wifiHidden5ghz;
 
     $.ajax({
       type: 'POST',

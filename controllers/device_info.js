@@ -56,6 +56,7 @@ const createRegistry = function(req, res) {
   let mode = util.returnObjOrEmptyStr(req.body.wifi_mode).trim();
   let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
   let wifiState = parseInt(util.returnObjOrNum(req.body.wifi_state, 1));
+  let wifiHidden = parseInt(util.returnObjOrNum(req.body.wifi_hidden, 0));
   let ssid5ghz = util.returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = util.returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = util.returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
@@ -63,6 +64,7 @@ const createRegistry = function(req, res) {
   let mode5ghz = util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
   let power5ghz = parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
   let wifiState5ghz = parseInt(util.returnObjOrNum(req.body.wifi_state_5ghz, 1));
+  let wifiHidden5ghz = parseInt(util.returnObjOrNum(req.body.wifi_hidden_5ghz, 0));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
@@ -115,7 +117,7 @@ const createRegistry = function(req, res) {
       genericValidate(mode, validator.validateMode,
                       'mode', null, errors);
     }
-    if (permissions.grantWifiPower) {
+    if (permissions.grantWifiPowerHiddenIpv6Box) {
       genericValidate(power, validator.validatePower,
                       'power', null, errors);
     }
@@ -135,7 +137,7 @@ const createRegistry = function(req, res) {
       }
       genericValidate(mode5ghz, validator.validateMode,
                       'mode5ghz', null, errors);
-      if (permissions.grantWifiPower) {
+      if (permissions.grantWifiPowerHiddenIpv6Box) {
         genericValidate(power5ghz, validator.validatePower,
                         'power5ghz', null, errors);
       }
@@ -177,6 +179,7 @@ const createRegistry = function(req, res) {
         'wifi_mode': mode,
         'wifi_power': power,
         'wifi_state': wifiState,
+        'wifi_hidden': wifiHidden,
         'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
@@ -185,6 +188,7 @@ const createRegistry = function(req, res) {
         'wifi_mode_5ghz': mode5ghz,
         'wifi_power_5ghz': power5ghz,
         'wifi_state_5ghz': wifiState5ghz,
+        'wifi_hidden_5ghz': wifiHidden5ghz,
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
@@ -495,8 +499,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
               }
             }
           }
-          if ( permissionsSentVersion.grantWifiPower &&
-              !permissionsCurrVersion.grantWifiPower) {
+          if ( permissionsSentVersion.grantWifiPowerHiddenIpv6Box &&
+              !permissionsCurrVersion.grantWifiPowerHiddenIpv6Box) {
             let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
             genericValidate(power, validator.validatePower,
                             'power', null, errors);
@@ -648,12 +652,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
             'wifi_mode': util.returnObjOrEmptyStr(matchedDevice.wifi_mode),
             'wifi_state': matchedDevice.wifi_state,
+            'wifi_hidden': matchedDevice.wifi_hidden,
             'wifi_ssid_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
+            'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
             'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
             'zabbix_fqdn': zabbixFqdn,

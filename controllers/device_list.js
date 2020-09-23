@@ -635,15 +635,18 @@ deviceListController.searchDeviceReg = async function(req, res) {
         device.wifi_is_5ghz_capable,
         device.model,
       );
-      // Fill default value if wi-fi state does not exist
+      // Fill default values if below fields does not exist
       if (device.wifi_state === undefined) {
         device.wifi_state = 1;
         device.wifi_state_5ghz = 1;
       }
-      // Fill default value if wi-fi power does not exist
       if (device.wifi_power === undefined) {
         device.wifi_power = 100;
         device.wifi_power_5ghz = 100;
+      }
+      if (device.wifi_hidden === undefined) {
+        device.wifi_hidden = 0;
+        device.wifi_hidden_5ghz = 0;
       }
       return device;
     };
@@ -1083,6 +1086,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
       let power = parseInt(util.returnObjOrNum(content.wifi_power, 100));
       let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
+      let wifiHidden = parseInt(util.returnObjOrNum(content.wifi_hidden, 0));
       let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
       let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
       let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
@@ -1090,6 +1094,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
+      let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
@@ -1267,6 +1272,11 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.wifi_state = wifiState;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('wifi_hidden') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_hidden = wifiHidden;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_power') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 power !== '') {
@@ -1306,6 +1316,11 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wifi_state_5ghz') &&
                (superuserGrant || role.grantWifiInfo > 1)) {
               matchedDevice.wifi_state_5ghz = wifiState5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_hidden_5ghz') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_power_5ghz') &&

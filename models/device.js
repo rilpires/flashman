@@ -29,6 +29,7 @@ let deviceSchema = new Schema({
   wifi_band: String,
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
+  wifi_hidden: {type: Number, default: 0},
   wifi_power: {type: Number, default: 100, enum: [ // Percentage
     25, 50, 75, 100,
   ]},
@@ -39,6 +40,7 @@ let deviceSchema = new Schema({
   wifi_band_5ghz: String,
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
+  wifi_hidden_5ghz: {type: Number, default: 0},
   wifi_power_5ghz: {type: Number, default: 100, enum: [ // Percentage
     25, 50, 75, 100,
   ]},
