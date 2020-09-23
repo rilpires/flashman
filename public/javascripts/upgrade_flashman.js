@@ -80,8 +80,72 @@ let checkUpdateFlashman = function() {
   });
 };
 
+
+// assigning tr069 elements.
+let recoveryInput = 
+  document.getElementById('lost-informs-recovery-threshold');
+let recoveryErrorElement = 
+  document.getElementById('error-lost-informs-recovery-threshold');
+let offlineInput = 
+  document.getElementById('lost-informs-offline-threshold');
+let offlineErrorElement = 
+  document.getElementById('error-lost-informs-offline-threshold');
+let recoveryOfflineErrorElement = 
+  document.getElementById("error-recovery-offline-thresholds");
+
+// resets errors and message styles for tr069 recovery and offline iputs.
+const resetRecoveryOfflineInputDependencyError = function () {
+  recoveryInput.setCustomValidity('');
+  offlineInput.setCustomValidity('');
+  recoveryOfflineErrorElement.style.display = '';
+  recoveryErrorElement.style.display = '';
+  offlineErrorElement.style.display = '';
+}
+
+// sets custom validity message, hides error element of both recovery and
+// offline inputs and shows an error message that belongs to both input fields.
+const setRecoveryOfflineInputDependencyError = function () {
+  // setting custom validity, which means inpute becomes invalid.
+  recoveryInput.setCustomValidity('recovery precisa ser menor que offline');
+  offlineInput.setCustomValidity('offline precisa ser maior que recovery');
+  // we report validity by showing a text right below the inputs and hide
+  // each input's individual error text message.
+  recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
+  offlineErrorElement.style.display = 'none'; // hidding offline's error.
+  recoveryOfflineErrorElement.style.display = 'block';//showing error for both.
+}
+
+// will be called in every input after the first time save button is pressed.
+const checkrecoveryOfflineInputDependency = function () {
+  // if inputs are valid, as defined by html input, check if recovery value is
+  // bigger, or equal, to offline value.
+  if (recoveryInput.validity.valid && offlineInput.validity.valid
+   && Number(recoveryInput.value) >= Number(offlineInput.value)) {
+    setRecoveryOfflineInputDependencyError(); // set error message.
+  } else { // if fields have valid values. we reset errors and message styles.
+    resetRecoveryOfflineInputDependencyError(); // reset error message.
+  };
+}
+
+// called after save button is pressed.
 let configFlashman = function(event) {
-  if ($(this)[0].checkValidity()) {
+  resetRecoveryOfflineInputDependencyError(); // reseting errors and message
+  // styles for recovery and offline inputs to default values.
+
+  // executing browser validation on all fields.
+  let allValid = $(this)[0].checkValidity();
+
+  // if browser validation is okay for recovery and offline threshold inputs,
+  // check for their values. if one value is not compatible with the other, set
+  // error message that belongs to both input fields.
+  if (recoveryInput.validity.valid && offlineInput.validity.valid
+   && Number(recoveryInput.value) >= Number(offlineInput.value)) {
+    setRecoveryOfflineInputDependencyError(); // set error message.
+    allValid = false; // we won't send the configurations.
+  };
+
+  // take action after validation is ready.
+  if (allValid) {
     $.post($(this).attr('action'), $(this).serialize(), 'json')
       .done(function(res) {
         $('#config-flashman-menu').modal('hide').on('hidden.bs.modal',
@@ -124,6 +188,9 @@ $(document).ready(function() {
       $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
       $('#measure-server-ip').val(resp.measureServerIP);
       $('#measure-server-port').val(resp.measureServerPort);
+      $('#inform-interval').val(resp.tr069InformInterval);
+      $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);
+      $('#lost-informs-offline-threshold').val(resp.tr069OfflineThreshold);
     },
   });
 });

@@ -36,6 +36,17 @@ const intToWeekDayStr = function(day) {
   return '';
 };
 
+// if allSettled is not defined in Promise, we define it here.
+if (Promise.allSettled === undefined) {
+  Promise.allSettled = function allSettled(promises) {
+    let wrappedPromises = promises.map((p) => Promise.resolve(p)
+        .then(
+            (val) => ({status: 'fulfilled', value: val}),
+            (err) => ({status: 'rejected', reason: err})));
+    return Promise.all(wrappedPromises);
+  };
+}
+
 deviceListController.getReleases = function(modelAsArray=false) {
   let releases = [];
   let releaseIds = [];
@@ -77,7 +88,7 @@ deviceListController.getReleases = function(modelAsArray=false) {
 };
 
 const getOnlineCount = function(query) {
-  return new Promise((resolve, reject)=> {
+  return new Promise(async (resolve, reject) => {
     let onlineQuery = {};
     let recoveryQuery = {};
     let offlineQuery = {};
@@ -88,26 +99,60 @@ const getOnlineCount = function(query) {
     status.recoverynum = 0;
     status.offlinenum = 0;
 
+    // getting tr069 inform parameters.
+    let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
+      +'parameters in database to build status count.');
+    let onlyFlashbox = {use_tr069: {$ne: true}}; // querying flashbox devices.
+    let onlyTR069 = {use_tr069: true}; // querying tr069 devices.
+    // time when devices are considered in recovery for tr069.
+    let tr069ORecoveryTime = new Date(Date.now() -
+      tr069Configs.inform_interval*tr069Configs.recovery_threshold);
+    // time when devices are considered as offline for tr069.
+    let tr069OfflineTime = new Date(Date.now() -
+      tr069Configs.inform_interval*tr069Configs.offline_threshold);
+
+    // counting tr069 devices for each status. 
+    // when error, we count 0 documents.
+    let results = await Promise.allSettled([
+      DeviceModel.countDocuments({$and:
+      [{last_contact: {$gt: tr069ORecoveryTime}}, onlyTR069, query]}).exec()
+      .catch(err => 0),
+      DeviceModel.countDocuments({$and:
+      [{last_contact: {$lt: tr069ORecoveryTime, $gte: tr069OfflineTime}},
+      onlyTR069, query]}).exec()
+      .catch(err => 0),
+      DeviceModel.countDocuments({$and:
+      [{last_contact: {$lt: tr069OfflineTime}}, onlyTR069, query]}).exec()
+      .catch(err => 0)
+    ]);
+    status.onlinenum += results[0].value;
+    status.recoverynum += results[1].value;
+    status.offlinenum += results[2].value;
+
+
     const mqttClients = Object.values(mqtt.unifiedClientsMap)
     .reduce((acc, curr) => {
       return acc.concat(Object.keys(curr));
     }, []);
 
+    // counting flashbox devices for each status. 
     onlineQuery.$and = [{_id: {$in: mqttClients}}, query];
-    recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query];
-    offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query];
+    recoveryQuery.$and = [{last_contact: {$gte: lastHour.getTime()}}, query,
+      onlyFlashbox];
+    offlineQuery.$and = [{last_contact: {$lt: lastHour.getTime()}}, query,
+      onlyFlashbox];
 
     DeviceModel.find(onlineQuery, {'_id': 1}, function(err, devices) {
       if (!err) {
-        status.onlinenum = devices.length;
+        status.onlinenum += devices.length;
         recoveryQuery.$and.push({_id: {$nin: devices}});
         DeviceModel.count(recoveryQuery, function(err, count) {
           if (!err) {
-            status.recoverynum = count;
+            status.recoverynum += count;
             offlineQuery.$and.push({_id: {$nin: devices}});
             DeviceModel.count(offlineQuery, function(err, count) {
               if (!err) {
-                status.offlinenum = count;
+                status.offlinenum += count;
                 getOnlineCountMesh(query).then((extraStatus)=>{
                   status.onlinenum += extraStatus.onlinenum;
                   status.recoverynum += extraStatus.recoverynum;
@@ -161,6 +206,23 @@ const getOnlineCountMesh = function(query) {
     });
   });
 };
+
+// getting values for inform configurations for tr069 from Config.
+const getOnlyTR069Configs = async function (errormsg) {
+  let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err); // in case of error, return error in await.
+  // it's very unlikely that we will incur in any error but,
+  if (configsWithTr069.constructor === Error) { // if we returned an error.
+    console.log(errormsg, 'Using default values.'); // print given message.
+    return { // build a default configuration.
+      inform_interval: 10*60*1000,
+      offline_threshold: 1,
+      recovery_threshold: 3,
+    };
+  } else { // if no error.
+    return configsWithTr069.tr069 // get only tr069 config inside the document.
+  }
+}
 
 // Main page
 deviceListController.index = function(req, res) {
@@ -603,7 +665,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     }
   }
 
-  DeviceModel.paginate(finalQuery, paginateOpts, function(err, matchedDevices) {
+  DeviceModel.paginate(finalQuery, paginateOpts, async function(err, matchedDevices) {
     if (err) {
       return res.json({
         success: false,
@@ -614,6 +676,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     let lastHour = new Date();
     let releases = deviceListController.getReleases();
     lastHour.setHours(lastHour.getHours() - 1);
+    let currentTime = Date.now();
+
+    // getting tr069 inform parameters.
+    let tr069Configs = await getOnlyTR069Configs(
+      'Error when getting tr069 parameters in database to build device list.');
 
     let enrichDevice = function(device) {
       const model = device.model.replace('N/', '');
@@ -624,10 +691,24 @@ deviceListController.searchDeviceReg = async function(req, res) {
       device.releases = devReleases;
       // Status color
       let deviceColor = 'grey-text';
-      if (isDevOn) {
-        deviceColor = 'green-text';
-      } else if (device.last_contact.getTime() >= lastHour.getTime()) {
-        deviceColor = 'red-text';
+      if (device.use_tr069) { // if this device uses tr069.
+        // calculate the time passed since its last inform.
+        let diff = (currentTime - device.last_contact.getTime());
+        diff /= tr069Configs.inform_interval; // quantify in informs intervals.
+        if (diff < tr069Configs.recovery_threshold) {
+        // if we are inside first threshold.
+          deviceColor = 'green-text';
+        } else if (diff < tr069Configs.offline_threshold) {
+        // if we are inside second threshold.
+          deviceColor = 'red-text';
+        };
+        // if we are out of these thresholds, we keep the default gray value.
+      } else { // default device, flashbox controlled.
+        if (isDevOn) {
+          deviceColor = 'green-text';
+        } else if (device.last_contact.getTime() >= lastHour.getTime()) {
+          deviceColor = 'red-text';
+        }
       }
       device.status_color = deviceColor;
       // Device permissions
@@ -1008,7 +1089,7 @@ deviceListController.getLastBootLog = function(req, res) {
 
 deviceListController.getDeviceReg = function(req, res) {
   DeviceModel.findById(req.params.id.toUpperCase()).lean().exec(
-  function(err, matchedDevice) {
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({success: false,
                                    message: 'Erro interno do servidor'});
@@ -1030,18 +1111,39 @@ deviceListController.getDeviceReg = function(req, res) {
     if (matchedDevice.lastboot_log) {
       matchedDevice.lastboot_log = null;
     }
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.params.id.toUpperCase()];
-    });
-    matchedDevice.online_status = (isDevOn);
-    // Status color
-    let lastHour = new Date();
-    lastHour.setHours(lastHour.getHours() - 1);
+
     let deviceColor = 'grey';
-    if (matchedDevice.online_status) {
-      deviceColor = 'green';
-    } else if (matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
-      deviceColor = 'red';
+    matchedDevice.online_status = false;
+    if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
+      // getting tr069 inform parameters.
+      let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
+        +'parameters in database to set tr069 status color in device list '
+        +'line item.');
+      // calculate the time passed since its last inform.
+      let diff = (Date.now() - matchedDevice.last_contact.getTime());
+      diff /= tr069Configs.inform_interval; // quantify in informs intervals.
+      if (diff < tr069Configs.recovery_threshold) {
+      // if we are inside first threshold.
+        deviceColor = 'green';
+        matchedDevice.online_status = true;
+      } else if (diff < tr069Configs.offline_threshold) {
+      // if we are inside second threshold.
+        deviceColor = 'red';
+      };
+      // if we are out of these thresholds, we keep the default gray value.
+    } else { // default matchedDevice, flashbox controlled.
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.params.id.toUpperCase()];
+      });
+      matchedDevice.online_status = (isDevOn);
+      // Status color
+      let lastHour = new Date();
+      lastHour.setHours(lastHour.getHours() - 1);
+      if (matchedDevice.online_status) {
+        deviceColor = 'green';
+      } else if (matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
+        deviceColor = 'red';
+      }
     }
     matchedDevice.status_color = deviceColor;
 

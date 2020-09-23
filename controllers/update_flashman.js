@@ -253,6 +253,10 @@ updateController.getAutoConfig = function(req, res) {
         minlengthpasspppoe: matchedConfig.pppoePassLength,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
+        // transforming from milliseconds to seconds.
+        tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
+        tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
+        tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
       });
     } else {
       return res.status(200).json({
@@ -309,6 +313,37 @@ updateController.setAutoConfig = async(function(req, res) {
       config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
       message += ' Seus dispositivos começarão a medir em breve.';
     }
+
+    //// checking tr069 configuration fields.
+    // parsing fields to number.
+    let tr069InformInterval = Number(req.body['inform-interval']);
+    let tr069RecoveryThreshold = 
+      Number(req.body['lost-informs-recovery-threshold']);
+    let tr069OfflineThreshold = 
+      Number(req.body['lost-informs-offline-threshold']);
+    // if all fields are numeric;
+    if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
+        && !isNaN(tr069OfflineThreshold) 
+     // and inform interval is within boundaries;
+     && tr069InformInterval >= 60 && tr069InformInterval <= 86400
+     // and recovery is within boundaries;
+     && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
+     // and boundaries is within boundaries;
+     && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
+     // and recovery is smaller than offline.
+     && tr069RecoveryThreshold < tr069OfflineThreshold) {
+      config.tr069 = { // create a new tr069 config with received values.
+        // transforming from seconds to milliseconds and removing fraction.
+        inform_interval: Math.floor(tr069InformInterval*1000),
+        recovery_threshold: tr069RecoveryThreshold,
+        offline_threshold: tr069OfflineThreshold,
+      };
+    } else { // if one single rule doesn't pass the test.
+      // respond error without much explanation.
+      return res.status(500).json({type: 'danger',
+        message: 'Erro validando os campos'});
+    };
+
     await(config.save());
     return res.status(200).json({
       type: 'success',
