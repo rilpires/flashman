@@ -113,6 +113,7 @@ const checkTask = function(task) {
               && task[parameterId][i][1].constructor !== Number
               && task[parameterId][i][1].constructor !== Boolean)
           // third position has to be a string (tr069 type).
+          || task[parameterId][i][2].constructor !== String
           ) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
