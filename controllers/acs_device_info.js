@@ -1,4 +1,5 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const DeviceModel = require('../models/device');
 const sio = require('../sio');
 
@@ -199,97 +200,100 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let hasPPPoE = (data.wan.pppoe_user && data.wan.pppoe_pass);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
-  let changes = {};
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
   device.acs_id = req.body.acs_id;
   if (data.common.model) device.model = data.common.model;
   if (data.common.version) device.version = data.common.version;
   if (hasPPPoE) {
     if (device.connection_type !== 'pppoe') {
-      changes['connection_type'] = 'pppoe';
-      changes['pppoe_user'] = data.wan.pppoe_user;
-      changes['pppoe_pass'] = data.wan.pppoe_pass;
+      changes.wan.pppoe_user = data.wan.pppoe_user;
+      changes.wan.pppoe_pass = data.wan.pppoe_pass;
     }
     if (!device.pppoe_user) {
       device.pppoe_user = data.wan.pppoe_user;
     } else if (device.pppoe_user !== data.wan.pppoe_user) {
-      changes['pppoe_user'] = data.wan.pppoe_user;
+      changes.wan.pppoe_user = device.pppoe_user;
     }
     if (!device.pppoe_password) {
       device.pppoe_password = data.wan.pppoe_pass;
     } else if (device.pppoe_password !== data.wan.pppoe_pass) {
-      changes['pppoe_pass'] = data.wan.pppoe_pass;
+      changes.wan.pppoe_pass = device.pppoe_password;
     }
   } else {
     if (device.connection_type !== 'dhcp') {
-      changes['connection_type'] = 'dhcp';
-      changes['pppoe_user'] = undefined;
-      changes['pppoe_pass'] = undefined;
+      changes.wan.pppoe_user = device.pppoe_user;
+      changes.wan.pppoe_pass = device.pppoe_password;
     }
-    device.pppoe_user = undefined;
-    device.pppoe_password = undefined;
   }
 
   if (typeof data.wifi2.enable !== 'undefined') {
     let enable = (data.wifi2.enable) ? 1 : 0;
     if (device.wifi_state !== enable) {
-      changes['wifi2_enable'] = enable;
+      changes.wifi2.enable = device.wifi_state;
     }
   }
+  if (typeof data.wifi5.enable !== 'undefined') {
+    let enable = (data.wifi5.enable) ? 1 : 0;
+    if (device.wifi_state_5ghz !== enable) {
+      changes.wifi5.enable = device.wifi_state_5ghz;
+    }
+  }
+
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid;
   } else if (device.wifi_ssid !== data.wifi2.ssid) {
-    changes['wifi2_ssid'] = data.wifi2.ssid;
+    changes.wifi2.ssid = device.wifi_ssid;
   }
   if (data.wifi2.channel && !device.wifi_channel) {
     device.wifi_channel = data.wifi2.channel;
   } else if (device.wifi_channel !== data.wifi2.channel) {
-    changes['wifi2_channel'] = data.wifi2.channel;
+    changes.wifi2.channel = device.wifi_channel;
   }
   let mode2 = convertWifiMode(data.wifi2.mode, false);
   if (data.wifi2.mode && !device.wifi_mode) {
     device.wifi_mode = mode2;
   } else if (device.wifi_mode !== mode2) {
-    changes['wifi2_mode'] = mode2;
+    changes.wifi2.mode = device.wifi_mode;
   }
-  let band2 = convertWifiMode(data.wifi2.band, data.wifi2.mode);
+  let band2 = convertWifiBand(data.wifi2.band, data.wifi2.mode);
   if (data.wifi2.band && !device.wifi_band) {
     device.wifi_band = band2;
   } else if (device.wifi_band !== band2) {
-    changes['wifi2_band'] = band2;
+    changes.wifi2.band = device.wifi_band;
   }
 
   if (data.wifi5.ssid && !device.wifi_ssid) {
     device.wifi_ssid_5ghz = data.wifi5.ssid;
   } else if (device.wifi_ssid_5ghz !== data.wifi5.ssid) {
-    changes['wifi5_ssid'] = data.wifi5.ssid;
+    changes.wifi5.ssid = device.wifi_ssid_5ghz;
   }
   if (data.wifi5.channel && !device.wifi_channel_5ghz) {
     device.wifi_channel_5ghz = data.wifi5.channel;
   } else if (device.wifi_channel_5ghz !== data.wifi5.channel) {
-    changes['wifi5_channel'] = data.wifi5.channel;
+    changes.wifi5.channel = device.wifi_channel_5ghz;
   }
   let mode5 = convertWifiMode(data.wifi5.mode, true);
   if (data.wifi5.mode && !device.wifi_mode_5ghz) {
     device.wifi_mode_5ghz = mode5;
   } else if (device.wifi_mode_5ghz !== mode5) {
-    changes['wifi5_mode'] = mode5;
+    changes.wifi5.mode = device.wifi_mode_5ghz;
   }
-  let band5 = convertWifiMode(data.wifi5.band, data.wifi5.mode);
+  let band5 = convertWifiBand(data.wifi5.band, data.wifi5.mode);
   if (data.wifi5.band && !device.wifi_band_5ghz) {
     device.wifi_band_5ghz = band5;
   } else if (device.wifi_band_5ghz !== band5) {
-    changes['wifi5_band'] = band5;
+    changes.wifi5.band = device.wifi_band_5ghz;
   }
 
   if (data.lan.router_ip && !device.lan_subnet) {
     device.lan_subnet = data.lan.router_ip;
   } else if (device.lan_subnet !== data.lan.router_ip) {
-    changes['lan_subnet'] = data.lan.router_ip;
+    changes.lan.router_ip = device.lan_subnet;
   }
   if (subnetNumber > 0 && !device.lan_netmask) {
     device.lan_netmask = subnetNumber;
   } else if (device.lan_netmask !== subnetNumber) {
-    changes['lan_netmask'] = subnetNumber;
+    changes.lan.subnet_mask = device.lan_netmask;
   }
   if (data.wan.recv_bytes && data.wan.sent_bytes) {
     device.wan_bytes = appendBytesMeasure(
@@ -307,32 +311,41 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
   device.last_contact = Date.now();
-  // Possibly TODO: Save changes object in the device if supposed to accept
-  //                changes from CPE that are not synced with Flashman
+  // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+  let acceptLocalChanges = false;
+  if (!acceptLocalChanges) {
+    acsDeviceInfoController.updateInfo(device, changes);
+  }
   await device.save();
   return res.status(200).json({success: true});
 };
 
-acsDeviceInfoController.rebootDevice = function(device) {
-  // TODO: Use tasks framework instead of requesting manually
+acsDeviceInfoController.rebootDevice = function(device, res) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {name: 'reboot'};
-  let req = http.request(options);
-  req.write(JSON.stringify(body));
-  req.end();
+  let task = {name: 'reboot'};
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'reboot') return;
+    if (result.finished) res.status(200).json({success: true});
+    else {
+      res.status(200).json({
+        success: false,
+        message: 'Dispositivos não respondeu à requisição',
+      });
+    }
+  });
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchLogFromGenie = function(mac, acsID) {
+const fetchLogFromGenie = function(success, mac, acsID) {
+  if (!success) {
+    // Return with log unavailable
+    let data = 'Log não disponível!';
+    let compressedLog = pako.gzip(data);
+    sio.anlixSendLiveLogNotifications(mac, compressedLog);
+    return;
+  }
   let splitID = acsID.split('-');
   let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
   let query = {_id: acsID};
@@ -514,35 +527,20 @@ const fetchDevicesFromGenie = function(mac, acsID) {
 };
 
 acsDeviceInfoController.requestLogs = function(device) {
-  // TODO: Use tasks framework instead of requesting manually
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchLogFromGenie(mac, acsID);
-    });
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    fetchLogFromGenie(result.finished, mac, acsID);
   });
-  req.write(JSON.stringify(body));
-  req.end();
 };
 
 acsDeviceInfoController.requestWanBytes = function(device) {
@@ -554,28 +552,14 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [recvField, sentField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchWanBytesFromGenie(mac, acsID);
-    });
+  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchWanBytesFromGenie(mac, acsID);
   });
-  req.write(JSON.stringify(body));
-  req.end();
 };
 
 acsDeviceInfoController.requestConnectedDevices = function(device) {
@@ -587,28 +571,44 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: '/devices/'+acsID+'/tasks?timeout=3000&connection_request',
-  };
-  let body = {
+  let task = {
     name: 'getParameterValues',
     parameterNames: [hostsField, assocField],
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    resp.on('data', (data)=>{});
-    resp.on('end', ()=>{
-      // TODO: Only call this function after task is executed (handle 202 resp)
-      //       Will be done when integrated with tasks framewowrk
-      fetchDevicesFromGenie(mac, acsID);
+  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchDevicesFromGenie(mac, acsID);
+  });
+};
+
+acsDeviceInfoController.updateInfo = function(device, changes) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let hasChanges = false;
+  let task = {name: 'setParameterValues', parameterValues: []};
+  console.log(task);
+  Object.keys(changes).forEach((masterKey)=>{
+    Object.keys(changes[masterKey]).forEach((key)=>{
+      let convertedValue = DevicesAPI.convertField(
+        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+      );
+      task.parameterValues.push([
+        fields[masterKey][key], // tr-069 field name
+        convertedValue.value, // value to change to
+        convertedValue.type, // genieacs type
+      ]);
+      hasChanges = true;
     });
   });
-  req.write(JSON.stringify(body));
-  req.end();
+  console.log(task);
+  if (!hasChanges) return; // No need to sync data with genie
+  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    // TODO: Do something with task complete?
+  });
 };
 
 module.exports = acsDeviceInfoController;

@@ -78,8 +78,12 @@ const deleteTask = function(taskid) {
 /* a map structure that holds task attribute names where the keys are the task
  names and the values are the task parameters respected to the task name. */
 let taskParameterIdFromType = {
-  getParameterValues: 'parameterNames', setParameterValues: 'parameterValues',
-  refreshObject: 'objectName', addObject: 'objectName', download: 'file',
+  getParameterValues: 'parameterNames',
+  setParameterValues: 'parameterValues',
+  refreshObject: 'objectName',
+  addObject: 'objectName',
+  download: 'file',
+  reboot: null,
 };
 
 /* return true if task has the correct format or false otherwise. 'task' should
@@ -100,14 +104,16 @@ const checkTask = function(task) {
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has also to be an array.
       if (task[parameterId][i].constructor !== Array) return false;
-      // that sub array has to have length 2.
-      if (task[parameterId][i].length !== 2) return false;
+      // that sub array has to have length 3.
+      if (task[parameterId][i].length !== 3) return false;
       // first position has to be a string (tr069 parameter name).
       if (task[parameterId][i][0].constructor !== String
           // second position can be a string, a number or a boolean.
           || (task[parameterId][i][1].constructor !== String
               && task[parameterId][i][1].constructor !== Number
               && task[parameterId][i][1].constructor !== Boolean)
+          // third position has to be a string (tr069 type).
+          || task[parameterId][i][2].constructor !== String
           ) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
@@ -119,7 +125,7 @@ const checkTask = function(task) {
       // that value has to be a string (tr069 parameter name).
       if (task[parameterId][i].constructor !== String) return false;
     }
-  } else if (task[parameterId].constructor !== String) { // all other task
+  } else if (parameterId && task[parameterId].constructor !== String) {
   // names/types have a string as parameter.
     return false;
   }
@@ -155,13 +161,15 @@ const joinAllTasks = function(tasks) {
     // each task type has its parameters under an attribute with different name.
 
     // if parameters can't be joined and task isn't new.
-    if (tasks[i][parameterId].constructor !== Array
+    if (parameterId && tasks[i][parameterId].constructor !== Array
         && tasks[i]._id !== undefined) continue; // move to next task.
 
     // if we haven't seen this task type before. this is the first of its type.
     if (!types[name]) {
       // save this task's type and all its parameters.
-      types[name] = tasks[i][parameterId];
+      if (parameterId) {
+        types[name] = tasks[i][parameterId];
+      }
       // testing id existence. old tasks already have an id.
       if (tasks[i]._id) {
         // save this task's type and its id, because we may need to delete it
@@ -222,16 +230,18 @@ const joinAllTasks = function(tasks) {
   // for each task type to be created, or recreated.
   for (let name in createNewTaskForType) {
     if (name === name) {
-    let ids = taskIdsForType[name]; // getting ids that have the same type.
-    if (ids && ids.length > 0) {// if there is at least one id.
-tasksToDelete[name] = taskIdsForType[name];
-} // save to list of tasks to delete.
-    let newTask = {name: name}; // create a new task of current type.
-    // add the joined parameters for current task type.
-    newTask[taskParameterIdFromType[name]] = types[name];
-    tasksToAdd.push(newTask); // save to list of tasks to be added.
+      let ids = taskIdsForType[name]; // getting ids that have the same type.
+      if (ids && ids.length > 0) { // if there is at least one id.
+        tasksToDelete[name] = taskIdsForType[name];
+      } // save to list of tasks to delete.
+      let newTask = {name: name}; // create a new task of current type.
+      // add the joined parameters for current task type.
+      if (taskParameterIdFromType[name]) {
+        newTask[taskParameterIdFromType[name]] = types[name];
+      }
+      tasksToAdd.push(newTask); // save to list of tasks to be added.
+    }
   }
-}
   return [tasksToAdd, tasksToDelete];
 };
 
@@ -274,7 +284,7 @@ const deleteOldTaks = async function(tasksToDelete, deviceid) {
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
 const sendTasks = async function(deviceid, tasks, timeout,
- shouldRequestConnection) {
+ shouldRequestConnection, callback) {
   let promises = []; // array that will hold http request promises.
   for (let i = 0; i < tasks.length; i++) {// for each task.
     promises.push(postTask(deviceid, tasks[i], timeout,
@@ -306,15 +316,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
       if (response.statusMessage === 'No such device') { // if Genie responded
       // saying device doesn't exist.
         errormsg += `Device ${deviceid} doesn't exist.`;
-      } else if (response.statusMessage === 'Device is offline') { // if Genie
-      // responded saying device is off-line.
-        // user probably already knows when device is off line.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-          {finished: false, taskid: JSON.parse(response.data)._id, source:
-           'request', message: response.statusMessage});
-        // console.log({deviceid, finished: false, taskid:
-        // JSON.parse(response.data)._id, source: 'request',
-        //   message: response.statusMessage})
       } else if (response.statusCode !== 200) { // if Genie didn't respond with
       // code 200, it scheduled the task for latter.
         // parse task to javascript object and add it to array of pending
@@ -322,9 +323,13 @@ const sendTasks = async function(deviceid, tasks, timeout,
         pendingTasks.push(JSON.parse(response.data));
       } else { // case where Genie responded with status code 200, this means
       // task has execute before 'timeout'.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-          {finished: true, taskid: JSON.parse(response.data)._id, source:
-          'request', message: 'task executed.'});
+        if (callback) {
+          callback({finished: true, task: JSON.parse(response.data)});
+        } else {
+          sio.anlixSendGenieAcsTaskNotifications(deviceid,
+            {finished: true, taskid: JSON.parse(response.data)._id, source:
+            'request', message: 'task executed.'});
+        }
         // console.log({deviceid, finished: true, taskid:
         // JSON.parse(response.data)._id, source: 'request',
         //   message: 'task executed.'})
@@ -348,7 +353,7 @@ const sendTasks = async function(deviceid, tasks, timeout,
  'watchTimes' has no more values, emits a message saying task was not executed.
  */
 const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
- watchTimes) {
+ watchTimes, callback) {
   let task = pendingTasks.pop(); // removed last task out of the array.
   let watchTime = watchTimes.shift(); // removed first value out of the array.
   // starts a change stream in task collection from GenieACS database.
@@ -397,9 +402,13 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
        joined with itself and will be removed and re added.*/
     } else { // if there no more watch times we won't retry anymore.
       // sending a socket.io message saying it wasn't executed.
-      sio.anlixSendGenieAcsTaskNotifications(deviceid,
-        {finished: false, taskid: task._id, source: 'timer',
-        message: `task never executed for deviceid ${deviceid}`});
+      if (callback) {
+        callback({finished: false, task: task});
+      } else {
+        sio.anlixSendGenieAcsTaskNotifications(deviceid,
+          {finished: false, taskid: task._id, source: 'timer',
+          message: `task never executed for deviceid ${deviceid}`});
+      }
       // console.log({deviceid, finished: false, taskid:
       // JSON.parse(response.data)._id, source: 'timer',
       // message: `task never executed for deviceid ${deviceid}`})
@@ -415,9 +424,13 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
     changeStream.close(); // close this change stream.
     clearTimeout(taskTimer); // clear setTimeout
     // sending a socket.io message saying it was executed.
-    sio.anlixSendGenieAcsTaskNotifications(deviceid,
-      {finished: true, taskid: task._id, source: 'change stream', message:
-      'task executed.'});
+    if (callback) {
+      callback({finished: false, task: task});
+    } else {
+      sio.anlixSendGenieAcsTaskNotifications(deviceid,
+        {finished: true, taskid: task._id, source: 'change stream', message:
+        'task executed.'});
+    }
     // console.log({deviceid, finished: true, taskid: task._id,
     // source: 'change stream',
     //   message: `task executed for deviceid ${deviceid}`})
@@ -446,12 +459,14 @@ Arguments:
  for scheduled tasks to disappear from GenieACS database, used only if the
  request 'timeout', sent to genie, runs out without an answer confirm the task
  execution.
+'callback' is a callback to override the default behaviour of calling the sio
+ event handler
 Having 2 or more numbers in this array means one or more retries to genie, for
  the cases when genie can't retry a task on its own. After all retries sent to
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
-genie.addTask = async function(deviceid, task, timeout=5000,
- shouldRequestConnection, watchTimes=[600000, 120000]) {
+genie.addTask = async function(deviceid, task, shouldRequestConnection,
+  timeout=5000, watchTimes=[60000, 120000], callback=null) {
   // console.log("-- starting to send task.") // for debugging.
 
   // checking task format and data types.
@@ -503,16 +518,29 @@ genie.addTask = async function(deviceid, task, timeout=5000,
   // console.log("-- sending tasks.") // for debugging.
   // send the new task and the old tasks being substituted.
   let [errormsg, pendingTasks] = await sendTasks(deviceid, tasks, timeout,
-   shouldRequestConnection);
+   shouldRequestConnection, callback);
   if (errormsg) return [errormsg, null];
 
   // if genie didn't execute the task before the timeout.
   if (pendingTasks.length > 0) {
     // console.log("-- watching pending tasks.") // for debugging.
-    // watch tasks collection for the new task to be deleted.
-    watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes);
-    // not awaiting this function call because it will emit its result using
-    // socket.io (web sockets).
+    // if there are no watch times, simply reply with task failed to execute
+    if (!watchTimes || watchTimes.length === 0) {
+      pendingTasks.forEach((task)=>{
+        if (callback) {
+          callback({finished: false, task: task});
+        } else {
+          sio.anlixSendGenieAcsTaskNotifications(deviceid,
+            {finished: false, taskid: task._id, source:
+             'pending reject', message: 'no watch times defined'});
+        }
+      });
+    } else {
+      // watch tasks collection for the new task to be deleted.
+      watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes, callback);
+      // not awaiting this function call because it will emit its result using
+      // socket.io (web sockets).
+    }
     // returning no error and no true value because result is still being
     // produced.
     return [null, null];
