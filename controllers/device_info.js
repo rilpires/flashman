@@ -71,6 +71,7 @@ const createRegistry = function(req, res) {
     (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
+  let wanIpv6Enabled = parseInt(util.returnObjOrNum(req.body.ipv6_enabled, 2));
   let wpsState = (parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
   let bridgeEnabled = parseInt(util.returnObjOrNum(req.body.bridge_enabled, 0));
   let bridgeSwitchDisable = parseInt(util.returnObjOrNum(req.body.bridge_switch_disable, 0));
@@ -192,6 +193,7 @@ const createRegistry = function(req, res) {
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
+        'wan_ipv6_enabled': wanIpv6Enabled,
         'ip': ip,
         'last_contact': Date.now(),
         'do_update': false,
@@ -524,6 +526,18 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                 }
               }
             }
+
+            let wanIpv6Enabled = parseInt(
+              util.returnObjOrNum(req.body.ipv6_enabled, 2));
+            genericValidate(wanIpv6Enabled, validator.validateIpv6Enabled,
+                            'ipv6Enabled', null, errors);
+            if (errors.length < 1) {
+              if (matchedDevice.wan_ipv6_enabled !== wanIpv6Enabled) {
+                deviceSetQuery.wan_ipv6_enabled = wanIpv6Enabled;
+                // Used in device response
+                matchedDevice.wan_ipv6_enabled = wanIpv6Enabled;
+              }
+            }
           }
           if (matchedDevice.version !== sentVersion) {
             deviceSetQuery.version = sentVersion;
@@ -635,8 +649,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
-          // Do not return yet, just respond to request so we can free socket
-          res.status(200).json({
+          let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
             'mqtt_status': isDevOn,
@@ -652,12 +665,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
             'wifi_mode': util.returnObjOrEmptyStr(matchedDevice.wifi_mode),
             'wifi_state': matchedDevice.wifi_state,
+            'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
             'wifi_hidden': matchedDevice.wifi_hidden,
             'wifi_ssid_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
+            'wifi_power_5ghz': util.returnObjOrNum(matchedDevice.wifi_power_5ghz, 100),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
@@ -678,7 +693,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
-          });
+          };
+          // Only answer ipv6 status if flashman knows current state
+          if (matchedDevice.wan_ipv6_enabled !== 2) {
+            resJson.ipv6_enabled = matchedDevice.wan_ipv6_enabled;
+          }
+          // Do not return yet, just respond to request so we can free socket
+          res.status(200).json(resJson);
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
             {'$set': deviceSetQuery}, (err) => {

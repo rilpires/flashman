@@ -117,6 +117,9 @@ let deviceSchema = new Schema({
   wan_ip: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
+  wan_ipv6_enabled: {type: Number, default: 2, enum: [
+    0, 1, 2, // 0 - false, 1 - true, 2 - unknown (old firmware)
+  ]},
   ip: String,
   ntp_status: String,
   last_devices_refresh: Date,
