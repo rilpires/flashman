@@ -533,13 +533,15 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
         {last_contact: {$lt: hours}},
         {_id: {$nin: mqttClients}},
       ];
-    } else if ((tag == 'upgrade on') || (tag == 'update on')) {
+    } else if (/^up(?:dat|grad)e o(?:n|ff)$/.test(tag)) { 
+    // update|upgrade on|off.
       query.use_tr069 = {$ne: true}; // only for flashbox.
-      query.do_update = {$eq: true};
-    } else if ((tag == 'upgrade off') || (tag == 'update off')) {
-      query.use_tr069 = {$ne: true}; // only for flashbox.
-      query.do_update = {$eq: false};
-    } else if (tag === 'onu') { // ONU routers.
+      if (tag.includes('on')) { // 'update on' or 'upgrade on'.
+        query.do_update = {$eq: true};
+      } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
+        query.do_update = {$eq: false};
+      }
+    }else if (tag === 'onu') { // ONU routers.
       query.use_tr069 = true;
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
