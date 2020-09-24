@@ -73,6 +73,10 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'wifi5-enable':
       result.value = (value > 0) ? true : false; // convert to boolean
       break;
+    case 'wifi2-channel':
+    case 'wifi5-channel':
+      result.value = parseInt(value); // convert to integer
+      break;
     case 'wifi2-mode':
     case 'wifi5-mode':
       result.value = convertWifiMode(value, oui, model); // convert to TR-069
