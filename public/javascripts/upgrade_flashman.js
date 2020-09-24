@@ -94,7 +94,7 @@ let recoveryOfflineErrorElement =
   document.getElementById("error-recovery-offline-thresholds");
 
 // resets errors and message styles for tr069 recovery and offline iputs.
-const resetRecoveryOfflineInputDependencyError = function () {
+const resetRecoveryOfflineInputDependencyError = function() {
   recoveryInput.setCustomValidity('');
   offlineInput.setCustomValidity('');
   recoveryOfflineErrorElement.style.display = '';
@@ -104,7 +104,7 @@ const resetRecoveryOfflineInputDependencyError = function () {
 
 // sets custom validity message, hides error element of both recovery and
 // offline inputs and shows an error message that belongs to both input fields.
-const setRecoveryOfflineInputDependencyError = function () {
+const setRecoveryOfflineInputDependencyError = function() {
   // setting custom validity, which means inpute becomes invalid.
   recoveryInput.setCustomValidity('recovery precisa ser menor que offline');
   offlineInput.setCustomValidity('offline precisa ser maior que recovery');
@@ -116,7 +116,7 @@ const setRecoveryOfflineInputDependencyError = function () {
 }
 
 // will be called in every input after the first time save button is pressed.
-const checkrecoveryOfflineInputDependency = function () {
+const checkrecoveryOfflineInputDependency = function() {
   // if inputs are valid, as defined by html input, check if recovery value is
   // bigger, or equal, to offline value.
   if (recoveryInput.validity.valid && offlineInput.validity.valid
