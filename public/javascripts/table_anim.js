@@ -1002,6 +1002,7 @@ $(document).ready(function() {
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-ipv6-enabled="'+grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+(grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
@@ -1194,6 +1195,13 @@ $(document).ready(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
+                  '$REPLACE_SELECTED_IPV6_ENABLED></input>'+
+                  '<label class="custom-control-label" for="edit_ipv6_enabled-'+index+'">'+
+                  'Habilitar IPv6'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-4">'+
                 '<div class="md-form input-entry">'+
@@ -1217,6 +1225,16 @@ $(document).ready(function() {
           } else {
             wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP', 'selected="selected"');
           }
+
+          let currIpv6Enabled = (parseInt(device.ipv6_enabled) == 1 ? 'checked' : '');
+          wanTab = wanTab.replace(/\$REPLACE_SELECTED_IPV6_ENABLED/g, currIpv6Enabled);
+
+          if (!grantWifiPowerHiddenIpv6Box) {
+            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', 'style="display: none;"');
+          } else {
+            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', '');
+          }
+
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');

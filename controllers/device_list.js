@@ -347,7 +347,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
       doUpdate = (req.body.do_update === 'true');
     }
     // Reject update cancel command to mesh slave, use above function instead
-    if (!req.body.do_update) {
+    if (!doUpdate) {
       return res.status(500).json({
         success: false,
         message: 'Esta função só deve ser usada para marcar um slave para '+
@@ -647,6 +647,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
       if (device.wifi_hidden === undefined) {
         device.wifi_hidden = 0;
         device.wifi_hidden_5ghz = 0;
+      }
+      if (device.ipv6_enabled === undefined) {
+        device.ipv6_enabled = 0;
       }
       return device;
     };
@@ -1077,6 +1080,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
       let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
       let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+      let ipv6Enabled = parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
       let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).trim();
       let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).trim();
       let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
@@ -1235,6 +1239,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 (superuserGrant || role.grantPPPoEInfo > 1) &&
                 pppoePassword !== '' && !matchedDevice.bridge_mode_enabled) {
               matchedDevice.pppoe_password = pppoePassword;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('ipv6_enabled')) {
+              matchedDevice.ipv6_enabled = ipv6Enabled;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&

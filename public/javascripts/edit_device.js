@@ -41,7 +41,9 @@ let validateEditDevice = function(event) {
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
   let validatePppoe = row.data('validatePppoe');
+  let validateIpv6Enabled = row.data('validate-ipv6-enabled');
   let validateLan = row.data('validate-lan');
+  let ipv6Enabled = ($('#edit_ipv6_enabled-' + index.toString()).is(':checked') ? 1 : 0);
   let pppoe = $('#edit_connect_type-' + index.toString()).val() === 'PPPoE';
   let pppoeUser = $('#edit_pppoe_user-' + index.toString()).val();
   let pppoePassword = $('#edit_pppoe_pass-' + index.toString()).val();
@@ -188,6 +190,9 @@ let validateEditDevice = function(event) {
     if (validatePppoe) {
       data.content.pppoe_user = (pppoe) ? pppoeUser : '';
       data.content.pppoe_password = (pppoe) ? pppoePassword : '';
+    }
+    if (validateIpv6Enabled) {
+      data.content.ipv6_enabled = ipv6Enabled;
     }
     if (validateWifi) {
       data.content.wifi_ssid = ssid;

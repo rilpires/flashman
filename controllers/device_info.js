@@ -193,7 +193,7 @@ const createRegistry = function(req, res) {
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
-        'wan_ipv6_enabled': wanIpv6Enabled,
+        'ipv6_enabled': wanIpv6Enabled,
         'ip': ip,
         'last_contact': Date.now(),
         'do_update': false,
@@ -532,10 +532,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             genericValidate(wanIpv6Enabled, validator.validateIpv6Enabled,
                             'ipv6Enabled', null, errors);
             if (errors.length < 1) {
-              if (matchedDevice.wan_ipv6_enabled !== wanIpv6Enabled) {
-                deviceSetQuery.wan_ipv6_enabled = wanIpv6Enabled;
+              if (matchedDevice.ipv6_enabled !== wanIpv6Enabled) {
+                deviceSetQuery.ipv6_enabled = wanIpv6Enabled;
                 // Used in device response
-                matchedDevice.wan_ipv6_enabled = wanIpv6Enabled;
+                matchedDevice.ipv6_enabled = wanIpv6Enabled;
               }
             }
           }
@@ -695,8 +695,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'mesh_key': matchedDevice.mesh_key,
           };
           // Only answer ipv6 status if flashman knows current state
-          if (matchedDevice.wan_ipv6_enabled !== 2) {
-            resJson.ipv6_enabled = matchedDevice.wan_ipv6_enabled;
+          if (matchedDevice.ipv6_enabled !== 2) {
+            resJson.ipv6_enabled = matchedDevice.ipv6_enabled;
           }
           // Do not return yet, just respond to request so we can free socket
           res.status(200).json(resJson);

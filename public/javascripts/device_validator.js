@@ -132,6 +132,13 @@
       };
     };
 
+    Validator.prototype.validateIpv6Enabled = function(ipv6Enabled) {
+      return {
+        valid: ['0', '1', '2', 0, 1, 2].includes(ipv6Enabled),
+        err: ['Valor inválido para ativar ou desativar IPv6'],
+      };
+    };
+
     return Validator;
   })();
 
