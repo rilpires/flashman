@@ -87,7 +87,7 @@ deviceListController.getReleases = function(modelAsArray=false) {
   return releases;
 };
 
-const getOnlineCount = async function(query, mqttClients, lastHour,  tr069Configs) {
+const getOnlineCount = async function(query, mqttClients, lastHour,  tr069Times) {
   let status = {};
   status.onlinenum = 0;
   status.recoverynum = 0;
@@ -126,7 +126,7 @@ const getOnlineCount = async function(query, mqttClients, lastHour,  tr069Config
     DeviceModel.countDocuments({$and: [onlineQuery, query]}).exec(),
     DeviceModel.countDocuments({$and: [recoveryQuery, query]}).exec(),
     DeviceModel.countDocuments({$and: [offlineQuery, query]}).exec(),
-    getOnlineCountMesh(query),
+    getOnlineCountMesh(query, lastHour),
   ]);
   // adding each count to their respective status.
   status.onlinenum += counts[0]+counts[3].onlinenum;
@@ -459,25 +459,30 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
   finalQuery[queryLogicalOperator] = finalQueryArray; // preparing 'finalQuery'.
 
   // tags that are computed differently for each communication protocol.
-  let statusTags = ['online', 'instavel', 'offline'];
+  let statusTags = {
+    online: /^online$/, instavel: /^instavel$/, offline: /^offline$/,
+    'offline >': /^offline >.*/,
+  } 
+  // mapping to regular expression because one tag has a parameter inside and
+  // won't make an exact match, but the other tags need to be exact.
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
 
-    if (statusTags.includes(tag)) { // if we need more than one query for each
-    // controller protocol.
-      
-      // variables that will hold one query for one controller protocol.
+    if (Object.values(statusTags).some((r) => r.test(tag))) { 
+    // if we need more than one query for each controller protocol.
+      // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
+
       // each tag has their specific query for each controller protocol.
-      if (tag === statusTags[0]) { // 'online'.
+      if (statusTags['online'].test(tag)) {
         flashbox = {
           _id: {$in: mqttClients},
           last_contact: {$gte: lastHour},
         };
         tr069 = {last_contact: {$gte: tr069Times.recovery}};
-      } else if (tag === statusTags[1]) { // 'instavel'.
+      } else if (statusTags['instavel'].test(tag)) {
         flashbox = {
           _id: {$nin: mqttClients},
           last_contact: {$gte: lastHour},
@@ -485,14 +490,14 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
         tr069 = {
           last_contact: {$lt: tr069Times.recovery, $gte: tr069Times.offline},
         };
-      } else if (tag === statusTags[2]) { // 'offline'.
+      } else if (statusTags['offline'].test(tag)) {
         flashbox = {
           _id: {$nin: mqttClients},
           last_contact: {$lt: lastHour},
         };
         tr069 = {last_contact: {$lt: tr069Times.offline}};
-      } else if (tag.includes('offline >')) {
-        const parsedHour = Maths.abs(parseInt(tag.split('>')[1]));
+      } else if (statusTags['offline >'].test(tag)) {
+        const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
         const hourThreshold = !isNaN(parsedHour) ? parsedHour*3600000 : 0;
         flashbox = {
           _id: {$nin: mqttClients},
@@ -505,7 +510,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
       tr069.use_tr069 = true; // this will select only tr069.
       query.$or = [flashbox, tr069]; // select either one.
-    } else if (/^up(?:dat|grad)e o(?:n|ff)$/.test(tag)) { 
+    } else if (/^(?:update|upgrade) (?:on|off)$/.test(tag)) { 
     // update|upgrade on|off.
       query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes('on')) { // 'update on' or 'upgrade on'.
@@ -513,10 +518,10 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
       }
-    }else if (tag === 'onu') { // ONU routers.
-      query.use_tr069 = true;
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
+    } else if (tag === 'onu') { // ONU routers.
+      query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
       let contentCondition = '$or';
@@ -738,7 +743,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             filter_list: req.body.filter_list,
             devices: allDevices,
           });
-        }, (error) => {
+        }, (err) => {
           return res.json({
             success: false,
             type: 'danger',
