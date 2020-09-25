@@ -87,43 +87,30 @@ deviceListController.getReleases = function(modelAsArray=false) {
   return releases;
 };
 
-const getOnlineCount = async function(query, tr069Configs) {
+const getOnlineCount = async function(query, mqttClients, lastHour,  tr069Configs) {
   let status = {};
-  let lastHour = new Date();
-  lastHour.setHours(lastHour.getHours() - 1);
   status.onlinenum = 0;
   status.recoverynum = 0;
   status.offlinenum = 0;
-  // time when devices are considered in recovery for tr069.
-  let tr069ORecoveryTime = new Date(Date.now() -
-    tr069Configs.inform_interval*tr069Configs.recovery_threshold);
-  // time when devices are considered offline for tr069.
-  let tr069OfflineTime = new Date(Date.now() -
-    tr069Configs.inform_interval*tr069Configs.offline_threshold);
-
-  const mqttClients = Object.values(mqtt.unifiedClientsMap)
-  .reduce((acc, curr) => {
-    return acc.concat(Object.keys(curr));
-  }, []);
 
   // the queries for each status count. they each countain a query to select
   // each router type, flashbox or onu/tr069, inside the $or array.
   let onlineQuery = {
     $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
       {_id: {$in: mqttClients}},
-      {last_contact: {$gte: tr069ORecoveryTime}},
+      {last_contact: {$gte: tr069Times.recovery}},
     ],
   };
   let recoveryQuery = {
     $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
       {_id: {$nin: mqttClients}, last_contact: {$gte: lastHour.getTime()}},
-      {last_contact: {$lt: tr069ORecoveryTime, $gte: tr069OfflineTime}},
+      {last_contact: {$lt: tr069Times.recovery, $gte: tr069Times.offline}},
     ],
   };
   let offlineQuery = {
     $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
       {_id: {$nin: mqttClients}, last_contact: {$lt: lastHour.getTime()}},
-      {last_contact: {$lt: tr069OfflineTime}},
+      {last_contact: {$lt: tr069Times.offline}},
     ],
   };
   let queries = [onlineQuery, recoveryQuery, offlineQuery];
@@ -151,12 +138,10 @@ const getOnlineCount = async function(query, tr069Configs) {
   return status; // resolve with the counts.
 };
 
-const getOnlineCountMesh = function(query) {
+const getOnlineCountMesh = function(query, lastHour) {
   return new Promise((resolve, reject)=> {
     let meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
     let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
-    let lastHour = new Date();
-    lastHour.setHours(lastHour.getHours() - 1);
     lastHour = lastHour.getTime();
     let options = {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1};
 
@@ -460,14 +445,9 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
 };
 
 deviceListController.complexSearchDeviceQuery = function(queryContents,
- tr069Configs) {
+ mqttClients, lastHour, tr069Times) {
   let finalQuery = {};
   let finalQueryArray = [];
-
-  const mqttClients = Object.values(mqtt.unifiedClientsMap)
-  .reduce((acc, curr) => {
-    return acc.concat(Object.keys(curr));
-  }, []);
 
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
@@ -487,15 +467,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
 
     if (statusTags.includes(tag)) { // if we need more than one query for each
     // controller protocol.
-      let lastHour = new Date();
-      lastHour.setHours(lastHour.getHours() - 1);
-      // time when devices are considered in recovery for tr069.
-      let tr069ORecoveryTime = new Date(Date.now() -
-        tr069Configs.inform_interval*tr069Configs.recovery_threshold);
-      // time when devices are considered offline for tr069.
-      let tr069OfflineTime = new Date(Date.now() -
-        tr069Configs.inform_interval*tr069Configs.offline_threshold);
-
+      
       // variables that will hold one query for one controller protocol.
       let flashbox; let tr069;
       // each tag has their specific query for each controller protocol.
@@ -504,35 +476,35 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
           _id: {$in: mqttClients},
           last_contact: {$gte: lastHour},
         };
-        tr069 = {last_contact: {$gte: tr069ORecoveryTime}};
+        tr069 = {last_contact: {$gte: tr069Times.recovery}};
       } else if (tag === statusTags[1]) { // 'instavel'.
         flashbox = {
           _id: {$nin: mqttClients},
           last_contact: {$gte: lastHour},
         };
         tr069 = {
-          last_contact: {$lt: tr069ORecoveryTime, $gte: tr069OfflineTime},
+          last_contact: {$lt: tr069Times.recovery, $gte: tr069Times.offline},
         };
       } else if (tag === statusTags[2]) { // 'offline'.
         flashbox = {
           _id: {$nin: mqttClients},
           last_contact: {$lt: lastHour},
         };
-        tr069 = {last_contact: {$lt: tr069OfflineTime}};
+        tr069 = {last_contact: {$lt: tr069Times.offline}};
+      } else if (tag.includes('offline >')) {
+        const parsedHour = Maths.abs(parseInt(tag.split('>')[1]));
+        const hourThreshold = !isNaN(parsedHour) ? parsedHour*3600000 : 0;
+        flashbox = {
+          _id: {$nin: mqttClients},
+          last_contact: {$lt: new Date(lastHour - hourThreshold)},
+        };
+        tr069 = {last_contact: 
+          {$lt: new Date(tr069Times.offline - hourThreshold)}
+        };
       };
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
       tr069.use_tr069 = true; // this will select only tr069.
       query.$or = [flashbox, tr069]; // select either one.
-    // Filter as offline if more than X hours
-    } else if (tag.includes('offline >')) {
-      let hours = new Date();
-      const parsedHour = parseInt(queryContents[idx].split('>')[1]);
-      const hourThreshold = parsedHour ? parsedHour : 1;
-      hours.setHours(hours.getHours() - hourThreshold);
-      query.$and = [
-        {last_contact: {$lt: hours}},
-        {_id: {$nin: mqttClients}},
-      ];
     } else if (/^up(?:dat|grad)e o(?:n|ff)$/.test(tag)) { 
     // update|upgrade on|off.
       query.use_tr069 = {$ne: true}; // only for flashbox.
@@ -629,6 +601,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
     sortKeys._id = sortTypeOrder;
   }
 
+  let currentTime = Date.now();
+  let lastHour = new Date(currentTime -3600000);
   // getting user configurations.
   let matchedConfig = await Config.findOne({is_default: true},
     'tr069 pppoePassLength').exec().catch((err) => err);
@@ -637,7 +611,25 @@ deviceListController.searchDeviceReg = async function(req, res) {
       +'device list.');
     return;
   }
-  let tr069Configs = matchedConfig.tr069 // to minimize code line length.
+  let tr069Times = { // thresholds for tr069 status classification.
+    // time when devices are considered in recovery for tr069.
+    recovery: new Date(currentTime - (matchedConfig.tr069.inform_interval*
+      matchedConfig.tr069.recovery_threshold)),
+    // time when devices are considered offline for tr069.
+    offline: new Date(currentTime - (matchedConfig.tr069.inform_interval*
+      matchedConfig.tr069.offline_threshold)),
+  };
+
+
+  // online devices.
+  // will be passed to the functions that need an array of ids.
+  let mqttClientsArray = Object.values(mqtt.unifiedClientsMap).reduce(
+    (acc, clients) => acc.concat(Object.keys(clients)), []);
+  // will be used in functions that need to access devices per id.
+  let mqttClientsMap = {};
+  for (let i = 0; i < mqttClientsArray.length; i++) {
+    mqttClientsMap[mqttClientsArray[i]] = true;
+  };
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role)
@@ -645,7 +637,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = deviceListController.complexSearchDeviceQuery(queryContents,
-      tr069Configs);
+      mqttClientsArray, currentTime, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
@@ -679,9 +671,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let lastHour = new Date();
     let releases = deviceListController.getReleases();
-    lastHour.setHours(lastHour.getHours() - 1);
     let currentTime = Date.now();
 
     let enrichDevice = function(device) {
@@ -691,16 +681,14 @@ deviceListController.searchDeviceReg = async function(req, res) {
         return map[device._id.toUpperCase()];
       });
       device.releases = devReleases;
+
       // Status color
       let deviceColor = 'grey-text';
       if (device.use_tr069) { // if this device uses tr069 to be controlled.
-        // calculate the time passed since its last inform.
-        let diff = (currentTime - device.last_contact.getTime());
-        diff /= tr069Configs.inform_interval; // quantify in informs intervals.
-        if (diff < tr069Configs.recovery_threshold) {
+        if (device.last_contact >= tr069Times.recovery) {
         // if we are inside first threshold.
           deviceColor = 'green-text';
-        } else if (diff < tr069Configs.offline_threshold) {
+        } else if (device.last_contact >= tr069Times.offline) {
         // if we are inside second threshold.
           deviceColor = 'red-text';
         };
@@ -713,12 +701,14 @@ deviceListController.searchDeviceReg = async function(req, res) {
         }
       }
       device.status_color = deviceColor;
+
       // Device permissions
       device.permissions = DeviceVersion.findByVersion(
         device.version,
         device.wifi_is_5ghz_capable,
         device.model
       );
+
       // Fill default value if wi-fi state does not exist
       if (device.wifi_state === undefined) {
         device.wifi_state = 1;
@@ -730,7 +720,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
       let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
       User.findOne({name: req.user.name}, function(err, user) {
-        getOnlineCount(finalQuery, tr069Configs)
+        getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
         .then((onlineStatus) => {
           // Counters
           let status = {};
@@ -1120,14 +1110,20 @@ deviceListController.getDeviceReg = function(req, res) {
       let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
         +'parameters in database to set tr069 status color in device list '
         +'line item.');
-      // calculate the time passed since its last inform.
-      let diff = (Date.now() - matchedDevice.last_contact.getTime());
-      diff /= tr069Configs.inform_interval; // quantify in informs intervals.
-      if (diff < tr069Configs.recovery_threshold) {
+      let currentTime = Date.now()
+      //// thresholds for tr069 status classification.
+      // time when devices are considered in recovery for tr069.
+      let recoveryTime = new Date(currentTime - (tr069Configs.inform_interval*
+        tr069Configs.recovery_threshold));
+      // time when devices are considered offline for tr069.
+      let offlineTime = new Date(currentTime - (tr069Configs.inform_interval*
+        tr069Configs.offline_threshold));
+      //// classifying device status.
+      if (matchedDevice.last_contact >= recoveryTime) {
       // if we are inside first threshold.
         deviceColor = 'green';
         matchedDevice.online_status = true;
-      } else if (diff < tr069Configs.offline_threshold) {
+      } else if (matchedDevice.last_contact >= offlineTime) {
       // if we are inside second threshold.
         deviceColor = 'red';
       };
