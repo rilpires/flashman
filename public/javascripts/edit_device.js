@@ -86,10 +86,16 @@ let validateEditDevice = function(event) {
     for (let i = 0; i < slaveCount; i++) {
       let slaveRefType = $('#edit_ext_ref_type_selected-'+index+'-'+i).html();
       let slaveRefData = $('#edit_external_reference-' +index+'-'+i).val();
+      let slaveChannel = $('#edit_wifi_channel-' +index+'-'+i).val();
+      let slaveChannel5ghz = $('#edit_wifi5_channel-' +index+'-'+i).val();
       let slavePower = $('#edit_wifi_power-' +index+'-'+i).val();
+      let slavePower5ghz = $('#edit_wifi5_power-' +index+'-'+i).val();
       slaveCustomConfigs.push({kind: slaveRefType,
                                data: slaveRefData,
-                               power: slavePower});
+                               channel: slaveChannel,
+                               channel5ghz: slaveChannel5ghz,
+                               power: slavePower,
+                               power5ghz: slavePower5ghz});
     }
   }
 

@@ -794,17 +794,49 @@ $(document).ready(function() {
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="active">Potência do sinal</label>'+
-                '<select class="browser-default md-select" id="edit_wifi_power-'+idIndex+'" '+
-                '$REPLACE_WIFI_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '<label class="text-primary active">Canal do Wi-Fi 2.4GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_channel-'+idIndex+'" '+
+                '$REPLACE_WIFI_EN>'+
+                  '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
+                  '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
+                  '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
+                  '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
+                  '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
+                  '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
+                  '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
+                  '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
+                  '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
+                  '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
+                  '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
+                  '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
-          '</div>' :
+          '</div>'+
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Canal do Wi-Fi 5.0GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_channel-'+idIndex+'" '+
+                '$REPLACE_WIFI_EN>'+
+                  '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
+                  '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
+                  '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
+                  '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
+                  '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
+                  '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
+                  '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
+                  '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
+                  '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
+                  '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
+                  '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
+                  '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
+                  '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>161</option>'+
+                  '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>165</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>':
           ''
         )+
       '</div>'+
@@ -827,6 +859,37 @@ $(document).ready(function() {
           'disabled value="'+device.version+'">'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (mesh > -1 ?
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Potência do sinal 2.4GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_power-'+idIndex+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Potência do sinal 5.0GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_power-'+idIndex+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER5_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>':
+          ''
+        )+
       '</div>'+
     '</div>';
     if (device.external_reference) {
@@ -853,16 +916,30 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', 'primary-color active');
     }
+    if (!isSuperuser && grantWifiInfo <= 1) {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
+    } else {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, '');
+    }
     if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
        (!isSuperuser && grantWifiInfo <= 1)) {
-      aboutTab = aboutTab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, 'disabled');
     } else {
-      aboutTab = aboutTab.replace('$REPLACE_WIFI_POWER_EN', '');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, '');
     }
 
-    let selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
+    let selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_CHANNEL5_' + device.wifi_channel_5ghz;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_CHANNEL5_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
     aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
     aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_POWER5_' + device.wifi_power_5ghz;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_POWER5_.*?\$/g, '');
 
     return aboutTab;
   };
