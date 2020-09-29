@@ -778,16 +778,14 @@ $(document).ready(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-group input-entry">'+
-          '<div class="input-group-prepend">'+
-            '<span class="input-group-text md-addon font-weight-light">Status da licença é</span>' +
-          '</div>'+
+          '<label class="active">Status da licença é</label>' +
           '<input class="form-control py-0 added-margin" type="text" '+
           'id="edit_license_status-'+idIndex+'" placeholder="Desconhecido" '+
           'disabled value="$REPLACE_LICENSE_STATUS_VAL">'+
           '</input>'+
           '<div class="input-group-append">'+
-            '<button class="btn btn-primary btn-sm btn-license-status-refresh" type="button">' +
-              '<i class="fas fa-sync-alt fa-lg"></i><span>&nbsp Atualizar</span>'+
+            '<button class="btn btn-primary mr-0 my-0 btn-license-status-refresh" type="button">' +
+              '<i class="fas fa-sync-alt"></i>'+
             '</button>'+
           '</div>'+
           '<div class="invalid-feedback"></div>'+
