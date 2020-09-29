@@ -524,4 +524,18 @@ $(document).ready(function() {
       },
     });
   });
+
+  // Block or unblock 5ghz wi-fi power setup
+  $(document).on('change', '[id^=edit_wifi5_channel-]', (event)=> {
+    let row = $(event.target).parents('tr');
+    let validateWifiPower = row.data('validate-wifi-power');
+    if (validateWifiPower) {
+      let idx = row.data('index');
+      let selChannel = $('#edit_wifi5_channel-' + idx).val();
+      $('#edit_wifi5_power-' + idx).prop('disabled', (selChannel == 'auto'));
+      if (selChannel == 'auto') {
+        $('#edit_wifi5_power-' + idx).val(100);
+      }
+    }
+  });
 });

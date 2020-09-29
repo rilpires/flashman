@@ -1828,7 +1828,8 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
           }
           if (!grantWifiPowerHiddenIpv6Box ||
-             (!isSuperuser && grantWifiInfo <= 1)) {
+             (!isSuperuser && grantWifiInfo <= 1) ||
+             (device.wifi_channel_5ghz == 'auto')) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', '');
