@@ -38,15 +38,17 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
   }
 };
 
-meshHandlers.syncSlaveReference = function(slave, reference) {
-  if (reference.hasOwnProperty('kind') && reference.kind !== '' &&
-      reference.hasOwnProperty('data') && reference.data !== '') {
-    slave.external_reference.kind = reference.kind;
-    slave.external_reference.data = reference.data;
+meshHandlers.syncSlaveCustomConfig = function(slave, config) {
+  if (('kind' in config) && (config.kind !== '') &&
+      ('data' in config) && (config.data !== '') &&
+      ('power' in config) && (config.power !== '')) {
+    slave.external_reference.kind = config.kind;
+    slave.external_reference.data = config.data;
+    slave.wifi_power = config.power;
   }
 };
 
-meshHandlers.syncSlaves = function(master, slaveReferences=null) {
+meshHandlers.syncSlaves = function(master, slaveCustomConfig=null) {
   for (let i = 0; i < master.mesh_slaves.length; i++) {
     let slaveMac = master.mesh_slaves[i];
     DeviceModel.findById(slaveMac, function(err, slaveDevice) {
@@ -57,8 +59,8 @@ meshHandlers.syncSlaves = function(master, slaveReferences=null) {
         console.log('Attempt to modify mesh slave '+ slaveMac +' from master ' +
           master._id + ' failed: cant get slave device.');
       } else {
-        if (slaveReferences && slaveReferences[i]) {
-          meshHandlers.syncSlaveReference(slaveDevice, slaveReferences[i]);
+        if (slaveCustomConfig && slaveCustomConfig[i]) {
+          meshHandlers.syncSlaveCustomConfig(slaveDevice, slaveCustomConfig[i]);
         }
         meshHandlers.syncSlaveWifi(master, slaveDevice);
         slaveDevice.save();

@@ -1105,14 +1105,14 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
       let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
-      let slaveReferences = [];
+      let slaveCustomConfigs = [];
       try {
-        slaveReferences = JSON.parse(content.slave_references);
-        if (slaveReferences.length !== matchedDevice.mesh_slaves.length) {
-          slaveReferences = [];
+        slaveCustomConfigs = JSON.parse(content.slave_custom_configs);
+        if (slaveCustomConfigs.length !== matchedDevice.mesh_slaves.length) {
+          slaveCustomConfigs = [];
         }
       } catch (err) {
-        slaveReferences = [];
+        slaveCustomConfigs = [];
       }
 
       let genericValidate = function(field, func, key, minlength) {
@@ -1399,7 +1399,7 @@ deviceListController.setDeviceReg = function(req, res) {
               } else {
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
-                meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+                meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
 
                 matchedDevice.success = true;
                 return res.status(200).json(matchedDevice);

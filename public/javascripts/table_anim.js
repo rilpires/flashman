@@ -732,7 +732,7 @@ $(document).ready(function() {
   };
 
   const buildAboutTab = function(device, index, mesh=-1) {
-    let idIndex = (mesh > -1) ? index + '-' + mesh : index;
+    let idIndex = ((mesh > -1) ? index + '-' + mesh : index);
     let createdDateStr = '';
     let resetDateStr = '';
     if (isNaN(Date.parse(device.created_at))) {
@@ -792,6 +792,23 @@ $(document).ready(function() {
           '</div>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (mesh > -1 ?
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_power-'+idIndex+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>' :
+          ''
+        )+
       '</div>'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
@@ -838,6 +855,17 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', 'primary-color active');
     }
+    if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
+       (!isSuperuser && grantWifiInfo <= 1)) {
+      aboutTab = aboutTab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+    } else {
+      aboutTab = aboutTab.replace('$REPLACE_WIFI_POWER_EN', '');
+    }
+
+    let selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+
     return aboutTab;
   };
 
@@ -1869,7 +1897,7 @@ $(document).ready(function() {
           finalHtml += formRow;
 
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            let s = 0;
+            let slaveIdx = 0;
             device.mesh_slaves.forEach((slave)=>{
               let slaveDev = res.devices.find((d)=>d._id===slave);
               let csvAttr = buildCsvData(slaveDev, index);
@@ -1890,7 +1918,7 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, s)+
+                buildAboutTab(slaveDev, index, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -1900,14 +1928,14 @@ $(document).ready(function() {
               finalHtml += formRow;
               if (slaveDev.external_reference &&
                   slaveDev.external_reference.kind === 'CPF') {
-                $('#edit_external_reference-' + index + '-' + s)
+                $('#edit_external_reference-' + index + '-' + slaveIdx)
                 .mask('000.000.000-009').keyup();
               } else if (slaveDev.external_reference &&
                          slaveDev.external_reference.kind === 'CNPJ') {
-                $('#edit_external_reference-' + index + '-' + s)
+                $('#edit_external_reference-' + index + '-' + slaveIdx)
                 .mask('00.000.000/0000-00').keyup();
               }
-              s++;
+              slaveIdx++;
             });
             let editButtonRow = buildFormSubmit(true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';

@@ -81,12 +81,15 @@ let validateEditDevice = function(event) {
                               index.toString()+'"]:checked').length > 0;
   let meshMode = $('#edit_meshMode-' + index.toString()).val();
 
-  let slaveReferences = [];
+  let slaveCustomConfigs = [];
   if (slaveCount > 0) {
     for (let i = 0; i < slaveCount; i++) {
-      let referenceType = $('#edit_ext_ref_type_selected-'+index+'-'+i).html();
-      let referenceData = $('#edit_external_reference-' +index+'-'+i).val();
-      slaveReferences.push({kind: referenceType, data: referenceData});
+      let slaveRefType = $('#edit_ext_ref_type_selected-'+index+'-'+i).html();
+      let slaveRefData = $('#edit_external_reference-' +index+'-'+i).val();
+      let slavePower = $('#edit_wifi_power-' +index+'-'+i).val();
+      slaveCustomConfigs.push({kind: slaveRefType,
+                               data: slaveRefData,
+                               power: slavePower});
     }
   }
 
@@ -185,7 +188,7 @@ let validateEditDevice = function(event) {
         kind: externalReferenceType,
         data: externalReferenceData,
       },
-      'slave_references': JSON.stringify(slaveReferences),
+      'slave_custom_configs': JSON.stringify(slaveCustomConfigs),
     }};
     if (validatePppoe) {
       data.content.pppoe_user = (pppoe) ? pppoeUser : '';
