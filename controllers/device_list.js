@@ -471,7 +471,7 @@ deviceListController.complexSearchDeviceQuery = function(queryContents) {
       let field = {};
       let hours = new Date();
       const parsedHour = parseInt(queryContents[idx].split('>')[1]);
-      const hourThreshold = parsedHour ? parsedHour : 1;
+      const hourThreshold = parsedHour ? parsedHour+1 : 1;
       hours.setHours(hours.getHours() - hourThreshold);
       field.$and = [
         {last_contact: {$lt: hours}},
