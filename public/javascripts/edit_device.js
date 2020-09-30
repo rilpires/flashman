@@ -558,8 +558,10 @@ $(document).ready(function() {
       $('#edit_wifi5_channel-' + idxMaster + '_' + idxSlave)
         .prop('disabled', (selMeshMode !== 1));
       if (selMeshMode !== 1) {
-        $('#edit_wifi_channel-' + idxMaster + '_' + idxSlave).val('auto');
-        $('#edit_wifi5_channel-' + idxMaster + '_' + idxSlave).val('auto');
+        $('#edit_wifi_channel-' + idxMaster + '_' + idxSlave)
+          .val($('#edit_wifi_channel-' + idxMaster).val());
+        $('#edit_wifi5_channel-' + idxMaster + '_' + idxSlave)
+          .val($('#edit_wifi5_channel-' + idxMaster).val());
         $('#edit_wifi5_power-' + idxMaster + '_' + idxSlave).val(100);
         $('#edit_wifi5_power-' + idxMaster + '_' + idxSlave)
           .prop('disabled', true);
