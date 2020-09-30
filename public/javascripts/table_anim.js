@@ -916,7 +916,8 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', 'primary-color active');
     }
-    if (!isSuperuser && grantWifiInfo <= 1) {
+    // Channel change only possible in cable only mesh mode
+    if ((!isSuperuser && grantWifiInfo <= 1) || (device.mesh_mode !== 1)) {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
     } else {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, '');

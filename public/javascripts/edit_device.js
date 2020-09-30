@@ -544,4 +544,26 @@ $(document).ready(function() {
       }
     }
   });
+
+  $(document).on('change', '[id^=edit_meshMode-]', (event)=> {
+    let selMeshMode = parseInt($(event.target).val());
+    let row = $(event.target).closest('tr');
+    let idxMaster = row.data('index');
+    let slaveCount = row.data('slave-count');
+    let idxSlave;
+    for (idxSlave = 0; idxSlave < slaveCount; idxSlave++) {
+      // Unblock mesh slave wi-fi channel selection if cable mode
+      $('#edit_wifi_channel-' + idxMaster + '_' + idxSlave)
+        .prop('disabled', (selMeshMode !== 1));
+      $('#edit_wifi5_channel-' + idxMaster + '_' + idxSlave)
+        .prop('disabled', (selMeshMode !== 1));
+      if (selMeshMode !== 1) {
+        $('#edit_wifi_channel-' + idxMaster + '_' + idxSlave).val('auto');
+        $('#edit_wifi5_channel-' + idxMaster + '_' + idxSlave).val('auto');
+        $('#edit_wifi5_power-' + idxMaster + '_' + idxSlave).val(100);
+        $('#edit_wifi5_power-' + idxMaster + '_' + idxSlave)
+          .prop('disabled', true);
+      }
+    }
+  });
 });
