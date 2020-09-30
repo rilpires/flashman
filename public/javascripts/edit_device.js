@@ -84,12 +84,12 @@ let validateEditDevice = function(event) {
   let slaveCustomConfigs = [];
   if (slaveCount > 0) {
     for (let i = 0; i < slaveCount; i++) {
-      let slaveRefType = $('#edit_ext_ref_type_selected-'+index+'-'+i).html();
-      let slaveRefData = $('#edit_external_reference-' +index+'-'+i).val();
-      let slaveChannel = $('#edit_wifi_channel-' +index+'-'+i).val();
-      let slaveChannel5ghz = $('#edit_wifi5_channel-' +index+'-'+i).val();
-      let slavePower = $('#edit_wifi_power-' +index+'-'+i).val();
-      let slavePower5ghz = $('#edit_wifi5_power-' +index+'-'+i).val();
+      let slaveRefType = $('#edit_ext_ref_type_selected-'+index+'_'+i).html();
+      let slaveRefData = $('#edit_external_reference-'+index+'_'+i).val();
+      let slaveChannel = $('#edit_wifi_channel-'+index+'_'+i).val();
+      let slaveChannel5ghz = $('#edit_wifi5_channel-'+index+'_'+i).val();
+      let slavePower = $('#edit_wifi_power-'+index+'_'+i).val();
+      let slavePower5ghz = $('#edit_wifi5_power-'+index+'_'+i).val();
       slaveCustomConfigs.push({kind: slaveRefType,
                                data: slaveRefData,
                                channel: slaveChannel,
@@ -527,11 +527,17 @@ $(document).ready(function() {
 
   // Block or unblock 5ghz wi-fi power setup
   $(document).on('change', '[id^=edit_wifi5_channel-]', (event)=> {
-    let row = $(event.target).parents('tr');
-    let validateWifiPower = row.data('validate-wifi-power');
+    let row = $(event.target).closest('tr');
+    if (row.data('index') === undefined) {
+      row = $(event.target).closest('tr').prev();
+    }
+    let idxMaster = row.data('index');
+    // Works also with mesh slave rows
+    let validateWifiPower = $('#form-' + idxMaster).data('validate-wifi-power');
     if (validateWifiPower) {
-      let idx = row.data('index');
-      let selChannel = $('#edit_wifi5_channel-' + idx).val();
+      // Do this horrible parse to work with mesh slave rows also
+      let idx = $(event.target).attr('id').split('-')[1];
+      let selChannel = $(event.target).val();
       $('#edit_wifi5_power-' + idx).prop('disabled', (selChannel == 'auto'));
       if (selChannel == 'auto') {
         $('#edit_wifi5_power-' + idx).val(100);

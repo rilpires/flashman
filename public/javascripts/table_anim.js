@@ -732,7 +732,7 @@ $(document).ready(function() {
   };
 
   const buildAboutTab = function(device, index, mesh=-1) {
-    let idIndex = ((mesh > -1) ? index + '-' + mesh : index);
+    let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
     if (isNaN(Date.parse(device.created_at))) {
@@ -879,7 +879,7 @@ $(document).ready(function() {
               '<div class="md-selectfield form-control my-0">'+
                 '<label class="text-primary active">Potência do sinal 5.0GHz</label>'+
                 '<select class="browser-default md-select" id="edit_wifi5_power-'+idIndex+'" '+
-                '$REPLACE_WIFI_POWER_EN>'+
+                '$REPLACE_WIFI5_POWER_EN>'+
                   '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
                   '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
                   '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
@@ -924,8 +924,14 @@ $(document).ready(function() {
     if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
        (!isSuperuser && grantWifiInfo <= 1)) {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, 'disabled');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, 'disabled');
     } else {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, '');
+      if (device.wifi_channel_5ghz == 'auto') {
+        aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, 'disabled');
+      } else {
+        aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, '');
+      }
     }
 
     let selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
