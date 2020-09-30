@@ -278,7 +278,7 @@ const grantWpsFunction = function(version) {
     return (versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, no way to know version so disable by default
-    return false;
+    return true;
   }
 };
 
