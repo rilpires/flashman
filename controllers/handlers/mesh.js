@@ -44,18 +44,20 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
 
 meshHandlers.syncSlaveCustomConfig = function(slave, config) {
   if (('kind' in config) && (config.kind !== '') &&
-      ('data' in config) && (config.data !== '') &&
-      ('channel' in config) && (config.channel !== '') &&
-      ('channel5ghz' in config) && (config.channel5ghz !== '') &&
-      ('power' in config) && (config.power !== '') &&
-      ('power5ghz' in config) && (config.power5ghz !== '')
+      ('data' in config) && (config.data !== '')
   ) {
     slave.external_reference.kind = config.kind;
     slave.external_reference.data = config.data;
-    if (slave.mesh_mode === 1) { // Cable only
-      slave.wifi_channel = config.channel;
-      slave.wifi_channel_5ghz = config.channel5ghz;
-    }
+  }
+  if (('channel' in config) && (config.channel !== '') &&
+      ('channel5ghz' in config) && (config.channel5ghz !== '') &&
+      (slave.mesh_mode === 1) // Cable only
+  ) {
+    slave.wifi_channel = config.channel;
+    slave.wifi_channel_5ghz = config.channel5ghz;
+  }
+  if (('power' in config) && (config.power !== '') &&
+      ('power5ghz' in config) && (config.power5ghz !== '')) {
     slave.wifi_power = config.power;
     slave.wifi_power_5ghz = config.power5ghz;
   }
