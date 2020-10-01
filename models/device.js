@@ -29,6 +29,10 @@ let deviceSchema = new Schema({
   wifi_band: String,
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
+  wifi_hidden: {type: Number, default: 0},
+  wifi_power: {type: Number, default: 100, enum: [ // Percentage
+    25, 50, 75, 100,
+  ]},
   wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
@@ -36,6 +40,10 @@ let deviceSchema = new Schema({
   wifi_band_5ghz: String,
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
+  wifi_hidden_5ghz: {type: Number, default: 0},
+  wifi_power_5ghz: {type: Number, default: 100, enum: [ // Percentage
+    25, 50, 75, 100,
+  ]},
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
@@ -109,6 +117,9 @@ let deviceSchema = new Schema({
   wan_ip: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
+  ipv6_enabled: {type: Number, default: 2, enum: [
+    0, 1, 2, // 0 - false, 1 - true, 2 - unknown (old firmware)
+  ]},
   ip: String,
   ntp_status: String,
   last_devices_refresh: Date,
@@ -163,6 +174,9 @@ let deviceSchema = new Schema({
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  wps_is_active: {type: Boolean, default: false},
+  wps_last_connected_date: {type: Date},
+  wps_last_connected_mac: {type: String, default: ''},
 });
 
 deviceSchema.plugin(mongoosePaginate);

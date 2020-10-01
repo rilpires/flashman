@@ -24,6 +24,7 @@ const speedTestCompatibleModels = {
   'EMG1702-T10AA1': 100,
   'GWR1200ACV1': 200,
   'GWR1200ACV2': 200,
+  'GF1200V1': 200,
   'NCLOUD': 100,
   'RE708V1': 200,
   'TL-MR3020V1': 100,
@@ -74,6 +75,18 @@ const meshCompatibleModels = [
   'TL-WDR3500V1',
   'TL-WDR3600V1',
   'TL-WDR4300V1',
+];
+
+const wpsNotCompatible = [
+  'TL-MR3020V1',
+  'TL-WR840NV5',
+  'TL-WR840NV6',
+  'TL-WR840NV62',
+  'TL-WR840NV6PRESET',
+  'TL-WR849NV5',
+  'TL-WR849NV6',
+  'TL-WR849NV62',
+  'TL-WR845NV4',
 ];
 
 const versionCompare = function(foo, bar) {
@@ -144,6 +157,15 @@ const grantWifi5ghz = function(version, is5ghzCapable) {
 const grantWifiBand = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantWifiPowerHiddenIpv6 = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -264,6 +286,19 @@ const grantUpdateAck = function(version) {
   }
 };
 
+const grantWpsFunction = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || wpsNotCompatible.includes(model)) {
+      // Unspecified model or model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.28.0') >= 0);
+  } else {
+    // Development version, no way to know version so disable by default
+    return true;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
@@ -274,6 +309,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
   result.grantWifiState = grantWifiState(version);
+  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);
@@ -285,6 +321,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWanBytesSupport = grantWanBytesSupport(version);
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
+  result.grantWpsFunction = grantWpsFunction(version, model);
   return result;
 };
 
