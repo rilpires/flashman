@@ -52,6 +52,13 @@
       };
     };
 
+    Validator.prototype.validatePower = function(power) {
+      return {
+        valid: ['25', '50', '75', '100', 25, 50, 75, 100].includes(power),
+        err: ['Somente são aceitos os valores 25%, 50%, 75% e 100%'],
+      };
+    };
+
     Validator.prototype.validateUser = function(user) {
       const messages = [
         'Este campo é obrigatório',
@@ -122,6 +129,13 @@
       return {
         valid: [24, 25, 26, '24', '25', '26'].includes(netmask),
         err: ['Somente são aceitas as máscaras 24, 25 ou 26'],
+      };
+    };
+
+    Validator.prototype.validateIpv6Enabled = function(ipv6Enabled) {
+      return {
+        valid: ['0', '1', '2', 0, 1, 2].includes(ipv6Enabled),
+        err: ['Valor inválido para ativar ou desativar IPv6'],
       };
     };
 

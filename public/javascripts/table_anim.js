@@ -732,7 +732,7 @@ $(document).ready(function() {
   };
 
   const buildAboutTab = function(device, index, mesh=-1) {
-    let idIndex = (mesh > -1) ? index + '-' + mesh : index;
+    let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
     if (isNaN(Date.parse(device.created_at))) {
@@ -790,6 +790,55 @@ $(document).ready(function() {
           '</div>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (mesh > -1 ?
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Canal do Wi-Fi 2.4GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_channel-'+idIndex+'" '+
+                '$REPLACE_WIFI_EN>'+
+                  '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
+                  '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
+                  '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
+                  '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
+                  '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
+                  '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
+                  '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
+                  '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
+                  '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
+                  '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
+                  '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
+                  '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Canal do Wi-Fi 5.0GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_channel-'+idIndex+'" '+
+                '$REPLACE_WIFI_EN>'+
+                  '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
+                  '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
+                  '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
+                  '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
+                  '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
+                  '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
+                  '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
+                  '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
+                  '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
+                  '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
+                  '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
+                  '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
+                  '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>161</option>'+
+                  '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>165</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>':
+          ''
+        )+
       '</div>'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
@@ -810,6 +859,37 @@ $(document).ready(function() {
           'disabled value="'+device.version+'">'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (mesh > -1 ?
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Potência do sinal 2.4GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_power-'+idIndex+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+          '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="text-primary active">Potência do sinal 5.0GHz</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_power-'+idIndex+'" '+
+                '$REPLACE_WIFI5_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER5_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>':
+          ''
+        )+
       '</div>'+
     '</div>';
     if (device.external_reference) {
@@ -836,6 +916,38 @@ $(document).ready(function() {
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', 'primary-color active');
     }
+    // Channel change only possible in cable only mesh mode
+    if ((!isSuperuser && grantWifiInfo <= 1) || (device.mesh_mode !== 1)) {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
+    } else {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, '');
+    }
+    if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
+       (!isSuperuser && grantWifiInfo <= 1)) {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, 'disabled');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, 'disabled');
+    } else {
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI_POWER_EN/g, '');
+      if (device.wifi_channel_5ghz == 'auto') {
+        aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, 'disabled');
+      } else {
+        aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_POWER_EN/g, '');
+      }
+    }
+
+    let selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_CHANNEL5_' + device.wifi_channel_5ghz;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_CHANNEL5_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+    selectTarget = '$REPLACE_SELECTED_POWER5_' + device.wifi_power_5ghz;
+    aboutTab = aboutTab.replace(selectTarget, 'selected="selected"');
+    aboutTab = aboutTab.replace(/\$REPLACE_SELECTED_POWER5_.*?\$/g, '');
+
     return aboutTab;
   };
 
@@ -944,6 +1056,8 @@ $(document).ready(function() {
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
+          let grantWifiPowerHiddenIpv6Box =
+            device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
@@ -998,8 +1112,10 @@ $(document).ready(function() {
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-ipv6-enabled="'+grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-power="'+(grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
@@ -1189,6 +1305,13 @@ $(document).ready(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
+                  '$REPLACE_SELECTED_IPV6_ENABLED></input>'+
+                  '<label class="custom-control-label" for="edit_ipv6_enabled-'+index+'">'+
+                  'Habilitar IPv6'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-4">'+
                 '<div class="md-form input-entry">'+
@@ -1212,6 +1335,16 @@ $(document).ready(function() {
           } else {
             wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP', 'selected="selected"');
           }
+
+          let currIpv6Enabled = (parseInt(device.ipv6_enabled) == 1 ? 'checked' : '');
+          wanTab = wanTab.replace(/\$REPLACE_SELECTED_IPV6_ENABLED/g, currIpv6Enabled);
+
+          if (!grantWifiPowerHiddenIpv6Box) {
+            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', 'style="display: none;"');
+          } else {
+            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', '');
+          }
+
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
@@ -1468,6 +1601,20 @@ $(document).ready(function() {
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
+                  'Ativar Wi-Fi 2.4GHz'+
+                  '</label>'+
+                '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
+                  'Ocultar SSID 2.4GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1494,12 +1641,19 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
-                  'Ativar Wi-Fi 2.4GHz'+
-                  '</label>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">Potência do sinal</label>'+
+                      '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
+                      '$REPLACE_WIFI_POWER_EN>'+
+                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -1519,6 +1673,18 @@ $(document).ready(function() {
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
           }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
+          }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', '');
+          }
           if (isSuperuser || grantPassShow) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', passwordToggle);
           } else {
@@ -1537,8 +1703,15 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
+          selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+
           let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
+
+          let currWifiHidden = (parseInt(device.wifi_hidden) == 1 ? 'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden);
 
           let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
             '<div class="row">'+
@@ -1582,6 +1755,20 @@ $(document).ready(function() {
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                 '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
+                  'Ativar Wi-Fi 5.0GHz'+
+                  '</label>'+
+                '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
+                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
+                  'Ocultar SSID 5.0GHz'+
+                  '</label>'+
+                '</div>'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1609,12 +1796,19 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
-                  'Ativar Wi-Fi 5.0GHz'+
-                  '</label>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">Potência do sinal</label>'+
+                      '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
+                      '$REPLACE_WIFI_POWER_EN>'+
+                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
@@ -1633,6 +1827,19 @@ $(document).ready(function() {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
           } else {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
+          }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1)) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
+          }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1) ||
+             (device.wifi_channel_5ghz == 'auto')) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', '');
           }
           if (isSuperuser || grantPassShow) {
             wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', passwordToggle);
@@ -1654,8 +1861,15 @@ $(document).ready(function() {
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
 
+          selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power_5ghz;
+          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
+          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+
           let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
           wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
+
+          let currWifiHidden5ghz = (parseInt(device.wifi_hidden_5ghz) == 1 ? 'checked' : '');
+          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden5ghz);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+
@@ -1766,7 +1980,7 @@ $(document).ready(function() {
           finalHtml += formRow;
 
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            let s = 0;
+            let slaveIdx = 0;
             device.mesh_slaves.forEach((slave)=>{
               let slaveDev = res.devices.find((d)=>d._id===slave);
               let csvAttr = buildCsvData(slaveDev, index);
@@ -1787,7 +2001,7 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, s)+
+                buildAboutTab(slaveDev, index, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -1797,14 +2011,14 @@ $(document).ready(function() {
               finalHtml += formRow;
               if (slaveDev.external_reference &&
                   slaveDev.external_reference.kind === 'CPF') {
-                $('#edit_external_reference-' + index + '-' + s)
+                $('#edit_external_reference-' + index + '-' + slaveIdx)
                 .mask('000.000.000-009').keyup();
               } else if (slaveDev.external_reference &&
                          slaveDev.external_reference.kind === 'CNPJ') {
-                $('#edit_external_reference-' + index + '-' + s)
+                $('#edit_external_reference-' + index + '-' + slaveIdx)
                 .mask('00.000.000/0000-00').keyup();
               }
-              s++;
+              slaveIdx++;
             });
             let editButtonRow = buildFormSubmit(true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';

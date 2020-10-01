@@ -54,19 +54,24 @@ const createRegistry = function(req, res) {
   let channel = util.returnObjOrEmptyStr(req.body.wifi_channel).trim();
   let band = util.returnObjOrEmptyStr(req.body.wifi_band).trim();
   let mode = util.returnObjOrEmptyStr(req.body.wifi_mode).trim();
+  let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
   let wifiState = parseInt(util.returnObjOrNum(req.body.wifi_state, 1));
+  let wifiHidden = parseInt(util.returnObjOrNum(req.body.wifi_hidden, 0));
   let ssid5ghz = util.returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
   let password5ghz = util.returnObjOrEmptyStr(req.body.wifi_password_5ghz).trim();
   let channel5ghz = util.returnObjOrEmptyStr(req.body.wifi_channel_5ghz).trim();
   let band5ghz = util.returnObjOrStr(req.body.wifi_band_5ghz, 'VHT80').trim();
   let mode5ghz = util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
+  let power5ghz = parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
   let wifiState5ghz = parseInt(util.returnObjOrNum(req.body.wifi_state_5ghz, 1));
+  let wifiHidden5ghz = parseInt(util.returnObjOrNum(req.body.wifi_hidden_5ghz, 0));
   let pppoe = (pppoeUser !== '' && pppoePassword !== '');
   let flmUpdater = util.returnObjOrEmptyStr(req.body.flm_updater).trim();
   let is5ghzCapable =
     (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
+  let wanIpv6Enabled = parseInt(util.returnObjOrNum(req.body.ipv6_enabled, 2));
   let wpsState = (parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
   let bridgeEnabled = parseInt(util.returnObjOrNum(req.body.bridge_enabled, 0));
   let bridgeSwitchDisable = parseInt(util.returnObjOrNum(req.body.bridge_switch_disable, 0));
@@ -113,6 +118,10 @@ const createRegistry = function(req, res) {
       genericValidate(mode, validator.validateMode,
                       'mode', null, errors);
     }
+    if (permissions.grantWifiPowerHiddenIpv6Box) {
+      genericValidate(power, validator.validatePower,
+                      'power', null, errors);
+    }
     if (permissions.grantWifi5ghz) {
       genericValidate(ssid5ghz, validator.validateSSID,
                       'ssid5ghz', null, errors);
@@ -129,6 +138,10 @@ const createRegistry = function(req, res) {
       }
       genericValidate(mode5ghz, validator.validateMode,
                       'mode5ghz', null, errors);
+      if (permissions.grantWifiPowerHiddenIpv6Box) {
+        genericValidate(power5ghz, validator.validatePower,
+                        'power5ghz', null, errors);
+      }
     }
 
     if (bridgeEnabled > 0) {
@@ -165,17 +178,22 @@ const createRegistry = function(req, res) {
         'wifi_channel': channel,
         'wifi_band': band,
         'wifi_mode': mode,
+        'wifi_power': power,
         'wifi_state': wifiState,
+        'wifi_hidden': wifiHidden,
         'wifi_is_5ghz_capable': is5ghzCapable,
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
         'wifi_band_5ghz': band5ghz,
         'wifi_mode_5ghz': mode5ghz,
+        'wifi_power_5ghz': power5ghz,
         'wifi_state_5ghz': wifiState5ghz,
+        'wifi_hidden_5ghz': wifiHidden5ghz,
         'wan_ip': wanIp,
         'wan_negociated_speed': wanSpeed,
         'wan_negociated_duplex': wanDuplex,
+        'ipv6_enabled': wanIpv6Enabled,
         'ip': ip,
         'last_contact': Date.now(),
         'do_update': false,
@@ -483,6 +501,44 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
               }
             }
           }
+          if ( permissionsSentVersion.grantWifiPowerHiddenIpv6Box &&
+              !permissionsCurrVersion.grantWifiPowerHiddenIpv6Box) {
+            let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
+            genericValidate(power, validator.validatePower,
+                            'power', null, errors);
+            if (errors.length < 1) {
+              if (matchedDevice.wifi_power !== power) {
+                deviceSetQuery.wifi_power = power;
+                matchedDevice.wifi_power = power; // Used in device response
+              }
+            }
+
+            if ( permissionsSentVersion.grantWifi5ghz &&
+                !permissionsCurrVersion.grantWifi5ghz) {
+              let power5ghz =
+                parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
+              genericValidate(power5ghz, validator.validatePower,
+                              'power5ghz', null, errors);
+              if (errors.length < 1) {
+                if (matchedDevice.wifi_power_5ghz !== power5ghz) {
+                  deviceSetQuery.wifi_power_5ghz = power5ghz;
+                  matchedDevice.wifi_power_5ghz = power5ghz; // Device response
+                }
+              }
+            }
+
+            let wanIpv6Enabled = parseInt(
+              util.returnObjOrNum(req.body.ipv6_enabled, 2));
+            genericValidate(wanIpv6Enabled, validator.validateIpv6Enabled,
+                            'ipv6Enabled', null, errors);
+            if (errors.length < 1) {
+              if (matchedDevice.ipv6_enabled !== wanIpv6Enabled) {
+                deviceSetQuery.ipv6_enabled = wanIpv6Enabled;
+                // Used in device response
+                matchedDevice.ipv6_enabled = wanIpv6Enabled;
+              }
+            }
+          }
           if (matchedDevice.version !== sentVersion) {
             deviceSetQuery.version = sentVersion;
           }
@@ -593,8 +649,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
-          // Do not return yet, just respond to request so we can free socket
-          res.status(200).json({
+          let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
             'mqtt_status': isDevOn,
@@ -610,12 +665,16 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
             'wifi_mode': util.returnObjOrEmptyStr(matchedDevice.wifi_mode),
             'wifi_state': matchedDevice.wifi_state,
+            'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
+            'wifi_hidden': matchedDevice.wifi_hidden,
             'wifi_ssid_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
             'wifi_mode_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_mode_5ghz),
+            'wifi_power_5ghz': util.returnObjOrNum(matchedDevice.wifi_power_5ghz, 100),
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
+            'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
             'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
             'zabbix_fqdn': zabbixFqdn,
@@ -634,7 +693,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
-          });
+          };
+          // Only answer ipv6 status if flashman knows current state
+          if (matchedDevice.ipv6_enabled !== 2) {
+            resJson.ipv6_enabled = matchedDevice.ipv6_enabled;
+          }
+          // Do not return yet, just respond to request so we can free socket
+          res.status(200).json(resJson);
           // Now we push the changed fields to the database
           DeviceModel.updateOne({'_id': matchedDevice._id},
             {'$set': deviceSetQuery}, (err) => {
