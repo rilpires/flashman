@@ -663,6 +663,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   queryPromise.then((matchedDevices)=>{
     let releasesAvailable = deviceListController.getReleases(true);
     let modelsNeeded = {};
+    let modelMeshIntersections = [];
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
       matchedDevices = matchedDevices.concat(extraDevices);
@@ -671,17 +672,31 @@ scheduleController.getDevicesReleases = async(function(req, res) {
         let weight = 1;
         if (device.mesh_master) return; // Ignore mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-          // Increase model weight for each router in mesh network
-          weight += device.mesh_slaves.length;
+          // Check for slave model, if it's different than master's, add it to
+          // intersections so we can couple them
+          let meshModels = {};
           device.mesh_slaves.forEach((slave)=>{
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
-            if (slaveModel in modelsNeeded) {
-              modelsNeeded[slaveModel] += weight;
+            if (model === slaveModel) {
+              weight += 1;
             } else {
-              modelsNeeded[slaveModel] = weight;
+              // Add slave model to models needed
+              if (slaveModel in modelsNeeded) {
+                modelsNeeded[slaveModel] += 1;
+              } else {
+                modelsNeeded[slaveModel] = 1;
+              }
+              // Add slave model to mesh models
+              if (slaveModel in meshModels) {
+                meshModels[slaveModel] += 1;
+              } else {
+                meshModels[slaveModel] = 1;
+              }
             }
           });
+          meshModels[model] = weight;
+          modelMeshIntersections.push(meshModels);
         }
         if (model in modelsNeeded) {
           modelsNeeded[model] += weight;
@@ -704,6 +719,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       return res.status(200).json({
         success: true,
         releases: releasesMissing,
+        intersections: modelMeshIntersections,
       });
     });
   }, (err)=>{
