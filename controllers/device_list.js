@@ -371,7 +371,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
       doUpdate = (req.body.do_update === 'true');
     }
     // Reject update cancel command to mesh slave, use above function instead
-    if (!req.body.do_update) {
+    if (!doUpdate) {
       return res.status(500).json({
         success: false,
         message: 'Esta função só deve ser usada para marcar um slave para '+
@@ -732,13 +732,24 @@ deviceListController.searchDeviceReg = async function(req, res) {
       device.permissions = DeviceVersion.findByVersion(
         device.version,
         device.wifi_is_5ghz_capable,
-        device.model
+        device.model,
       );
 
       // Fill default value if wi-fi state does not exist
       if (device.wifi_state === undefined) {
         device.wifi_state = 1;
         device.wifi_state_5ghz = 1;
+      }
+      if (device.wifi_power === undefined) {
+        device.wifi_power = 100;
+        device.wifi_power_5ghz = 100;
+      }
+      if (device.wifi_hidden === undefined) {
+        device.wifi_hidden = 0;
+        device.wifi_hidden_5ghz = 0;
+      }
+      if (device.ipv6_enabled === undefined) {
+        device.ipv6_enabled = 0;
       }
       return device;
     };
@@ -954,7 +965,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'speedtest': {
+      case 'speedtest':
+      case 'wps': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -1037,6 +1049,16 @@ deviceListController.sendMqttMsg = function(req, res) {
               message: 'Esse comando somente funciona em uma sessão!',
             });
           }
+        } else if (msgtype === 'wps') {
+          if (!('activate' in req.params) ||
+              !(typeof req.params.activate === 'boolean')
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: 'Erro na requisição'});
+          }
+          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
+                                           req.params.activate);
         } else {
           return res.status(200).json({
             success: false,
@@ -1201,6 +1223,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
       let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
       let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+      let ipv6Enabled = parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
       let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).trim();
       let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).trim();
       let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
@@ -1208,27 +1231,31 @@ deviceListController.setDeviceReg = function(req, res) {
       let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
       let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
       let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+      let power = parseInt(util.returnObjOrNum(content.wifi_power, 100));
       let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
+      let wifiHidden = parseInt(util.returnObjOrNum(content.wifi_hidden, 0));
       let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
       let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
       let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
       let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
       let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
+      let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
       let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
       let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
-      let slaveReferences = [];
+      let slaveCustomConfigs = [];
       try {
-        slaveReferences = JSON.parse(content.slave_references);
-        if (slaveReferences.length !== matchedDevice.mesh_slaves.length) {
-          slaveReferences = [];
+        slaveCustomConfigs = JSON.parse(content.slave_custom_configs);
+        if (slaveCustomConfigs.length !== matchedDevice.mesh_slaves.length) {
+          slaveCustomConfigs = [];
         }
       } catch (err) {
-        slaveReferences = [];
+        slaveCustomConfigs = [];
       }
 
       let genericValidate = function(field, func, key, minlength) {
@@ -1281,6 +1308,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_mode')) {
           genericValidate(mode, validator.validateMode, 'mode');
         }
+        if (content.hasOwnProperty('wifi_power')) {
+          genericValidate(power, validator.validatePower, 'power');
+        }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
           genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
         }
@@ -1297,6 +1327,9 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('wifi_mode_5ghz')) {
           genericValidate(mode5ghz, validator.validateMode, 'mode5ghz');
+        }
+        if (content.hasOwnProperty('wifi_power_5ghz')) {
+          genericValidate(power5ghz, validator.validatePower, 'power5ghz');
         }
         if (content.hasOwnProperty('lan_subnet')) {
           genericValidate(lanSubnet, validator.validateIP, 'lan_subnet');
@@ -1360,6 +1393,10 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.pppoe_password = pppoePassword;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('ipv6_enabled')) {
+              matchedDevice.ipv6_enabled = ipv6Enabled;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_ssid') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid !== '') {
@@ -1413,6 +1450,17 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice.wifi_state = wifiState;
               updateParameters = true;
             }
+            if (content.hasOwnProperty('wifi_hidden') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_hidden = wifiHidden;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_power') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                power !== '') {
+              matchedDevice.wifi_power = power;
+              updateParameters = true;
+            }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
                 (superuserGrant || role.grantWifiInfo > 1) &&
                 ssid5ghz !== '') {
@@ -1464,6 +1512,17 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi5.enable = wifiState5ghz;
               }
               matchedDevice.wifi_state_5ghz = wifiState5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_hidden_5ghz') &&
+               (superuserGrant || role.grantWifiInfo > 1)) {
+              matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
+              updateParameters = true;
+            }
+            if (content.hasOwnProperty('wifi_power_5ghz') &&
+                (superuserGrant || role.grantWifiInfo > 1) &&
+                power5ghz !== '') {
+              matchedDevice.wifi_power_5ghz = power5ghz;
               updateParameters = true;
             }
             if (content.hasOwnProperty('lan_subnet') &&
@@ -1529,6 +1588,10 @@ deviceListController.setDeviceReg = function(req, res) {
             matchedDevice.save(async function(err) {
               if (err) {
                 console.log(err);
+                return res.status(500).json({
+                  success: false,
+                  message: 'Erro ao salvar dados na base',
+                });
               }
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
@@ -1539,8 +1602,9 @@ deviceListController.setDeviceReg = function(req, res) {
                 acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
 
-              matchedDevice.success = true;
-              return res.status(200).json(matchedDevice);
+                matchedDevice.success = true;
+                return res.status(200).json(matchedDevice);
+              }
             });
           });
         } else {
@@ -2030,12 +2094,15 @@ deviceListController.getLanDevices = function(req, res) {
     .map((lanDevice) => {
       lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
+      // Ease up gateway reference when in Mesh mode
+      lanDevice.gateway_mac = matchedDevice._id;
       return lanDevice;
     });
 
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
+      mesh_routers: matchedDevice.mesh_routers,
     });
   });
 };

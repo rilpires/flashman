@@ -17,39 +17,40 @@ const fetchUsers = function(usersTable, hasTrash) {
       res.users.forEach(function(userObj) {
         if (!userObj.deviceCertifications) return;
         userObj.deviceCertifications.forEach(function(cert) {
-          let certRow = $('<tr></tr>');
+          let certRow = $('<tr>');
           if (hasTrash) {
-            certRow.append($('<td></td>').addClass('col-xs-1').append(
-              $('<input></input>').addClass('checkbox item-checkbox')
+            certRow.append($('<td>').addClass('col-xs-1').append(
+              $('<input>').addClass('checkbox item-checkbox')
               .attr('type', 'checkbox')
               .attr('data-userid', userObj._id)
               .attr('data-timestamp', cert.localEpochTimestamp)
             ));
           }
           certRow.append(
-            $('<td></td>').html(
+            $('<td>').html(
               (cert.finished) ?
               '<div class="fas fa-check-circle fa-2x green-text"></div>' :
               '<div class="fas fa-times-circle fa-2x red-text"></div>'
             ),
-            $('<td></td>').html(cert.mac),
-            $('<td></td>').html(
-              new Date(cert.localEpochTimestamp).toLocaleString()
+            $('<td>').html(cert.mac),
+            $('<td>').html(
+              new Date(cert.localEpochTimestamp).toLocaleString('en-US')
             ),
-            $('<td></td>').html(userObj.name),
-            $('<td class="btn-detail"></td>').append(
-              $('<button></button>').append(
-                $('<div></div>').addClass('fas fa-info-circle'),
-                $('<span></span>').html('&nbsp Detalhes')
+            $('<td>').html(userObj.name),
+            $('<td class="btn-detail">').append(
+              $('<button>').append(
+                $('<div>').addClass('fas fa-info-circle'),
+                $('<span>').html('&nbsp Detalhes')
               ).addClass('btn btn-sm btn-primary my-0')
               .attr('type', 'button')
             ).attr('data-userid', userObj._id)
             .attr('data-username', userObj.name)
             .attr('data-timestamp', cert.localEpochTimestamp),
           );
-          usersTable.row.add(certRow).draw();
+          usersTable.row.add(certRow);
         });
       });
+      usersTable.draw();
     } else {
       displayAlertMsg(res);
     }

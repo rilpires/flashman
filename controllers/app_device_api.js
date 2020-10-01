@@ -545,7 +545,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -557,7 +557,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    // Send mqtt message to update devices on flashman db
+    // Send mqtt message to reboot router
     mqtt.anlixMessageRouterReboot(req.body.id);
 
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -576,7 +576,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -610,7 +610,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -698,7 +698,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -845,7 +845,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -872,7 +872,7 @@ appDeviceAPIController.appGetDevices = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -900,7 +900,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -937,7 +937,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message: 'Roteador não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -980,6 +980,32 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
   }));
 };
 
+appDeviceAPIController.appGetWpsState = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Roteador não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj[0].secret != req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+
+    return res.status(200).json({
+      is_active: matchedDevice.wps_is_active,
+      last_conn_date: matchedDevice.wps_last_connected_date,
+      last_conn_mac: matchedDevice.wps_last_connected_mac,
+    });
+  });
+};
+
 appDeviceAPIController.resetPassword = function(req, res) {
   if (!req.body.content || !req.body.content.reset_mac ||
       !req.body.content.reset_secret) {
@@ -1014,6 +1040,42 @@ appDeviceAPIController.resetPassword = function(req, res) {
 
     return res.status(200).json({success: true});
   }));
-}
+};
+
+appDeviceAPIController.activateWpsButton = function(req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'Roteador não encontrado'});
+    }
+    let appObj = matchedDevice.apps.find(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (typeof appObj === 'undefined') {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+    if (appObj.secret !== req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+    if (!('content' in req.body) || !('activate' in req.body.content) ||
+        !(typeof req.body.content.activate === 'boolean')
+    ) {
+      return res.status(500).json({message: 'Erro na requisição'});
+    }
+
+    // Send mqtt message to activate WPS push button
+    mqtt.anlixMessageRouterWpsButton(req.body.id, req.body.content.activate);
+
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.id.toUpperCase()];
+    });
+
+    return res.status(200).json({
+      success: isDevOn,
+    });
+  });
+};
 
 module.exports = appDeviceAPIController;

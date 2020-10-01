@@ -200,13 +200,30 @@ $(document).ready(function() {
             let release = event.originalEvent.target.text;
             $('#selected-release').html(release);
             let missingModels = res.releases.find((r)=>r.id===release).models;
+            let intersections = res.intersections;
             let missingCount = 0;
             $('#warning-missing-models').html('');
             missingModels.forEach((model)=>{
               $('#warning-missing-models').append(
-                $('<li>').html(model.model)
+                $('<li>').html(model.model),
               );
-              missingCount += model.count;
+              let count = model.count;
+              // Discount mesh intersections
+              intersections = intersections.filter((intersection)=>{
+                if (model.model in intersection) {
+                  Object.keys(intersection).forEach((imodel)=>{
+                    if (model.model === imodel) return; // discard same model
+                    if (!missingModels.find((m)=>m.model===imodel)) {
+                      // Only discard intersection models if the other model
+                      // is not in the missing models
+                      count += intersection[imodel];
+                    }
+                  });
+                  return false;
+                }
+                return true;
+              });
+              missingCount += count;
             });
             let totalCount;
             if (useCsv) {
