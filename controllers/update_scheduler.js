@@ -619,6 +619,9 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
+  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this 
+ prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
@@ -692,7 +695,10 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       let releasesMissing = releasesAvailable.map((release)=>{
         let modelsMissing = [];
         for (let model in modelsNeeded) {
-          if (!release.model.includes(model)) {
+          if (!release.model.some(
+           (modelAndVersion) => modelAndVersion.includes(model))) { /* if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
             modelsMissing.push({model: model, count: modelsNeeded[model]});
           }
         }
@@ -762,6 +768,9 @@ scheduleController.startSchedule = async(function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
+  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this 
+ prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
