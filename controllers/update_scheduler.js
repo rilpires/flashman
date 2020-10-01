@@ -612,7 +612,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   });
 });
 
-scheduleController.getDevicesReleases = async(function(req, res) {
+scheduleController.getDevicesReleases = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -620,13 +620,14 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
   if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
- adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this 
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
  prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -696,7 +697,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
         let modelsMissing = [];
         for (let model in modelsNeeded) {
           if (!release.model.some(
-           (modelAndVersion) => modelAndVersion.includes(model))) { /* if array
+           (modelAndVersion) => modelAndVersion.includes(model))) {/* if array
  of strings contains model name inside any of its strings, where each string is
  a concatenation of both model name and version. */
             modelsMissing.push({model: model, count: modelsNeeded[model]});
@@ -719,7 +720,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       message: 'Erro interno na base',
     });
   });
-});
+};
 
 scheduleController.uploadDevicesFile = function(req, res) {
   if (!req.files) {
@@ -757,7 +758,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
   });
 };
 
-scheduleController.startSchedule = async(function(req, res) {
+scheduleController.startSchedule = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
@@ -769,13 +770,14 @@ scheduleController.startSchedule = async(function(req, res) {
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
   if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
- adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this 
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
  prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -842,7 +844,10 @@ scheduleController.startSchedule = async(function(req, res) {
         if (!valid) return false;
       }
       let model = device.model.replace('N/', '');
-      return modelsAvailable.includes(model);
+      return modelsAvailable.some(
+       (modelAndVersion) => modelAndVersion.includes(model)); /* true if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
     });
     if (matchedDevices.length === 0) {
       return res.status(500).json({
@@ -930,7 +935,7 @@ scheduleController.startSchedule = async(function(req, res) {
       message: 'Erro interno na base',
     });
   }));
-});
+};
 
 scheduleController.updateScheduleStatus = async(function(req, res) {
   let config = await(getConfig(true, false));
