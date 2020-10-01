@@ -155,6 +155,12 @@ mqtts.on('ack', function(packet, client, err) {
   }
 });
 
+
+mqtts.getConnectedClients = function() {
+  return Object.values(mqtts.unifiedClientsMap)
+    .reduce((acc, clients) => acc.concat(Object.keys(clients)), []);
+}
+
 mqtts.authenticate = function(client, username, password, cb) {
   let needauth = true;
   if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
