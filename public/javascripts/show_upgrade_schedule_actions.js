@@ -212,11 +212,10 @@ $(document).ready(function() {
               intersections = intersections.filter((intersection)=>{
                 if (model.model in intersection) {
                   Object.keys(intersection).forEach((imodel)=>{
-                    if (model.model === imodel) return; // discrard same model
+                    if (model.model === imodel) return; // discard same model
                     if (!missingModels.find((m)=>m.model===imodel)) {
                       // Only discard intersection models if the other model
                       // is not in the missing models
-                      console.log(model.model + ' ' + imodel);
                       count += intersection[imodel];
                     }
                   });
