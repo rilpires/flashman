@@ -40,9 +40,9 @@ const intToWeekDayStr = function(day) {
 if (Promise.allSettled === undefined) {
   Promise.allSettled = function allSettled(promises) {
     let wrappedPromises = promises.map((p) => Promise.resolve(p)
-        .then(
-            (val) => ({status: 'fulfilled', value: val}),
-            (err) => ({status: 'rejected', reason: err})));
+      .then(
+        (val) => ({status: 'fulfilled', value: val}),
+        (err) => ({status: 'rejected', reason: err})));
     return Promise.all(wrappedPromises);
   };
 }
@@ -456,13 +456,14 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
     queryContents = queryContents.filter((query) => query !== '/ou');
   }
   queryContents = queryContents.filter((query) => query !== '/e');
-  finalQuery[queryLogicalOperator] = finalQueryArray; // preparing 'finalQuery'.
+  // setting higher level logical operator for 'finalQuery'.
+  finalQuery[queryLogicalOperator] = finalQueryArray;
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
     online: /^online$/, instavel: /^instavel$/, offline: /^offline$/,
     'offline >': /^offline >.*/,
-  } 
+  }
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact.
 
@@ -472,6 +473,26 @@ deviceListController.complexSearchDeviceQuery = function(queryContents,
 
     if (Object.values(statusTags).some((r) => r.test(tag))) { 
     // if we need more than one query for each controller protocol.
+
+      // as this function is sometimes called from different files, 
+      if (mqttClients === undefined) {
+        mqttClientsArray = mqtt.getConnectedClients()
+      }
+      let currentTime = Date.now()
+      if (lastHour === undefined) {
+        lastHour = new Date(currentTime -3600000);
+      }
+      if (tr069Times === undefined) {
+        tr069Times = { // thresholds for tr069 status classification.
+          // time when devices are considered in recovery for tr069.
+          recovery: new Date(currentTime - (matchedConfig.tr069.inform_interval*
+            matchedConfig.tr069.recovery_threshold)),
+          // time when devices are considered offline for tr069.
+          offline: new Date(currentTime - (matchedConfig.tr069.inform_interval*
+            matchedConfig.tr069.offline_threshold)),
+        };
+      }
+
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
 
@@ -628,8 +649,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
   // online devices.
   // will be passed to the functions that need an array of ids.
-  let mqttClientsArray = Object.values(mqtt.unifiedClientsMap).reduce(
-    (acc, clients) => acc.concat(Object.keys(clients)), []);
+  let mqttClientsArray = mqtt.getConnectedClients()
   // will be used in functions that need to access devices per id.
   let mqttClientsMap = {};
   for (let i = 0; i < mqttClientsArray.length; i++) {
@@ -682,9 +702,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     let enrichDevice = function(device) {
       const model = device.model.replace('N/', '');
       const devReleases = releases.filter((release) => release.model === model);
-      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[device._id.toUpperCase()];
-      });
+      const isDevOn = mqttClientsMap[device._id.toUpperCase()]
       device.releases = devReleases;
 
       // Status color
