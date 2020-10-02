@@ -1596,7 +1596,7 @@ deviceListController.setDeviceReg = function(req, res) {
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-                meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+                meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
                 acsDeviceInfo.updateInfo(matchedDevice, changes);
@@ -1604,7 +1604,6 @@ deviceListController.setDeviceReg = function(req, res) {
 
                 matchedDevice.success = true;
                 return res.status(200).json(matchedDevice);
-              }
             });
           });
         } else {
