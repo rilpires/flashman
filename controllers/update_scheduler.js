@@ -619,9 +619,6 @@ scheduleController.getDevicesReleases = async function(req, res) {
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
-  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
- adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
- prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
@@ -667,12 +664,14 @@ scheduleController.getDevicesReleases = async function(req, res) {
   queryPromise.then((matchedDevices)=>{
     let releasesAvailable = deviceListController.getReleases(true);
     let modelsNeeded = {};
+    let isOnu = {}
     let modelMeshIntersections = [];
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices.forEach((device)=>{
         let model = device.model.replace('N/', '');
+        isOnu[model] = device.use_tr069
         let weight = 1;
         if (device.mesh_master) return; // Ignore mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
@@ -715,7 +714,8 @@ scheduleController.getDevicesReleases = async function(req, res) {
            (modelAndVersion) => modelAndVersion.includes(model))) {/* if array
  of strings contains model name inside any of its strings, where each string is
  a concatenation of both model name and version. */
-            modelsMissing.push({model: model, count: modelsNeeded[model]});
+            modelsMissing.push({model: model, count: modelsNeeded[model],
+             isOnu: isOnu[model]});
           }
         }
         return {
