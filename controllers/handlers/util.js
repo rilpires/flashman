@@ -22,6 +22,7 @@ utilHandlers.returnObjOrEmptyStr = function(query) {
 };
 
 utilHandlers.returnObjOrNum = function(query, num) {
+  query = parseInt(query);
   if (typeof query !== 'undefined' && !isNaN(query)) {
     return query;
   } else {
