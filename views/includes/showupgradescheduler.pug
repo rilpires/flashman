@@ -117,8 +117,13 @@
                       span  dos
                       span#warning-prevTotal
                       span  roteadores selecionados serão atualizados!
-                  h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os roteadores!
-                  ul#warning-missing-models
+                  #list-onus
+                    h6.mt-4 Dentre os selecionados, 
+                      span#onu-count
+                      span são ONUs. Por isso não serão atualizadas.
+                  #list-missing-models
+                    h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os roteadores!
+                    ul#warning-missing-models
                 .text-right.mt-4
                   button#how-btn-prev.btn.btn-primary(type="button")
                     strong Anterior
