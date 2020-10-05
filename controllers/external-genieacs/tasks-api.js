@@ -170,14 +170,14 @@ const checkTask = function(task) {
       // first position has to be a string (tr069 parameter name).
       if (task[parameterId][i][0] === undefined
        || task[parameterId][i][0].constructor !== String
-          // second position can be a string, a number or a boolean.
+       // second position can be a string, a number or a boolean.
        || task[parameterId][i][1] === undefined 
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
-          // third position has to be a string (tr069 type).
-       || (task[parameterId][i][2] !== undefined  
-        && task[parameterId][i][2].constructor !== String )) return false;
+       // third position has to be a string (tr069 type).
+       || task[parameterId][i][2] === undefined  
+       || task[parameterId][i][2].constructor !== String) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
   // "getParameterValues".
