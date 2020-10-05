@@ -88,9 +88,9 @@
       const messages = [
         'Este campo é obrigatório',
         'Este campo não pode ter mais de 32 caracteres',
-        'Somente são aceitos: caracteres alfanuméricos, espaços, - e _',
+        'Somente são aceitos: caracteres alfanuméricos, espaços, ponto, - e _',
       ];
-      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9\-\_\#\s]+$/);
+      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9\.\-\_\#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
