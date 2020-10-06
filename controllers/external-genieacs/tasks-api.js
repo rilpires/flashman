@@ -165,18 +165,18 @@ const checkTask = function(task) {
       // that value has also to be an array.
       if (task[parameterId][i].constructor !== Array) return false;
       // that sub array has to have length 3.
-      if (task[parameterId][i].length < 2 
+      if (task[parameterId][i].length < 2
        || task[parameterId][i].length > 3 ) return false;
       // first position has to be a string (tr069 parameter name).
       if (task[parameterId][i][0] === undefined
        || task[parameterId][i][0].constructor !== String
        // second position can be a string, a number or a boolean.
-       || task[parameterId][i][1] === undefined 
+       || task[parameterId][i][1] === undefined
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
        // third position has to be a string (tr069 type).
-       || task[parameterId][i][2] === undefined  
+       || task[parameterId][i][2] === undefined
        || task[parameterId][i][2].constructor !== String) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
@@ -531,7 +531,6 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  saying the task has not executed is emitted through socket.io.*/
 genie.addTask = async function(deviceid, task, shouldRequestConnection,
   timeout=5000, watchTimes=[60000, 120000], callback=null) {
-
   // checking task format and data types.
   if (!checkTask(task)) throw new Error('task not valid.');
 
