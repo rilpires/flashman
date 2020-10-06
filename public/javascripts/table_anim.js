@@ -521,6 +521,7 @@ $(document).ready(function() {
   const buildCsvData = function(device, index) {
     let csvAttr = 'id="'+device._id+'"';
     csvAttr += ' data-index="'+index+'"';
+    csvAttr += ' data-is-tr069="'+device.use_tr069+'"';
     csvAttr += ' data-slave-count="'+(device.mesh_slaves ? device.mesh_slaves.length : 0)+'"';
     csvAttr += ' data-deviceid="'+device._id+'"';
     csvAttr += ' data-connection-type="'+(device.connection_type ? device.connection_type : '')+'"';
@@ -689,6 +690,7 @@ $(document).ready(function() {
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
         '$REPLACE_NOTIFICATIONS'+
+        '</div><div class="badge teal $REPLACE_COLOR_CLASS_PILL">$REPLACE_PILL_TEXT</div>'+
       '</td><td class="text-center device-pppoe-user">'+
         device.pppoe_user+
       '</td><td class="text-center">'+
@@ -731,7 +733,7 @@ $(document).ready(function() {
     '</div>';
   };
 
-  const buildAboutTab = function(device, index, mesh=-1) {
+  const buildAboutTab = function(device, index, isTR069, mesh=-1) {
     let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
@@ -749,6 +751,12 @@ $(document).ready(function() {
       resetDateStr = resetDate.toLocaleDateString(navigator.language,
         {hour: '2-digit', minute: '2-digit'});
     }
+    let lastReset = '<div class="md-form input-entry pt-1">'+
+      '<label class="active">Último reset no roteador realizado em</label>'+
+      '<input class="form-control" type="text" '+
+      'disabled value="'+resetDateStr+'">'+
+      '<div class="invalid-feedback"></div>'+
+    '</div>';
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
@@ -841,12 +849,7 @@ $(document).ready(function() {
         )+
       '</div>'+
       '<div class="col-6">'+
-        '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Último reset no roteador realizado em</label>'+
-          '<input class="form-control" type="text" '+
-          'disabled value="'+resetDateStr+'">'+
-          '<div class="invalid-feedback"></div>'+
-        '</div>'+
+        '$REPLACE_RESET_DATE'+
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
@@ -854,7 +857,9 @@ $(document).ready(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
-          '<label class="active">Versão do Flashbox</label>'+
+          '<label class="active">'+
+            ((isTR069) ? 'Versão do Firmware' : 'Versão do Flashbox')+
+          '</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
           'disabled value="'+device.version+'">'+
           '<div class="invalid-feedback"></div>'+
@@ -892,6 +897,11 @@ $(document).ready(function() {
         )+
       '</div>'+
     '</div>';
+    if (!isTR069) {
+      aboutTab = aboutTab.replace('$REPLACE_RESET_DATE', lastReset);
+    } else {
+      aboutTab = aboutTab.replace('$REPLACE_RESET_DATE', '');
+    }
     if (device.external_reference) {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
     } else {
@@ -1053,6 +1063,7 @@ $(document).ready(function() {
             // Skip mesh slaves, master draws their form
             continue;
           }
+          let isTR069 = device.use_tr069;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
@@ -1102,12 +1113,20 @@ $(document).ready(function() {
           } else {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
+          if (isTR069) {
+            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'ONU');
+          } else {
+            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+          }
 
           finalHtml += infoRow;
 
           let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
+          formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
@@ -1193,17 +1212,17 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_LOG_ACTION', '');
           }
-          if (!device.bridge_mode_enabled && grantResetDevices) {
+          if (!isTR069 && !device.bridge_mode_enabled && grantResetDevices) {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', unblockAction);
           } else {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', '');
           }
-          if (!device.bridge_mode_enabled && grantPortForward) {
+          if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', portForwardAction);
           } else {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', '');
           }
-          if (grantPingTest) {
+          if (!isTR069 && grantPingTest) {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', pingTestAction);
           } else {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
@@ -1213,7 +1232,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
           }
-          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
+          if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
@@ -1223,14 +1242,14 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
           }
-          if (isSuperuser || grantFactoryReset) {
+          if (!isTR069 && (isSuperuser || grantFactoryReset)) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
           } else {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');
           }
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
-            buildAboutTab(device, index)+
+            buildAboutTab(device, index, isTR069)+
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -1348,7 +1367,7 @@ $(document).ready(function() {
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
-          } else if (!isSuperuser && !grantWanType) {
+          } else if (isTR069 || (!isSuperuser && !grantWanType)) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
           } else {
@@ -1608,13 +1627,7 @@ $(document).ready(function() {
                   'Ativar Wi-Fi 2.4GHz'+
                   '</label>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
-                  'Ocultar SSID 2.4GHz'+
-                  '</label>'+
-                '</div>'+
+                '$REPLACE_WIFI2_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1641,23 +1654,38 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Potência do sinal</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
-                      '$REPLACE_WIFI_POWER_EN>'+
-                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
+                '$REPLACE_WIFI2_POWER'+
               '</div>'+
             '</div>'+
           '</div>';
+          let wifi2Hidden = '<div class="custom-control custom-checkbox">'+
+            '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
+            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+            '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
+            'Ocultar SSID 2.4GHz'+
+            '</label>'+
+          '</div>';
+          let wifi2Power = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+          if (!isTR069) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', wifi2Hidden);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', wifi2Power);
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', '');
+          }
           if (!isSuperuser && grantWifiInfo <= 1) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
           } else {
@@ -1762,13 +1790,7 @@ $(document).ready(function() {
                   'Ativar Wi-Fi 5.0GHz'+
                   '</label>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
-                  'Ocultar SSID 5.0GHz'+
-                  '</label>'+
-                '</div>'+
+                '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1796,23 +1818,38 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Potência do sinal</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
-                      '$REPLACE_WIFI_POWER_EN>'+
-                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
+                '$REPLACE_WIFI5_POWER'+
               '</div>'+
             '</div>'+
           '</div>';
+          let wifi5Hidden = '<div class="custom-control custom-checkbox">'+
+            '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
+            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+            '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
+            'Ocultar SSID 5.0GHz'+
+            '</label>'+
+          '</div>';
+          let wifi5Power = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+          if (!isTR069) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', wifi5Hidden);
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', wifi5Power);
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', '');
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', '');
+          }
           if (!isSuperuser && grantWifiInfo <= 1) {
             wifi5Tab = wifi5Tab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
           } else {
@@ -1943,7 +1980,7 @@ $(document).ready(function() {
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
           }
-          if (grantOpmode) {
+          if (!isTR069 && grantOpmode) {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
           } else {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
@@ -2001,7 +2038,7 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, slaveIdx)+
+                buildAboutTab(slaveDev, index, false, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
