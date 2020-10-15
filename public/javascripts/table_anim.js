@@ -178,7 +178,8 @@ $(document).ready(function() {
   let grantPPPoEInfo = false;
   let grantDeviceActions = false;
   let grantLOGAccess = false;
-  let grantLanAccess = false;
+  let grantLanEditAccess = false;
+  let grantLanDevsAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
@@ -204,7 +205,8 @@ $(document).ready(function() {
     grantPPPoEInfo = role.grantPPPoEInfo;
     grantDeviceActions = role.grantDeviceActions;
     grantLOGAccess = role.grantLOGAccess;
-    grantLanAccess = role.grantLanDevices;
+    grantLanEditAccess = role.grantLanEdit;
+    grantLanDevsAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
@@ -1208,7 +1210,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
           }
-          if ((isSuperuser || grantLanAccess) && grantLanDevices) {
+          if ((isSuperuser || grantLanDevsAccess) && grantLanDevices) {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
@@ -1406,7 +1408,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (device.bridge_mode_enabled || (!isSuperuser && !grantLanEdit)) {
+          if (device.bridge_mode_enabled || !grantLanEdit || (!isSuperuser && !grantLanEditAccess)) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
           } else {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, '');
