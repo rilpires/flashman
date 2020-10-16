@@ -1124,6 +1124,8 @@ $(document).ready(function() {
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
+          formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
+          formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
 
           let baseAction = '<div class="dropdown-divider"></div>'+
           '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
@@ -2282,6 +2284,22 @@ $(document).ready(function() {
   $(document).on('click', '.btn-factory', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let deviceModel = row.data('device-model');
+    let deviceVersion = row.data('device-version');
+    let abort = false;
+    let abortMsg = '';
+    // Special cases
+    if (deviceModel !== '') {
+      // Factory firmware issue caused by TP-Link partition change
+      if (deviceModel === 'ARCHERC6V2US' &&
+          parseInt(deviceVersion.split('.')[1]) < 28) {
+        abort = true;
+        abortMsg = 'Não é possível retornar para a firmware de fábrica a ' +
+                 'partir da versão instalada do Flashbox. Atualize primeiro ' +
+                 'o Flashbox para a versão 0.28.0 ou superior e em seguida ' +
+                 'faça o retorno para a firmware de fábrica.';
+      }
+    }
     swal({
       type: 'warning',
       title: 'Atenção!',
@@ -2293,7 +2311,15 @@ $(document).ready(function() {
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
-      if (result.value) {
+      if (abort) {
+        swal({
+          type: 'warning',
+          title: 'Atenção!',
+          text: abortMsg,
+          confirmButtonColor: '#4db6ac',
+          confirmButtonText: 'OK',
+        });
+      } else if (result.value) {
         swal({
           title: 'Preparando firmware de fábrica...',
           onOpen: () => {
