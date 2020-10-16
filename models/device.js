@@ -162,6 +162,7 @@ let deviceSchema = new Schema({
   },
   sys_up_time: {type: Number, default: 0},
   wan_up_time: {type: Number, default: 0},
+  // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
     down_speed: String,
