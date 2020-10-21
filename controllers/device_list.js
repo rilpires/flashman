@@ -15,7 +15,7 @@ const acsDeviceInfo = require('./acs_device_info.js');
 let deviceListController = {};
 
 const fs = require('fs');
-const unzip = require('unzip');
+const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
@@ -836,7 +836,7 @@ const downloadStockFirmware = function(model) {
           if (resp.statusCode !== 200) {
             return resolve(false);
           }
-          responseStream.pipe(unzip.Parse()).on('entry', (entry)=>{
+          responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
             let fname = entry.path;
             let writeStream = fs.createWriteStream(imageReleasesDir + fname);
             writeStream.on('close', ()=>{
