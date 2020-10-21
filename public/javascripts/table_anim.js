@@ -178,7 +178,8 @@ $(document).ready(function() {
   let grantPPPoEInfo = false;
   let grantDeviceActions = false;
   let grantLOGAccess = false;
-  let grantLanAccess = false;
+  let grantLanEditAccess = false;
+  let grantLanDevsAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
@@ -204,7 +205,8 @@ $(document).ready(function() {
     grantPPPoEInfo = role.grantPPPoEInfo;
     grantDeviceActions = role.grantDeviceActions;
     grantLOGAccess = role.grantLOGAccess;
-    grantLanAccess = role.grantLanDevices;
+    grantLanEditAccess = role.grantLanEdit;
+    grantLanDevsAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
@@ -1141,6 +1143,8 @@ $(document).ready(function() {
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
+          formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
+          formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
 
           let baseAction = '<div class="dropdown-divider"></div>'+
           '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
@@ -1227,7 +1231,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
           }
-          if ((isSuperuser || grantLanAccess) && grantLanDevices) {
+          if ((isSuperuser || grantLanDevsAccess) && grantLanDevices) {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
@@ -1425,7 +1429,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (device.bridge_mode_enabled || (!isSuperuser && !grantLanEdit)) {
+          if (device.bridge_mode_enabled || !grantLanEdit || (!isSuperuser && !grantLanEditAccess)) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
           } else {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, '');
@@ -2319,6 +2323,22 @@ $(document).ready(function() {
   $(document).on('click', '.btn-factory', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let deviceModel = row.data('device-model');
+    let deviceVersion = row.data('device-version');
+    let abort = false;
+    let abortMsg = '';
+    // Special cases
+    if (deviceModel !== '') {
+      // Factory firmware issue caused by TP-Link partition change
+      if (deviceModel === 'ARCHERC6V2US' &&
+          parseInt(deviceVersion.split('.')[1]) < 28) {
+        abort = true;
+        abortMsg = 'Não é possível retornar para a firmware de fábrica a ' +
+                 'partir da versão instalada do Flashbox. Atualize primeiro ' +
+                 'o Flashbox para a versão 0.28.0 ou superior e em seguida ' +
+                 'faça o retorno para a firmware de fábrica.';
+      }
+    }
     swal({
       type: 'warning',
       title: 'Atenção!',
@@ -2330,7 +2350,15 @@ $(document).ready(function() {
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
-      if (result.value) {
+      if (abort) {
+        swal({
+          type: 'warning',
+          title: 'Atenção!',
+          text: abortMsg,
+          confirmButtonColor: '#4db6ac',
+          confirmButtonText: 'OK',
+        });
+      } else if (result.value) {
         swal({
           title: 'Preparando firmware de fábrica...',
           onOpen: () => {
