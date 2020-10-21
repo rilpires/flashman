@@ -30,22 +30,22 @@ mongodb.MongoClient.connect('mongodb://localhost:27017',
 const keepDeletingGenieFaults = async function(faultsCollection) {
   let ret = await faultsCollection.deleteMany(); // delete all existing faults.
   if (ret.n > 0) {
-    console.log("WARNING: genieacs created "+ret.n+" faults that have now"+
-      " been deleted");
-  };
+    console.log('WARNING: genieacs created '+ret.n+' faults that have now'+
+      ' been deleted');
+  }
 
   let changeStream = faultsCollection.watch([
     {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
   ]);
   changeStream.on('error', (e) => {
-    console.log("Error in genieacs faults collection change stream.");
+    console.log('Error in genieacs faults collection change stream.');
     console.log(e);
   });
   changeStream.on('change', (change) => { // for each inserted document.
     let doc = change.fullDocument;
     faultsCollection.deleteOne({_id: doc._id}); // deletes the document.
-    console.log("WARNING: genieacs created a fault for device id '"+doc.device+
-      "' and we have deleted it.");
+    console.log('WARNING: genieacs created a fault for device id '+doc.device+
+      ' and we have deleted it.');
   });
 };
 
@@ -54,7 +54,7 @@ if (Promise.allSettled === undefined) {
   Promise.allSettled = function allSettled(promises) {
     let wrappedPromises = promises.map((p) => Promise.resolve(p).then(
       (val) => ({status: 'fulfilled', value: val}),
-      (err) => ({status: 'rejected', reason: err})
+      (err) => ({status: 'rejected', reason: err}),
     ));
     return Promise.all(wrappedPromises);
   };
