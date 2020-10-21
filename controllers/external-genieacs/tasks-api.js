@@ -18,11 +18,36 @@ let genie = {}; // to be exported.
 let tasksCollection;
 mongodb.MongoClient.connect('mongodb://localhost:27017',
   {useUnifiedTopology: true}).then(async (client) => {
-  tasksCollection = client.db('genieacs').collection('tasks');
+  let genieDB = client.db('genieacs');
+  tasksCollection = genieDB.collection('tasks');
+  keepDeletingGenieFaults(genieDB.collection('faults'));
   /* we should never close connection to database. it will be close when
    application stops. */
-  // client.close()
 });
+
+// watches genieacs faults collection waiting for any insert and deletes them
+// as they arrive.
+const keepDeletingGenieFaults = async function(faultsCollection) {
+  let ret = await faultsCollection.deleteMany(); // delete all existing faults.
+  if (ret.n > 0) {
+    console.log("WARNING: genieacs created "+ret.n+" faults that have now"+
+      " been deleted");
+  };
+
+  let changeStream = faultsCollection.watch([
+    {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
+  ]);
+  changeStream.on('error', (e) => {
+    console.log("Error in genieacs faults collection change stream.");
+    console.log(e);
+  });
+  changeStream.on('change', (change) => { // for each inserted document.
+    let doc = change.fullDocument;
+    faultsCollection.deleteOne({_id: doc._id}); // deletes the document.
+    console.log("WARNING: genieacs created a fault for device id '"+doc.device+
+      "' and we have deleted it.");
+  });
+};
 
 // if allSettled is not defined in Promise, we define it here.
 if (Promise.allSettled === undefined) {
