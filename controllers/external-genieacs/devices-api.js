@@ -158,6 +158,23 @@ const getHuaweiFields = function() {
   return fields;
 };
 
+const getZTEFields = function() {
+  let fields = getDefaultFields();
+  fields.pppoe_user = fields.pppoe_user.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
+  fields.pppoe_pass = fields.pppoe_pass.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
+  fields.wan_ip_ppp = fields.wan_ip_ppp.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
+  fields.uptime_ppp = fields.uptime_ppp.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
+  fields.recv_bytes = fields.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+  fields.sent_bytes = fields.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+  fields.wifi2.password = fields.wifi2.password(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
+  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -169,7 +186,7 @@ const getModelFields = function(oui, model) {
       break;
     case 'E01954-F670L': // ZTE F670L
       message = '';
-      fields = getDefaultFields();
+      fields = getZTEFields();
       break;
     case '000AC2-HG6245D': // Fiberhome AN5506-04-CG
       message = '';
