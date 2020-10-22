@@ -1,21 +1,52 @@
 {
   "apps": [{
-      "name": "flashman",
-      "script": "bin/www",
-      "log_date_format": "YYYY-MM-DD HH:mm Z",
-      "autorestart": true,
-      "env": {
-        "production": true,
-        "TZ": "America/Sao_Paulo",
-        "FLM_IMG_RELEASE_DIR": "./public/firmwares/",
-        "FLM_ALLOW_DEV_UPDATE_REST_DATA": false,
-        "FLM_CONCURRENT_UPDATES_LIMIT": 50,
-        "FLM_MONGODB_HOST": "localhost",
-        "FLM_ADM_USER": "admin",
-        "FLM_ADM_PASS": "flashman"
-      },
-      "error_file": "/dev/stderr",
-      "out_file": "/dev/stdout",
-      "exec_mode": "cluster"
-    }]
+    "name": "flashman",
+    "script": "bin/www",
+    "log_date_format": "YYYY-MM-DD HH:mm Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "TZ": "America/Sao_Paulo",
+      "FLM_IMG_RELEASE_DIR": "./public/firmwares/",
+      "FLM_ALLOW_DEV_UPDATE_REST_DATA": false,
+      "FLM_CONCURRENT_UPDATES_LIMIT": 50,
+      "FLM_MONGODB_HOST": "localhost",
+      "FLM_ADM_USER": "admin",
+      "FLM_ADM_PASS": "flashman"
+    },
+    "exec_mode": "cluster",
+    "wait_ready": true,
+  },{
+    "name": "genieacs-cwmp",
+    "cwd": "/root/genieacs",
+    "script": "dist/bin/genieacs-cwmp",
+    "log_date_format": "YYYY-MM-DD HH:mm Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "GENIEACS_CWMP_SSL": true,
+      "GENIEACS_CWMP_SSL_CERT": "/root/flashman/certs/cert.pem",
+      "GENIEACS_CWMP_SSL_KEY": "/root/flashman/certs/key.pem",
+      "GENIEACS_CWMP_PORT": 7547,
+      "GENIEACS_CWMP_ACCESS_LOG_FILE": "/dev/null",
+      "GENIEACS_EXT_DIR": "/root/flashman/controllers/external-genieacs",
+      "GENIEACS_RETRY_DELAY": 15,
+      "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
+    },
+  },{
+    "name": "genieacs-nbi",
+    "cwd": "/root/genieacs",
+    "script": "dist/bin/genieacs-nbi",
+    "log_date_format": "YYYY-MM-DD HH:mm Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "GENIEACS_NBI_ACCESS_LOG_FILE": "/dev/null",
+      "GENIEACS_EXT_DIR": "/root/flashman/controllers/external-genieacs",
+      "GENIEACS_RETRY_DELAY": 15,
+      "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
+    },
+  }]
 }
