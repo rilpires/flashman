@@ -18,7 +18,7 @@
     "wait_ready": true,
   },{
     "name": "genieacs-cwmp",
-    "cwd": "/root/genieacs",
+    "cwd": "../genieacs",
     "script": "dist/bin/genieacs-cwmp",
     "log_date_format": "YYYY-MM-DD HH:mm Z",
     "autorestart": true,
@@ -36,7 +36,7 @@
     },
   },{
     "name": "genieacs-nbi",
-    "cwd": "/root/genieacs",
+    "cwd": "../genieacs",
     "script": "dist/bin/genieacs-nbi",
     "log_date_format": "YYYY-MM-DD HH:mm Z",
     "autorestart": true,
