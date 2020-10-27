@@ -160,19 +160,20 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function() {
   let fields = getDefaultFields();
-  fields.pppoe_user = fields.pppoe_user.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
-  fields.pppoe_pass = fields.pppoe_pass.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
-  fields.wan_ip_ppp = fields.wan_ip_ppp.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
-  fields.uptime_ppp = fields.uptime_ppp.replace(/WanPPPConnection\.1/g, 'WanPPPConnection.2');
-  fields.recv_bytes = fields.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
-  fields.sent_bytes = fields.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
-  fields.wifi2.password = fields.wifi2.password(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.password = fields.wifi5.password(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wan.pppoe_user = fields.wan.pppoe_user.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
+  fields.wan.pppoe_pass = fields.wan.pppoe_pass.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
+  fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
+  fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
+  fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+  fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  return fields;
 };
 
 const getModelFields = function(oui, model) {
