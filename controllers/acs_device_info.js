@@ -262,7 +262,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.wifi2.band = device.wifi_band;
   }
 
-  if (data.wifi5.ssid && !device.wifi_ssid) {
+  if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid;
   } else if (device.wifi_ssid_5ghz !== data.wifi5.ssid) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz;
