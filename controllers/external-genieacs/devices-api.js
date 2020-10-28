@@ -101,14 +101,14 @@ const getDefaultFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
-      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
-      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Password',
+      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Username',
+      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Password',
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate',
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.DuplexMode',
       wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
-      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress',
+      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Uptime',
-      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Uptime',
+      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
     },
@@ -146,8 +146,8 @@ const getDefaultFields = function() {
 
 const getHuaweiFields = function() {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Stats.EthernetBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Stats.EthernetBytesSent';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesSent';
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
@@ -160,10 +160,6 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function() {
   let fields = getDefaultFields();
-  fields.wan.pppoe_user = fields.wan.pppoe_user.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
-  fields.wan.pppoe_pass = fields.wan.pppoe_pass.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
-  fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
-  fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/WANPPPConnection\.1/g, 'WANPPPConnection.2');
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
