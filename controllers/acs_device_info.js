@@ -325,7 +325,7 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let task = {name: 'reboot'};
-  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'reboot') return;
     if (result.finished) res.status(200).json({success: true});
     else {
@@ -537,7 +537,7 @@ acsDeviceInfoController.requestLogs = function(device) {
     name: 'getParameterValues',
     parameterNames: [logField],
   };
-  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     fetchLogFromGenie(result.finished, mac, acsID);
   });
@@ -556,7 +556,7 @@ acsDeviceInfoController.requestWanBytes = function(device) {
     name: 'getParameterValues',
     parameterNames: [recvField, sentField],
   };
-  TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchWanBytesFromGenie(mac, acsID);
   });
