@@ -169,6 +169,8 @@ const getZTEFields = function() {
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
   return fields;
 };
 
