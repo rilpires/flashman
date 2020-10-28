@@ -127,7 +127,7 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user && data.wan.pppoe_pass);
+  let hasPPPoE = (data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let newDevice = new DeviceModel({
@@ -197,7 +197,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user && data.wan.pppoe_pass);
+  let hasPPPoE = (data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
