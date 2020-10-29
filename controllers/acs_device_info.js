@@ -152,13 +152,13 @@ const createRegistry = async function(req) {
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
     wifi_ssid: data.wifi2.ssid,
-    wifi_channel: data.wifi2.channel,
+    wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
     wifi_mode: convertWifiMode(data.wifi2.mode, false),
     wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
     wifi_state: (data.wifi2.enable) ? 1 : 0,
     wifi_is_5ghz_capable: true,
     wifi_ssid_5ghz: data.wifi5.ssid,
-    wifi_channel_5ghz: data.wifi5.channel,
+    wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
     wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
     wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
     lan_subnet: data.lan.router_ip,
@@ -254,9 +254,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else if (device.wifi_ssid !== data.wifi2.ssid) {
     changes.wifi2.ssid = device.wifi_ssid;
   }
-  if (data.wifi2.channel.toString() && !device.wifi_channel) {
-    device.wifi_channel = data.wifi2.channel.toString();
-  } else if (device.wifi_channel !== data.wifi2.channel.toString()) {
+  let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
+  if (channel2 && !device.wifi_channel) {
+    device.wifi_channel = channel2;
+  } else if (device.wifi_channel !== channel2) {
     changes.wifi2.channel = device.wifi_channel;
   }
   let mode2 = convertWifiMode(data.wifi2.mode, false);
@@ -277,9 +278,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else if (device.wifi_ssid_5ghz !== data.wifi5.ssid) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz;
   }
-  if (data.wifi5.channel.toString() && !device.wifi_channel_5ghz) {
-    device.wifi_channel_5ghz = data.wifi5.channel.toString();
-  } else if (device.wifi_channel_5ghz !== data.wifi5.channel.toString()) {
+  let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
+  if (channel5 && !device.wifi_channel_5ghz) {
+    device.wifi_channel_5ghz = channel5;
+  } else if (device.wifi_channel_5ghz !== channel5) {
     changes.wifi5.channel = device.wifi_channel_5ghz;
   }
   let mode5 = convertWifiMode(data.wifi5.mode, true);
@@ -600,10 +602,24 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let hasChanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
-  console.log(task);
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
+      if (key === 'channel') {
+        // Special case since channel relates to 2 fields
+        let channel = changes[masterKey][key];
+        let auto = channel === 'auto';
+        task.parameterValues.push([
+          fields[masterKey]['auto'], auto, 'xsd:boolean',
+        ]);
+        if (!auto) {
+          task.parameterValues.push([
+            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+          ]);
+        }
+        hasChanges = true;
+        return;
+      }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
       );

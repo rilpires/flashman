@@ -131,6 +131,7 @@ const getDefaultFields = function() {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
     },
@@ -138,6 +139,7 @@ const getDefaultFields = function() {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
     },
@@ -162,6 +164,7 @@ const getHuaweiFields = function() {
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
@@ -178,6 +181,7 @@ const getZTEFields = function() {
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
