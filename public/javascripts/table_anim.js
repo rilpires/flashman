@@ -696,7 +696,7 @@ $(document).ready(function() {
       '</td><td class="text-center device-pppoe-user">'+
         device.pppoe_user+
       '</td><td class="text-center">'+
-        device._id+
+        ((device.use_tr069) ? device.serial_tr069 : device._id)+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
       '</td><td class="text-center device-ip">'+
@@ -1070,6 +1070,7 @@ $(document).ready(function() {
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
           let grantWifiPowerHiddenIpv6Box =
+            (device.use_tr069) ? false :
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
@@ -1619,7 +1620,9 @@ $(document).ready(function() {
                   '<div class="input-group">'+
                     '<label class="active">Senha do Wi-Fi</label>'+
                     '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
-                    'maxlength="64" value="'+device.wifi_password+'" $REPLACE_WIFI_EN></input>'+
+                    'maxlength="64" value="'+
+                    (device.wifi_password) ? device.wifi_password : ''+ // treat undefined case
+                    '" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
