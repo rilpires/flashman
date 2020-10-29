@@ -1290,8 +1290,11 @@ deviceListController.setDeviceReg = function(req, res) {
         if (pppoeUser !== '' && pppoePassword !== '') {
           connectionType = 'pppoe';
           genericValidate(pppoeUser, validator.validateUser, 'pppoe_user');
-          genericValidate(pppoePassword, validator.validatePassword,
-                          'pppoe_password', matchedConfig.pppoePassLength);
+          if (!matchedDevice.use_tr069 || pppoePassword) {
+            // Do not validate this field if a TR069 device left it blank
+            genericValidate(pppoePassword, validator.validatePassword,
+                            'pppoe_password', matchedConfig.pppoePassLength);
+          }
         }
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(ssid, validator.validateSSID, 'ssid');
