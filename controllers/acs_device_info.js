@@ -43,15 +43,25 @@ const convertSubnetMaskToInt = function(mask) {
 
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
-    case 'a':
+    case '11b':
+    case '11g':
+    case '11bg':
     case 'b':
     case 'g':
+    case 'b,g':
       return '11g';
     case '11bgn':
+    case '11a':
+    case '11na':
+    case 'a':
     case 'n':
+    case 'g,n':
+    case 'b,g,n':
+    case 'a,n':
       return (is5ghz) ? '11na' : '11n';
     case '11ac':
     case 'ac':
+    case 'a,n,ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
     default:

@@ -35,13 +35,24 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = oui + '-' + model;
   switch (mode) {
     case '11g':
-      return 'g';
+      if (ouiModelStr === '0C8063-IGD') return 'g';
+      else if (ouiModelStr === 'E01954-F670L') return 'b,g';
+      else if (ouiModelStr === '00259E-HG8245Q2') return '11bg';
+      else return '11bg';
     case '11n':
+      if (ouiModelStr === '0C8063-IGD') return 'n';
+      else if (ouiModelStr === '00259E-HG8245Q2') return '11bgn';
+      else if (ouiModelStr === 'E01954-F670L') return 'b,g,n';
+      else return '11bgn';
     case '11na':
       if (ouiModelStr === '0C8063-IGD') return 'n';
-      else return '11bgn';
+      else if (ouiModelStr === '00259E-HG8245Q2') return '11na';
+      else if (ouiModelStr === 'E01954-F670L') return 'a,n';
+      else return '11na';
     case '11ac':
       if (ouiModelStr === '0C8063-IGD') return 'ac';
+      else if (ouiModelStr === '00259E-HG8245Q2') return '11ac';
+      else if (ouiModelStr === 'E01954-F670L') return 'a,n,ac';
       else return '11ac';
     default:
       return '';
