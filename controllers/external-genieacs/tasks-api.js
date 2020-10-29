@@ -355,7 +355,7 @@ const deleteOldTaks = async function(tasksToDelete, deviceid) {
         +` genieacs rest api, for device ${deviceid}.`);
     } else if (results[i].value.data === 'Task not found') { // if it resolved
     // to GenieACS saying task wasn't found.
-      throw new Error(`Task not foud When deleting an old task in genieAcs `
+      throw new Error(`Task not foud when deleting an old task in genieAcs `
         +`rest api, for device ${deviceid}.`);
     }
     /* successful deletes don't need to be noted. they are expected to be
@@ -556,6 +556,10 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  saying the task has not executed is emitted through socket.io.*/
 genie.addTask = async function(deviceid, task, shouldRequestConnection,
   timeout=5000, watchTimes=[60000, 120000], callback=null) {
+  // checking device id.
+  if (!deviceid || deviceid.constructor !== String) {
+    throw new Error('device id not valid. Received:', deviceid);
+  }
   // checking task format and data types.
   if (!checkTask(task)) throw new Error('task not valid.');
 
@@ -585,7 +589,8 @@ So we delete old tasks as fast as we can. Adding a task makes us wait at least
 a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
     if (Object.keys(tasksToDelete).length > 0) {
-      await deleteOldTaks(tasksToDelete); // there will be tasks to be deleted.
+      // there will be tasks to be deleted.
+      await deleteOldTaks(tasksToDelete, deviceid);
     }
   }
 
