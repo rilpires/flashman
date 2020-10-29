@@ -143,6 +143,7 @@ const createRegistry = async function(req) {
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
+    serial_tr069: req.body.acs_id.split('-')[2],
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
@@ -212,6 +213,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
   device.acs_id = req.body.acs_id;
+  device.serial_tr069 = req.body.acs_id.split('-')[2];
   if (data.common.model) device.model = data.common.model;
   if (data.common.version) device.version = data.common.version;
   if (hasPPPoE) {

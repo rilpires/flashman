@@ -10,6 +10,7 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
+  serial_tr069: String,
   acs_id: String,
   created_at: {type: Date},
   external_reference: {kind: String, data: String},
