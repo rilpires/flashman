@@ -1621,7 +1621,7 @@ $(document).ready(function() {
                     '<label class="active">Senha do Wi-Fi</label>'+
                     '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
                     'maxlength="64" value="'+
-                    (device.wifi_password) ? device.wifi_password : ''+ // treat undefined case
+                    ((device.wifi_password) ? device.wifi_password : '')+ // treat undefined case
                     '" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
                     '<div class="invalid-feedback"></div>'+
