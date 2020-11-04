@@ -598,7 +598,8 @@ $(document).ready(function() {
           roleObj.grantFlashmanManage + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-api-access] option[value=' +
-          roleObj.grantAPIAccess + ']');
+          roleObj.grantAPIAccess + ']')
+        .attr('selected', 'selected');
         $(rowObj).find('[name=grant-diag-app-access] option[value=' +
           roleObj.grantDiagAppAccess + ']')
         .attr('selected', 'selected');
