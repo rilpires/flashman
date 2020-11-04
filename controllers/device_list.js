@@ -195,6 +195,7 @@ deviceListController.index = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
         let active = matchedConfig.measure_configs.is_active;
         indexContent.measure_active = active;
