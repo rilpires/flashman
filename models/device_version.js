@@ -14,6 +14,7 @@ const speedTestCompatibleModels = {
   'ARCHERC50V3': 100,
   'ARCHERC50V4': 100,
   'ARCHERC60V2': 100,
+  'ARCHERC60V3': 100,
   'ARCHERC6V2US': 200,
   'ARCHERC7V5': 300,
   'DIR-819A1': 100,
@@ -57,6 +58,7 @@ const speedTestCompatibleModels = {
   'TL-WR949NV6': 100,
   'TL-WR845NV3': 100,
   'TL-WR845NV4': 100,
+  'W5-1200FV1': 100,
 };
 
 const meshCompatibleModels = [
@@ -69,6 +71,7 @@ const meshCompatibleModels = [
   'ARCHERC50V3',
   'ARCHERC50V4',
   'ARCHERC60V2',
+  'ARCHERC60V3',
   'ARCHERC6V2US',
   'ARCHERC7V5',
   'DIR-819A1',
