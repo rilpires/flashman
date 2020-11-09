@@ -131,33 +131,52 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
       let alertLink = alert.parent();
       alertLink.removeClass('d-none');
       alertLink.off('click').click(function(event) {
-        swal({
+        let options = {
           type: 'warning',
-          text: data.message,
           confirmButtonText: data.action_title,
           confirmButtonColor: '#4db6ac',
           cancelButtonText: 'Cancelar',
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
-        }).then(function(result) {
-          alertLink.addClass('d-none');
+        };
+        if (data.type === "genieacs") {
+          options.title = data.message;
+          options.html = data.message_error.replace(/\n/g, '<br>');
+        } else {
+          options.text = data.message;
+        };
+        swal(options).then(function(result) {
           if (result.value) {
-            $.ajax({
-              type: 'POST',
-              url: data.action_url,
-              traditional: true,
+            $.ajax({type: 'POST', url: data.action_url || '/notification/del',
+              traditional: true, data: {id: data._id}})
+            .done(() => {
+              alertLink.addClass('d-none');
+              fetchNotificationsForDevice(data.target);
             });
-          }
-          $.ajax({
-            type: 'POST',
-            url: '/notification/del',
-            traditional: true,
-            data: {id: data._id},
-          });
+          } else if (result.dismiss !== undefined && !data.seen) {
+            $.ajax({type: 'POST', url: '/notification/seen', traditional: true,
+              data: {id: data._id}})
+            .done(() => {
+              data.seen = true;
+            });
+          };
         });
       });
     }
   }
+};
+
+/* fetch notifications for a single device and sets triangle with exclamation
+ mark. */
+let fetchNotificationsForDevice = function(deviceId) {
+  $.ajax({type: 'POST', url: '/notification/fetch', traditional: true,
+    data: {devices: [deviceId]}})
+  .done((response) => {
+    let deviceTableContent = $('#devices-table-content');
+    for (let notification of response.notifications) {
+      changeDeviceStatusOnTable(deviceTableContent, deviceId, notification);
+    };
+  });
 };
 
 $(document).ready(function() {
@@ -460,6 +479,10 @@ $(document).ready(function() {
         },
       });
     }
+    
+    // fetch notifications and set triangle with exclamation mark.
+    fetchNotificationsForDevice(deviceId);
+
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
