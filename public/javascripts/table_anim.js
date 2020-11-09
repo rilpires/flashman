@@ -589,7 +589,7 @@ $(document).ready(function() {
     return '<a class="d-none">'+
       '<div class="fas fa-exclamation-triangle fa-lg orange-text '+
                   'device-alert animated heartBeat infinite">'+
-      '</div>'+
+      '</div>'+'<span>&nbsp;</span><span>&nbsp;</span>'+
     '</a>';
   };
 
