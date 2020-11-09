@@ -174,7 +174,8 @@ const getOnlyTR069Configs = async function(errormsg) {
     .exec().catch((err) => err); // in case of error, return error in await.
   // it's very unlikely that we will incur in any error but,
   if (configsWithTr069.constructor === Error) { // if we returned an error.
-    console.log(errormsg, 'Using default values.'); // print given message.
+    // print error message.
+    console.log(errormsg, '\nUsing default values for tr069 config.');
     return { // build a default configuration.
       inform_interval: 10*60*1000,
       offline_threshold: 1,

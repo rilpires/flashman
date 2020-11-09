@@ -6,6 +6,8 @@ through the use of genieacs-nbi, the genie rest api.
 const http = require('http');
 const mongodb = require('mongodb');
 const sio = require('../../sio');
+const NotificationModel = require('../../models/notification');
+const DeviceModel = require('../../models/device');
 
 
 let GENIEHOST = 'localhost';
@@ -16,24 +18,57 @@ let genie = {}; // to be exported.
 // starting a connection to mongodb so we can start a change stream to the
 // tasks collection when necessary.
 let tasksCollection;
+let genieDB;
 mongodb.MongoClient.connect('mongodb://localhost:27017',
   {useUnifiedTopology: true}).then(async (client) => {
-  let genieDB = client.db('genieacs');
+  genieDB = client.db('genieacs');
   tasksCollection = genieDB.collection('tasks');
-  keepDeletingGenieFaults(genieDB.collection('faults'));
+  watchGenieFaults();
   /* we should never close connection to database. it will be close when
    application stops. */
 });
 
+/* Creates a new notification in flashman, with the Genie ACS stack trace error
+ 'stackError' and with the device id 'genieDeviceId' as the notification target
+ for that notification. If no 'genieDeviceId' is given, the error is considered
+ to be from Genie itself. */
+const createNotificationForDevice = async function(stackError, genieDeviceId) {
+  // getting flashman device id related to the genie device id.
+  let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  // notification values.
+  let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
+    message_error: stackError};
+  if (genieDeviceId !== undefined) { // if error has an associated device.
+    params.message = 'Erro na ONU '+genieDeviceId+'. Chamar supporte.';
+    params.target = device._id;
+    params.genieDeviceId = genieDeviceId;
+  } else { // if error has no associated device.
+    params.message = 'Erro no GenieACS. Chamar supporte.';
+  }
+  let notification = new NotificationModel(params); // creating notification.
+  await notification.save(); // saving notification.
+};
+
 // watches genieacs faults collection waiting for any insert and deletes them
 // as they arrive.
-const keepDeletingGenieFaults = async function(faultsCollection) {
-  let ret = await faultsCollection.deleteMany(); // delete all existing faults.
+const watchGenieFaults = async function() {
+  let faultsCollection = genieDB.collection('faults');
+  let cacheCollection = genieDB.collection('cache');
+
+  // delete all existing faults.
+  let ret = await faultsCollection.deleteMany();
   if (ret.n > 0) {
-    console.log('WARNING: genieacs created '+ret.n+' faults that have now'+
-      ' been deleted');
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\' faults '
+      +'collection');
+  }
+  // delete all genieacs cache.
+  ret = await cacheCollection.deleteMany();
+  if (ret.n > 0) {
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\' cache '+
+      'collection.');
   }
 
+  // creating a change stream on 'faults' collection.
   let changeStream = faultsCollection.watch([
     {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
   ]);
@@ -41,13 +76,22 @@ const keepDeletingGenieFaults = async function(faultsCollection) {
     console.log('Error in genieacs faults collection change stream.');
     console.log(e);
   });
-  changeStream.on('change', (change) => { // for each inserted document.
+  changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    faultsCollection.deleteOne({_id: doc._id}); // deletes the document.
-    console.log('WARNING: genieacs created a fault for device id '+doc.device+
-      ' and we have deleted it.');
+    await createNotificationForDevice(doc.detail.stack, doc.device);
+    console.log('WARNING: genieacs created a fault'+(doc.device ? 
+      ' for device id '+doc.device : '')+'.');
   });
 };
+
+// removes entries in Genie's 'faults' and 'cache' collections related to 
+// a given device id.
+genie.deleteCacheAndFaultsForDevice = async function(genieDeviceId) {
+  // match anything that contains the given device id.
+  let re = new RegExp('^'+genieDeviceId);
+  await genieDB.collection('cache').deleteMany({_id: re});
+  await genieDB.collection('faults').deleteMany({_id: re});
+}
 
 // if allSettled is not defined in Promise, we define it here.
 if (Promise.allSettled === undefined) {
@@ -565,11 +609,12 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
-  let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
-  /* rejected value will be error object in case of connection errors.*/
-    throw new Error(`${e.code} when getting old tasks from genieacs rest api, `
-     +`for device ${deviceid}.`); // return error code in error message.
-  });
+  let tasks = [];
+  // let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
+  // /* rejected value will be error object in case of connection errors.*/
+  //   throw new Error(`${e.code} when getting old tasks from genieacs rest api, `
+  //    +`for device ${deviceid}.`); // return error code in error message.
+  // });
   // adding the new task as one more older task to tasks array.
   tasks.push(task);
 
