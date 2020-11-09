@@ -11,7 +11,7 @@ let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
   serial_tr069: String,
-  acs_id: String,
+  acs_id: {type: String, sparse: true},
   created_at: {type: Date},
   external_reference: {kind: String, data: String},
   model: String,
@@ -182,6 +182,8 @@ let deviceSchema = new Schema({
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
 });
+
+deviceSchema.set('autoIndex', false);
 
 deviceSchema.plugin(mongoosePaginate);
 
