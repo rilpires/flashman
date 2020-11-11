@@ -301,7 +301,7 @@ $(document).ready(function() {
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (deviceId == '') {
       swal({
-        title: 'Falha na inclução da regra',
+        title: 'Falha na inclusão da regra',
         text: 'O dispositivo deve ser informado!',
         type: 'error',
         confirmButtonColor: '#4db6ac',
@@ -310,7 +310,7 @@ $(document).ready(function() {
     }
     if (ports == '') {
       swal({
-        title: 'Falha na inclução da regra',
+        title: 'Falha na inclusão da regra',
         text: 'Informe, no mínimo, uma porta para liberar acesso!',
         type: 'error',
         confirmButtonColor: '#4db6ac',
@@ -322,7 +322,7 @@ $(document).ready(function() {
     $.each(ports, function(idx, portValue) {
       if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
         swal({
-          title: 'Falha na inclução da regra',
+          title: 'Falha na inclusão da regra',
           text: 'Roteador não aceita portas assimétricas! Atualize o Roteador.',
           type: 'error',
           confirmButtonColor: '#4db6ac',
@@ -374,7 +374,7 @@ $(document).ready(function() {
 
       if (reservedPorts.indexOf(parseInt(portFinal)) != -1) {
         swal({
-          title: 'Falha na inclução da regra',
+          title: 'Falha na inclusão da regra',
           text: 'Porta Externa já utilizada!',
           type: 'error',
           confirmButtonColor: '#4db6ac',
@@ -385,7 +385,7 @@ $(document).ready(function() {
 
       if (intPorts.indexOf(parseInt(intPort)) != -1) {
         swal({
-          title: 'Falha na inclução da regra',
+          title: 'Falha na inclusão da regra',
           text: 'Porta Interna já utilizada!',
           type: 'error',
           confirmButtonColor: '#4db6ac',
