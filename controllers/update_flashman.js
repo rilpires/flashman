@@ -12,6 +12,12 @@ let updateController = {};
 const returnStrOrEmptyStr = (query) =>
     (typeof query === 'string') ? query : '';
 
+const isMajorUpgrade = function(target, current) {
+  let targetMajor = parseInt(target.split('.')[0]);
+  let currentMajor = parseInt(current.split('.')[0]);
+  return targetMajor > currentMajor;
+};
+
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
@@ -138,7 +144,30 @@ const updateFlashman = function(automatic, res) {
   getRemoteVersion().then((remoteVersion) => {
     let localVersion = getLocalVersion();
     let needsUpdate = versionCompare(remoteVersion, localVersion) > 0;
-    if (needsUpdate) {
+    let majorUpgrade = isMajorUpgrade(remoteVersion, localVersion);
+    if (needsUpdate && majorUpgrade) {
+      Config.findOne({is_default: true}, function(err, matchedConfig) {
+        // Do not upgrade automatically for new major version, direct to docs
+        if (err || !matchedConfig) return;
+        matchedConfig.hasMajorUpdate = true;
+        matchedConfig.save();
+      });
+      if (res) {
+        res.status(200).json({
+          hasMajorUpdate: true, hasUpdate: true, updated: false,
+        });
+      }
+    } else if (!needsUpdate && !majorUpgrade) {
+      Config.findOne({is_default: true}, function(err, matchedConfig) {
+        if (err || !matchedConfig) return;
+        matchedConfig.hasUpdate = false;
+        matchedConfig.hasMajorUpdate = false;
+        matchedConfig.save();
+      });
+      if (res) {
+        res.status(200).json({hasUpdate: false, updated: false});
+      }
+    } else if (needsUpdate) {
       Config.findOne({is_default: true}, function(err, matchedConfig) {
         if (err || !matchedConfig) return errorCallback(res);
         matchedConfig.hasUpdate = true;

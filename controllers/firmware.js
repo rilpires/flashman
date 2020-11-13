@@ -75,6 +75,7 @@ firmwareController.index = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         let active = matchedConfig.measure_configs.is_active;
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?

@@ -195,6 +195,7 @@ deviceListController.index = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
         let active = matchedConfig.measure_configs.is_active;
         indexContent.measure_active = active;
@@ -1077,33 +1078,33 @@ deviceListController.setDeviceReg = function(req, res) {
       let validator = new Validator();
 
       let errors = [];
-      let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
-      let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
-      let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
+      let connectionType = util.returnObjOrEmptyStr(content.connection_type).toString().trim();
+      let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).toString().trim();
+      let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).toString().trim();
       let ipv6Enabled = parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
-      let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).trim();
-      let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).trim();
-      let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
-      let password = util.returnObjOrEmptyStr(content.wifi_password).trim();
-      let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
-      let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
-      let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+      let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).toString().trim();
+      let lanNetmask = util.returnObjOrEmptyStr(content.lan_netmask).toString().trim();
+      let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).toString().trim();
+      let password = util.returnObjOrEmptyStr(content.wifi_password).toString().trim();
+      let channel = util.returnObjOrEmptyStr(content.wifi_channel).toString().trim();
+      let band = util.returnObjOrEmptyStr(content.wifi_band).toString().trim();
+      let mode = util.returnObjOrEmptyStr(content.wifi_mode).toString().trim();
       let power = parseInt(util.returnObjOrNum(content.wifi_power, 100));
       let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
       let wifiHidden = parseInt(util.returnObjOrNum(content.wifi_hidden, 0));
-      let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).trim();
-      let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).trim();
-      let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).trim();
-      let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).trim();
-      let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).trim();
+      let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).toString().trim();
+      let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).toString().trim();
+      let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).toString().trim();
+      let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).toString().trim();
+      let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).toString().trim();
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
-      let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).trim();
-      let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).trim();
-      let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).trim();
+      let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
+      let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).toString().trim();
+      let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
       let slaveCustomConfigs = [];
       try {
@@ -1212,179 +1213,293 @@ deviceListController.setDeviceReg = function(req, res) {
               console.log(err);
             }
             let superuserGrant = false;
+            let hasPermissionError = false;
+
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            if (connectionType != '' && (superuserGrant || role.grantWanType) &&
-                !matchedDevice.bridge_mode_enabled) {
-              if (connectionType === 'pppoe') {
-                if (pppoeUser !== '' && pppoePassword !== '') {
+            if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
+                connectionType !== matchedDevice.connection_type) {
+              if (superuserGrant || role.grantWanType) {
+                if (connectionType === 'pppoe') {
+                  if (pppoeUser !== '' && pppoePassword !== '') {
+                    matchedDevice.connection_type = connectionType;
+                    updateParameters = true;
+                  }
+                } else {
                   matchedDevice.connection_type = connectionType;
+                  matchedDevice.pppoe_user = '';
+                  matchedDevice.pppoe_password = '';
                   updateParameters = true;
                 }
               } else {
-                matchedDevice.connection_type = connectionType;
-                matchedDevice.pppoe_user = '';
-                matchedDevice.pppoe_password = '';
-                updateParameters = true;
+                hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('pppoe_user') &&
-                (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoeUser !== '' && !matchedDevice.bridge_mode_enabled) {
-              matchedDevice.pppoe_user = pppoeUser;
-              updateParameters = true;
+                pppoeUser !== '' && !matchedDevice.bridge_mode_enabled &&
+                pppoeUser !== matchedDevice.pppoe_user) {
+              if (superuserGrant || role.grantPPPoEInfo > 1) {
+                matchedDevice.pppoe_user = pppoeUser;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('pppoe_password') &&
-                (superuserGrant || role.grantPPPoEInfo > 1) &&
-                pppoePassword !== '' && !matchedDevice.bridge_mode_enabled) {
-              matchedDevice.pppoe_password = pppoePassword;
-              updateParameters = true;
+                pppoePassword !== '' && !matchedDevice.bridge_mode_enabled &&
+                pppoePassword !== matchedDevice.pppoe_password) {
+              if (superuserGrant || role.grantPPPoEInfo > 1) {
+                matchedDevice.pppoe_password = pppoePassword;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('ipv6_enabled')) {
               matchedDevice.ipv6_enabled = ipv6Enabled;
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                ssid !== '') {
-              matchedDevice.wifi_ssid = ssid;
-              updateParameters = true;
+                ssid !== '' && ssid !== matchedDevice.wifi_ssid) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_ssid = ssid;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_password') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                password !== '') {
-              matchedDevice.wifi_password = password;
-              updateParameters = true;
+                password !== '' && password !== matchedDevice.wifi_password) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_password = password;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_channel') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                channel !== '') {
-              matchedDevice.wifi_channel = channel;
-              updateParameters = true;
+                channel !== '' && channel !== matchedDevice.wifi_channel) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_channel = channel;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_band') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                band !== '') {
-              matchedDevice.wifi_band = band;
-              updateParameters = true;
+                band !== '' && band !== matchedDevice.wifi_band) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_band = band;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_mode') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                mode !== '') {
-              matchedDevice.wifi_mode = mode;
-              updateParameters = true;
+                mode !== '' && mode !== matchedDevice.wifi_mode) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_mode = mode;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_state') &&
-               (superuserGrant || role.grantWifiInfo > 1)) {
-              matchedDevice.wifi_state = wifiState;
-              updateParameters = true;
+                wifiState !== matchedDevice.wifi_state) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_state = wifiState;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_hidden') &&
-               (superuserGrant || role.grantWifiInfo > 1)) {
-              matchedDevice.wifi_hidden = wifiHidden;
-              updateParameters = true;
+                wifiHidden !== matchedDevice.wifi_hidden) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_hidden = wifiHidden;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_power') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                power !== '') {
-              matchedDevice.wifi_power = power;
-              updateParameters = true;
+                power !== '' && power !== matchedDevice.wifi_power) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_power = power;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                ssid5ghz !== '') {
-              matchedDevice.wifi_ssid_5ghz = ssid5ghz;
-              updateParameters = true;
+                ssid5ghz !== '' && ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_ssid_5ghz = ssid5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_password_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                password5ghz !== '') {
-              matchedDevice.wifi_password_5ghz = password5ghz;
-              updateParameters = true;
+                password5ghz !== '' &&
+                password5ghz !== matchedDevice.wifi_password_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_password_5ghz = password5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_channel_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                channel5ghz !== '') {
-              matchedDevice.wifi_channel_5ghz = channel5ghz;
-              updateParameters = true;
+                channel5ghz !== '' &&
+                channel5ghz !== matchedDevice.wifi_channel_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_channel_5ghz = channel5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                band5ghz !== '') {
-              matchedDevice.wifi_band_5ghz = band5ghz;
-              updateParameters = true;
+                band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_band_5ghz = band5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                mode5ghz !== '') {
-              matchedDevice.wifi_mode_5ghz = mode5ghz;
-              updateParameters = true;
+                mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_mode_5ghz = mode5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_state_5ghz') &&
-               (superuserGrant || role.grantWifiInfo > 1)) {
-              matchedDevice.wifi_state_5ghz = wifiState5ghz;
-              updateParameters = true;
+                wifiState5ghz !== matchedDevice.wifi_state_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_state_5ghz = wifiState5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_hidden_5ghz') &&
-               (superuserGrant || role.grantWifiInfo > 1)) {
-              matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
-              updateParameters = true;
+                wifiHidden5ghz !== matchedDevice.wifi_hidden_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('wifi_power_5ghz') &&
-                (superuserGrant || role.grantWifiInfo > 1) &&
-                power5ghz !== '') {
-              matchedDevice.wifi_power_5ghz = power5ghz;
-              updateParameters = true;
+                power5ghz !== '' &&
+                power5ghz !== matchedDevice.wifi_power_5ghz) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.wifi_power_5ghz = power5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('lan_subnet') &&
-                (superuserGrant || role.grantLanEdit) &&
-                lanSubnet !== '' && !matchedDevice.bridge_mode_enabled) {
-              matchedDevice.lan_subnet = lanSubnet;
-              updateParameters = true;
+                lanSubnet !== '' && !matchedDevice.bridge_mode_enabled &&
+                lanSubnet !== matchedDevice.lan_subnet) {
+              if (superuserGrant || role.grantLanEdit) {
+                matchedDevice.lan_subnet = lanSubnet;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('lan_netmask') &&
-                (superuserGrant || role.grantLanEdit) &&
-                lanNetmask !== '' && !matchedDevice.bridge_mode_enabled) {
-              matchedDevice.lan_netmask = lanNetmask;
-              updateParameters = true;
+                lanNetmask !== '' && !matchedDevice.bridge_mode_enabled &&
+                lanNetmask !== matchedDevice.lan_netmask) {
+              if (superuserGrant || role.grantLanEdit) {
+                matchedDevice.lan_netmask = lanNetmask;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('external_reference') &&
-                (superuserGrant || role.grantDeviceId)) {
-              matchedDevice.external_reference.kind =
-                content.external_reference.kind;
-              matchedDevice.external_reference.data =
-                content.external_reference.data;
+                (content.external_reference.kind !== matchedDevice.external_reference.kind ||
+                 content.external_reference.data !== matchedDevice.external_reference.data)
+            ) {
+              if (superuserGrant || role.grantDeviceId) {
+                matchedDevice.external_reference.kind =
+                  content.external_reference.kind;
+                matchedDevice.external_reference.data =
+                  content.external_reference.data;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('bridgeEnabled') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.bridge_mode_enabled = bridgeEnabled;
-              updateParameters = true;
+                bridgeEnabled !== matchedDevice.bridge_mode_enabled) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.bridge_mode_enabled = bridgeEnabled;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('bridgeDisableSwitch') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
-              updateParameters = true;
+                bridgeDisableSwitch !== matchedDevice.bridge_mode_switch_disable) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('bridgeFixIP') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.bridge_mode_ip = bridgeFixIP;
-              updateParameters = true;
+                bridgeFixIP !== matchedDevice.bridge_mode_ip) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.bridge_mode_ip = bridgeFixIP;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('bridgeFixIP') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.bridge_mode_gateway = bridgeFixGateway;
-              updateParameters = true;
+                bridgeFixGateway !== matchedDevice.bridge_mode_gateway) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.bridge_mode_gateway = bridgeFixGateway;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('bridgeFixIP') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.bridge_mode_dns = bridgeFixDNS;
-              updateParameters = true;
+                bridgeFixDNS !== matchedDevice.bridge_mode_dns) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.bridge_mode_dns = bridgeFixDNS;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
             }
             if (content.hasOwnProperty('mesh_mode') &&
-                (superuserGrant || role.grantOpmodeEdit)) {
-              matchedDevice.mesh_mode = meshMode;
-              updateParameters = true;
+                meshMode !== matchedDevice.mesh_mode) {
+              if (superuserGrant || role.grantOpmodeEdit) {
+                matchedDevice.mesh_mode = meshMode;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (hasPermissionError) {
+              return res.status(403).json({
+                success: false,
+                type: 'danger',
+                message: 'Permissão insuficiente para alterar campos requisitados',
+              });
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
