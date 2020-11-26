@@ -1,49 +1,18 @@
 
-let downloadCSV = function(csv, filename) {
-  let csvFile;
+let downloadCSV = function(url, filename) {
   let downloadLink;
-  // CSV file
-  csvFile = new Blob([csv], {type: 'text/csv'});
   // Download link
   downloadLink = document.createElement('a');
   // File name
   downloadLink.download = filename;
-  // Create a link to the file
-  downloadLink.href = window.URL.createObjectURL(csvFile);
+  downloadLink.href = url;
   // Hide download link
   downloadLink.style.display = 'none';
   // Add the link to DOM
   document.body.appendChild(downloadLink);
   // Click download link
   downloadLink.click();
-};
-
-let exportTableToCSV = function(filename) {
-  let csv = [];
-  let rows = $('table tr.csv-export');
-  let ignoreFieldsList = ['index', 'passShow'];
-
-  for (let i = 0; i < rows.length; i++) {
-    let row = [];
-    for (let data in rows[i].dataset) {
-      if (Object.prototype.hasOwnProperty.call(rows[i].dataset, data)) {
-        if (data == 'passShow' && rows[i].dataset[data] == 'false') {
-          ignoreFieldsList.push('pass', 'wifiPass');
-        }
-        if (!ignoreFieldsList.includes(data)) {
-          if (rows[i].dataset[data]) {
-            row.push(rows[i].dataset[data]);
-          } else {
-            row.push('-');
-          }
-        }
-      }
-    }
-    csv.push(row.join(','));
-  }
-  // Download CSV file
-  downloadCSV(csv.join('\n'), filename);
-};
+}
 
 let refreshExtRefType = function(event) {
   let selectedSpan = $(event.target).closest('.input-group-btn')
@@ -337,7 +306,10 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '#export-csv', function(event) {
-    exportTableToCSV('lista-de-roteadores-flashbox.csv');
+    let filterList = $('#devices-search-input').val();
+    let exportURL = '/devicelist/export?filter=' +
+                    encodeURIComponent(filterList);
+    downloadCSV(exportURL, 'lista-de-roteadores-flashbox.csv');
   });
 
   $(document).on('click', '.tab-switch-btn', function(event) {
@@ -525,9 +497,6 @@ $(document).ready(function() {
     csvAttr += ' data-index="'+index+'"';
     csvAttr += ' data-slave-count="'+(device.mesh_slaves ? device.mesh_slaves.length : 0)+'"';
     csvAttr += ' data-deviceid="'+device._id+'"';
-    csvAttr += ' data-connection-type="'+(device.connection_type ? device.connection_type : '')+'"';
-    csvAttr += ' data-user="'+(device.pppoe_user ? device.pppoe_user : '')+'"';
-    csvAttr += ' data-pass="'+(device.pppoe_password ? device.pppoe_password : '')+'"';
     csvAttr += ' data-lan-subnet="'+(device.lan_subnet ? device.lan_subnet : '')+'"';
     csvAttr += ' data-lan-netmask="'+(device.lan_netmask ? device.lan_netmask : '')+'"';
     csvAttr += ' data-ssid="'+(device.wifi_ssid ? device.wifi_ssid : '')+'"';
@@ -682,7 +651,7 @@ $(document).ready(function() {
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
-    let infoRow = '<tr class=" csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
+    let infoRow = '<tr class=" ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+

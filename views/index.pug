@@ -144,12 +144,9 @@ block content
             .table-responsive
               table.table.table-hover#devices-table
                 thead
-                  tr.csv-export(
+                  tr(
                     data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
                     data-deviceid="Endereço MAC",
-                    data-connection-type="Tipo de Conexão WAN",
-                    data-user="Usuário PPPoE",
-                    data-pass="Senha PPPoE",
                     data-lan-subnet="Subrede LAN",
                     data-lan-netmask="Máscara LAN",
                     data-ssid="WiFi SSID",
