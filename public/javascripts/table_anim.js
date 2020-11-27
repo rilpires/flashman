@@ -1,18 +1,12 @@
 
 let downloadCSV = function(url, filename) {
-  let downloadLink;
-  // Download link
-  downloadLink = document.createElement('a');
-  // File name
+  let downloadLink = document.createElement('a');
   downloadLink.download = filename;
   downloadLink.href = url;
-  // Hide download link
   downloadLink.style.display = 'none';
-  // Add the link to DOM
   document.body.appendChild(downloadLink);
-  // Click download link
   downloadLink.click();
-}
+};
 
 let refreshExtRefType = function(event) {
   let selectedSpan = $(event.target).closest('.input-group-btn')
@@ -492,34 +486,13 @@ $(document).ready(function() {
     });
   };
 
-  const buildCsvData = function(device, index) {
-    let csvAttr = 'id="'+device._id+'"';
-    csvAttr += ' data-index="'+index+'"';
-    csvAttr += ' data-slave-count="'+(device.mesh_slaves ? device.mesh_slaves.length : 0)+'"';
-    csvAttr += ' data-deviceid="'+device._id+'"';
-    csvAttr += ' data-lan-subnet="'+(device.lan_subnet ? device.lan_subnet : '')+'"';
-    csvAttr += ' data-lan-netmask="'+(device.lan_netmask ? device.lan_netmask : '')+'"';
-    csvAttr += ' data-ssid="'+(device.wifi_ssid ? device.wifi_ssid : '')+'"';
-    csvAttr += ' data-wifi-pass="'+(device.wifi_password ? device.wifi_password : '')+'"';
-    csvAttr += ' data-channel="'+(device.wifi_channel ? device.wifi_channel : '')+'"';
-    csvAttr += ' data-band="'+(device.wifi_band ? device.wifi_band : '')+'"';
-    csvAttr += ' data-mode="'+(device.wifi_mode ? device.wifi_mode : '')+'"';
-    csvAttr += ' data-ssid-5ghz="'+(device.wifi_ssid_5ghz ? device.wifi_ssid_5ghz : '')+'"';
-    csvAttr += ' data-wifi-pass-5ghz="'+(device.wifi_password_5ghz ? device.wifi_password_5ghz : '')+'"';
-    csvAttr += ' data-channel-5ghz="'+(device.wifi_channel_5ghz ? device.wifi_channel_5ghz : '')+'"';
-    csvAttr += ' data-band-5ghz="'+(device.wifi_band_5ghz ? device.wifi_band_5ghz : '')+'"';
-    csvAttr += ' data-mode-5ghz="'+(device.wifi_mode_5ghz ? device.wifi_mode_5ghz : '')+'"';
-    csvAttr += ' data-ext-wan="'+(device.ip ? device.ip : '')+'"';
-    csvAttr += ' data-int-wan="'+(device.wan_ip ? device.wan_ip : '')+'"';
-    csvAttr += ' data-wan-speed="'+(device.wan_negociated_speed ? device.wan_negociated_speed : '')+'"';
-    csvAttr += ' data-wan-duplex="'+(device.wan_negociated_duplex ? device.wan_negociated_duplex : '')+'"';
-    csvAttr += ' data-external-ref-type="'+(device.external_reference ? device.external_reference.kind : '')+'"';
-    csvAttr += ' data-external-ref="'+(device.external_reference ? device.external_reference.data : '')+'"';
-    csvAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
-    csvAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
-    csvAttr += ' data-device-release="'+(device.release ? device.release : '')+'"';
-    csvAttr += ' data-do-update="'+(device.do_update ? 'Sim' : 'Não')+'"';
-    return csvAttr;
+  const buildRowData = function(device, index) {
+    let rowAttr = 'id="' + device._id + '"';
+    rowAttr += ' data-index="' + index + '"';
+    rowAttr += ' data-slave-count="' +
+               (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
+    rowAttr += ' data-deviceid="' + device._id + '"';
+    return rowAttr;
   };
 
   const buildStatusClasses = function(device) {
@@ -1044,7 +1017,7 @@ $(document).ready(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
-          let csvAttr = buildCsvData(device, index);
+          let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
           let statusAttributes = buildStatusAttributes(device);
           let notifications = buildNotification();
@@ -1060,7 +1033,7 @@ $(document).ready(function() {
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
           let infoRow = buildTableRowInfo(device, isSelectableRow);
-          infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
+          infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
           if (isSuperuser || grantNotificationPopups) {
@@ -1956,13 +1929,13 @@ $(document).ready(function() {
             let slaveIdx = 0;
             device.mesh_slaves.forEach((slave)=>{
               let slaveDev = res.devices.find((d)=>d._id===slave);
-              let csvAttr = buildCsvData(slaveDev, index);
+              let rowAttr = buildRowData(slaveDev, index);
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
               let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
               let infoRow = buildTableRowInfo(slaveDev, false, true, index);
-              infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', csvAttr);
+              infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
               infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
