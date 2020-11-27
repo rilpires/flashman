@@ -115,7 +115,6 @@ $(document).ready(function() {
             .removeClass('fa-spinner fa-pulse');
         },
       });
-    } else {
     }
     return false;
   });
