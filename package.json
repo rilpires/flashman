@@ -41,6 +41,7 @@
     "jquery": "~3.5.1",
     "jquery-highlight": "~3.5.0",
     "jquery-mask-plugin": "~1.14.16",
+    "json2csv": "~5.0.5",
     "md5-file": "~4.0.0",
     "mdbootstrap": "~4.8.8",
     "mongoose": "~5.7.5",

@@ -148,4 +148,8 @@ router.route('/license').post(
   authController.ensureLogin(),
   deviceListController.updateLicenseStatus);
 
+router.route('/export').get(
+  authController.ensureLogin(),
+  deviceListController.exportDevicesCsv);
+
 module.exports = router;
