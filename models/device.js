@@ -29,7 +29,9 @@ let deviceSchema = new Schema({
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
+  wifi_last_channel: String, // last channel in use reported from router
   wifi_band: String,
+  wifi_last_band: String, // last band in use reported from router
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
   wifi_hidden: {type: Number, default: 0},
@@ -40,7 +42,9 @@ let deviceSchema = new Schema({
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,
+  wifi_last_channel_5ghz: String,
   wifi_band_5ghz: String,
+  wifi_last_band_5ghz: String,
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
   wifi_hidden_5ghz: {type: Number, default: 0},

@@ -80,6 +80,11 @@ const createRegistry = function(req, res) {
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
 
+  let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
+  let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
+  let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
+  let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
   if (flmUpdater == '0') {
@@ -176,7 +181,9 @@ const createRegistry = function(req, res) {
         'wifi_ssid': ssid,
         'wifi_password': password,
         'wifi_channel': channel,
+        'wifi_last_channel': sentWifiLastChannel,
         'wifi_band': band,
+        'wifi_last_band': sentWifiLastBand,
         'wifi_mode': mode,
         'wifi_power': power,
         'wifi_state': wifiState,
@@ -185,7 +192,9 @@ const createRegistry = function(req, res) {
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
+        'wifi_last_channel_5ghz': sentWifiLastChannel5G,
         'wifi_band_5ghz': band5ghz,
+        'wifi_last_band_5ghz': sentWifiLastBand5G,
         'wifi_mode_5ghz': mode5ghz,
         'wifi_power_5ghz': power5ghz,
         'wifi_state_5ghz': wifiState5ghz,
@@ -575,6 +584,28 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
+
+        let sentWifiLastChannel =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
+        if (sentWifiLastChannel !== matchedDevice.wifi_last_channel) {
+          deviceSetQuery.wifi_last_channel = sentWifiLastChannel;
+        }
+        let sentWifiLastChannel5G =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
+        if (sentWifiLastChannel5G !== matchedDevice.wifi_last_channel_5ghz) {
+          deviceSetQuery.wifi_last_channel_5ghz = sentWifiLastChannel5G;
+        }
+
+        let sentWifiLastBand =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
+        if (sentWifiLastBand !== matchedDevice.wifi_last_band) {
+          deviceSetQuery.wifi_last_band = sentWifiLastBand;
+        }
+        let sentWifiLastBand5G =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+        if (sentWifiLastBand5G !== matchedDevice.wifi_last_band_5ghz) {
+          deviceSetQuery.wifi_last_band_5ghz = sentWifiLastBand5G;
+        }
 
         deviceSetQuery.last_contact = Date.now();
 
