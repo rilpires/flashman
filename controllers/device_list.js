@@ -10,6 +10,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 
 let deviceListController = {};
 
@@ -2215,6 +2216,74 @@ deviceListController.updateLicenseStatus = function(req, res) {
       }
     });
   });
+};
+
+deviceListController.exportDevicesCsv = async function(req, res) {
+  let queryContents = req.query.filter.split(',');
+
+  const userRole = await Role.findOne({
+    name: util.returnObjOrEmptyStr(req.user.role)});
+  let finalQuery;
+  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+  } else {
+    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+  }
+
+  let devices = {};
+  try {
+    devices = await DeviceModel.find(finalQuery).lean();
+  } catch (err) {
+    let emptyReturn = '';
+    res.set('Content-Type', 'text/csv');
+    return res.send(emptyReturn);
+  }
+  let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
+                         true : false);
+  const csvFields = [
+    {label: 'Endereço MAC', value: '_id'},
+    {label: 'Tipo de Conexão WAN', value: 'connection_type'},
+    {label: 'Usuário PPPoE', value: 'pppoe_user'},
+  ];
+  if (exportPasswords) {
+    csvFields.push({label: 'Senha PPPoE', value: 'pppoe_password'});
+  }
+  csvFields.push(
+    {label: 'Subrede LAN', value: 'lan_subnet'},
+    {label: 'Máscara LAN', value: 'lan_netmask'},
+    {label: 'Wi-Fi SSID', value: 'wifi_ssid'},
+  );
+  if (exportPasswords) {
+    csvFields.push({label: 'Wi-Fi Senha', value: 'wifi_password'});
+  }
+  csvFields.push(
+    {label: 'Wi-Fi Canal', value: 'wifi_channel'},
+    {label: 'Largura de banda', value: 'wifi_band'},
+    {label: 'Modo de operação', value: 'wifi_mode'},
+    {label: 'Wi-Fi SSID 5GHz', value: 'wifi_ssid_5ghz'},
+  );
+  if (exportPasswords) {
+    csvFields.push({label: 'Wi-Fi Senha 5GHz', value: 'wifi_password_5ghz'});
+  }
+  csvFields.push(
+    {label: 'Wi-Fi Canal 5GHz', value: 'wifi_channel_5ghz'},
+    {label: 'Largura de banda 5GHz', value: 'wifi_band_5ghz'},
+    {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
+    {label: 'IP Público', value: 'ip'},
+    {label: 'IP WAN', value: 'wan_ip'},
+    {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
+    {label: 'Modo de transmissão WAN (duplex)', value: 'wan_negociated_duplex'},
+    {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
+    {label: 'ID do cliente', value: 'external_reference.data'},
+    {label: 'Modelo do roteador', value: 'model'},
+    {label: 'Versão do firmware', value: 'version'},
+    {label: 'Release', value: 'installed_release'},
+    {label: 'Atualizar firmware', value: 'do_update'},
+  );
+  const json2csvParser = new Parser({fields: csvFields});
+  const devicesCsv = json2csvParser.parse(devices);
+  res.set('Content-Type', 'text/csv');
+  return res.send(devicesCsv);
 };
 
 module.exports = deviceListController;

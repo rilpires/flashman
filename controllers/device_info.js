@@ -809,7 +809,14 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             updateScheduler.successDownload(req.body.id);
           }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
-          matchedDevice.do_update_status = 10; // ack received
+          if (matchedDevice.release === '9999-aix') {
+            // Disable schedule since factory firmware will not inform status
+            matchedDevice.installed_release = '9999-aix';
+            matchedDevice.do_update = false;
+            matchedDevice.do_update_status = 1; // success
+          } else {
+            matchedDevice.do_update_status = 10; // ack received
+          }
           proceed = 1;
         } else if (upgStatus == '0') {
           if (matchedDevice.mesh_master) {
