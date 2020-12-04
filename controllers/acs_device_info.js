@@ -228,7 +228,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
     if (!device.pppoe_password) {
       device.pppoe_password = data.wan.pppoe_pass;
-    } else if (device.pppoe_password !== data.wan.pppoe_pass) {
+    } else if (data.wan.pppoe_pass && // make sure this onu reports the password
+               device.pppoe_password !== data.wan.pppoe_pass) {
       changes.wan.pppoe_pass = device.pppoe_password;
     }
   } else {
