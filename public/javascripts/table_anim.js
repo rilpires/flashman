@@ -1270,7 +1270,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
           }
-          if (!isTR069 && (isSuperuser || grantFactoryReset)) {
+          if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
           } else {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');

@@ -34,6 +34,23 @@ let forceUpdateFlashman = function() {
   });
 };
 
+let alertMajorUpdateFlashman = function() {
+  swal({
+    type: 'warning',
+    title: 'Atualização importante disponível!',
+    text: 'A nova versão do Flashman requer uma instalação manual. Por favor, '+
+          'entre na nossa página de documentação e siga os passos para '+
+          'atualizar o seu Flashman para a nova versão. Se precisar, entre em '+
+          'contato com a equipe Anlix.',
+    confirmButtonText: 'Ver instruções',
+    confirmButtonColor: '#4db6ac',
+  }).then(function(result) {
+    if (result.value) {
+      window.open('https://documentacao.anlix.io/doku.php');
+    }
+  });
+};
+
 let alertUpdateFlashman = function() {
   swal({
     type: 'warning',

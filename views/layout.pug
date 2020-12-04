@@ -39,7 +39,10 @@ html
       }
       let superuser = '#{superuser}';
       let update = '#{update}' === "true";
-      if (superuser && update && Math.random() < 0.3) {
+      let majorUpdate = '#{majorUpdate}' === "true";
+      if (superuser && majorUpdate) {
+        alertMajorUpdateFlashman();
+      } else if (superuser && update && Math.random() < 0.3) {
         alertUpdateFlashman();
       }
       let measure_active = '#{measure_active}' === 'true';
