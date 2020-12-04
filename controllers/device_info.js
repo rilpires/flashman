@@ -1296,6 +1296,98 @@ deviceInfoController.receiveDevices = function(req, res) {
   });
 };
 
+
+deviceInfoController.receiveSiteSurvey = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Site Survey: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+    if (!('survey' in req.body)) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: Invalid JSON.');
+      return res.status(400).json({processed: 0});
+    }
+
+    let apsData = req.body.survey;
+    let outData = [];
+
+    for (let connApMac in apsData) {
+      if (Object.prototype.hasOwnProperty.call(apsData, connApMac)) {
+        let outDev = {};
+        let upConnApMac = connApMac.toLowerCase();
+        let upConnDev = apsData[upConnApMac];
+        if (!upConnDev) continue;
+
+        let devReg = matchedDevice.getAPSurveyDevice(upConnApMac);
+        if (upConnDev.freq) {
+          upConnDev.freq = parseInt(upConnDev.freq);
+        }
+        if (upConnDev.signal) {
+          upConnDev.signal = parseInt(upConnDev.signal);
+        }
+        let devWidth=20;
+        let devVHT=false;
+        if (upConnDev.largura_VHT) {
+          devVHT=true;
+          devWidth = parseInt(upConnDev.largura_VHT);
+        }
+
+        if (devReg) {
+          devReg.ssid = upConnDev.ssid;
+          devReg.freq = upConnDev.freq;
+          devReg.signal = upConnDev.signal;
+          devReg.width = devWidth;
+          devReg.VHT = devVHT;
+          devReg.last_seen = Date.now();
+          if (!devReg.first_seen) {
+            devReg.first_seen = Date.now();
+          }
+        } else {
+          matchedDevice.ap_survey.push({
+            mac: upConnApMac,
+            ssid: upConnDev.ssid,
+            freq: upConnDev.freq,
+            signal: upConnDev.signal,
+            width: devWidth,
+            VHT: devVHT,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
+        outDev.mac = upConnApMac;
+        outData.push(outDev);
+      }
+    }
+
+    matchedDevice.last_site_survey = Date.now();
+    matchedDevice.save();
+
+    // if someone is waiting for this message, send the information
+    sio.anlixSendSiteSurveyNotifications(id, outData);
+    console.log('Site Survey Receiving for device ' +
+      id + ' successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
 deviceInfoController.getPingHosts = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {

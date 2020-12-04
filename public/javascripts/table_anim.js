@@ -143,6 +143,7 @@ $(document).ready(function() {
   let grantLOGAccess = false;
   let grantLanEditAccess = false;
   let grantLanDevsAccess = false;
+  let grantSiteSurveyAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
@@ -170,6 +171,7 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanEditAccess = role.grantLanEdit;
     grantLanDevsAccess = role.grantLanDevices;
+    grantSiteSurveyAccess = role.grantSiteSurvey;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
@@ -1012,6 +1014,7 @@ $(document).ready(function() {
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
           let grantLanDevices = device.permissions.grantLanDevices;
+          let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
@@ -1099,6 +1102,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
+          let siteSurveyAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
+          .replace('$REPLACE_ICON', 'fa-network-wired')
+          .replace('$REPLACE_TEXT', 'Roteadores ao redor');
+
           let measureAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
@@ -1130,6 +1138,7 @@ $(document).ready(function() {
             '$REPLACE_PORT_FORWARD_ACTION'+
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
+            '$REPLACE_SITESURVEY_ACTION'+
             '$REPLACE_MEASURE_ACTION'+
             '$REPLACE_WAN_BYTES_ACTION'+
             '$REPLACE_FACTORY_ACTION'+
@@ -1158,6 +1167,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
+          }
+          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
           }
           if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);

@@ -16,6 +16,8 @@ router.route('/get/measureconfig').post(deviceInfoController.getZabbixConfig);
 router.route('/get/upnpdevices').post(deviceInfoController.getUpnpDevsPerm);
 router.route('/receive/upnp').post(deviceInfoController.receiveUpnp);
 router.route('/receive/devices').post(deviceInfoController.receiveDevices);
+// eslint-disable-next-line max-len
+router.route('/receive/sitesurvey').post(deviceInfoController.receiveSiteSurvey);
 router.route('/receive/pingresult').post(
   deviceInfoController.receivePingResult);
 router.route('/receive/routerstatus').post(

@@ -224,6 +224,15 @@ const grantLanDevices = function(version) {
   }
 };
 
+const grantSiteSurvey = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.29.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantUpnp = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
@@ -321,6 +330,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
+  result.grantSiteSurvey = grantSiteSurvey(version);
   result.grantUpnp = grantUpnp(version);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);

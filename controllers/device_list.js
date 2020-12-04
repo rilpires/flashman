@@ -899,6 +899,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
           });
+        } else if (msgtype === 'sitesurvey') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForSiteSurveyNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
