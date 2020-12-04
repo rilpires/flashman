@@ -26,6 +26,8 @@ let userSchema = new mongoose.Schema({
   deviceCertifications: [{
     finished: {type: Boolean, default: true},
     mac: {type: String},
+    onuMac: {type: String},
+    isOnu: {type: Boolean, default: false},
     routerModel: {type: String},
     routerVersion: {type: String},
     routerRelease: {type: String},
@@ -34,12 +36,14 @@ let userSchema = new mongoose.Schema({
     didDiagnose: {type: Boolean, default: false},
     diagnostic: {
       wan: {type: Boolean, default: false},
+      tr069: {type: Boolean, default: false},
       ipv4: {type: Boolean, default: false},
       ipv6: {type: Boolean, default: false},
       dns: {type: Boolean, default: false},
       anlix: {type: Boolean, default: false},
       flashman: {type: Boolean, default: false},
     },
+    didConfigureTR069: {type: Boolean, default: false},
     didConfigureWan: {type: Boolean, default: false},
     routerConnType: {type: String},
     pppoeUser: {type: String},
