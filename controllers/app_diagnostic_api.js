@@ -66,7 +66,7 @@ const pushCertification = function(arr, c, finished) {
     finished: finished,
     mac: c.mac,
     onuMac: (c.onuMac) ? c.onuMac : '',
-    isONU: (c.isONU) ? c.isONU : false,
+    isOnu: (c.isONU) ? c.isONU : false,
     routerModel: (c.routerModel) ? c.routerModel : '',
     routerVersion: (c.routerVersion) ? c.routerVersion : '',
     routerRelease: (c.routerRelease) ? c.routerRelease : '',
