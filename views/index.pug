@@ -144,35 +144,7 @@ block content
             .table-responsive
               table.table.table-hover#devices-table
                 thead
-                  tr.csv-export(
-                    data-pass-show=(superuser || role.grantPassShow ? "true" : "false"),
-                    data-deviceid="Identificador Único",
-                    data-connection-type="Tipo de Conexão WAN",
-                    data-user="Usuário PPPoE",
-                    data-pass="Senha PPPoE",
-                    data-lan-subnet="Subrede LAN",
-                    data-lan-netmask="Máscara LAN",
-                    data-ssid="WiFi SSID",
-                    data-wifi-pass="WiFi Senha",
-                    data-channel="WiFi Canal",
-                    data-band="Largura de banda",
-                    data-mode="Modo de operação",
-                    data-ssid-5ghz="WiFi SSID 5GHz",
-                    data-wifi-pass-5ghz="WiFi Senha 5GHz",
-                    data-channel-5ghz="WiFi Canal 5GHz",
-                    data-band-5ghz="Largura de banda 5GHz",
-                    data-mode-5ghz="Modo de operação 5GHz",
-                    data-ext-wan="IP Público",
-                    data-int-wan="IP WAN",
-                    data-wan-speed="Velocidade WAN negociada"
-                    data-wan-duplex="Modo de transmissão WAN (duplex)"
-                    data-external-ref-type="Tipo de ID do cliente",
-                    data-external-ref="ID do cliente",
-                    data-device-model="Modelo do roteador",
-                    data-device-version="Versão do Flashbox",
-                    data-device-release="Release",
-                    data-do-update="Atualizar Firmware"
-                  )
+                  tr
                     th
                     th
                     th.text-left

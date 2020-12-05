@@ -13,7 +13,10 @@ let deviceSchema = new Schema({
   serial_tr069: String,
   acs_id: {type: String, sparse: true},
   created_at: {type: Date},
-  external_reference: {kind: String, data: String},
+  external_reference: {
+    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    data: String,
+  },
   model: String,
   version: {type: String, default: '0.0.0'},
   installed_release: String,

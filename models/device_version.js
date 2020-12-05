@@ -7,6 +7,7 @@ const speedTestCompatibleModels = {
   'ACTIONRG1200V1': 200,
   'ARCHERC2V1': 300,
   'ARCHERC5V4': 300,
+  'EC220-G5V2': 300,
   'ARCHERC20V1': 100,
   'ARCHERC20V4': 100,
   'ARCHERC20V5': 100,
@@ -14,6 +15,7 @@ const speedTestCompatibleModels = {
   'ARCHERC50V3': 100,
   'ARCHERC50V4': 100,
   'ARCHERC60V2': 100,
+  'ARCHERC60V3': 100,
   'ARCHERC6V2US': 200,
   'ARCHERC7V5': 300,
   'DIR-819A1': 100,
@@ -57,6 +59,7 @@ const speedTestCompatibleModels = {
   'TL-WR949NV6': 100,
   'TL-WR845NV3': 100,
   'TL-WR845NV4': 100,
+  'W5-1200FV1': 100,
 };
 
 const meshCompatibleModels = [
@@ -69,8 +72,10 @@ const meshCompatibleModels = [
   'ARCHERC50V3',
   'ARCHERC50V4',
   'ARCHERC60V2',
+  'ARCHERC60V3',
   'ARCHERC6V2US',
   'ARCHERC7V5',
+  'EC220-G5V2',
   'DIR-819A1',
   'COVR-C1200A1',
   'EMG1702-T10AA1',
