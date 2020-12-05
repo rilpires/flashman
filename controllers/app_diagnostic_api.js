@@ -337,7 +337,17 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     // Save current certification, if any
     if (content.current && content.current.mac) {
       if (content.current.latitude && content.current.longitude) {
-        let device = await(DeviceModel.findById(content.current.mac));
+        let device;
+        if (req.body.isOnu && req.body.onuMac) {
+          device = await(DeviceModel.findById(req.body.onuMac));
+        } else if (req.body.isOnu) {
+          let devices = await(DeviceModel.find({serial_tr069: req.body.mac}));
+          if (devices.length > 0) {
+            device = devices[0];
+          }
+        } else {
+          device = await(DeviceModel.findById(req.body.mac));
+        }
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
         await(device.save());
