@@ -205,6 +205,9 @@ $(document).ready(function() {
       $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
       $('#measure-server-ip').val(resp.measureServerIP);
       $('#measure-server-port').val(resp.measureServerPort);
+      if (resp.tr069ServerURL) {
+        $('#tr069-server-url').val(resp.tr069ServerURL);
+      }
       $('#inform-interval').val(resp.tr069InformInterval);
       $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);
       $('#lost-informs-offline-threshold').val(resp.tr069OfflineThreshold);

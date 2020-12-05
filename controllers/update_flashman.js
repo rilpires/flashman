@@ -283,6 +283,7 @@ updateController.getAutoConfig = function(req, res) {
         minlengthpasspppoe: matchedConfig.pppoePassLength,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
+        tr069ServerURL: matchedConfig.tr069.server_url,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
@@ -416,7 +417,12 @@ updateController.setAutoConfig = async function(req, res) {
       message += ' Seus dispositivos começarão a medir em breve.';
     }
 
-    // // checking tr069 configuration fields.
+    // check which variables will need updating
+    let willUpdateInterval = false;
+    let willUpdateURL = false;
+
+    // checking tr069 configuration fields.
+    let tr069ServerURL = req.body['tr069-server-url'];
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
     let tr069RecoveryThreshold =
@@ -432,7 +438,14 @@ updateController.setAutoConfig = async function(req, res) {
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
      && tr069RecoveryThreshold < tr069OfflineThreshold) {
+      if (tr069ServerURL && tr069ServerURL !== config.tr069.server_url) {
+        willUpdateURL = true;
+      }
+      if (tr069InformInterval*1000 !== config.tr069.inform_interval) {
+        willUpdateInterval = true;
+      }
       config.tr069 = { // create a new tr069 config with received values.
+        server_url: tr069ServerURL,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
@@ -445,9 +458,10 @@ updateController.setAutoConfig = async function(req, res) {
         message: 'Erro validando os campos relacionados ao TR-069.',
       });
     }
-    // // setting inform interval in genie for all devices and in preset.
-    let presetResponse = await updatePeriodicInformInGenieAcs(
-     tr069InformInterval)
+    // setting inform interval in genie for all devices and in preset.
+    if (willUpdateInterval) {
+      await updatePeriodicInformInGenieAcs(tr069InformInterval);
+    }
 
     await(config.save());
     return res.status(200).json({

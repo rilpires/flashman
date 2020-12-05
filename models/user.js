@@ -45,6 +45,7 @@ let userSchema = new mongoose.Schema({
     },
     didConfigureTR069: {type: Boolean, default: false},
     didConfigureWan: {type: Boolean, default: false},
+    wanConfigOnu: {type: String},
     routerConnType: {type: String},
     pppoeUser: {type: String},
     bridgeIP: {type: String},
