@@ -2028,6 +2028,35 @@ deviceListController.getLanDevices = function(req, res) {
   });
 };
 
+deviceListController.getSiteSurvey = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+
+    let enrichedSiteSurvey = util.deepCopyObject(matchedDevice.ap_survey)
+    .map((apDevice) => {
+      apDevice.is_old = deviceHandlers.isTooOld(apDevice.last_seen);
+      return apDevice;
+    });
+
+    return res.status(200).json({
+      success: true,
+      ap_devices: enrichedSiteSurvey,
+    });
+  });
+};
+
 deviceListController.getSpeedtestResults = function(req, res) {
   DeviceModel.findById(req.params.id.toUpperCase(), (err, matchedDevice)=>{
     if (err) {
