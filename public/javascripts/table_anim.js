@@ -1583,6 +1583,7 @@ $(document).ready(function() {
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
                       '$REPLACE_WIFI_EN>'+
+                        '<option value="auto" $REPLACE_SELECTED_BAND_auto$>Automatico</option>'+
                         '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
                         '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
                       '</select>'+
@@ -1737,6 +1738,7 @@ $(document).ready(function() {
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
                       '$REPLACE_WIFI_EN>'+
+                        '<option value="auto" $REPLACE_SELECTED_BAND_auto$>Automatico</option>'+
                         '<option value="VHT80" $REPLACE_SELECTED_BAND_VHT80$>80 MHz</option>'+
                         '<option value="VHT40" $REPLACE_SELECTED_BAND_VHT40$>40 MHz</option>'+
                         '<option value="VHT20" $REPLACE_SELECTED_BAND_VHT20$>20 MHz</option>'+
