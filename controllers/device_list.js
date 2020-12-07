@@ -870,7 +870,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-      case 'wps': {
+      case 'wps':
+      case 'sitesurvey': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
