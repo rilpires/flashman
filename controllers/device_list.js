@@ -678,11 +678,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
               devices: allDevices,
             });
           }, (error) => {
-            return res.json({
+            let response = {
               success: false,
               type: 'danger',
-              message: err.message,
-            });
+              message: (error.message ? error.message : error),
+            };
+            return res.json(response);
           });
         });
       });
@@ -869,7 +870,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-      case 'wps': {
+      case 'wps':
+      case 'sitesurvey': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
