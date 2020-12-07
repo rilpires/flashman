@@ -79,11 +79,39 @@ $(document).ready(function() {
     });
   };
 
+  const sortBySignal = function(a, b) {
+    if ( a.signal > b.signal ) {
+      return -1;
+    }
+    if ( a.last_nom < b.last_nom ) {
+      return 1;
+    }
+    return 0;
+  };
+
+  const calculateChannel = function(rawFreq) {
+    const startFreq2Ghz = 2412;
+    const startFreq5GHz = 5180;
+    let intRawFreq = parseInt(rawFreq);
+    let finalChannel = 1;
+    if (Math.floor(intRawFreq / startFreq5GHz) == 0) { // 2.4 GHz
+      // 5 MHz between channels center
+      finalChannel += (intRawFreq % startFreq2Ghz) / 5;
+    } else { // 5.0 GHz
+      finalChannel = 36;
+      // 10 MHz between channels center
+      // Each channel moves two units
+      finalChannel += ((intRawFreq % startFreq5GHz) / 10) * 2;
+    }
+    return finalChannel;
+  };
+
   const renderSiteSurvey = function(apDevices, isBridge) {
     $('#site-survey-placeholder').hide();
     let apDevsRow = $('#site-survey-body');
     let countAddedDevs = 0;
 
+    apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
       // Skip if not seen for too long
       if (device.is_old) {
@@ -94,11 +122,17 @@ $(document).ready(function() {
         .addClass('col-lg m-1 grey lighten-4').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
-              $('<h6>').text(device.ssid),
-              $('<h6>').text(device.mac),
-              $('<h6>').text('Canal: ' + device.freq),
-              $('<h6>').text('Sinal: ' + device.signal +' dBm'),
-              $('<h6>').text('Banda: ' + device.width +' MHz'),
+              $('<div>').addClass('row p-0 m-0').append(
+                $('<div>').addClass('col p-0').append(
+                  $('<h6>').text(device.ssid),
+                  $('<h6>').text(device.mac),
+                ),
+                $('<div>').addClass('col p-0 pl-2').append(
+                  $('<h6>').text('Canal: ' + calculateChannel(device.freq)),
+                  $('<h6>').text('Sinal: ' + device.signal +' dBm'),
+                  $('<h6>').text('Banda: ' + device.width +' MHz'),
+                ),
+              ),
             ),
           ),
         ),
