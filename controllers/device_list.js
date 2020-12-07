@@ -678,11 +678,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
               devices: allDevices,
             });
           }, (error) => {
-            return res.json({
+            let response = {
               success: false,
               type: 'danger',
-              message: err.message,
-            });
+              message: (error.message ? error.message : error),
+            };
+            return res.json(response);
           });
         });
       });
