@@ -1344,13 +1344,25 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         }
         let devWidth=20;
         let devVHT=false;
+
+        if (upConnDev.largura_HT) {
+          if (upConnDev.largura_HT === 'any') {
+            devWidth = 40;
+          } else {
+            devWidth = parseInt(upConnDev.largura_HT);
+          }
+        }
+
         if (upConnDev.largura_VHT) {
-          devVHT=true;
-          devWidth = parseInt(upConnDev.largura_VHT);
+          let VHTWifth=parseInt(upConnDev.largura_VHT);
+          if (VHTWifth > 0) {
+            devVHT=true;
+            devWidth = VHTWifth;
+          }
         }
 
         if (devReg) {
-          devReg.ssid = upConnDev.ssid;
+          devReg.ssid = upConnDev.SSID;
           devReg.freq = upConnDev.freq;
           devReg.signal = upConnDev.signal;
           devReg.width = devWidth;
@@ -1362,7 +1374,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         } else {
           matchedDevice.ap_survey.push({
             mac: upConnApMac,
-            ssid: upConnDev.ssid,
+            ssid: upConnDev.SSID,
             freq: upConnDev.freq,
             signal: upConnDev.signal,
             width: devWidth,
