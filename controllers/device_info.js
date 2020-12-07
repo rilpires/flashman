@@ -705,6 +705,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             {'$set': deviceSetQuery}, (err) => {
               if (err) {
                 console.log(err);
+                return;
               } else {
                 // Convert to date string
                 deviceSetQuery.last_contact =
@@ -742,6 +743,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
                       return;
                     });
                   }
+                  return;
                 }
               }
             },
