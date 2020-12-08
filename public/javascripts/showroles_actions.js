@@ -324,7 +324,7 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Informações Sobre Roteadores ao Redor'),
+                        .text('Informações Sobre Redes ao Redor'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-site-survey').append(

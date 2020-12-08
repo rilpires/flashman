@@ -19,7 +19,8 @@ $(document).ready(function() {
         } else {
           $('#site-survey').removeAttr('data-ap-devices-list');
           $('#site-survey').removeData('ap-devices-list');
-          $('#site-survey-body').empty(); // Clear old data
+          $('#2-ghz-aps').empty();
+          $('#5-ghz-aps').empty();
           $('#site-survey-placeholder').show();
           $('#site-survey-placeholder-none').hide();
           fetchSiteSurvey(deviceId, isBridge);
@@ -28,7 +29,8 @@ $(document).ready(function() {
       error: function(xhr, status, error) {
         $('#site-survey').removeAttr('data-ap-devices-list');
         $('#site-survey').removeData('ap-devices-list');
-        $('#site-survey-body').empty(); // Clear old data
+        $('#2-ghz-aps').empty();
+        $('#5-ghz-aps').empty();
         $('#site-survey-placeholder').show();
         $('#site-survey-placeholder-none').hide();
         fetchSiteSurvey(deviceId, isBridge);
@@ -108,8 +110,11 @@ $(document).ready(function() {
 
   const renderSiteSurvey = function(apDevices, isBridge) {
     $('#site-survey-placeholder').hide();
-    let apDevsRow = $('#site-survey-body');
-    let countAddedDevs = 0;
+    let apDevs2GhzRow = $('#2-ghz-aps');
+    let apDevs5GhzRow = $('#5-ghz-aps');
+    let countAdded2GhzDevs = 0;
+    let countAdded5GhzDevs = 0;
+    let apSelectedDevsRow = apDevs2GhzRow;
 
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
@@ -117,7 +122,13 @@ $(document).ready(function() {
       if (device.is_old) {
         return true;
       }
-      apDevsRow.append(
+      let apChannel = calculateChannel(device.freq);
+      if (apChannel <= 14) { // 2.4 GHz
+        apSelectedDevsRow = apDevs2GhzRow;
+      } else { // 5.0 GHz
+        apSelectedDevsRow = apDevs5GhzRow;
+      }
+      apSelectedDevsRow.append(
         $('<div>')
         .addClass('col-lg m-1 grey lighten-4').append(
           $('<div>').addClass('row pt-3 mb-2').append(
@@ -128,7 +139,7 @@ $(document).ready(function() {
                   $('<h6>').text(device.mac),
                 ),
                 $('<div>').addClass('col p-0 pl-2').append(
-                  $('<h6>').text('Canal: ' + calculateChannel(device.freq)),
+                  $('<h6>').text('Canal: ' + apChannel),
                   $('<h6>').text('Sinal: ' + device.signal +' dBm'),
                   $('<h6>').text('Banda: ' + device.width +' MHz'),
                 ),
@@ -137,35 +148,40 @@ $(document).ready(function() {
           ),
         ),
       );
-      countAddedDevs += 1;
-      // Line break every 2 columns
-      if (countAddedDevs % 2 == 0) {
-        apDevsRow.append($('<div></div>').addClass('w-100'));
+      if (apChannel <= 14) { // 2.4 GHz
+        countAdded2GhzDevs += 1;
+        // Line break every 2 columns
+        if (countAdded2GhzDevs % 2 == 0) {
+          apDevs2GhzRow.append($('<div></div>').addClass('w-100'));
+        }
+      } else { // 5.0 GHz
+        countAdded5GhzDevs += 1;
+        // Line break every 2 columns
+        if (countAdded5GhzDevs % 2 == 0) {
+          apDevs5GhzRow.append($('<div></div>').addClass('w-100'));
+        }
       }
     });
 
     // Placeholder if empty
-    if ( apDevsRow.is(':empty') ) {
+    if ( apSelectedDevsRow.is(':empty') ) {
       $('#site-survey-placeholder-none').show();
+      $('.btn-show-5-ghz-aps').addClass('disabled');
+      $('.btn-show-2-ghz-aps').addClass('disabled');
     }
   };
 
   $(document).on('click', '.btn-site-survey-modal', function(event) {
-    let slaves = [];
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
-    let slaveCount = parseInt(row.data('slave-count'));
-    let totalRouters = slaveCount + 1;
-    if (slaveCount > 0) {
-      slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
-    }
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#site-survey-placeholder-none').hide();
 
     // Trigger ap device view
-    $('#site-survey-body').show();
+    $('#2-ghz-aps').show();
+    $('#5-ghz-aps').hide();
 
     // Refresh devices status
     refreshSiteSurvey(id, isBridge);
@@ -179,6 +195,20 @@ $(document).ready(function() {
     refreshSiteSurvey(id, isBridge);
   });
 
+  $(document).on('click', '.btn-show-2-ghz-aps', function(event) {
+    $('#5-ghz-aps').hide();
+    $('#2-ghz-aps').show();
+    $('.btn-show-5-ghz-aps').removeClass('active');
+    $('.btn-show-2-ghz-aps').addClass('active');
+  });
+
+  $(document).on('click', '.btn-show-5-ghz-aps', function(event) {
+    $('#2-ghz-aps').hide();
+    $('#5-ghz-aps').show();
+    $('.btn-show-2-ghz-aps').removeClass('active');
+    $('.btn-show-5-ghz-aps').addClass('active');
+  });
+
   // Important: include and initialize socket.io first using socket var
   socket.on('SITESURVEY', function(macaddr, data) {
     if (($('#site-survey').data('bs.modal') || {})._isShown) {
@@ -189,11 +219,13 @@ $(document).ready(function() {
         $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
         $('#site-survey').removeAttr('data-ap-devices-list');
         $('#site-survey').removeData('ap-devices-list');
-        $('#site-survey-body').empty();
+        $('#2-ghz-aps').empty();
+        $('#5-ghz-aps').empty();
         $('#site-survey-placeholder').show();
         $('#site-survey-placeholder-none').hide();
       } else {
-        $('#site-survey-body').empty();
+        $('#2-ghz-aps').empty();
+        $('#5-ghz-aps').empty();
       }
       let id = $('#site-survey-hlabel').text();
       let isBridge = $('#isBridgeDiv').html() === 'Sim';
@@ -208,11 +240,15 @@ $(document).ready(function() {
   $('#site-survey').on('hidden.bs.modal', function() {
     $('#site-survey').removeAttr('data-ap-devices-list');
     $('#site-survey').removeData('ap-devices-list');
-    $('#site-survey-body').empty();
+    $('#2-ghz-aps').empty();
+    $('#5-ghz-aps').empty();
     $('#site-survey-placeholder').show();
     $('#site-survey-placeholder-none').hide();
     $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-ssurvey').prop('disabled', false);
+    $('.btn-show-5-ghz-aps').removeClass('active disabled');
+    $('.btn-show-2-ghz-aps').removeClass('disabled');
+    $('.btn-show-2-ghz-aps').addClass('active');
     clearTimeout(siteSurveyGlobalTimer);
   });
 });

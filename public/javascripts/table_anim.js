@@ -1105,7 +1105,7 @@ $(document).ready(function() {
           let siteSurveyAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
           .replace('$REPLACE_ICON', 'fa-wifi')
-          .replace('$REPLACE_TEXT', 'Roteadores ao redor');
+          .replace('$REPLACE_TEXT', 'Redes ao redor');
 
           let measureAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')

@@ -12,6 +12,14 @@
           span.white-text &times;
       .modal-body.pt-2
         .row
+          .col.p-0.text-left
+            .btn-group.btn-group-sm.m-1.btn-group-aps(role="group")
+              button.btn.btn-primary.btn-sm.btn-show-2-ghz-aps.active(type="button")
+                i.fas.fa-wifi.fa-lg
+                span &nbsp; Redes em 2.4GHz
+              button.btn.btn-primary.btn-sm.btn-show-5-ghz-aps
+                i.fas.fa-wifi.fa-lg
+                span &nbsp; Redes em 5.0GHz
           .col.p-0.text-right
             button.btn.btn-primary.btn-sm.m-1.btn-sync-ssurvey
               i.fas.fa-sync-alt.fa-lg
@@ -22,7 +30,7 @@
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
-              span Atualizando roteadores ao redor...
+              span Atualizando redes ao redor...
               br
               span#site-survey-placeholder-counter 0 de 1
         .row#site-survey-placeholder-none
@@ -31,5 +39,6 @@
               i.fas.fa-wifi.fa-4x
               br
               br
-              span Nenhum Roteador encontrado
-        .row#site-survey-body
+              span Nenhuma rede vizinha encontrada
+        .row#2-ghz-aps
+        .row#5-ghz-aps
