@@ -1,0 +1,35 @@
+{
+  "apps": [{
+    "name": "genieacs-cwmp",
+    "script": "../genieacs/dist/bin/genieacs-cwmp",
+    "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "GENIEACS_CWMP_SSL": true,
+      "GENIEACS_CWMP_SSL_CERT": "/root/flashman/certs/cert.pem",
+      "GENIEACS_CWMP_SSL_KEY": "/root/flashman/certs/key.pem",
+      "GENIEACS_CWMP_PORT": 7547,
+      "GENIEACS_CWMP_ACCESS_LOG_FILE": "/dev/null",
+      "GENIEACS_EXT_DIR": "/root/flashman/controllers/external-genieacs",
+      "GENIEACS_EXT_TIMEOUT": 30000,
+      "GENIEACS_RETRY_DELAY": 15,
+      "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
+    },
+  },{
+    "name": "genieacs-nbi",
+    "script": "../genieacs/dist/bin/genieacs-nbi",
+    "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "GENIEACS_NBI_ACCESS_LOG_FILE": "/dev/null",
+      "GENIEACS_EXT_DIR": "/root/flashman/controllers/external-genieacs",
+      "GENIEACS_EXT_TIMEOUT": 30000,
+      "GENIEACS_RETRY_DELAY": 15,
+      "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
+    },
+  }]
+}
