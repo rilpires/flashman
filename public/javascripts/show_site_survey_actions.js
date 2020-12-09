@@ -115,6 +115,10 @@ $(document).ready(function() {
     let countAdded2GhzDevs = 0;
     let countAdded5GhzDevs = 0;
     let apSelectedDevsRow = apDevs2GhzRow;
+    let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
+                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
+    let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
+                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
 
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
@@ -125,8 +129,16 @@ $(document).ready(function() {
       let apChannel = calculateChannel(device.freq);
       if (apChannel <= 14) { // 2.4 GHz
         apSelectedDevsRow = apDevs2GhzRow;
+        // Count APs
+        if (apChannel in ap2GhzCountDict) {
+          ap2GhzCountDict[apChannel] += 1;
+        }
       } else { // 5.0 GHz
         apSelectedDevsRow = apDevs5GhzRow;
+        // Count APs
+        if (apChannel in ap5GhzCountDict) {
+          ap5GhzCountDict[apChannel] += 1;
+        }
       }
       apSelectedDevsRow.append(
         $('<div>')
@@ -152,16 +164,94 @@ $(document).ready(function() {
         countAdded2GhzDevs += 1;
         // Line break every 2 columns
         if (countAdded2GhzDevs % 2 == 0) {
-          apDevs2GhzRow.append($('<div></div>').addClass('w-100'));
+          apDevs2GhzRow.append($('<div>').addClass('w-100'));
         }
       } else { // 5.0 GHz
         countAdded5GhzDevs += 1;
         // Line break every 2 columns
         if (countAdded5GhzDevs % 2 == 0) {
-          apDevs5GhzRow.append($('<div></div>').addClass('w-100'));
+          apDevs5GhzRow.append($('<div>').addClass('w-100'));
         }
       }
     });
+    // Prepend summary of APs in each channel
+    let summary2Ghz = $();
+    summary2Ghz = summary2Ghz.add(
+      $('<div>').addClass('col m-1 p-0').append(
+        $('<h5>').addClass('m-0').append( $('<strong>')
+                                 .text('Ocupação dos canais')),
+        $('<hr>').addClass('mt-1'),
+    ));
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
+    // eslint-disable-next-line guard-for-in
+    for (let channel in ap2GhzCountDict) {
+      summary2Ghz = summary2Ghz.add($('<div>')
+      .addClass('col-lg m-1 grey lighten-3').append(
+        $('<div>').addClass('row pt-3 mb-2').append(
+          $('<div>').addClass('col').append(
+            $('<h5>').append(
+              $('<strong>').text('Canal ' + channel + ': '),
+              ap2GhzCountDict[channel],
+            ),
+          ),
+        ),
+      ));
+      if (channel % 4 == 0) {
+        summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
+      }
+    }
+    // Division between each AP found
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
+    summary2Ghz = summary2Ghz.add(
+      $('<div>').addClass('col m-1 p-0 pt-3').append(
+        $('<h5>').addClass('m-0').append( $('<strong>')
+                                 .text('Listagem de redes encontradas')),
+        $('<hr>').addClass('mt-1'),
+    ));
+    summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
+    apDevs2GhzRow.prepend(summary2Ghz);
+    // 5GHz
+    let summary5Ghz = $();
+    summary5Ghz = summary5Ghz.add(
+      $('<div>').addClass('col m-1 p-0').append(
+        $('<h5>').addClass('m-0').append( $('<strong>')
+                                 .text('Ocupação dos canais')),
+        $('<hr>').addClass('mt-1'),
+    ));
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
+    // eslint-disable-next-line guard-for-in
+    for (let channel in ap5GhzCountDict) {
+      summary5Ghz = summary5Ghz.add($('<div>')
+      .addClass('col-lg m-1 grey lighten-3').append(
+        $('<div>').addClass('row pt-3 mb-2').append(
+          $('<div>').addClass('col').append(
+            $('<h5>').append(
+              $('<strong>').text('Canal ' + channel + ': '),
+              ap5GhzCountDict[channel],
+            ),
+          ),
+        ),
+      ));
+      if (['48', '64', '161'].includes(channel)) {
+        summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
+      }
+    }
+    // Division between each AP found
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('col m-1'));
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('col m-1'));
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('col m-1'));
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
+    summary5Ghz = summary5Ghz.add(
+      $('<div>').addClass('col m-1 p-0 pt-3').append(
+        $('<h5>').addClass('m-0').append( $('<strong>')
+                                 .text('Listagem de redes encontradas')),
+        $('<hr>').addClass('mt-1'),
+    ));
+    summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
+    apDevs5GhzRow.prepend(summary5Ghz);
 
     // Placeholder if empty
     if ( apSelectedDevsRow.is(':empty') ) {
