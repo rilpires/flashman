@@ -870,7 +870,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-      case 'wps': {
+      case 'wps':
+      case 'sitesurvey': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -900,6 +901,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
           });
+        } else if (msgtype === 'sitesurvey') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForSiteSurveyNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -2019,6 +2026,35 @@ deviceListController.getLanDevices = function(req, res) {
       success: true,
       lan_devices: enrichedLanDevs,
       mesh_routers: matchedDevice.mesh_routers,
+    });
+  });
+};
+
+deviceListController.getSiteSurvey = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+
+    let enrichedSiteSurvey = util.deepCopyObject(matchedDevice.ap_survey)
+    .map((apDevice) => {
+      apDevice.is_old = deviceHandlers.isTooOld(apDevice.last_seen);
+      return apDevice;
+    });
+
+    return res.status(200).json({
+      success: true,
+      ap_devices: enrichedSiteSurvey,
     });
   });
 };

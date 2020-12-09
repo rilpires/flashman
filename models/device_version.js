@@ -171,6 +171,15 @@ const grantWifiBand = function(version) {
   }
 };
 
+const grantWifiBandAuto = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.29.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantWifiPowerHiddenIpv6 = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.28.0') >= 0);
@@ -219,6 +228,15 @@ const grantLanGwEdit = function(version) {
 const grantLanDevices = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.14.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantSiteSurvey = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -316,12 +334,14 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
+  result.grantWifiBandAuto = grantWifiBandAuto(version);
   result.grantWifiState = grantWifiState(version);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
+  result.grantSiteSurvey = grantSiteSurvey(version);
   result.grantUpnp = grantUpnp(version);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);

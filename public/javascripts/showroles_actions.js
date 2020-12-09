@@ -324,6 +324,19 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Informações Sobre Redes ao Redor'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-site-survey').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Informações Sobre Medição de Velocidade'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -620,6 +633,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-lan-devices] option[value=' +
           roleObj.grantLanDevices + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-site-survey] option[value=' +
+          roleObj.grantSiteSurvey + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-measure-devices] option[value=' +
           roleObj.grantMeasureDevices + ']')

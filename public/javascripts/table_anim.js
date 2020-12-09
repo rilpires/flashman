@@ -143,6 +143,7 @@ $(document).ready(function() {
   let grantLOGAccess = false;
   let grantLanEditAccess = false;
   let grantLanDevsAccess = false;
+  let grantSiteSurveyAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
@@ -170,6 +171,7 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanEditAccess = role.grantLanEdit;
     grantLanDevsAccess = role.grantLanDevices;
+    grantSiteSurveyAccess = role.grantSiteSurvey;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
@@ -998,6 +1000,7 @@ $(document).ready(function() {
             continue;
           }
           let grantWifiBand = device.permissions.grantWifiBand;
+          let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
           let grantWifiPowerHiddenIpv6Box =
@@ -1012,6 +1015,7 @@ $(document).ready(function() {
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
           let grantLanDevices = device.permissions.grantLanDevices;
+          let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
@@ -1099,6 +1103,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
+          let siteSurveyAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
+          .replace('$REPLACE_ICON', 'fa-wifi')
+          .replace('$REPLACE_TEXT', 'Redes ao redor');
+
           let measureAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
@@ -1130,6 +1139,7 @@ $(document).ready(function() {
             '$REPLACE_PORT_FORWARD_ACTION'+
             '$REPLACE_PING_TEST_ACTION'+
             '$REPLACE_DEVICES_ACTION'+
+            '$REPLACE_SITESURVEY_ACTION'+
             '$REPLACE_MEASURE_ACTION'+
             '$REPLACE_WAN_BYTES_ACTION'+
             '$REPLACE_FACTORY_ACTION'+
@@ -1158,6 +1168,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
+          }
+          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
           }
           if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
@@ -1529,6 +1544,12 @@ $(document).ready(function() {
                         '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
                         '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
                       '</select>'+
+                      '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
+                      (device.wifi_last_channel ?
+                        'Canal escolhido em auto: ' + device.wifi_last_channel :
+                        ''
+                      )+
+                      '</small>'+
                     '</div>'+
                   '</div>'+
                 '</div>'+
@@ -1569,6 +1590,10 @@ $(document).ready(function() {
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
                       '$REPLACE_WIFI_EN>'+
+                        (grantWifiBandAuto ?
+                          '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>':
+                          ''
+                        )+
                         '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
                         '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
                       '</select>'+
@@ -1640,6 +1665,14 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+          // Show text about selected channel if in auto mode
+          if (device.wifi_channel === 'auto') {
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                      '');
+          } else {
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                      'style="display:none;"');
+          }
 
           selectTarget = '$REPLACE_SELECTED_BAND_' + device.wifi_band;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
@@ -1683,6 +1716,12 @@ $(document).ready(function() {
                         '<option value="161" $REPLACE_SELECTED_CHANNEL_161$>161</option>'+
                         '<option value="165" $REPLACE_SELECTED_CHANNEL_165$>165</option>'+
                       '</select>'+
+                      '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
+                      (device.wifi_last_channel_5ghz ?
+                        'Canal escolhido em auto: ' + device.wifi_last_channel_5ghz :
+                        ''
+                      )+
+                      '</small>'+
                     '</div>'+
                   '</div>'+
                 '</div>'+
@@ -1723,6 +1762,10 @@ $(document).ready(function() {
                       '<label class="active">Largura de banda</label>'+
                       '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
                       '$REPLACE_WIFI_EN>'+
+                        (grantWifiBandAuto ?
+                          '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>' :
+                          ''
+                        )+
                         '<option value="VHT80" $REPLACE_SELECTED_BAND_VHT80$>80 MHz</option>'+
                         '<option value="VHT40" $REPLACE_SELECTED_BAND_VHT40$>40 MHz</option>'+
                         '<option value="VHT20" $REPLACE_SELECTED_BAND_VHT20$>20 MHz</option>'+
@@ -1796,6 +1839,14 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+          // Show text about selected channel if in auto mode
+          if (device.wifi_channel_5ghz === 'auto') {
+            wifi5Tab = wifi5Tab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                        '');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                        'style="display:none;"');
+          }
 
           let band = (device.wifi_band_5ghz === 'HT20' || device.wifi_band_5ghz === 'HT40')
                       ? ('V'+device.wifi_band_5ghz) : device.wifi_band_5ghz;

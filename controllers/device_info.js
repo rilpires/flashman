@@ -80,6 +80,11 @@ const createRegistry = function(req, res) {
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
 
+  let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
+  let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
+  let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
+  let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
   if (flmUpdater == '0') {
@@ -176,7 +181,9 @@ const createRegistry = function(req, res) {
         'wifi_ssid': ssid,
         'wifi_password': password,
         'wifi_channel': channel,
+        'wifi_last_channel': sentWifiLastChannel,
         'wifi_band': band,
+        'wifi_last_band': sentWifiLastBand,
         'wifi_mode': mode,
         'wifi_power': power,
         'wifi_state': wifiState,
@@ -185,7 +192,9 @@ const createRegistry = function(req, res) {
         'wifi_ssid_5ghz': ssid5ghz,
         'wifi_password_5ghz': password5ghz,
         'wifi_channel_5ghz': channel5ghz,
+        'wifi_last_channel_5ghz': sentWifiLastChannel5G,
         'wifi_band_5ghz': band5ghz,
+        'wifi_last_band_5ghz': sentWifiLastBand5G,
         'wifi_mode_5ghz': mode5ghz,
         'wifi_power_5ghz': power5ghz,
         'wifi_state_5ghz': wifiState5ghz,
@@ -575,6 +584,28 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
+
+        let sentWifiLastChannel =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
+        if (sentWifiLastChannel !== matchedDevice.wifi_last_channel) {
+          deviceSetQuery.wifi_last_channel = sentWifiLastChannel;
+        }
+        let sentWifiLastChannel5G =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
+        if (sentWifiLastChannel5G !== matchedDevice.wifi_last_channel_5ghz) {
+          deviceSetQuery.wifi_last_channel_5ghz = sentWifiLastChannel5G;
+        }
+
+        let sentWifiLastBand =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
+        if (sentWifiLastBand !== matchedDevice.wifi_last_band) {
+          deviceSetQuery.wifi_last_band = sentWifiLastBand;
+        }
+        let sentWifiLastBand5G =
+        util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+        if (sentWifiLastBand5G !== matchedDevice.wifi_last_band_5ghz) {
+          deviceSetQuery.wifi_last_band_5ghz = sentWifiLastBand5G;
+        }
 
         deviceSetQuery.last_contact = Date.now();
 
@@ -1261,6 +1292,110 @@ deviceInfoController.receiveDevices = function(req, res) {
     // if someone is waiting for this message, send the information
     sio.anlixSendOnlineDevNotifications(id, outData);
     console.log('Devices Receiving for device ' +
+      id + ' successfully.');
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
+deviceInfoController.receiveSiteSurvey = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Site Survey: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: Cant get device profile.');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: No device found.');
+      return res.status(404).json({processed: 0});
+    }
+    if (!('survey' in req.body)) {
+      console.log('Site Survey Receiving for device ' +
+        id + ' failed: Invalid JSON.');
+      return res.status(400).json({processed: 0});
+    }
+
+    let apsData = req.body.survey;
+    let outData = [];
+
+    for (let connApMac in apsData) {
+      if (Object.prototype.hasOwnProperty.call(apsData, connApMac)) {
+        let outDev = {};
+        let upConnApMac = connApMac.toLowerCase();
+        let upConnDev = apsData[upConnApMac];
+        if (!upConnDev) continue;
+
+        let devReg = matchedDevice.getAPSurveyDevice(upConnApMac);
+        if (upConnDev.freq) {
+          upConnDev.freq = parseInt(upConnDev.freq);
+        }
+        if (upConnDev.signal) {
+          upConnDev.signal = parseInt(upConnDev.signal);
+        }
+        let devWidth=20;
+        let devVHT=false;
+
+        if (upConnDev.largura_HT) {
+          if (upConnDev.largura_HT === 'any') {
+            devWidth = 40;
+          } else {
+            devWidth = parseInt(upConnDev.largura_HT);
+          }
+        }
+
+        if (upConnDev.largura_VHT) {
+          let VHTWifth=parseInt(upConnDev.largura_VHT);
+          if (VHTWifth > 0) {
+            devVHT=true;
+            devWidth = VHTWifth;
+          }
+        }
+
+        if (devReg) {
+          devReg.ssid = upConnDev.SSID;
+          devReg.freq = upConnDev.freq;
+          devReg.signal = upConnDev.signal;
+          devReg.width = devWidth;
+          devReg.VHT = devVHT;
+          devReg.last_seen = Date.now();
+          if (!devReg.first_seen) {
+            devReg.first_seen = Date.now();
+          }
+        } else {
+          matchedDevice.ap_survey.push({
+            mac: upConnApMac,
+            ssid: upConnDev.SSID,
+            freq: upConnDev.freq,
+            signal: upConnDev.signal,
+            width: devWidth,
+            VHT: devVHT,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
+        outDev.mac = upConnApMac;
+        outData.push(outDev);
+      }
+    }
+
+    matchedDevice.last_site_survey = Date.now();
+    matchedDevice.save();
+
+    // if someone is waiting for this message, send the information
+    sio.anlixSendSiteSurveyNotifications(id, outData);
+    console.log('Site Survey Receiving for device ' +
       id + ' successfully.');
 
     return res.status(200).json({processed: 1});
