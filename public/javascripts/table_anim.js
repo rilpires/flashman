@@ -1597,6 +1597,12 @@ $(document).ready(function() {
                         '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
                         '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
                       '</select>'+
+                      '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
+                      (device.wifi_last_band ?
+                        'Banda escolhida em auto: ' + device.wifi_last_band :
+                        ''
+                      )+
+                      '</small>'+
                     '</div>'+
                   '</div>'+
                 '</div>'+
@@ -1667,16 +1673,24 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
           // Show text about selected channel if in auto mode
           if (device.wifi_channel === 'auto') {
-            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
                                       '');
           } else {
-            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
                                       'style="display:none;"');
           }
 
           selectTarget = '$REPLACE_SELECTED_BAND_' + device.wifi_band;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
+          // Show text about selected band if in auto mode
+          if (device.wifi_band === 'auto') {
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                      '');
+          } else {
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+                                      'style="display:none;"');
+          }
 
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
@@ -1770,6 +1784,12 @@ $(document).ready(function() {
                         '<option value="VHT40" $REPLACE_SELECTED_BAND_VHT40$>40 MHz</option>'+
                         '<option value="VHT20" $REPLACE_SELECTED_BAND_VHT20$>20 MHz</option>'+
                       '</select>'+
+                      '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
+                      (device.wifi_last_band_5ghz ?
+                        'Banda escolhida em auto: ' + device.wifi_last_band_5ghz :
+                        ''
+                      )+
+                      '</small>'+
                     '</div>'+
                   '</div>'+
                 '</div>'+
@@ -1853,6 +1873,14 @@ $(document).ready(function() {
           selectTarget = '$REPLACE_SELECTED_BAND_' + band;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
           wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
+          // Show text about selected channel if in auto mode
+          if (device.wifi_band_5ghz === 'auto') {
+            wifi5Tab = wifi5Tab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+                                        '');
+          } else {
+            wifi5Tab = wifi5Tab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+                                        'style="display:none;"');
+          }
 
           selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
           wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
