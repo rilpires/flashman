@@ -15,18 +15,55 @@ let GENIEPORT = 7557;
 
 let genie = {}; // to be exported.
 
-// starting a connection to mongodb so we can start a change stream to the
+// starting a connection to MongoDB so we can start a change stream to the
 // tasks collection when necessary.
 let tasksCollection;
 let genieDB;
-mongodb.MongoClient.connect('mongodb://localhost:27017',
-  {useUnifiedTopology: true}).then(async (client) => {
-  genieDB = client.db('genieacs');
-  tasksCollection = genieDB.collection('tasks');
-  watchGenieFaults();
-  /* we should never close connection to database. it will be close when
-   application stops. */
-});
+if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
+  mongodb.MongoClient.connect('mongodb://localhost:27017',
+    {useUnifiedTopology: true}).then(async (client) => {
+    genieDB = client.db('genieacs');
+    tasksCollection = genieDB.collection('tasks');
+    watchGenieFaults(); // start watcher for genie faults.
+    /* we should never close connection to database. it will be close when
+     application stops. */
+  });
+}
+
+// watches genieacs faults collection waiting for any insert and deletes them
+// as they arrive.
+const watchGenieFaults = async function() {
+  let faultsCollection = genieDB.collection('faults');
+  let cacheCollection = genieDB.collection('cache');
+
+  // delete all existing faults.
+  let ret = await faultsCollection.deleteMany();
+  if (ret.n > 0) {
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\'s faults '
+      +'collection');
+  }
+  // delete all genieacs cache.
+  ret = await cacheCollection.deleteMany();
+  if (ret.n > 0) {
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\'s cache '+
+      'collection.');
+  }
+
+  // creating a change stream on 'faults' collection.
+  let changeStream = faultsCollection.watch([
+    {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
+  ]);
+  changeStream.on('error', (e) => {
+    console.log('Error in genieacs faults collection change stream.');
+    console.log(e);
+  });
+  changeStream.on('change', async (change) => { // for each inserted document.
+    let doc = change.fullDocument;
+    await createNotificationForDevice(doc.detail.stack, doc.device);
+    console.log('WARNING: genieacs created a fault'+(doc.device ? 
+      ' for device id '+doc.device : '')+'.');
+  });
+};
 
 /* Creates a new notification in flashman, with the Genie ACS stack trace error
  'stackError' and with the device id 'genieDeviceId' as the notification target
@@ -47,41 +84,6 @@ const createNotificationForDevice = async function(stackError, genieDeviceId) {
   }
   let notification = new NotificationModel(params); // creating notification.
   await notification.save(); // saving notification.
-};
-
-// watches genieacs faults collection waiting for any insert and deletes them
-// as they arrive.
-const watchGenieFaults = async function() {
-  let faultsCollection = genieDB.collection('faults');
-  let cacheCollection = genieDB.collection('cache');
-
-  // delete all existing faults.
-  let ret = await faultsCollection.deleteMany();
-  if (ret.n > 0) {
-    console.log('INFO: deleted '+ret.n+' documents in genieacs\' faults '
-      +'collection');
-  }
-  // delete all genieacs cache.
-  ret = await cacheCollection.deleteMany();
-  if (ret.n > 0) {
-    console.log('INFO: deleted '+ret.n+' documents in genieacs\' cache '+
-      'collection.');
-  }
-
-  // creating a change stream on 'faults' collection.
-  let changeStream = faultsCollection.watch([
-    {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
-  ]);
-  changeStream.on('error', (e) => {
-    console.log('Error in genieacs faults collection change stream.');
-    console.log(e);
-  });
-  changeStream.on('change', async (change) => { // for each inserted document.
-    let doc = change.fullDocument;
-    await createNotificationForDevice(doc.detail.stack, doc.device);
-    console.log('WARNING: genieacs created a fault'+(doc.device ? 
-      ' for device id '+doc.device : '')+'.');
-  });
 };
 
 // removes entries in Genie's 'faults' and 'cache' collections related to 

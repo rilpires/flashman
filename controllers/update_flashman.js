@@ -417,10 +417,6 @@ updateController.setAutoConfig = async function(req, res) {
       message += ' Seus dispositivos começarão a medir em breve.';
     }
 
-    // check which variables will need updating
-    let willUpdateInterval = false;
-    let willUpdateURL = false;
-
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
     // parsing fields to number.
@@ -429,20 +425,21 @@ updateController.setAutoConfig = async function(req, res) {
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
-    // if all fields are numeric;
+    // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
-        && !isNaN(tr069OfflineThreshold)
+     && !isNaN(tr069OfflineThreshold)
      // and inform interval, recovery and offline values are within boundaries,
      && tr069InformInterval >= 60 && tr069InformInterval <= 86400
      && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
      && tr069RecoveryThreshold < tr069OfflineThreshold) {
-      if (tr069ServerURL && tr069ServerURL !== config.tr069.server_url) {
-        willUpdateURL = true;
-      }
-      if (tr069InformInterval*1000 !== config.tr069.inform_interval) {
-        willUpdateInterval = true;
+      // if received inform interval, in seconds, is different than saved
+      // inform interval in milliseconds,
+      if (tr069InformInterval*1000 !== config.tr069.inform_interval
+       && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS. 
+        // setting inform interval in genie for all devices and in preset.
+        await updatePeriodicInformInGenieAcs(tr069InformInterval);
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
@@ -457,10 +454,6 @@ updateController.setAutoConfig = async function(req, res) {
         type: 'danger',
         message: 'Erro validando os campos relacionados ao TR-069.',
       });
-    }
-    // setting inform interval in genie for all devices and in preset.
-    if (willUpdateInterval) {
-      await updatePeriodicInformInGenieAcs(tr069InformInterval);
     }
 
     await(config.save());
