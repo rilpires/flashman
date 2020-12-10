@@ -1673,10 +1673,10 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
           // Show text about selected channel if in auto mode
           if (device.wifi_channel === 'auto') {
-            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
                                       '');
           } else {
-            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
                                       'style="display:none;"');
           }
 
@@ -1685,10 +1685,10 @@ $(document).ready(function() {
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
           // Show text about selected band if in auto mode
           if (device.wifi_band === 'auto') {
-            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
                                       '');
           } else {
-            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
                                       'style="display:none;"');
           }
 
