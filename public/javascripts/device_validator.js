@@ -40,8 +40,8 @@
 
     Validator.prototype.validateBand = function(band) {
       return {
-        valid: ['HT20', 'HT40', 'VHT20', 'VHT40', 'VHT80'].includes(band),
-        err: ['Somente são aceitos os valores HT20,HT40,VHT20,VHT40 e VHT80'],
+        valid: ['auto', 'HT20', 'HT40', 'VHT20', 'VHT40', 'VHT80'].includes(band),
+        err: ['Somente são aceitos os valores auto,HT20,HT40,VHT20,VHT40 e VHT80'],
       };
     };
 
