@@ -208,6 +208,9 @@ $(document).ready(function() {
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL);
       }
+      if (resp.tr069WebPassword) {
+        $('#onu-web-password').val(resp.tr069WebPassword);
+      }
       $('#inform-interval').val(resp.tr069InformInterval);
       $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);
       $('#lost-informs-offline-threshold').val(resp.tr069OfflineThreshold);

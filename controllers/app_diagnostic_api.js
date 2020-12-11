@@ -128,6 +128,11 @@ diagAppAPIController.sessionLogin = function(req, res) {
                                      message: 'Permissão negada'});
       }
       let session = generateSessionCredential(user.name);
+      let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
+        .exec().catch((err) => err));
+      if (config && config.tr069 && config.tr069.web_password) {
+        session.onuPassword = config.tr069.web_password;
+      }
       session.success = true;
       return res.status(200).json(session);
     }));

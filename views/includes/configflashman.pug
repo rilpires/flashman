@@ -64,14 +64,22 @@
               if (superuser || role && role.grantMonitorManage)
                 br
                 .input-entry
-                label URL completa do servidor TR-069 do Flashman
+                label FQDN do servidor TR-069 do Flashman
                 input.form-control(
                   type="text",
                   name="tr069-server-url",
                   id="tr069-server-url",
-                  placeholder="https://200.100.200.100:7547/"
                 )
-                .invalid-feedback Insira um IP válido
+                .invalid-feedback Insira um FQDN válido
+                br
+                .input-entry
+                label Senha para a interface web das ONUs
+                input.form-control(
+                  type="text",
+                  name="onu-web-password",
+                  id="onu-web-password",
+                )
+                .invalid-feedback Insira uma senha válida
                 br
                 .input-entry
                 label Intervalo entre informes do TR-069 (em segundos, mínimo 60)

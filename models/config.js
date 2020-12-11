@@ -14,6 +14,7 @@ let configSchema = new mongoose.Schema({
   },
   tr069: {
     server_url: String,
+    web_password: String,
     inform_interval: {type: Number, required: true, default: 10*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
