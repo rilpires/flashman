@@ -1750,7 +1750,9 @@ $(document).ready(function() {
                   '<div class="input-group">'+
                     '<label class="active">Senha do Wi-Fi</label>'+
                     '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
-                    'maxlength="64" value="'+device.wifi_password_5ghz+'" $REPLACE_WIFI_EN></input>'+
+                    'maxlength="64" value="'+
+                    ((device.wifi_password_5ghz) ? device.wifi_password_5ghz : '')+ // treat undefined case
+                    '" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
