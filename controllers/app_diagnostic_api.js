@@ -98,7 +98,7 @@ const pushCertification = function(arr, c, finished) {
 
 const generateSessionCredential = function(user) {
   let sessionExpirationDate = new Date().getTime();
-  sessionExpirationDate += (7*24*60*60*1000); // 7 days
+  sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
   // This JSON format is dictated by auth inside firmware
   let expirationCredential = {
