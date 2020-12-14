@@ -109,7 +109,14 @@ const generateSessionCredential = function(user) {
   let buff = new Buffer(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
   let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
-  return {credential: b64Json, sign: encryptedB64Json};
+  let session = {credential: b64Json, sign: encryptedB64Json};
+  // Add onu config, if present
+  let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err));
+  if (config && config.tr069 && config.tr069.web_password) {
+    session.onuPassword = config.tr069.web_password;
+  }
+  return session;
 };
 
 diagAppAPIController.sessionLogin = function(req, res) {
@@ -128,11 +135,6 @@ diagAppAPIController.sessionLogin = function(req, res) {
                                      message: 'Permissão negada'});
       }
       let session = generateSessionCredential(user.name);
-      let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-        .exec().catch((err) => err));
-      if (config && config.tr069 && config.tr069.web_password) {
-        session.onuPassword = config.tr069.web_password;
-      }
       session.success = true;
       return res.status(200).json(session);
     }));
