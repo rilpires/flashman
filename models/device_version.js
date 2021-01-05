@@ -7,7 +7,6 @@ const speedTestCompatibleModels = {
   'ACTIONRG1200V1': 200,
   'ARCHERC2V1': 300,
   'ARCHERC5V4': 300,
-  'EC220-G5V2': 300,
   'ARCHERC20V1': 100,
   'ARCHERC20V4': 100,
   'ARCHERC20V5': 100,
@@ -18,16 +17,18 @@ const speedTestCompatibleModels = {
   'ARCHERC60V3': 100,
   'ARCHERC6V2US': 200,
   'ARCHERC7V5': 300,
+  'COVR-C1200A1': 200,
   'DIR-819A1': 100,
   'DIR-815D1': 100,
-  'COVR-C1200A1': 200,
   'DWR-116A1': 100,
   'DWR-116A2': 100,
   'DWR-116A3': 100,
   'EMG1702-T10AA1': 100,
+  'EC220-G5V2': 300,
   'GWR1200ACV1': 200,
   'GWR1200ACV2': 200,
   'GF1200V1': 200,
+  'MAXLINKAC1200GV1': 200,
   'NCLOUD': 100,
   'RE708V1': 200,
   'TL-MR3020V1': 100,
@@ -36,10 +37,15 @@ const speedTestCompatibleModels = {
   'TL-WDR4300V1': 150,
   'TL-WR2543N/NDV1': 120,
   'TL-WR740N/NDV4': 100,
+  'TL-WR740NDV4': 100,
   'TL-WR740N/NDV5': 100,
+  'TL-WR740NDV5': 100,
   'TL-WR740N/NDV6': 100,
+  'TL-WR740NDV6': 100,
   'TL-WR741N/NDV4': 100,
+  'TL-WR741NDV4': 100,
   'TL-WR741N/NDV5': 100,
+  'TL-WR741NDV5': 100,
   'TL-WR840NV4': 100,
   'TL-WR840NV5': 100,
   'TL-WR840NV6': 100,
@@ -47,8 +53,11 @@ const speedTestCompatibleModels = {
   'TL-WR840NV5PRESET': 100,
   'TL-WR840NV6PRESET': 100,
   'TL-WR841N/NDV7': 100,
+  'TL-WR841NDV7': 100,
   'TL-WR841N/NDV8': 100,
+  'TL-WR841NDV8': 100,
   'TL-WR842N/NDV3': 100,
+  'TL-WR842NDV3': 100,
   'TL-WR849NV4': 100,
   'TL-WR849NV5': 100,
   'TL-WR849NV6': 100,
@@ -75,10 +84,10 @@ const meshCompatibleModels = [
   'ARCHERC60V3',
   'ARCHERC6V2US',
   'ARCHERC7V5',
-  'EC220-G5V2',
   'DIR-819A1',
   'COVR-C1200A1',
   'EMG1702-T10AA1',
+  'EC220-G5V2',
   'TL-WDR3500V1',
   'TL-WDR3600V1',
   'TL-WDR4300V1',
@@ -170,6 +179,15 @@ const grantWifiBand = function(version) {
   }
 };
 
+const grantWifiBandAuto = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.29.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantWifiPowerHiddenIpv6 = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.28.0') >= 0);
@@ -218,6 +236,15 @@ const grantLanGwEdit = function(version) {
 const grantLanDevices = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.14.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantSiteSurvey = function(version) {
+  if (version.match(versionRegex)) {
+    return (versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -315,12 +342,14 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version);
+  result.grantWifiBandAuto = grantWifiBandAuto(version);
   result.grantWifiState = grantWifiState(version);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
+  result.grantSiteSurvey = grantSiteSurvey(version);
   result.grantUpnp = grantUpnp(version);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);

@@ -136,6 +136,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantLanEdit: true,
         grantLanDevices: 2,
         grantLanDevicesBlock: true,
+        grantSiteSurvey: true,
         grantMeasureDevices: 2,
         grantOpmodeEdit: true,
         grantWanBytesView: true,

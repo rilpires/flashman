@@ -250,6 +250,10 @@ mqtts.authenticate = function(client, username, password, cb) {
   }
 };
 
+// TODO: Refactor functions bellow.
+// All those functions have the same code.
+// Create a common publish function.
+
 mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   const serverId = findServerId(id);
   if (serverId !== null) {
@@ -345,6 +349,20 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
     };
     toPublishPacket(serverId, packet);
     debug('MQTT SEND Message ONLINEDEVS to ' + id);
+  }
+};
+
+mqtts.anlixMessageRouterSiteSurvey = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: false,
+      payload: 'sitesurvey',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message SITESURVEY to ' + id);
   }
 };
 

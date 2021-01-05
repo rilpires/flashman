@@ -32,7 +32,9 @@ let deviceSchema = new Schema({
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
+  wifi_last_channel: String, // last channel in use reported from router
   wifi_band: String,
+  wifi_last_band: String, // last band in use reported from router
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
   wifi_hidden: {type: Number, default: 0},
@@ -43,7 +45,9 @@ let deviceSchema = new Schema({
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,
+  wifi_last_channel_5ghz: String,
   wifi_band_5ghz: String,
+  wifi_last_band_5ghz: String,
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
   wifi_hidden_5ghz: {type: Number, default: 0},
@@ -87,6 +91,17 @@ let deviceSchema = new Schema({
       'none', // never asked
     ]},
   }],
+  ap_survey: [{
+    mac: String,
+    ssid: String,
+    freq: Number,
+    signal: Number,
+    width: Number,
+    VHT: Boolean,
+    offset: String,
+    last_seen: {type: Date},
+    first_seen: {type: Date},
+  }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
   mesh_mode: {type: Number, default: 0, enum: [
     0, // disable mesh
@@ -128,6 +143,7 @@ let deviceSchema = new Schema({
   ]},
   ip: String,
   ntp_status: String,
+  last_site_survey: Date,
   last_devices_refresh: Date,
   last_contact: Date,
   last_hardreset: Date,
@@ -199,6 +215,12 @@ deviceSchema.methods.getLanDevice = function(mac) {
 deviceSchema.methods.getRouterDevice = function(mac) {
   return this.mesh_routers.find(function(router, idx) {
     return router.mac == mac;
+  });
+};
+
+deviceSchema.methods.getAPSurveyDevice = function(mac) {
+  return this.ap_survey.find(function(device, idx) {
+    return device.mac == mac;
   });
 };
 

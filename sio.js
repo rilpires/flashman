@@ -11,6 +11,7 @@ const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
+const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
 
 sio.anlixConnections = {};
 sio.anlixNotifications = {};
@@ -190,6 +191,39 @@ sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
   }
 
   let found = emitNotification(SIO_NOTIFICATION_ONLINEDEVS,
+                               macaddr, devsData, macaddr);
+  if (!found) {
+    debug('SIO: NO Session found for ' +
+                macaddr + '! Discarding message...');
+  }
+  return found;
+};
+
+sio.anlixWaitForSiteSurveyNotification = function(session, macaddr) {
+  if (!session) {
+    debug('ERROR: SIO: ' +
+                'Try to add sitesurvey notification with an invalid session!');
+    return false;
+  }
+  if (!macaddr) {
+    debug('ERROR: SIO: Try to add sitesurvey ' +
+                'notification with an invalid mac address!');
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_SITESURVEY, macaddr);
+  return true;
+};
+
+sio.anlixSendSiteSurveyNotifications = function(macaddr, devsData) {
+  if (!macaddr) {
+    debug(
+      'ERROR: SIO: ' +
+      'Try to send sitesurvey notification to an invalid mac address!');
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_SITESURVEY,
                                macaddr, devsData, macaddr);
   if (!found) {
     debug('SIO: NO Session found for ' +

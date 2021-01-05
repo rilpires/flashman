@@ -135,6 +135,10 @@ router.route('/landevices/:id').get(
   authController.ensureLogin(),
   deviceListController.getLanDevices);
 
+router.route('/sitesurvey/:id').get(
+  authController.ensureLogin(),
+  deviceListController.getSiteSurvey);
+
 router.route('/uiupdate/:id').get(
   authController.ensureLogin(),
   deviceListController.getDeviceReg);

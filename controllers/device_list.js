@@ -760,29 +760,31 @@ deviceListController.searchDeviceReg = async function(req, res) {
     meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
       let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
       User.findOne({name: req.user.name}, function(err, user) {
-        getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
-        .then((onlineStatus) => {
-          // Counters
-          let status = {};
-          status = Object.assign(status, onlineStatus);
-          // Filter data using user permissions
-          return res.json({
-            success: true,
-            type: 'success',
-            limit: req.user.maxElementsPerPage,
-            page: matchedDevices.page,
-            pages: matchedDevices.pages,
-            min_length_pass_pppoe: matchedConfig.pppoePassLength,
-            status: status,
-            single_releases: deviceListController.getReleases(true),
-            filter_list: req.body.filter_list,
-            devices: allDevices,
-          });
-        }, (err) => {
-          return res.json({
-            success: false,
-            type: 'danger',
-            message: err.message,
+        Config.findOne({is_default: true}, function(err, matchedConfig) {
+          getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
+          .then((onlineStatus) => {
+            // Counters
+            let status = {};
+            status = Object.assign(status, onlineStatus);
+            // Filter data using user permissions
+            return res.json({
+              success: true,
+              type: 'success',
+              limit: req.user.maxElementsPerPage,
+              page: matchedDevices.page,
+              pages: matchedDevices.pages,
+              min_length_pass_pppoe: matchedConfig.pppoePassLength,
+              status: status,
+              single_releases: deviceListController.getReleases(true),
+              filter_list: req.body.filter_list,
+              devices: allDevices,
+            });
+          }, (error) => {
+            return res.json({
+              success: false,
+              type: 'danger',
+              message: (error.message ? error.message : error),
+            });
           });
         });
       });
@@ -969,7 +971,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'speedtest':
-      case 'wps': {
+      case 'wps':
+      case 'sitesurvey': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -1008,6 +1011,12 @@ deviceListController.sendMqttMsg = function(req, res) {
               mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
             });
           }
+        } else if (msgtype === 'sitesurvey') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForSiteSurveyNotification(
+              req.sessionID, req.params.id.toUpperCase());
+          }
+          mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
@@ -2189,6 +2198,35 @@ deviceListController.getLanDevices = function(req, res) {
       success: true,
       lan_devices: enrichedLanDevs,
       mesh_routers: matchedDevice.mesh_routers,
+    });
+  });
+};
+
+deviceListController.getSiteSurvey = function(req, res) {
+  DeviceModel.findById(req.params.id.toUpperCase(),
+  function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: 'Erro interno do servidor',
+      });
+    }
+    if (matchedDevice == null) {
+      return res.status(200).json({
+        success: false,
+        message: 'Roteador não encontrado',
+      });
+    }
+
+    let enrichedSiteSurvey = util.deepCopyObject(matchedDevice.ap_survey)
+    .map((apDevice) => {
+      apDevice.is_old = deviceHandlers.isTooOld(apDevice.last_seen);
+      return apDevice;
+    });
+
+    return res.status(200).json({
+      success: true,
+      ap_devices: enrichedSiteSurvey,
     });
   });
 };
