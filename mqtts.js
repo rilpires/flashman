@@ -15,12 +15,12 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     // Do not store messages to deliver when device is offline
     maxSessionDelivery: 0,
   });
-  mqtts = aedes({mq: mq, persistance: persistence});
+  mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2});
   // Fix broker id in case of instance restart
   mqtts.id = process.env.name + process.env.NODE_APP_INSTANCE;
 } else {
   debug('Instance ID is: ' + process.env.NODE_APP_INSTANCE);
-  mqtts = aedes();
+  mqtts = aedes({queueLimit: 2});
 }
 
 // This object will contain clients ids
@@ -411,6 +411,26 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
     };
     toPublishPacket(serverId, packet);
     debug('MQTT SEND Message SPEEDTEST to ' + id);
+  }
+};
+
+mqtts.anlixMessageRouterWpsButton = function(id, state) {
+  let wpsState = '1';
+  if (state) {
+    wpsState = '0';
+  } else {
+    wpsState = '1';
+  }
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'wps ' + wpsState,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message WPS to ' + id);
   }
 };
 

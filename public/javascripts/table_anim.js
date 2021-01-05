@@ -160,14 +160,6 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
   }
 };
 
-let secondsTimeSpanToHMS = function(s) {
-  let h = Math.floor(s / 3600); // Get whole hours
-  s -= h * 3600;
-  let m = Math.floor(s / 60); // Get remaining minutes
-  s -= m * 60;
-  return h + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
-};
-
 $(document).ready(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
@@ -189,11 +181,14 @@ $(document).ready(function() {
   let grantLanAccess = false;
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
+  let grantDeviceMassRemoval = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantWanBytes = false;
+  let grantShowSearchSummary = false;
+  let grantWanType = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -211,12 +206,15 @@ $(document).ready(function() {
     grantLOGAccess = role.grantLOGAccess;
     grantLanAccess = role.grantLanDevices;
     grantDeviceRemoval = role.grantDeviceRemoval;
+    grantDeviceMassRemoval = role.grantDeviceMassRemoval;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantWanBytes = role.grantWanBytesView;
+    grantShowSearchSummary = role.grantShowSearchSummary;
+    grantWanType = role.grantWanType;
   }
 
   // Default column to sort rows
@@ -353,7 +351,7 @@ $(document).ready(function() {
   // Refresh table content
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
@@ -439,18 +437,27 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    let thisBtn = $(this);
+    let sysUptime = row.find('.device-sys-up-time')
+    let wanUptime = row.find('.device-wan-up-time')
     // Stop event from reaching tr element
     event.stopPropagation();
-    // Dispatch update for wan and sys uptime
-    $.ajax({
-      url: '/devicelist/command/' + deviceId + '/upstatus',
-      type: 'post',
-      dataType: 'json',
-      success: function(res) {
-        row.find('.device-sys-up-time').addClass('grey-text');
-        row.find('.device-wan-up-time').addClass('grey-text');
-      },
-    });
+    // Block button until response has been received
+    thisBtn.prop('disabled', true).css('color', 'grey');
+    thisBtn.find('.icon-row-refresh').addClass('fa-spinner fa-pulse');
+    // Dispatch update for wan and sys uptime only if not pending
+    if (!sysUptime.hasClass('pending-update') &&
+        !wanUptime.hasClass('pending-update')) {
+      $.ajax({
+        url: '/devicelist/command/' + deviceId + '/upstatus',
+        type: 'post',
+        dataType: 'json',
+        success: function(res) {
+          sysUptime.addClass('grey-text pending-update');
+          wanUptime.addClass('grey-text pending-update');
+        },
+      });
+    }
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -473,6 +480,10 @@ $(document).ready(function() {
           res.do_update_mesh_remaining,
           deviceId
         );
+      },
+      complete: function(xhr, status) {
+        thisBtn.prop('disabled', false).css('color', 'black');
+        thisBtn.find('.icon-row-refresh').removeClass('fa-spinner fa-pulse');
       },
     });
   });
@@ -667,7 +678,7 @@ $(document).ready(function() {
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
-      '<div class="fas fa-sync-alt fa-lg hover-effect"></div>'+
+      '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
     let infoRow = '<tr class=" csv-export ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
@@ -885,28 +896,39 @@ $(document).ready(function() {
             '</div>'+
           '</div>'+
         '</td>';
+        let searchSummary = '<td class="text-center">'+
+          res.status.totalnum+' total'+
+        '</td><td>'+
+          '<div class="fas fa-circle green-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
+          '<br>'+
+          '<div class="fas fa-circle red-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
+          '<br>'+
+          '<div class="fas fa-circle grey-text"></div>'+
+          '<span>&nbsp;</span>'+
+          '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
+        '</td>';
+
         let statusRow = '<tr class="not-selectable-device-row">'+
           '<td class="pl-1 pr-0">'+
             '<a id="refresh-table-content">'+
               '<div class="fas fa-sync-alt fa-lg mt-2 hover-effect"></div>'+
             '</a>'+
-          '</td><td class="text-center">'+
-            res.status.totalnum+' total'+
-          '</td><td>'+
-            '<div class="fas fa-circle green-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="online-status-sum">'+res.status.onlinenum+'</a>'+
-            '<br>'+
-            '<div class="fas fa-circle red-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="recovery-status-sum">'+res.status.recoverynum+'</a>'+
-            '<br>'+
-            '<div class="fas fa-circle grey-text"></div>'+
-            '<span>&nbsp;</span>'+
-            '<a href="#" id="offline-status-sum">'+res.status.offlinenum+'</a>'+
-          '</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '</td>'+
+          '$REPLACE_SEARCHSUMMARY'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
+        if (isSuperuser || grantShowSearchSummary) {
+          statusRow = statusRow.replace('$REPLACE_SEARCHSUMMARY',
+                                        searchSummary);
+        } else {
+          statusRow = statusRow.replace('$REPLACE_SEARCHSUMMARY',
+                                        '<td></td><td></td>');
+        }
         if (isSuperuser || (grantFirmwareUpgrade && grantMassFirmwareUpgrade)) {
           statusRow = statusRow.replace('$REPLACE_ALLUPDATE', allUpgrade);
         } else {
@@ -950,7 +972,7 @@ $(document).ready(function() {
             slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
             isSelectableRow = false;
           }
-          if (!isSuperuser && !grantDeviceRemoval) {
+          if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
@@ -1195,6 +1217,9 @@ $(document).ready(function() {
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
+          } else if (!isSuperuser && !grantWanType) {
+            wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
           } else {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', '');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
@@ -1272,9 +1297,9 @@ $(document).ready(function() {
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
-                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Wifi 2.4 GHz</option>'+
-                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Wifi 5 GHz</option>'+
-                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Ambos Wifi</option>'+
+                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
+                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
+                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1288,7 +1313,7 @@ $(document).ready(function() {
                     '<div class="md-selectfield form-control my-0">'+
                       '<label class="active">Modo de Operação</label>'+
                       '<select class="browser-default md-select" type="text" id="edit_opmode-'+index+'" '+
-                      'maxlength="15" $REPLACE_OPMODE_EN>'+
+                      'maxlength="15" $REPLACE_OPMODE_EN $REPLACE_MESH_OPMODE_EN>'+
                         '<option value="Modo Roteador" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
                         '<option value="Modo Bridge" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
                       '</select>'+
@@ -1363,6 +1388,12 @@ $(document).ready(function() {
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_EN/g, '');
             meshForm = meshForm.replace(/\$REPLACE_OPMODE_EN/g, '');
+          }
+          // Disable mode if there are routers in mesh connected
+          if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, 'disabled');
+          } else {
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
@@ -1930,14 +1961,14 @@ $(document).ready(function() {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
-            .removeClass('grey-text')
+            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.sysuptime))
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
-            .removeClass('grey-text')
+            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime))
             );
@@ -1950,7 +1981,7 @@ $(document).ready(function() {
   loadDevicesTable();
 
   $(document).on('submit', '#devices-search-form', function(event) {
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(1, filterList);
     return false;
@@ -1958,7 +1989,7 @@ $(document).ready(function() {
 
   $(document).on('click', '.change-page-link', function(event) {
     let pageNum = parseInt($(event.target).html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
   });
@@ -1984,7 +2015,7 @@ $(document).ready(function() {
           data: {ids: [id]},
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
@@ -2019,7 +2050,7 @@ $(document).ready(function() {
           success: function(res) {
             $('#btn-trash-multiple').addClass('disabled');
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
@@ -2060,7 +2091,7 @@ $(document).ready(function() {
           type: 'post',
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-form .tags-input').val();
+            let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.close();
@@ -2124,7 +2155,7 @@ $(document).ready(function() {
   // Table column sorts
   $(document).on('click', '[id^=sort-]', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
-    let filterList = $('#devices-search-form .tags-input').val();
+    let filterList = $('#devices-search-input').val();
     // Reset other columns
     $('[id^=sort-]').css('font-weight', '').each(function(index) {
       let headerText = $(this).text().split('\u2191')[0];

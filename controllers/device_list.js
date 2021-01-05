@@ -406,7 +406,22 @@ deviceListController.changeAllUpdates = function(req, res) {
   });
 };
 
-deviceListController.searchDeviceQuery = function(queryContents) {
+deviceListController.simpleSearchDeviceQuery = function(queryContents) {
+  let finalQuery = {};
+  let queryContentNoCase = new RegExp('^' + queryContents[0] + '$', 'i');
+  if (queryContents[0].length > 0) {
+    finalQuery.$or = [
+      {pppoe_user: queryContentNoCase},
+      {_id: queryContentNoCase},
+      {'external_reference.data': queryContentNoCase},
+    ];
+  } else {
+    finalQuery = {_id: ''};
+  }
+  return finalQuery;
+};
+
+deviceListController.complexSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let finalQueryArray = [];
 
@@ -456,7 +471,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
       let field = {};
       let hours = new Date();
       const parsedHour = parseInt(queryContents[idx].split('>')[1]);
-      const hourThreshold = parsedHour ? parsedHour : 1;
+      const hourThreshold = parsedHour ? parsedHour+1 : 1;
       hours.setHours(hours.getHours() - hourThreshold);
       field.$and = [
         {last_contact: {$lt: hours}},
@@ -509,7 +524,7 @@ deviceListController.searchDeviceQuery = function(queryContents) {
   return finalQuery;
 };
 
-deviceListController.searchDeviceReg = function(req, res) {
+deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
   let queryContents = req.body.filter_list.split(',');
@@ -556,7 +571,15 @@ deviceListController.searchDeviceReg = function(req, res) {
     sortKeys._id = sortTypeOrder;
   }
 
-  let finalQuery = deviceListController.searchDeviceQuery(queryContents);
+  const userRole = await Role.findOne({
+    name: util.returnObjOrEmptyStr(req.user.role)
+  });
+  let finalQuery;
+  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+  } else {
+    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+  }
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -832,7 +855,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'speedtest': {
+      case 'speedtest':
+      case 'wps': {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
@@ -898,6 +922,16 @@ deviceListController.sendMqttMsg = function(req, res) {
               message: 'Esse comando somente funciona em uma sessão!',
             });
           }
+        } else if (msgtype === 'wps') {
+          if (!('activate' in req.params) ||
+              !(typeof req.params.activate === 'boolean')
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: 'Erro na requisição'});
+          }
+          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
+                                           req.params.activate);
         } else {
           return res.status(200).json({
             success: false,
@@ -1310,13 +1344,18 @@ deviceListController.setDeviceReg = function(req, res) {
             matchedDevice.save(async function(err) {
               if (err) {
                 console.log(err);
+                return res.status(500).json({
+                  success: false,
+                  message: 'Erro ao salvar dados na base',
+                });
+              } else {
+                mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+                meshHandlers.syncSlaves(matchedDevice, slaveReferences);
+
+                matchedDevice.success = true;
+                return res.status(200).json(matchedDevice);
               }
-              mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-              meshHandlers.syncSlaves(matchedDevice, slaveReferences);
-
-              matchedDevice.success = true;
-              return res.status(200).json(matchedDevice);
             });
           });
         } else {
@@ -1546,7 +1585,7 @@ deviceListController.setPortForward = function(req, res) {
           let localAsymPorts = r.router_port.map((p) => parseInt(p));
           // Get unique port set
           let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-          if (localUniqueAsymPorts.lenght != localAsymPorts.lenght) {
+          if (localUniqueAsymPorts.length != localAsymPorts.length) {
             return res.status(200).json({
               success: false,
               message: 'Portas Externas Repetidas no JSON',
@@ -1806,12 +1845,15 @@ deviceListController.getLanDevices = function(req, res) {
     .map((lanDevice) => {
       lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
+      // Ease up gateway reference when in Mesh mode
+      lanDevice.gateway_mac = matchedDevice._id;
       return lanDevice;
     });
 
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
+      mesh_routers: matchedDevice.mesh_routers,
     });
   });
 };

@@ -67,6 +67,7 @@ const createRegistry = function(req, res) {
     (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
   let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
   let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
+  let wpsState = (parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
   let bridgeEnabled = parseInt(util.returnObjOrNum(req.body.bridge_enabled, 0));
   let bridgeSwitchDisable = parseInt(util.returnObjOrNum(req.body.bridge_switch_disable, 0));
   let bridgeFixIP = util.returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
@@ -146,6 +147,8 @@ const createRegistry = function(req, res) {
     }
 
     if (errors.length < 1) {
+      let newMeshId = meshHandlers.genMeshID();
+      let newMeshKey = meshHandlers.genMeshKey();
       let newDeviceModel = new DeviceModel({
         '_id': macAddr,
         'created_at': new Date(),
@@ -185,8 +188,9 @@ const createRegistry = function(req, res) {
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
         'mesh_mode': meshMode,
-        'mesh_id': meshHandlers.genMeshID(),
-        'mesh_key': meshHandlers.genMeshKey(),
+        'mesh_id': newMeshId,
+        'mesh_key': newMeshKey,
+        'wps_is_active': wpsState,
       });
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
@@ -198,7 +202,10 @@ const createRegistry = function(req, res) {
         } else {
           return res.status(200).json({'do_update': false,
                                        'do_newprobe': true,
-                                       'release_id:': installedRelease});
+                                       'release_id:': installedRelease,
+                                       'mesh_mode': meshMode,
+                                       'mesh_id': newMeshId,
+                                       'mesh_key': newMeshKey});
         }
       });
     } else {
@@ -509,6 +516,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         deviceSetQuery.sys_up_time = sysUpTime;
         let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
         deviceSetQuery.wan_up_time = wanUpTime;
+        let wpsState = (
+          parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
+        deviceSetQuery.wps_is_active = wpsState;
 
         deviceSetQuery.last_contact = Date.now();
 
@@ -1000,9 +1010,20 @@ deviceInfoController.receiveDevices = function(req, res) {
         id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
+    if (!('Devices' in req.body)) {
+      console.log('Devices Receiving for device ' +
+        id + ' failed: Invalid JSON.');
+      return res.status(400).json({processed: 0});
+    }
+
     const validator = new Validator();
     let devsData = req.body.Devices;
     let outData = [];
+    let routersData = undefined;
+
+    if ('mesh_routers' in req.body) {
+      routersData = req.body.mesh_routers;
+    }
 
     for (let connDeviceMac in devsData) {
       if (Object.prototype.hasOwnProperty.call(devsData, connDeviceMac)) {
@@ -1105,6 +1126,60 @@ deviceInfoController.receiveDevices = function(req, res) {
                              upConnDev.dhcpv6.length > 0 ? true : false);
         outDev.mac = upConnDevMac;
         outData.push(outDev);
+      }
+    }
+
+    if (routersData) {
+      // Erasing existing data of previous mesh routers
+      matchedDevice.mesh_routers = [];
+
+      for (let connRouter in routersData) {
+        if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
+          let upConnRouterMac = connRouter.toLowerCase();
+          let upConnRouter = routersData[upConnRouterMac];
+          // Skip if not lowercase
+          if (!upConnRouter) continue;
+
+          if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
+            upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
+            upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
+          }
+          if (upConnRouter.signal) {
+            upConnRouter.signal = parseFloat(upConnRouter.signal);
+          }
+          if (upConnRouter.rx_bytes && upConnRouter.tx_bytes) {
+            upConnRouter.rx_bytes = parseInt(upConnRouter.rx_bytes);
+            upConnRouter.tx_bytes = parseInt(upConnRouter.tx_bytes);
+          }
+          if (upConnRouter.conn_time) {
+            upConnRouter.conn_time = parseInt(upConnRouter.conn_time);
+          }
+          if (upConnRouter.latency) {
+            upConnRouter.latency = parseInt(upConnRouter.latency);
+          } else {
+            upConnRouter.latency = 0;
+          }
+          if (upConnRouter.iface) {
+            let ifaceMode = 1;
+            if (upConnRouter.iface === 'mesh0') ifaceMode = 2;
+            if (upConnRouter.iface === 'mesh1') ifaceMode = 3;
+            upConnRouter.iface = ifaceMode;
+          } else {
+            upConnRouter.iface = 1;
+          }
+          matchedDevice.mesh_routers.push({
+            mac: upConnRouterMac,
+            last_seen: Date.now(),
+            conn_time: upConnRouter.conn_time,
+            rx_bytes: upConnRouter.rx_bytes,
+            tx_bytes: upConnRouter.tx_bytes,
+            signal: upConnRouter.signal,
+            rx_bit: upConnRouter.rx_bit,
+            tx_bit: upConnRouter.tx_bit,
+            latency: upConnRouter.latency,
+            iface: upConnRouter.iface,
+          });
+        }
       }
     }
 
@@ -1413,6 +1488,55 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.receiveWpsResult = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Wps: Secrets do not match');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      console.log('Wps: Error fetching database');
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      console.log('Wps: ' + id + ' not found');
+      return res.status(404).json({processed: 0});
+    }
+
+    if (!('wps_inform' in req.body) || !('wps_content' in req.body)) {
+      console.log('Wps: ' + id + ' wrong request body');
+      return res.status(500).json({processed: 0});
+    }
+    const wpsInform = parseInt(req.body.wps_inform);
+
+    if (wpsInform === 0) {
+      matchedDevice.wps_is_active = (parseInt(req.body.wps_content) === 1);
+    } else if (wpsInform === 2) {
+      let errors = [];
+      let macAddr = req.body.wps_content.trim().toUpperCase();
+      const validator = new Validator();
+
+      genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
+      if (errors.length < 1) {
+        matchedDevice.wps_last_connected_date = Date.now();
+        matchedDevice.wps_last_connected_mac = macAddr;
+      } else {
+        console.log('Wps: ' + id + ' wrong content format');
+        return res.status(500).json({processed: 0});
+      }
+    }
+    matchedDevice.save();
+    console.log('Wps: ' + id + ' received successfully');
     return res.status(200).json({processed: 1});
   });
 };
