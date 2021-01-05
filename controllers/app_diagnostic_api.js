@@ -458,12 +458,10 @@ diagAppAPIController.getTR069Config = async(function(req, res) {
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
-  let certFile = fs.readFileSync('./certs/cert.pem', 'utf8');
   return res.status(200).json({
     'success': true,
     'url': config.tr069.server_url,
     'interval': parseInt(config.tr069.inform_interval/1000),
-    'certificate': certFile,
   });
 });
 
