@@ -1212,7 +1212,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
           }
-          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
             devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
           } else {
             devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
