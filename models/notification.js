@@ -12,8 +12,9 @@ let notificationSchema = new mongoose.Schema({
     type: Number,
     enum: [1, // MQTT secret doesn't match
     ],
-    required: true,
+    required: false,
   },
+  message_error: String,
   severity: {
     type: String,
     enum: ['info', 'warning', 'alert', 'danger'],
@@ -22,8 +23,13 @@ let notificationSchema = new mongoose.Schema({
   // Type will help with roles permissions
   type: {
     type: String,
-    enum: ['communication', 'wan-network', 'lan-network'],
+    enum: ['communication', 'wan-network', 'lan-network', 'genieacs'],
     required: [true, 'Ops! Insira o tipo desta notificação.'],
+  },
+  seen: { // if user has seen this notification.
+    type: Boolean,
+    required: true,
+    default: false,
   },
   // Notification can happen more than once
   allow_duplicate: {
@@ -34,6 +40,7 @@ let notificationSchema = new mongoose.Schema({
   action_title: String,
   action_url: String,
   target: String,
+  genieDeviceId: String,
 });
 
 let Notification = mongoose.model('Notification', notificationSchema);

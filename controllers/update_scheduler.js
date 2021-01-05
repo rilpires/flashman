@@ -612,7 +612,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   });
 });
 
-scheduleController.getDevicesReleases = async(function(req, res) {
+scheduleController.getDevicesReleases = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -623,7 +623,8 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -663,12 +664,14 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   queryPromise.then((matchedDevices)=>{
     let releasesAvailable = deviceListController.getReleases(true);
     let modelsNeeded = {};
+    let isOnu = {}
     let modelMeshIntersections = [];
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices.forEach((device)=>{
         let model = device.model.replace('N/', '');
+        isOnu[model] = device.use_tr069
         let weight = 1;
         if (device.mesh_master) return; // Ignore mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
@@ -707,8 +710,12 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       let releasesMissing = releasesAvailable.map((release)=>{
         let modelsMissing = [];
         for (let model in modelsNeeded) {
-          if (!release.model.includes(model)) {
-            modelsMissing.push({model: model, count: modelsNeeded[model]});
+          if (!release.model.some(
+           (modelAndVersion) => modelAndVersion.includes(model))) {/* if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
+            modelsMissing.push({model: model, count: modelsNeeded[model],
+             isOnu: isOnu[model]});
           }
         }
         return {
@@ -729,7 +736,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       message: 'Erro interno na base',
     });
   });
-});
+};
 
 scheduleController.uploadDevicesFile = function(req, res) {
   if (!req.files) {
@@ -767,7 +774,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
   });
 };
 
-scheduleController.startSchedule = async(function(req, res) {
+scheduleController.startSchedule = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
@@ -778,11 +785,15 @@ scheduleController.startSchedule = async(function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
+  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
+ prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -849,7 +860,10 @@ scheduleController.startSchedule = async(function(req, res) {
         if (!valid) return false;
       }
       let model = device.model.replace('N/', '');
-      return modelsAvailable.includes(model);
+      return modelsAvailable.some(
+       (modelAndVersion) => modelAndVersion.includes(model)); /* true if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
     });
     if (matchedDevices.length === 0) {
       return res.status(500).json({
@@ -937,7 +951,7 @@ scheduleController.startSchedule = async(function(req, res) {
       message: 'Erro interno na base',
     });
   }));
-});
+};
 
 scheduleController.updateScheduleStatus = async(function(req, res) {
   let config = await(getConfig(true, false));

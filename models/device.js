@@ -9,6 +9,9 @@ let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
   _id: String,
+  use_tr069: {type: Boolean, default: false},
+  serial_tr069: String,
+  acs_id: {type: String, sparse: true},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -160,8 +163,8 @@ let deviceSchema = new Schema({
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
   firstboot_date: Date,
-  lastboot_log: Buffer,
-  lastboot_date: Date,
+  lastboot_log: Buffer, // used as simply last requested live log for TR-069
+  lastboot_date: Date, // used as simply last requested live log for TR-069
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
@@ -198,6 +201,8 @@ let deviceSchema = new Schema({
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
 });
+
+deviceSchema.set('autoIndex', false);
 
 deviceSchema.plugin(mongoosePaginate);
 

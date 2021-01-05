@@ -36,6 +36,7 @@ let validateEditDevice = function(event) {
 
   // Get form values
   let mac = row.data('deviceid');
+  let isTR069 = row.data('is-tr069');
   let validateWifi = row.data('validateWifi');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
@@ -137,8 +138,11 @@ let validateEditDevice = function(event) {
   // Validate fields
   if (pppoe && validatePppoe) {
     genericValidate(pppoeUser, validator.validateUser, errors.pppoe_user);
-    genericValidate(pppoePassword, validator.validatePassword,
-                    errors.pppoe_password, pppoePassLength);
+    if (!isTR069 || pppoePassword) {
+      // Do not validate this field if a TR069 device left it blank
+      genericValidate(pppoePassword, validator.validatePassword,
+                      errors.pppoe_password, pppoePassLength);
+    }
   }
   if (validateWifi) {
     genericValidate(ssid, validator.validateSSID, errors.ssid);

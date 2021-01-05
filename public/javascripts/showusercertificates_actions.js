@@ -88,10 +88,21 @@ const fetchCertification = function(id, name, timestamp) {
         $('#user-contract').html('&nbsp;Não especificado');
       }
       // Change router info
-      $('#router-mac').html('&nbsp;'+cert.mac);
-      $('#router-model').html('&nbsp;'+cert.routerModel);
-      $('#router-version').html('&nbsp;'+cert.routerVersion);
-      $('#router-release').html('&nbsp;'+cert.routerRelease);
+      if (cert.isOnu) {
+        $('#router-data').hide();
+        $('#onu-data').show();
+        $('#onu-serial').html('&nbsp;'+cert.mac);
+        $('#onu-model').html('&nbsp;'+cert.routerModel);
+        $('#onu-hardware').html('&nbsp;'+cert.routerVersion);
+        $('#onu-firmware').html('&nbsp;'+cert.routerRelease);
+      } else {
+        $('#onu-data').hide();
+        $('#router-data').show();
+        $('#router-mac').html('&nbsp;'+cert.mac);
+        $('#router-model').html('&nbsp;'+cert.routerModel);
+        $('#router-version').html('&nbsp;'+cert.routerVersion);
+        $('#router-release').html('&nbsp;'+cert.routerRelease);
+      }
       // Change wan info
       if (cert.didConfigureWan && cert.routerConnType) {
         $('#wan-config-list').html('');
@@ -102,10 +113,32 @@ const fetchCertification = function(id, name, timestamp) {
           ),
         );
         if (cert.routerConnType === "PPPoE") {
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('Usuário PPPoE:'),
-            $('<span></span>').html('&nbsp;'+cert.pppoeUser),
-          ));
+          if (cert.isOnu && cert.wanConfigOnu) {
+            let params = JSON.parse(cert.wanConfigOnu);
+            if (params.user) {
+              wanList.append($('<li></li>').append(
+                $('<strong></strong>').html('Usuário PPPoE:'),
+                $('<span></span>').html('&nbsp;'+params.user),
+              ));
+            }
+            if (params.vlan) {
+              wanList.append($('<li></li>').append(
+                $('<strong></strong>').html('VLAN ID:'),
+                $('<span></span>').html('&nbsp;'+params.vlan),
+              ));
+            }
+            if (params.mtu) {
+              wanList.append($('<li></li>').append(
+                $('<strong></strong>').html('MTU:'),
+                $('<span></span>').html('&nbsp;'+params.mtu),
+              ));
+            }
+          } else {
+            wanList.append($('<li></li>').append(
+              $('<strong></strong>').html('Usuário PPPoE:'),
+              $('<span></span>').html('&nbsp;'+cert.pppoeUser),
+            ));
+          }
         } else if (cert.routerConnType === "Bridge (IP Fixo)") {
           wanList.append($('<li></li>').append(
             $('<strong></strong>').html('IP Fixo do Roteador:'),
@@ -137,17 +170,29 @@ const fetchCertification = function(id, name, timestamp) {
       // Change diagnostics info
       if (cert.didDiagnose && cert.diagnostic) {
         let diagWan = (cert.diagnostic.wan) ? 'OK' : 'Erro';
-        let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
-        let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
-        let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
         let diagAnlix = (cert.diagnostic.anlix) ? 'OK' : 'Erro';
         let diagFlashman = (cert.diagnostic.flashman) ? 'OK' : 'Erro';
-        $('#diagnostic-wan').html('&nbsp;'+diagWan);
-        $('#diagnostic-ip4').html('&nbsp;'+diagIp4);
-        $('#diagnostic-ip6').html('&nbsp;'+diagIp6);
-        $('#diagnostic-dns').html('&nbsp;'+diagDns);
-        $('#diagnostic-anlix').html('&nbsp;'+diagAnlix);
-        $('#diagnostic-flashman').html('&nbsp;'+diagFlashman);
+        if (cert.isOnu) {
+          let diagTR069 = (cert.diagnostic.tr069) ? 'OK' : 'Erro';
+          $('#diagnostic-onu-wan').html('&nbsp;'+diagWan);
+          $('#diagnostic-onu-tr069').html('&nbsp;'+diagTR069);
+          $('#diagnostic-onu-anlix').html('&nbsp;'+diagAnlix);
+          $('#diagnostic-onu-flashman').html('&nbsp;'+diagFlashman);
+          $('#diagnostic-router').hide();
+          $('#diagnostic-onu').show();
+        } else {
+          let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
+          let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
+          let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
+          $('#diagnostic-router-wan').html('&nbsp;'+diagWan);
+          $('#diagnostic-router-ip4').html('&nbsp;'+diagIp4);
+          $('#diagnostic-router-ip6').html('&nbsp;'+diagIp6);
+          $('#diagnostic-router-dns').html('&nbsp;'+diagDns);
+          $('#diagnostic-router-anlix').html('&nbsp;'+diagAnlix);
+          $('#diagnostic-router-flashman').html('&nbsp;'+diagFlashman);
+          $('#diagnostic-onu').hide();
+          $('#diagnostic-router').show();
+        }
         $('#diagnostic-none').hide();
         $('#diagnostic-done').show();
       } else {

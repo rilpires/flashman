@@ -1,0 +1,29 @@
+{
+	"precondition": true,
+	"configurations": [
+		{
+			"type": "provision",
+			"name": "flashman"
+		},
+		{
+			"type": "value",
+			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformEnable",
+			"value": "true"
+		},
+		{
+			"type": "value",
+			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformInterval",
+			"value": "60"
+		},
+		{
+			"type": "value",
+			"name": "InternetGatewayDevice.ManagementServer.ConnectionRequestUsername",
+			"value": "anlix"
+		},
+		{
+			"type": "value",
+			"name": "InternetGatewayDevice.ManagementServer.ConnectionRequestPassword",
+			"value": "landufrj123"
+		}
+	]
+}

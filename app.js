@@ -36,8 +36,11 @@ app.locals.appVersion = packageJson.version;
 mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman',
   {useNewUrlParser: true,
-   reconnectTries: Number.MAX_VALUE,
-   reconnectInterval: 1000,
+   // reconnectTries: Number.MAX_VALUE,
+   // reconnectInterval: 1000,
+   useUnifiedTopology: true,
+   useFindAndModify: false,
+   useCreateIndex: true,
 });
 mongoose.set('useCreateIndex', true);
 
