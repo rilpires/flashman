@@ -51,7 +51,7 @@ $(document).ready(function() {
 
   // Important: include and initialize socket.io first using socket var
   socket.on('UPSTATUS', function(macaddr, data) {
-    if (data.wanbytes) {
+    if (data.wanbytes && macaddr === $('#wan-bytes-hlabel').text()) {
       $('#wan-bytes-graph').empty();
       let upBytes = [];
       let downBytes = Object.keys(data.wanbytes).map(function(time) {
