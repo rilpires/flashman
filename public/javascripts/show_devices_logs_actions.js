@@ -112,6 +112,15 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
 
+    let isTR069 = row.data('is-tr069') === true; // cast to bool
+    if (isTR069) {
+      $('.btn-log-upgrade').hide();
+      $('#boot-log').html('&nbsp; Último log');
+    } else {
+      $('.btn-log-upgrade').show();
+      $('#boot-log').html('&nbsp; Boot');
+    }
+
     let slaveCount = parseInt(row.data('slave-count'));
     $('#mesh-change-div').html('');
     if (slaveCount > 0) {

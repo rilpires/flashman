@@ -4,12 +4,20 @@ let configSchema = new mongoose.Schema({
   is_default: {type: Boolean, required: true, default: false},
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
+  hasMajorUpdate: {type: Boolean, default: false},
   pppoePassLength: {type: Number, default: 8},
   measureServerIP: {type: String},
   measureServerPort: {type: Number, default: 80},
   messaging_configs: {
     functions_fqdn: String,
     secret_token: String,
+  },
+  tr069: {
+    server_url: String,
+    web_password: String,
+    inform_interval: {type: Number, required: true, default: 10*60*1000}, // ms
+    recovery_threshold: {type: Number, required: true, default: 1}, // intervals
+    offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
   data_collecting_configs: {
     is_active: {type: Boolean, default: false},

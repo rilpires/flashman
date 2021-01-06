@@ -64,6 +64,70 @@
               if (superuser || role && role.grantMonitorManage)
                 br
                 .input-entry
+                label FQDN do servidor TR-069 do Flashman
+                input.form-control(
+                  type="text",
+                  name="tr069-server-url",
+                  id="tr069-server-url",
+                )
+                .invalid-feedback Insira um FQDN válido
+                br
+                .input-entry
+                label Senha para a interface web das ONUs
+                input.form-control(
+                  type="text",
+                  name="onu-web-password",
+                  id="onu-web-password",
+                )
+                .invalid-feedback Insira uma senha válida
+                br
+                .input-entry
+                label Intervalo entre informes do TR-069 (em segundos, mínimo 60)
+                input.form-control(
+                  type="number",
+                  name="inform-interval",
+                  id="inform-interval",
+                  min=60,
+                  max=86400,
+                  value=600,
+                  placeholder="600"
+                )
+                .invalid-feedback Insira uma quantidade válida
+                br
+                table
+                  tr
+                    td(style='vertical-align: top;')
+                      .input-entry
+                      label Quantidade de informes TR-069 não recebidos para considerar roteador instável
+                      input.form-control(
+                        type="number",
+                        name="lost-informs-recovery-threshold",
+                        id="lost-informs-recovery-threshold",
+                        min=1,
+                        max=100,
+                        value=1,
+                        placeholder="1"
+                        oninput="checkrecoveryOfflineInputDependency()"
+                      )
+                      .invalid-feedback#error-lost-informs-recovery-threshold Insira uma quantidade válida
+                    td(style='vertical-align: top;')
+                      .input-entry
+                      label Quantidade de informes TR-069 não recebidos para considerar roteador offline
+                      input.form-control(
+                        type="number",
+                        name="lost-informs-offline-threshold",
+                        id="lost-informs-offline-threshold",
+                        min=1,
+                        max=300,
+                        value=3,
+                        placeholder="3"
+                        oninput="checkrecoveryOfflineInputDependency()"
+                      )
+                      //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
+                      .invalid-feedback#error-lost-informs-offline-threshold Insira uma quantidade válida
+                .invalid-feedback#error-recovery-offline-thresholds Valor para instável precisa ser menor que o valor offline.
+                br
+                .input-entry
                   label(for="measure-token") Token de ativação da ferramenta de medição
                   input.form-control(type="text", value=measure_token, name="measure-token", id="measure-token")
                 if (measure_active)

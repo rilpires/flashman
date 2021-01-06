@@ -4,7 +4,7 @@ let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 
 const fs = require('fs');
-const unzip = require('unzip');
+const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const path = require('path');
@@ -75,6 +75,7 @@ firmwareController.index = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         let active = matchedConfig.data_collecting_configs.is_active;
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
@@ -350,7 +351,7 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
       return res.json({type: 'danger', message: 'Erro na requisição'});
     })
     .on('response', function(response) {
-      let unzipDest = new unzip.Extract({path: imageReleasesDir});
+      let unzipDest = new unzipper.Extract({path: imageReleasesDir});
       if (response.statusCode === 200) {
         responseStream.pipe(unzipDest);
         unzipDest.on('close', function() {

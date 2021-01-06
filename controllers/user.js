@@ -134,6 +134,7 @@ userController.postRole = function(req, res) {
     grantOpmodeEdit: req.body['grant-opmode-edit'],
     grantLanDevices: parseInt(req.body['grant-lan-devices']),
     grantLanDevicesBlock: req.body['grant-lan-devices-block'],
+    grantSiteSurvey: req.body['grant-site-survey'],
     grantMeasureDevices: parseInt(req.body['grant-measure-devices']),
     grantCsvExport: req.body['grant-csv-export'],
     grantWanBytesView: req.body['grant-wan-bytes'],
@@ -301,6 +302,7 @@ userController.editRole = function(req, res) {
     role.grantOpmodeEdit = req.body['grant-opmode-edit'];
     role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
     role.grantLanDevicesBlock = req.body['grant-lan-devices-block'];
+    role.grantSiteSurvey = req.body['grant-site-survey'];
     role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
     role.grantCsvExport = req.body['grant-csv-export'];
     role.grantWanBytesView = req.body['grant-wan-bytes'];
@@ -454,6 +456,7 @@ userController.getProfile = function(req, res) {
         indexContent.update = false;
       } else {
         indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         let active = matchedConfig.data_collecting_configs.is_active;
           indexContent.measure_active = active;
           indexContent.measure_token = (active) ?
@@ -538,6 +541,7 @@ userController.showCertificates = function(req, res) {
               indexContent.update = false;
             } else {
               indexContent.update = matchedConfig.hasUpdate;
+              indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
               let active = matchedConfig.data_collecting_configs.is_active;
                 indexContent.measure_active = active;
                 indexContent.measure_token = (active) ?
@@ -603,6 +607,7 @@ userController.showAll = function(req, res) {
               indexContent.update = false;
             } else {
               indexContent.update = matchedConfig.hasUpdate;
+              indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
               let active = matchedConfig.data_collecting_configs.is_active;
                 indexContent.measure_active = active;
                 indexContent.measure_token = (active) ?
@@ -660,6 +665,7 @@ userController.showRoles = function(req, res) {
             indexContent.update = false;
           } else {
             indexContent.update = matchedConfig.hasUpdate;
+            indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
             let active = matchedConfig.data_collecting_configs.is_active;
               indexContent.measure_active = active;
               indexContent.measure_token = (active) ?

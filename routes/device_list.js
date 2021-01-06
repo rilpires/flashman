@@ -135,6 +135,10 @@ router.route('/landevices/:id').get(
   authController.ensureLogin(),
   deviceListController.getLanDevices);
 
+router.route('/sitesurvey/:id').get(
+  authController.ensureLogin(),
+  deviceListController.getSiteSurvey);
+
 router.route('/uiupdate/:id').get(
   authController.ensureLogin(),
   deviceListController.getDeviceReg);
@@ -147,5 +151,9 @@ router.route('/landevice/block').post(
 router.route('/license').post(
   authController.ensureLogin(),
   deviceListController.updateLicenseStatus);
+
+router.route('/export').get(
+  authController.ensureLogin(),
+  deviceListController.exportDevicesCsv);
 
 module.exports = router;

@@ -612,7 +612,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   });
 });
 
-scheduleController.getDevicesReleases = async(function(req, res) {
+scheduleController.getDevicesReleases = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -623,7 +623,8 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -663,25 +664,42 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   queryPromise.then((matchedDevices)=>{
     let releasesAvailable = deviceListController.getReleases(true);
     let modelsNeeded = {};
+    let isOnu = {}
+    let modelMeshIntersections = [];
     if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
     meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices.forEach((device)=>{
         let model = device.model.replace('N/', '');
+        isOnu[model] = device.use_tr069
         let weight = 1;
         if (device.mesh_master) return; // Ignore mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-          // Increase model weight for each router in mesh network
-          weight += device.mesh_slaves.length;
+          // Check for slave model, if it's different than master's, add it to
+          // intersections so we can couple them
+          let meshModels = {};
           device.mesh_slaves.forEach((slave)=>{
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
-            if (slaveModel in modelsNeeded) {
-              modelsNeeded[slaveModel] += weight;
+            if (model === slaveModel) {
+              weight += 1;
             } else {
-              modelsNeeded[slaveModel] = weight;
+              // Add slave model to models needed
+              if (slaveModel in modelsNeeded) {
+                modelsNeeded[slaveModel] += 1;
+              } else {
+                modelsNeeded[slaveModel] = 1;
+              }
+              // Add slave model to mesh models
+              if (slaveModel in meshModels) {
+                meshModels[slaveModel] += 1;
+              } else {
+                meshModels[slaveModel] = 1;
+              }
             }
           });
+          meshModels[model] = weight;
+          modelMeshIntersections.push(meshModels);
         }
         if (model in modelsNeeded) {
           modelsNeeded[model] += weight;
@@ -692,8 +710,12 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       let releasesMissing = releasesAvailable.map((release)=>{
         let modelsMissing = [];
         for (let model in modelsNeeded) {
-          if (!release.model.includes(model)) {
-            modelsMissing.push({model: model, count: modelsNeeded[model]});
+          if (!release.model.some(
+           (modelAndVersion) => modelAndVersion.includes(model))) {/* if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
+            modelsMissing.push({model: model, count: modelsNeeded[model],
+             isOnu: isOnu[model]});
           }
         }
         return {
@@ -704,6 +726,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       return res.status(200).json({
         success: true,
         releases: releasesMissing,
+        intersections: modelMeshIntersections,
       });
     });
   }, (err)=>{
@@ -713,7 +736,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       message: 'Erro interno na base',
     });
   });
-});
+};
 
 scheduleController.uploadDevicesFile = function(req, res) {
   if (!req.files) {
@@ -751,7 +774,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
   });
 };
 
-scheduleController.startSchedule = async(function(req, res) {
+scheduleController.startSchedule = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
@@ -762,11 +785,15 @@ scheduleController.startSchedule = async(function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
+  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
+ adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
+ prevents ONUs devices being included in search. */
 
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -833,7 +860,10 @@ scheduleController.startSchedule = async(function(req, res) {
         if (!valid) return false;
       }
       let model = device.model.replace('N/', '');
-      return modelsAvailable.includes(model);
+      return modelsAvailable.some(
+       (modelAndVersion) => modelAndVersion.includes(model)); /* true if array
+ of strings contains model name inside any of its strings, where each string is
+ a concatenation of both model name and version. */
     });
     if (matchedDevices.length === 0) {
       return res.status(500).json({
@@ -921,7 +951,7 @@ scheduleController.startSchedule = async(function(req, res) {
       message: 'Erro interno na base',
     });
   }));
-});
+};
 
 scheduleController.updateScheduleStatus = async(function(req, res) {
   let config = await(getConfig(true, false));

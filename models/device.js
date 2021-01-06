@@ -9,8 +9,14 @@ let Schema = mongoose.Schema;
 
 let deviceSchema = new Schema({
   _id: String,
+  use_tr069: {type: Boolean, default: false},
+  serial_tr069: String,
+  acs_id: {type: String, sparse: true},
   created_at: {type: Date},
-  external_reference: {kind: String, data: String},
+  external_reference: {
+    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    data: String,
+  },
   model: String,
   version: {type: String, default: '0.0.0'},
   installed_release: String,
@@ -25,16 +31,28 @@ let deviceSchema = new Schema({
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
+  wifi_last_channel: String, // last channel in use reported from router
   wifi_band: String,
+  wifi_last_band: String, // last band in use reported from router
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
+  wifi_hidden: {type: Number, default: 0},
+  wifi_power: {type: Number, default: 100, enum: [ // Percentage
+    25, 50, 75, 100,
+  ]},
   wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,
+  wifi_last_channel_5ghz: String,
   wifi_band_5ghz: String,
+  wifi_last_band_5ghz: String,
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
+  wifi_hidden_5ghz: {type: Number, default: 0},
+  wifi_power_5ghz: {type: Number, default: 100, enum: [ // Percentage
+    25, 50, 75, 100,
+  ]},
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
@@ -72,6 +90,17 @@ let deviceSchema = new Schema({
       'none', // never asked
     ]},
   }],
+  ap_survey: [{
+    mac: String,
+    ssid: String,
+    freq: Number,
+    signal: Number,
+    width: Number,
+    VHT: Boolean,
+    offset: String,
+    last_seen: {type: Date},
+    first_seen: {type: Date},
+  }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
   mesh_mode: {type: Number, default: 0, enum: [
     0, // disable mesh
@@ -108,8 +137,12 @@ let deviceSchema = new Schema({
   wan_ip: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
+  ipv6_enabled: {type: Number, default: 2, enum: [
+    0, 1, 2, // 0 - false, 1 - true, 2 - unknown (old firmware)
+  ]},
   ip: String,
   ntp_status: String,
+  last_site_survey: Date,
   last_devices_refresh: Date,
   last_contact: Date,
   last_hardreset: Date,
@@ -129,8 +162,8 @@ let deviceSchema = new Schema({
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
   firstboot_date: Date,
-  lastboot_log: Buffer,
-  lastboot_date: Date,
+  lastboot_log: Buffer, // used as simply last requested live log for TR-069
+  lastboot_date: Date, // used as simply last requested live log for TR-069
   apps: [{id: String, secret: String}],
   // For port forward
   forward_index: String,
@@ -150,6 +183,7 @@ let deviceSchema = new Schema({
   },
   sys_up_time: {type: Number, default: 0},
   wan_up_time: {type: Number, default: 0},
+  // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
     down_speed: String,
@@ -167,6 +201,8 @@ let deviceSchema = new Schema({
   wps_last_connected_mac: {type: String, default: ''},
 });
 
+deviceSchema.set('autoIndex', false);
+
 deviceSchema.plugin(mongoosePaginate);
 
 deviceSchema.methods.getLanDevice = function(mac) {
@@ -178,6 +214,12 @@ deviceSchema.methods.getLanDevice = function(mac) {
 deviceSchema.methods.getRouterDevice = function(mac) {
   return this.mesh_routers.find(function(router, idx) {
     return router.mac == mac;
+  });
+};
+
+deviceSchema.methods.getAPSurveyDevice = function(mac) {
+  return this.ap_survey.find(function(device, idx) {
+    return device.mac == mac;
   });
 };
 

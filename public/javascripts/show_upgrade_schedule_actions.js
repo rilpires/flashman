@@ -115,7 +115,6 @@ $(document).ready(function() {
             .removeClass('fa-spinner fa-pulse');
         },
       });
-    } else {
     }
     return false;
   });
@@ -197,16 +196,41 @@ $(document).ready(function() {
           $('#releases-dropdown a').unbind('click');
           $('#releases-dropdown a').click((event)=>{
             $('#warning-releases').hide();
+            $('#list-missing-models').hide();
+            $('#list-onus').hide();
             let release = event.originalEvent.target.text;
             $('#selected-release').html(release);
             let missingModels = res.releases.find((r)=>r.id===release).models;
+            let intersections = res.intersections;
             let missingCount = 0;
+            let onuCount = 0;
             $('#warning-missing-models').html('');
             missingModels.forEach((model)=>{
-              $('#warning-missing-models').append(
-                $('<li>').html(model.model)
-              );
-              missingCount += model.count;
+              console.log(model)
+              if (!model.isOnu) {
+                console.log('got here')
+                $('#warning-missing-models').append(
+                  $('<li>').html(model.model),
+                );
+              }
+              let count = model.count;
+              // Discount mesh intersections
+              intersections = intersections.filter((intersection)=>{
+                if (model.model in intersection) {
+                  Object.keys(intersection).forEach((imodel)=>{
+                    if (model.model === imodel) return; // discard same model
+                    if (!missingModels.find((m)=>m.model===imodel)) {
+                      // Only discard intersection models if the other model
+                      // is not in the missing models
+                      count += intersection[imodel];
+                    }
+                  });
+                  return false;
+                }
+                return true;
+              });
+              if (model.isOnu) onuCount += count;
+              else missingCount += count;
             });
             let totalCount;
             if (useCsv) {
@@ -217,7 +241,8 @@ $(document).ready(function() {
               totalCount = $('#someDevicesLabel').html();
             }
             $('#warning-prevTotal').html(totalCount);
-            totalCount = parseInt(totalCount) - missingCount;
+            console.log('onuCount', onuCount)
+            totalCount = parseInt(totalCount) - missingCount - onuCount;
             if (totalCount > 0) {
               $('#warning-newTotal').html(' somente ' + totalCount);
               $('#how-btn-next').prop('disabled', false);
@@ -225,8 +250,15 @@ $(document).ready(function() {
               $('#how-btn-next').prop('disabled', true);
               $('#warning-newTotal').html(' nenhum');
             }
-            if (missingCount > 0) {
+            if (missingCount + onuCount > 0) {
               $('#warning-releases').show();
+              if (missingCount > 0) {
+                $('#list-missing-models').show();
+              }
+              if (onuCount > 0) {
+                $('#onu-count').html(onuCount+' ');
+                $('#list-onus').show();
+              }
             } else {
               $('#how-btn-next').prop('disabled', false);
             }

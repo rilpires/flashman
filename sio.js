@@ -10,6 +10,8 @@ const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
+const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
+const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
 
 sio.anlixConnections = {};
 sio.anlixNotifications = {};
@@ -197,6 +199,39 @@ sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
   return found;
 };
 
+sio.anlixWaitForSiteSurveyNotification = function(session, macaddr) {
+  if (!session) {
+    debug('ERROR: SIO: ' +
+                'Try to add sitesurvey notification with an invalid session!');
+    return false;
+  }
+  if (!macaddr) {
+    debug('ERROR: SIO: Try to add sitesurvey ' +
+                'notification with an invalid mac address!');
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_SITESURVEY, macaddr);
+  return true;
+};
+
+sio.anlixSendSiteSurveyNotifications = function(macaddr, devsData) {
+  if (!macaddr) {
+    debug(
+      'ERROR: SIO: ' +
+      'Try to send sitesurvey notification to an invalid mac address!');
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_SITESURVEY,
+                               macaddr, devsData, macaddr);
+  if (!found) {
+    debug('SIO: NO Session found for ' +
+                macaddr + '! Discarding message...');
+  }
+  return found;
+};
+
 sio.anlixWaitDeviceStatusNotification = function(session) {
   if (!session) {
     debug('ERROR: SIO: Try to add device status ' +
@@ -289,6 +324,36 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
+  }
+  return found;
+};
+
+sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
+  if (!session) {
+    debug('ERROR: SIO: '
+      +'Tried to add genie task notification with an invalid session!');
+    return false;
+  }
+  if (!deviceid) {
+    debug('ERROR: SIO: Tried to add genie task ' 
+      +'notification with an invalid deviceid!');
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_GENIE_TASK, deviceid);
+  return true;
+};
+
+sio.anlixSendGenieAcsTaskNotifications = function(deviceid, taskInfo) {
+  if (!deviceid) {
+    debug('ERROR: SIO: Tried to send genie task notification ' 
+      +`to an invalid deviceid! ${deviceid}`);
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_GENIE_TASK,
+                               deviceid, taskInfo, deviceid);
+  if (!found) {
+    debug(`SIO: NO Session found for ${deviceid} Discarding message...`);
   }
   return found;
 };

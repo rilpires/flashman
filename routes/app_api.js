@@ -39,6 +39,18 @@ router.route('/diagnostic/verify').post(
   diagAPIController.verifyFlashman,
 );
 
+router.route('/diagnostic/tr069config').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.getTR069Config,
+);
+
+router.route('/diagnostic/wan').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.configureWanOnu,
+);
+
 router.route('/diagnostic/wifi').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
