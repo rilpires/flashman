@@ -118,7 +118,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
                 fetchNotificationsForDevice(data.target);
               });
             };
-            if (data.action_url) {
+            if (data.action_url && data.action_url != '/notification/del') {
               $.ajax({type: 'POST', url: data.action_url, traditional: true})
               .done(deleteNotification);
             } else {
