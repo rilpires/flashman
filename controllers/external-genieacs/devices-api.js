@@ -36,23 +36,27 @@ const convertWifiMode = function(mode, oui, model) {
   switch (mode) {
     case '11g':
       if (ouiModelStr === '0C8063-IGD') return 'g';
-      else if (ouiModelStr === 'E01954-F670L') return 'b,g';
       else if (ouiModelStr === '00259E-HG8245Q2') return '11bg';
+      else if (ouiModelStr === 'E01954-F670L') return 'b,g';
+      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'b,g';
       else return '11bg';
     case '11n':
       if (ouiModelStr === '0C8063-IGD') return 'n';
       else if (ouiModelStr === '00259E-HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'E01954-F670L') return 'b,g,n';
+      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'b,g,n';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === '0C8063-IGD') return 'n';
       else if (ouiModelStr === '00259E-HG8245Q2') return '11na';
       else if (ouiModelStr === 'E01954-F670L') return 'a,n';
+      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'a,n';
       else return '11na';
     case '11ac':
       if (ouiModelStr === '0C8063-IGD') return 'ac';
       else if (ouiModelStr === '00259E-HG8245Q2') return '11ac';
       else if (ouiModelStr === 'E01954-F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'a,n,ac';
       else return '11ac';
     default:
       return '';
@@ -189,6 +193,19 @@ const getZTEFields = function() {
   return fields;
 };
 
+const getNokiaFields = function() {
+  let fields = getDefaultFields();
+  fields.common.mac = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_MACAddress';
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
+  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -201,6 +218,10 @@ const getModelFields = function(oui, model) {
     case 'E01954-F670L': // ZTE F670L
       message = '';
       fields = getZTEFields();
+      break;
+    case 'AC9CE4-G-140W-C': // Nokia G-140W-C
+      message = '';
+      fields = getNokiaFields();
       break;
     case '000AC2-HG6245D': // Fiberhome AN5506-04-CG
       message = '';
