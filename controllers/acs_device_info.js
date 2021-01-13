@@ -523,13 +523,13 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
               rssiKey = rssiKey.replace('*', interface).replace('*', i);
-              device.rssi = getFromNestedKey(data, rssiKey);
+              device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
               snrKey = snrKey.replace('*', interface).replace('*', i);
-              device.snr = getFromNestedKey(data, snrKey);
+              device.snr = getFromNestedKey(data, snrKey+'._value');
             }
           }
         });
