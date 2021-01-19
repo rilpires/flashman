@@ -141,6 +141,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantOpmodeEdit: true,
         grantWanBytesView: true,
         grantCsvExport: true,
+        grantFirmwareBetaUpgrade: true,
       });
       managerRole.save();
     }

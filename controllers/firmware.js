@@ -306,6 +306,7 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
                     firmwareInfoObj.wan_proto =
                      matchedFirmwareInfo.wan_proto.toUpperCase();
                   }
+                  firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta 
                 }
                 firmwareNames.push(firmwareInfoObj);
               };
@@ -334,11 +335,15 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
 firmwareController.addRemoteFirmwareFile = function(req, res) {
   let wanProto = '';
   let flashboxVer = '';
+  let isBeta = false;
   if ('wanproto' in req.body) {
     wanProto = req.body.wanproto;
   }
   if ('flashboxversion' in req.body) {
     flashboxVer = req.body.flashboxversion;
+  }
+  if ('isbeta' in req.body) {
+    isBeta = req.body.isbeta;
   }
   let responseStream = request
     .get('https://artifactory.anlix.io/artifactory/upgrades/' +
@@ -408,6 +413,7 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
                     wan_proto: wanProto,
                     flashbox_version: flashboxVer,
                     filename: firmwarefname,
+                    is_beta: isBeta,
                   });
                 } else {
                   firmware.vendor = fnameFields.vendor;
@@ -417,6 +423,7 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
                   firmware.filename = firmwarefname;
                   firmware.wan_proto = wanProto;
                   firmware.flashbox_version = flashboxVer;
+                  firmware.is_beta = isBeta;
                 }
 
                 firmware.save(function(err) {

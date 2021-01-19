@@ -537,6 +537,19 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Atualizar para firmware beta'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-beta-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
                     )
                   ),
                 ),
@@ -651,6 +664,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-search-summary] option[value=' +
           roleObj.grantShowSearchSummary + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-firmware-beta-upgrade] option[value=' +
+          roleObj.grantFirmwareBetaUpgrade + ']')
         .attr('selected', 'selected');
       });
     } else {

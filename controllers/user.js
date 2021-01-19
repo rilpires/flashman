@@ -140,6 +140,7 @@ userController.postRole = function(req, res) {
     grantWanBytesView: req.body['grant-wan-bytes'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
+    grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
   });
   role.save(function(err) {
     if (err) {
@@ -308,6 +309,7 @@ userController.editRole = function(req, res) {
     role.grantWanBytesView = req.body['grant-wan-bytes'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
+    role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
 
     role.save(function(err) {
       if (err) {

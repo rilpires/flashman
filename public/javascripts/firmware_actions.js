@@ -96,6 +96,7 @@ $(document).ready(function() {
     let firmwareFile = $(this).data('firmwarefile');
     let wanProto = $(this).data('wanproto');
     let flashboxVer = $(this).data('flashboxversion');
+    let isBeta = $(this).data('isbeta');
     let currBtn = $(this);
 
     currBtn.prop('disabled', true);
@@ -107,7 +108,7 @@ $(document).ready(function() {
       url: '/firmware/add',
       traditional: true,
       data: {encoded: encoded, company: company, firmwarefile: firmwareFile,
-             wanproto: wanProto, flashboxversion: flashboxVer},
+             wanproto: wanProto, flashboxversion: flashboxVer, isbeta: isBeta},
       success: function(res) {
         currBtn.prop('disabled', false);
         currBtn.find('.btn-fw-add-icon')
