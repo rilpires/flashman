@@ -141,6 +141,7 @@ userController.postRole = function(req, res) {
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
+    grantFirmwareRestrictedUpgrade: req.body['grant-firmware-restricted-upgrade'],
   });
   role.save(function(err) {
     if (err) {
@@ -310,6 +311,7 @@ userController.editRole = function(req, res) {
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
+    role.grantFirmwareRestrictedUpgrade = req.body['grant-firmware-restricted-upgrade'];
 
     role.save(function(err) {
       if (err) {

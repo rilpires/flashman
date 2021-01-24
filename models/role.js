@@ -39,6 +39,7 @@ let roleSchema = new mongoose.Schema({
   grantSearchLevel: {type: Number, required: true, default: 2},
   grantShowSearchSummary: {type: Boolean, required: true, default: true},
   grantFirmwareBetaUpgrade: {type: Boolean, default: false},
+  grantFirmwareRestrictedUpgrade: {type: Boolean, default: false},
 });
 
 // Hooks traps notifications

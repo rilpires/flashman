@@ -248,6 +248,19 @@ $(document).ready(function() {
                           .text('Busca completa com filtros especiais')
                         )
                       )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Atualizar para firmware restrita'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-restricted-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
                     )
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
@@ -667,6 +680,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-beta-upgrade] option[value=' +
           roleObj.grantFirmwareBetaUpgrade + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value=' +
+          roleObj.grantFirmwareRestrictedUpgrade + ']')
         .attr('selected', 'selected');
       });
     } else {

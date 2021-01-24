@@ -306,7 +306,7 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
                     firmwareInfoObj.wan_proto =
                      matchedFirmwareInfo.wan_proto.toUpperCase();
                   }
-                  firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta 
+                  firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta //consertar, tem que testar se é None
                 }
                 firmwareNames.push(firmwareInfoObj);
               };
@@ -332,133 +332,149 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
   );
 };
 
-firmwareController.addRemoteFirmwareFile = function(req, res) {
-  let wanProto = '';
-  let flashboxVer = '';
-  let isBeta = false;
-  if ('wanproto' in req.body) {
-    wanProto = req.body.wanproto;
-  }
-  if ('flashboxversion' in req.body) {
-    flashboxVer = req.body.flashboxversion;
-  }
-  if ('isbeta' in req.body) {
-    isBeta = req.body.isbeta;
-  }
-  let responseStream = request
-    .get('https://artifactory.anlix.io/artifactory/upgrades/' +
-      req.body.company + req.body.firmwarefile, {
-        headers: {
-          'Authorization': 'Basic ' + req.body.encoded,
-        },
+let addFirmwareFile = function(fw) {
+  return new Promise((resolve, reject)=> {
+    let wanProto = '';
+    let flashboxVer = '';
+    let isBeta = false;
+    if ('wanproto' in fw) {
+      wanProto = fw.wanproto;
+    }
+    if ('flashboxversion' in fw) {
+      flashboxVer = fw.flashboxversion;
+    }
+    if ('isbeta' in fw) {
+      isBeta = fw.isbeta;
+    }
+    if ('isrestricted' in fw) {
+      isRestricted = fw.isrestricted;
+    }
+    let responseStream = request
+      .get('https://artifactory.anlix.io/artifactory/upgrades/' +
+        fw.company + fw.firmwarefile, {
+          headers: {
+            'Authorization': 'Basic ' + fw.encoded,
+          },
+        })
+      .on('error', function(err) {
+        return reject('Erro na requisição');
       })
-    .on('error', function(err) {
-      return res.json({type: 'danger', message: 'Erro na requisição'});
-    })
-    .on('response', function(response) {
-      let unzipDest = new unzipper.Extract({path: imageReleasesDir});
-      if (response.statusCode === 200) {
-        responseStream.pipe(unzipDest);
-        unzipDest.on('close', function() {
-          let firmwarefname = req.body.firmwarefile
-            .replace('/', '')
-            .replace('.zip', '.bin');
-          let fnameFields = parseFilename(firmwarefname);
+      .on('response', function(response) {
+        let unzipDest = new unzipper.Extract({path: imageReleasesDir});
+        if (response.statusCode === 200) {
+          responseStream.pipe(unzipDest);
+          unzipDest.on('close', function() {
+            let firmwarefname = fw.firmwarefile
+              .replace('/', '')
+              .replace('.zip', '.bin');
+            let fnameFields = parseFilename(firmwarefname);
 
-          // Generate MD5 checksum
-          const md5Checksum = md5File.sync(path.join(imageReleasesDir,
+            // Generate MD5 checksum
+            const md5Checksum = md5File.sync(path.join(imageReleasesDir,
                                                      firmwarefname));
-          const md5fname = '.' + firmwarefname.replace('.bin', '.md5');
-          fs.writeFile(path.join(imageReleasesDir, md5fname), md5Checksum,
-            function(err) {
-              if (err) {
-                fs.unlink(path.join(imageReleasesDir, firmwarefname),
-                  function(err) {
-                    return res.json({
-                      type: 'danger',
-                      message: 'Erro ao gerar hash de integridade do arquivo',
-                    });
-                  }
-                );
-              }
-              // Hash generated and saved. Register entry on db
-              Firmware.findOne({
-                vendor: fnameFields.vendor,
-                model: fnameFields.model,
-                version: fnameFields.version,
-                release: fnameFields.release,
-                filename: firmwarefname,
-              }, function(err, firmware) {
+            const md5fname = '.' + firmwarefname.replace('.bin', '.md5');
+            fs.writeFile(path.join(imageReleasesDir, md5fname), md5Checksum,
+              function(err) {
                 if (err) {
-                  // Remove downloaded files
                   fs.unlink(path.join(imageReleasesDir, firmwarefname),
                     function(err) {
-                      fs.unlink(path.join(imageReleasesDir, md5fname),
-                        function(err) {
-                          return res.json({
-                            type: 'danger',
-                            message: 'Erro buscar na base de dados',
-                          });
-                        }
-                      );
+                      return reject('Erro ao gerar hash de integridade do arquivo');
                     }
                   );
                 }
-                if (!firmware) {
-                  firmware = new Firmware({
-                    vendor: fnameFields.vendor,
-                    model: fnameFields.model,
-                    version: fnameFields.version,
-                    release: fnameFields.release,
-                    wan_proto: wanProto,
-                    flashbox_version: flashboxVer,
-                    filename: firmwarefname,
-                    is_beta: isBeta,
-                  });
-                } else {
-                  firmware.vendor = fnameFields.vendor;
-                  firmware.model = fnameFields.model;
-                  firmware.version = fnameFields.version;
-                  firmware.release = fnameFields.release;
-                  firmware.filename = firmwarefname;
-                  firmware.wan_proto = wanProto;
-                  firmware.flashbox_version = flashboxVer;
-                  firmware.is_beta = isBeta;
-                }
-
-                firmware.save(function(err) {
+                // Hash generated and saved. Register entry on db
+                Firmware.findOne({
+                  vendor: fnameFields.vendor,
+                  model: fnameFields.model,
+                  version: fnameFields.version,
+                  release: fnameFields.release,
+                  filename: firmwarefname,
+                }, function(err, firmware) {
                   if (err) {
-                    let msg = '';
-                    for (let field = 0; field < err.errors.length; field++) {
-                      msg += err.errors[field].message + ' ';
-                    }
                     // Remove downloaded files
                     fs.unlink(path.join(imageReleasesDir, firmwarefname),
                       function(err) {
                         fs.unlink(path.join(imageReleasesDir, md5fname),
                           function(err) {
-                            return res.json({type: 'danger', message: msg});
+                            return reject('Erro buscar na base de dados');
                           }
                         );
                       }
                     );
                   }
-                  return res.json({
-                    type: 'success',
-                    message: 'Firmware adicionado com sucesso!',
+                  if (!firmware) {
+                    firmware = new Firmware({
+                      vendor: fnameFields.vendor,
+                      model: fnameFields.model,
+                      version: fnameFields.version,
+                      release: fnameFields.release,
+                      wan_proto: wanProto,
+                      flashbox_version: flashboxVer,
+                      filename: firmwarefname,
+                      is_beta: isBeta,
+                      is_restricted: isRestricted,
+                    });
+                  } else {
+                    firmware.vendor = fnameFields.vendor;
+                    firmware.model = fnameFields.model;
+                    firmware.version = fnameFields.version;
+                    firmware.release = fnameFields.release;
+                    firmware.filename = firmwarefname;
+                    firmware.wan_proto = wanProto;
+                    firmware.flashbox_version = flashboxVer;
+                    firmware.is_beta = isBeta;
+                    firmware.is_restricted = isRestricted;
+                  }
+
+                  firmware.save(function(err) {
+                    if (err) {
+                      let msg = '';
+                      for (let field = 0; field < err.errors.length; field++) {
+                        msg += err.errors[field].message + ' ';
+                      }
+                      // Remove downloaded files
+                      fs.unlink(path.join(imageReleasesDir, firmwarefname),
+                        function(err) {
+                          fs.unlink(path.join(imageReleasesDir, md5fname),
+                            function(err) {
+                              return reject(msg);
+                            }
+                          );
+                        }
+                      );
+                    }
+                    return resolve();
                   });
                 });
-              });
-            }
-          );
-        });
-      } else {
-        return res.json({
-          type: 'danger',
-          message: 'Erro na autenticação',
-        });
-      }
-    });
+              }
+            );
+          });
+        } else {
+          return reject('Erro na autenticação');
+        }
+      });
+  });
+}
+
+firmwareController.addRemoteFirmwareFile = function(req, res) {
+  firmwares = JSON.parse(req.body.firmwares);
+  console.log(firmwares);
+  let promises = [];
+  firmwares.forEach((firmware) => {
+    promises.push(addFirmwareFile(firmware));
+  });
+  Promise.all(promises).then(
+    function() {
+      return res.json({
+        type: 'success',
+        message: 'Firmware(s) adicionado(s) com sucesso!',
+      });
+    }, function(errMessage) {
+      return res.json({
+        type: 'danger',
+        message: errMessage,
+      });
+  });
 };
 
 module.exports = firmwareController;

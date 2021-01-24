@@ -5,15 +5,21 @@
     "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
     "autorestart": true,
     "env": {
-      "production": true,
+      "production": false,
       "TZ": "America/Sao_Paulo",
       "FLM_IMG_RELEASE_DIR": "./public/firmwares/",
       "FLM_ALLOW_DEV_UPDATE_REST_DATA": false,
       "FLM_CONCURRENT_UPDATES_LIMIT": 50,
       "FLM_MONGODB_HOST": "localhost",
       "FLM_ADM_USER": "admin",
-      "FLM_ADM_PASS": "flashman"
+      "FLM_ADM_PASS": "flashman",
+      "FLM_CERT_MQTT_DIR": "./certs",
+      "FLM_MQTTS_DOMAIN": "192.168.0.40",
+      "FLM_MQTT_PORT": "5000",
+      "FLM_COMPANY_SECRET": "eEIBDRfEao1JriwsKGyN6l1WVzWZMmcr"
     },
+    "error_file": "/dev/stderr",
+    "out_file": "/dev/stdout",
     "exec_mode": "cluster"
   }]
 }
