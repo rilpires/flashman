@@ -5,6 +5,7 @@ const User = require('../models/user');
 const DeviceVersion = require('../models/device_version');
 const Config = require('../models/config');
 const Role = require('../models/role');
+const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
@@ -48,43 +49,9 @@ if (Promise.allSettled === undefined) {
   };
 }
 
-deviceListController.getReleases = function(modelAsArray=false) {
-  let releases = [];
-  let releaseIds = [];
-  fs.readdirSync(imageReleasesDir).forEach((filename) => {
-    // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.bin
-    let fnameSubStrings = filename.split('_');
-    let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
-    let releaseSubStringsRaw = releaseSubStringRaw.split('.');
-    if (releaseSubStringsRaw[1] == 'md5') {
-      // Skip MD5 hash files
-      return;
-    }
-    let releaseId = releaseSubStringsRaw[0];
-    let releaseModel = fnameSubStrings[1];
-    if (fnameSubStrings.length == 4) {
-      releaseModel += fnameSubStrings[2];
-    }
-    // Always make comparison using upper case
-    releaseModel = releaseModel.toUpperCase();
-    if (modelAsArray) {
-      if (releaseIds.includes(releaseId)) {
-        for (let i=0; i < releases.length; i++) {
-          if (releases[i].id == releaseId) {
-            releases[i].model.push(releaseModel);
-            break;
-          }
-        }
-      } else {
-        let release = {id: releaseId, model: [releaseModel]};
-        releases.push(release);
-        releaseIds.push(releaseId);
-      }
-    } else {
-      let release = {id: releaseId, model: releaseModel};
-      releases.push(release);
-    }
-  });
+deviceListController.getReleases = async function(role, is_superuser) {
+  let filenames = fs.readdirSync(imageReleasesDir);
+  let releases = await firmware.getReleases(filenames, role, is_superuser);
   return releases;
 };
 
@@ -702,87 +669,91 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let releases = deviceListController.getReleases();
+    let releases = deviceListController.getReleases(req.user.role, req.user.is_superuser);
+    releases.then(function(releases){
+      let enrichDevice = function(device) {
+        const model = device.model.replace('N/', '');
+        const devReleases = releases.filter((release) => release.model === model);
+        const isDevOn = mqttClientsMap[device._id.toUpperCase()];
+        device.releases = devReleases;
 
-    let enrichDevice = function(device) {
-      const model = device.model.replace('N/', '');
-      const devReleases = releases.filter((release) => release.model === model);
-      const isDevOn = mqttClientsMap[device._id.toUpperCase()];
-      device.releases = devReleases;
-
-      // Status color
-      let deviceColor = 'grey-text';
-      if (device.use_tr069) { // if this device uses tr069 to be controlled.
-        if (device.last_contact >= tr069Times.recovery) {
-        // if we are inside first threshold.
-          deviceColor = 'green-text';
-        } else if (device.last_contact >= tr069Times.offline) {
-        // if we are inside second threshold.
-          deviceColor = 'red-text';
-        };
-        // if we are out of these thresholds, we keep the default gray value.
-      } else { // default device, flashbox controlled.
-        if (isDevOn) {
-          deviceColor = 'green-text';
-        } else if (device.last_contact.getTime() >= lastHour.getTime()) {
-          deviceColor = 'red-text';
+        // Status color
+        let deviceColor = 'grey-text';
+        if (device.use_tr069) { // if this device uses tr069 to be controlled.
+          if (device.last_contact >= tr069Times.recovery) {
+          // if we are inside first threshold.
+            deviceColor = 'green-text';
+          } else if (device.last_contact >= tr069Times.offline) {
+          // if we are inside second threshold.
+            deviceColor = 'red-text';
+          };
+          // if we are out of these thresholds, we keep the default gray value.
+        } else { // default device, flashbox controlled.
+          if (isDevOn) {
+            deviceColor = 'green-text';
+          } else if (device.last_contact.getTime() >= lastHour.getTime()) {
+            deviceColor = 'red-text';
+          }
         }
-      }
-      device.status_color = deviceColor;
+        device.status_color = deviceColor;
 
-      // Device permissions
-      device.permissions = DeviceVersion.findByVersion(
-        device.version,
-        device.wifi_is_5ghz_capable,
-        device.model,
-      );
+        // Device permissions
+        device.permissions = DeviceVersion.findByVersion(
+          device.version,
+          device.wifi_is_5ghz_capable,
+          device.model,
+        );
 
-      // Fill default value if wi-fi state does not exist
-      if (device.wifi_state === undefined) {
-        device.wifi_state = 1;
-        device.wifi_state_5ghz = 1;
-      }
-      if (device.wifi_power === undefined) {
-        device.wifi_power = 100;
-        device.wifi_power_5ghz = 100;
-      }
-      if (device.wifi_hidden === undefined) {
-        device.wifi_hidden = 0;
-        device.wifi_hidden_5ghz = 0;
-      }
-      if (device.ipv6_enabled === undefined) {
-        device.ipv6_enabled = 0;
-      }
-      return device;
-    };
+        // Fill default value if wi-fi state does not exist
+        if (device.wifi_state === undefined) {
+          device.wifi_state = 1;
+          device.wifi_state_5ghz = 1;
+        }
+        if (device.wifi_power === undefined) {
+          device.wifi_power = 100;
+          device.wifi_power_5ghz = 100;
+        }
+        if (device.wifi_hidden === undefined) {
+          device.wifi_hidden = 0;
+          device.wifi_hidden_5ghz = 0;
+        }
+        if (device.ipv6_enabled === undefined) {
+          device.ipv6_enabled = 0;
+        }
+        return device;
+      };
 
-    meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
-      let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
-      User.findOne({name: req.user.name}, function(err, user) {
-        Config.findOne({is_default: true}, function(err, matchedConfig) {
-          getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
-          .then((onlineStatus) => {
-            // Counters
-            let status = {};
-            status = Object.assign(status, onlineStatus);
-            // Filter data using user permissions
-            return res.json({
-              success: true,
-              type: 'success',
-              limit: req.user.maxElementsPerPage,
-              page: matchedDevices.page,
-              pages: matchedDevices.pages,
-              min_length_pass_pppoe: matchedConfig.pppoePassLength,
-              status: status,
-              single_releases: deviceListController.getReleases(true),
-              filter_list: req.body.filter_list,
-              devices: allDevices,
-            });
-          }, (error) => {
-            return res.json({
-              success: false,
-              type: 'danger',
-              message: (error.message ? error.message : error),
+      meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
+        let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
+        User.findOne({name: req.user.name}, function(err, user) {
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
+            .then((onlineStatus) => {
+              // Counters
+              let status = {};
+              status = Object.assign(status, onlineStatus);
+              // Filter data using user permissions
+              let single_releases = deviceListController.getReleases(req.user.role, req.user.is_superuser);
+              single_releases.then(function(single_releases){
+                return res.json({
+                success: true,
+                  type: 'success',
+                  limit: req.user.maxElementsPerPage,
+                  page: matchedDevices.page,
+                  pages: matchedDevices.pages,
+                  min_length_pass_pppoe: matchedConfig.pppoePassLength,
+                  status: status,
+                  single_releases: single_releases,
+                  filter_list: req.body.filter_list,
+                  devices: allDevices,
+                });
+              });
+            }, (error) => {
+              return res.json({
+                success: false,
+                type: 'danger',
+                message: (error.message ? error.message : error),
+              });
             });
           });
         });

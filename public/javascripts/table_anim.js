@@ -547,6 +547,7 @@ $(document).ready(function() {
 
   const buildUpgradeCol = function(device, slaves=[]) {
     let upgradeOpts = '';
+    //console.log(device);
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
       // Skip stock firmwares from being listed

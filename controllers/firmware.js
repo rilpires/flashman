@@ -108,6 +108,39 @@ firmwareController.fetchFirmwares = function(req, res) {
   });
 };
 
+firmwareController.getReleases = async function(filenames, role, is_superuser){
+  let releases = [];
+  let beta_array = [false];
+  let restricted_array = [false];
+  console.log('role firmware', role);
+  console.log('superuser firmware', is_superuser);
+  if (!role && is_superuser){
+    beta_array.push(true);
+    restricted_array.push(true);
+  } else if (role){
+    if (role.grantFirmwareBetaUpgrade){
+      beta_array.push(true);
+    }
+    if (role.grantFirmwareRestrictedUpgrade){
+      restricted_array.push(true);
+    }
+  }
+  try{
+    var firmwares = await Firmware.find({'filename': {$in: filenames},
+      'is_beta': {$in: beta_array},
+      'is_restricted': {$in: restricted_array}}).lean();
+  } catch(err){
+    console.log(err);
+    return releases;
+  }
+  console.log(firmwares);
+  firmwares.forEach(function(firmware){
+    releases.push({id: firmware.release, model: firmware.model.concat(firmware.version),
+    is_beta: firmware.is_beta, is_restricted: firmware.is_restricted});
+  });
+  return releases;
+}
+
 firmwareController.delFirmware = function(req, res) {
   Firmware.find({'_id': {$in: req.body.ids}}, function(err, firmwares) {
     if (err || firmwares.length == 0) {
@@ -306,7 +339,16 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
                     firmwareInfoObj.wan_proto =
                      matchedFirmwareInfo.wan_proto.toUpperCase();
                   }
-                  firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta //consertar, tem que testar se é None
+                  //console.log('controller beta');
+                  //console.log(matchedFirmwareInfo.is_beta);
+                  //console.log('controller restricted');
+                  //console.log(matchedFirmwareInfo.is_restricted);
+                  if (matchedFirmwareInfo.is_beta != undefined){
+                    firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta;
+                  }
+                  if (matchedFirmwareInfo.is_restricted != undefined){
+                    firmwareInfoObj.is_restricted = matchedFirmwareInfo.is_restricted;
+                  }
                 }
                 firmwareNames.push(firmwareInfoObj);
               };
@@ -337,6 +379,7 @@ let addFirmwareFile = function(fw) {
     let wanProto = '';
     let flashboxVer = '';
     let isBeta = false;
+    let isRestricted = false;
     if ('wanproto' in fw) {
       wanProto = fw.wanproto;
     }
@@ -458,7 +501,6 @@ let addFirmwareFile = function(fw) {
 
 firmwareController.addRemoteFirmwareFile = function(req, res) {
   firmwares = JSON.parse(req.body.firmwares);
-  console.log(firmwares);
   let promises = [];
   firmwares.forEach((firmware) => {
     promises.push(addFirmwareFile(firmware));

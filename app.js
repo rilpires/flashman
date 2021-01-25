@@ -25,6 +25,7 @@ let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
+let Firmware = require('./models/firmware');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 
@@ -177,6 +178,30 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         }
         if (saveDevice) {
           devices[idx].save();
+        }
+      }
+    }
+  });
+
+  //check that is_beta and is_restricted are correct
+  Firmware.find({}, function(err, firmwares) {
+    if (!err && firmwares) {
+      for (let idx = 0; idx < firmwares.length; idx++) {
+        let saveFirmware = false;
+        if (firmwares[idx].is_restricted == undefined){
+          firmwares[idx].is_restricted = false;
+          saveFirmware = true;
+        }
+        if (firmwares[idx].is_beta == undefined){
+          firmwares[idx].is_beta = false;
+          saveFirmware = true;
+        }
+        if (firmwares[idx].is_beta == false && firmwares[idx].release.includes('B')){
+          firmwares[idx].is_beta = true;
+          saveFirmware = true;
+        }
+        if (saveFirmware) {
+          firmwares[idx].save();
         }
       }
     }

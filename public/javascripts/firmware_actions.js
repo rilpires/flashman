@@ -3,14 +3,13 @@ const fetchLocalFirmwares = function(firmwaresTable) {
   $.get('/firmware/fetch', function(res) {
     if (res.success) {
       res.firmwares.forEach(function(firmware) {
-        let is_restricted = firmware.is_restricted
-        let display_restricted = ''
+        let is_restricted = firmware.is_restricted;
+        let display_restricted = '';
         if (is_restricted){
-          display_restricted = 'Sim'
+          display_restricted = 'Sim';
         } else{
-          display_restricted = 'Não'
+          display_restricted = 'Não';
         }
-        //console.log(firmware)
         let firmwareRow = $('<tr></tr>').append(
           $('<td></td>').append(
             $('<input></input>').addClass('checkbox')
@@ -102,7 +101,6 @@ $(document).ready(function() {
 
   // Use this format when adding button with AJAX
   $(document).on('click', '.btn-firmware-add', function(event) {
-    let encoded = $('#avail-firmware-table').data('encoded');
     let currBtn = $(this);
 
     currBtn.prop('disabled', true);
