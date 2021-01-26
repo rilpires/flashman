@@ -3,12 +3,12 @@ const fetchLocalFirmwares = function(firmwaresTable) {
   $.get('/firmware/fetch', function(res) {
     if (res.success) {
       res.firmwares.forEach(function(firmware) {
-        let is_restricted = firmware.is_restricted;
-        let display_restricted = '';
-        if (is_restricted){
-          display_restricted = 'Sim';
-        } else{
-          display_restricted = 'Não';
+        let isRestricted = firmware.is_restricted;
+        let displayRestricted = '';
+        if (isRestricted) {
+          displayRestricted = 'Sim';
+        } else {
+          displayRestricted = 'Não';
         }
         let firmwareRow = $('<tr></tr>').append(
           $('<td></td>').append(
@@ -22,7 +22,7 @@ const fetchLocalFirmwares = function(firmwaresTable) {
           $('<td></td>').html(firmware.release),
           $('<td></td>').html(firmware.wan_proto),
           $('<td></td>').html(firmware.flashbox_version),
-          $('<td></td>').html(display_restricted)
+          $('<td></td>').html(displayRestricted),
         );
         firmwaresTable.row.add(firmwareRow).draw();
       });
@@ -110,7 +110,7 @@ $(document).ready(function() {
 
     let fws = [];
 
-    selectedItensAdd.forEach(function(firmware){
+    selectedItensAdd.forEach(function(firmware) {
       var firmwareAttrs = {encoded: firmware.encoded,
                             company: firmware.company,
                             firmwareFile: firmware.firmwareFile,
@@ -141,22 +141,21 @@ $(document).ready(function() {
 
     let list = Array.from($('.checkbox'));
 
-    if (this.hasAttribute('id')){ //é um dos checkboxes de marcar todos ou de deletar
+    if (this.hasAttribute('id')) { // é um dos checkboxes de marcar todos ou de deletar
       let itemId = $(this).prop('id');
-      if (itemId == 'checkall_del'){
-        console.log(this.checked);
-        list.forEach(function(checkbox){
-          if ($(checkbox).data('action') == 'del' && $(checkbox).not(this)){
+      if (itemId == 'checkall_del') {
+        list.forEach(function(checkbox) {
+          if ($(checkbox).data('action') == 'del' && $(checkbox).not(this)) {
             $(checkbox).prop('checked', this.checked).change();
           }
         });
-      }else if (itemId == 'checkall_add'){
-        list.forEach(function(checkbox){
-          if ($(checkbox).data('action') == 'add' && $(checkbox).not(this)){
+      } else if (itemId == 'checkall_add') {
+        list.forEach(function(checkbox) {
+          if ($(checkbox).data('action') == 'add' && $(checkbox).not(this)) {
             $(checkbox).prop('checked', this.checked).change();
           }
         });
-      } else{
+      } else {
         let itemIdx = selectedItensDel.indexOf(itemId);
         if ($(this).is(':checked')) {
           if (itemIdx == -1) {
@@ -168,10 +167,11 @@ $(document).ready(function() {
           }
         }
       }
-    } else{
+    } else {
       let itemAction = $(this).data('action');
-      if (itemAction == 'add'){
-        var firmwareAttrs = {encoded: $('#avail-firmware-table').data('encoded'),
+      if (itemAction == 'add') {
+        var firmwareAttrs = {encoded: $('#avail-firmware-table')
+                              .data('encoded'),
                               company: $(this).data('company'),
                               firmwareFile: $(this).data('firmwarefile'),
                               wanProto: $(this).data('wanproto'),
@@ -179,13 +179,13 @@ $(document).ready(function() {
                               isBeta: $(this).data('release').includes('B')};
         let i = 0;
         let itemIdx = -1;
-        selectedItensAdd.forEach(function(obj){
-          if (obj.firmwareFile == firmwareAttrs.firmwareFile){
+        selectedItensAdd.forEach(function(obj) {
+          if (obj.firmwareFile == firmwareAttrs.firmwareFile) {
             itemIdx = i;
           }
           i ++;
         });
-        //let itemIdx = selectedItensAdd.indexOf(firmwareAttrs);
+        // let itemIdx = selectedItensAdd.indexOf(firmwareAttrs);
         if ($(this).is(':checked')) {
           if (itemIdx == -1) {
             selectedItensAdd.push(firmwareAttrs);
@@ -195,7 +195,7 @@ $(document).ready(function() {
             selectedItensAdd.splice(itemIdx, 1);
           }
         }
-      } else if (itemAction == 'restrict'){
+      } else if (itemAction == 'restrict') {
         let firmwareFile = $(this).data('firmwarefile');
         let itemIdx = selectedItensRestrict.indexOf(firmwareFile);
         if ($(this).is(':checked')) {
@@ -284,8 +284,8 @@ $(document).ready(function() {
                                 .attr('type', 'checkbox')
                                 .attr('text', 'Restringir firmware')
                                 .attr('data-action', 'restrict')
-                                .attr('data-firmwarefile', firmwareInfoObj.uri))
-            )
+                                .attr('data-firmwarefile', firmwareInfoObj.uri)),
+            ),
           );
         });
         $('#avail-firmware-table').attr('data-encoded', res.encoded);

@@ -49,9 +49,9 @@ if (Promise.allSettled === undefined) {
   };
 }
 
-deviceListController.getReleases = async function(role, is_superuser) {
+deviceListController.getReleases = async function(role, isSuperuser) {
   let filenames = fs.readdirSync(imageReleasesDir);
-  let releases = await firmware.getReleases(filenames, role, is_superuser);
+  let releases = await firmware.getReleases(filenames, role, isSuperuser);
   return releases;
 };
 
@@ -669,11 +669,13 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let releases = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-    releases.then(function(releases){
+    let releases = deviceListController.
+    getReleases(req.user.role, req.user.is_superuser);
+    releases.then(function(releases) {
       let enrichDevice = function(device) {
         const model = device.model.replace('N/', '');
-        const devReleases = releases.filter((release) => release.model === model);
+        const devReleases = releases.
+        filter((release) => release.model === model);
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 

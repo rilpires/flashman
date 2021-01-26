@@ -663,7 +663,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
   }
   queryPromise.then((matchedDevices)=>{
     let releasesAvailable = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-    releasesAvailable.then(function(releasesAvailable){
+    releasesAvailable.then(function(releasesAvailable) {
       let modelsNeeded = {};
       let isOnu = {}
       let modelMeshIntersections = [];
@@ -836,7 +836,7 @@ scheduleController.startSchedule = async function(req, res) {
   queryPromise.then(async((matchedDevices)=>{
     // Get valid models for this release
     let releasesAvailable = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-    releasesAvailable.then(function(releasesAvailable){
+    releasesAvailable.then(function(releasesAvailable) {
       let modelsAvailable = releasesAvailable.find((r)=>r.id===release);
       if (!modelsAvailable) {
         return res.status(500).json({

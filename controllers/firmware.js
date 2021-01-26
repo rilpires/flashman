@@ -108,58 +108,60 @@ firmwareController.fetchFirmwares = function(req, res) {
   });
 };
 
-firmwareController.getReleases = async function(filenames, role, is_superuser){
+firmwareController.getReleases = async function(filenames, role, isSuperuser) {
   let releases = [];
-  if (!role && is_superuser){
-    has_beta_grant = true;
-    has_restricted_grant = true;
-  } else if (role){
-    if (role.grantFirmwareBetaUpgrade){
-      has_beta_grant = true;
+  let hasBetaGrant = false;
+  let hasRestrictedGrant = false;
+  if (!role && isSuperuser) {
+    hasBetaGrant = true;
+    hasRestrictedGrant = true;
+  } else if (role) {
+    if (role.grantFirmwareBetaUpgrade) {
+      hasBetaGrant = true;
     }
-    if (role.grantFirmwareRestrictedUpgrade){
-      has_restricted_grant = true;
+    if (role.grantFirmwareRestrictedUpgrade) {
+      hasRestrictedGrant = true;
     }
   }
-  if (has_beta_grant && has_restricted_grant){
-    try{
+  if (hasBetaGrant && hasRestrictedGrant) {
+    try {
       var firmwares = await Firmware.find({'filename': {$in: filenames}});
-    } catch(err){
+    } catch (err) {
       console.log(err);
       return releases;
     }
-  } else if (has_beta_grant && ! has_restricted_grant){
-    try{
+  } else if (hasBetaGrant && ! hasRestrictedGrant) {
+    try {
       var firmwares = await Firmware.find({'filename': {$in: filenames},
       'is_restricted': {$not: true}});
-    } catch(err){
+    } catch (err) {
       console.log(err);
       return releases;
     }
-  } else if (!has_beta_grant && has_restricted_grant){
-    try{
+  } else if (!hasBetaGrant && hasRestrictedGrant) {
+    try {
       var firmwares = await Firmware.find({'filename': {$in: filenames},
       'is_beta': {$not: true}});
-    } catch(err){
+    } catch (err) {
       console.log(err);
       return releases;
     }
-  } else{
-    try{
+  } else {
+    try {
       var firmwares = await Firmware.find({'filename': {$in: filenames},
       'is_restricted': {$not: true}, 'is_beta': {$not: true}});
-    } catch(err){
+    } catch (err) {
       console.log(err);
       return releases;
     }
   }
-  console.log(firmwares);
-  firmwares.forEach(function(firmware){
-    releases.push({id: firmware.release, model: firmware.model.concat(firmware.version),
-    is_beta: firmware.is_beta, is_restricted: firmware.is_restricted});
+  firmwares.forEach(function(firmware) {
+    releases.push({id: firmware.release, model: firmware.model
+      .concat(firmware.version), is_beta: firmware.is_beta,
+      is_restricted: firmware.is_restricted});
   });
   return releases;
-}
+};
 
 firmwareController.delFirmware = function(req, res) {
   Firmware.find({'_id': {$in: req.body.ids}}, function(err, firmwares) {
@@ -359,10 +361,6 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
                     firmwareInfoObj.wan_proto =
                      matchedFirmwareInfo.wan_proto.toUpperCase();
                   }
-                  //console.log('controller beta');
-                  //console.log(matchedFirmwareInfo.is_beta);
-                  //console.log('controller restricted');
-                  //console.log(matchedFirmwareInfo.is_restricted);
                   if (matchedFirmwareInfo.is_beta != undefined){
                     firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta;
                   }
