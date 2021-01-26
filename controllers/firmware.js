@@ -394,22 +394,23 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
 
 let addFirmwareFile = function(fw) {
   return new Promise((resolve, reject)=> {
-    let wanProto = '';
-    let flashboxVer = '';
-    let isBeta = false;
-    let isRestricted = false;
+    let wanproto = '';
+    let flashboxver = '';
+    let isbeta = false;
+    let isrestricted = false;
     if ('wanproto' in fw) {
-      wanProto = fw.wanproto;
+      wanproto = fw.wanproto;
     }
     if ('flashboxversion' in fw) {
-      flashboxVer = fw.flashboxversion;
+      flashboxver = fw.flashboxversion;
     }
     if ('isbeta' in fw) {
-      isBeta = fw.isbeta;
+      isbeta = fw.isbeta;
     }
     if ('isrestricted' in fw) {
-      isRestricted = fw.isrestricted;
+      isrestricted = fw.isrestricted;
     }
+    console.log(fw);
     let responseStream = request
       .get('https://artifactory.anlix.io/artifactory/upgrades/' +
         fw.company + fw.firmwarefile, {
@@ -469,11 +470,11 @@ let addFirmwareFile = function(fw) {
                       model: fnameFields.model,
                       version: fnameFields.version,
                       release: fnameFields.release,
-                      wan_proto: wanProto,
-                      flashbox_version: flashboxVer,
+                      wan_proto: wanproto,
+                      flashbox_version: flashboxver,
                       filename: firmwarefname,
-                      is_beta: isBeta,
-                      is_restricted: isRestricted,
+                      is_beta: isbeta,
+                      is_restricted: isrestricted,
                     });
                   } else {
                     firmware.vendor = fnameFields.vendor;
@@ -481,10 +482,10 @@ let addFirmwareFile = function(fw) {
                     firmware.version = fnameFields.version;
                     firmware.release = fnameFields.release;
                     firmware.filename = firmwarefname;
-                    firmware.wan_proto = wanProto;
-                    firmware.flashbox_version = flashboxVer;
-                    firmware.is_beta = isBeta;
-                    firmware.is_restricted = isRestricted;
+                    firmware.wan_proto = wanproto;
+                    firmware.flashbox_version = flashboxver;
+                    firmware.is_beta = isbeta;
+                    firmware.is_restricted = isrestricted;
                   }
 
                   firmware.save(function(err) {

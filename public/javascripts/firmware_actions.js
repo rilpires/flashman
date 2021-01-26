@@ -113,11 +113,11 @@ $(document).ready(function() {
     selectedItensAdd.forEach(function(firmware) {
       var firmwareAttrs = {encoded: firmware.encoded,
                             company: firmware.company,
-                            firmwareFile: firmware.firmwareFile,
-                            wanProto: firmware.wanProto,
-                            flashboxVer: firmware.flashboxVer,
-                            isBeta: firmware.isBeta,
-                            isRestricted: selectedItensRestrict.includes(firmware.firmwareFile)};
+                            firmwarefile: firmware.firmwarefile,
+                            wanproto: firmware.wanproto,
+                            flashboxVer: firmware.flashboxver,
+                            isbeta: firmware.isbeta,
+                            isrestricted: selectedItensRestrict.includes(firmware.firmwarefile)};
       fws.push(firmwareAttrs);
     });
 
@@ -144,17 +144,18 @@ $(document).ready(function() {
     if (this.hasAttribute('id')) { // é um dos checkboxes de marcar todos ou de deletar
       let itemId = $(this).prop('id');
       if (itemId == 'checkall_del') {
-        list.forEach(function(checkbox) {
-          if ($(checkbox).data('action') == 'del' && $(checkbox).not(this)) {
-            $(checkbox).prop('checked', this.checked).change();
+        for (let idx = 0; idx < list.length; idx++) {
+          if ($(list[idx]).data('action') == 'del' && $(list[idx]).not(this)) {
+            $(list[idx]).prop('checked', this.checked).change();
           }
-        });
+        }
+        console.log('end');
       } else if (itemId == 'checkall_add') {
-        list.forEach(function(checkbox) {
-          if ($(checkbox).data('action') == 'add' && $(checkbox).not(this)) {
-            $(checkbox).prop('checked', this.checked).change();
+        for (let idx = 0; idx < list.length; idx++) {
+          if ($(list[idx]).data('action') == 'add' && $(list[idx]).not(this)) {
+            $(list[idx]).prop('checked', this.checked).change();
           }
-        });
+        }
       } else {
         let itemIdx = selectedItensDel.indexOf(itemId);
         if ($(this).is(':checked')) {
@@ -173,10 +174,10 @@ $(document).ready(function() {
         var firmwareAttrs = {encoded: $('#avail-firmware-table')
                               .data('encoded'),
                               company: $(this).data('company'),
-                              firmwareFile: $(this).data('firmwarefile'),
-                              wanProto: $(this).data('wanproto'),
-                              flashboxVer: $(this).data('flashboxversion'),
-                              isBeta: $(this).data('release').includes('B')};
+                              firmwarefile: $(this).data('firmwarefile'),
+                              wanproto: $(this).data('wanproto'),
+                              flashboxver: $(this).data('flashboxversion'),
+                              isbeta: $(this).data('release').includes('B')};
         let i = 0;
         let itemIdx = -1;
         selectedItensAdd.forEach(function(obj) {
@@ -313,12 +314,11 @@ $(document).ready(function() {
                  '<"row" <"col-6"l>                                  ' +
                  '       <"col-6"p>                                 >',
         });
-        // Initialize custom options on dataTable
         $('.dt-up-firm-table-btns').append(
           $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-            $('<button></button>').addClass('fas fa-check btn-fw-add-icon'),
+            $('<div></div>').addClass('fas fa-plus fa-lg btn-fw-add-icon'),
                   $('<span></span>').html('&nbsp Adicionar')).addClass(
-                  'btn btn-sm my-0 btn-primary btn-firmware-add')
+                  'btn btn-md ml-0 my-md-0 btn-primary btn-firmware-add'),
         );
       } else {
         displayAlertMsg({
