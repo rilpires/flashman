@@ -143,6 +143,33 @@ userController.postRole = function(req, res) {
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
     grantFirmwareRestrictedUpgrade: req.body['grant-firmware-restricted-upgrade'],
   });
+
+  if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
+    console.log('Role conflict error');
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
+      'sem Controle de Atualização de Firmware',
+    });
+  } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
+    console.log('Role conflict error');
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
+      'sem Controle de Atualização de Firmware',
+    });
+  } else if (role.grantMassFirmwareUpgrade && !role.grantFirmwareUpgrade) {
+    console.log('Role conflict error');
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro de conflito de classe: Controle de Atualização de Firmware em Massa '+
+      'sem Controle de Atualização de Firmware',
+    });
+  }
+
   role.save(function(err) {
     if (err) {
       console.log('Error creating role: ' + err);
@@ -312,6 +339,32 @@ userController.editRole = function(req, res) {
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
     role.grantFirmwareRestrictedUpgrade = req.body['grant-firmware-restricted-upgrade'];
+
+    if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
+      console.log('Role conflict error');
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
+        'sem Controle de Atualização de Firmware',
+      });
+    } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
+      console.log('Role conflict error');
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
+        'sem Controle de Atualização de Firmware',
+      });
+    } else if (role.grantMassFirmwareUpgrade && !role.grantFirmwareUpgrade) {
+      console.log('Role conflict error');
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro de conflito de classe: Controle de Atualização de Firmware em Massa '+
+        'sem Controle de Atualização de Firmware',
+      });
+    }
 
     role.save(function(err) {
       if (err) {

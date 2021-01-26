@@ -253,7 +253,7 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Atualizar para firmware restrita'),
+                        .text('Controle de Atualização de Firmware Restrita'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-restricted-upgrade').append(
@@ -555,7 +555,7 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Atualizar para firmware beta'),
+                        .text('Controle de Atualização de Firmware Beta'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-beta-upgrade').append(
