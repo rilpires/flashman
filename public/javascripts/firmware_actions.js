@@ -179,13 +179,15 @@ $(document).ready(function() {
                               isbeta: $(this).data('release').includes('B')};
         let i = 0;
         let itemIdx = -1;
-        selectedItensAdd.forEach(function(obj) {
+        selectedItensAdd.every(function(obj, index) {
           if (obj.firmwarefile === firmwareAttrs.firmwarefile) {
             itemIdx = i;
+            return false;
+          } else {
+            i ++;
+            return true;
           }
-          i ++;
         });
-        // let itemIdx = selectedItensAdd.indexOf(firmwareAttrs);
         if ($(this).is(':checked')) {
           if (itemIdx == -1) {
             selectedItensAdd.push(firmwareAttrs);
