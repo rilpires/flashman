@@ -180,7 +180,7 @@ $(document).ready(function() {
         let i = 0;
         let itemIdx = -1;
         selectedItensAdd.forEach(function(obj) {
-          if (obj.firmwareFile == firmwareAttrs.firmwareFile) {
+          if (obj.firmwarefile === firmwareAttrs.firmwarefile) {
             itemIdx = i;
           }
           i ++;

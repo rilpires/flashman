@@ -410,7 +410,6 @@ let addFirmwareFile = function(fw) {
     if ('isrestricted' in fw) {
       isrestricted = fw.isrestricted;
     }
-    console.log(fw);
     let responseStream = request
       .get('https://artifactory.anlix.io/artifactory/upgrades/' +
         fw.company + fw.firmwarefile, {
@@ -519,7 +518,7 @@ let addFirmwareFile = function(fw) {
 }
 
 firmwareController.addRemoteFirmwareFile = function(req, res) {
-  firmwares = JSON.parse(req.body.firmwares);
+  let firmwares = JSON.parse(req.body.firmwares);
   let promises = [];
   firmwares.forEach((firmware) => {
     promises.push(addFirmwareFile(firmware));
