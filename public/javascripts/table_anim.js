@@ -1558,7 +1558,7 @@ $(document).ready(function() {
               opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
             }
           } else {
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // Assumo que quando está no modo roteador fica desabilitado, como era antes
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // Default é estar habilitado quando muda do modo Roteador para o modo Bridge
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
