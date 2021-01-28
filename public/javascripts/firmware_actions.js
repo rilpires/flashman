@@ -149,7 +149,6 @@ $(document).ready(function() {
             $(list[idx]).prop('checked', this.checked).change();
           }
         }
-        console.log('end');
       } else if (itemId == 'checkall_add') {
         for (let idx = 0; idx < list.length; idx++) {
           if ($(list[idx]).data('action') == 'add' && $(list[idx]).not(this)) {
