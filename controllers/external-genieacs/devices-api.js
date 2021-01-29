@@ -195,7 +195,6 @@ const getZTEFields = function() {
 
 const getNokiaFields = function() {
   let fields = getDefaultFields();
-  fields.common.mac = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_MACAddress';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
@@ -204,6 +203,7 @@ const getNokiaFields = function() {
   fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  return fields;
 };
 
 const getModelFields = function(oui, model) {
