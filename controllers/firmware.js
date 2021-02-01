@@ -109,6 +109,7 @@ firmwareController.fetchFirmwares = function(req, res) {
 };
 
 firmwareController.getReleases = async function(filenames, role, isSuperuser) {
+  let firmwares = null;
   let releases = [];
   let hasBetaGrant = false;
   let hasRestrictedGrant = false;
@@ -123,37 +124,23 @@ firmwareController.getReleases = async function(filenames, role, isSuperuser) {
       hasRestrictedGrant = true;
     }
   }
-  if (hasBetaGrant && hasRestrictedGrant) {
-    try {
-      var firmwares = await Firmware.find({'filename': {$in: filenames}});
-    } catch (err) {
-      console.log(err);
-      return releases;
+  try {
+    if (hasBetaGrant && hasRestrictedGrant) {
+      firmwares = await Firmware.find({'filename': {$in: filenames}});
+    } else if (hasBetaGrant && ! hasRestrictedGrant) {
+      firmwares = await Firmware.find({'filename': {$in: filenames},
+                                       'is_restricted': {$not: true}});
+    } else if (!hasBetaGrant && hasRestrictedGrant) {
+      firmwares = await Firmware.find({'filename': {$in: filenames},
+                                       'is_beta': {$not: true}});
+    } else {
+      firmwares = await Firmware.find({'filename': {$in: filenames},
+                                       'is_restricted': {$not: true},
+                                       'is_beta': {$not: true}});
     }
-  } else if (hasBetaGrant && ! hasRestrictedGrant) {
-    try {
-      var firmwares = await Firmware.find({'filename': {$in: filenames},
-      'is_restricted': {$not: true}});
-    } catch (err) {
-      console.log(err);
-      return releases;
-    }
-  } else if (!hasBetaGrant && hasRestrictedGrant) {
-    try {
-      var firmwares = await Firmware.find({'filename': {$in: filenames},
-      'is_beta': {$not: true}});
-    } catch (err) {
-      console.log(err);
-      return releases;
-    }
-  } else {
-    try {
-      var firmwares = await Firmware.find({'filename': {$in: filenames},
-      'is_restricted': {$not: true}, 'is_beta': {$not: true}});
-    } catch (err) {
-      console.log(err);
-      return releases;
-    }
+  } catch (err) {
+    console.error(err);
+    return releases;
   }
   firmwares.forEach(function(firmware) {
     releases.push({id: firmware.release, model: firmware.model
@@ -332,6 +319,10 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
               for (firmwareEntry of firmwareList) {
                 let fileName = firmwareEntry.uri;
                 let fileNameParts = fileName.split('_');
+                if (fileNameParts.length < 4) {
+                  // Invalid entry
+                  continue;
+                }
                 let vendor = fileNameParts[0].split('/')[1];
                 let model = fileNameParts[1];
                 let version = fileNameParts[2];

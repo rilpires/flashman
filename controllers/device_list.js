@@ -49,6 +49,11 @@ if (Promise.allSettled === undefined) {
   };
 }
 
+const escapeRegExp = function(string) {
+  // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
 deviceListController.getReleases = async function(role, isSuperuser) {
   let filenames = fs.readdirSync(imageReleasesDir);
   let releases = await firmware.getReleases(filenames, role, isSuperuser);
@@ -402,7 +407,8 @@ deviceListController.changeAllUpdates = function(req, res) {
 
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
-  let queryContentNoCase = new RegExp('^' + queryContents[0] + '$', 'i');
+  let queryContentNoCase = new RegExp('^' + escapeRegExp(queryContents[0]) +
+                                      '$', 'i');
   if (queryContents[0].length > 0) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
@@ -432,7 +438,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    online: /^online$/, instavel: /^instavel$/, offline: /^offline$/,
+    'online': /^online$/, 'instavel': /^instavel$/, 'offline': /^offline$/,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
@@ -522,7 +528,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       // Check negation condition
       if (queryContents[idx].startsWith('/excluir')) {
         const filterContent = queryContents[idx].split('/excluir')[1].trim();
-        let queryInput = new RegExp(filterContent, 'i');
+        let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
         for (let property in DeviceModel.schema.paths) {
           if (DeviceModel.schema.paths.hasOwnProperty(property) &&
               DeviceModel.schema.paths[property].instance === 'String') {
@@ -533,7 +539,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         }
         contentCondition = '$and';
       } else {
-        let queryInput = new RegExp(queryContents[idx], 'i');
+        let queryInput = new RegExp(escapeRegExp(queryContents[idx]), 'i');
         for (let property in DeviceModel.schema.paths) {
           if (DeviceModel.schema.paths.hasOwnProperty(property) &&
               DeviceModel.schema.paths[property].instance === 'String') {
