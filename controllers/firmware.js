@@ -277,6 +277,10 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
               for (firmwareEntry of firmwareList) {
                 let fileName = firmwareEntry.uri;
                 let fileNameParts = fileName.split('_');
+                if (fileNameParts.length < 4) {
+                  // Invalid entry
+                  continue;
+                }
                 let vendor = fileNameParts[0].split('/')[1];
                 let model = fileNameParts[1];
                 let version = fileNameParts[2];
