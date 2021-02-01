@@ -249,7 +249,20 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
-                    )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware Beta'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-beta-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -527,19 +540,6 @@ $(document).ready(function() {
                         )
                       )
                     ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Atualização de Firmware Beta'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-beta-upgrade').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    )
                   ),
                 ),
                 $('<div></div>').addClass('row')
