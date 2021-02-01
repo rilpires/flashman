@@ -1,12 +1,13 @@
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
+const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
 const meshHandler = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
+const util = require('./handlers/util');
 
-const nodeSchedule = require('node-schedule');
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 const async = require('asyncawait/async');
@@ -17,7 +18,6 @@ const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
 let mutex = new Mutex();
 let mutexRelease = null;
 let watchdogIntervalID = null;
-let initSchedules = [];
 let scheduleController = {};
 
 const returnStringOrEmptyStr = function(query) {
@@ -295,12 +295,12 @@ const markNextForUpdate = async(function() {
 scheduleController.initialize = async(function(macList, slaveCountPerMac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
-  devices = macList.map((mac)=>{
+  let devices = macList.map((mac)=>{
     return {
       mac: mac.toUpperCase(),
       state: 'update',
       slave_count: slaveCountPerMac[mac],
-      retry_count: 0
+      retry_count: 0,
     };
   });
   try {
@@ -311,7 +311,7 @@ scheduleController.initialize = async(function(macList, slaveCountPerMac) {
         'device_update_schedule.rule.done_devices': [],
       },
       null,
-      null
+      null,
     ));
     for (let i = 0; i < maxDownloads; i++) {
       let result = await(markNextForUpdate());
@@ -620,6 +620,9 @@ scheduleController.getDevicesReleases = async function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
 
+  const userRole = await Role.findOne(
+    {name: util.returnObjOrEmptyStr(req.user.role)});
+
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
@@ -662,17 +665,17 @@ scheduleController.getDevicesReleases = async function(req, res) {
     });
   }
   queryPromise.then((matchedDevices)=>{
-    let releasesAvailable = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-    releasesAvailable.then(function(releasesAvailable) {
+    deviceListController.getReleases(userRole, req.user.is_superuser)
+    .then(function(releasesAvailable) {
       let modelsNeeded = {};
-      let isOnu = {}
+      let isOnu = {};
       let modelMeshIntersections = [];
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-      meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
+      meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices) => {
         matchedDevices = matchedDevices.concat(extraDevices);
         matchedDevices.forEach((device)=>{
           let model = device.model.replace('N/', '');
-          isOnu[model] = device.use_tr069
+          isOnu[model] = device.use_tr069;
           let weight = 1;
           if (device.mesh_master) return; // Ignore mesh slaves
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
@@ -680,7 +683,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
             // intersections so we can couple them
             let meshModels = {};
             device.mesh_slaves.forEach((slave)=>{
-              let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+              let slaveDevice = matchedDevices.find((d) => d._id === slave);
               let slaveModel = slaveDevice.model.replace('N/', '');
               if (model === slaveModel) {
                 weight += 1;
@@ -711,10 +714,12 @@ scheduleController.getDevicesReleases = async function(req, res) {
         let releasesMissing = releasesAvailable.map((release)=>{
           let modelsMissing = [];
           for (let model in modelsNeeded) {
-            if (!release.model.some(
-            (modelAndVersion) => modelAndVersion.includes(model))) {/* if array
-of strings contains model name inside any of its strings, where each string is
- a concatenation of both model name and version. */
+            /* below if is true if array of strings contains model name
+               inside any of its strings, where each string is a
+               concatenation of both model name and version. */
+            if (!release.model.some((modelAndVersion) => {
+              modelAndVersion.includes(model);
+            })) {
               modelsMissing.push({model: model, count: modelsNeeded[model],
               isOnu: isOnu[model]});
             }
@@ -787,12 +792,16 @@ scheduleController.startSchedule = async function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
-  if (!queryContents.includes('flashbox')) queryContents.push('flashbox'); /*
- adds 'flashbox' tag if it doesn't already belongs to 'queryContents'. this
- prevents ONUs devices being included in search. */
+  /* Below line adds 'flashbox' tag if it doesn't already belongs to
+    'queryContents'. this prevents ONUs devices being included in search. */
+  if (!queryContents.includes('flashbox')) queryContents.push('flashbox');
 
   let finalQuery = null;
   let deviceList = [];
+
+  const userRole = await Role.findOne(
+    {name: util.returnObjOrEmptyStr(req.user.role)});
+
   if (!useCsv) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
      queryContents);
@@ -835,9 +844,9 @@ scheduleController.startSchedule = async function(req, res) {
 
   queryPromise.then(async((matchedDevices)=>{
     // Get valid models for this release
-    let releasesAvailable = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-    releasesAvailable.then(function(releasesAvailable) {
-      let modelsAvailable = releasesAvailable.find((r)=>r.id===release);
+    deviceListController.getReleases(userRole, req.user.is_superuser)
+    .then(function(releasesAvailable) {
+      let modelsAvailable = releasesAvailable.find((r) => r.id === release);
       if (!modelsAvailable) {
         return res.status(500).json({
           success: false,
@@ -863,10 +872,11 @@ scheduleController.startSchedule = async function(req, res) {
           if (!valid) return false;
         }
         let model = device.model.replace('N/', '');
+        /* below return is true if array of strings contains model name
+           inside any of its strings, where each string is a concatenation of
+           both model name and version. */
         return modelsAvailable.some(
-        (modelAndVersion) => modelAndVersion.includes(model)); /* true if array
- of strings contains model name inside any of its strings, where each string is
- a concatenation of both model name and version. */
+          (modelAndVersion) => modelAndVersion.includes(model));
       });
       if (matchedDevices.length === 0) {
         return res.status(500).json({
