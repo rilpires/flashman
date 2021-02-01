@@ -113,30 +113,26 @@ firmwareController.getReleases = async function(filenames, role, isSuperuser) {
   let releases = [];
   let hasBetaGrant = false;
   let hasRestrictedGrant = false;
-  if (!role && isSuperuser) {
+  if (isSuperuser) {
     hasBetaGrant = true;
     hasRestrictedGrant = true;
   } else if (role) {
-    if (role.grantFirmwareBetaUpgrade) {
-      hasBetaGrant = true;
-    }
-    if (role.grantFirmwareRestrictedUpgrade) {
-      hasRestrictedGrant = true;
-    }
+    hasBetaGrant = role.grantFirmwareBetaUpgrade;
+    hasRestrictedGrant = role.grantFirmwareRestrictedUpgrade;
   }
   try {
     if (hasBetaGrant && hasRestrictedGrant) {
       firmwares = await Firmware.find({'filename': {$in: filenames}});
-    } else if (hasBetaGrant && ! hasRestrictedGrant) {
+    } else if (hasBetaGrant && !hasRestrictedGrant) {
       firmwares = await Firmware.find({'filename': {$in: filenames},
-                                       'is_restricted': {$not: true}});
+                                       'is_restricted': false});
     } else if (!hasBetaGrant && hasRestrictedGrant) {
       firmwares = await Firmware.find({'filename': {$in: filenames},
-                                       'is_beta': {$not: true}});
+                                       'is_beta': false});
     } else {
       firmwares = await Firmware.find({'filename': {$in: filenames},
-                                       'is_restricted': {$not: true},
-                                       'is_beta': {$not: true}});
+                                       'is_restricted': false,
+                                       'is_beta': false});
     }
   } catch (err) {
     console.error(err);
