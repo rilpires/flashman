@@ -154,7 +154,7 @@ firmwareController.getReleases = async function(filenames, role,
         }
       } else {
         releases.push({id: releaseId,
-                       model: releaseModel,
+                       model: [releaseModel],
                        is_beta: firmware.is_beta,
                        is_restricted: firmware.is_restricted});
         releaseIds.push(releaseId);
