@@ -25,7 +25,6 @@ let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
-let Firmware = require('./models/firmware');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 
