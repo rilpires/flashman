@@ -54,9 +54,12 @@ const escapeRegExp = function(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
-deviceListController.getReleases = async function(role, isSuperuser) {
+deviceListController.getReleases = async function(role,
+                                                  isSuperuser,
+                                                  modelAsArray=false) {
   let filenames = fs.readdirSync(imageReleasesDir);
-  let releases = await firmware.getReleases(filenames, role, isSuperuser);
+  let releases = await firmware.getReleases(filenames, role,
+                                            isSuperuser, modelAsArray);
   return releases;
 };
 
@@ -742,7 +745,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
               status = Object.assign(status, onlineStatus);
               // Filter data using user permissions
               deviceListController.getReleases(userRole,
-                                               req.user.is_superuser)
+                                               req.user.is_superuser, true)
               .then(function(singleReleases) {
                 return res.json({
                 success: true,

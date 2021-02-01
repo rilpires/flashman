@@ -665,7 +665,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
     });
   }
   queryPromise.then((matchedDevices)=>{
-    deviceListController.getReleases(userRole, req.user.is_superuser)
+    deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
       let modelsNeeded = {};
       let isOnu = {};
@@ -844,7 +844,7 @@ scheduleController.startSchedule = async function(req, res) {
 
   queryPromise.then(async((matchedDevices)=>{
     // Get valid models for this release
-    deviceListController.getReleases(userRole, req.user.is_superuser)
+    deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
       let modelsAvailable = releasesAvailable.find((r) => r.id === release);
       if (!modelsAvailable) {

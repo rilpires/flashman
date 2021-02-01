@@ -108,9 +108,12 @@ firmwareController.fetchFirmwares = function(req, res) {
   });
 };
 
-firmwareController.getReleases = async function(filenames, role, isSuperuser) {
+firmwareController.getReleases = async function(filenames, role,
+                                                isSuperuser,
+                                                modelAsArray=false) {
   let firmwares = null;
   let releases = [];
+  let releaseIds = [];
   let hasBetaGrant = false;
   let hasRestrictedGrant = false;
   if (isSuperuser) {
@@ -139,9 +142,29 @@ firmwareController.getReleases = async function(filenames, role, isSuperuser) {
     return releases;
   }
   firmwares.forEach(function(firmware) {
-    releases.push({id: firmware.release, model: firmware.model
-      .concat(firmware.version), is_beta: firmware.is_beta,
-      is_restricted: firmware.is_restricted});
+    let releaseId = firmware.release;
+    let releaseModel = firmware.model.concat(firmware.version);
+    if (modelAsArray) {
+      if (releaseIds.includes(releaseId)) {
+        for (let i = 0; i < releases.length; i++) {
+          if (releases[i].id == releaseId) {
+            releases[i].model.push(releaseModel);
+            break;
+          }
+        }
+      } else {
+        releases.push({id: releaseId,
+                       model: releaseModel,
+                       is_beta: firmware.is_beta,
+                       is_restricted: firmware.is_restricted});
+        releaseIds.push(releaseId);
+      }
+    } else {
+      releases.push({id: releaseId,
+                     model: releaseModel,
+                     is_beta: firmware.is_beta,
+                     is_restricted: firmware.is_restricted});
+    }
   });
   return releases;
 };
