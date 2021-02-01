@@ -182,30 +182,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
     }
   });
-
-  //check that is_beta and is_restricted are correct
-  Firmware.find({}, function(err, firmwares) {
-    if (!err && firmwares) {
-      for (let idx = 0; idx < firmwares.length; idx++) {
-        let saveFirmware = false;
-        if (firmwares[idx].is_restricted == undefined){
-          firmwares[idx].is_restricted = false;
-          saveFirmware = true;
-        }
-        if (firmwares[idx].is_beta == undefined){
-          firmwares[idx].is_beta = false;
-          saveFirmware = true;
-        }
-        if (firmwares[idx].is_beta == false && firmwares[idx].release.includes('B')){
-          firmwares[idx].is_beta = true;
-          saveFirmware = true;
-        }
-        if (saveFirmware) {
-          firmwares[idx].save();
-        }
-      }
-    }
-  });
 }
 
 // Get message configs from control
