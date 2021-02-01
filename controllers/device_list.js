@@ -633,7 +633,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let mqttClientsMap = {};
   for (let i = 0; i < mqttClientsArray.length; i++) {
     mqttClientsMap[mqttClientsArray[i]] = true;
-  };
+  }
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role)
@@ -644,7 +644,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
      queryContents, mqttClientsArray, lastHour, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
-  };
+  }
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -675,13 +675,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let releases = deviceListController.
-    getReleases(req.user.role, req.user.is_superuser);
-    releases.then(function(releases) {
+    deviceListController.getReleases(userRole, req.user.is_superuser)
+    .then(function(releases) {
       let enrichDevice = function(device) {
         const model = device.model.replace('N/', '');
-        const devReleases = releases.
-        filter((release) => release.model === model);
+        const devReleases = releases.filter(
+          (release) => release.model === model);
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 
@@ -694,7 +693,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
           } else if (device.last_contact >= tr069Times.offline) {
           // if we are inside second threshold.
             deviceColor = 'red-text';
-          };
+          }
           // if we are out of these thresholds, we keep the default gray value.
         } else { // default device, flashbox controlled.
           if (isDevOn) {
@@ -731,7 +730,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
         return device;
       };
 
-      meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
+      meshHandlers.enhanceSearchResult(matchedDevices.docs)
+      .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
           Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -741,8 +741,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
               let status = {};
               status = Object.assign(status, onlineStatus);
               // Filter data using user permissions
-              let single_releases = deviceListController.getReleases(req.user.role, req.user.is_superuser);
-              single_releases.then(function(single_releases){
+              deviceListController.getReleases(userRole,
+                                               req.user.is_superuser)
+              .then(function(singleReleases) {
                 return res.json({
                 success: true,
                   type: 'success',
@@ -751,7 +752,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   pages: matchedDevices.pages,
                   min_length_pass_pppoe: matchedConfig.pppoePassLength,
                   status: status,
-                  single_releases: single_releases,
+                  single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
                 });
