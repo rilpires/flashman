@@ -7,7 +7,8 @@
         p.heading.lead
           span.fas.fa-network-wired.fa-lg
           strong &nbsp;Rede local do&nbsp;
-            label(name="lan-devices-hlabel" id="lan-devices-hlabel")
+          strong(name="lan-devices-visual" id="lan-devices-visual")
+          span.d-none(name="lan-devices-hlabel" id="lan-devices-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body.pt-2
