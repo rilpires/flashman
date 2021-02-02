@@ -792,9 +792,6 @@ scheduleController.startSchedule = async function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let timeRestrictions = JSON.parse(req.body.time_restriction);
   let queryContents = req.body.filter_list.split(',');
-  /* Below line adds 'flashbox' tag if it doesn't already belongs to
-    'queryContents'. this prevents ONUs devices being included in search. */
-  if (!queryContents.includes('flashbox')) queryContents.push('flashbox');
 
   let finalQuery = null;
   let deviceList = [];
@@ -859,6 +856,7 @@ scheduleController.startSchedule = async function(req, res) {
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices = matchedDevices.filter((device)=>{
+        if (device.use_tr069) return false; // Discard ONU devices
         if (device.mesh_master) return false; // Discard mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
           // Discard master if any slave has incompatible model
