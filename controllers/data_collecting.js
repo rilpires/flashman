@@ -11,37 +11,46 @@ let dataCollectingController = {};
 
 
 const checkReqField = (req, fieldname, validityFunc) => {
-  if (!req.body.hasOwnProperty(fieldname))
-    return ''+fieldname+' inexistente.'
-  if (!validityFunc(req.body[fieldname]))
-    return ''+fieldname+' inválido.'
-}
-const checkDataColllectingFqdn = req => checkReqField(req, 'data_collecting_fqdn', util.isFqdnValid);
-const checkMac = req => checkReqField(req, 'mac', util.isMacValid);
-const checkDevices = req => {
-  if (!req.body.hasOwnProperty(fieldname))
-    return 'devices inexistente.'
-  let devices = req.body.devices
-  let invalidDevices = {}
-  for (let mac in devices) {
-    devices[mac] = mac.toUpperCase() // transform to uppercase
-    if (!util.isMacValid(mac))
-      invalidDevices[mac] = "invalid mac address"
-    else if (devices[mac].constructor !== Boolean)
-      invalidDevices[mac] = "not boolean value"
+  if (!req.body.hasOwnProperty(fieldname)) {
+    return ''+fieldname+' inexistente.';
   }
-  if (Object.keys(invalidDevices).length > 0)
-    return {invalidDevices: invalidDevices}
-}
+  if (!validityFunc(req.body[fieldname])) {
+    return ''+fieldname+' inválido.';
+  }
+};
+const checkDataColllectingFqdn = (req) => checkReqField(req,
+  'data_collecting_fqdn', util.isFqdnValid);
+const checkMac = (req) => checkReqField(req, 'mac', util.isMacValid);
+const checkDevices = (req) => {
+  if (!req.body.hasOwnProperty(fieldname)) {
+    return 'devices inexistente.';
+  }
+  let devices = req.body.devices;
+  let invalidDevices = {};
+  for (let mac in devices) {
+    devices[mac] = mac.toUpperCase(); // transform to uppercase
+    if (!util.isMacValid(mac)) {
+      invalidDevices[mac] = "invalid mac address";
+    } else if (devices[mac].constructor !== Boolean) {
+      invalidDevices[mac] = "not boolean value";
+    }
+  }
+  if (Object.keys(invalidDevices).length > 0) {
+    return {invalidDevices: invalidDevices};
+  }
+};
 
 // This should check request json and company secret validity (API only)
 const checkBodyAndSecret = function(req) {
-  if (!util.isJSONObject(req.body))
-    return [400, 'Erro no JSON recebido']
-  if (!req.body.hasOwnProperty('secret'))
-    return [403, 'Não foi fornecido um secret para autenticação']
-  if (req.body.secret !== req.app.locals.secret)
-    return [403, 'O secret fornecido não está correto']
+  if (!util.isJSONObject(req.body)) {
+    return [400, 'Erro no JSON recebido'];
+  }
+  if (!req.body.hasOwnProperty('secret')) {
+    return [403, 'Não foi fornecido um secret para autenticação'];
+  }
+  if (req.body.secret !== req.app.locals.secret) {
+    return [403, 'O secret fornecido não está correto'];
+  }
   return [200, ''];
 };
 
@@ -50,28 +59,30 @@ const handleErrors = function(req, extraHandlersArray) {
   let [errorCode, errorObj] = checkBodyAndSecret(req);
   if (errorCode !== 200) {
     res.status(errorCode).json({ message: errorObj });
-    return false // found a problem with request.
+    return false; // found a problem with request.
   }
   if (extraHandlersArray !== undefined 
     && extraHandlersArray.constructor === Array 
     && extraHandlersArray.length > 0) {
-    return executeCustomRequestChecks(req, extraHandlersArray)
+    return executeCustomRequestChecks(req, extraHandlersArray);
   }
-  return true // no problems found.
+  return true; // no problems found.
 };
 
 const executeCustomRequestChecks = function(req, extraHandlersArray) {
-  let errors = [] // accumulating all errors in request, except the ones found in checkBodyAndSecret().
+  // accumulating all errors in request, except the ones found in
+  // checkBodyAndSecret().
+  let errors = [];
   for (let i = 0; i < extraHandlersArray.length; i++) {
-    let error = extraHandlersArray[i](req)
-    if (error !== undefined) errors.push(error)
+    let error = extraHandlersArray[i](req);
+    if (error !== undefined) errors.push(error);
   }
   if (errors.length > 0) {
-    req.status(400).json({message: errors}) // sending errors.
-    return false // found at least one problem with request.
+    req.status(400).json({message: errors}); // sending errors.
+    return false; // found at least one problem with request.
   }
-  return true // no problems found.
-}
+  return true; // no problems found.
+};
 
 // dataCollectingController.activateDevices = async(function(req, res) {
 //   const customHandler = async(function(req) {
@@ -245,68 +256,85 @@ const executeCustomRequestChecks = function(req, extraHandlersArray) {
 //   return [200, ''];
 // });
 
-dataCollectingController.updateDataCollectingServerFqdn = async(function(req, res) {
-  let checks = [checkDataColllectingFqdn]
-  if (!handleErrors(checks)) return
+dataCollectingController.updateDataCollectingServerFqdn =
+async(function(req, res) {
+  let checks = [checkDataColllectingFqdn];
+  if (!handleErrors(checks)) {
+    return;
+  }
 
   // Set license to true and set data collecting fqdn.
   ConfigModel.updateOne({is_default: true}, {
     '$set': {
-      'data_collecting_configs.is_license_active': true, // unused.
-      'data_collecting_configs.is_active': true, // unused.
-      'data_collecting_configs.fqdn': req.body.data_collecting_fqdn, 
+      'data_collecting.is_license_active': true, // unused.
+      'data_collecting.is_active': true, // unused.
+      'data_collecting.fqdn': req.body.data_collecting_fqdn,
+      'data_collecting.latency_is_active': req.body.latency_is_active || false,
     }
-  }, err => {
-    if (err)
+  }, (err) => {
+    if (err) {
       return res.status(500).json({
         message: 'Erro acessando o banco de dados',
-      })
+      });
+    }
     return res.status(200).end();
-  })
+  });
 });
 
-// expects a request body being an object where keys are MACs and values are booleans.
+// expects a request body being an object where keys are MACs and values are
+// booleans.
 dataCollectingController.setLicenses = async(function(req, res) {
-  let checks = [checkDevices]
-  if (!handleErrors(checks)) return
+  let checks = [checkDevices];
+  if (!handleErrors(checks)) {
+    return;
+  }
 
-  let devices = req.body.devices
-  let macs = Object.keys(devices)
+  let devices = req.body.devices;
+  let macs = Object.keys(devices);
 
   // if request had no devices.
-  if (macs.length === 0)
-    return res.status(400).json({message: 'Nenhum dispositivo.'})
+  if (macs.length === 0) {
+    return res.status(400).json({message: 'Nenhum dispositivo.'});
+  }
 
   // check if devices exist in flashman.
-  let existingDevices = {}
-  let existingChangedDevices = {}
-  let unchangedDevices = []
-  await(DeviceModel.find({_id: {$in: macs}}, {_id: 1, 'data_collecting_config.is_active': 1}, (docs, err) => {
-    if (err)
-      return res.status(500).json({message: "Erro ao acessar os dispotivos localmente."})
-
-    // only existing devices will have returned.
-    let device
-    for (let i = 0; i < docs.length; i++) {
-      device = docs[i]
-      existingDevices[device._id] = true
-      if (device.data_collecting_config.is_active !== devices[device._id])
-        existingChangedDevices[device._id] = devices[device._id]
-      else 
-        unchangedDevices.push(device._id)
+  let existingDevices = {};
+  let existingChangedDevices = {};
+  let unchangedDevices = [];
+  await(DeviceModel.find(
+  {_id: {$in: macs}}, {_id: 1, 'data_collecting.is_active': 1},
+  (docs, err) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Erro ao acessar os dispotivos localmente."
+      });
     }
-  }))
+
+    // only existing devices will be returned.
+    let device;
+    for (let i = 0; i < docs.length; i++) {
+      device = docs[i];
+      existingDevices[device._id] = true;
+      if (device.data_collecting.is_active !== devices[device._id]) {
+        existingChangedDevices[device._id] = devices[device._id];
+      } else {
+        unchangedDevices.push(device._id);
+      }
+    };
+  }));
 
   // saving unknown devices to return them with an error message later.
-  let unknownDevices = []
-  for (let mac in devices)
-    if (existingDevices[mac] === undefined)
-      unknownDevices.push(mac)
+  let unknownDevices = [];
+  for (let mac in devices) {
+    if (existingDevices[mac] === undefined) {
+      unknownDevices.push(mac);
+    }
+  }
 
-  let licenseControlBody = {}
-  if (Object.keys(existingChangedDevices).length > 0) { // if there is at least one device.
-    // send devices to license-control
-    try {
+  let licenseControlBody = {};
+  // if there is at least one device.
+  if (Object.keys(existingChangedDevices).length > 0) {
+    try { // send devices to license-control
       licenseControlBody = await(request({
         url: "https://"+process.env.LC_FQDN+"/data_collecting/license/set",
         method: 'POST',
@@ -316,50 +344,63 @@ dataCollectingController.setLicenses = async(function(req, res) {
         },
       }));
     } catch (err) {
-      return res.status(500).json({message: "Erro ao conectar ao controle de licensas."})
+      return res.status(500).json({
+        message: "Erro ao conectar ao controle de licensas."
+      });
     }
 
-    if (licenseControlBody.message !== undefined)
-      return res.status(500).json(licenseControlBody)
+    // errors from license control come in 'message' field.
+    if (licenseControlBody.message !== undefined) {
+      return res.status(500).json(licenseControlBody);
+    }
 
     // separate devices by license state and send MQTT messages.
-    let enabledDevices = []
-    let disabledDevices = []
+    let enabledDevices = [];
+    let disabledDevices = [];
     for (let mac in licenseControlBody.devices) {
       if (licenseControlBody.devices[mac] === true) {
-        enabledDevices.push(mac)
+        enabledDevices.push(mac);
         mqtt.anlixMessageRouterDataCollecting(mac, 'on');
       } else if (licenseControlBody.devices[mac] === false) {
-        disabledDevices.push(mac)
+        disabledDevices.push(mac);
         mqtt.anlixMessageRouterDataCollecting(mac, 'off');
       }
     }
 
     let objs = [
-      {macs: enabledDevices, val: true}, 
+      {macs: enabledDevices, val: true},
       {macs: disabledDevices, val: false}
-    ]
+    ];
     for (let i = 0; i < objs.length; i++) {
-      let obj = objs[i]
+      let obj = objs[i];
       // update locally for enabled devices and then disabled devices.
       await(DeviceModel.update({_id: {$in: obj.macs}}, {
-        '$set': {'data_collecting_config.is_active': obj.val}
-      }, err => {
-        if (err) res.status(500).json({message: 'error ao atualizar licensas no flashman.'})
-      }))
+        '$set': {'data_collecting.is_active': obj.val}
+      }, (err) => {
+        if (err) {
+          res.status(500).json({
+            message: 'error ao atualizar licensas no flashman.'
+          });
+        }
+      }));
     }
   }
 
   // complement with unknown devices.
-  if (unknownDevices.length > 0)
-    for (let i = 0; i < unknownDevices.length; i++)
-      licenseControlBody[unknownDevices[i]] = 'inexistente no flashman.'
-  if (unchangedDevices.length > 0)
-    for (let i = 0; i < unchangedDevices.length; i++)
-      licenseControlBody[unchangedDevices[i]] = devices[unchangedDevices[i]] // repeating received value.
+  if (unknownDevices.length > 0) {
+    for (let i = 0; i < unknownDevices.length; i++) {
+      licenseControlBody[unknownDevices[i]] = 'inexistente no flashman.';
+    }
+  }
+  if (unchangedDevices.length > 0) {
+    for (let i = 0; i < unchangedDevices.length; i++) {
+      // repeating received value.
+      licenseControlBody[unchangedDevices[i]] = devices[unchangedDevices[i]];
+    }
+  }
 
-
-  res.json(licenseControlBody) // devices with problems in license-control will also be returned here.
+  // devices with problems in license-control will also be returned here.
+  res.json(licenseControlBody);
 });
 
 module.exports = dataCollectingController;

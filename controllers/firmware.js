@@ -76,12 +76,14 @@ firmwareController.index = function(req, res) {
       } else {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-        let active = matchedConfig.data_collecting_configs.is_active;
+        let active = matchedConfig.data_collecting.is_active;
           indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.data_collecting_configs.auth_token : '';
-        let license = matchedConfig.data_collecting_configs.is_license_active;
+          // indexContent.measure_token = (active) ?
+          //     matchedConfig.data_collecting.auth_token : '';
+        let license = matchedConfig.data_collecting.is_license_active;
         indexContent.measure_license = license;
+        let latency = matchedConfig.data_collecting.latency_is_active;
+        indexContent.latency_is_active = latency;
       }
       Role.findOne({name: req.user.role}, function(err, role) {
         if (err) {

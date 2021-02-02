@@ -380,6 +380,20 @@ mqtts.anlixMessageRouterDataCollecting = function(id, status) {
   }
 };
 
+mqtts.anlixMessageRouterDataCollectingLatency = function(id, status) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'collectlatencies ' + status,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message MEASURE to '+ id);
+  }
+};
+
 mqtts.anlixMessageRouterPingTest = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {

@@ -674,8 +674,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
           let dataCollectingFqdn = '';
-          if (matchedConfig && matchedConfig.data_collecting_configs.fqdn) {
-            dataCollectingFqdn = matchedConfig.data_collecting_configs.fqdn;
+          if (matchedConfig && matchedConfig.data_collecting.fqdn) {
+            dataCollectingFqdn = matchedConfig.data_collecting.fqdn;
           }
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
@@ -708,10 +708,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
             'data_collecting_fqdn': dataCollectingFqdn,
-            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.is_active),
-            // 'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.measure_psk),
+            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
+            // 'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.data_collecting.measure_psk),
             'zabbix_fqdn': dataCollectingFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting_config.is_active),
+            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1766,7 +1766,7 @@ deviceInfoController.getDataCollectingConfig = async(function(req, res) {
     // Check if data collecting fqdn config is set
     let config = await(Config.findOne({is_default: true}));
     if (!config) throw new {message: 'Config not found'};
-    if (!config.data_collecting_configs.fqdn) {
+    if (!config.data_collecting.fqdn) {
       throw new {message: 'Data Collecting FQDN not configured'};
     }
 
@@ -1777,8 +1777,9 @@ deviceInfoController.getDataCollectingConfig = async(function(req, res) {
     // Reply with data collecting fqdn
     return res.status(200).json({
       success: 1,
-      fqdn: config.data_collecting_configs.fqdn,
-      is_active: device.data_collecting_config.is_active,
+      fqdn: config.data_collecting.fqdn,
+      is_active: device.data_collecting.is_active,
+      latency_is_active: device.data_collecting.latency_is_active;
     });
   } catch (err) {
     console.log(err);

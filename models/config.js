@@ -19,11 +19,12 @@ let configSchema = new mongoose.Schema({
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
-  data_collecting_configs: {
-    is_active: {type: Boolean, default: false},
+  data_collecting: {
     is_license_active: {type: Boolean, default: false},
-    controller_fqdn: String,
+    is_active: {type: Boolean, default: false},
+    latency_is_active: {type: Boolean, default: false},
     fqdn: String,
+    controller_fqdn: String,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
