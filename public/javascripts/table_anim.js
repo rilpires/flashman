@@ -102,12 +102,14 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
         };
-        if (data.type === "genieacs") {
+        if (data.type === 'genieacs') {
           options.title = data.message;
-          options.html = data.message_error.replace(/\n/g, '<br>');
+          let error = data.message_error;
+          if (error) error = error.replace(/\n/g, '<br>');
+          options.html = error;
         } else {
           options.text = data.message;
-        };
+        }
         swal(options).then(function(result) {
           if (result.value) {
             let deleteNotification = function () {
