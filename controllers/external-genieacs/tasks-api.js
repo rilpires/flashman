@@ -192,7 +192,7 @@ const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   return request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/devices/'+deviceid+'/tasks?timeout='+timeout+
+    path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
      (shouldRequestConnection ? '&connection_request' : ''),
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(taskjson)},

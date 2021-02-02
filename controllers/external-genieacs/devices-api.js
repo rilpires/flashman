@@ -195,8 +195,8 @@ const getZTEFields = function() {
 
 const getNokiaFields = function() {
   let fields = getDefaultFields();
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
@@ -220,6 +220,7 @@ const getModelFields = function(oui, model) {
       fields = getZTEFields();
       break;
     case 'AC9CE4-G-140W-C': // Nokia G-140W-C
+    case 'AC9CE4-G%2D140W%2DC': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
