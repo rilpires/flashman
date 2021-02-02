@@ -718,7 +718,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
                inside any of its strings, where each string is a
                concatenation of both model name and version. */
             if (!release.model.some((modelAndVersion) => {
-              modelAndVersion.includes(model);
+              return modelAndVersion.includes(model);
             })) {
               modelsMissing.push({model: model, count: modelsNeeded[model],
               isOnu: isOnu[model]});
