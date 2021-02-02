@@ -1331,13 +1331,17 @@ $(document).ready(function() {
                 '<div class="md-form input-entry">'+
                   '<label class="active">Velocidade Negociada (Mbps)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_speed+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_speed) ? device.wan_negociated_speed : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">Modo de Transmissão (Duplex)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_duplex+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_duplex) ? device.wan_negociated_duplex : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
               '</div>'+
