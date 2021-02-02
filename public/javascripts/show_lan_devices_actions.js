@@ -352,10 +352,10 @@ $(document).ready(function() {
             (device.conn_type == 1 && device.wifi_signal &&
              device.is_online) ?
             $('<div>').addClass('col').append(
-              $('<h6>').text(device.wifi_freq + ' GHz'),
-              $('<h6>').text('Modo: ' + device.wifi_mode),
-              $('<h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
-              $('<h6>').text('SNR: ' + device.wifi_snr + ' dB')
+              $('<h6>').text(((device.wifi_freq) ? device.wifi_freq : 'N/D') + ' GHz'),
+              $('<h6>').text('Modo: ' + ((device.wifi_mode) ? device.wifi_mode : 'N/D')),
+              $('<h6>').text('Sinal: ' + ((device.wifi_signal) ? device.wifi_signal : 'N/D') +' dBm'),
+              $('<h6>').text('SNR: ' + ((device.wifi_snr) ? device.wifi_snr : 'N/D') + ' dB')
               .append(
                 $('<span>').html('&nbsp'),
                 ((device.wifi_snr >= 25) ?
