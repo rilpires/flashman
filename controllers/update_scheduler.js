@@ -842,10 +842,10 @@ scheduleController.startSchedule = async function(req, res) {
     });
   }
 
-  queryPromise.then(async((matchedDevices)=>{
+  queryPromise.then((matchedDevices) => {
     // Get valid models for this release
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
-    .then(function(releasesAvailable) {
+    .then(async function(releasesAvailable) {
       let modelsAvailable = releasesAvailable.find((r) => r.id === release);
       if (!modelsAvailable) {
         return res.status(500).json({
@@ -856,7 +856,7 @@ scheduleController.startSchedule = async function(req, res) {
       modelsAvailable = modelsAvailable.model;
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-      let extraDevices = await(meshHandler.enhanceSearchResult(matchedDevices));
+      let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices = matchedDevices.filter((device)=>{
         if (device.mesh_master) return false; // Discard mesh slaves
@@ -896,7 +896,7 @@ scheduleController.startSchedule = async function(req, res) {
       // Save scheduler configs to database
       let config = null;
       try {
-        config = await(getConfig(false, false));
+        config = await getConfig(false, false);
         config.device_update_schedule.is_active = true;
         config.device_update_schedule.is_aborted = false;
         config.device_update_schedule.used_time_range = hasTimeRestriction;
@@ -930,12 +930,11 @@ scheduleController.startSchedule = async function(req, res) {
               end_time: r.endTime,
             };
           });
-        }
-        else {
+        } else {
           config.device_update_schedule.allowed_time_ranges = [];
         }
         config.device_update_schedule.rule.release = release;
-        await(config.save());
+        await config.save();
       } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -944,7 +943,7 @@ scheduleController.startSchedule = async function(req, res) {
         });
       }
       // Start updating
-      let result = await(scheduleController.initialize(macList, slaveCount));
+      let result = await scheduleController.initialize(macList, slaveCount);
       if (!result.success) {
         return res.status(500).json({
           success: false,
@@ -964,7 +963,7 @@ scheduleController.startSchedule = async function(req, res) {
       success: false,
       message: 'Erro interno na base',
     });
-  }));
+  });
 };
 
 scheduleController.updateScheduleStatus = async(function(req, res) {
