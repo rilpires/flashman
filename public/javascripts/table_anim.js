@@ -1469,7 +1469,7 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Habilitar portas de rede LAN do roteador'+ // Habilitar ao invés de Desabilitar
+                      'Habilitar portas de rede LAN do roteador'+ // Changed to Enable instead Disable
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
@@ -1543,9 +1543,9 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', '');
             if (device.bridge_mode_switch_disable) {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // Caso desabilitado desmarca
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // If disabled, uncheck
             } else {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // Caso habilitado marca
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // If enable, check
             }
             if (device.bridge_mode_ip !== '') {
               opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, '');
@@ -1558,7 +1558,7 @@ $(document).ready(function() {
               opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
             }
           } else {
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // Default é estar habilitado quando muda do modo Roteador para o modo Bridge
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // The default value is Enabled when change from Route mode to Bridge mode
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
@@ -2148,7 +2148,7 @@ $(document).ready(function() {
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
               $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
-              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Trocou para falso pois o texto trocou para uma lógica positiva (Habilitar ao invés de Desabilitar)
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Changed to false because the text in the label changed to a positive logic (Enable instead Disable)
             } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();
