@@ -70,7 +70,7 @@ $(document).ready(function() {
                                    JSON.stringify(apDevices));
           }
 
-          renderSiteSurvey(apDevices, isBridge);
+          renderSiteSurvey(apDevices, isBridge, res.wifi_last_channel, res.wifi_last_channel_5ghz);
         } else {
           displayAlertMsg(res);
         }
@@ -108,17 +108,28 @@ $(document).ready(function() {
     return finalChannel;
   };
 
-  const renderSiteSurvey = function(apDevices, isBridge) {
+  const renderSiteSurvey = function(apDevices, isBridge, wifi2GhzChannel, wifi5GhzChannel) {
     $('#site-survey-placeholder').hide();
     let apDevs2GhzRow = $('#2-ghz-aps');
     let apDevs5GhzRow = $('#5-ghz-aps');
     let countAdded2GhzDevs = 0;
     let countAdded5GhzDevs = 0;
     let apSelectedDevsRow = apDevs2GhzRow;
+    let minScore = 1000;
+    let maxScore = -1;
+    let worst2GhzChannel = 0;
+    let best2GhzChannel = 0;
+    let worst5GhzChannel = 0;
+    let best5GhzChannel = 0;
     let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
     let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
+                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
+    let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
+                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    let channels = Object.keys(ap2GhzCountDict);
 
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
@@ -174,6 +185,27 @@ $(document).ready(function() {
         }
       }
     });
+    for (let [index, [channel, value]] of Object.entries(Object.entries(ap2GhzCountDict))) {
+      index = parseInt(index);
+      if (index == 0) {
+        ap2GhzScoreDict[channel] = 2*value + ap2GhzCountDict[channels[index+1]];
+      } else if (index == channels.length - 1) {
+        ap2GhzScoreDict[channel] = 2*value + ap2GhzCountDict[channels[index-1]];
+      } else {
+        ap2GhzScoreDict[channel] = 2*value + ap2GhzCountDict[channels[index+1]]
+                                           + ap2GhzCountDict[channels[index-1]];
+      }
+    }
+    for (let channel in ap2GhzScoreDict) {
+      if (ap2GhzScoreDict[channel] >= maxScore) {
+        maxScore = ap2GhzScoreDict[channel];
+        worst2GhzChannel = channel;
+      }
+      if (ap2GhzScoreDict[channel] <= minScore) {
+        minScore = ap2GhzScoreDict[channel];
+        best2GhzChannel = channel;
+      }
+    }
     // Prepend summary of APs in each channel
     let summary2Ghz = $();
     summary2Ghz = summary2Ghz.add(
@@ -185,17 +217,43 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     // eslint-disable-next-line guard-for-in
     for (let channel in ap2GhzCountDict) {
-      summary2Ghz = summary2Ghz.add($('<div>')
-      .addClass('col-lg m-1 grey lighten-3').append(
-        $('<div>').addClass('row pt-3 mb-2').append(
-          $('<div>').addClass('col').append(
-            $('<h5>').append(
-              $('<strong>').text('Canal ' + channel + ': '),
-              ap2GhzCountDict[channel],
+      if (channel == best2GhzChannel) {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-lg m-1 green lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel],
+              ),
             ),
           ),
-        ),
-      ));
+        ));
+      } else if (channel == worst2GhzChannel) {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-lg m-1 red lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      } else {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-lg m-1 grey lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      }
       if (channel % 4 == 0) {
         summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
       }
@@ -214,6 +272,27 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     apDevs2GhzRow.prepend(summary2Ghz);
     // 5GHz
+    for (let [index, [channel, value]] of Object.entries(Object.entries(ap5GhzCountDict))) {
+      index = parseInt(index);
+      if (index == 0) {
+        ap5GhzScoreDict[channel] = 2*value + ap5GhzCountDict[channels[index+1]];
+      } else if (index == channels.length - 1) {
+        ap5GhzScoreDict[channel] = 2*value + ap5GhzCountDict[channels[index-1]];
+      } else {
+        ap5GhzScoreDict[channel] = 2*value + ap5GhzCountDict[channels[index+1]]
+                                           + ap5GhzCountDict[channels[index-1]];
+      }
+    }
+    for (let channel in ap5GhzScoreDict) {
+      if (ap5GhzScoreDict[channel] >= maxScore) {
+        maxScore = ap5GhzScoreDict[channel];
+        worst5GhzChannel = channel;
+      }
+      if (ap5GhzScoreDict[channel] <= minScore) {
+        minScore = ap5GhzScoreDict[channel];
+        best5GhzChannel = channel;
+      }
+    }
     let summary5Ghz = $();
     summary5Ghz = summary5Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
@@ -224,17 +303,43 @@ $(document).ready(function() {
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
     // eslint-disable-next-line guard-for-in
     for (let channel in ap5GhzCountDict) {
-      summary5Ghz = summary5Ghz.add($('<div>')
-      .addClass('col-lg m-1 grey lighten-3').append(
-        $('<div>').addClass('row pt-3 mb-2').append(
-          $('<div>').addClass('col').append(
-            $('<h5>').append(
-              $('<strong>').text('Canal ' + channel + ': '),
-              ap5GhzCountDict[channel],
+      if (channel == best5GhzChannel) {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 green lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel],
+              ),
             ),
           ),
-        ),
-      ));
+        ));
+      } else if (channel == worst5GhzChannel) {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 red lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      } else {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 grey lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      }
       if (['48', '64', '161'].includes(channel)) {
         summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
       }

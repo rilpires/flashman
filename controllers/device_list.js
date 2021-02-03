@@ -2232,6 +2232,8 @@ deviceListController.getSiteSurvey = function(req, res) {
     return res.status(200).json({
       success: true,
       ap_devices: enrichedSiteSurvey,
+      wifi_last_channel: matchedDevice.wifi_last_channel,
+      wifi_last_channel_5ghz: matchedDevice.wifi_last_channel_5ghz,
     });
   });
 };
