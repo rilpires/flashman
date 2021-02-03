@@ -336,7 +336,7 @@ dataCollectingController.setLicenses = async(function(req, res) {
   if (Object.keys(existingChangedDevices).length > 0) {
     try { // send devices to license-control
       licenseControlBody = await(request({
-        url: "https://"+process.env.LC_FQDN+"/data_collecting/license/set",
+        url: "https://"+process.env.LC_FQDN+"/data_collecting/set/license",
         method: 'POST',
         json: {
           'devices': existingChangedDevices,
