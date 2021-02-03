@@ -712,6 +712,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             // 'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.data_collecting.measure_psk),
             'zabbix_fqdn': dataCollectingFqdn,
             'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
+            'data_collecting_fqdn': dataCollectingFqdn,
+            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
+            'data_collecting_latency_is_active': util.returnObjOrEmptyStr(
+              matchedDevice.data_collecting.latency_is_active),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
