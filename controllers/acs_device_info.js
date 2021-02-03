@@ -586,9 +586,10 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
+  let totalAssocField = fields.devices.assoc_total;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [hostsField, assocField],
+    parameterNames: [hostsField, assocField, totalAssocField],
   };
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
