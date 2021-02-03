@@ -102,12 +102,14 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
         };
-        if (data.type === "genieacs") {
+        if (data.type === 'genieacs') {
           options.title = data.message;
-          options.html = data.message_error.replace(/\n/g, '<br>');
+          let error = data.message_error;
+          if (error) error = error.replace(/\n/g, '<br>');
+          options.html = error;
         } else {
           options.text = data.message;
-        };
+        }
         swal(options).then(function(result) {
           if (result.value) {
             let deleteNotification = function () {
@@ -526,6 +528,7 @@ $(document).ready(function() {
     rowAttr += ' data-slave-count="' +
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
+    rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
     return rowAttr;
   };
 
@@ -1106,6 +1109,7 @@ $(document).ready(function() {
           let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
+          formAttr += ' data-serialid="'+device.serial_tr069+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
@@ -1329,13 +1333,17 @@ $(document).ready(function() {
                 '<div class="md-form input-entry">'+
                   '<label class="active">Velocidade Negociada (Mbps)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_speed+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_speed) ? device.wan_negociated_speed : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">Modo de Transmissão (Duplex)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_duplex+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_duplex) ? device.wan_negociated_duplex : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
               '</div>'+
