@@ -13,11 +13,12 @@ utilHandlers.isJsonString = function(str) {
   return true;
 };
 
-utilHandlers.returnObjOrEmptyStr = query => 
-  query === undefined ? '' : query
+utilHandlers.returnObjOrFalse = (query) => query === undefined ? false : query;
 
-utilHandlers.returnStrOrEmptyStr = query =>
-    query !== undefined && query.constructor === String ? query : '';
+utilHandlers.returnObjOrEmptyStr = (query) => query === undefined ? '' : query;
+
+utilHandlers.returnStrOrEmptyStr = (query) => query !== undefined &&
+  query.constructor === String ? query : '';
 
 utilHandlers.returnObjOrNum = function(query, num) {
   query = parseInt(query);
