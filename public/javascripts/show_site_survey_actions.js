@@ -116,13 +116,13 @@ $(document).ready(function() {
     let countAdded5GhzDevs = 0;
     let apSelectedDevsRow = apDevs2GhzRow;
     let minScore2Ghz = 1000;
-    let maxScore2Ghz = -1;
+    let maxScore2Ghz = -1000;
     let minScore5Ghz = 1000;
-    let maxScore5Ghz = -1;
+    let maxScore5Ghz = -1000;
     let minSignal2Ghz = 1000;
-    let maxSignal2Ghz = 0;
+    let maxSignal2Ghz = -1000;
     let minSignal5Ghz = 1000;
-    let maxSignal5Ghz = 0;
+    let maxSignal5Ghz = -1000;
     let worst2GhzChannel = 0;
     let best2GhzChannel = 0;
     let worst5GhzChannel = 0;
@@ -131,15 +131,12 @@ $(document).ready(function() {
                            9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
     let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
-    let ap2GhzSignalDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
-                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
-    let ap5GhzSignalDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
-                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
     let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
     let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
-    let channels = Object.keys(ap2GhzCountDict);
+    let channels2Ghz = Object.keys(ap2GhzCountDict);
+    let channels5Ghz = Object.keys(ap5GhzCountDict);
 
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
@@ -154,11 +151,11 @@ $(document).ready(function() {
         if (apChannel in ap2GhzCountDict) {
           ap2GhzCountDict[apChannel] += 1;
         }
-        if (-parseInt(device.signal) >= maxSignal2Ghz) {
-          maxSignal2Ghz = -parseInt(device.signal)
+        if (parseInt(device.signal) >= maxSignal2Ghz) {
+          maxSignal2Ghz = parseInt(device.signal)
         }
-        if (-parseInt(device.signal) <= minSignal2Ghz) {
-          minSignal2Ghz = -parseInt(device.signal)
+        if (parseInt(device.signal) <= minSignal2Ghz) {
+          minSignal2Ghz = parseInt(device.signal)
         }
       } else { // 5.0 GHz
         apSelectedDevsRow = apDevs5GhzRow;
@@ -166,11 +163,11 @@ $(document).ready(function() {
         if (apChannel in ap5GhzCountDict) {
           ap5GhzCountDict[apChannel] += 1;
         }
-        if (-parseInt(device.signal) >= maxSignal5Ghz) {
-          maxSignal5Ghz = -parseInt(device.signal)
+        if (parseInt(device.signal) >= maxSignal5Ghz) {
+          maxSignal5Ghz = parseInt(device.signal)
         }
-        if (-parseInt(device.signal) <= minSignal5Ghz) {
-          minSignal5Ghz = -parseInt(device.signal)
+        if (parseInt(device.signal) <= minSignal5Ghz) {
+          minSignal5Ghz = parseInt(device.signal)
         }
       }
       apSelectedDevsRow.append(
@@ -208,26 +205,50 @@ $(document).ready(function() {
       }
     });
     $.each(apDevices, function(idx, device) {
+      // Skip if not seen for too long
+      if (device.is_old) {
+        return true;
+      }
       let apChannel = calculateChannel(device.freq);
+      let apWidth = device.width;
+      let range = 2;
       let signalValue = 0;
       if (apChannel <= 14) { // 2.4 GHz
-        signalValue = 1 - device.signal/(maxSignal2Ghz - minSignal2Ghz);
+        signalValue = 1 - (device.signal - maxSignal2Ghz)/(minSignal2Ghz - maxSignal2Ghz);
+        if (apWidth == 40) range = 4;
+        let index = channels2Ghz.indexOf(apChannel);
+        for (let i=index-range; i<=index+range; i++) {
+          if (i >= 0 && index < channels2Ghz.length) {
+            let x = 1 + Math.abs(index - i);
+            if (apWidth == 20) {
+              ap2GhzScoreDict[channels2Ghz[i]] += (1/Math.sqrt(4*(x-1) + 1))*signalValue;
+            } else {
+              ap2GhzScoreDict[channels2Ghz[i]] += (1/Math.sqrt(2*(x-1) + 1))*signalValue;
+            }
+          }
+        }
       } else { // 5.0 GHz
-        signalValue = 1 - device.signal/(maxSignal5Ghz - minSignal5Ghz);
+        signalValue = 1 - (device.signal - maxSignal5Ghz)/(minSignal5Ghz - maxSignal5Ghz);
+        if (apWidth == 40) {
+          range = 4;
+        } else if (apWidth == 80) {
+          range = 8;
+        }
+        let index = channels5Ghz.indexOf(apChannel);
+        for (let i=index-range; i<=index+range; i++) {
+          if (i >= 0 && index < channels5Ghz.length) {
+            let x = 1 + Math.abs(index - i);
+            if (apWidth == 20) {
+              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(4*(x-1) + 1))*signalValue;
+            } else if (apWidth == 40) {
+              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(2*(x-1) + 1))*signalValue;
+            } else {
+              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(x))*signalValue;
+            }
+          }
+        }
       }
-      ap2GhzSignalDict[apChannel] += signalValue;
     });
-    for (let [index, [channel, value]] of Object.entries(Object.entries(ap2GhzSignalDict))) {
-      index = parseInt(index);
-      if (index == 0) {
-        ap2GhzScoreDict[channel] = 2*value + ap2GhzSignalDict[channels[index+1]];
-      } else if (index == channels.length - 1) {
-        ap2GhzScoreDict[channel] = 2*value + ap2GhzSignalDict[channels[index-1]];
-      } else {
-        ap2GhzScoreDict[channel] = 2*value + ap2GhzSignalDict[channels[index+1]]
-                                           + ap2GhzSignalDict[channels[index-1]];
-      }
-    }
     for (let channel in ap2GhzScoreDict) {
       if (ap2GhzScoreDict[channel] >= maxScore2Ghz) {
         maxScore2Ghz = ap2GhzScoreDict[channel];
@@ -243,7 +264,8 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais')),
+                                 .text('Ocupação dos canais (atual: ' +
+                                  wifi2GhzChannel + ')')),
         $('<hr>').addClass('mt-1'),
     ));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
@@ -256,7 +278,7 @@ $(document).ready(function() {
             $('<div>').addClass('col').append(
               $('<h5>').append(
                 $('<strong>').text('Canal ' + channel + ': '),
-                ap2GhzCountDict[channel],
+                ap2GhzCountDict[channel] + ' (melhor)',
               ),
             ),
           ),
@@ -268,7 +290,7 @@ $(document).ready(function() {
             $('<div>').addClass('col').append(
               $('<h5>').append(
                 $('<strong>').text('Canal ' + channel + ': '),
-                ap2GhzCountDict[channel],
+                ap2GhzCountDict[channel] + ' (pior)',
               ),
             ),
           ),
@@ -304,17 +326,6 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     apDevs2GhzRow.prepend(summary2Ghz);
     // 5GHz
-    for (let [index, [channel, value]] of Object.entries(Object.entries(ap5GhzSignalDict))) {
-      index = parseInt(index);
-      if (index == 0) {
-        ap5GhzScoreDict[channel] = 2*value + ap5GhzSignalDict[channels[index+1]];
-      } else if (index == channels.length - 1) {
-        ap5GhzScoreDict[channel] = 2*value + ap5GhzSignalDict[channels[index-1]];
-      } else {
-        ap5GhzScoreDict[channel] = 2*value + ap5GhzSignalDict[channels[index+1]]
-                                           + ap5GhzSignalDict[channels[index-1]];
-      }
-    }
     for (let channel in ap5GhzScoreDict) {
       if (ap5GhzScoreDict[channel] >= maxScore5Ghz) {
         maxScore5Ghz = ap5GhzScoreDict[channel];
