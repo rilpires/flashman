@@ -261,6 +261,11 @@ app.use('/javascripts',
     dotfiles: 'ignore',
     maxAge: false,
 }));
+app.use('/bin', // to bundle with webpack
+  serveStatic(path.join(__dirname, 'bin/'), {
+    dotfiles: 'ignore',
+    maxAge: false,
+}));
 app.use('/images',
   serveStatic(path.join(__dirname, 'public/images'), {
     dotfiles: 'ignore',
