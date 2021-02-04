@@ -45,7 +45,7 @@
                 li
                   strong Contrato:
                   span#user-contract
-            .col-md-6
+            #router-data.col-md-6
               h4 Dados do Roteador
               ul.list-inline
                 li
@@ -60,6 +60,21 @@
                 li
                   strong Release:
                   span#router-release
+            #onu-data.col-md-6
+              h4 Dados da ONU
+              ul.list-inline
+                li
+                  strong Serial:
+                  span#onu-serial
+                li
+                  strong Modelo:
+                  span#onu-model
+                li
+                  strong Versão Hardware:
+                  span#onu-hardware
+                li
+                  strong Versão Firmware:
+                  span#onu-firmware
           hr
           #wan-config-none
             h4 A configuração da WAN não foi alterada
@@ -71,25 +86,38 @@
             h4 O diagnóstico do roteador não foi feito
           #diagnostic-done
             h4 Diagnóstico do Roteador
-            ul.list-inline
+            ul#diagnostic-router.list-inline
               li
                 strong Acesso WAN:
-                span#diagnostic-wan
+                span#diagnostic-router-wan
               li
                 strong Acesso IPv4:
-                span#diagnostic-ip4
+                span#diagnostic-router-ip4
               li
                 strong Acesso IPv6:
-                span#diagnostic-ip6
+                span#diagnostic-router-ip6
               li
                 strong Acesso DNS:
-                span#diagnostic-dns
+                span#diagnostic-router-dns
               li
                 strong Licença Anlix:
-                span#diagnostic-anlix
+                span#diagnostic-router-anlix
               li
                 strong Comunicação com Flashman:
-                span#diagnostic-flashman
+                span#diagnostic-router-flashman
+            ul#diagnostic-onu.list-inline
+              li
+                strong Acesso WAN:
+                span#diagnostic-onu-wan
+              li
+                strong Configuração TR-069:
+                span#diagnostic-onu-tr069
+              li
+                strong Licença Anlix:
+                span#diagnostic-onu-anlix
+              li
+                strong Comunicação com Flashman:
+                span#diagnostic-onu-flashman
           hr
           #mesh-config-none
             h4 A configuração da rede Mesh não foi alterada

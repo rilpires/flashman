@@ -36,6 +36,7 @@ let validateEditDevice = function(event) {
 
   // Get form values
   let mac = row.data('deviceid');
+  let isTR069 = row.data('is-tr069');
   let validateWifi = row.data('validateWifi');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
@@ -78,7 +79,7 @@ let validateEditDevice = function(event) {
   let bridgeFixGateway = (useBridgeFixIP) ? $('#edit_opmode_fixip_gateway-' + index.toString()).val() : '';
   let bridgeFixDNS = (useBridgeFixIP) ? $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
   let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
-                              index.toString()+'"]:checked').length > 0;
+                              index.toString()+'"]:checked').length == 0; // Case not marked assign True, pointing that is disabled
   let meshMode = $('#edit_meshMode-' + index.toString()).val();
 
   let slaveCustomConfigs = [];
@@ -137,8 +138,11 @@ let validateEditDevice = function(event) {
   // Validate fields
   if (pppoe && validatePppoe) {
     genericValidate(pppoeUser, validator.validateUser, errors.pppoe_user);
-    genericValidate(pppoePassword, validator.validatePassword,
-                    errors.pppoe_password, pppoePassLength);
+    if (!isTR069 || pppoePassword) {
+      // Do not validate this field if a TR069 device left it blank
+      genericValidate(pppoePassword, validator.validatePassword,
+                      errors.pppoe_password, pppoePassLength);
+    }
   }
   if (validateWifi) {
     genericValidate(ssid, validator.validateSSID, errors.ssid);
@@ -230,7 +234,7 @@ let validateEditDevice = function(event) {
       data.content.lan_netmask = lanNetmask;
     }
     if (validateBridge) {
-      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0;
+      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0; // Keep this logic, because in the fronted was inverted from disable to enable
       data.content.bridgeFixIP = bridgeFixIP;
       data.content.bridgeFixGateway = bridgeFixGateway;
       data.content.bridgeFixDNS = bridgeFixDNS;

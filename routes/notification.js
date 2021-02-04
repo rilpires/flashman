@@ -18,4 +18,9 @@ router.route('/del').post(
   authController.ensureLogin(),
   notificationController.delNotification);
 
+
+router.route('/seen').post(
+  authController.ensureLogin(),
+  notificationController.SeeNotification);
+
 module.exports = router;

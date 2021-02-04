@@ -12,6 +12,8 @@ let firmwareSchema = new Schema({
   wan_proto: {type: String, default: ''},
   flashbox_version: {type: String, default: ''},
   filename: {type: String, required: true},
+  is_beta: {type: Boolean, default: false},
+  is_restricted: {type: Boolean, default: false},
 });
 
 firmwareSchema.plugin(mongoosePaginate);

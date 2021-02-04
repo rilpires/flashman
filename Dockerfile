@@ -1,4 +1,4 @@
-FROM node:8
+FROM node:12
 
 # APP information
 MAINTAINER anlix "guisenges@gmail.com"
@@ -14,6 +14,7 @@ ENV FLM_ADM_USER "admin"
 ENV FLM_ADM_PASS "flashman"
 ENV FLM_CONCURRENT_UPDATES_LIMIT 5
 ENV FLM_WEB_PORT "8000"
+ENV FLM_GENIE_IGNORED true
 
 WORKDIR /app
 

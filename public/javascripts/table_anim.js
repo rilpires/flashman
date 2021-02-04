@@ -94,33 +94,62 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
       let alertLink = alert.parent();
       alertLink.removeClass('d-none');
       alertLink.off('click').click(function(event) {
-        swal({
+        let options = {
           type: 'warning',
-          text: data.message,
           confirmButtonText: data.action_title,
           confirmButtonColor: '#4db6ac',
           cancelButtonText: 'Cancelar',
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
-        }).then(function(result) {
-          alertLink.addClass('d-none');
+        };
+        if (data.type === 'genieacs') {
+          options.title = data.message;
+          let error = data.message_error;
+          if (error) error = error.replace(/\n/g, '<br>');
+          options.html = error;
+        } else {
+          options.text = data.message;
+        }
+        swal(options).then(function(result) {
           if (result.value) {
-            $.ajax({
-              type: 'POST',
-              url: data.action_url,
-              traditional: true,
+            let deleteNotification = function () {
+              $.ajax({type: 'POST', url: '/notification/del',
+                traditional: true, data: {id: data._id}})
+              .done(() => {
+                alertLink.addClass('d-none');
+                fetchNotificationsForDevice(data.target);
+              });
+            };
+            if (data.action_url && data.action_url != '/notification/del') {
+              $.ajax({type: 'POST', url: data.action_url, traditional: true})
+              .done(deleteNotification);
+            } else {
+              deleteNotification();
+            }
+          } else if (result.dismiss !== undefined && !data.seen) {
+            $.ajax({type: 'POST', url: '/notification/seen',
+              traditional: true, data: {id: data._id}})
+            .done(() => {
+              data.seen = true;
             });
-          }
-          $.ajax({
-            type: 'POST',
-            url: '/notification/del',
-            traditional: true,
-            data: {id: data._id},
-          });
+          };
         });
       });
     }
   }
+};
+
+/* fetch notifications for a single device and sets triangle with exclamation
+ mark. */
+let fetchNotificationsForDevice = function(deviceId) {
+  $.ajax({type: 'POST', url: '/notification/fetch', traditional: true,
+    data: {devices: [deviceId]}})
+  .done((response) => {
+    let deviceTableContent = $('#devices-table-content');
+    for (let notification of response.notifications) {
+      changeDeviceStatusOnTable(deviceTableContent, deviceId, notification);
+    };
+  });
 };
 
 $(document).ready(function() {
@@ -428,6 +457,10 @@ $(document).ready(function() {
         },
       });
     }
+    
+    // fetch notifications and set triangle with exclamation mark.
+    fetchNotificationsForDevice(deviceId);
+
     $.ajax({
       url: '/devicelist/uiupdate/' + deviceId,
       type: 'GET',
@@ -491,9 +524,11 @@ $(document).ready(function() {
   const buildRowData = function(device, index) {
     let rowAttr = 'id="' + device._id + '"';
     rowAttr += ' data-index="' + index + '"';
+    rowAttr += ' data-is-tr069="'+device.use_tr069+'"';
     rowAttr += ' data-slave-count="' +
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
+    rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
     return rowAttr;
   };
 
@@ -509,11 +544,11 @@ $(document).ready(function() {
     return '<a class="d-none">'+
       '<div class="fas fa-exclamation-triangle fa-lg orange-text '+
                   'device-alert animated heartBeat infinite">'+
-      '</div>'+
+      '</div>'+'<span>&nbsp;</span><span>&nbsp;</span>'+
     '</a>';
   };
 
-  const buildUpgradeCol = function(device, slaves=[]) {
+  const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -531,7 +566,8 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = '<td>'+
+    let upgradeCol = (isTR069) ? '<td></td>':
+    '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2 btn-cancel-update btn-danger" $NO_UPDATE>'+
           '<div class="fas fa-times"></div>'+
@@ -618,11 +654,11 @@ $(document).ready(function() {
   };
 
   const buildTableRowInfo = function(device, selectable,
-                                     meshSlave=false, index=0) {
+                                     meshSlave=false, index=0, isTR069=false) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave) ? '' :
+    let refreshIcon = (meshSlave || isTR069) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
@@ -635,10 +671,11 @@ $(document).ready(function() {
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
         '$REPLACE_NOTIFICATIONS'+
+        '</div><div class="badge teal $REPLACE_COLOR_CLASS_PILL">$REPLACE_PILL_TEXT</div>'+
       '</td><td class="text-center device-pppoe-user">'+
         device.pppoe_user+
       '</td><td class="text-center">'+
-        device._id+
+        ((device.use_tr069) ? device.serial_tr069 : device._id)+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
       '</td><td class="text-center device-ip">'+
@@ -677,7 +714,7 @@ $(document).ready(function() {
     '</div>';
   };
 
-  const buildAboutTab = function(device, index, mesh=-1) {
+  const buildAboutTab = function(device, index, isTR069, mesh=-1) {
     let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
@@ -695,6 +732,12 @@ $(document).ready(function() {
       resetDateStr = resetDate.toLocaleDateString(navigator.language,
         {hour: '2-digit', minute: '2-digit'});
     }
+    let lastReset = '<div class="md-form input-entry pt-1">'+
+      '<label class="active">Último reset no roteador realizado em</label>'+
+      '<input class="form-control" type="text" '+
+      'disabled value="'+resetDateStr+'">'+
+      '<div class="invalid-feedback"></div>'+
+    '</div>';
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
@@ -723,6 +766,7 @@ $(document).ready(function() {
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (!isTR069 ?
         '<div class="md-form input-group input-entry">'+
           '<label class="active">Status da licença é</label>' +
           '<input class="form-control py-0 added-margin" type="text" '+
@@ -735,7 +779,9 @@ $(document).ready(function() {
             '</button>'+
           '</div>'+
           '<div class="invalid-feedback"></div>'+
-        '</div>'+
+        '</div>':
+        ''
+        )+
         (mesh > -1 ?
           '<div class="md-form">'+
             '<div class="input-group">'+
@@ -787,12 +833,7 @@ $(document).ready(function() {
         )+
       '</div>'+
       '<div class="col-6">'+
-        '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Último reset no roteador realizado em</label>'+
-          '<input class="form-control" type="text" '+
-          'disabled value="'+resetDateStr+'">'+
-          '<div class="invalid-feedback"></div>'+
-        '</div>'+
+        '$REPLACE_RESET_DATE'+
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
@@ -800,7 +841,9 @@ $(document).ready(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
-          '<label class="active">Versão do Flashbox</label>'+
+          '<label class="active">'+
+            ((isTR069) ? 'Versão do Firmware' : 'Versão do Flashbox')+
+          '</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
           'disabled value="'+device.version+'">'+
           '<div class="invalid-feedback"></div>'+
@@ -838,6 +881,11 @@ $(document).ready(function() {
         )+
       '</div>'+
     '</div>';
+    if (!isTR069) {
+      aboutTab = aboutTab.replace('$REPLACE_RESET_DATE', lastReset);
+    } else {
+      aboutTab = aboutTab.replace('$REPLACE_RESET_DATE', '');
+    }
     if (device.external_reference) {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
     } else {
@@ -999,11 +1047,13 @@ $(document).ready(function() {
             // Skip mesh slaves, master draws their form
             continue;
           }
+          let isTR069 = device.use_tr069;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
           let grantWifiPowerHiddenIpv6Box =
+            (device.use_tr069) ? false :
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
@@ -1035,8 +1085,9 @@ $(document).ready(function() {
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
-          let upgradeCol = buildUpgradeCol(device, slaves);
-          let infoRow = buildTableRowInfo(device, isSelectableRow);
+          let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let infoRow = buildTableRowInfo(device, isSelectableRow,
+                                          false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
@@ -1050,12 +1101,21 @@ $(document).ready(function() {
           } else {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
+          if (isTR069) {
+            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'ONU');
+          } else {
+            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+          }
 
           finalHtml += infoRow;
 
           let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
+          formAttr += ' data-serialid="'+device.serial_tr069+'"';
+          formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
@@ -1063,7 +1123,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-ipv6-enabled="'+grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-power="'+(grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-power="'+(!device.use_tr069 && grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
@@ -1149,17 +1209,17 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_LOG_ACTION', '');
           }
-          if (!device.bridge_mode_enabled && grantResetDevices) {
+          if (!isTR069 && !device.bridge_mode_enabled && grantResetDevices) {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', unblockAction);
           } else {
             devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', '');
           }
-          if (!device.bridge_mode_enabled && grantPortForward) {
+          if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', portForwardAction);
           } else {
             devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', '');
           }
-          if (grantPingTest) {
+          if (!isTR069 && grantPingTest) {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', pingTestAction);
           } else {
             devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
@@ -1169,12 +1229,12 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
           }
-          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
             devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
           } else {
             devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
           }
-          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
+          if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
@@ -1184,14 +1244,14 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
           }
-          if (slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
+          if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
           } else {
             devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');
           }
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
-            buildAboutTab(device, index)+
+            buildAboutTab(device, index, isTR069)+
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -1278,13 +1338,17 @@ $(document).ready(function() {
                 '<div class="md-form input-entry">'+
                   '<label class="active">Velocidade Negociada (Mbps)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_speed+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_speed) ? device.wan_negociated_speed : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">Modo de Transmissão (Duplex)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_duplex+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_duplex) ? device.wan_negociated_duplex : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
               '</div>'+
@@ -1309,7 +1373,7 @@ $(document).ready(function() {
           if (device.bridge_mode_enabled) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
-          } else if (!isSuperuser && !grantWanType) {
+          } else if (isTR069 || (!isSuperuser && !grantWanType)) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
           } else {
@@ -1418,7 +1482,7 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Desabilitar portas de rede LAN do roteador'+
+                      'Habilitar portas de rede LAN do roteador'+ // Changed to Enable instead Disable
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
@@ -1492,9 +1556,9 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', '');
             if (device.bridge_mode_switch_disable) {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // If disabled, uncheck
             } else {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', '');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // If enable, check
             }
             if (device.bridge_mode_ip !== '') {
               opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, '');
@@ -1507,7 +1571,7 @@ $(document).ready(function() {
               opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
             }
           } else {
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // The default value is Enabled when change from Route mode to Bridge mode
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
@@ -1563,7 +1627,9 @@ $(document).ready(function() {
                   '<div class="input-group">'+
                     '<label class="active">Senha do Wi-Fi</label>'+
                     '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
-                    'maxlength="64" value="'+device.wifi_password+'" $REPLACE_WIFI_EN></input>'+
+                    'maxlength="64" value="'+
+                    ((device.wifi_password) ? device.wifi_password : '')+ // treat undefined case
+                    '" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
@@ -1575,13 +1641,7 @@ $(document).ready(function() {
                   'Ativar Wi-Fi 2.4GHz'+
                   '</label>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
-                  'Ocultar SSID 2.4GHz'+
-                  '</label>'+
-                '</div>'+
+                '$REPLACE_WIFI2_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1618,23 +1678,38 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Potência do sinal</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
-                      '$REPLACE_WIFI_POWER_EN>'+
-                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
+                '$REPLACE_WIFI2_POWER'+
               '</div>'+
             '</div>'+
           '</div>';
+          let wifi2Hidden = '<div class="custom-control custom-checkbox">'+
+            '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
+            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+            '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
+            'Ocultar SSID 2.4GHz'+
+            '</label>'+
+          '</div>';
+          let wifi2Power = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+          if (!isTR069) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', wifi2Hidden);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', wifi2Power);
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', '');
+          }
           if (!isSuperuser && grantWifiInfo <= 1) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
           } else {
@@ -1749,7 +1824,9 @@ $(document).ready(function() {
                   '<div class="input-group">'+
                     '<label class="active">Senha do Wi-Fi</label>'+
                     '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
-                    'maxlength="64" value="'+device.wifi_password_5ghz+'" $REPLACE_WIFI_EN></input>'+
+                    'maxlength="64" value="'+
+                    ((device.wifi_password_5ghz) ? device.wifi_password_5ghz : '')+ // treat undefined case
+                    '" $REPLACE_WIFI_EN></input>'+
                     '$REPLACE_WIFI_PASS'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
@@ -1761,13 +1838,7 @@ $(document).ready(function() {
                   'Ativar Wi-Fi 5.0GHz'+
                   '</label>'+
                 '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
-                  'Ocultar SSID 5.0GHz'+
-                  '</label>'+
-                '</div>'+
+                '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
                 '<div class="md-form">'+
@@ -1805,23 +1876,38 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Potência do sinal</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
-                      '$REPLACE_WIFI_POWER_EN>'+
-                        '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                        '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                        '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                        '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
+                '$REPLACE_WIFI5_POWER'+
               '</div>'+
             '</div>'+
           '</div>';
+          let wifi5Hidden = '<div class="custom-control custom-checkbox">'+
+            '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
+            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
+            '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
+            'Ocultar SSID 5.0GHz'+
+            '</label>'+
+          '</div>';
+          let wifi5Power = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
+                '$REPLACE_WIFI_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+          if (!isTR069) {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', wifi5Hidden);
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', wifi5Power);
+          } else {
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', '');
+            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', '');
+          }
           if (!isSuperuser && grantWifiInfo <= 1) {
             wifi5Tab = wifi5Tab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
           } else {
@@ -1968,7 +2054,7 @@ $(document).ready(function() {
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
           }
-          if (grantOpmode) {
+          if (!isTR069 && grantOpmode) {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
           } else {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
@@ -2018,6 +2104,8 @@ $(document).ready(function() {
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
               infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
+              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
               if (isSuperuser || grantNotificationPopups) {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
               } else {
@@ -2026,7 +2114,7 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, slaveIdx)+
+                buildAboutTab(slaveDev, index, false, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -2073,7 +2161,7 @@ $(document).ready(function() {
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
               $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
-              $('#edit_opmode_switch_en-' + localIdx)[0].checked = true;
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Changed to false because the text in the label changed to a positive logic (Enable instead Disable)
             } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();

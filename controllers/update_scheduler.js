@@ -1,12 +1,13 @@
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
+const Role = require('../models/role');
 const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
 const meshHandler = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
+const util = require('./handlers/util');
 
-const nodeSchedule = require('node-schedule');
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 const async = require('asyncawait/async');
@@ -17,7 +18,6 @@ const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
 let mutex = new Mutex();
 let mutexRelease = null;
 let watchdogIntervalID = null;
-let initSchedules = [];
 let scheduleController = {};
 
 const returnStringOrEmptyStr = function(query) {
@@ -295,12 +295,12 @@ const markNextForUpdate = async(function() {
 scheduleController.initialize = async(function(macList, slaveCountPerMac) {
   let config = await(getConfig());
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
-  devices = macList.map((mac)=>{
+  let devices = macList.map((mac)=>{
     return {
       mac: mac.toUpperCase(),
       state: 'update',
       slave_count: slaveCountPerMac[mac],
-      retry_count: 0
+      retry_count: 0,
     };
   });
   try {
@@ -311,7 +311,7 @@ scheduleController.initialize = async(function(macList, slaveCountPerMac) {
         'device_update_schedule.rule.done_devices': [],
       },
       null,
-      null
+      null,
     ));
     for (let i = 0; i < maxDownloads; i++) {
       let result = await(markNextForUpdate());
@@ -612,7 +612,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   });
 });
 
-scheduleController.getDevicesReleases = async(function(req, res) {
+scheduleController.getDevicesReleases = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -620,10 +620,14 @@ scheduleController.getDevicesReleases = async(function(req, res) {
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
 
+  const userRole = await Role.findOne(
+    {name: util.returnObjOrEmptyStr(req.user.role)});
+
   let finalQuery = null;
   let deviceList = [];
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -661,65 +665,75 @@ scheduleController.getDevicesReleases = async(function(req, res) {
     });
   }
   queryPromise.then((matchedDevices)=>{
-    let releasesAvailable = deviceListController.getReleases(true);
-    let modelsNeeded = {};
-    let modelMeshIntersections = [];
-    if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-    meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices)=>{
-      matchedDevices = matchedDevices.concat(extraDevices);
-      matchedDevices.forEach((device)=>{
-        let model = device.model.replace('N/', '');
-        let weight = 1;
-        if (device.mesh_master) return; // Ignore mesh slaves
-        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-          // Check for slave model, if it's different than master's, add it to
-          // intersections so we can couple them
-          let meshModels = {};
-          device.mesh_slaves.forEach((slave)=>{
-            let slaveDevice = matchedDevices.find((d)=>d._id===slave);
-            let slaveModel = slaveDevice.model.replace('N/', '');
-            if (model === slaveModel) {
-              weight += 1;
-            } else {
-              // Add slave model to models needed
-              if (slaveModel in modelsNeeded) {
-                modelsNeeded[slaveModel] += 1;
+    deviceListController.getReleases(userRole, req.user.is_superuser, true)
+    .then(function(releasesAvailable) {
+      let modelsNeeded = {};
+      let isOnu = {};
+      let modelMeshIntersections = [];
+      if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+      meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices) => {
+        matchedDevices = matchedDevices.concat(extraDevices);
+        matchedDevices.forEach((device)=>{
+          let model = device.model.replace('N/', '');
+          isOnu[model] = device.use_tr069;
+          let weight = 1;
+          if (device.mesh_master) return; // Ignore mesh slaves
+          if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            // Check for slave model, if it's different than master's, add it to
+            // intersections so we can couple them
+            let meshModels = {};
+            device.mesh_slaves.forEach((slave)=>{
+              let slaveDevice = matchedDevices.find((d) => d._id === slave);
+              let slaveModel = slaveDevice.model.replace('N/', '');
+              if (model === slaveModel) {
+                weight += 1;
               } else {
-                modelsNeeded[slaveModel] = 1;
+                // Add slave model to models needed
+                if (slaveModel in modelsNeeded) {
+                  modelsNeeded[slaveModel] += 1;
+                } else {
+                  modelsNeeded[slaveModel] = 1;
+                }
+                // Add slave model to mesh models
+                if (slaveModel in meshModels) {
+                  meshModels[slaveModel] += 1;
+                } else {
+                  meshModels[slaveModel] = 1;
+                }
               }
-              // Add slave model to mesh models
-              if (slaveModel in meshModels) {
-                meshModels[slaveModel] += 1;
-              } else {
-                meshModels[slaveModel] = 1;
-              }
-            }
-          });
-          meshModels[model] = weight;
-          modelMeshIntersections.push(meshModels);
-        }
-        if (model in modelsNeeded) {
-          modelsNeeded[model] += weight;
-        } else {
-          modelsNeeded[model] = weight;
-        }
-      });
-      let releasesMissing = releasesAvailable.map((release)=>{
-        let modelsMissing = [];
-        for (let model in modelsNeeded) {
-          if (!release.model.includes(model)) {
-            modelsMissing.push({model: model, count: modelsNeeded[model]});
+            });
+            meshModels[model] = weight;
+            modelMeshIntersections.push(meshModels);
           }
-        }
-        return {
-          id: release.id,
-          models: modelsMissing,
-        };
-      });
-      return res.status(200).json({
-        success: true,
-        releases: releasesMissing,
-        intersections: modelMeshIntersections,
+          if (model in modelsNeeded) {
+            modelsNeeded[model] += weight;
+          } else {
+            modelsNeeded[model] = weight;
+          }
+        });
+        let releasesMissing = releasesAvailable.map((release)=>{
+          let modelsMissing = [];
+          for (let model in modelsNeeded) {
+            /* below if is true if array of strings contains model name
+               inside any of its strings, where each string is a
+               concatenation of both model name and version. */
+            if (!release.model.some((modelAndVersion) => {
+              return modelAndVersion.includes(model);
+            })) {
+              modelsMissing.push({model: model, count: modelsNeeded[model],
+              isOnu: isOnu[model]});
+            }
+          }
+          return {
+            id: release.id,
+            models: modelsMissing,
+          };
+        });
+        return res.status(200).json({
+          success: true,
+          releases: releasesMissing,
+          intersections: modelMeshIntersections,
+        });
       });
     });
   }, (err)=>{
@@ -729,7 +743,7 @@ scheduleController.getDevicesReleases = async(function(req, res) {
       message: 'Erro interno na base',
     });
   });
-});
+};
 
 scheduleController.uploadDevicesFile = function(req, res) {
   if (!req.files) {
@@ -767,7 +781,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
   });
 };
 
-scheduleController.startSchedule = async(function(req, res) {
+scheduleController.startSchedule = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
@@ -781,8 +795,13 @@ scheduleController.startSchedule = async(function(req, res) {
 
   let finalQuery = null;
   let deviceList = [];
+
+  const userRole = await Role.findOne(
+    {name: util.returnObjOrEmptyStr(req.user.role)});
+
   if (!useCsv) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
   } else {
     try {
       let csvContents = await(
@@ -820,115 +839,121 @@ scheduleController.startSchedule = async(function(req, res) {
     });
   }
 
-  queryPromise.then(async((matchedDevices)=>{
+  queryPromise.then((matchedDevices) => {
     // Get valid models for this release
-    let releasesAvailable = deviceListController.getReleases(true);
-    let modelsAvailable = releasesAvailable.find((r)=>r.id===release);
-    if (!modelsAvailable) {
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao processar os parâmetros',
-      });
-    }
-    modelsAvailable = modelsAvailable.model;
-    // Filter devices that have a valid model
-    if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-    let extraDevices = await(meshHandler.enhanceSearchResult(matchedDevices));
-    matchedDevices = matchedDevices.concat(extraDevices);
-    matchedDevices = matchedDevices.filter((device)=>{
-      if (device.mesh_master) return false; // Discard mesh slaves
-      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        // Discard master if any slave has incompatible model
-        let valid = true;
-        device.mesh_slaves.forEach((slave)=>{
-          if (!valid) return;
-          let slaveDevice = matchedDevices.find((d)=>d._id===slave);
-          let slaveModel = slaveDevice.model.replace('N/', '');
-          valid = modelsAvailable.includes(slaveModel);
+    deviceListController.getReleases(userRole, req.user.is_superuser, true)
+    .then(async function(releasesAvailable) {
+      let modelsAvailable = releasesAvailable.find((r) => r.id === release);
+      if (!modelsAvailable) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao processar os parâmetros',
         });
-        if (!valid) return false;
       }
-      let model = device.model.replace('N/', '');
-      return modelsAvailable.includes(model);
-    });
-    if (matchedDevices.length === 0) {
-      return res.status(500).json({
-        success: false,
-        message: 'Erro ao processar os parâmetros: nenhum roteador encontrado',
-      });
-    }
-    let slaveCount = {};
-    let macList = matchedDevices.map((device)=>{
-      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        slaveCount[device._id] = device.mesh_slaves.length;
-      } else {
-        slaveCount[device._id] = 0;
-      }
-      return device._id;
-    });
-    // Save scheduler configs to database
-    let config = null;
-    try {
-      config = await(getConfig(false, false));
-      config.device_update_schedule.is_active = true;
-      config.device_update_schedule.is_aborted = false;
-      config.device_update_schedule.used_time_range = hasTimeRestriction;
-      config.device_update_schedule.used_csv = useCsv;
-      config.device_update_schedule.used_search = searchTags;
-      config.device_update_schedule.device_count = macList.length;
-      config.device_update_schedule.date = Date.now();
-      if (hasTimeRestriction) {
-        let hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-        let valid = timeRestrictions.filter((r)=>{
-          let startDay = weekDayStrToInt(r.startWeekday);
-          let endDay = weekDayStrToInt(r.endWeekday);
-          if (startDay < 0) return false;
-          if (endDay < 0) return false;
-          if (!r.startTime.match(hourRegex)) return false;
-          if (!r.endTime.match(hourRegex)) return false;
-          if (startDay === endDay && r.startTime === r.endTime) return false;
-          return true;
-        });
-        if (valid.length === 0) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao processar parâmetros: ranges de tempo inválidos',
+      modelsAvailable = modelsAvailable.model;
+      // Filter devices that have a valid model
+      if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+      let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
+      matchedDevices = matchedDevices.concat(extraDevices);
+      matchedDevices = matchedDevices.filter((device)=>{
+        if (device.use_tr069) return false; // Discard ONU devices
+        if (device.mesh_master) return false; // Discard mesh slaves
+        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+          // Discard master if any slave has incompatible model
+          let valid = true;
+          device.mesh_slaves.forEach((slave)=>{
+            if (!valid) return;
+            let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+            let slaveModel = slaveDevice.model.replace('N/', '');
+            valid = modelsAvailable.includes(slaveModel);
           });
+          if (!valid) return false;
         }
-        config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
-          return {
-            start_day: weekDayStrToInt(r.startWeekday),
-            end_day: weekDayStrToInt(r.endWeekday),
-            start_time: r.startTime,
-            end_time: r.endTime,
-          };
+        let model = device.model.replace('N/', '');
+        /* below return is true if array of strings contains model name
+           inside any of its strings, where each string is a concatenation of
+           both model name and version. */
+        return modelsAvailable.some(
+          (modelAndVersion) => modelAndVersion.includes(model));
+      });
+      if (matchedDevices.length === 0) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao processar os parâmetros: nenhum roteador encontrado',
         });
       }
-      else {
-        config.device_update_schedule.allowed_time_ranges = [];
+      let slaveCount = {};
+      let macList = matchedDevices.map((device)=>{
+        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+          slaveCount[device._id] = device.mesh_slaves.length;
+        } else {
+          slaveCount[device._id] = 0;
+        }
+        return device._id;
+      });
+      // Save scheduler configs to database
+      let config = null;
+      try {
+        config = await getConfig(false, false);
+        config.device_update_schedule.is_active = true;
+        config.device_update_schedule.is_aborted = false;
+        config.device_update_schedule.used_time_range = hasTimeRestriction;
+        config.device_update_schedule.used_csv = useCsv;
+        config.device_update_schedule.used_search = searchTags;
+        config.device_update_schedule.device_count = macList.length;
+        config.device_update_schedule.date = Date.now();
+        if (hasTimeRestriction) {
+          let hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+          let valid = timeRestrictions.filter((r)=>{
+            let startDay = weekDayStrToInt(r.startWeekday);
+            let endDay = weekDayStrToInt(r.endWeekday);
+            if (startDay < 0) return false;
+            if (endDay < 0) return false;
+            if (!r.startTime.match(hourRegex)) return false;
+            if (!r.endTime.match(hourRegex)) return false;
+            if (startDay === endDay && r.startTime === r.endTime) return false;
+            return true;
+          });
+          if (valid.length === 0) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao processar parâmetros: ranges de tempo inválidos',
+            });
+          }
+          config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
+            return {
+              start_day: weekDayStrToInt(r.startWeekday),
+              end_day: weekDayStrToInt(r.endWeekday),
+              start_time: r.startTime,
+              end_time: r.endTime,
+            };
+          });
+        } else {
+          config.device_update_schedule.allowed_time_ranges = [];
+        }
+        config.device_update_schedule.rule.release = release;
+        await config.save();
+      } catch (err) {
+        console.log(err);
+        return res.status(500).json({
+          success: false,
+          message: 'Erro interno na base',
+        });
       }
-      config.device_update_schedule.rule.release = release;
-      await(config.save());
-    } catch (err) {
-      console.log(err);
-      return res.status(500).json({
-        success: false,
-        message: 'Erro interno na base',
+      // Start updating
+      let result = await scheduleController.initialize(macList, slaveCount);
+      if (!result.success) {
+        return res.status(500).json({
+          success: false,
+          message: result.error,
+        });
+      }
+      // Schedule job to init whenever a time range starts
+      config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
       });
-    }
-    // Start updating
-    let result = await(scheduleController.initialize(macList, slaveCount));
-    if (!result.success) {
-      return res.status(500).json({
-        success: false,
-        message: result.error,
+      return res.status(200).json({
+        success: true,
       });
-    }
-    // Schedule job to init whenever a time range starts
-    config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
-    });
-    return res.status(200).json({
-      success: true,
     });
   }, (err)=>{
     console.log(err);
@@ -936,8 +961,8 @@ scheduleController.startSchedule = async(function(req, res) {
       success: false,
       message: 'Erro interno na base',
     });
-  }));
-});
+  });
+};
 
 scheduleController.updateScheduleStatus = async(function(req, res) {
   let config = await(getConfig(true, false));

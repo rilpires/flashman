@@ -5,7 +5,8 @@
         p.heading.lead
           span.fas.fa-chart-line.fa-lg
           strong &nbsp; Tráfego WAN de&nbsp;
-            label(name="wan-bytes-hlabel" id="wan-bytes-hlabel")
+          strong(name="wan-bytes-visual" id="wan-bytes-visual")
+          span.d-none(name="wan-bytes-hlabel" id="wan-bytes-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
