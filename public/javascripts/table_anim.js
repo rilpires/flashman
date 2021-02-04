@@ -766,6 +766,7 @@ $(document).ready(function() {
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (!isTR069 ?
         '<div class="md-form input-group input-entry">'+
           '<label class="active">Status da licença é</label>' +
           '<input class="form-control py-0 added-margin" type="text" '+
@@ -778,7 +779,9 @@ $(document).ready(function() {
             '</button>'+
           '</div>'+
           '<div class="invalid-feedback"></div>'+
-        '</div>'+
+        '</div>':
+        ''
+        )+
         (mesh > -1 ?
           '<div class="md-form">'+
             '<div class="input-group">'+
