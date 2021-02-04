@@ -653,11 +653,11 @@ $(document).ready(function() {
   };
 
   const buildTableRowInfo = function(device, selectable,
-                                     meshSlave=false, index=0) {
+                                     meshSlave=false, index=0, isTR069=false) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave) ? '' :
+    let refreshIcon = (meshSlave || isTR069) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
@@ -1082,7 +1082,8 @@ $(document).ready(function() {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
-          let infoRow = buildTableRowInfo(device, isSelectableRow);
+          let infoRow = buildTableRowInfo(device, isSelectableRow,
+                                          false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
