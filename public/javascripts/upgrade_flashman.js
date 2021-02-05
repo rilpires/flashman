@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+
 let forceUpdateFlashman = function() {
   swal({
     title: 'Atualizando Flashman...',

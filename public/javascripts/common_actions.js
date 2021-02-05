@@ -14,3 +14,5 @@ const secondsTimeSpanToHMS = function(s) {
   s -= m * 60;
   return h + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
 };
+
+export {displayAlertMsg};

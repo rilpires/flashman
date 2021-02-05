@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+
 $(document).ready(function() {
   let socketIoTimeout = false;
   let socketIoResponse = false;

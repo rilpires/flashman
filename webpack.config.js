@@ -16,17 +16,31 @@ module.exports = {
     './public/javascripts/show_wan_bytes_actions.js',
     './public/javascripts/show_lan_devices_actions.js',
     './public/javascripts/show_site_survey_actions.js',
+    './public/javascripts/table_anim.js',
     './public/javascripts/show_upgrade_schedule_actions.js',
     './public/javascripts/update_device.js',
-    './public/javascripts/table_anim.js',
-    './node_modules/jquery-highlight/jquery.highlight.js',
-    './node_modules/pako/dist/pako.js',
-    './node_modules/moment/min/moment.min.js',
-    './node_modules/tempusdominus-bootstrap-4/build/js/tempusdominus-bootstrap-4.min.js',
-    './node_modules/bs-stepper/dist/js/bs-stepper.min.js',
-    './node_modules/apexcharts/dist/apexcharts.min.js',
-    './node_modules/tags-input/tags-input.js',
-    './/node_modules/socket.io-client/dist/socket.io.js',
+    ],
+    changepassword: [
+    './public/javascripts/changepassword_actions.js',
+    ],
+    firmware: [
+    './public/javascripts/firmware_actions.js',
+    ],
+    profile: [
+    './public/javascripts/profile_actions.js',
+    ],
+    showroles: [
+    './public/javascripts/showroles_actions.js',
+    ],
+    showusercertificates: [
+    './public/javascripts/showusercertificates_actions.js',
+    ],
+    showusers: [
+    './public/javascripts/showusers_actions.js',
+    ],
+    layout: [
+    './public/javascripts/common_actions.js',
+    './public/javascripts/upgrade_flashman.js',
     ],
   },
   output: {
@@ -35,7 +49,7 @@ module.exports = {
   },
   module: {
     rules: [
-    /* {
+     {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
@@ -44,15 +58,15 @@ module.exports = {
             presets: ['@babel/preset-env'],
           },
         },
-      },*/
+      },
     ],
   },
-  /* resolve: {
+  resolve: {
     fallback: {
       'util': require.resolve('util/'),
       'path-browserify': require.resolve('path-browserify/'),
       'stream-browserify': require.resolve('stream-browserify/'),
       'assert': require.resolve('assert/'),
     },
-  },*/
+  },
 };
