@@ -137,7 +137,16 @@ $(document).ready(function() {
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
     let channels2Ghz = Object.keys(ap2GhzCountDict);
     let channels5Ghz = Object.keys(ap5GhzCountDict);
-
+    let channels5GhzLower = [];
+    let channels5GhzUpper = [];
+    let dividingChannel = 64;
+    for (let i=0; i< channels5Ghz.length; i++) {
+      if (channels5Ghz[i] <= dividingChannel) {
+        channels5GhzLower.push(channels5Ghz[i]);
+      } else {
+        channels5GhzUpper.push(channels5Ghz[i]);
+      }
+    }
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
       // Skip if not seen for too long
@@ -145,7 +154,7 @@ $(document).ready(function() {
         return true;
       }
       let apChannel = calculateChannel(device.freq);
-      if (apChannel <= 14) { // 2.4 GHz
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         apSelectedDevsRow = apDevs2GhzRow;
         // Count APs
         if (apChannel in ap2GhzCountDict) {
@@ -190,7 +199,7 @@ $(document).ready(function() {
           ),
         ),
       );
-      if (apChannel <= 14) { // 2.4 GHz
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         countAdded2GhzDevs += 1;
         // Line break every 2 columns
         if (countAdded2GhzDevs % 2 == 0) {
@@ -213,18 +222,14 @@ $(document).ready(function() {
       let apWidth = device.width;
       let range = 2;
       let signalValue = 0;
-      if (apChannel <= 14) { // 2.4 GHz
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         signalValue = 1 - (device.signal - maxSignal2Ghz)/(minSignal2Ghz - maxSignal2Ghz);
         if (apWidth == 40) range = 4;
         let index = channels2Ghz.indexOf(apChannel);
         for (let i=index-range; i<=index+range; i++) {
           if (i >= 0 && index < channels2Ghz.length) {
-            let x = 1 + Math.abs(index - i);
-            if (apWidth == 20) {
-              ap2GhzScoreDict[channels2Ghz[i]] += (1/Math.sqrt(4*(x-1) + 1))*signalValue;
-            } else {
-              ap2GhzScoreDict[channels2Ghz[i]] += (1/Math.sqrt(2*(x-1) + 1))*signalValue;
-            }
+            ap2GhzScoreDict[channels2Ghz[i]] +=
+            (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
           }
         }
       } else { // 5.0 GHz
@@ -234,16 +239,20 @@ $(document).ready(function() {
         } else if (apWidth == 80) {
           range = 8;
         }
-        let index = channels5Ghz.indexOf(apChannel);
-        for (let i=index-range; i<=index+range; i++) {
-          if (i >= 0 && index < channels5Ghz.length) {
-            let x = 1 + Math.abs(index - i);
-            if (apWidth == 20) {
-              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(4*(x-1) + 1))*signalValue;
-            } else if (apWidth == 40) {
-              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(2*(x-1) + 1))*signalValue;
-            } else {
-              ap5GhzScoreDict[channels5Ghz[i]] += (1/Math.sqrt(x))*signalValue;
+        if (apChannel <= dividingChannel) {
+          let index = channels5GhzLower.indexOf(apChannel);
+          for (let i=index-range; i<=index+range; i++) {
+            if (i >= 0 && index < channels5GhzLower.length) {
+              ap5GhzScoreDict[channels5GhzLower[i]] +=
+              (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
+            }
+          }
+        } else {
+          let index = channels5GhzUpper.indexOf(apChannel);
+          for (let i=index-range; i<=index+range; i++) {
+            if (i >= 0 && index < channels5GhzUpper.length) {
+              ap5GhzScoreDict[channels5GhzUpper[i]] +=
+              (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
             }
           }
         }
