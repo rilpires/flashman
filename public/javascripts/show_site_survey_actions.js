@@ -282,7 +282,7 @@ $(document).ready(function() {
     for (let channel in ap2GhzCountDict) {
       if (channel == best2GhzChannel) {
         summary2Ghz = summary2Ghz.add($('<div>')
-        .addClass('col-lg m-1 green lighten-3').append(
+        .addClass('col-md-auto m-1 green lighten-3').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
@@ -294,7 +294,7 @@ $(document).ready(function() {
         ));
       } else if (channel == worst2GhzChannel) {
         summary2Ghz = summary2Ghz.add($('<div>')
-        .addClass('col-lg m-1 red lighten-3').append(
+        .addClass('col-md m-1 red lighten-3').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
