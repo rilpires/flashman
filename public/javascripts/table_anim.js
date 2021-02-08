@@ -110,15 +110,23 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
         };
         swal(options).then(function(result) {
           if (result.value) {
-            $.ajax({type: 'POST', url: data.action_url || '/notification/del',
-              traditional: true, data: {id: data._id}})
-            .done(() => {
-              alertLink.addClass('d-none');
-              fetchNotificationsForDevice(data.target);
-            });
+            let deleteNotification = function () {
+              $.ajax({type: 'POST', url: '/notification/del',
+                traditional: true, data: {id: data._id}})
+              .done(() => {
+                alertLink.addClass('d-none');
+                fetchNotificationsForDevice(data.target);
+              });
+            };
+            if (data.action_url && data.action_url != '/notification/del') {
+              $.ajax({type: 'POST', url: data.action_url, traditional: true})
+              .done(deleteNotification);
+            } else {
+              deleteNotification();
+            }
           } else if (result.dismiss !== undefined && !data.seen) {
-            $.ajax({type: 'POST', url: '/notification/seen', traditional: true,
-              data: {id: data._id}})
+            $.ajax({type: 'POST', url: '/notification/seen',
+              traditional: true, data: {id: data._id}})
             .done(() => {
               data.seen = true;
             });

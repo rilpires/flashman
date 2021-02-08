@@ -480,11 +480,11 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
  them. */
       if (mqttClients === undefined) {
         mqttClients = mqtt.getConnectedClients();
-      };
+      }
       let currentTime = Date.now();
       if (lastHour === undefined) {
         lastHour = new Date(currentTime -3600000);
-      };
+      }
       if (tr069Times === undefined) {
         let tr069 = await getOnlyTR069Configs('Error when getting tr069 '
         +'parameters in database to for \'complexSearchDeviceQuery\'.');
@@ -496,7 +496,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           offline: new Date(currentTime - (tr069.inform_interval*
            tr069.offline_threshold)),
         };
-      };
+      }
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -505,7 +505,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       if (statusTags['online'].test(tag)) {
         flashbox = {
           _id: {$in: mqttClients},
-          last_contact: {$gte: lastHour},
         };
         tr069 = {last_contact: {$gte: tr069Times.recovery}};
       } else if (statusTags['instavel'].test(tag)) {
@@ -532,7 +531,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         tr069 = {last_contact:
           {$lt: new Date(tr069Times.offline - hourThreshold)},
         };
-      };
+      }
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
       tr069.use_tr069 = true; // this will select only tr069.
       query.$or = [flashbox, tr069]; // select either one.
@@ -667,7 +666,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
-     queryContents, mqttClientsArray, currentTime, tr069Times);
+     queryContents, mqttClientsArray, lastHour, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   };
