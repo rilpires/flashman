@@ -1,6 +1,6 @@
 import {displayAlertMsg} from './common_actions.js';
 
-const check = function(input) {
+window.check = function(input) {
   if (input.value != document.getElementById('password').value) {
     input.setCustomValidity('As senhas estão diferentes');
   } else {
