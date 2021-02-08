@@ -523,13 +523,13 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
               rssiKey = rssiKey.replace('*', interface).replace('*', i);
-              device.rssi = getFromNestedKey(data, rssiKey);
+              device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
               snrKey = snrKey.replace('*', interface).replace('*', i);
-              device.snr = getFromNestedKey(data, snrKey);
+              device.snr = getFromNestedKey(data, snrKey+'._value');
             }
           }
         });
@@ -586,9 +586,10 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
+  let totalAssocField = fields.devices.assoc_total;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [hostsField, assocField],
+    parameterNames: [hostsField, assocField, totalAssocField],
   };
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;

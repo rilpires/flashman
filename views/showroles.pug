@@ -57,14 +57,9 @@ block content
                   .md-selectfield.form-control.my-0
                     label Controle de Atualização de Firmware
                     select.browser-default.md-select(name="grant-firmware-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware em Massa
-                    select.browser-default.md-select(name="grant-mass-firmware-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value=0) Bloquear
+                      option(value=1) Permitir
+                      option(value=2) Permitir em massa
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Controle do Tipo de Conexão
@@ -121,6 +116,18 @@ block content
                       option(value=0) Não permitir busca e visualização
                       option(value=1) Busca simples
                       option(value=2) Busca completa com filtros especiais
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware Beta
+                    select.browser-default.md-select(name="grant-firmware-beta-upgrade")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware Restrita
+                    select.browser-default.md-select(name="grant-firmware-restricted-upgrade")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -132,14 +139,9 @@ block content
                   .md-selectfield.form-control.my-0
                     label Remoção de Registro de Roteador
                     select.browser-default.md-select(name="grant-device-removal")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Remoção de Registro de Roteadores em Massa
-                    select.browser-default.md-select(name="grant-device-mass-removal")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value=0) Bloquear
+                      option(value=1) Permitir
+                      option(value=2) Permitir em massa
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Adição de Registro de Roteador

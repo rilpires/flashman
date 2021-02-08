@@ -5,6 +5,7 @@ const User = require('../models/user');
 const DeviceVersion = require('../models/device_version');
 const Config = require('../models/config');
 const Role = require('../models/role');
+const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
@@ -48,43 +49,17 @@ if (Promise.allSettled === undefined) {
   };
 }
 
-deviceListController.getReleases = function(modelAsArray=false) {
-  let releases = [];
-  let releaseIds = [];
-  fs.readdirSync(imageReleasesDir).forEach((filename) => {
-    // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.bin
-    let fnameSubStrings = filename.split('_');
-    let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
-    let releaseSubStringsRaw = releaseSubStringRaw.split('.');
-    if (releaseSubStringsRaw[1] == 'md5') {
-      // Skip MD5 hash files
-      return;
-    }
-    let releaseId = releaseSubStringsRaw[0];
-    let releaseModel = fnameSubStrings[1];
-    if (fnameSubStrings.length == 4) {
-      releaseModel += fnameSubStrings[2];
-    }
-    // Always make comparison using upper case
-    releaseModel = releaseModel.toUpperCase();
-    if (modelAsArray) {
-      if (releaseIds.includes(releaseId)) {
-        for (let i=0; i < releases.length; i++) {
-          if (releases[i].id == releaseId) {
-            releases[i].model.push(releaseModel);
-            break;
-          }
-        }
-      } else {
-        let release = {id: releaseId, model: [releaseModel]};
-        releases.push(release);
-        releaseIds.push(releaseId);
-      }
-    } else {
-      let release = {id: releaseId, model: releaseModel};
-      releases.push(release);
-    }
-  });
+const escapeRegExp = function(string) {
+  // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+deviceListController.getReleases = async function(role,
+                                                  isSuperuser,
+                                                  modelAsArray=false) {
+  let filenames = fs.readdirSync(imageReleasesDir);
+  let releases = await firmware.getReleases(filenames, role,
+                                            isSuperuser, modelAsArray);
   return releases;
 };
 
@@ -433,7 +408,8 @@ deviceListController.changeAllUpdates = function(req, res) {
 
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
-  let queryContentNoCase = new RegExp('^' + queryContents[0] + '$', 'i');
+  let queryContentNoCase = new RegExp('^' + escapeRegExp(queryContents[0]) +
+                                      '$', 'i');
   if (queryContents[0].length > 0) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
@@ -463,7 +439,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    online: /^online$/, instavel: /^instavel$/, offline: /^offline$/,
+    'online': /^online$/, 'instavel': /^instavel$/, 'offline': /^offline$/,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
@@ -553,7 +529,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       // Check negation condition
       if (queryContents[idx].startsWith('/excluir')) {
         const filterContent = queryContents[idx].split('/excluir')[1].trim();
-        let queryInput = new RegExp(filterContent, 'i');
+        let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
         for (let property in DeviceModel.schema.paths) {
           if (DeviceModel.schema.paths.hasOwnProperty(property) &&
               DeviceModel.schema.paths[property].instance === 'String') {
@@ -564,7 +540,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         }
         contentCondition = '$and';
       } else {
-        let queryInput = new RegExp(queryContents[idx], 'i');
+        let queryInput = new RegExp(escapeRegExp(queryContents[idx]), 'i');
         for (let property in DeviceModel.schema.paths) {
           if (DeviceModel.schema.paths.hasOwnProperty(property) &&
               DeviceModel.schema.paths[property].instance === 'String') {
@@ -658,7 +634,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let mqttClientsMap = {};
   for (let i = 0; i < mqttClientsArray.length; i++) {
     mqttClientsMap[mqttClientsArray[i]] = true;
-  };
+  }
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role)
@@ -669,7 +645,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
      queryContents, mqttClientsArray, lastHour, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
-  };
+  }
 
   if (req.query.page) {
     reqPage = parseInt(req.query.page);
@@ -700,87 +676,94 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let releases = deviceListController.getReleases();
+    deviceListController.getReleases(userRole, req.user.is_superuser)
+    .then(function(releases) {
+      let enrichDevice = function(device) {
+        const model = device.model.replace('N/', '');
+        const devReleases = releases.filter(
+          (release) => release.model === model);
+        const isDevOn = mqttClientsMap[device._id.toUpperCase()];
+        device.releases = devReleases;
 
-    let enrichDevice = function(device) {
-      const model = device.model.replace('N/', '');
-      const devReleases = releases.filter((release) => release.model === model);
-      const isDevOn = mqttClientsMap[device._id.toUpperCase()];
-      device.releases = devReleases;
-
-      // Status color
-      let deviceColor = 'grey-text';
-      if (device.use_tr069) { // if this device uses tr069 to be controlled.
-        if (device.last_contact >= tr069Times.recovery) {
-        // if we are inside first threshold.
-          deviceColor = 'green-text';
-        } else if (device.last_contact >= tr069Times.offline) {
-        // if we are inside second threshold.
-          deviceColor = 'red-text';
-        };
-        // if we are out of these thresholds, we keep the default gray value.
-      } else { // default device, flashbox controlled.
-        if (isDevOn) {
-          deviceColor = 'green-text';
-        } else if (device.last_contact.getTime() >= lastHour.getTime()) {
-          deviceColor = 'red-text';
+        // Status color
+        let deviceColor = 'grey-text';
+        if (device.use_tr069) { // if this device uses tr069 to be controlled.
+          if (device.last_contact >= tr069Times.recovery) {
+          // if we are inside first threshold.
+            deviceColor = 'green-text';
+          } else if (device.last_contact >= tr069Times.offline) {
+          // if we are inside second threshold.
+            deviceColor = 'red-text';
+          }
+          // if we are out of these thresholds, we keep the default gray value.
+        } else { // default device, flashbox controlled.
+          if (isDevOn) {
+            deviceColor = 'green-text';
+          } else if (device.last_contact.getTime() >= lastHour.getTime()) {
+            deviceColor = 'red-text';
+          }
         }
-      }
-      device.status_color = deviceColor;
+        device.status_color = deviceColor;
 
-      // Device permissions
-      device.permissions = DeviceVersion.findByVersion(
-        device.version,
-        device.wifi_is_5ghz_capable,
-        device.model,
-      );
+        // Device permissions
+        device.permissions = DeviceVersion.findByVersion(
+          device.version,
+          device.wifi_is_5ghz_capable,
+          device.model,
+        );
 
-      // Fill default value if wi-fi state does not exist
-      if (device.wifi_state === undefined) {
-        device.wifi_state = 1;
-        device.wifi_state_5ghz = 1;
-      }
-      if (device.wifi_power === undefined) {
-        device.wifi_power = 100;
-        device.wifi_power_5ghz = 100;
-      }
-      if (device.wifi_hidden === undefined) {
-        device.wifi_hidden = 0;
-        device.wifi_hidden_5ghz = 0;
-      }
-      if (device.ipv6_enabled === undefined) {
-        device.ipv6_enabled = 0;
-      }
-      return device;
-    };
+        // Fill default value if wi-fi state does not exist
+        if (device.wifi_state === undefined) {
+          device.wifi_state = 1;
+          device.wifi_state_5ghz = 1;
+        }
+        if (device.wifi_power === undefined) {
+          device.wifi_power = 100;
+          device.wifi_power_5ghz = 100;
+        }
+        if (device.wifi_hidden === undefined) {
+          device.wifi_hidden = 0;
+          device.wifi_hidden_5ghz = 0;
+        }
+        if (device.ipv6_enabled === undefined) {
+          device.ipv6_enabled = 0;
+        }
+        return device;
+      };
 
-    meshHandlers.enhanceSearchResult(matchedDevices.docs).then(function(extra) {
-      let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
-      User.findOne({name: req.user.name}, function(err, user) {
-        Config.findOne({is_default: true}, function(err, matchedConfig) {
-          getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
-          .then((onlineStatus) => {
-            // Counters
-            let status = {};
-            status = Object.assign(status, onlineStatus);
-            // Filter data using user permissions
-            return res.json({
-              success: true,
-              type: 'success',
-              limit: req.user.maxElementsPerPage,
-              page: matchedDevices.page,
-              pages: matchedDevices.pages,
-              min_length_pass_pppoe: matchedConfig.pppoePassLength,
-              status: status,
-              single_releases: deviceListController.getReleases(true),
-              filter_list: req.body.filter_list,
-              devices: allDevices,
-            });
-          }, (error) => {
-            return res.json({
-              success: false,
-              type: 'danger',
-              message: (error.message ? error.message : error),
+      meshHandlers.enhanceSearchResult(matchedDevices.docs)
+      .then(function(extra) {
+        let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
+        User.findOne({name: req.user.name}, function(err, user) {
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
+            .then((onlineStatus) => {
+              // Counters
+              let status = {};
+              status = Object.assign(status, onlineStatus);
+              // Filter data using user permissions
+              deviceListController.getReleases(userRole,
+                                               req.user.is_superuser, true)
+              .then(function(singleReleases) {
+                return res.json({
+                success: true,
+                  type: 'success',
+                  limit: req.user.maxElementsPerPage,
+                  page: matchedDevices.page,
+                  pages: matchedDevices.pages,
+                  min_length_pass_pppoe: matchedConfig.pppoePassLength,
+                  status: status,
+                  single_releases: singleReleases,
+                  filter_list: req.body.filter_list,
+                  devices: allDevices,
+                });
+              });
+            }, (error) => {
+              return res.json({
+                success: false,
+                type: 'danger',
+                message: (error.message ? error.message : error),
+              });
             });
           });
         });
@@ -2427,69 +2410,74 @@ deviceListController.updateLicenseStatus = function(req, res) {
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');
 
-  const userRole = await Role.findOne({
-    name: util.returnObjOrEmptyStr(req.user.role)});
-  let finalQuery;
-  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
-    finalQuery = deviceListController.complexSearchDeviceQuery(queryContents);
-  } else {
-    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
-  }
-
-  let devices = {};
   try {
+    const userRole = await Role.findOne({
+      name: util.returnObjOrEmptyStr(req.user.role)});
+    let finalQuery;
+    if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+      finalQuery = await deviceListController.complexSearchDeviceQuery(
+        queryContents);
+    } else {
+      finalQuery = deviceListController.simpleSearchDeviceQuery(
+        queryContents);
+    }
+
+    let devices = {};
     devices = await DeviceModel.find(finalQuery).lean();
+
+    let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
+                           true : false);
+    const csvFields = [
+      {label: 'Endereço MAC', value: '_id'},
+      {label: 'Identificador Serial', value: 'serial_tr069'},
+      {label: 'Tipo de Conexão WAN', value: 'connection_type'},
+      {label: 'Usuário PPPoE', value: 'pppoe_user'},
+    ];
+    if (exportPasswords) {
+      csvFields.push({label: 'Senha PPPoE', value: 'pppoe_password'});
+    }
+    csvFields.push(
+      {label: 'Subrede LAN', value: 'lan_subnet'},
+      {label: 'Máscara LAN', value: 'lan_netmask'},
+      {label: 'Wi-Fi SSID', value: 'wifi_ssid'},
+    );
+    if (exportPasswords) {
+      csvFields.push({label: 'Wi-Fi Senha', value: 'wifi_password'});
+    }
+    csvFields.push(
+      {label: 'Wi-Fi Canal', value: 'wifi_channel'},
+      {label: 'Largura de banda', value: 'wifi_band'},
+      {label: 'Modo de operação', value: 'wifi_mode'},
+      {label: 'Wi-Fi SSID 5GHz', value: 'wifi_ssid_5ghz'},
+    );
+    if (exportPasswords) {
+      csvFields.push({label: 'Wi-Fi Senha 5GHz', value: 'wifi_password_5ghz'});
+    }
+    csvFields.push(
+      {label: 'Wi-Fi Canal 5GHz', value: 'wifi_channel_5ghz'},
+      {label: 'Largura de banda 5GHz', value: 'wifi_band_5ghz'},
+      {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
+      {label: 'IP Público', value: 'ip'},
+      {label: 'IP WAN', value: 'wan_ip'},
+      {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
+      {label: 'Modo de transmissão WAN (duplex)',
+              value: 'wan_negociated_duplex'},
+      {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
+      {label: 'ID do cliente', value: 'external_reference.data'},
+      {label: 'Modelo do roteador', value: 'model'},
+      {label: 'Versão do firmware', value: 'version'},
+      {label: 'Release', value: 'installed_release'},
+      {label: 'Atualizar firmware', value: 'do_update'},
+    );
+    const json2csvParser = new Parser({fields: csvFields});
+    const devicesCsv = json2csvParser.parse(devices);
+    res.set('Content-Type', 'text/csv');
+    return res.send(devicesCsv);
   } catch (err) {
     let emptyReturn = '';
     res.set('Content-Type', 'text/csv');
     return res.send(emptyReturn);
   }
-  let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
-                         true : false);
-  const csvFields = [
-    {label: 'Endereço MAC', value: '_id'},
-    {label: 'Tipo de Conexão WAN', value: 'connection_type'},
-    {label: 'Usuário PPPoE', value: 'pppoe_user'},
-  ];
-  if (exportPasswords) {
-    csvFields.push({label: 'Senha PPPoE', value: 'pppoe_password'});
-  }
-  csvFields.push(
-    {label: 'Subrede LAN', value: 'lan_subnet'},
-    {label: 'Máscara LAN', value: 'lan_netmask'},
-    {label: 'Wi-Fi SSID', value: 'wifi_ssid'},
-  );
-  if (exportPasswords) {
-    csvFields.push({label: 'Wi-Fi Senha', value: 'wifi_password'});
-  }
-  csvFields.push(
-    {label: 'Wi-Fi Canal', value: 'wifi_channel'},
-    {label: 'Largura de banda', value: 'wifi_band'},
-    {label: 'Modo de operação', value: 'wifi_mode'},
-    {label: 'Wi-Fi SSID 5GHz', value: 'wifi_ssid_5ghz'},
-  );
-  if (exportPasswords) {
-    csvFields.push({label: 'Wi-Fi Senha 5GHz', value: 'wifi_password_5ghz'});
-  }
-  csvFields.push(
-    {label: 'Wi-Fi Canal 5GHz', value: 'wifi_channel_5ghz'},
-    {label: 'Largura de banda 5GHz', value: 'wifi_band_5ghz'},
-    {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
-    {label: 'IP Público', value: 'ip'},
-    {label: 'IP WAN', value: 'wan_ip'},
-    {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
-    {label: 'Modo de transmissão WAN (duplex)', value: 'wan_negociated_duplex'},
-    {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
-    {label: 'ID do cliente', value: 'external_reference.data'},
-    {label: 'Modelo do roteador', value: 'model'},
-    {label: 'Versão do firmware', value: 'version'},
-    {label: 'Release', value: 'installed_release'},
-    {label: 'Atualizar firmware', value: 'do_update'},
-  );
-  const json2csvParser = new Parser({fields: csvFields});
-  const devicesCsv = json2csvParser.parse(devices);
-  res.set('Content-Type', 'text/csv');
-  return res.send(devicesCsv);
 };
 
 module.exports = deviceListController;

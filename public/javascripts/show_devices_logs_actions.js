@@ -111,6 +111,7 @@ $(document).ready(function() {
   $(document).on('click', '.btn-log-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let serialid = row.data('serialid');
 
     let isTR069 = row.data('is-tr069') === true; // cast to bool
     if (isTR069) {
@@ -136,7 +137,14 @@ $(document).ready(function() {
       $('#mesh-change-div').hide();
     }
 
-    $('#logRouterid_label').text(id);
+    if (isTR069) {
+      $('#logRouterid_title').html('&nbsp; Logs da Onu &nbsp;');
+      $('#logRouterid_visual').html(serialid);
+    } else {
+      $('#logRouterid_title').html('&nbsp; Logs do Roteador &nbsp;');
+      $('#logRouterid_visual').html(id);
+    }
+    $('#logRouterid_label').html(id);
     $('#analyse-logs').modal('show');
   });
 
@@ -144,6 +152,7 @@ $(document).ready(function() {
     let target = $(event.target).html();
     if (target === $('#logRouterid_label').text()) return;
     $('#logRouterid_label').text(target);
+    $('#logRouterid_visual').text(target);
     $('#export-log').addClass('disabled');
     $('#logArea').hide('fast', function() {
       $('#logs-placeholder').show('fast');

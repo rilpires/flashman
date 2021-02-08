@@ -1,20 +1,28 @@
-
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
   $.get('/firmware/fetch', function(res) {
     if (res.success) {
       res.firmwares.forEach(function(firmware) {
+        let isRestricted = firmware.is_restricted;
+        let displayRestricted = '';
+        if (isRestricted) {
+          displayRestricted = 'Sim';
+        } else {
+          displayRestricted = 'Não';
+        }
         let firmwareRow = $('<tr></tr>').append(
           $('<td></td>').append(
             $('<input></input>').addClass('checkbox')
                                 .attr('id', firmware._id)
-                                .attr('type', 'checkbox')),
+                                .attr('type', 'checkbox')
+                                .attr('data-action', 'del')),
           $('<td></td>').html(firmware.vendor),
           $('<td></td>').html(firmware.model),
           $('<td></td>').html(firmware.version),
           $('<td></td>').html(firmware.release),
           $('<td></td>').html(firmware.wan_proto),
-          $('<td></td>').html(firmware.flashbox_version)
+          $('<td></td>').html(firmware.flashbox_version),
+          $('<td></td>').html(displayRestricted),
         );
         firmwaresTable.row.add(firmwareRow).draw();
       });
@@ -25,7 +33,9 @@ const fetchLocalFirmwares = function(firmwaresTable) {
 };
 
 $(document).ready(function() {
-  let selectedItens = [];
+  let selectedItensDel = [];
+  let selectedItensAdd = [];
+  let selectedItensRestrict = [];
 
   let firmwaresTable = $('#firmware-table').DataTable({
     'paging': true,
@@ -61,7 +71,7 @@ $(document).ready(function() {
       type: 'POST',
       url: '/firmware/del',
       traditional: true,
-      data: {ids: selectedItens},
+      data: {ids: selectedItensDel},
       success: function(res) {
         displayAlertMsg(res);
         if (res.type == 'success') {
@@ -91,23 +101,31 @@ $(document).ready(function() {
 
   // Use this format when adding button with AJAX
   $(document).on('click', '.btn-firmware-add', function(event) {
-    let encoded = $('#avail-firmware-table').data('encoded');
-    let company = $(this).data('company');
-    let firmwareFile = $(this).data('firmwarefile');
-    let wanProto = $(this).data('wanproto');
-    let flashboxVer = $(this).data('flashboxversion');
     let currBtn = $(this);
 
     currBtn.prop('disabled', true);
     currBtn.find('.btn-fw-add-icon')
       .removeClass('fa-check')
       .addClass('fa-spinner fa-pulse');
+
+    let fws = [];
+
+    selectedItensAdd.forEach(function(firmware) {
+      var firmwareAttrs = {encoded: firmware.encoded,
+                            company: firmware.company,
+                            firmwarefile: firmware.firmwarefile,
+                            wanproto: firmware.wanproto,
+                            flashboxVer: firmware.flashboxver,
+                            isbeta: firmware.isbeta,
+                            isrestricted: selectedItensRestrict.includes(firmware.firmwarefile)};
+      fws.push(firmwareAttrs);
+    });
+
     $.ajax({
       type: 'POST',
       url: '/firmware/add',
       traditional: true,
-      data: {encoded: encoded, company: company, firmwarefile: firmwareFile,
-             wanproto: wanProto, flashboxversion: flashboxVer},
+      data: {firmwares: JSON.stringify(fws)},
       success: function(res) {
         currBtn.prop('disabled', false);
         currBtn.find('.btn-fw-add-icon')
@@ -120,19 +138,76 @@ $(document).ready(function() {
   });
 
   $(document).on('change', '.checkbox', function(event) {
-    let itemId = $(this).prop('id');
 
-    if (itemId == 'checkall') {
-      $('.checkbox').not(this).prop('checked', this.checked).change();
-    } else {
-      let itemIdx = selectedItens.indexOf(itemId);
-      if ($(this).is(':checked')) {
-        if (itemIdx == -1) {
-          selectedItens.push(itemId);
+    let list = Array.from($('.checkbox'));
+
+    if (this.hasAttribute('id')) { // é um dos checkboxes de marcar todos ou de deletar
+      let itemId = $(this).prop('id');
+      if (itemId == 'checkall_del') {
+        for (let idx = 0; idx < list.length; idx++) {
+          if ($(list[idx]).data('action') == 'del' && $(list[idx]).not(this)) {
+            $(list[idx]).prop('checked', this.checked).change();
+          }
+        }
+      } else if (itemId == 'checkall_add') {
+        for (let idx = 0; idx < list.length; idx++) {
+          if ($(list[idx]).data('action') == 'add' && $(list[idx]).not(this)) {
+            $(list[idx]).prop('checked', this.checked).change();
+          }
         }
       } else {
-        if (itemIdx != -1) {
-          selectedItens.splice(itemIdx, 1);
+        let itemIdx = selectedItensDel.indexOf(itemId);
+        if ($(this).is(':checked')) {
+          if (itemIdx == -1) {
+            selectedItensDel.push(itemId);
+          }
+        } else {
+          if (itemIdx != -1) {
+            selectedItensDel.splice(itemIdx, 1);
+          }
+        }
+      }
+    } else {
+      let itemAction = $(this).data('action');
+      if (itemAction == 'add') {
+        var firmwareAttrs = {encoded: $('#avail-firmware-table')
+                              .data('encoded'),
+                              company: $(this).data('company'),
+                              firmwarefile: $(this).data('firmwarefile'),
+                              wanproto: $(this).data('wanproto'),
+                              flashboxver: $(this).data('flashboxversion'),
+                              isbeta: $(this).data('release').includes('B')};
+        let i = 0;
+        let itemIdx = -1;
+        selectedItensAdd.every(function(obj, index) {
+          if (obj.firmwarefile === firmwareAttrs.firmwarefile) {
+            itemIdx = i;
+            return false;
+          } else {
+            i ++;
+            return true;
+          }
+        });
+        if ($(this).is(':checked')) {
+          if (itemIdx == -1) {
+            selectedItensAdd.push(firmwareAttrs);
+          }
+        } else {
+          if (itemIdx != -1) {
+            selectedItensAdd.splice(itemIdx, 1);
+          }
+        }
+      } else if (itemAction == 'restrict') {
+        let firmwareFile = $(this).data('firmwarefile');
+        let itemIdx = selectedItensRestrict.indexOf(firmwareFile);
+        if ($(this).is(':checked')) {
+          if (itemIdx == -1) {
+            selectedItensRestrict.push(firmwareFile);
+          }
+        } else {
+          if (itemIdx != -1) {
+            selectedItensRestrict.splice(firmwareFile, 1);
+          }
         }
       }
     }
@@ -191,6 +266,15 @@ $(document).ready(function() {
         res.firmwarelist.forEach(function(firmwareInfoObj) {
           $('#avail-firmware-list').append(
             $('<tr></tr>').append(
+              $('<td></td>').append(
+                $('<input></input>').addClass('checkbox')
+                                .attr('type', 'checkbox')
+                                .attr('data-firmwarefile', firmwareInfoObj.uri)
+                                .attr('data-wanproto', firmwareInfoObj.wan_proto)
+                                .attr('data-flashboxversion', firmwareInfoObj.flashbox_version)
+                                .attr('data-company', firmwareInfoObj.company)
+                                .attr('data-release', firmwareInfoObj.release)
+                                .attr('data-action', 'add')),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.vendor),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.model),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.version),
@@ -198,17 +282,12 @@ $(document).ready(function() {
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.wan_proto),
               $('<td></td>').addClass('text-center').html(firmwareInfoObj.flashbox_version),
               $('<td></td>').addClass('text-center').append(
-                $('<button></button>').append(
-                  $('<div></div>').addClass('fas fa-check btn-fw-add-icon'),
-                  $('<span></span>').html('&nbsp Adicionar')
-                ).addClass('btn btn-sm my-0 btn-primary btn-firmware-add')
-                .attr('data-firmwarefile', firmwareInfoObj.uri)
-                .attr('data-wanproto', firmwareInfoObj.wan_proto)
-                .attr('data-flashboxversion', firmwareInfoObj.flashbox_version)
-                .attr('data-company', firmwareInfoObj.company)
-                .attr('type', 'button')
-              )
-            )
+                $('<input></input>').addClass('checkbox')
+                                .attr('type', 'checkbox')
+                                .attr('text', 'Restringir firmware')
+                                .attr('data-action', 'restrict')
+                                .attr('data-firmwarefile', firmwareInfoObj.uri)),
+            ),
           );
         });
         $('#avail-firmware-table').attr('data-encoded', res.encoded);
@@ -225,14 +304,23 @@ $(document).ready(function() {
             'searchPlaceholder': 'Buscar...',
             'lengthMenu': 'Exibir _MENU_',
           },
-          'order': [[0, 'asc'], [1, 'asc'], [2, 'asc'], [3, 'desc']],
-          'columnDefs': [{className: 'text-center', targets: ['_all']}],
-          'dom': '<"row" <"col-12 col-md-6">                         ' +
+          'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
+          'columnDefs': [
+            {className: 'text-center', targets: ['_all']},
+            {orderable: false, targets: [0, -1]},
+          ],
+          'dom': '<"row" <"col-12 col-md-6 dt-up-firm-table-btns">   ' +
                  '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
                  '<"row" t>                                          ' +
                  '<"row" <"col-6"l>                                  ' +
                  '       <"col-6"p>                                 >',
         });
+        $('.dt-up-firm-table-btns').append(
+          $('<div></div>').addClass('btn-group').attr('role', 'group').append(
+            $('<div></div>').addClass('fas fa-plus fa-lg btn-fw-add-icon'),
+                  $('<span></span>').html('&nbsp Adicionar')).addClass(
+                  'btn btn-md ml-0 my-md-0 btn-primary btn-firmware-add'),
+        );
       } else {
         displayAlertMsg({
           type: res.type,
