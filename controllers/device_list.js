@@ -223,14 +223,10 @@ deviceListController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-        let active = matchedConfig.data_collecting.is_active;
-        indexContent.measure_active = active;
-        // indexContent.measure_token = (active) ?
-        //     matchedConfig.data_collecting.auth_token : '';
-        let license = matchedConfig.data_collecting.is_license_active;
-        indexContent.measure_license = license;
-        let latency = matchedConfig.data_collecting.latency_is_active;
-        indexContent.latency_is_active = latency;
+        indexContent.data_collecting = {
+          is_active: matchedConfig.data_collecting.is_active,
+          latency: matchedConfig.data_collecting.latency
+        };
         indexContent.update_schedule = {
           is_active: matchedConfig.device_update_schedule.is_active,
           device_total: matchedConfig.device_update_schedule.device_count,

@@ -24,7 +24,7 @@ let deviceSchema = new Schema({
   is_license_active: Boolean,
   data_collecting: {
     is_active: {type: Boolean, default: false},
-    latency_is_active: {type: Boolean, default: false},
+    latency: {type: Boolean, default: false},
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,

@@ -256,7 +256,7 @@ const executeCustomRequestChecks = function(req, extraHandlersArray) {
 //   return [200, ''];
 // });
 
-dataCollectingController.updateDataCollectingServerFqdn =
+dataCollectingController.updateDataCollectingParameters =
 async(function(req, res) {
   let checks = [checkDataColllectingFqdn];
   if (!handleErrors(checks)) {
@@ -266,10 +266,9 @@ async(function(req, res) {
   // Set license to true and set data collecting fqdn.
   ConfigModel.updateOne({is_default: true}, {
     '$set': {
-      'data_collecting.is_license_active': true, // unused.
       'data_collecting.is_active': true, // unused.
       'data_collecting.fqdn': req.body.data_collecting_fqdn,
-      'data_collecting.latency_is_active': req.body.latency_is_active || false,
+      'data_collecting.latency': req.body.data_collecting_latency || false,
     }
   }, (err) => {
     if (err) {
@@ -281,126 +280,126 @@ async(function(req, res) {
   });
 });
 
-// expects a request body being an object where keys are MACs and values are
-// booleans.
-dataCollectingController.setLicenses = async(function(req, res) {
-  let checks = [checkDevices];
-  if (!handleErrors(checks)) {
-    return;
-  }
+// // expects a request body being an object where keys are MACs and values are
+// // booleans.
+// dataCollectingController.setLicenses = async(function(req, res) {
+//   let checks = [checkDevices];
+//   if (!handleErrors(checks)) {
+//     return;
+//   }
 
-  let devices = req.body.devices;
-  let macs = Object.keys(devices);
+//   let devices = req.body.devices;
+//   let macs = Object.keys(devices);
 
-  // if request had no devices.
-  if (macs.length === 0) {
-    return res.status(400).json({message: 'Nenhum dispositivo.'});
-  }
+//   // if request had no devices.
+//   if (macs.length === 0) {
+//     return res.status(400).json({message: 'Nenhum dispositivo.'});
+//   }
 
-  // check if devices exist in flashman.
-  let existingDevices = {};
-  let existingChangedDevices = {};
-  let unchangedDevices = [];
-  await(DeviceModel.find(
-  {_id: {$in: macs}}, {_id: 1, 'data_collecting.is_active': 1},
-  (docs, err) => {
-    if (err) {
-      return res.status(500).json({
-        message: "Erro ao acessar os dispotivos localmente."
-      });
-    }
+//   // check if devices exist in flashman.
+//   let existingDevices = {};
+//   let existingChangedDevices = {};
+//   let unchangedDevices = [];
+//   await(DeviceModel.find(
+//   {_id: {$in: macs}}, {_id: 1, 'data_collecting.is_active': 1},
+//   (docs, err) => {
+//     if (err) {
+//       return res.status(500).json({
+//         message: "Erro ao acessar os dispotivos localmente."
+//       });
+//     }
 
-    // only existing devices will be returned.
-    let device;
-    for (let i = 0; i < docs.length; i++) {
-      device = docs[i];
-      existingDevices[device._id] = true;
-      if (device.data_collecting.is_active !== devices[device._id]) {
-        existingChangedDevices[device._id] = devices[device._id];
-      } else {
-        unchangedDevices.push(device._id);
-      }
-    };
-  }));
+//     // only existing devices will be returned.
+//     let device;
+//     for (let i = 0; i < docs.length; i++) {
+//       device = docs[i];
+//       existingDevices[device._id] = true;
+//       if (device.data_collecting.is_active !== devices[device._id]) {
+//         existingChangedDevices[device._id] = devices[device._id];
+//       } else {
+//         unchangedDevices.push(device._id);
+//       }
+//     };
+//   }));
 
-  // saving unknown devices to return them with an error message later.
-  let unknownDevices = [];
-  for (let mac in devices) {
-    if (existingDevices[mac] === undefined) {
-      unknownDevices.push(mac);
-    }
-  }
+//   // saving unknown devices to return them with an error message later.
+//   let unknownDevices = [];
+//   for (let mac in devices) {
+//     if (existingDevices[mac] === undefined) {
+//       unknownDevices.push(mac);
+//     }
+//   }
 
-  let licenseControlBody = {};
-  // if there is at least one device.
-  if (Object.keys(existingChangedDevices).length > 0) {
-    try { // send devices to license-control
-      licenseControlBody = await(request({
-        url: "https://"+process.env.LC_FQDN+"/data_collecting/set/license",
-        method: 'POST',
-        json: {
-          'devices': existingChangedDevices,
-          'secret': process.env.FLM_COMPANY_SECRET,
-        },
-      }));
-    } catch (err) {
-      return res.status(500).json({
-        message: "Erro ao conectar ao controle de licensas."
-      });
-    }
+//   let licenseControlBody = {};
+//   // if there is at least one device.
+//   if (Object.keys(existingChangedDevices).length > 0) {
+//     try { // send devices to license-control
+//       licenseControlBody = await(request({
+//         url: "https://"+process.env.LC_FQDN+"/data_collecting/set/license",
+//         method: 'POST',
+//         json: {
+//           'devices': existingChangedDevices,
+//           'secret': process.env.FLM_COMPANY_SECRET,
+//         },
+//       }));
+//     } catch (err) {
+//       return res.status(500).json({
+//         message: "Erro ao conectar ao controle de licensas."
+//       });
+//     }
 
-    // errors from license control come in 'message' field.
-    if (licenseControlBody.message !== undefined) {
-      return res.status(500).json(licenseControlBody);
-    }
+//     // errors from license control come in 'message' field.
+//     if (licenseControlBody.message !== undefined) {
+//       return res.status(500).json(licenseControlBody);
+//     }
 
-    // separate devices by license state and send MQTT messages.
-    let enabledDevices = [];
-    let disabledDevices = [];
-    for (let mac in licenseControlBody.devices) {
-      if (licenseControlBody.devices[mac] === true) {
-        enabledDevices.push(mac);
-        mqtt.anlixMessageRouterDataCollecting(mac, 'on');
-      } else if (licenseControlBody.devices[mac] === false) {
-        disabledDevices.push(mac);
-        mqtt.anlixMessageRouterDataCollecting(mac, 'off');
-      }
-    }
+//     // separate devices by license state and send MQTT messages.
+//     let enabledDevices = [];
+//     let disabledDevices = [];
+//     for (let mac in licenseControlBody.devices) {
+//       if (licenseControlBody.devices[mac] === true) {
+//         enabledDevices.push(mac);
+//         mqtt.anlixMessageRouterDataCollecting(mac, 'on');
+//       } else if (licenseControlBody.devices[mac] === false) {
+//         disabledDevices.push(mac);
+//         mqtt.anlixMessageRouterDataCollecting(mac, 'off');
+//       }
+//     }
 
-    let objs = [
-      {macs: enabledDevices, val: true},
-      {macs: disabledDevices, val: false}
-    ];
-    for (let i = 0; i < objs.length; i++) {
-      let obj = objs[i];
-      // update locally for enabled devices and then disabled devices.
-      await(DeviceModel.update({_id: {$in: obj.macs}}, {
-        '$set': {'data_collecting.is_active': obj.val}
-      }, (err) => {
-        if (err) {
-          res.status(500).json({
-            message: 'error ao atualizar licensas no flashman.'
-          });
-        }
-      }));
-    }
-  }
+//     let objs = [
+//       {macs: enabledDevices, val: true},
+//       {macs: disabledDevices, val: false}
+//     ];
+//     for (let i = 0; i < objs.length; i++) {
+//       let obj = objs[i];
+//       // update locally for enabled devices and then disabled devices.
+//       await(DeviceModel.update({_id: {$in: obj.macs}}, {
+//         '$set': {'data_collecting.is_active': obj.val}
+//       }, (err) => {
+//         if (err) {
+//           res.status(500).json({
+//             message: 'error ao atualizar licensas no flashman.'
+//           });
+//         }
+//       }));
+//     }
+//   }
 
-  // complement with unknown devices.
-  if (unknownDevices.length > 0) {
-    for (let i = 0; i < unknownDevices.length; i++) {
-      licenseControlBody[unknownDevices[i]] = 'inexistente no flashman.';
-    }
-  }
-  if (unchangedDevices.length > 0) {
-    for (let i = 0; i < unchangedDevices.length; i++) {
-      // repeating received value.
-      licenseControlBody[unchangedDevices[i]] = devices[unchangedDevices[i]];
-    }
-  }
+//   // complement with unknown devices.
+//   if (unknownDevices.length > 0) {
+//     for (let i = 0; i < unknownDevices.length; i++) {
+//       licenseControlBody[unknownDevices[i]] = 'inexistente no flashman.';
+//     }
+//   }
+//   if (unchangedDevices.length > 0) {
+//     for (let i = 0; i < unchangedDevices.length; i++) {
+//       // repeating received value.
+//       licenseControlBody[unchangedDevices[i]] = devices[unchangedDevices[i]];
+//     }
+//   }
 
-  // devices with problems in license-control will also be returned here.
-  res.json(licenseControlBody);
-});
+//   // devices with problems in license-control will also be returned here.
+//   res.json(licenseControlBody);
+// });
 
 module.exports = dataCollectingController;

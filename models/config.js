@@ -20,11 +20,9 @@ let configSchema = new mongoose.Schema({
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
   data_collecting: {
-    is_license_active: {type: Boolean, default: false},
     is_active: {type: Boolean, default: false},
-    latency_is_active: {type: Boolean, default: false},
+    latency: {type: Boolean, default: false},
     fqdn: String,
-    controller_fqdn: String,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},

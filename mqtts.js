@@ -376,7 +376,7 @@ mqtts.anlixMessageRouterDataCollecting = function(id, status) {
       payload: 'datacollecting ' + status,
     };
     toPublishPacket(serverId, packet);
-    debug('MQTT SEND Message MEASURE to '+ id);
+    debug('MQTT SEND Message DATACOLLECTING to '+ id);
   }
 };
 
@@ -387,10 +387,10 @@ mqtts.anlixMessageRouterDataCollectingLatency = function(id, status) {
       id: id,
       qos: 2,
       retain: true,
-      payload: 'collectlatencies ' + status,
+      payload: 'collectlatency ' + status,
     };
     toPublishPacket(serverId, packet);
-    debug('MQTT SEND Message MEASURE to '+ id);
+    debug('MQTT SEND Message COLLECTLATENCY to '+ id);
   }
 };
 

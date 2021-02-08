@@ -708,14 +708,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
             'data_collecting_fqdn': dataCollectingFqdn,
-            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
-            // 'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.data_collecting.measure_psk),
-            'zabbix_fqdn': dataCollectingFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
-            'data_collecting_fqdn': dataCollectingFqdn,
-            'data_collecting_is_active': util.returnObjOrEmptyStr(matchedDevice.data_collecting.is_active),
-            'data_collecting_latency_is_active': util.returnObjOrEmptyStr(
-              matchedDevice.data_collecting.latency_is_active),
+            'data_collecting_is_active': util.returnObjOrFalse(matchedDevice.data_collecting.is_active) &&
+              util.returnObjOrFalse(matchedConfig.data_collecting.is_active),
+            'data_collecting_latency': util.returnObjOrFalse(matchedDevice.data_collecting.latency) &&
+              util.returnObjOrFalse(matchedConfig.data_collecting.latency),
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1783,7 +1779,7 @@ deviceInfoController.getDataCollectingConfig = async(function(req, res) {
       success: 1,
       fqdn: config.data_collecting.fqdn,
       is_active: device.data_collecting.is_active,
-      latency_is_active: device.data_collecting.latency_is_active;
+      latency: device.data_collecting.latency;
     });
   } catch (err) {
     console.log(err);
