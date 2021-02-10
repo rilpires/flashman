@@ -636,7 +636,9 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
       hasChanges = true;
     });
   });
-  console.log(task);
+  if (task.parameterValues.length > 0) {
+    console.log(task);
+  }
   if (!hasChanges) return; // No need to sync data with genie
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
