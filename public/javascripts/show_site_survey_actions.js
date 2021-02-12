@@ -273,7 +273,7 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais (atual: ' +
+                                 .text('Ocupação dos canais (atual: Canal ' +
                                   wifi2GhzChannel + ')')),
         $('<hr>').addClass('mt-1'),
     ));
@@ -362,7 +362,7 @@ $(document).ready(function() {
             $('<div>').addClass('col').append(
               $('<h5>').append(
                 $('<strong>').text('Canal ' + channel + ': '),
-                ap5GhzCountDict[channel],
+                ap5GhzCountDict[channel] + ' (melhor)',
               ),
             ),
           ),
@@ -374,7 +374,7 @@ $(document).ready(function() {
             $('<div>').addClass('col').append(
               $('<h5>').append(
                 $('<strong>').text('Canal ' + channel + ': '),
-                ap5GhzCountDict[channel],
+                ap5GhzCountDict[channel] + ' (pior)',
               ),
             ),
           ),
