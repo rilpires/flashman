@@ -3,7 +3,6 @@ $(document).ready(function() {
   let lanDevicesGlobalTimer;
 
   const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
-    $('#lan-devices-hlabel').text(deviceId);
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
     $('.btn-sync-lan').prop('disabled', true);
@@ -353,10 +352,10 @@ $(document).ready(function() {
             (device.conn_type == 1 && device.wifi_signal &&
              device.is_online) ?
             $('<div>').addClass('col').append(
-              $('<h6>').text(device.wifi_freq + ' GHz'),
-              $('<h6>').text('Modo: ' + device.wifi_mode),
-              $('<h6>').text('Sinal: ' + device.wifi_signal +' dBm'),
-              $('<h6>').text('SNR: ' + device.wifi_snr + ' dB')
+              $('<h6>').text(((device.wifi_freq) ? device.wifi_freq : 'N/D') + ' GHz'),
+              $('<h6>').text('Modo: ' + ((device.wifi_mode) ? device.wifi_mode : 'N/D')),
+              $('<h6>').text('Sinal: ' + ((device.wifi_signal) ? device.wifi_signal : 'N/D') +' dBm'),
+              $('<h6>').text('SNR: ' + ((device.wifi_snr) ? device.wifi_snr : 'N/D') + ' dB')
               .append(
                 $('<span>').html('&nbsp'),
                 ((device.wifi_snr >= 25) ?
@@ -446,6 +445,8 @@ $(document).ready(function() {
     let slaves = [];
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let serialid = row.data('serialid');
+    let isTR069 = row.data('is-tr069') === true; // cast to bool
     let isBridge = row.data('bridge-enabled') === 'Sim';
     let slaveCount = parseInt(row.data('slave-count'));
     let totalRouters = slaveCount + 1;
@@ -467,6 +468,12 @@ $(document).ready(function() {
     // Trigger lan device view
     $('.btn-show-lan-devs').trigger('click');
     // Refresh devices status
+    if (isTR069) {
+      $('#lan-devices-visual').text(serialid);
+    } else {
+      $('#lan-devices-visual').text(id);
+    }
+    $('#lan-devices-hlabel').text(id);
     refreshLanDevices(id, upnpSupport, isBridge);
   });
 

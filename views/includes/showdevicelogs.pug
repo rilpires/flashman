@@ -5,8 +5,9 @@
       .modal-header
         p.heading.lead
           span.fas.fa-file-alt.fa-lg
-          strong &nbsp; Logs do Roteador &nbsp;
-            label(name="logRouterid_label" id="logRouterid_label")
+          strong(name="logRouterid_title" id="logRouterid_title") &nbsp; Logs do Roteador &nbsp;
+          strong(name="logRouterid_visual" id="logRouterid_visual")
+          span.d-none(name="logRouterid_label" id="logRouterid_label")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body

@@ -127,9 +127,16 @@ $(document).ready(function() {
   $(document).on('click', '.btn-wan-bytes-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let serialid = row.data('serialid');
+    let isTR069 = row.data('is-tr069') === true; // cast to bool
     chartDownId = '';
     chartUpId = '';
     $('#wan-bytes-hlabel').text(id);
+    if (isTR069) {
+      $('#wan-bytes-visual').text(serialid);
+    } else {
+      $('#wan-bytes-visual').text(id);
+    }
     $('#wan-bytes-placeholder-ready').show();
     $('#wan-bytes-placeholder-progress').hide();
     $('#wan-bytes-placeholder-none').hide();

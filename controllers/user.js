@@ -107,18 +107,34 @@ userController.postUser = function(req, res) {
 };
 
 userController.postRole = function(req, res) {
+  let basicFirmwareUpgrade = false;
+  let massFirmwareUpgrade = false;
+  if (req.body['grant-firmware-upgrade'] == 2) {
+    basicFirmwareUpgrade = true;
+    massFirmwareUpgrade = true;
+  } else if (req.body['grant-firmware-upgrade'] == 1) {
+    basicFirmwareUpgrade = true;
+  }
+  let basicDeviceRemoval = false;
+  let massDeviceRemoval = false;
+  if (req.body['grant-device-removal'] == 2) {
+    basicDeviceRemoval = true;
+    massDeviceRemoval = true;
+  } else if (req.body['grant-device-removal'] == 1) {
+    basicDeviceRemoval = true;
+  }
   let role = new Role({
     name: req.body.name,
     grantWifiInfo: parseInt(req.body['grant-wifi-info']),
     grantPPPoEInfo: parseInt(req.body['grant-pppoe-info']),
     grantPassShow: req.body['grant-pass-show'],
-    grantFirmwareUpgrade: req.body['grant-firmware-upgrade'],
-    grantMassFirmwareUpgrade: req.body['grant-mass-firmware-upgrade'],
+    grantFirmwareUpgrade: basicFirmwareUpgrade,
+    grantMassFirmwareUpgrade: massFirmwareUpgrade,
     grantWanType: req.body['grant-wan-type'],
     grantDeviceId: req.body['grant-device-id'],
     grantDeviceActions: req.body['grant-device-actions'],
-    grantDeviceRemoval: req.body['grant-device-removal'],
-    grantDeviceMassRemoval: req.body['grant-device-mass-removal'],
+    grantDeviceRemoval: basicDeviceRemoval,
+    grantDeviceMassRemoval: massDeviceRemoval,
     grantFactoryReset: req.body['grant-factory-reset'],
     grantDeviceAdd: req.body['grant-device-add'],
     grantMonitorManage: req.body['grant-monitor-manage'],
@@ -140,7 +156,28 @@ userController.postRole = function(req, res) {
     grantWanBytesView: req.body['grant-wan-bytes'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
+    grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
+    grantFirmwareRestrictedUpgrade: req.body['grant-firmware-restricted-upgrade'],
   });
+
+  if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
+    console.log('Role conflict error');
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
+      'sem Controle de Atualização de Firmware',
+    });
+  } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
+    console.log('Role conflict error');
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
+      'sem Controle de Atualização de Firmware',
+    });
+  }
+
   role.save(function(err) {
     if (err) {
       console.log('Error creating role: ' + err);
@@ -277,17 +314,33 @@ userController.editRole = function(req, res) {
         message: 'Erro ao encontrar classe.',
       });
     }
+    let basicFirmwareUpgrade = false;
+    let massFirmwareUpgrade = false;
+    if (req.body['grant-firmware-upgrade'] == 2) {
+      basicFirmwareUpgrade = true;
+      massFirmwareUpgrade = true;
+    } else if (req.body['grant-firmware-upgrade'] == 1) {
+      basicFirmwareUpgrade = true;
+    }
+    let basicDeviceRemoval = false;
+    let massDeviceRemoval = false;
+    if (req.body['grant-device-removal'] == 2) {
+      basicDeviceRemoval = true;
+      massDeviceRemoval = true;
+    } else if (req.body['grant-device-removal'] == 1) {
+      basicDeviceRemoval = true;
+    }
     role.grantWifiInfo = parseInt(req.body['grant-wifi-info']);
     role.grantPPPoEInfo = parseInt(req.body['grant-pppoe-info']);
     role.grantPassShow = req.body['grant-pass-show'];
-    role.grantFirmwareUpgrade = req.body['grant-firmware-upgrade'];
-    role.grantMassFirmwareUpgrade = req.body['grant-mass-firmware-upgrade'];
+    role.grantFirmwareUpgrade = basicFirmwareUpgrade;
+    role.grantMassFirmwareUpgrade = massFirmwareUpgrade;
     role.grantWanType = req.body['grant-wan-type'];
     role.grantDeviceId = req.body['grant-device-id'];
     role.grantDeviceActions = req.body['grant-device-actions'];
     role.grantFactoryReset = req.body['grant-factory-reset'];
-    role.grantDeviceRemoval = req.body['grant-device-removal'];
-    role.grantDeviceMassRemoval = req.body['grant-device-mass-removal'];
+    role.grantDeviceRemoval = basicDeviceRemoval;
+    role.grantDeviceMassRemoval = massDeviceRemoval;
     role.grantDeviceAdd = req.body['grant-device-add'];
     role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];
@@ -308,6 +361,26 @@ userController.editRole = function(req, res) {
     role.grantWanBytesView = req.body['grant-wan-bytes'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
+    role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
+    role.grantFirmwareRestrictedUpgrade = req.body['grant-firmware-restricted-upgrade'];
+
+    if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
+      console.log('Role conflict error');
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
+        'sem Controle de Atualização de Firmware',
+      });
+    } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
+      console.log('Role conflict error');
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
+        'sem Controle de Atualização de Firmware',
+      });
+    }
 
     role.save(function(err) {
       if (err) {

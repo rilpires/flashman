@@ -102,12 +102,14 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
         };
-        if (data.type === "genieacs") {
+        if (data.type === 'genieacs') {
           options.title = data.message;
-          options.html = data.message_error.replace(/\n/g, '<br>');
+          let error = data.message_error;
+          if (error) error = error.replace(/\n/g, '<br>');
+          options.html = error;
         } else {
           options.text = data.message;
-        };
+        }
         swal(options).then(function(result) {
           if (result.value) {
             let deleteNotification = function () {
@@ -526,6 +528,7 @@ $(document).ready(function() {
     rowAttr += ' data-slave-count="' +
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
+    rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
     return rowAttr;
   };
 
@@ -545,7 +548,7 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildUpgradeCol = function(device, slaves=[]) {
+  const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -563,7 +566,8 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = '<td>'+
+    let upgradeCol = (isTR069) ? '<td></td>':
+    '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2 btn-cancel-update btn-danger" $NO_UPDATE>'+
           '<div class="fas fa-times"></div>'+
@@ -650,11 +654,11 @@ $(document).ready(function() {
   };
 
   const buildTableRowInfo = function(device, selectable,
-                                     meshSlave=false, index=0) {
+                                     meshSlave=false, index=0, isTR069=false) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave) ? '' :
+    let refreshIcon = (meshSlave || isTR069) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
@@ -762,6 +766,7 @@ $(document).ready(function() {
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
+        (!isTR069 ?
         '<div class="md-form input-group input-entry">'+
           '<label class="active">Status da licença é</label>' +
           '<input class="form-control py-0 added-margin" type="text" '+
@@ -774,7 +779,9 @@ $(document).ready(function() {
             '</button>'+
           '</div>'+
           '<div class="invalid-feedback"></div>'+
-        '</div>'+
+        '</div>':
+        ''
+        )+
         (mesh > -1 ?
           '<div class="md-form">'+
             '<div class="input-group">'+
@@ -1078,8 +1085,9 @@ $(document).ready(function() {
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
-          let upgradeCol = buildUpgradeCol(device, slaves);
-          let infoRow = buildTableRowInfo(device, isSelectableRow);
+          let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let infoRow = buildTableRowInfo(device, isSelectableRow,
+                                          false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
@@ -1106,6 +1114,7 @@ $(document).ready(function() {
           let formAttr = 'id="form-'+index+'"';
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
+          formAttr += ' data-serialid="'+device.serial_tr069+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
@@ -1329,13 +1338,17 @@ $(document).ready(function() {
                 '<div class="md-form input-entry">'+
                   '<label class="active">Velocidade Negociada (Mbps)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_speed+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_speed) ? device.wan_negociated_speed : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">Modo de Transmissão (Duplex)</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
-                  'value="'+device.wan_negociated_duplex+'" disabled></input>'+
+                  'value="'+
+                  ((device.wan_negociated_duplex) ? device.wan_negociated_duplex : 'Não disponível')+
+                  '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
               '</div>'+
@@ -1469,7 +1482,7 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Desabilitar portas de rede LAN do roteador'+
+                      'Habilitar portas de rede LAN do roteador'+ // Changed to Enable instead Disable
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
@@ -1543,9 +1556,9 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', '');
             if (device.bridge_mode_switch_disable) {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // If disabled, uncheck
             } else {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', '');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // If enable, check
             }
             if (device.bridge_mode_ip !== '') {
               opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, '');
@@ -1558,7 +1571,7 @@ $(document).ready(function() {
               opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
             }
           } else {
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // The default value is Enabled when change from Route mode to Bridge mode
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
@@ -2148,7 +2161,7 @@ $(document).ready(function() {
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
               $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
-              $('#edit_opmode_switch_en-' + localIdx)[0].checked = true;
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Changed to false because the text in the label changed to a positive logic (Enable instead Disable)
             } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();
