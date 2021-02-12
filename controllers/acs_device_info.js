@@ -473,23 +473,24 @@ const fetchDevicesFromGenie = function(mac, acsID) {
       data = JSON.parse(data)[0];
       let success = true;
       let hostCount = 0;
+      let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
       // Make sure we have a host count and assodicated devices fields
       if (checkForNestedKey(data, hostCountField) &&
           checkForNestedKey(data, assocField)) {
         hostCount = getFromNestedKey(data, hostCountField);
+        // Host indexes might not respect order because of expired leases, so
+        // we just use whatever keys show up
         let hostBaseField = fields.devices.hosts_template;
-        if (!hostCount) hostCount = 0;
-        // Make sure every host has an entry
-        for (let i = 1; i < hostCount+1; i++) {
-          if (!checkForNestedKey(data, hostBaseField+'.'+i)) success = false;
-        }
+        hostKeys = Object.keys(getFromNestedKey(data, hostBaseField));
+        // Filter out meta fields from genieacs
+        hostKeys = hostKeys.filter((k)=>k[0] && k[0]!=='_');
       } else {
         success = false;
       }
       if (success) {
         let devices = [];
-        for (let i = 1; i < hostCount+1; i++) {
+        hostKeys.forEach((i)=>{
           let device = {};
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
@@ -502,7 +503,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           device.ip = getFromNestedKey(data, ipKey+'._value');
           // Push basic device information
           devices.push(device);
-        }
+        });
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
@@ -635,7 +636,9 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
       hasChanges = true;
     });
   });
-  console.log(task);
+  if (task.parameterValues.length > 0) {
+    console.log(task);
+  }
   if (!hasChanges) return; // No need to sync data with genie
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
