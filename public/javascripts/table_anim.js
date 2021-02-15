@@ -1133,8 +1133,9 @@ $(document).ready(function() {
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
 
-          let baseAction = '<div class="dropdown-divider"></div>'+
-          '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
+          let dropdownDivider = '<div class="dropdown-divider"></div>';
+
+          let baseAction = '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
             '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
           '</a>';
 
@@ -1173,6 +1174,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
+          let vlanAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-vlan-modal')
+          .replace('$REPLACE_ICON', 'fa-project-diagram')
+          .replace('$REPLACE_TEXT', 'Administrar VLANs');
+
           let wanBytesAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
@@ -1185,24 +1191,36 @@ $(document).ready(function() {
 
           let devActions = '<button class="btn btn-primary dropdown-toggle" '+
           'type="button" data-toggle="dropdown">Opções</button>'+
-          '<div class="dropdown-menu dropdown-menu-right" data-dropdown-in="fadeIn" '+
+          '<div class="dropdown-menu dropdown-menu-inline dropdown-menu-right" data-dropdown-in="fadeIn" '+
           'data-dropdown-out="fadeOut">'+
-            '<a class="dropdown-item btn-reboot">'+
+            '<div><a class="dropdown-item btn-reboot">'+
               '<i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span>'+
             '</a>'+
-            '<div class="dropdown-divider"></div>'+
+            dropdownDivider+
             '<a class="dropdown-item btn-reset-app">'+
               '<i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span>'+
             '</a>'+
+            dropdownDivider+
             '$REPLACE_LOG_ACTION'+
+            dropdownDivider+
             '$REPLACE_UNBLOCK_ACTION'+
+            dropdownDivider+
             '$REPLACE_PORT_FORWARD_ACTION'+
+            dropdownDivider+
             '$REPLACE_PING_TEST_ACTION'+
+            '</div><div>'+
             '$REPLACE_DEVICES_ACTION'+
+            dropdownDivider+
             '$REPLACE_SITESURVEY_ACTION'+
+            dropdownDivider+
             '$REPLACE_MEASURE_ACTION'+
+            dropdownDivider+
+            '$REPLACE_VLAN_ACTION'+
+            dropdownDivider+
             '$REPLACE_WAN_BYTES_ACTION'+
+            dropdownDivider+
             '$REPLACE_FACTORY_ACTION'+
+            '</div>'+
           '</div>';
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
             devActions = devActions.replace('$REPLACE_LOG_ACTION', logAction);
@@ -1238,6 +1256,11 @@ $(document).ready(function() {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
+          }
+          if ((isSuperuser || grantVlan) && grantWanBytesSupport) {
+            devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
+          } else {
+            devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
           }
           if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
             devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);

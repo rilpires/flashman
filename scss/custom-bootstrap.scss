@@ -211,3 +211,8 @@
 
   color: $primary-color-dark;
 }
+
+.dropdown-menu.dropdown-menu-inline.show {
+  display: flex;
+  flex-direction: row;
+}
