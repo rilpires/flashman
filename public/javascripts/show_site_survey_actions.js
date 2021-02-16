@@ -349,7 +349,8 @@ $(document).ready(function() {
     summary5Ghz = summary5Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais')),
+                                 .text('Ocupação dos canais (atual: Canal ' +
+                                  wifi5GhzChannel + ')')),
         $('<hr>').addClass('mt-1'),
     ));
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
