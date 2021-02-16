@@ -423,6 +423,10 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
+    let has5ghz = row.data('has-5ghz');
+    if (!has5ghz) {
+      $('.btn-show-5-ghz-aps').addClass('disabled').prop('disabled', true);
+    }
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#site-survey-placeholder-none').hide();
@@ -495,6 +499,7 @@ $(document).ready(function() {
     $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-ssurvey').prop('disabled', false);
     $('.btn-show-5-ghz-aps').removeClass('active disabled');
+    $('.btn-show-5-ghz-aps').prop('disabled', false);
     $('.btn-show-2-ghz-aps').removeClass('disabled');
     $('.btn-show-2-ghz-aps').addClass('active');
     clearTimeout(siteSurveyGlobalTimer);
