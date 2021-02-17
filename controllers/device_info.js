@@ -653,6 +653,29 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
+        // Update data collecting device parameters.
+        // // if any data collecting parameter exists.
+        if (req.body.data_collecting_is_active !== undefined || 
+        req.body.data_collecting_has_latency !== undefined || 
+        req.body.data_collecting_ping_fqdn !== undefined) {
+          // coping current data collecting parameters, or creating new one.
+          deviceSetQuery.data_collecting = matchedDevice.data_collecting || {
+            is_active: false, has_latency: false,
+          };
+
+          // parsing values and setting fields if values exists and are valid.
+          let v;
+          v = util.returnBoolean(req.body.data_collecting_is_active);
+          if (v) deviceSetQuery.data_collecting.is_active = v;
+
+          v = util.returnBoolean(req.body.data_collecting_has_latency);
+          if (v) deviceSetQuery.data_collecting.has_latency = v;
+
+          v = req.body.data_collecting_ping_fqdn;
+          if (v !== undefined && v.constructor === String) v = v.trim();
+          if (util.isFqdnValid(v)) deviceSetQuery.data_collecting.ping_fqdn = v;
+        }
+
         let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {

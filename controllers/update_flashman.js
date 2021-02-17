@@ -6,6 +6,7 @@ const request = require('request-promise-native');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const commandExists = require('command-exists');
+const util = require('./handlers/util');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
 let updateController = {};
@@ -463,6 +464,39 @@ updateController.setAutoConfig = async function(req, res) {
         message: 'Erro validando os campos relacionados ao TR-069.',
       });
     }
+
+    // // data collecting parameters.
+    // data_collecting = {
+    //   is_active: req.body.['data_collecting_is_active'],
+    //   has_latency: req.body.['data_collecting_has_latency'],
+    //   alarm_fqdn: req.body.['data_collecting_alarm_fqdn'],
+    //   ping_fqdn: req.body.['data_collecting_ping_fqdn'],
+    //   ping_packets: Number(req.body.['data_collecting_ping_packets']),
+    // };
+
+    // // testing every field.
+    // if (data_collecting.is_active === undefined || // if undefined or
+    //  data_collecting.is_active.constructor !== Boolean || // not boolean or
+    //  data_collecting.has_latency === undefined || // undefined or
+    //  data_collecting.has_latency.constructor !== Boolean || // not boolean or
+    //  data_collecting.alarm_fqdn === undefined || // undefined or
+    //  data_collecting.alarm_fqdn.constructor !== String || // not string or
+    //  !(data_collecting.alarm_fqdn = data_collecting.alarm_fqdn.trim()) ||
+    //  !util.isFqdnValid(data_collecting.alarm_fqdn) || // trimmed is not valid or
+    //  data_collecting.ping_fqdn === undefined || // undefined or
+    //  data_collecting.ping_fqdn.constructor !== String || // not string or
+    //  !(data_collecting.ping_fqdn = data_collecting.ping_fqdn.trim()) ||
+    //  !util.isFqdnValid(data_collecting.ping_fqdn) || // trimmed is not valid or
+    //  isNaN(data_collecting.ping_packets) || // is not a number or
+    //  data_collecting.ping_packets < 10 || data_collecting.ping_packets > 100 
+    //  // number out of bounds.
+    // ) { // if one single rule doesn't pass the test.
+    //   // respond error without much explanation.
+    //   return res.status(500).json({
+    //     type: 'danger',
+    //     message: 'Erro validando os campos relacionados a coleta de dados.',
+    //   });
+    // }
 
     await(config.save());
     return res.status(200).json({
