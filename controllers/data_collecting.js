@@ -10,19 +10,32 @@ const ConfigModel = require('../models/config');
 let dataCollectingController = {};
 
 
+// returns undefined when field exists in request and is valid. if not, returns
+// a string saying what is wrong.
 const checkReqField = (req, fieldname, validityFunc) => {
   if (!req.body.hasOwnProperty(fieldname)) {
-    return ''+fieldname+' inexistente.';
+    return fieldname+' inexistente.';
   }
   if (!validityFunc(req.body[fieldname])) {
-    return ''+fieldname+' inválido.';
+    return fieldname+' inválido.';
   }
 };
-const checkDataColllectingFqdn = (req) => checkReqField(req,
-  'data_collecting_fqdn', util.isFqdnValid);
+
+// generic call for checking boolean request parameters.
+const checkBooleanField = (req, fieldname) => checkReqField(req, fieldname,
+ (val) => val.constructor === Boolean);
+
+const checkIsActive = (req) => checkBooleanField(req, 'is_active');
+const checkHaslatency = (req) => checkBooleanField(req, 'has_latency');
+const checkAlarmFqdn = (req) => checkReqField(req,
+ 'data_collecting_alarm_fqdn', util.isFqdnValid);
+const checkPingFqdn = (req) => checkReqField(req,
+ 'data_collecting_ping_fqdn', util.isFqdnValid);
+const checkPingPackets = (req) => checkReqField(req, 'ping_packets', 
+ (val) => val.constructor === Number && val > 0 && val <= 100);
 const checkMac = (req) => checkReqField(req, 'mac', util.isMacValid);
 const checkDevices = (req) => {
-  if (!req.body.hasOwnProperty(fieldname)) {
+  if (!req.body.hasOwnProperty('devices')) {
     return 'devices inexistente.';
   }
   let devices = req.body.devices;
@@ -61,9 +74,9 @@ const handleErrors = function(req, extraHandlersArray) {
     res.status(errorCode).json({ message: errorObj });
     return false; // found a problem with request.
   }
-  if (extraHandlersArray !== undefined 
-    && extraHandlersArray.constructor === Array 
-    && extraHandlersArray.length > 0) {
+  if (extraHandlersArray !== undefined
+   && extraHandlersArray.constructor === Array
+   && extraHandlersArray.length > 0) {
     return executeCustomRequestChecks(req, extraHandlersArray);
   }
   return true; // no problems found.
@@ -258,17 +271,18 @@ const executeCustomRequestChecks = function(req, extraHandlersArray) {
 
 dataCollectingController.updateDataCollectingParameters =
 async(function(req, res) {
-  let checks = [checkDataColllectingFqdn];
-  if (!handleErrors(checks)) {
-    return;
-  }
+  let checks = [checkIsActive, checkHaslatency, checkAlarmFqdn, checkPingFqdn,
+   checkPingPackets];
+  if (!handleErrors(checks)) return;
 
   // Set license to true and set data collecting fqdn.
   ConfigModel.updateOne({is_default: true}, {
     '$set': {
-      'data_collecting.is_active': true, // unused.
-      'data_collecting.fqdn': req.body.data_collecting_fqdn,
-      'data_collecting.latency': req.body.data_collecting_latency || false,
+      'data_collecting.is_active': req.body.data_collecting_is_active,
+      'data_collecting.has_latency': req.body.data_collecting_has_latency,
+      'data_collecting.alarm_fqdn': req.body.data_collecting_alarm_fqdn,
+      'data_collecting.ping_fqdn': req.body.data_collecting_ping_fqdn,
+      'data_collecting.ping_packets': req.body.data_collecting_ping_packets,
     }
   }, (err) => {
     if (err) {

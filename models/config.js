@@ -21,8 +21,10 @@ let configSchema = new mongoose.Schema({
   },
   data_collecting: {
     is_active: {type: Boolean, default: false},
-    latency: {type: Boolean, default: false},
-    fqdn: String,
+    has_latency: {type: Boolean, default: false},
+    alarm_fqdn: {type: String, default: ''},
+    ping_fqdn: {type: String, default: ''},
+    ping_packets: {type: Number, default: 100},
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
