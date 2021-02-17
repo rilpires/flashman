@@ -1,0 +1,38 @@
+#vlan-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-project-diagram.fa-lg
+          strong &nbsp; Administrar VLANs de&nbsp;
+          strong(name="vlan-visual" id="vlan-visual")
+          span.d-none(name="vlan-hlabel" id="vlan-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          .table-responsive
+            table.table
+              thead
+                tr
+                  th.text-left VLAN
+                  th.text-left Interface
+                  th.text-left
+                    span Portas &nbsp;
+                    a.fas.fa-question-circle(
+                      data-toggle="tooltip",
+                      title="Os números marcados são de portas 'etiquetadas', já os números normais são de portas 'não etiquetadas'",
+                    )
+                  th &nbsp;
+                  th &nbsp;
+              tbody#vlansTable
+        .row
+          .col.text-left
+            button#btn-vlan-add.btn.btn-primary.btn-sm
+              i.fas.fa-plus.fa-lg
+              span &nbsp Adicionar
+      .modal-footer
+        .col.text-right
+          button#btn-vlan-visualize.btn.btn-primary.btn-sm
+            i.fas.fa-project-diagram.fa-lg
+            span &nbsp Visualizar VLANs

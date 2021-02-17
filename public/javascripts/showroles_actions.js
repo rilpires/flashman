@@ -658,6 +658,9 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-wan-bytes] option[value=' +
           roleObj.grantWanBytesView + ']')
         .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-vlan] option[value=' +
+          roleObj.grantVlan + ']')
+        .attr('selected', 'selected');
         $(rowObj).find('[name=grant-search-level] option[value=' +
           roleObj.grantSearchLevel + ']')
         .attr('selected', 'selected');

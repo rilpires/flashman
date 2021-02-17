@@ -289,6 +289,16 @@ const grantOpmode = function(version) {
   }
 };
 
+const grantVlanSupport = function(version) {
+  if (version.match(versionRegex)) {
+    // !todo! figure out which versions and/or model support VLANs
+    return (versionCompare(version, '0.25.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantWanBytesSupport = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.25.0') >= 0);
@@ -354,6 +364,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantOpmode = grantOpmode(version);
+  result.grantVlanSupport = grantVlanSupport(version);
   result.grantWanBytesSupport = grantWanBytesSupport(version);
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);

@@ -180,6 +180,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
+  let grantVlan = false;
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
@@ -208,6 +209,7 @@ $(document).ready(function() {
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
+    grantVlan = role.grantVlan;
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
@@ -1068,6 +1070,7 @@ $(document).ready(function() {
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
+          let grantVlanSupport = device.permissions.grantVlanSupport;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
@@ -1139,22 +1142,26 @@ $(document).ready(function() {
             '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
           '</a>';
 
-          let logAction = baseAction
+          let baseActionBottom = dropdownDivider+'<a class="dropdown-item $REPLACE_BTN_CLASS">'+
+            '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
+          '</a>';
+
+          let logAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
           .replace('$REPLACE_ICON', 'fa-file-alt')
           .replace('$REPLACE_TEXT', 'Logs do roteador');
 
-          let unblockAction = baseAction
+          let unblockAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-reset-blocked')
           .replace('$REPLACE_ICON', 'fa-ban')
           .replace('$REPLACE_TEXT', 'Desbloquear dispositivos');
 
-          let portForwardAction = baseAction
+          let portForwardAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-open-ports-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
-          let pingTestAction = baseAction
+          let pingTestAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-ping-test-modal')
           .replace('$REPLACE_ICON', 'fa-stethoscope')
           .replace('$REPLACE_TEXT', 'Teste de latência e perda');
@@ -1164,27 +1171,27 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
-          let siteSurveyAction = baseAction
+          let siteSurveyAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
           .replace('$REPLACE_ICON', 'fa-wifi')
           .replace('$REPLACE_TEXT', 'Redes ao redor');
 
-          let measureAction = baseAction
+          let measureAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
-          let vlanAction = baseAction
+          let vlanAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-vlan-modal')
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', 'Administrar VLANs');
 
-          let wanBytesAction = baseAction
+          let wanBytesAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
           .replace('$REPLACE_TEXT', 'Tráfego WAN');
 
-          let factoryAction = baseAction
+          let factoryAction = baseActionBottom
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
@@ -1200,25 +1207,16 @@ $(document).ready(function() {
             '<a class="dropdown-item btn-reset-app">'+
               '<i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span>'+
             '</a>'+
-            dropdownDivider+
             '$REPLACE_LOG_ACTION'+
-            dropdownDivider+
             '$REPLACE_UNBLOCK_ACTION'+
-            dropdownDivider+
             '$REPLACE_PORT_FORWARD_ACTION'+
-            dropdownDivider+
             '$REPLACE_PING_TEST_ACTION'+
             '</div><div>'+
             '$REPLACE_DEVICES_ACTION'+
-            dropdownDivider+
             '$REPLACE_SITESURVEY_ACTION'+
-            dropdownDivider+
             '$REPLACE_MEASURE_ACTION'+
-            dropdownDivider+
             '$REPLACE_VLAN_ACTION'+
-            dropdownDivider+
             '$REPLACE_WAN_BYTES_ACTION'+
-            dropdownDivider+
             '$REPLACE_FACTORY_ACTION'+
             '</div>'+
           '</div>';
@@ -1257,7 +1255,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
-          if ((isSuperuser || grantVlan) && grantWanBytesSupport) {
+          if ((isSuperuser || grantVlan) && grantVlanSupport) {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
           } else {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
