@@ -530,10 +530,6 @@ userController.getProfile = function(req, res) {
       } else {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-        indexContent.data_collecting = {
-          is_active: matchedConfig.data_collecting.is_active,
-          latency: matchedConfig.data_collecting.latency
-        };
       }
       indexContent.superuser = req.user.is_superuser;
       indexContent.username = req.user.name;
@@ -613,10 +609,6 @@ userController.showCertificates = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              indexContent.data_collecting = {
-                is_active: matchedConfig.data_collecting.is_active,
-                latency: matchedConfig.data_collecting.latency
-              };
             }
             indexContent.username = req.user.name;
 
@@ -677,10 +669,6 @@ userController.showAll = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              indexContent.data_collecting = {
-                is_active: matchedConfig.data_collecting.is_active,
-                latency: matchedConfig.data_collecting.latency
-              };
             }
             indexContent.username = req.user.name;
 
@@ -733,10 +721,6 @@ userController.showRoles = function(req, res) {
           } else {
             indexContent.update = matchedConfig.hasUpdate;
             indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-            indexContent.data_collecting = {
-              is_active: matchedConfig.data_collecting.is_active,
-              latency: matchedConfig.data_collecting.latency
-            };
           }
           indexContent.username = req.user.name;
 

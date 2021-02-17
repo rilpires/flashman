@@ -76,10 +76,6 @@ firmwareController.index = function(req, res) {
       } else {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-        indexContent.data_collecting = {
-          is_active: matchedConfig.data_collecting.is_active,
-          latency: matchedConfig.data_collecting.latency
-        };
       }
       Role.findOne({name: req.user.role}, function(err, role) {
         if (err) {

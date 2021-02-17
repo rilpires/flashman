@@ -198,10 +198,6 @@ deviceListController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-        indexContent.data_collecting = {
-          is_active: matchedConfig.data_collecting.is_active,
-          latency: matchedConfig.data_collecting.latency
-        };
         indexContent.update_schedule = {
           is_active: matchedConfig.device_update_schedule.is_active,
           device_total: matchedConfig.device_update_schedule.device_count,
