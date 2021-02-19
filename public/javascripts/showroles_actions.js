@@ -224,6 +224,32 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Administração de portas VLANs de um roteador'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-vlan-edit').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Edição de Perfis de VLANs'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-vlan-profile-edit').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Busca de roteadores'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -658,8 +684,11 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-wan-bytes] option[value=' +
           roleObj.grantWanBytesView + ']')
         .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-vlan] option[value=' +
-          roleObj.grantVlan + ']')
+        $(rowObj).find('[name=grant-vlan-edit] option[value=' +
+          roleObj.grantVlanEdit + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-vlan-profile-edit] option[value=' +
+          roleObj.grantVlanProfileEdit + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-search-level] option[value=' +
           roleObj.grantSearchLevel + ']')

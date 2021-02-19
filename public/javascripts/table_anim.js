@@ -180,7 +180,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
-  let grantVlan = false;
+  let grantVlanEdit = false;
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
@@ -209,7 +209,7 @@ $(document).ready(function() {
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
-    grantVlan = role.grantVlan;
+    grantEditVlan = role.grantEditVlan;
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
@@ -1255,7 +1255,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
-          if ((isSuperuser || grantVlan) && grantVlanSupport) {
+          if ((isSuperuser || grantVlanEdit) && grantVlanSupport) {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
           } else {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
