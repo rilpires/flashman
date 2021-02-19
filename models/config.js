@@ -71,6 +71,10 @@ let configSchema = new mongoose.Schema({
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},
+  vlans_profiles: [{
+    vlan_id: {type: Number, required: true, min: 1, max: 4094},
+    profile_name: {type: String, required: true, match: /[A-Za-z0-9_-]/, maxLength: 32},
+  }],
 });
 
 let config = mongoose.model('config', configSchema);

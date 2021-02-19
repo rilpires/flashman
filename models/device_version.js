@@ -291,8 +291,7 @@ const grantOpmode = function(version) {
 
 const grantVlanSupport = function(version) {
   if (version.match(versionRegex)) {
-    // !todo! figure out which versions and/or model support VLANs
-    return (versionCompare(version, '0.25.0') >= 0);
+    return (versionCompare(version, '0.31.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;

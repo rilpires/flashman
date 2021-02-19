@@ -1,0 +1,53 @@
+
+const express = require('express');
+const vlanController = require('../controllers/vlan');
+const authController = require('../controllers/auth');
+const permission = 'grantVlan';
+const permissionProfile = 'grantVlanProfileEdit';
+
+let router = express.Router();
+
+router.route('/profile').get(authController.ensureLogin(),
+                           authController.ensurePermission(),
+                           vlanController.showVlanProfiles);
+
+router.route('/profile/:vid').get(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.getAllVlanProfiles);
+
+router.route('/profile/new').post(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.addVlanProfile);
+
+router.route('/profile/edit/:vid').post(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.editVlanProfile);
+
+router.route('/profile/del').delete(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.removeVlanProfile);
+/*
+
+router.route('/fetch').get(authController.ensureLogin(),
+                           authController.ensurePermission(permission),
+                           vlanController.fetchVlans);
+
+router.route('/del').post(authController.ensureLogin(),
+                          authController.ensurePermission(permission),
+                          vlanController.delVlan);
+
+router.route('/upload').post(authController.ensureLogin(),
+                             authController.ensurePermission(permission),
+                             vlanController.uploadVlan);
+
+router.route('/sync').post(authController.ensureLogin(),
+                           authController.ensurePermission(permission),
+                           vlanController.syncRemoteVlanFiles);
+
+router.route('/add').post(authController.ensureLogin(),
+                          authController.ensurePermission(permission),
+                          vlanController.addRemoteVlanFile);
+
+*/
+
+module.exports = router;
