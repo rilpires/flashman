@@ -113,8 +113,14 @@ const generateSessionCredential = function(user) {
   // Add onu config, if present
   let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
     .exec().catch((err) => err));
-  if (config && config.tr069 && config.tr069.web_password) {
-    session.onuPassword = config.tr069.web_password;
+  if (config && config.tr069) {
+    let trConf = config.tr069;
+    session.onuLogin = (trConf.web_login) ? trConf.web_login : '';
+    session.onuPassword = (trConf.web_password) ? trConf.web_password : '';
+    session.onuUserLogin = (trConf.web_login_user) ? trConf.web_login_user : '';
+    session.onuUserPassword = (trConf.web_password_user) ?
+                              trConf.web_password_user : '';
+    session.onuRemote = trConf.remote_access;
   }
   return session;
 };
@@ -413,6 +419,7 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
           tr069Info.url = config.tr069.server_url;
           tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
         }
+        // TODO: Send custom onu fields
         return res.status(200).json({
           'success': true,
           'isRegister': true,
@@ -458,10 +465,12 @@ diagAppAPIController.getTR069Config = async(function(req, res) {
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
+  let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
   return res.status(200).json({
     'success': true,
     'url': config.tr069.server_url,
     'interval': parseInt(config.tr069.inform_interval/1000),
+    'certificate': certFile,
   });
 });
 
