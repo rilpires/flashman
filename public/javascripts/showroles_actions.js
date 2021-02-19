@@ -160,21 +160,9 @@ $(document).ready(function() {
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-upgrade').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Atualização de Firmware em Massa'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-mass-firmware-upgrade').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
+                          $('<option></option>').val(0).text('Bloquear'),
+                          $('<option></option>').val(1).text('Permitir'),
+                          $('<option></option>').val(2).text('Permitir em massa'),
                         )
                       )
                     ),
@@ -248,7 +236,33 @@ $(document).ready(function() {
                           .text('Busca completa com filtros especiais')
                         )
                       )
-                    )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware Restrita'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-restricted-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware Beta'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-beta-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -429,21 +443,9 @@ $(document).ready(function() {
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-removal').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Remoção de Registro de Roteadores em Massa'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-device-mass-removal').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
+                          $('<option></option>').val(0).text('Bloquear'),
+                          $('<option></option>').val(1).text('Permitir'),
+                          $('<option></option>').val(2).text('Permitir em massa'),
                         )
                       )
                     ),
@@ -537,7 +539,7 @@ $(document).ready(function() {
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
-                    )
+                    ),
                   ),
                 ),
                 $('<div></div>').addClass('row')
@@ -568,11 +570,16 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-pass-show] option[value=' +
           roleObj.grantPassShow + ']')
         .attr('selected', 'selected');
+        let basicFirmwareUpgrade = roleObj.grantFirmwareUpgrade;
+        let massFirmwareUpgrade = roleObj.grantMassFirmwareUpgrade;
+        let fwUpgradeValue = 0;
+        if (basicFirmwareUpgrade && massFirmwareUpgrade) {
+          fwUpgradeValue = 2;
+        } else if (basicFirmwareUpgrade && !massFirmwareUpgrade) {
+          fwUpgradeValue = 1;
+        }
         $(rowObj).find('[name=grant-firmware-upgrade] option[value=' +
-          roleObj.grantFirmwareUpgrade + ']')
-        .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-mass-firmware-upgrade] option[value=' +
-          roleObj.grantMassFirmwareUpgrade + ']')
+          fwUpgradeValue + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-wan-type] option[value=' +
           roleObj.grantWanType + ']')
@@ -589,11 +596,16 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-factory-reset] option[value=' +
           roleObj.grantFactoryReset + ']')
         .attr('selected', 'selected');
+        let basicDeviceRemoval = roleObj.grantDeviceRemoval;
+        let massDeviceRemoval = roleObj.grantDeviceMassRemoval;
+        let deviceRemovalValue = 0;
+        if (basicDeviceRemoval && massDeviceRemoval) {
+          deviceRemovalValue = 2;
+        } else if (basicDeviceRemoval && !massDeviceRemoval) {
+          deviceRemovalValue = 1;
+        }
         $(rowObj).find('[name=grant-device-removal] option[value=' +
-          roleObj.grantDeviceRemoval + ']')
-        .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-device-mass-removal] option[value=' +
-          roleObj.grantDeviceMassRemoval + ']')
+          deviceRemovalValue + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-add] option[value=' +
           roleObj.grantDeviceAdd + ']')
@@ -651,6 +663,12 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-search-summary] option[value=' +
           roleObj.grantShowSearchSummary + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-firmware-beta-upgrade] option[value=' +
+          roleObj.grantFirmwareBetaUpgrade + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value=' +
+          roleObj.grantFirmwareRestrictedUpgrade + ']')
         .attr('selected', 'selected');
       });
     } else {

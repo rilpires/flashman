@@ -32,31 +32,31 @@ const convertSubnetIntToMask = function(mask) {
 };
 
 const convertWifiMode = function(mode, oui, model) {
-  let ouiModelStr = oui + '-' + model;
+  let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === '0C8063-IGD') return 'g';
-      else if (ouiModelStr === '00259E-HG8245Q2') return '11bg';
-      else if (ouiModelStr === 'E01954-F670L') return 'b,g';
-      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'b,g';
+      if (ouiModelStr === 'IGD') return 'g';
+      else if (ouiModelStr === 'F670L') return 'b,g';
+      else if (ouiModelStr === 'HG8245Q2') return '11bg';
+      else if (ouiModelStr === 'G-140W-C') return 'b,g';
       else return '11bg';
     case '11n':
-      if (ouiModelStr === '0C8063-IGD') return 'n';
-      else if (ouiModelStr === '00259E-HG8245Q2') return '11bgn';
-      else if (ouiModelStr === 'E01954-F670L') return 'b,g,n';
-      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'b,g,n';
+      if (ouiModelStr === 'IGD') return 'n';
+      else if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else return '11bgn';
     case '11na':
-      if (ouiModelStr === '0C8063-IGD') return 'n';
-      else if (ouiModelStr === '00259E-HG8245Q2') return '11na';
-      else if (ouiModelStr === 'E01954-F670L') return 'a,n';
-      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'a,n';
+      if (ouiModelStr === 'IGD') return 'n';
+      else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else return '11na';
     case '11ac':
-      if (ouiModelStr === '0C8063-IGD') return 'ac';
-      else if (ouiModelStr === '00259E-HG8245Q2') return '11ac';
-      else if (ouiModelStr === 'E01954-F670L') return 'a,n,ac';
-      else if (ouiModelStr === 'AC9CE4-G-140W-C') return 'a,n,ac';
+      if (ouiModelStr === 'IGD') return 'ac';
+      else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else return '11ac';
     default:
       return '';
@@ -210,25 +210,25 @@ const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
   let fields = {};
-  switch (oui+'-'+model) {
-    case '00259E-HG8245Q2': // Huawei HG8245Q2
+  switch (model) {
+    case 'HG8245Q2': // Huawei HG8245Q2
       message = '';
       fields = getHuaweiFields();
       break;
-    case 'E01954-F670L': // ZTE F670L
+    case 'F670L': // ZTE F670L
       message = '';
       fields = getZTEFields();
       break;
-    case 'AC9CE4-G-140W-C': // Nokia G-140W-C
-    case 'AC9CE4-G%2D140W%2DC': // URI encoded
+    case 'G-140W-C': // Nokia G-140W-C
+    case 'G%2D140W%2DC': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
-    case '000AC2-HG6245D': // Fiberhome AN5506-04-CG
+    case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
       break;
-    case '0C8063-IGD': // TP-Link Archer C5
+    case 'IGD': // TP-Link Archer C5
       message = '';
       fields = getDefaultFields();
       break;

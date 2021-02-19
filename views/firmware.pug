@@ -63,13 +63,15 @@ block content
             table#avail-firmware-table.table
               thead
                 tr
+                  th.text-center
+                    input.checkbox(type="checkbox" id="checkall_add" autocomplete="off")
                   th.text-center Fabricante
                   th.text-center Modelo
                   th.text-center Versão do hardware
                   th.text-center Release
                   th.text-center Protocolo de acesso
                   th.text-center Versão do Flashbox
-                  th
+                  th.text-center Restringir Firmware
               tbody#avail-firmware-list
           h2#avail-firmware-placeholder.text-center.grey-text.mb-3
             i.fas.fa-hdd.fa-4x
@@ -86,13 +88,14 @@ block content
           thead
             tr
               th.text-center
-                input.checkbox(type="checkbox" id="checkall")
+                input.checkbox(type="checkbox" id="checkall_del" autocomplete="off")
               th.text-center Fabricante
               th.text-center Modelo
               th.text-center Versão
               th.text-center Release
               th.text-center Protocolo de acesso
               th.text-center Versão do Flashbox
+              th.text-center Firmware Restrita
 
 block scripts
   script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')

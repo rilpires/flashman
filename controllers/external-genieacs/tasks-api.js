@@ -24,7 +24,11 @@ if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
     {useUnifiedTopology: true}).then(async (client) => {
     genieDB = client.db('genieacs');
     tasksCollection = genieDB.collection('tasks');
-    watchGenieFaults(); // start watcher for genie faults.
+    // Only watch if flashman instance is the first one dispatched
+    if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+      console.log('Watching for faults in GenieACS database');
+      watchGenieFaults(); // start watcher for genie faults.
+    }
     /* we should never close connection to database. it will be close when
      application stops. */
   });
