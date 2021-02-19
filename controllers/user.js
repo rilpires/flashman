@@ -153,7 +153,7 @@ userController.postRole = function(req, res) {
     grantSiteSurvey: req.body['grant-site-survey'],
     grantMeasureDevices: parseInt(req.body['grant-measure-devices']),
     grantCsvExport: req.body['grant-csv-export'],
-    grantVlanEdit: req.body['grant-vlan-edit'],
+    grantVlanEdit: req.body['grant-vlan'],
     grantVlanProfileEdit: req.body['grant-vlan-profile-edit'],
     grantWanBytesView: req.body['grant-wan-bytes'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
@@ -360,7 +360,7 @@ userController.editRole = function(req, res) {
     role.grantSiteSurvey = req.body['grant-site-survey'];
     role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
     role.grantCsvExport = req.body['grant-csv-export'];
-    role.grantVlanEdit = req.body['grant-vlan-edit'];
+    role.grantVlanEdit = req.body['grant-vlan'];
     role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
     role.grantWanBytesView = req.body['grant-wan-bytes'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);

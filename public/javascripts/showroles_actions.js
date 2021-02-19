@@ -224,32 +224,6 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Administração de portas VLANs de um roteador'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-vlan-edit').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Edição de Perfis de VLANs'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-vlan-profile-edit').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
                         .text('Busca de roteadores'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -566,6 +540,33 @@ $(document).ready(function() {
                         )
                       )
                     ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Informações de VLANs'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-vlan').append(
+                          $('<option></option>').val(0).text('Não Visualizar'),
+                          $('<option></option>').val(1).text('Visualizar'),
+                          $('<option></option>').val(2).text('Visualizar e Editar')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Adição/Edição/Remoção de Perfis de VLANs'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-vlan-profile-edit').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
                   ),
                 ),
                 $('<div></div>').addClass('row')
@@ -684,8 +685,8 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-wan-bytes] option[value=' +
           roleObj.grantWanBytesView + ']')
         .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-vlan-edit] option[value=' +
-          roleObj.grantVlanEdit + ']')
+        $(rowObj).find('[name=grant-vlan] option[value=' +
+          roleObj.grantVlan + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-vlan-profile-edit] option[value=' +
           roleObj.grantVlanProfileEdit + ']')

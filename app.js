@@ -139,7 +139,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantSiteSurvey: true,
         grantMeasureDevices: 2,
         grantOpmodeEdit: true,
-        grantVlanEdit: true,
+        grantVlan: 2,
         grantVlanProfileEdit: true,
         grantWanBytesView: true,
         grantCsvExport: true,

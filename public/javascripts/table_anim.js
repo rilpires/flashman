@@ -180,7 +180,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
-  let grantVlanEdit = false;
+  let grantVlan = 0;
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
@@ -1255,7 +1255,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
-          if ((isSuperuser || grantVlanEdit) && grantVlanSupport) {
+          if ((isSuperuser || grantVlan > 0) && grantVlanSupport) {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
           } else {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
