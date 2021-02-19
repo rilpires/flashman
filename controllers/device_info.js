@@ -653,27 +653,30 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        // Update data collecting device parameters.
-        // // if any data collecting parameter exists.
-        if (req.body.data_collecting_is_active !== undefined || 
-        req.body.data_collecting_has_latency !== undefined || 
-        req.body.data_collecting_ping_fqdn !== undefined) {
-          // coping current data collecting parameters, or creating new one.
-          deviceSetQuery.data_collecting = matchedDevice.data_collecting || {
-            is_active: false, has_latency: false,
-          };
-
-          // parsing values and setting fields if values exists and are valid.
-          let v;
-          v = util.returnBoolean(req.body.data_collecting_is_active);
-          if (v) deviceSetQuery.data_collecting.is_active = v;
-
-          v = util.returnBoolean(req.body.data_collecting_has_latency);
-          if (v) deviceSetQuery.data_collecting.has_latency = v;
-
-          v = req.body.data_collecting_ping_fqdn;
-          if (v !== undefined && v.constructor === String) v = v.trim();
-          if (util.isFqdnValid(v)) deviceSetQuery.data_collecting.ping_fqdn = v;
+        // Updating data collecting device parameters.
+        // coping current data collecting parameters, or creating new one.
+        deviceSetQuery.data_collecting = matchedDevice.data_collecting || {
+          is_active: false, has_latency: false, ping_fqdn: '',
+        };
+        // if any data collecting parameter exists. parses values and sets
+        // fields if values exists and are valid.
+        let v;
+        v = req.body.data_collecting_is_active;
+        if ((v.constructor === String && (v = v.trim()) !== '') || v !== undefined) {
+          // if parameter is a string and if, after trimming it, it's not empty or
+          // if it's not undefined, we convert to boolean.
+          deviceSetQuery.data_collecting.is_active = Boolean(v); 
+        }
+        v = req.body.data_collecting_has_latency;
+        if ((v.constructor === String && (v = v.trim()) !== '') || v !== undefined) {
+          // if parameter is a string and if, after trimming it, it's not empty or
+          // if it's not undefined, we convert to boolean.
+          deviceSetQuery.data_collecting.has_latency = Boolean(v);
+        }
+        v = req.body.data_collecting_ping_fqdn;
+        if (v.constructor === String && (v = v.trim()) !== null && util.isFqdnValid(v)) {
+          // if parameter is a string, then we trim it, and if it's a valid FQDN.
+          deviceSetQuery.data_collecting.ping_fqdn = v; // assign parameter.
         }
 
         let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
@@ -696,24 +699,22 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         );
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          // combining 'Device' and 'Config' data collecting parameters.
-          let data_collecting = {}
-          if (matchedDevice && matchedDevice.data_collecting) {
-            data_collecting.is_active =
-              util.returnObjOrFalse(matchedDevice.data_collecting.is_active)
-            data_collecting.has_latency =
-              util.returnObjOrFalse(matchedDevice.data_collecting.has_latency)
-            data_collecting.ping_fqdn = matchedDevice.data_collecting.ping_fqdn
+          // combining 'Device' and 'Config' data collecting parameters or setting defaults.
+          let data_collecting = {};
+          if (matchedDevice && matchedDevice.data_collecting.constructor === Object) {
+            data_collecting.is_active = matchedDevice.data_collecting.is_active || false;
+            data_collecting.has_latency = matchedDevice.data_collecting.has_latency || false;
+            data_collecting.ping_fqdn = matchedDevice.data_collecting.ping_fqdn || '';
           }
-          if (matchedConfig && matchedConfig.data_collecting) {
-            data_collecting.is_active &&= // matchedDevice value && matchedConfig value.
-              util.returnObjOrFalse(matchedConfig.data_collecting.is_active)
-            data_collecting.has_latency &&= // matchedDevice value && matchedConfig value.
-              util.returnObjOrFalse(matchedConfig.data_collecting.has_latency)
-            data_collecting.alarm_fqdn = matchedConfig.data_collecting.alarm_fqdn
-            data_collecting.ping_fqdn ||= // preference for matchedDevice value.
-              matchedConfig.data_collecting.ping_fqdn
-            data_collecting.ping_packets = matchedConfig.data_collecting.ping_packets
+          if (matchedConfig && matchedConfig.data_collecting.constructor === Object) {
+            // matchedDevice value && matchedConfig value.
+            data_collecting.is_active &&= matchedConfig.data_collecting.is_active || false;
+            // matchedDevice value && matchedConfig value.
+            data_collecting.has_latency &&= matchedConfig.data_collecting.has_latency || false;
+            data_collecting.alarm_fqdn = matchedConfig.data_collecting.alarm_fqdn || '';
+            // preference for matchedDevice value.
+            data_collecting.ping_fqdn ||= matchedConfig.data_collecting.ping_fqdn || '';
+            data_collecting.ping_packets = matchedConfig.data_collecting.ping_packets || 100;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1816,35 +1817,27 @@ deviceInfoController.getDataCollectingConfig = async(function(req, res) {
       throw new {message: 'Data Collecting Ping Machine FQDN not configured'};
     }
 
-    // combining 'Device' and 'Config' data collecting parameters.
-    let data_collecting = {}
-    if (device && device.data_collecting) {
-      data_collecting.is_active =
-        util.returnObjOrFalse(device.data_collecting.is_active)
-      data_collecting.has_latency =
-        util.returnObjOrFalse(device.data_collecting.has_latency)
-      data_collecting.ping_fqdn = device.data_collecting.ping_fqdn
+    // combining 'Device' and 'Config' data collecting parameters or 
+    // setting defaults.
+    let ret = {success: 1};
+    if (device && device.data_collecting.constructor === Object) {
+      ret.is_active = device.data_collecting.is_active || false;
+      ret.has_latency = device.data_collecting.has_latency || false;
+      ret.ping_fqdn = device.data_collecting.ping_fqdn || '';
     }
-    if (config && config.data_collecting) {
-      data_collecting.is_active &&= // device value && config value.
-        util.returnObjOrFalse(config.data_collecting.is_active)
-      data_collecting.has_latency &&= // device value && config value.
-        util.returnObjOrFalse(config.data_collecting.has_latency)
-      data_collecting.alarm_fqdn = config.data_collecting.alarm_fqdn
-      data_collecting.ping_fqdn ||= // preference for device value.
-        config.data_collecting.ping_fqdn
-      data_collecting.ping_packets = config.data_collecting.ping_packets
+    if (config && config.data_collecting.constructor === Object) {
+      // device value && config value.
+      ret.is_active &&= config.data_collecting.is_active || false;
+      // device value && config value.
+      ret.has_latency &&= config.data_collecting.has_latency || false;
+      ret.alarm_fqdn = config.data_collecting.alarm_fqdn || '';
+      // preference for device value.
+      ret.ping_fqdn ||= matchedConfig.data_collecting.ping_fqdn || '';
+      ret.ping_packets = config.data_collecting.ping_packets || 100;
     }
 
     // Reply with both data collecting FQDNs.
-    return res.status(200).json({
-      success: 1,
-      is_active: data_collecting.is_active,
-      has_latency: data_collecting.has_latency,
-      alarm_fqdn: data_collecting.alarm_fqdn,
-      ping_fqdn: data_collecting.ping_fqdn,
-      ping_packets: data_collecting.ping_packets,
-    });
+    return res.status(200).json(data_collecting);
   } catch (err) {
     console.log(err);
     return res.status(500).json({success: 0});

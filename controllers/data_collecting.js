@@ -21,7 +21,7 @@ const checkReqField = (req, fieldname, validityFunc) => {
   }
 };
 
-// generic call for checking boolean request parameters.
+// generic call for checking boolean parameters in request.
 const checkBooleanField = (req, fieldname) => checkReqField(req, fieldname,
  (val) => val.constructor === Boolean);
 
@@ -31,7 +31,7 @@ const checkAlarmFqdn = (req) => checkReqField(req,
  'data_collecting_alarm_fqdn', util.isFqdnValid);
 const checkPingFqdn = (req) => checkReqField(req,
  'data_collecting_ping_fqdn', util.isFqdnValid);
-const checkPingPackets = (req) => checkReqField(req, 'ping_packets', 
+const checkPingPackets = (req) => checkReqField(req, 'ping_packets',
  (val) => val.constructor === Number && val > 0 && val <= 100);
 const checkMac = (req) => checkReqField(req, 'mac', util.isMacValid);
 const checkDevices = (req) => {
