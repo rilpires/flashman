@@ -13,14 +13,13 @@ const fileUpload = require('express-fileupload');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
-const request = require('request-promise-native');
 const meshHandlers = require('./controllers/handlers/mesh');
 let session = require('express-session');
 
 let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
 let deviceUpdater = require('./controllers/update_scheduler');
-let keyHandlers = require('./controllers/handlers/keys');
+let controlApi = require('./controllers/external-api/control');
 let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
@@ -78,33 +77,12 @@ if (process.env.FLM_COMPANY_SECRET) {
 
 // Only master instance should do DB checks
 if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
-  let pubKeyUrl = 'http://localhost:9000/api/flashman/pubkey/register';
-  if (process.env.production) {
-    pubKeyUrl = 'https://controle.anlix.io/api/flashman/pubkey/register';
-  }
   // Check default config
-  Config.findOne({is_default: true}, async function(err, matchedConfig) {
-    // Check config existence and create one if not found
-    if (err || !matchedConfig) {
-      let newConfig = new Config({
-        is_default: true,
-        autoUpdate: true,
-        pppoePassLength: 8,
-      });
-      await newConfig.save();
-      // Generate key pair
-      await keyHandlers.generateAuthKeyPair();
-      // Send public key to be included in firmwares
-      await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
-    } else {
-      // Check flashman key pair existence and generate it otherwise
-      if (matchedConfig.auth_privkey === '') {
-        await keyHandlers.generateAuthKeyPair();
-        // Send public key to be included in firmwares
-        await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
-      }
-    }
+  controlApi.checkPubKey(app).then(() => {
+    // Get message configs from control
+    controlApi.getMessageConfig(app);
   });
+
   // Check administration user existence
   User.find({is_superuser: true}, function(err, matchedUsers) {
     if (err || !matchedUsers || 0 === matchedUsers.length) {
@@ -180,32 +158,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         }
       }
     }
-  });
-}
-
-// Get message configs from control
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
-  request({
-    url: 'https://controle.anlix.io/api/message/config',
-    method: 'POST',
-    json: {
-      secret: app.locals.secret,
-    },
-  }).then((resp)=>{
-    if (resp && resp.token && resp.fqdn) {
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
-        if (err || !matchedConfig) {
-          console.log('Error obtaining message config!');
-          return;
-        }
-        matchedConfig.messaging_configs.secret_token = resp.token;
-        matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-        console.log('Obtained message config successfully!');
-        matchedConfig.save();
-      });
-    }
-  }, (err)=>{
-    console.log('Error obtaining message config!');
   });
 }
 
