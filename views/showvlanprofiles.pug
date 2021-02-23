@@ -27,10 +27,10 @@ block content
               label(for="new_vlan-id") VLAN ID
               input.form-control(type="number",
                                  id="new_vlan-id",
-                                 name="vlanid",
+                                 name="id",
                                  oninput="checkVlanId(this)", 
                                  required)
-              .invalid-feedback O VLAN ID não pode ser menor que 0 ou maior que 4094
+              .invalid-feedback O VLAN ID deve ser distinto, não pode ser menor que 2 ou maior que 4094
             .md-form.input-entry
               label(for="new_vlan-profile-name") Nome
               input.form-control(type="text",

@@ -1,9 +1,27 @@
 
 let checkVlanId = function(input) {
-  if (input.value < 0 || input.value > 4094) {
-    input.setCustomValidity('O VLAN ID não pode ser menor que 0 ou maior que 4094.');
+  if (input.value < 2 || input.value > 4094) {
+    input.setCustomValidity('O VLAN ID não pode ser menor que 2 ou maior que 4094.');
   } else {
-    input.setCustomValidity('');
+    let distinctValidity = false;
+    $.get('/vlan/profile/fetch', function(res) {
+      if (res.type == 'success') {
+        $('#loading-vlan-profile').hide();
+        $('#vlan-profile-table-wrapper').show();
+
+        res.vlanProfiles.forEach(function(vp) {
+          if(vp.vlan_id.toString() === input.value) {
+            distinctValidity = true;
+          }
+        });
+        if(distinctValidity) {
+          input.setCustomValidity('O VLAN ID deve ser distinto dos já existentes.');
+        }
+        else {
+          input.setCustomValidity('');
+        }
+      }
+    });
   }
 };
 
@@ -17,29 +35,30 @@ let checkVlanName = function(input) {
 
 const fetchVlanProfiles = function(vlanProfilesTable) {
   vlanProfilesTable.clear().draw();
-  $.get('/vlan/profile/', function(res) {
+  $.get('/vlan/profile/fetch', function(res) {
     if (res.type == 'success') {
       $('#loading-vlan-profile').hide();
       $('#vlan-profile-table-wrapper').show();
 
       res.vlanProfiles.forEach(function(vlanProfileObj) {
         let vlanProfileRow = $('<tr></tr>').append(
-          (vlanProfileObj.is_superuser ?
+          (vlanProfileObj.is_superuser || vlanProfileObj.vlan_id == 1 ?
             $('<td></td>') :
             $('<td></td>').addClass('col-xs-1').append(
               $('<input></input>').addClass('checkbox')
               .attr('type', 'checkbox')
-              .attr('id', vlanProfileObj.vlan_id)
+              .attr('id', vlanProfileObj._id)
             )
           ),
           $('<td></td>').html(vlanProfileObj.vlan_id),
           $('<td></td>').html(vlanProfileObj.profile_name),
           $('<td></td>').append(
+            vlanProfileObj.vlan_id == 1 ? '' :
             $('<button></button>').append(
               $('<div></div>').addClass('fas fa-edit btn-vp-edit-icon'),
               $('<span></span>').html('&nbsp Editar')
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
-            .attr('data-vlan-profile-id', vlanProfileObj._id)
+            .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button')
           )
         );
@@ -54,7 +73,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
 $(document).ready(function() {
   let selectedItens = [];
 
-  let vlanProfilesTable = $('#vlanProfiles-table').DataTable({
+  let vlanProfilesTable = $('#vlan-profile-table').DataTable({
     'destroy': true,
     'paging': true,
     'info': false,
@@ -71,7 +90,7 @@ $(document).ready(function() {
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0]},
     ],
-    'dom': '<"row" <"col-sm-12 col-md-6 dt-vlan-profile-table-btns">  ' +
+    'dom': '<"row" <"col-sm-12 col-md-6 dt-vlan-profiles-table-btns">  ' +
            '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
            '<"row" t>                                          ' +
            '<"row" <"col-6"l>                                  ' +
@@ -96,7 +115,7 @@ $(document).ready(function() {
 
   $(document).on('click', '.btn-trash', function(event) {
     $.ajax({
-      type: 'POST',
+      type: 'DELETE',
       url: '/vlan/profile/del',
       traditional: true,
       data: {ids: selectedItens},

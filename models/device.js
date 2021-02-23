@@ -200,6 +200,11 @@ let deviceSchema = new Schema({
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
+  qtd_lan_ports: {type: Number, default: 4},
+  vlan : [{
+    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    vlan_id: {type: Number, required: true, min: 1, max: 4094 /*, default: 1*/},
+  }],
 });
 
 deviceSchema.set('autoIndex', false);
