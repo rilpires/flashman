@@ -284,7 +284,9 @@ updateController.getAutoConfig = function(req, res) {
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
         tr069ServerURL: matchedConfig.tr069.server_url,
+        tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
+        tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
@@ -387,11 +389,17 @@ updateController.setAutoConfig = async function(req, res) {
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
+    let onuWebLogin = req.body['onu-web-login'];
+    if (!onuWebLogin) {
+      // in case of falsey value, use current one
+      onuWebLogin = config.tr069.web_login;
+    }
     let onuWebPassword = req.body['onu-web-password'];
     if (!onuWebPassword) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
     }
+    let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
     let tr069RecoveryThreshold =
@@ -416,7 +424,9 @@ updateController.setAutoConfig = async function(req, res) {
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
+        web_login: onuWebLogin,
         web_password: onuWebPassword,
+        remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
