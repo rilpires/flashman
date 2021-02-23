@@ -372,8 +372,12 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             // Device was set to DHCP, change relevant fields
             deviceSetQuery.bridge_mode_enabled = false;
             deviceSetQuery.connection_type = 'dhcp';
+            deviceSetQuery.pppoe_user = '';
+            deviceSetQuery.pppoe_password = '';
             matchedDevice.bridge_mode_enabled = false; // Used in device response
             matchedDevice.connection_type = 'dhcp'; // Used in device response
+            matchedDevice.pppoe_user = ''; // Used in device response
+            matchedDevice.pppoe_password = ''; // Used in device response
           } else if (sentConnType === 'pppoe') {
             // Device was set to PPPoE, change relevant fields
             let sentUser = util.returnObjOrEmptyStr(req.body.pppoe_user).trim();
