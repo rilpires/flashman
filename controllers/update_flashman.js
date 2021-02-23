@@ -303,41 +303,8 @@ updateController.getAutoConfig = function(req, res) {
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
 const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
-  // getting devices ids from genie.
-  let ids = await tasksApi.getFromCollection('devices', {}, '_id')
-  .catch((e) => {
-    console.error(e); // printing error to console.
-    // throwing error message that can be given to user interface.
-    throw new Error('Erro encontrando dispositivos do TR-069 no ACS.');
-  });
-  ids = ids.map((obj) => obj._id); // transforming object to string.
-
-
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-
-  // preparing a task to each device to change inform interval in genieacs.
-  let tasksChangeInform = new Array(ids.length); // one task for each device.
-  for (let i = 0; i < tasksChangeInform.length; i++) {
-    let taskInformInterval = {
-      name: 'setParameterValues',
-      parameterValues: [[parameterName, tr069InformInterval]],
-      // genie accepts inform interval as seconds.
-    };
-    // executing a promise and not waiting for it.
-    tasksChangeInform[i] = tasksApi.addTask(ids[i], taskInformInterval, false)
-     .catch((e) => {
-      console.error('error when sending inform interval for device id '+ids[i])
-      // if error throw object containing respective device id and task.
-      throw {task: taskInformInterval, id: ids[i], err: e};
-    });
-  }
-  // sending task to genieacs and waiting all promises to finish.
-  await Promise.all(tasksChangeInform).catch((e) => {
-    console.error(e.err); // print error message.
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS '
-     +`para dispositivo ${e.id}.`); // can be given to user interface.
-  });
 
   // updating inform interval in genie preset.
   /* we already have a preset in genieacs which _id is 'inform'. first we get
