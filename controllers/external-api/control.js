@@ -4,7 +4,7 @@ const keyHandlers = require('../handlers/keys');
 
 let Config = require('../../models/config');
 
-let controlApiAddr = 'https://controle.anlix.io/api';
+let controlApiAddr = 'http://localhost:9000/api';
 if (process.env.production === 'true' || process.env.production === true) {
   controlApiAddr = 'https://controle.anlix.io/api';
 }
@@ -142,6 +142,58 @@ controlController.isAccountBlocked = function(app) {
     }).then((res) => {
       if (res.success) {
         return resolve({success: true, isBlocked: res.blocked});
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro na requisição'});
+    });
+  });
+};
+
+controlController.isAccountBlocked = function(app) {
+  return new Promise((resolve, reject) => {
+    request({
+      url: controlApiAddr + '/user/blocked',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+      },
+      timeout: 20000,
+    }).then((res) => {
+      if (res.success) {
+        return resolve({success: true, isBlocked: res.blocked});
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro na requisição'});
+    });
+  });
+};
+
+controlController.reportDevices = function(app, devicesArray) {
+  let stdDevicesArray = [];
+  for (let i = 0; i < devicesArray.length; i++) {
+    stdDevicesArray[i] = {
+      id: devicesArray[i]['serial_tr069'],
+      model: devicesArray[i]['model'],
+      modelversion: devicesArray[i]['version'],
+    };
+  }
+  return new Promise((resolve, reject) => {
+    request({
+      url: controlApiAddr + '/device/report',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+        'devices': stdDevicesArray,
+      },
+      timeout: 20000,
+    }).then((res) => {
+      if (res.success) {
+        return resolve({success: true, hasLicenses: res.nolicense,
+                        licensesNum: res.licenses});
       } else {
         return resolve({success: false, message: res.message});
       }
