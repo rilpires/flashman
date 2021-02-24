@@ -11,6 +11,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 
@@ -2370,45 +2371,30 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   });
 };
 
-deviceListController.updateLicenseStatus = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
-    if (err || !matchedDevice) {
+deviceListController.updateLicenseStatus = async function(req, res) {
+  try {
+    let matchedDevice = await DeviceModel.findById(req.body.id);
+    if (!matchedDevice) {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar roteador'});
     }
-    request({
-      url: 'https://controle.anlix.io/api/device/list',
-      method: 'POST',
-      json: {
-        'secret': req.app.locals.secret,
-        'all': false,
-        'mac': matchedDevice._id,
-      },
-    },
-    function(error, response, body) {
-      if (error) {
-        return res.json({success: false, message: 'Erro na requisição'});
+    let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
+    if (retObj.success) {
+      if (matchedDevice.is_license_active === undefined) {
+        matchedDevice.is_license_active = !retObj.isBlocked;
+        await matchedDevice.save();
+      } else if ((!retObj.isBlocked) !== matchedDevice.is_license_active) {
+        matchedDevice.is_license_active = !retObj.isBlocked;
+        await matchedDevice.save();
       }
-      if (response.statusCode === 200) {
-        if (body.success) {
-          let isBlocked = (body.device.is_blocked === true ||
-                           body.device.is_blocked === 'true');
-          if (matchedDevice.is_license_active === undefined) {
-            matchedDevice.is_license_active = !isBlocked;
-            matchedDevice.save();
-          } else if ((!isBlocked) !== matchedDevice.is_license_active) {
-            matchedDevice.is_license_active = !isBlocked;
-            matchedDevice.save();
-          }
-          return res.json({success: true, status: !isBlocked});
-        } else {
-          return res.json({success: false, message: body.message});
-        }
-      } else {
-        return res.json({success: false, message: 'Erro na requisição'});
-      }
-    });
-  });
+      return res.json({success: true, status: !retObj.isBlocked});
+    } else {
+      return res.json({success: false, message: retObj.message});
+    }
+  } catch (err) {
+    return res.status(500).json({success: false,
+                                 message: 'Erro externo de comunicação'});
+  }
 };
 
 deviceListController.exportDevicesCsv = async function(req, res) {
