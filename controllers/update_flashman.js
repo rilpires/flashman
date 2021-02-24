@@ -123,8 +123,24 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
+const rebootGenie = function() {
+  // We do a stop/start instead of restart to avoid racing conditions when
+  // genie's worker processes are killed and then respawned - this prevents
+  // issues with ONU connections since exceptions lead to buggy exp. backoff
+  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    exec('pm2 start genieacs-cwmp');
+  });
+};
+
 const rebootFlashman = function(version) {
-  exec('pm2 reload environment.config.json &');
+  // Stop genieacs before reloading flashman - this prevents exceptions and
+  // racing conditions when onus try to connect - we use the service name to
+  // avoid booting genieacs on servers where it was never booted in the first
+  // place (as opposed to using environment.genieacs.json)
+  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    // & necessary because otherwise process would kill itself and cause issues
+    exec('pm2 reload environment.config.json &');
+  });
 };
 
 const errorCallback = function(res) {
@@ -223,6 +239,8 @@ updateController.update = function() {
 };
 
 updateController.checkUpdate = function() {
+  // Restart genieacs service whenever Flashman is restarted
+  rebootGenie();
   if (process.env.FLM_DISABLE_AUTO_UPDATE === 'true') {
     // Always return as updated if auto update is disabled
     Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -269,7 +287,9 @@ updateController.getAutoConfig = function(req, res) {
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
         tr069ServerURL: matchedConfig.tr069.server_url,
+        tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
+        tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
@@ -288,42 +308,8 @@ updateController.getAutoConfig = function(req, res) {
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
 const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
-  // getting devices ids from genie.
-  let ids = await tasksApi.getFromCollection('devices', {}, '_id')
-  .catch((e) => {
-    console.error(e); // printing error to console.
-    // throwing error message that can be given to user interface.
-    throw new Error('Erro encontrando dispositivos do TR-069 no ACS.');
-  });
-  ids = ids.map((obj) => obj._id); // transforming object to string.
-
-
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-
-  // preparing a task to each device to change inform interval in genieacs.
-  let tasksChangeInform = new Array(ids.length); // one task for each device.
-  for (let i = 0; i < tasksChangeInform.length; i++) {
-    let taskInformInterval = {
-      name: 'setParameterValues',
-      parameterValues: [[parameterName, tr069InformInterval]],
-      // genie accepts inform interval as seconds.
-    };
-    // executing a promise and not waiting for it.
-    tasksChangeInform[i] = tasksApi.addTask(ids[i], taskInformInterval, false)
-     .catch((e) => {
-        console.error('error when sending inform interval for device id ' +
-                      ids[i]);
-      // if error throw object containing respective device id and task.
-      throw {task: taskInformInterval, id: ids[i], err: e};
-    });
-  }
-  // sending task to genieacs and waiting all promises to finish.
-  await Promise.all(tasksChangeInform).catch((e) => {
-    console.error(e.err); // print error message.
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS '
-     +`para dispositivo ${e.id}.`); // can be given to user interface.
-  });
 
   // updating inform interval in genie preset.
   /* we already have a preset in genieacs which _id is 'inform'. first we get
@@ -406,11 +392,17 @@ updateController.setAutoConfig = async function(req, res) {
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
+    let onuWebLogin = req.body['onu-web-login'];
+    if (!onuWebLogin) {
+      // in case of falsey value, use current one
+      onuWebLogin = config.tr069.web_login;
+    }
     let onuWebPassword = req.body['onu-web-password'];
     if (!onuWebPassword) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
     }
+    let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
     let tr069RecoveryThreshold =
@@ -435,7 +427,9 @@ updateController.setAutoConfig = async function(req, res) {
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
+        web_login: onuWebLogin,
         web_password: onuWebPassword,
+        remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,

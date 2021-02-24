@@ -207,8 +207,14 @@ $(document).ready(function() {
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL);
       }
+      if (resp.tr069WebLogin) {
+        $('#onu-web-login').val(resp.tr069WebLogin);
+      }
       if (resp.tr069WebPassword) {
         $('#onu-web-password').val(resp.tr069WebPassword);
+      }
+      if (resp.tr069WebRemote) {
+        $('#onu_web_remote').prop('checked', true).change();
       }
       $('#inform-interval').val(resp.tr069InformInterval);
       $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);

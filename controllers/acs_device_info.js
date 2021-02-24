@@ -142,10 +142,11 @@ const createRegistry = async function(req) {
   let hasPPPoE = (data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
+  let splitID = req.body.acs_id.split('-');
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
-    serial_tr069: req.body.acs_id.split('-')[2],
+    serial_tr069: splitID[splitID.length - 1],
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
@@ -216,7 +217,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
   device.acs_id = req.body.acs_id;
-  device.serial_tr069 = req.body.acs_id.split('-')[2];
+  let splitID = req.body.acs_id.split('-');
+  device.serial_tr069 = splitID[splitID.length - 1];
   if (data.common.model) device.model = data.common.model;
   if (data.common.version) device.version = data.common.version;
   if (hasPPPoE) {
@@ -365,7 +367,8 @@ const fetchLogFromGenie = function(success, mac, acsID) {
     return;
   }
   let splitID = acsID.split('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
   let options = {
@@ -405,7 +408,8 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 // TODO: Move this function to external-genieacs?
 const fetchWanBytesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
@@ -454,7 +458,8 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
 // TODO: Move this function to external-genieacs?
 const fetchDevicesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   assocField = assocField.substring(0, assocField.indexOf('*')-1);
@@ -551,7 +556,8 @@ acsDeviceInfoController.requestLogs = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
   let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
@@ -568,7 +574,8 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let task = {
@@ -587,7 +594,8 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   let totalAssocField = fields.devices.assoc_total;
@@ -607,7 +615,8 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hasChanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   Object.keys(changes).forEach((masterKey)=>{

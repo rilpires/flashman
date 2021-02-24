@@ -37,17 +37,16 @@ const updateConfiguration = function(fields) {
   return result;
 };
 
+let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let serial = declare('DeviceID.SerialNumber', {value: 1}).value[0];
-let genieID = oui + '-' + modelClass + '-' + serial;
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
 let args = {oui: oui, model: modelClass};
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 if (!result.success || !result.fields) {
-  log('Provision sync for device ' + genieID + ' failed: ' + result.message);
+  log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
   return;
 }
 let fields = result.fields;
