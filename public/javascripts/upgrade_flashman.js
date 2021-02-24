@@ -97,18 +97,17 @@ let checkUpdateFlashman = function() {
   });
 };
 
-
 // assigning tr069 elements.
-let recoveryInput = 
+let recoveryInput =
   document.getElementById('lost-informs-recovery-threshold');
-let recoveryErrorElement = 
+let recoveryErrorElement =
   document.getElementById('error-lost-informs-recovery-threshold');
-let offlineInput = 
+let offlineInput =
   document.getElementById('lost-informs-offline-threshold');
-let offlineErrorElement = 
+let offlineErrorElement =
   document.getElementById('error-lost-informs-offline-threshold');
-let recoveryOfflineErrorElement = 
-  document.getElementById("error-recovery-offline-thresholds");
+let recoveryOfflineErrorElement =
+  document.getElementById('error-recovery-offline-thresholds');
 
 // resets errors and message styles for tr069 recovery and offline iputs.
 const resetRecoveryOfflineInputDependencyError = function() {
@@ -117,7 +116,7 @@ const resetRecoveryOfflineInputDependencyError = function() {
   recoveryOfflineErrorElement.style.display = '';
   recoveryErrorElement.style.display = '';
   offlineErrorElement.style.display = '';
-}
+};
 
 // sets custom validity message, hides error element of both recovery and
 // offline inputs and shows an error message that belongs to both input fields.
@@ -129,8 +128,8 @@ const setRecoveryOfflineInputDependencyError = function() {
   // each input's individual error text message.
   recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
   offlineErrorElement.style.display = 'none'; // hidding offline's error.
-  recoveryOfflineErrorElement.style.display = 'block';//showing error for both.
-}
+  recoveryOfflineErrorElement.style.display = 'block'; // showing error for both
+};
 
 // will be called in every input after the first time save button is pressed.
 const checkrecoveryOfflineInputDependency = function() {
@@ -141,8 +140,8 @@ const checkrecoveryOfflineInputDependency = function() {
     setRecoveryOfflineInputDependencyError(); // set error message.
   } else { // if fields have valid values. we reset errors and message styles.
     resetRecoveryOfflineInputDependencyError(); // reset error message.
-  };
-}
+  }
+};
 
 // called after save button is pressed.
 let configFlashman = function(event) {
@@ -159,7 +158,7 @@ let configFlashman = function(event) {
    && Number(recoveryInput.value) >= Number(offlineInput.value)) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
-  };
+  }
 
   // take action after validation is ready.
   if (allValid) {
