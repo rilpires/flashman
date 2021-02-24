@@ -123,7 +123,7 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
-const rebootGenie = function() {
+updateController.rebootGenie = function() {
   // We do a stop/start instead of restart to avoid racing conditions when
   // genie's worker processes are killed and then respawned - this prevents
   // issues with ONU connections since exceptions lead to buggy exp. backoff
@@ -239,8 +239,6 @@ updateController.update = function() {
 };
 
 updateController.checkUpdate = function() {
-  // Restart genieacs service whenever Flashman is restarted
-  rebootGenie();
   if (process.env.FLM_DISABLE_AUTO_UPDATE === 'true') {
     // Always return as updated if auto update is disabled
     Config.findOne({is_default: true}, function(err, matchedConfig) {
