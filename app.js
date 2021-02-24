@@ -156,6 +156,15 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
           devices[idx].connection_type = 'dhcp';
           saveDevice = true;
         }
+        // Remove pppoe credentials from dhcp devices
+        if (devices[idx].connection_type === 'dhcp' &&
+            (devices[idx].pppoe_user !== '' ||
+             devices[idx].pppoe_password !== '')
+        ) {
+          devices[idx].pppoe_user = '';
+          devices[idx].pppoe_password = '';
+          saveDevice = true;
+        }
         if (saveDevice) {
           devices[idx].save();
         }
