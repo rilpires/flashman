@@ -351,7 +351,7 @@ if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
 }
 
 // trigger ´npm run build´ to bundle front-end javascript with webpack
-exec('npm rum build', (error, stdout, stderr) => {
+exec('npm run build', (error, stdout, stderr) => {
     if (error) {
         console.log(`error: ${error.message}`);
         return;

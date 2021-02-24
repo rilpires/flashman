@@ -1,10 +1,7 @@
-const path = require('path');
-// const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
   target: 'web',
   mode: 'development',
-  // externals: [nodeExternals()],
   entry: {
     index: ['./public/javascripts/device_validator.js',
     './public/javascripts/new_device.js',
@@ -45,7 +42,7 @@ module.exports = {
   },
   output: {
     filename: '[name].bundle.js',
-    path: path.resolve(__dirname, 'bin'),
+    path: __dirname + '/bin',
   },
   module: {
     rules: [
@@ -60,13 +57,5 @@ module.exports = {
         },
       },
     ],
-  },
-  resolve: {
-    fallback: {
-      'util': require.resolve('util/'),
-      'path-browserify': require.resolve('path-browserify/'),
-      'stream-browserify': require.resolve('stream-browserify/'),
-      'assert': require.resolve('assert/'),
-    },
   },
 };
