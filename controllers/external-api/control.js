@@ -192,7 +192,7 @@ controlController.reportDevices = function(app, devicesArray) {
       timeout: 20000,
     }).then((res) => {
       if (res.success) {
-        return resolve({success: true, hasLicenses: res.nolicense,
+        return resolve({success: true, noLicenses: res.nolicense,
                         licensesNum: res.licenses});
       } else {
         return resolve({success: false, message: res.message});

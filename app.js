@@ -14,10 +14,13 @@ const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const meshHandlers = require('./controllers/handlers/mesh');
+const utilHandlers = require('./controllers/handlers/util');
 let session = require('express-session');
 
 let measurer = require('./controllers/measure');
 let updater = require('./controllers/update_flashman');
+let acsDeviceController = require('./controllers/acs_device_info');
+let userController = require('./controllers/user');
 let deviceUpdater = require('./controllers/update_scheduler');
 let controlApi = require('./controllers/external-api/control');
 let Config = require('./models/config');
@@ -377,15 +380,25 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
   app.listen(parseInt(schedulePort), function() {
-    let rule = new schedule.RecurrenceRule();
-    rule.hour = 20;
-    rule.minute = 0;
+    let late8pmRule = new schedule.RecurrenceRule();
+    late8pmRule.hour = 20;
+    late8pmRule.minute = 0;
     // Schedule automatic update
-    schedule.scheduleJob(rule, function() {
+    schedule.scheduleJob(late8pmRule, function() {
       updater.update();
       measurer.pingLicenseStatus();
     });
+    let midnightRule = new schedule.RecurrenceRule();
+    midnightRule.hour = 0;
+    midnightRule.minute = utilHandlers.getRandomInt(10, 50);
+    schedule.scheduleJob(midnightRule, function() {
+      // Schedule license report
+      acsDeviceController.reportOnuDevices(app);
+      userController.checkAccountIsBlocked(app);
+    });
 
+    acsDeviceController.reportOnuDevices(app);
+    userController.checkAccountIsBlocked(app);
     // Force an update check to alert user on app startup
     updater.checkUpdate();
   });

@@ -1,6 +1,8 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const Notification = require('../models/notification');
 const sio = require('../sio');
 
 const pako = require('pako');
@@ -175,6 +177,7 @@ const createRegistry = async function(req) {
   });
   try {
     await newDevice.save();
+    await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
     console.log(err);
     return false;
@@ -643,6 +646,68 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
   });
+};
+
+acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
+  try {
+    let devicesArray = null;
+    if (!devices) {
+      devicesArray = await DeviceModel.find({
+        use_tr069: true,
+        is_license_active: {$exists: false}},
+      {
+        serial_tr069: true,
+        model: true,
+        version: true,
+        is_license_active: true});
+    } else {
+      devicesArray = devices;
+    }
+    let response = await controlApi.reportDevices(app, devicesArray);
+    if (response.success) {
+      for (let device of devicesArray) {
+        device.is_license_active = true;
+        await device.save();
+      }
+      if (response.noLicenses) {
+        let matchedNotif = await Notification.findOne({
+          'message_code': 4,
+          'target': 'general'});
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'Sua conta está sem licenças para ONUs sobrando. ' +
+                       'Entre em contato com seu representante comercial',
+            'message_code': 4,
+            'severity': 'danger',
+            'type': 'communication',
+            'allow_duplicate': false,
+            'target': 'general',
+          });
+          await notification.save();
+        }
+      } else if (response.licensesNum < 50) {
+        let matchedNotif = await Notification.findOne({
+          'message_code': 3,
+          'target': 'general'});
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'Sua conta está com apenas ' + response.licensesNum +
+                       ' licenças ONU sobrando. ' +
+                       'Entre em contato com seu representante comercial',
+            'message_code': 3,
+            'severity': 'alert',
+            'type': 'communication',
+            'allow_duplicate': false,
+            'target': 'general',
+          });
+          await notification.save();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in license report: ' + err);
+    return {success: false, message: 'Erro na requisição'};
+  }
 };
 
 module.exports = acsDeviceInfoController;
