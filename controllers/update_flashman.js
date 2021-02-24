@@ -123,8 +123,24 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
+const rebootGenie = function() {
+  // We do a stop/start instead of restart to avoid racing conditions when
+  // genie's worker processes are killed and then respawned - this prevents
+  // issues with ONU connections since exceptions lead to buggy exp. backoff
+  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    exec('pm2 start genieacs-cwmp');
+  });
+};
+
 const rebootFlashman = function(version) {
-  exec('pm2 reload environment.config.json &');
+  // Stop genieacs before reloading flashman - this prevents exceptions and
+  // racing conditions when onus try to connect - we use the service name to
+  // avoid booting genieacs on servers where it was never booted in the first
+  // place (as opposed to using environment.genieacs.json)
+  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    // & necessary because otherwise process would kill itself and cause issues
+    exec('pm2 reload environment.config.json &');
+  });
 };
 
 const errorCallback = function(res) {
@@ -223,6 +239,8 @@ updateController.update = function() {
 };
 
 updateController.checkUpdate = function() {
+  // Restart genieacs service whenever Flashman is restarted
+  rebootGenie();
   if (process.env.FLM_DISABLE_AUTO_UPDATE === 'true') {
     // Always return as updated if auto update is disabled
     Config.findOne({is_default: true}, function(err, matchedConfig) {
