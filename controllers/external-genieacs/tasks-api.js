@@ -196,7 +196,7 @@ const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   return request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/devices/'+deviceid+'/tasks?timeout='+timeout+
+    path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
      (shouldRequestConnection ? '&connection_request' : ''),
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(taskjson)},
@@ -475,6 +475,7 @@ itself and will be removed and re added.*/
     // if the last task was execute, it's high likely the previous tasks were
     // also executed.
     changeStream.hasNext().then(async function() {
+      if (changeStream.isClosed()) return;
       await changeStream.next();
       changeStream.close(); // close this change stream.
       clearTimeout(taskTimer); // clear setTimeout.

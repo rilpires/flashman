@@ -70,7 +70,7 @@ $(document).ready(function() {
                                    JSON.stringify(apDevices));
           }
 
-          renderSiteSurvey(apDevices, isBridge);
+          renderSiteSurvey(apDevices, isBridge, res.wifi_last_channel, res.wifi_last_channel_5ghz);
         } else {
           displayAlertMsg(res);
         }
@@ -108,18 +108,45 @@ $(document).ready(function() {
     return finalChannel;
   };
 
-  const renderSiteSurvey = function(apDevices, isBridge) {
+  const renderSiteSurvey = function(apDevices, isBridge, wifi2GhzChannel, wifi5GhzChannel) {
     $('#site-survey-placeholder').hide();
     let apDevs2GhzRow = $('#2-ghz-aps');
     let apDevs5GhzRow = $('#5-ghz-aps');
     let countAdded2GhzDevs = 0;
     let countAdded5GhzDevs = 0;
     let apSelectedDevsRow = apDevs2GhzRow;
+    let minScore2Ghz = 1000;
+    let maxScore2Ghz = -1000;
+    let minScore5Ghz = 1000;
+    let maxScore5Ghz = -1000;
+    let minSignal2Ghz = 1000;
+    let maxSignal2Ghz = -1000;
+    let minSignal5Ghz = 1000;
+    let maxSignal5Ghz = -1000;
+    let worst2GhzChannel = 0;
+    let best2GhzChannel = 0;
+    let worst5GhzChannel = 0;
+    let best5GhzChannel = 0;
     let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
     let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
-
+    let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
+                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
+    let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
+                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    let channels2Ghz = Object.keys(ap2GhzCountDict);
+    let channels5Ghz = Object.keys(ap5GhzCountDict);
+    let channels5GhzLower = [];
+    let channels5GhzUpper = [];
+    let dividingChannel = 64;
+    for (let i=0; i< channels5Ghz.length; i++) {
+      if (channels5Ghz[i] <= dividingChannel) {
+        channels5GhzLower.push(channels5Ghz[i]);
+      } else {
+        channels5GhzUpper.push(channels5Ghz[i]);
+      }
+    }
     apDevices.sort(sortBySignal);
     $.each(apDevices, function(idx, device) {
       // Skip if not seen for too long
@@ -127,17 +154,29 @@ $(document).ready(function() {
         return true;
       }
       let apChannel = calculateChannel(device.freq);
-      if (apChannel <= 14) { // 2.4 GHz
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         apSelectedDevsRow = apDevs2GhzRow;
         // Count APs
         if (apChannel in ap2GhzCountDict) {
           ap2GhzCountDict[apChannel] += 1;
+        }
+        if (parseInt(device.signal) >= maxSignal2Ghz) {
+          maxSignal2Ghz = parseInt(device.signal)
+        }
+        if (parseInt(device.signal) <= minSignal2Ghz) {
+          minSignal2Ghz = parseInt(device.signal)
         }
       } else { // 5.0 GHz
         apSelectedDevsRow = apDevs5GhzRow;
         // Count APs
         if (apChannel in ap5GhzCountDict) {
           ap5GhzCountDict[apChannel] += 1;
+        }
+        if (parseInt(device.signal) >= maxSignal5Ghz) {
+          maxSignal5Ghz = parseInt(device.signal)
+        }
+        if (parseInt(device.signal) <= minSignal5Ghz) {
+          minSignal5Ghz = parseInt(device.signal)
         }
       }
       apSelectedDevsRow.append(
@@ -160,7 +199,7 @@ $(document).ready(function() {
           ),
         ),
       );
-      if (apChannel <= 14) { // 2.4 GHz
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         countAdded2GhzDevs += 1;
         // Line break every 2 columns
         if (countAdded2GhzDevs % 2 == 0) {
@@ -174,28 +213,110 @@ $(document).ready(function() {
         }
       }
     });
+    $.each(apDevices, function(idx, device) {
+      // Skip if not seen for too long
+      if (device.is_old) {
+        return true;
+      }
+      let apChannel = calculateChannel(device.freq);
+      let apWidth = device.width;
+      let range = 2;
+      let signalValue = 0;
+      if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
+        signalValue = 1 - (device.signal - maxSignal2Ghz)/(minSignal2Ghz - maxSignal2Ghz);
+        if (apWidth == 40) range = 4;
+        let index = channels2Ghz.indexOf(apChannel);
+        for (let i=index-range; i<=index+range; i++) {
+          if (i >= 0 && index < channels2Ghz.length) {
+            ap2GhzScoreDict[channels2Ghz[i]] +=
+            (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
+          }
+        }
+      } else { // 5.0 GHz
+        signalValue = 1 - (device.signal - maxSignal5Ghz)/(minSignal5Ghz - maxSignal5Ghz);
+        if (apWidth == 40) {
+          range = 4;
+        } else if (apWidth == 80) {
+          range = 8;
+        }
+        if (apChannel <= dividingChannel) {
+          let index = channels5GhzLower.indexOf(apChannel);
+          for (let i=index-range; i<=index+range; i++) {
+            if (i >= 0 && index < channels5GhzLower.length) {
+              ap5GhzScoreDict[channels5GhzLower[i]] +=
+              (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
+            }
+          }
+        } else {
+          let index = channels5GhzUpper.indexOf(apChannel);
+          for (let i=index-range; i<=index+range; i++) {
+            if (i >= 0 && index < channels5GhzUpper.length) {
+              ap5GhzScoreDict[channels5GhzUpper[i]] +=
+              (1/Math.sqrt(1 + (range/2)*Math.abs(index - i)))*signalValue;
+            }
+          }
+        }
+      }
+    });
+    for (let channel in ap2GhzScoreDict) {
+      if (ap2GhzScoreDict[channel] >= maxScore2Ghz) {
+        maxScore2Ghz = ap2GhzScoreDict[channel];
+        worst2GhzChannel = channel;
+      }
+      if (ap2GhzScoreDict[channel] <= minScore2Ghz) {
+        minScore2Ghz = ap2GhzScoreDict[channel];
+        best2GhzChannel = channel;
+      }
+    }
     // Prepend summary of APs in each channel
     let summary2Ghz = $();
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais')),
+                                 .text('Ocupação dos canais (atual: Canal ' +
+                                  wifi2GhzChannel + ')')),
         $('<hr>').addClass('mt-1'),
     ));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     // eslint-disable-next-line guard-for-in
     for (let channel in ap2GhzCountDict) {
-      summary2Ghz = summary2Ghz.add($('<div>')
-      .addClass('col-lg m-1 grey lighten-3').append(
-        $('<div>').addClass('row pt-3 mb-2').append(
-          $('<div>').addClass('col').append(
-            $('<h5>').append(
-              $('<strong>').text('Canal ' + channel + ': '),
-              ap2GhzCountDict[channel],
+      if (channel == best2GhzChannel) {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-md-auto m-1 green lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel] + ' (melhor)',
+              ),
             ),
           ),
-        ),
-      ));
+        ));
+      } else if (channel == worst2GhzChannel) {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-md m-1 red lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel] + ' (pior)',
+              ),
+            ),
+          ),
+        ));
+      } else {
+        summary2Ghz = summary2Ghz.add($('<div>')
+        .addClass('col-lg m-1 grey lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap2GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      }
       if (channel % 4 == 0) {
         summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
       }
@@ -214,27 +335,64 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     apDevs2GhzRow.prepend(summary2Ghz);
     // 5GHz
+    for (let channel in ap5GhzScoreDict) {
+      if (ap5GhzScoreDict[channel] >= maxScore5Ghz) {
+        maxScore5Ghz = ap5GhzScoreDict[channel];
+        worst5GhzChannel = channel;
+      }
+      if (ap5GhzScoreDict[channel] <= minScore5Ghz) {
+        minScore5Ghz = ap5GhzScoreDict[channel];
+        best5GhzChannel = channel;
+      }
+    }
     let summary5Ghz = $();
     summary5Ghz = summary5Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais')),
+                                 .text('Ocupação dos canais (atual: Canal ' +
+                                  wifi5GhzChannel + ')')),
         $('<hr>').addClass('mt-1'),
     ));
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
     // eslint-disable-next-line guard-for-in
     for (let channel in ap5GhzCountDict) {
-      summary5Ghz = summary5Ghz.add($('<div>')
-      .addClass('col-lg m-1 grey lighten-3').append(
-        $('<div>').addClass('row pt-3 mb-2').append(
-          $('<div>').addClass('col').append(
-            $('<h5>').append(
-              $('<strong>').text('Canal ' + channel + ': '),
-              ap5GhzCountDict[channel],
+      if (channel == best5GhzChannel) {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 green lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel] + ' (melhor)',
+              ),
             ),
           ),
-        ),
-      ));
+        ));
+      } else if (channel == worst5GhzChannel) {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 red lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel] + ' (pior)',
+              ),
+            ),
+          ),
+        ));
+      } else {
+        summary5Ghz = summary5Ghz.add($('<div>')
+        .addClass('col-lg m-1 grey lighten-3').append(
+          $('<div>').addClass('row pt-3 mb-2').append(
+            $('<div>').addClass('col').append(
+              $('<h5>').append(
+                $('<strong>').text('Canal ' + channel + ': '),
+                ap5GhzCountDict[channel],
+              ),
+            ),
+          ),
+        ));
+      }
       if (['48', '64', '161'].includes(channel)) {
         summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
       }
@@ -265,6 +423,10 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
+    let has5ghz = row.data('has-5ghz');
+    if (!has5ghz) {
+      $('.btn-show-5-ghz-aps').addClass('disabled').prop('disabled', true);
+    }
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#site-survey-placeholder-none').hide();
@@ -337,6 +499,7 @@ $(document).ready(function() {
     $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
     $('.btn-sync-ssurvey').prop('disabled', false);
     $('.btn-show-5-ghz-aps').removeClass('active disabled');
+    $('.btn-show-5-ghz-aps').prop('disabled', false);
     $('.btn-show-2-ghz-aps').removeClass('disabled');
     $('.btn-show-2-ghz-aps').addClass('active');
     clearTimeout(siteSurveyGlobalTimer);

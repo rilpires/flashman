@@ -38,21 +38,25 @@ const convertWifiMode = function(mode, oui, model) {
       if (ouiModelStr === 'IGD') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
+      else if (ouiModelStr === 'G-140W-C') return 'b,g';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else return '11ac';
     default:
       return '';
@@ -189,6 +193,19 @@ const getZTEFields = function() {
   return fields;
 };
 
+const getNokiaFields = function() {
+  let fields = getDefaultFields();
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
+  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  return fields;
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -201,6 +218,11 @@ const getModelFields = function(oui, model) {
     case 'F670L': // ZTE F670L
       message = '';
       fields = getZTEFields();
+      break;
+    case 'G-140W-C': // Nokia G-140W-C
+    case 'G%2D140W%2DC': // URI encoded
+      message = '';
+      fields = getNokiaFields();
       break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';

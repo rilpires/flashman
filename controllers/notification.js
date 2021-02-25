@@ -5,7 +5,7 @@ let TasksAPI = require('./external-genieacs/tasks-api');
 let notificationController = {};
 
 notificationController.fetchNotifications = function(req, res) {
-  Notification.find({'target': {$in: req.body.devices}},
+  Notification.find({'target': {$in: req.body.targets}},
     function(err, notifications) {
       if (err) {
         console.log('Error retrieving notifications: ' + err);
