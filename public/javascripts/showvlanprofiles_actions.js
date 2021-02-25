@@ -4,24 +4,18 @@ let checkVlanId = function(input) {
     input.setCustomValidity('O VLAN ID não pode ser menor que 2 ou maior que 4094.');
   } else {
     let distinctValidity = false;
-    $.get('/vlan/profile/fetch', function(res) {
-      if (res.type == 'success') {
-        $('#loading-vlan-profile').hide();
-        $('#vlan-profile-table-wrapper').show();
-
-        res.vlanProfiles.forEach(function(vp) {
-          if(vp.vlan_id.toString() === input.value) {
-            distinctValidity = true;
-          }
-        });
-        if(distinctValidity) {
-          input.setCustomValidity('O VLAN ID deve ser distinto dos já existentes.');
-        }
-        else {
-          input.setCustomValidity('');
-        }
+    vlanIdsOnTable = $('.td-vlan-id');
+    for(i in vlanIdsOnTable) {
+      if(vlanIdsOnTable[i].innerText === input.value) {
+        distinctValidity = true;
       }
-    });
+    }
+    if(distinctValidity) {
+      input.setCustomValidity('O VLAN ID deve ser distinto dos já existentes.');
+    }
+    else {
+      input.setCustomValidity('');
+    }
   }
 };
 
@@ -29,7 +23,19 @@ let checkVlanName = function(input) {
   if (/[^A-Za-z\-0-9_]+/.test(input.value)) {
     input.setCustomValidity('O nome deve ter caracteres alfanumericos, hífen ou sublinhado.');
   } else {
-    input.setCustomValidity('');
+    let distinctValidity = false;
+    vlanIdsOnTable = $('.td-profile-name');
+    for(i in vlanIdsOnTable) {
+      if(vlanIdsOnTable[i].innerText === input.value) {
+        distinctValidity = true;
+      }
+    }
+    if(distinctValidity) {
+      input.setCustomValidity('O Nome do Perfil da VLAN deve ser distinto dos já existentes.');
+    }
+    else {
+      input.setCustomValidity('');
+    }
   }
 };
 
@@ -50,8 +56,8 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
               .attr('id', vlanProfileObj._id)
             )
           ),
-          $('<td></td>').html(vlanProfileObj.vlan_id),
-          $('<td></td>').html(vlanProfileObj.profile_name),
+          $('<td></td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
+          $('<td></td>').addClass('td-profile-name').html(vlanProfileObj.profile_name),
           $('<td></td>').append(
             vlanProfileObj.vlan_id == 1 ? '' :
             $('<button></button>').append(

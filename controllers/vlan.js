@@ -72,7 +72,85 @@ vlanController.showVlanProfiles = function(req, res) {
 };
 
 vlanController.getVlanProfile = function(req, res) {
-  next();
+  let indexContent = {};
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
+  Role.find(function(err, roles) {
+    if (err) {
+      console.log(err);
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    }
+    let userRole = roles.find(function(role) {
+      return role.name === req.user.role;
+    });
+    if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+      indexContent.type = 'danger';
+      indexContent.message = 'Permissão não encontrada';
+      return res.render('error', indexContent);
+    } else {
+      indexContent.roles = roles;
+      indexContent.role = userRole;
+
+      if (req.user.is_superuser || indexContent.role.grantVlanProfileEdit) {
+        User.findOne({name: req.user.name}, function(err, user) {
+          if (err || !user) {
+            indexContent.superuser = false;
+          } else {
+            indexContent.superuser = user.is_superuser;
+          }
+
+          Config.findOne({is_default: true}, function(err, matchedConfig) {
+            if (err || !matchedConfig) {
+              indexContent.update = false;
+            } else {
+              indexContent.update = matchedConfig.hasUpdate;
+              indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
+              let active = matchedConfig.measure_configs.is_active;
+                indexContent.measure_active = active;
+                indexContent.measure_token = (active) ?
+                    matchedConfig.measure_configs.auth_token : '';
+              let license = matchedConfig.measure_configs.is_license_active;
+              indexContent.measure_license = license;
+            }
+            indexContent.username = req.user.name;
+
+            let exist_vlan_profile = false;
+
+            for(let i = 0; i < matchedConfig.vlans_profiles.length ; i++) {
+              if(matchedConfig.vlans_profiles[i].vlan_id == req.params.vid) {
+                exist_vlan_profile = true;
+                indexContent.vlanprofile = matchedConfig.vlans_profiles[i]; 
+              }
+            }
+
+            if(exist_vlan_profile) {
+              return res.render('vlanprofile', indexContent);
+            }
+            else {
+              indexContent.type = 'danger';
+              indexContent.message = 'VLAN ID não encontrado';
+              return res.render('error', indexContent);
+            }
+          });
+        });
+      } else {
+        indexContent.type = 'danger';
+        indexContent.message = 'Permissão negada';
+        return res.render('error', indexContent);
+      }
+    }
+  });
 };
 
 vlanController.getAllVlanProfiles = function(req, res) {
@@ -91,37 +169,71 @@ vlanController.addVlanProfile = async function(req, res) {
   let newVlanProfile = {vlan_id : req.body.id, profile_name : req.body.name};
   try {
     let config = await Config.findOne({is_default: true}).catch(function(rej) {
-      res.json({success: false, type: 'danger', message : rej.message});
+      return res.json({success: false, type: 'danger', message : rej.message});
     });
     if(config && config.vlans_profiles) {
       config.vlans_profiles.push(newVlanProfile);
       config.save().then(function() {
-        res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
+        return res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
       }).catch(function(rej) {
-        res.json({success: false, type: 'danger', message : rej.message});
+        return res.json({success: false, type: 'danger', message : rej.message});
       });
     }
     else {
-      res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
+      return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
     }
   }
   catch {
-    res.json({message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
+    return res.json({message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
   }
 };
 
 vlanController.editVlanProfile = async function(req, res) {
-  next();
+  try {
+    let config = await Config.findOne({is_default: true}).catch(function(rej) {
+      return res.json({success: false, type: 'danger', message : rej.message});
+    });
+    if(config && config.vlans_profiles) {
+      let exist_vlan_profile = false;
+      for(let i = 0 ; i < config.vlans_profiles.length ; i++) {
+        if(config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
+          exist_vlan_profile = true;
+          config.vlans_profiles[i].profile_name = req.body.profilename;
+        }
+      }
+
+      if(exist_vlan_profile) {
+        config.save().then(function() {
+          return res.json({ success: true, type: 'success', message: 'Perfil de VLAN atualizado com sucesso!'});
+        }).catch(function(rej) {
+          return res.json({success: false, type: 'danger', message : rej.message});
+        });
+      }
+      else {
+        return res.json({success: false, type: 'danger', message : "VLAN ID não foi encontrado!"});
+      }
+    }
+    else {
+      res(500).json({success: false, type: 'danger', message : config});
+    }
+  }
+  catch {
+    return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao atualizar perfil de VLAN"});
+  }
 };
 
 vlanController.removeVlanProfile = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true}).catch(function(rej) {
-      res.json({success: false, type: 'danger', message : rej.message});
+      return res.json({success: false, type: 'danger', message : rej.message});
     });
     if(config && config.vlans_profiles) {
       var is_to_delete, i, where_to_delete;
       
+      if(typeof req.body.ids === "string") {
+        req.body.ids = [req.body.ids]
+      }
+
       for(i = 0; i < req.body.ids.length ; i++) {
         is_to_delete = false;
         where_to_delete = 0;
@@ -136,9 +248,9 @@ vlanController.removeVlanProfile = async function(req, res) {
         }
       }
       config.save().then(function() {
-        res.json({ success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
+        return res.json({ success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
       }).catch(function(rej) {
-        res.json({success: false, type: 'danger', message : rej.message});
+        return res.json({success: false, type: 'danger', message : rej.message});
       });
     }
     else {
@@ -146,7 +258,7 @@ vlanController.removeVlanProfile = async function(req, res) {
     }
   }
   catch {
-    res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao remover perfil de VLAN"});
+    return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao remover perfil de VLAN"});
   }
 };
 
