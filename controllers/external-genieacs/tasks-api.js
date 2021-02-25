@@ -194,6 +194,7 @@ genie.putPreset = async function(preset) {
  error if task can't be stringifyed to json. */
 const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
   let taskjson = JSON.stringify(task); // can throw an error here.
+  // console.log("Posting a task.")
   return request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
     path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
@@ -270,20 +271,21 @@ const checkTask = function(task) {
   return true; // if all passed, this task is good.
 };
 
-/* given an array of tasks, ignores tasks the can't be joined (the one which
- parameters data type aren't an array) and returns a array in which the first
- position has an array tasks that will be new tasks sent to genie and the
+/* given an array of tasks, ignores tasks that can't be joined (the one which
+ parameters data type aren't an array) and returns an array in which the first
+ position has an array of tasks that will be new tasks sent to genie and the
  second position has an object where key is a task type/name and the value is
  an array of task ids to be deleted. It's implicit that all tasks belong to the
  same device id. The tasks to be delete are tasks that have the same name/type.
  All tasks with the same name/type are returned in the second argument. Tasks
- are not check for being identical, in that case all identical tasks are marked
- to be removed and new identical task is created. The tasks to be added are the
- result of joining tasks with the same name/type or it's a task that has not
- been added yet, case that can be verified by checking that _id doesn't exist.
- Tasks that can't be joined won't be saved to be delete, will just be ignored
- but if it's a new task, it will be saved as task to be added. */
+ are not checked for being identical, in that case all identical tasks are
+ marked to be removed and new identical task is created. The tasks to be added
+ are the result of joining tasks with the same name/type or it's a task that
+ has not been added yet, case that can be verified by checking that _id doesn't
+ exist. Tasks that can't be joined won't be saved to be delete, will just be
+ ignored but if it's a new task, it will be saved as task to be added. */
 const joinAllTasks = function(tasks) {
+  // console.log("tasks to join:", tasks)
   // map of task types (names) to their respective parameters. all parameters
   // including old and new tasks.
   let types = {};
@@ -312,7 +314,8 @@ const joinAllTasks = function(tasks) {
       if (tasks[i]._id) {
         // save this task's type and its id, because we may need to delete it
         // if it needs to be joined.
-        taskIdsForType[name] = [tasks[i]._id];
+        taskIdsForType[name] = {};
+        taskIdsForType[name][tasks[i]._id] = true;
       } else { // if a task is new, it doesn't have an id yet, because it has
       // never been added to genie.
         // a new task certainly needs to be added to genie.
@@ -325,7 +328,7 @@ const joinAllTasks = function(tasks) {
     // this part is reached if current task is not the first one found for its
     // type.
     if (tasks[i]._id !== undefined) { // for any task except the last one.
-      taskIdsForType[name].push(tasks[i]._id);
+      taskIdsForType[name][tasks[i]._id] = true;
     } // remembering current task id because it will be joined.
     // joined tasks always result in creating a new task.
     createNewTaskForType[name] = true;
@@ -363,15 +366,10 @@ const joinAllTasks = function(tasks) {
   }
 
   // map of task types to ids of tasks that have the same type.
-  let tasksToDelete = {};
   let tasksToAdd = []; // array of new tasks, joined tasks or completely new.
   // for each task type to be created, or recreated.
   for (let name in createNewTaskForType) {
     if (name === name) {
-      let ids = taskIdsForType[name]; // getting ids that have the same type.
-      if (ids && ids.length > 0) { // if there is at least one id.
-        tasksToDelete[name] = taskIdsForType[name];
-      } // save to list of tasks to delete.
       let newTask = {name: name}; // create a new task of current type.
       // add the joined parameters for current task type.
       if (taskParameterIdFromType[name]) {
@@ -380,19 +378,19 @@ const joinAllTasks = function(tasks) {
       tasksToAdd.push(newTask); // save to list of tasks to be added.
     }
   }
-  return [tasksToAdd, tasksToDelete];
+  return [tasksToAdd, taskIdsForType];
 };
 
 /* for each task id, send a request to GenieACS to delete that task. GenieACS
  doesn't have a call to delete more than one task at once. 'deviceid' is used
  to print error messages. */
-const deleteOldTaks = async function(tasksToDelete, deviceid) {
+const deleteOldTasks = async function(tasksToDelete, deviceid) {
   let promises = []; // array that will hold http request promises.
-  for (let name in tasksToDelete) {// for each task name/type.
+  for (let name in tasksToDelete) { // for each task name/type.
     if (name === name) {
       // for each task._id in this task type/name.
-      for (let i = 0; i < tasksToDelete[name].length; i++) {
-        promises.push(deleteTask(tasksToDelete[name][i]));
+      for (let id in tasksToDelete[name]) {
+        promises.push(deleteTask(id)); // delete task.
       }
     }
   } // add a request to array of promises.
@@ -616,12 +614,12 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
-  let tasks = [];
-  // let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
-  // /* rejected value will be error object in case of connection errors.*/
-  //   throw new Error(`${e.code} when getting old tasks from genieacs rest api, `
-  //    +`for device ${deviceid}.`); // return error code in error message.
-  // });
+  let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
+  /* rejected value will be error object in case of connection errors.*/
+    throw new Error(`${e.code} when getting old tasks from genieacs rest api, `
+     +`for device ${deviceid}.`); // return error code in error message.
+  });
+  // console.log("tasks found", tasks)
   // adding the new task as one more older task to tasks array.
   tasks.push(task);
 
@@ -633,20 +631,24 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
     let tasksToDelete;
     // substitutes tasks array with arrays of tasks to be added to genie.
     [tasks, tasksToDelete] = joinAllTasks(tasks);
+    // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
+
 
     /* we have to delete old tasks before adding the joined tasks because it
 could happen that an old task is executed while we add their joined
-counterpart, in which case deleting it would make genie return 'tasknot found'.
+counterpart, in which case deleting it would make genie return 'task not found'.
 So we delete old tasks as fast as we can. Adding a task makes us wait at least
 a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
     if (Object.keys(tasksToDelete).length > 0) {
       // there will be tasks to be deleted.
-      await deleteOldTaks(tasksToDelete, deviceid);
+      await deleteOldTasks(tasksToDelete, deviceid);
     }
   }
 
-  // send the new task and the old tasks being substituted, then return result.
+  // console.log("sending tasks", tasks, ", timeout:", timeout,
+  // ", watchTimes:", watchTimes)
+  // sending the new task and the old tasks being substituted, then return result.
   return sendTasks(deviceid, tasks, timeout, shouldRequestConnection,
    watchTimes, callback);
 };
