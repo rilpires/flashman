@@ -1,7 +1,7 @@
 
 let checkVlanId = function(input) {
-  if (input.value < 2 || input.value > 4094) {
-    input.setCustomValidity('O VLAN ID não pode ser menor que 2 ou maior que 4094.');
+  if (input.value != 1 && (input.value < 10 || input.value > 4094)) {
+    input.setCustomValidity('O VLAN ID não pode ser menor que 10 ou maior que 4094.');
   } else {
     let distinctValidity = false;
     vlanIdsOnTable = $('.td-vlan-id');
@@ -59,7 +59,6 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
           $('<td></td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
           $('<td></td>').addClass('td-profile-name').html(vlanProfileObj.profile_name),
           $('<td></td>').append(
-            vlanProfileObj.vlan_id == 1 ? '' :
             $('<button></button>').append(
               $('<div></div>').addClass('fas fa-edit btn-vp-edit-icon'),
               $('<span></span>').html('&nbsp Editar')

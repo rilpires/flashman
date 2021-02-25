@@ -167,6 +167,10 @@ vlanController.getAllVlanProfiles = function(req, res) {
 
 vlanController.addVlanProfile = async function(req, res) {
   let newVlanProfile = {vlan_id : req.body.id, profile_name : req.body.name};
+
+  if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 10 || newVlanProfile.vlan_id > 4094)) {
+    return res.json({success: false, type: 'danger', message : "O VLAN ID não pode ser menor que 10 ou maior que 4094!"});
+  }
   try {
     let config = await Config.findOne({is_default: true}).catch(function(rej) {
       return res.json({success: false, type: 'danger', message : rej.message});
@@ -227,7 +231,7 @@ vlanController.removeVlanProfile = async function(req, res) {
     let config = await Config.findOne({is_default: true}).catch(function(rej) {
       return res.json({success: false, type: 'danger', message : rej.message});
     });
-    if(config && config.vlans_profiles) {
+    if(config && config) {
       var is_to_delete, i, where_to_delete;
       
       if(typeof req.body.ids === "string") {
@@ -247,6 +251,7 @@ vlanController.removeVlanProfile = async function(req, res) {
           config.vlans_profiles.splice(where_to_delete, 1);
         }
       }
+
       config.save().then(function() {
         return res.json({ success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
       }).catch(function(rej) {
