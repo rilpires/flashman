@@ -1074,6 +1074,8 @@ $(document).ready(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
+          let qtdPorts = device.qtdPorts;
+
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
           let statusAttributes = buildStatusAttributes(device);
@@ -1136,6 +1138,7 @@ $(document).ready(function() {
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
+          formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
 
           let dropdownDivider = '<div class="dropdown-divider"></div>';
 

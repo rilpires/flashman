@@ -371,4 +371,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   return result;
 };
 
+
+DeviceVersion.getPortsQuantity = function(model) {
+  // to check the list of supported devices and the quantity of ports
+  return 4;
+};
+
 module.exports = DeviceVersion;

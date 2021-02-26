@@ -714,6 +714,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
           device.model,
         );
 
+        // amount ports a device have
+        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model); 
+
         // Fill default value if wi-fi state does not exist
         if (device.wifi_state === undefined) {
           device.wifi_state = 1;

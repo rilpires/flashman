@@ -29,11 +29,12 @@ router.route('/profile/edit/:vid').post(authController.ensureLogin(),
 router.route('/profile/del').delete(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
                            vlanController.removeVlanProfile);
-/*
 
-router.route('/fetch').get(authController.ensureLogin(),
+router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permission),
-                           vlanController.fetchVlans);
+                           vlanController.getVlansFromDevice);
+
+/*
 
 router.route('/del').post(authController.ensureLogin(),
                           authController.ensurePermission(permission),

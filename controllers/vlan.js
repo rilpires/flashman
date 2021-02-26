@@ -1,6 +1,6 @@
 let User = require('../models/user');
 let Config = require('../models/config');
-let Device = require('../models/device');
+let DeviceModel = require('../models/device');
 const Role = require('../models/role');
 
 let vlanController = {};
@@ -231,7 +231,7 @@ vlanController.removeVlanProfile = async function(req, res) {
     let config = await Config.findOne({is_default: true}).catch(function(rej) {
       return res.json({success: false, type: 'danger', message : rej.message});
     });
-    if(config && config) {
+    if(config) {
       var is_to_delete, i, where_to_delete;
       
       if(typeof req.body.ids === "string") {
@@ -265,6 +265,18 @@ vlanController.removeVlanProfile = async function(req, res) {
   catch {
     return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao remover perfil de VLAN"});
   }
+};
+
+vlanController.getVlansFromDevice = function(req, res) {
+  DeviceModel.findById(req.params.deviceid, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      console.log(err);
+      return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
+    }
+    else {
+      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan});
+    }
+  });
 };
 
 module.exports = vlanController;
