@@ -369,7 +369,7 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
           }
           firmwareNames.push(firmwareInfoObj);
         }
-        let encodedAuth = new Buffer(
+        let encodedAuth = Buffer.from(
           req.body.name + ':' + req.body.password).toString('base64');
 
         return res.json({type: 'success',

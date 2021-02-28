@@ -106,7 +106,7 @@ const generateSessionCredential = function(user) {
     // Must be epoch
     expire: sessionExpirationDate,
   };
-  let buff = new Buffer(JSON.stringify(expirationCredential));
+  let buff = Buffer.from(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
   let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
   let session = {credential: b64Json, sign: encryptedB64Json};
