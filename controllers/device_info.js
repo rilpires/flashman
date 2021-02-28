@@ -1022,13 +1022,13 @@ deviceInfoController.receiveLog = function(req, res) {
     }
 
     if (bootType == 'FIRST') {
-      matchedDevice.firstboot_log = new Buffer(req.body);
+      matchedDevice.firstboot_log = Buffer.from(req.body);
       matchedDevice.firstboot_date = Date.now();
       matchedDevice.save();
       console.log('Log Receiving for device ' +
         id + ' successfully. FIRST BOOT');
     } else if (bootType == 'BOOT') {
-      matchedDevice.lastboot_log = new Buffer(req.body);
+      matchedDevice.lastboot_log = Buffer.from(req.body);
       matchedDevice.lastboot_date = Date.now();
       matchedDevice.save();
       console.log('Log Receiving for device ' +

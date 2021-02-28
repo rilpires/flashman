@@ -475,7 +475,7 @@ userController.deleteUser = function(req, res) {
 };
 
 userController.deleteRole = function(req, res) {
-  User.count({'role': {$in: req.body.names}}, function(err, count) {
+  User.countDocuments({'role': {$in: req.body.names}}, function(err, count) {
     if (count == 0) {
       Role.find({'_id': {$in: req.body.ids}}, function(err, roles) {
         if (err || !roles) {
