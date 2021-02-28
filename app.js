@@ -130,7 +130,11 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   });
   // Check migration for devices checked for upgrade
   // Check mesh key existence or generate it
-  Device.find({}, function(err, devices) {
+  Device.find({$or: [{installed_release: {$exists: false}},
+                     {mesh_key: {$exists: false}},
+                     {bridge_mode_enabled: true, connection_type: 'pppoe'},
+                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}}
+  ]}, function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
         let saveDevice = false;
