@@ -34,6 +34,10 @@ router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permission),
                            vlanController.getVlansFromDevice);
 
+router.route('/update/:deviceid').post(authController.ensureLogin(),
+                          authController.ensurePermission(permission),
+                          vlanController.updateVlansToDevice);
+
 /*
 
 router.route('/del').post(authController.ensureLogin(),

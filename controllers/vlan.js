@@ -279,4 +279,29 @@ vlanController.getVlansFromDevice = function(req, res) {
   });
 };
 
+vlanController.updateVlansToDevice = async function(req, res) {
+  try {
+    let device = await DeviceModel.findById(req.params.deviceid).catch(function(rej) {
+      return res.json({success: false, type: 'danger', message : rej.message});
+    });
+    if(device) {
+      
+      // needs validation
+      device.vlan = JSON.parse(req.body.vlans);
+
+      device.save().then(function() {
+        return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
+      }).catch(function(rej) {
+        return res.json({success: false, type: 'danger', message : rej.message});
+      });
+    }
+    else {
+      res(500).json({success: false, type: 'danger', message : config});
+    }
+  }
+  catch {
+    return res.json({success: false, type: 'danger', message : "Erro ao atualizar VLANs do dispositivo "+req.params.deviceid});
+  }
+};
+
 module.exports = vlanController;

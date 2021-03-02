@@ -26,12 +26,13 @@ $(document).ready(function() {
       let vlanCanvas = $("#vlan-ports-canvas").html('');
       let vlanBlock = $("<div></div>").addClass('d-flex').addClass('flex-row').addClass('flex-wrap');
       for(let i = 0 ; i < qtdPorts ; i++) {
-        let vlanPortInput = $("<div></div>").addClass('md-selectfield').addClass('d-flex').addClass('flex-row');
+        let vlanPortInput = $("<div></div>").addClass('d-flex').addClass('flex-column').addClass('mr-3').addClass('mb-3');
 
         vlanPortInput.append(
-            $("<label></label>").text("Porta "+(i+1)+" :")
+            $("<label></label>").addClass('mb-0').text("Porta "+(i+1)+" :")
           );
-        let profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select');
+
+        let profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1));
 
         for(let j = 0 ; j < dataControl.vlan_profiles.length ; j++) {
           let option = $("<option></option>").attr('value', dataControl.vlan_profiles[j].vlan_id).text(dataControl.vlan_profiles[j].profile_name);
@@ -43,7 +44,10 @@ $(document).ready(function() {
           */
           profilesOptions.append(option);
         }
-        vlanPortInput.append(profilesOptions);
+
+        let profilesSelect = $("<div></div>").addClass('md-selectfield').append(profilesOptions);
+
+        vlanPortInput.append(profilesSelect);
 
         vlanBlock.append(vlanPortInput);
       }
@@ -52,8 +56,33 @@ $(document).ready(function() {
       $('#vlan-modal').modal('show');
     }
   });
+
+  $(document).on('click', '#btn-vlan-update', function(event) {
+     let vlans_retrieved = getVlansFromModal();
+     $.ajax({
+      type: 'POST',
+      url: '/vlan/update/'+$('#vlan-hlabel')[0].textContent,
+      traditional: true,
+      data: { vlans: JSON.stringify(vlans_retrieved) },
+      success: function(res) {
+        displayAlertMsg(res);
+      },
+    });
+  });
 });
 
+const getVlansFromModal = function() {
+  var ret = [];
+  let portsVlan = $(".select-port-vlan");
+  
+  for(let i = 0 ; i < portsVlan.length ; i++) {
+    if(parseInt(portsVlan[i].value) != 1) {
+      ret.push({port: parseInt(portsVlan[i].name), vlan_id: parseInt(portsVlan[i].value)});
+    }
+  }
+  
+  return ret;
+}
 
 const fetchVlanDeviceInfo = async function(id) {
   var res, ret;
