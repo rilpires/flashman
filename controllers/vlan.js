@@ -171,99 +171,84 @@ vlanController.addVlanProfile = async function(req, res) {
   if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 10 || newVlanProfile.vlan_id > 4094)) {
     return res.json({success: false, type: 'danger', message : "O VLAN ID não pode ser menor que 10 ou maior que 4094!"});
   }
-  try {
-    let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+    return res.json({success: false, type: 'danger', message : rej.message});
+  });
+  if(config && config.vlans_profiles) {
+    config.vlans_profiles.push(newVlanProfile);
+    config.save().then(function() {
+      return res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
+    }).catch(function(rej) {
       return res.json({success: false, type: 'danger', message : rej.message});
     });
-    if(config && config.vlans_profiles) {
-      config.vlans_profiles.push(newVlanProfile);
-      config.save().then(function() {
-        return res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
-      }).catch(function(rej) {
-        return res.json({success: false, type: 'danger', message : rej.message});
-      });
-    }
-    else {
-      return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
-    }
   }
-  catch {
-    return res.json({message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
+  else {
+    return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
   }
 };
 
 vlanController.editVlanProfile = async function(req, res) {
-  try {
-    let config = await Config.findOne({is_default: true}).catch(function(rej) {
-      return res.json({success: false, type: 'danger', message : rej.message});
-    });
-    if(config && config.vlans_profiles) {
-      let exist_vlan_profile = false;
-      for(let i = 0 ; i < config.vlans_profiles.length ; i++) {
-        if(config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
-          exist_vlan_profile = true;
-          config.vlans_profiles[i].profile_name = req.body.profilename;
-        }
-      }
-
-      if(exist_vlan_profile) {
-        config.save().then(function() {
-          return res.json({ success: true, type: 'success', message: 'Perfil de VLAN atualizado com sucesso!'});
-        }).catch(function(rej) {
-          return res.json({success: false, type: 'danger', message : rej.message});
-        });
-      }
-      else {
-        return res.json({success: false, type: 'danger', message : "VLAN ID não foi encontrado!"});
+  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+    return res.json({success: false, type: 'danger', message : rej.message});
+  });
+  if(config && config.vlans_profiles) {
+    let exist_vlan_profile = false;
+    for(let i = 0 ; i < config.vlans_profiles.length ; i++) {
+      if(config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
+        exist_vlan_profile = true;
+        config.vlans_profiles[i].profile_name = req.body.profilename;
       }
     }
-    else {
-      res(500).json({success: false, type: 'danger', message : config});
-    }
-  }
-  catch {
-    return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao atualizar perfil de VLAN"});
-  }
-};
 
-vlanController.removeVlanProfile = async function(req, res) {
-  try {
-    let config = await Config.findOne({is_default: true}).catch(function(rej) {
-      return res.json({success: false, type: 'danger', message : rej.message});
-    });
-    if(config) {
-      var is_to_delete, i, where_to_delete;
-      
-      if(typeof req.body.ids === "string") {
-        req.body.ids = [req.body.ids]
-      }
-
-      for(i = 0; i < req.body.ids.length ; i++) {
-        is_to_delete = false;
-        where_to_delete = 0;
-        for(j = 0; j < config.vlans_profiles.length ; j++) {
-          if(config.vlans_profiles[j]._id.toString() === req.body.ids[i]) {
-            is_to_delete = true;
-            where_to_delete = j;
-          }
-        }
-        if(is_to_delete) {
-          config.vlans_profiles.splice(where_to_delete, 1);
-        }
-      }
-
+    if(exist_vlan_profile) {
       config.save().then(function() {
-        return res.json({ success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
+        return res.json({ success: true, type: 'success', message: 'Perfil de VLAN atualizado com sucesso!'});
       }).catch(function(rej) {
         return res.json({success: false, type: 'danger', message : rej.message});
       });
     }
     else {
-      res(500).json({success: false, type: 'danger', message : config});
+      return res.json({success: false, type: 'danger', message : "VLAN ID não foi encontrado!"});
     }
   }
-  catch {
-    return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao remover perfil de VLAN"});
+  else {
+    res.json({success: false, type: 'danger', message : config});
+  }
+};
+
+vlanController.removeVlanProfile = async function(req, res) {
+  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+    return res.json({success: false, type: 'danger', message : rej.message});
+  });
+  if(config) {
+    var is_to_delete, i, where_to_delete;
+    
+    if(typeof req.body.ids === "string") {
+      req.body.ids = [req.body.ids]
+    }
+
+    for(i = 0; i < req.body.ids.length ; i++) {
+      is_to_delete = false;
+      where_to_delete = 0;
+      for(j = 0; j < config.vlans_profiles.length ; j++) {
+        if(config.vlans_profiles[j]._id.toString() === req.body.ids[i]) {
+          is_to_delete = true;
+          where_to_delete = j;
+        }
+      }
+      if(is_to_delete) {
+        config.vlans_profiles.splice(where_to_delete, 1);
+      }
+    }
+
+    config.save().then(function() {
+      return res.json({ success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
+    }).catch(function(rej) {
+      return res.json({success: false, type: 'danger', message : rej.message});
+    });
+  }
+  else {
+    res.json({success: false, type: 'danger', message : config});
   }
 };
 
@@ -280,27 +265,22 @@ vlanController.getVlansFromDevice = function(req, res) {
 };
 
 vlanController.updateVlansToDevice = async function(req, res) {
-  try {
-    let device = await DeviceModel.findById(req.params.deviceid).catch(function(rej) {
+  let device = await DeviceModel.findById(req.params.deviceid).catch(function(rej) {
+    return res.json({success: false, type: 'danger', message : rej.message});
+  });
+  if(device) {
+    
+    // needs validation
+    device.vlan = JSON.parse(req.body.vlans);
+
+    device.save().then(function() {
+      return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
+    }).catch(function(rej) {
       return res.json({success: false, type: 'danger', message : rej.message});
     });
-    if(device) {
-      
-      // needs validation
-      device.vlan = JSON.parse(req.body.vlans);
-
-      device.save().then(function() {
-        return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
-      }).catch(function(rej) {
-        return res.json({success: false, type: 'danger', message : rej.message});
-      });
-    }
-    else {
-      res(500).json({success: false, type: 'danger', message : config});
-    }
   }
-  catch {
-    return res.json({success: false, type: 'danger', message : "Erro ao atualizar VLANs do dispositivo "+req.params.deviceid});
+  else {
+    res.json({success: false, type: 'danger', message : "Dispositivo não encontrado."});
   }
 };
 
