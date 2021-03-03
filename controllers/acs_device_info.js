@@ -672,6 +672,10 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     } else {
       devicesArray = devices;
     }
+    if (!devicesArray || devicesArray.length == 0) {
+      // Nothing to report
+      return {success: false, message: 'Nenhum a reportar'};
+    }
     let response = await controlApi.reportDevices(app, devicesArray);
     if (response.success) {
       for (let device of devicesArray) {
