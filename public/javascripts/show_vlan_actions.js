@@ -22,7 +22,8 @@ $(document).ready(function() {
       } else {
         $('#vlan-visual').text(id);
       }
-      buildVlanModal(dataControl);
+
+      buildVlanModal(dataControl, (vlan_access == 2) ? true : false);
     }
   });
 
@@ -119,7 +120,7 @@ const fetchVlanProfiles = async function() {
   return ret;
 };
 
-const buildVlanModal = function(dc) {
+const buildVlanModal = function(dc, can_edit) {
   let vlanCanvas = $("#vlan-ports-canvas").html('');
   let vlanBlock = $("<div></div>").addClass('d-flex').addClass('flex-row').addClass('flex-wrap');
   for(let i = 0 ; i < dc.qtdPorts ; i++) {
@@ -129,7 +130,14 @@ const buildVlanModal = function(dc) {
         $("<label></label>").addClass('mb-0').text("Porta "+(i+1)+" :")
       );
 
-    let profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1));
+    let profilesOptions;
+    if(can_edit) {
+      profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1));
+    }
+    else {
+      profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1)).attr('disabled', 'disabled');
+      $('#btn-vlan-update').attr('disabled', 'disabled');
+    }
 
     for(let j = 0 ; j < dc.vlan_profiles.length ; j++) {
       let option = $("<option></option>").attr('value', dc.vlan_profiles[j].vlan_id).text(dc.vlan_profiles[j].profile_name);

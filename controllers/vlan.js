@@ -273,6 +273,20 @@ vlanController.updateVlansToDevice = async function(req, res) {
     // needs validation
     device.vlan = JSON.parse(req.body.vlans);
 
+    // send to device
+    /*
+    vlan: {
+      vlan_id: assoc_ports
+    }
+    i.g.
+
+    "vlan" : {
+      "1" : "2t 4 6t",
+      "100" : "1 6t",
+      "210" : "2t 3"
+    }
+    */
+
     device.save().then(function() {
       return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
     }).catch(function(rej) {
