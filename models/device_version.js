@@ -105,6 +105,18 @@ const wpsNotCompatible = [
   'TL-WR845NV4',
 ];
 
+const lanPorts = {
+  'EC220-G5V2': 3,
+  'TL-MR3020V1': 0,
+  'COVR-C1200A1': 2, // 1 or 2?
+  'GWR1200ACV1': 3,
+  'GWR1200ACV2': 3,
+  'ACTIONRF1200V1': 3,
+  'GF1200V1': 3,
+  'W5-1200FV1': 3,
+  'MAXLINKAC1200GV1': 3,
+}
+
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
@@ -374,7 +386,12 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
 
 DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
-  return 4;
+  ret = 4;
+  // The default quantity of ports is 4, as checked
+  if(model in LanPorts) {
+    ret = lanPorts[model];
+  }
+  return ret;
 };
 
 module.exports = DeviceVersion;
