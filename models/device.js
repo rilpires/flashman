@@ -204,12 +204,6 @@ let deviceSchema = new Schema({
     port: {type: Number, required: true, min: 1, max: 32, unique: true},
     vlan_id: {type: Number, required: true, min: 1, max: 4094 , default: 1},
   }],
-  /*
-  lan_ports: [Number],
-  wan_port: Number,
-  cpu_port: Number,
-  number_lan_ports : // lan_ports.length
-  */
 });
 
 deviceSchema.set('autoIndex', false);

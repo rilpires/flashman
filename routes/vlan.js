@@ -38,24 +38,4 @@ router.route('/update/:deviceid').post(authController.ensureLogin(),
                           authController.ensurePermission(permission),
                           vlanController.updateVlansToDevice);
 
-/*
-
-router.route('/del').post(authController.ensureLogin(),
-                          authController.ensurePermission(permission),
-                          vlanController.delVlan);
-
-router.route('/upload').post(authController.ensureLogin(),
-                             authController.ensurePermission(permission),
-                             vlanController.uploadVlan);
-
-router.route('/sync').post(authController.ensureLogin(),
-                           authController.ensurePermission(permission),
-                           vlanController.syncRemoteVlanFiles);
-
-router.route('/add').post(authController.ensureLogin(),
-                          authController.ensurePermission(permission),
-                          vlanController.addRemoteVlanFile);
-
-*/
-
 module.exports = router;

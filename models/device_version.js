@@ -117,6 +117,16 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
+const dictDevices = {
+  "ACTIONRF1200V1" : {
+    'lan_ports': [1, 2, 3, 4], // lan_ports.length
+    'wan_port': 5,
+    'cpu_port': 6,
+  },
+};
+
+
+
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {

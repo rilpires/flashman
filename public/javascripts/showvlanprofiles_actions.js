@@ -1,7 +1,7 @@
 
 let checkVlanId = function(input) {
-  if (input.value != 1 && (input.value < 10 || input.value > 4094)) {
-    input.setCustomValidity('O VLAN ID não pode ser menor que 10 ou maior que 4094.');
+  if (input.value != 1 && (input.value < 10 || input.value > 127)) {
+    input.setCustomValidity('O VLAN ID não pode ser menor que 10 ou maior que 127.');
   } else {
     let distinctValidity = false;
     vlanIdsOnTable = $('.td-vlan-id');
