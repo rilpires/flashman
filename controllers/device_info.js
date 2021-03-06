@@ -9,6 +9,7 @@ const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
 const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
+const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
@@ -680,6 +681,16 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
+
+          let fetchedVlans;
+          let didChangeVlan = vlanController.retrieveAndChangeStatus(matchedDevice);
+          if(didChangeVlan === 'y') {
+            fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+          }
+          else {
+            fetchedVlans = "{}";
+          }
+
           let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
@@ -720,6 +731,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
+            'did_change_vlan': didChangeVlan,
+            'vlan': fetchedVlans,
             'mesh_mode': matchedDevice.mesh_mode,
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,

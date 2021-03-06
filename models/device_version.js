@@ -118,14 +118,347 @@ const lanPorts = {
 };
 
 const dictDevices = {
-  "ACTIONRF1200V1" : {
-    'lan_ports': [1, 2, 3, 4], // lan_ports.length
-    'wan_port': 5,
+  'ACTIONRF1200V1': {
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'ACTIONRG1200V1': {
+    'lan_ports': [0, 1, 2],
+    'wan_port': 3,
+    'cpu_port': 6,
+  },
+  'ARCHERC2V1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC5V4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC20V1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC20V4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC20V5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC20V5PRESET': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC50V3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC50V4': {
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'ARCHERC60V2': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC60V3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC6V2US': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'ARCHERC7V5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'COVR-C1200A1': { // todo
+    'lan_ports': [1],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'DIR-819A1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'DIR-815D1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'DWR-116A1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'DWR-116A2': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'DWR-116A3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'EMG1702-T10AA1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'EC220-G5V2': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'GWR1200ACV1': { 
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'GWR1200ACV2': { 
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'GWR300NV1': { 
+    'lan_ports': [0, 1, 2, 3],
+    'wan_port': 4,
+    'cpu_port': 6,
+  },
+  'GF1200V1': { 
+    'lan_ports': [1, 2, 3],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'MAXLINKAC1200GV1': {
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  },
+  'NCLOUD': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'RE708V1': {
+    'lan_ports': [0 ,1, 2, 3],
+    'wan_port': 4,
+    'cpu_port': 6,
+  },
+  'RE172V1': {
+    'lan_ports': [0 ,1, 2, 3],
+    'wan_port': 4,
+    'cpu_port': 6,
+  },
+  'TL-MR3020V1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WDR3500V1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WDR3600V1': {  // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WDR4300V1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR2543N/NDV1': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740N/NDV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740NDV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740N/NDV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740NDV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740N/NDV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR740NDV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR741N/NDV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR741NDV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR741N/NDV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR741NDV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV62': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV5PRESET': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR840NV6PRESET': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR841N/NDV7': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR841NDV7': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR841N/NDV8': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR841NDV8': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR842N/NDV3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR842NDV3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR849NV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR849NV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR849NV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR849NV62': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR940NV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR940NV5': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR940NV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR949NV6': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR845NV3': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'TL-WR845NV4': { // todo
+    'lan_ports': [],
+    'wan_port': 0,
+    'cpu_port': 0,
+  },
+  'W5-1200FV1': {
+    'lan_ports': [1, 2, 3],
+    'wan_port': 0,
     'cpu_port': 6,
   },
 };
-
-
 
 const versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar

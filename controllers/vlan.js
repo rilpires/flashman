@@ -252,40 +252,27 @@ vlanController.removeVlanProfile = async function(req, res) {
   }
 };
 
-vlanController.getVlansFromDevice = function(req, res) {
+vlanController.getVlans = function(req, res) {
   DeviceModel.findById(req.params.deviceid, function(err, matchedDevice) {
     if (err || !matchedDevice) {
       console.log(err);
       return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
     }
     else {
-      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan});
+      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan.list_of_vlans});
     }
   });
 };
 
-vlanController.updateVlansToDevice = async function(req, res) {
+vlanController.updateVlans = async function(req, res) {
   let device = await DeviceModel.findById(req.params.deviceid).catch(function(rej) {
     return res.json({success: false, type: 'danger', message : rej.message});
   });
   if(device) {
     
     // needs validation
-    device.vlan = JSON.parse(req.body.vlans);
-
-    // send to device
-    /*
-    vlan: {
-      vlan_id: assoc_ports
-    }
-    i.g.
-
-    "vlan" : {
-      "1" : "2t 4 6t",
-      "100" : "1 6t",
-      "210" : "2t 3"
-    }
-    */
+    device.vlan.did_change_vlan = true;
+    device.vlan.list_of_vlans = JSON.parse(req.body.vlans);
 
     device.save().then(function() {
       return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
@@ -296,6 +283,37 @@ vlanController.updateVlansToDevice = async function(req, res) {
   else {
     res.json({success: false, type: 'danger', message : "Dispositivo não encontrado."});
   }
+};
+
+vlanController.retrieveAndChangeStatus = function(device) {
+  var ret = "";
+  if(device.vlan.did_change_vlan == true) {
+    device.vlan.did_change_vlan = false;
+    ret = device.save().then(() => {return "y";});
+  }
+  else {
+    ret = "n";
+  }
+  return ret;
+};
+
+vlanController.retrieveVlansToDevice = function(device) {
+  // send to device
+  /*
+  vlan: {
+    vlan_id: assoc_ports
+  }
+  i.g.
+
+  "vlan" : {
+    "1" : "2t 4 6t",
+    "100" : "1 6t",
+    "210" : "2t 3"
+  }
+  */
+  var retObj = {};
+
+  return retObj;
 };
 
 module.exports = vlanController;

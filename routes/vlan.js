@@ -32,10 +32,10 @@ router.route('/profile/del').delete(authController.ensureLogin(),
 
 router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permission),
-                           vlanController.getVlansFromDevice);
+                           vlanController.getVlans);
 
 router.route('/update/:deviceid').post(authController.ensureLogin(),
                           authController.ensurePermission(permission),
-                          vlanController.updateVlansToDevice);
+                          vlanController.updateVlans);
 
 module.exports = router;
