@@ -70,9 +70,7 @@ const getVlansFromModal = function() {
   let portsVlan = $(".select-port-vlan");
   
   for(let i = 0 ; i < portsVlan.length ; i++) {
-    if(parseInt(portsVlan[i].value) != 1) {
-      ret.push({port: parseInt(portsVlan[i].name), vlan_id: parseInt(portsVlan[i].value)});
-    }
+    ret.push({port: parseInt(portsVlan[i].name), vlan_id: parseInt(portsVlan[i].value)});
   }
   
   return ret;
@@ -142,9 +140,11 @@ const buildVlanModal = function(dc, can_edit) {
     for(let j = 0 ; j < dc.vlan_profiles.length ; j++) {
       let option = $("<option></option>").attr('value', dc.vlan_profiles[j].vlan_id).text(dc.vlan_profiles[j].profile_name);
       for(let k = 0 ; k < dc.vlan.length ; k++) {
-        if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
-          option.attr('selected', 'selected');
-          profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+        if(dc.vlan !== undefined && dc.vlan[0] !== null) {
+          if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
+            option.attr('selected', 'selected');
+            profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+          }
         }
       }
       profilesOptions.append(option);

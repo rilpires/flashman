@@ -673,7 +673,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           }
         );
         Config.findOne({is_default: true}).lean()
-        .exec(function(err, matchedConfig) {
+        .exec(async function(err, matchedConfig) {
           let zabbixFqdn = '';
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
@@ -682,14 +682,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             return map[matchedDevice._id];
           });
 
-          let fetchedVlans;
-          let didChangeVlan = vlanController.retrieveAndChangeStatus(matchedDevice);
-          if(didChangeVlan === 'y') {
-            fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
-          }
-          else {
-            fetchedVlans = "{}";
-          }
+          let didChangeVlan = await vlanController.retrieveAndChangeStatus(matchedDevice);
+          let fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
 
           let resJson = {
             'do_update': matchedDevice.do_update,

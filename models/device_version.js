@@ -737,4 +737,8 @@ DeviceVersion.getPortsQuantity = function(model) {
   return ret;
 };
 
+DeviceVersion.getDevicePort = function(model, type) {
+  return dictDevices[model][type];
+};
+
 module.exports = DeviceVersion;
