@@ -32,6 +32,13 @@ $(document).ready(function() {
     let vlans_on_modal = getVlansFromModal();
     let vlans_on_db = getOldVlansFromModal();
     let vlans_changed = false;
+    let has_internet_vid = false;
+
+    for(i = 0 ; i < vlans_on_modal.length ; i++) {
+      if(vlans_on_modal[i].vlan_id == 1) {
+        has_internet_vid = true;
+      }
+    }
 
     if(vlans_on_db.length == vlans_on_modal.length) {
       for(i = 0 ; i < vlans_on_db.length ; i++) {
@@ -50,7 +57,7 @@ $(document).ready(function() {
     else {
       vlans_changed = true;
     }
-    if(vlans_changed) {
+    if(vlans_changed && has_internet_vid) {
       $.ajax({
         type: 'POST',
         url: '/vlan/update/'+$('#vlan-hlabel')[0].textContent,
@@ -61,6 +68,13 @@ $(document).ready(function() {
           $('#vlan-modal').modal('hide');
         }
       });
+    }
+    else if(!has_internet_vid) {
+      $('#frame-vlan-modal-alert').addClass('d-block').addClass('p-3').addClass('bg-warning').addClass('text-white').append($('<h5></h5>').html('Deve existir pelo menos uma porta associada a VLAN Internet!'));
+      
+      setTimeout(function() {
+       $('#frame-vlan-modal-alert').removeClass('d-block').removeClass('p-3').removeClass('bg-warning').removeClass('text-white').html('');
+      }, 5000);
     }
   });
 });
