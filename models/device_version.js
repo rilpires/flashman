@@ -738,7 +738,19 @@ DeviceVersion.getPortsQuantity = function(model) {
 };
 
 DeviceVersion.getDevicePort = function(model, type) {
-  return dictDevices[model][type];
+  var ret = { // default return value
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+  };
+
+  if(dictDevices[model] !== undefined) {
+    if(dictDevices[model][type] !== undefined) {
+      ret = dictDevices[model][type];
+    }
+  }
+
+  return ret;
 };
 
 module.exports = DeviceVersion;

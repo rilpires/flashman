@@ -289,17 +289,21 @@ vlanController.updateVlans = async function(req, res) {
 
 vlanController.retrieveAndChangeStatus = async function(device) {
   var ret = "";
-  if(device.vlan.did_change_vlan == true) {
-    let deviceModel = await DeviceModel.findById(device._id).catch(function(rej) {
-      console.log(rej.message);
-    });
-    deviceModel.vlan.did_change_vlan = false;
-    ret = await deviceModel.save().then(() => {return "y";});
+  if(device.vlan !== undefined && device.vlan.did_change_vlan !== undefined) {
+    if(device.vlan.did_change_vlan == true) {
+      let deviceModel = await DeviceModel.findById(device._id).catch(function(rej) {
+        console.log(rej.message);
+      });
+      deviceModel.vlan.did_change_vlan = false;
+      ret = await deviceModel.save().then(() => {return "y";});
+    }
+    else {
+      ret = "n";
+    }
   }
   else {
     ret = "n";
   }
-  console.log(ret);
   return ret;
 };
 
@@ -334,7 +338,7 @@ vlanController.retrieveVlansToDevice = function(device) {
   let cpu_port = DeviceVersion.getDevicePort(device.model, "cpu_port");
 
   // on well behavior object of vlan that needs to treat others vlans
-  if(device.vlan.list_of_vlans !== undefined) {
+  if(device.vlan !== undefined && device.vlan.list_of_vlans !== undefined && device.vlan.list_of_vlans > 0) {
     // initialize keys values with empty string
     for(let i = 0 ; i < device.vlan.list_of_vlans.length ; i++) {
       retObj[device.vlan.list_of_vlans[i].vlan_id] = "";
@@ -368,8 +372,6 @@ vlanController.retrieveVlansToDevice = function(device) {
   }
   
   retObj["2"] = wan_port.toString() + " " + cpu_port.toString() + "t";
-
-  console.log(retObj);
 
   return retObj;
 };
