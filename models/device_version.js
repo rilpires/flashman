@@ -183,9 +183,9 @@ const dictDevices = {
     'wan_port': 0,
     'cpu_port': 0,
   },
-  'ARCHERC7V5': { // todo
-    'lan_ports': [],
-    'wan_port': 0,
+  'ARCHERC7V5': {
+    'lan_ports': [2, 3, 4, 5],
+    'wan_port': 1,
     'cpu_port': 0,
   },
   'COVR-C1200A1': { // todo

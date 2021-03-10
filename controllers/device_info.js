@@ -14,6 +14,7 @@ const meshHandlers = require('./handlers/mesh');
 const async = require('asyncawait/async');
 const await = require('asyncawait/await');
 const util = require('./handlers/util');
+const crypto = require("crypto");
 
 let deviceInfoController = {};
 
@@ -673,7 +674,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           }
         );
         Config.findOne({is_default: true}).lean()
-        .exec(async function(err, matchedConfig) {
+        .exec(function(err, matchedConfig) {
           let zabbixFqdn = '';
           if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
             zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
@@ -682,8 +683,14 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             return map[matchedDevice._id];
           });
 
-          let didChangeVlan = await vlanController.retrieveAndChangeStatus(matchedDevice);
+
           let fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+
+
+          // create a sha-256 hasher
+          const sha256Hasher = crypto.createHmac("sha256", "");
+          // hash the string
+          let vlanHash = sha256Hasher.update(JSON.stringify(fetchedVlans)).digest("base64");
 
           let resJson = {
             'do_update': matchedDevice.do_update,
@@ -725,7 +732,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
-            'did_change_vlan': didChangeVlan,
+            'vlan_hash': vlanHash,
             'vlan': fetchedVlans,
             'mesh_mode': matchedDevice.mesh_mode,
             'mesh_master': matchedDevice.mesh_master,

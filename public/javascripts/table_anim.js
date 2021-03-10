@@ -1259,7 +1259,7 @@ $(document).ready(function() {
           } else {
             devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
           }
-          if ((isSuperuser || grantVlan > 0) && grantVlanSupport) {
+          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) && grantVlanSupport) {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
           } else {
             devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
