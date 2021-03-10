@@ -351,7 +351,6 @@ vlanController.retrieveVlansToDevice = function(device) {
     retObj["2"] = wan_port.toString() + " " + cpu_port.toString() + "t";
   }
 
-  console.log(vlan_from_device);
   console.log(retObj);
   return retObj;
 };
