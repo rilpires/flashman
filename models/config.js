@@ -19,7 +19,7 @@ let configSchema = new mongoose.Schema({
     web_login_user: String,
     web_password_user: String,
     remote_access: {type: Boolean, default: false},
-    inform_interval: {type: Number, required: true, default: 10*60*1000}, // ms
+    inform_interval: {type: Number, required: true, default: 1*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },

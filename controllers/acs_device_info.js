@@ -3,6 +3,7 @@ const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
 const Notification = require('../models/notification');
+const Config = require('../models/config');
 const sio = require('../sio');
 
 const pako = require('pako');
@@ -655,6 +656,41 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
   });
+};
+
+acsDeviceInfoController.pingOfflineDevices = async function() {
+  // Get TR-069 configs from database
+  let matchedConfig = await Config.findOne(
+    {is_default: true}, 'tr069',
+  ).exec().catch((err) => err);
+  if (matchedConfig.constructor === Error) {
+    console.log('Error getting user config in database to ping offline ONUs');
+    return;
+  }
+  // Compute offline threshold from options
+  let currentTime = Date.now();
+  let interval = matchedConfig.tr069.inform_interval;
+  let threshold = matchedConfig.tr069.offline_threshold;
+  let offlineThreshold = new Date(currentTime - (interval*threshold));
+  // Query database for offline ONU devices
+  let offlineDevices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$lt: offlineThreshold},
+  }, {
+    acs_id: true,
+  });
+  // Issue a task for every offline device to try and force it to reconnect
+  for (let i = 0; i < offlineDevices.length; i++) {
+    let id = offlineDevices[i].acs_id;
+    let splitID = id.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [fields.common.uptime],
+    };
+    await TasksAPI.addTask(id, task, true, 50, [], null);
+  }
 };
 
 acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {

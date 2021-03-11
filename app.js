@@ -412,9 +412,18 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     acsDeviceController.reportOnuDevices(app);
     userController.checkAccountIsBlocked(app);
     // Restart genieacs service whenever Flashman is restarted
-    updater.rebootGenie();
+    updater.rebootGenie(process.env.instances);
     // Force an update check to alert user on app startup
     updater.checkUpdate();
+
+    let hourlyRule = new schedule.RecurrenceRule();
+    hourlyRule.minute = 10;
+    schedule.scheduleJob(hourlyRule, function() {
+      // Issue a command to offline ONUs to try and fix exp. backoff bug
+      // This is only relevant for a few ONU models, and currently this is
+      // out best fix available...
+      acsDeviceController.pingOfflineDevices();
+    });
   });
 }
 
