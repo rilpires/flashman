@@ -73,6 +73,15 @@
                 .invalid-feedback Insira um FQDN válido
                 br
                 .input-entry
+                label Login para a interface web das ONUs
+                input.form-control(
+                  type="text",
+                  name="onu-web-login",
+                  id="onu-web-login",
+                )
+                .invalid-feedback Insira um login válido
+                br
+                .input-entry
                 label Senha para a interface web das ONUs
                 input.form-control(
                   type="text",
@@ -80,6 +89,16 @@
                   id="onu-web-password",
                 )
                 .invalid-feedback Insira uma senha válida
+                br
+                .custom-control.custom-checkbox
+                  input.custom-control-input(
+                    name="onu_web_remote",
+                    type="checkbox",
+                    id="onu_web_remote"
+                  )
+                  label.custom-control-label(for="onu_web_remote")
+                    | Configurar acesso remoto para ONUs
+                  .invalid-feedback
                 br
                 .input-entry
                 label Intervalo entre informes do TR-069 (em segundos, mínimo 60)

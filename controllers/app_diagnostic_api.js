@@ -106,15 +106,21 @@ const generateSessionCredential = function(user) {
     // Must be epoch
     expire: sessionExpirationDate,
   };
-  let buff = new Buffer(JSON.stringify(expirationCredential));
+  let buff = Buffer.from(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
   let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
   let session = {credential: b64Json, sign: encryptedB64Json};
   // Add onu config, if present
   let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
     .exec().catch((err) => err));
-  if (config && config.tr069 && config.tr069.web_password) {
-    session.onuPassword = config.tr069.web_password;
+  if (config && config.tr069) {
+    let trConf = config.tr069;
+    session.onuLogin = (trConf.web_login) ? trConf.web_login : '';
+    session.onuPassword = (trConf.web_password) ? trConf.web_password : '';
+    session.onuUserLogin = (trConf.web_login_user) ? trConf.web_login_user : '';
+    session.onuUserPassword = (trConf.web_password_user) ?
+                              trConf.web_password_user : '';
+    session.onuRemote = trConf.remote_access;
   }
   return session;
 };
@@ -407,12 +413,23 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
         }
         await(device.save());
         let tr069Info = {'url': '', 'interval': 0};
+        let onuConfig = {};
         let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
           .exec().catch((err) => err));
         if (config.tr069) {
           tr069Info.url = config.tr069.server_url;
           tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
+          onuConfig.onuLogin = (config.tr069.web_login) ?
+                               config.tr069.web_login : '';
+          onuConfig.onuPassword = (config.tr069.web_password) ?
+                                  config.tr069.web_password : '';
+          onuConfig.onuUserLogin = (config.tr069.web_login_user) ?
+                                   config.tr069.web_login_user : '';
+          onuConfig.onuUserPassword = (config.tr069.web_password_user) ?
+                                      config.tr069.web_password_user : '';
+          onuConfig.onuRemote = config.tr069.remote_access;
         }
+        // TODO: Send custom onu fields
         return res.status(200).json({
           'success': true,
           'isRegister': true,
@@ -422,6 +439,7 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
             'onu_mac': device._id,
           },
           'tr069Info': tr069Info,
+          'onuConfig': onuConfig,
         });
       }
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -458,10 +476,12 @@ diagAppAPIController.getTR069Config = async(function(req, res) {
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
+  let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
   return res.status(200).json({
     'success': true,
     'url': config.tr069.server_url,
     'interval': parseInt(config.tr069.inform_interval/1000),
+    'certificate': certFile,
   });
 });
 

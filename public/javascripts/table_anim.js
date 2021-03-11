@@ -143,12 +143,12 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
  mark. */
 let fetchNotificationsForDevice = function(deviceId) {
   $.ajax({type: 'POST', url: '/notification/fetch', traditional: true,
-    data: {devices: [deviceId]}})
+    data: {targets: [deviceId]}})
   .done((response) => {
     let deviceTableContent = $('#devices-table-content');
     for (let notification of response.notifications) {
       changeDeviceStatusOnTable(deviceTableContent, deviceId, notification);
-    };
+    }
   });
 };
 
@@ -2251,7 +2251,7 @@ $(document).ready(function() {
           type: 'POST',
           traditional: true,
           data: {
-            devices: res.devices.map((device) => device._id),
+            targets: res.devices.map((device) => device._id),
           },
           success: function(res) {
             for (let idx = 0; idx < res.notifications.length; idx += 1) {

@@ -79,5 +79,11 @@ utilHandlers.isMacValid = (mac) => mac !== undefined &&
 
 utilHandlers.isArrayObject = (val) => val instanceof Array ? true : false;
 
+utilHandlers.getRandomInt = function(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
 
 module.exports = utilHandlers;

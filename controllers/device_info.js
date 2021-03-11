@@ -372,8 +372,12 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             // Device was set to DHCP, change relevant fields
             deviceSetQuery.bridge_mode_enabled = false;
             deviceSetQuery.connection_type = 'dhcp';
+            deviceSetQuery.pppoe_user = '';
+            deviceSetQuery.pppoe_password = '';
             matchedDevice.bridge_mode_enabled = false; // Used in device response
             matchedDevice.connection_type = 'dhcp'; // Used in device response
+            matchedDevice.pppoe_user = ''; // Used in device response
+            matchedDevice.pppoe_password = ''; // Used in device response
           } else if (sentConnType === 'pppoe') {
             // Device was set to PPPoE, change relevant fields
             let sentUser = util.returnObjOrEmptyStr(req.body.pppoe_user).trim();
@@ -1060,13 +1064,13 @@ deviceInfoController.receiveLog = function(req, res) {
     }
 
     if (bootType == 'FIRST') {
-      matchedDevice.firstboot_log = new Buffer(req.body);
+      matchedDevice.firstboot_log = Buffer.from(req.body);
       matchedDevice.firstboot_date = Date.now();
       matchedDevice.save();
       console.log('Log Receiving for device ' +
         id + ' successfully. FIRST BOOT');
     } else if (bootType == 'BOOT') {
-      matchedDevice.lastboot_log = new Buffer(req.body);
+      matchedDevice.lastboot_log = Buffer.from(req.body);
       matchedDevice.lastboot_date = Date.now();
       matchedDevice.save();
       console.log('Log Receiving for device ' +

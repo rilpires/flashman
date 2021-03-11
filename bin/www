@@ -124,8 +124,8 @@ function getDomainACMECerts(acme, domainName) {
     let i = 0;
     while (i<certs.length && opts === undefined) {
       if (certs[i].Certificate.Domain == domainName) {
-        let keybuff = new Buffer(certs[i].Certificate.PrivateKey, 'base64');
-        let certbuff = new Buffer(certs[i].Certificate.Certificate, 'base64');
+        let keybuff = Buffer.from(certs[i].Certificate.PrivateKey, 'base64');
+        let certbuff = Buffer.from(certs[i].Certificate.Certificate, 'base64');
         opts = tls.createSecureContext({
           key: keybuff.toString('ascii'),
           cert: certbuff.toString('ascii'),

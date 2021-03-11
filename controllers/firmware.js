@@ -2,6 +2,7 @@ let User = require('../models/user');
 let Config = require('../models/config');
 let Firmware = require('../models/firmware');
 const Role = require('../models/role');
+const controlApi = require('./external-api/control');
 
 const fs = require('fs');
 const unzipper = require('unzipper');
@@ -296,9 +297,15 @@ firmwareController.uploadFirmware = function(req, res) {
   );
 };
 
-firmwareController.syncRemoteFirmwareFiles = function(req, res) {
-  request({
-      url: 'https://controle.anlix.io/api/user',
+firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
+  let retObj = await controlApi.authUser(req.body.name, req.body.password);
+  if (retObj.success) {
+    const resBody = retObj.res;
+    const company = resBody.o;
+    const firmwareBuilds = resBody.firmware_builds;
+    request({
+      url: 'https://artifactory.anlix.io/' +
+           'artifactory/api/storage/upgrades/' + company,
       method: 'GET',
       auth: {
         user: req.body.name,
@@ -310,90 +317,69 @@ firmwareController.syncRemoteFirmwareFiles = function(req, res) {
         return res.json({type: 'danger', message: 'Erro na requisição'});
       }
       if (response.statusCode === 200) {
-        const resBody = JSON.parse(body);
-        const company = resBody.o;
-        const firmwareBuilds = resBody.firmware_builds;
-        request({
-            url: 'https://artifactory.anlix.io/' +
-                 'artifactory/api/storage/upgrades/' + company,
-            method: 'GET',
-            auth: {
-              user: req.body.name,
-              pass: req.body.password,
-            },
-          },
-          function(error, response, body) {
-            if (error) {
-              return res.json({type: 'danger', message: 'Erro na requisição'});
+        let firmwareNames = [];
+        let firmwareList = JSON.parse(body)['children'];
+        for (let firmwareEntry of firmwareList) {
+          let fileName = firmwareEntry.uri;
+          let fileNameParts = fileName.split('_');
+          if (fileNameParts.length < 4) {
+            // Invalid entry
+            continue;
+          }
+          let vendor = fileNameParts[0].split('/')[1];
+          let model = fileNameParts[1];
+          let version = fileNameParts[2];
+          let release = fileNameParts[3].split('.')[0];
+          const matchedFirmwareInfo = firmwareBuilds.find(
+            (firmwareInfo) => {
+              return (firmwareInfo.model.toUpperCase() === model &&
+                      firmwareInfo.version.toUpperCase() === version &&
+                      firmwareInfo.release === release);
+          });
+          let firmwareInfoObj = {
+            company: company,
+            vendor: vendor,
+            model: model,
+            version: version,
+            release: release,
+            uri: fileName,
+          };
+          if (matchedFirmwareInfo) {
+            // Fields may not exist on very old firmwares
+            if (matchedFirmwareInfo.flashbox_version) {
+              firmwareInfoObj.flashbox_version =
+                matchedFirmwareInfo.flashbox_version;
             }
-            if (response.statusCode === 200) {
-              let firmwareNames = [];
-              let firmwareList = JSON.parse(body)['children'];
-              for (firmwareEntry of firmwareList) {
-                let fileName = firmwareEntry.uri;
-                let fileNameParts = fileName.split('_');
-                if (fileNameParts.length < 4) {
-                  // Invalid entry
-                  continue;
-                }
-                let vendor = fileNameParts[0].split('/')[1];
-                let model = fileNameParts[1];
-                let version = fileNameParts[2];
-                let release = fileNameParts[3].split('.')[0];
-                const matchedFirmwareInfo = firmwareBuilds.find(
-                  (firmwareInfo) => {
-                    return (firmwareInfo.model.toUpperCase() === model &&
-                            firmwareInfo.version.toUpperCase() === version &&
-                            firmwareInfo.release === release);
-                  }
-                );
-                let firmwareInfoObj = {
-                  company: company,
-                  vendor: vendor,
-                  model: model,
-                  version: version,
-                  release: release,
-                  uri: fileName,
-                };
-                if (matchedFirmwareInfo) {
-                  // Fields may not exist on ver old firmwares
-                  if (matchedFirmwareInfo.flashbox_version) {
-                    firmwareInfoObj.flashbox_version =
-                      matchedFirmwareInfo.flashbox_version;
-                  }
-                  if (matchedFirmwareInfo.wan_proto) {
-                    firmwareInfoObj.wan_proto =
-                     matchedFirmwareInfo.wan_proto.toUpperCase();
-                  }
-                  if (matchedFirmwareInfo.is_beta != undefined){
-                    firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta;
-                  }
-                  if (matchedFirmwareInfo.is_restricted != undefined){
-                    firmwareInfoObj.is_restricted = matchedFirmwareInfo.is_restricted;
-                  }
-                }
-                firmwareNames.push(firmwareInfoObj);
-              };
-              let encodedAuth = new Buffer(
-                req.body.name + ':' + req.body.password).toString('base64');
-
-              return res.json({type: 'success',
-                firmwarelist: firmwareNames,
-                encoded: encodedAuth,
-              });
-            } else {
-              return res.json({
-                type: 'danger',
-                message: 'Erro na autenticação',
-              });
+            if (matchedFirmwareInfo.wan_proto) {
+              firmwareInfoObj.wan_proto =
+               matchedFirmwareInfo.wan_proto.toUpperCase();
+            }
+            if (matchedFirmwareInfo.is_beta != undefined) {
+              firmwareInfoObj.is_beta = matchedFirmwareInfo.is_beta;
+            }
+            if (matchedFirmwareInfo.is_restricted != undefined) {
+              firmwareInfoObj.is_restricted = matchedFirmwareInfo.is_restricted;
             }
           }
-        );
+          firmwareNames.push(firmwareInfoObj);
+        }
+        let encodedAuth = Buffer.from(
+          req.body.name + ':' + req.body.password).toString('base64');
+
+        return res.json({type: 'success',
+          firmwarelist: firmwareNames,
+          encoded: encodedAuth,
+        });
       } else {
-        return res.json({type: 'danger', message: 'Erro na autenticação'});
+        return res.json({
+          type: 'danger',
+          message: 'Erro na autenticação',
+        });
       }
-    }
-  );
+    });
+  } else {
+    return res.json({type: 'danger', message: 'Erro na autenticação'});
+  }
 };
 
 let addFirmwareFile = function(fw) {
