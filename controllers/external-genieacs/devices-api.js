@@ -4,7 +4,13 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 "path/to/flashman/controllers/external-genieacs"
 */
 
-const API_URL = 'http://localhost:8000/acs/';
+// ***** WARNING!!! *****
+// DO NOT CHANGE THIS VARIABLE WITHOUT ALSO CHANGING THE COMMAND THAT ALTERS IT
+// IN CONTROLLERS/UPDATE_FLASHMAN.JS! THIS LINE IS ALTERED AUTOMATICALLY WHEN
+// FLASHMAN IS RESTARTED FOR ANY REASON
+const INSTANCES_COUNT = 1;
+const API_URL = 'http://localhost:$PORT/acs/';
+
 const request = require('request');
 
 const getFieldType = function(masterKey, key) {
@@ -263,8 +269,20 @@ const syncDeviceData = function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
+  let url = API_URL;
+  let numInstances = INSTANCES_COUNT;
+  if (numInstances > 1) {
+    // More than 1 instance - share load between instances 1 and N-1
+    // We ignore instance 0 for the same reason we ignore it for router syn
+    // Instance 0 will be at port 8000, instance i will be at 8000+i
+    let target = Math.floor(Math.random()*(numInstances-1)) + 8001;
+    url = url.replace('$PORT', target.toString());
+  } else {
+    // Only 1 instance - force on instance 0
+    url = url.replace('$PORT', '8000');
+  }
   request({
-    url: API_URL + 'device/syn',
+    url: url + 'device/syn',
     method: 'POST',
     json: params,
   },

@@ -123,12 +123,20 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
-updateController.rebootGenie = function() {
+updateController.rebootGenie = function(instances) {
   // We do a stop/start instead of restart to avoid racing conditions when
   // genie's worker processes are killed and then respawned - this prevents
   // issues with ONU connections since exceptions lead to buggy exp. backoff
   exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
-    exec('pm2 start genieacs-cwmp');
+    // Replace genieacs instances config with what flashman gives us
+    let replace = 'const INSTANCES_COUNT = .*;';
+    let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+    let sedExpr = 's/' + replace + '/' + newText + '/';
+    let targetFile = 'controllers/external-genieacs/devices-api.js';
+    let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+    exec(sedCommand, (err, stdout, stderr)=>{
+      exec('pm2 start genieacs-cwmp');
+    });
   });
 };
 
