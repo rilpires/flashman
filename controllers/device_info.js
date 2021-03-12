@@ -686,11 +686,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
 
           let fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
 
-
-          // create a sha-256 hasher
-          const sha256Hasher = crypto.createHmac("sha256", "");
-          // hash the string
-          let vlanHash = sha256Hasher.update(JSON.stringify(fetchedVlans)).digest("base64");
+          // hash the VLANs JSON for change check in device
+          let vlanHash = crypto.createHash('md5').update(JSON.stringify(fetchedVlans)).digest('base64');
 
           let resJson = {
             'do_update': matchedDevice.do_update,
