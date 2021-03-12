@@ -14,7 +14,7 @@ $(document).ready(function() {
       dataControl.qtdPorts = row.data('qtdPorts');
       dataControl.vlan_profiles = await fetchVlanProfiles(); 
       dataControl.vlan = await fetchVlanDeviceInfo(id);
-
+      
       // build modal 
       $('#vlan-hlabel').text(id);
       if (isTR069) {
@@ -153,11 +153,13 @@ const buildVlanModal = function(dc, can_edit) {
 
     for(let j = 0 ; j < dc.vlan_profiles.length ; j++) {
       let option = $("<option></option>").attr('value', dc.vlan_profiles[j].vlan_id).text(dc.vlan_profiles[j].profile_name);
-      for(let k = 0 ; k < dc.vlan.length ; k++) {
-        if(dc.vlan !== undefined && dc.vlan[0] !== null) {
-          if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
-            option.attr('selected', 'selected');
-            profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+      if(dc.vlan !== undefined) {
+        for(let k = 0 ; k < dc.vlan.length ; k++) {
+          if(dc.vlan[0] !== null) {
+            if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
+              option.attr('selected', 'selected');
+              profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+            }
           }
         }
       }

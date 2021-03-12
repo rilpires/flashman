@@ -20,7 +20,7 @@ router.route('/profile/new').post(authController.ensureLogin(),
 
 router.route('/profile/:vid').get(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
-                           vlanController.getVlanProfile);
+                           vlanController.updateVlanProfile);
 
 router.route('/profile/edit/:vid').post(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),

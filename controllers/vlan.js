@@ -72,7 +72,7 @@ vlanController.showVlanProfiles = function(req, res) {
   });
 };
 
-vlanController.getVlanProfile = function(req, res) {
+vlanController.updateVlanProfile = function(req, res) {
   let indexContent = {};
 
   // Check Flashman automatic update availability
@@ -260,7 +260,7 @@ vlanController.getVlans = function(req, res) {
       return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
     }
     else {
-      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan.list_of_vlans});
+      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan});
     }
   });
 };
@@ -273,9 +273,7 @@ vlanController.updateVlans = async function(req, res) {
     
     // needs validation
     device.vlan = JSON.parse(req.body.vlans);
-
-    console.log(device.vlan);
-
+    
     device.save().then(function() {
       return res.json({ success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
     }).catch(function(rej) {
