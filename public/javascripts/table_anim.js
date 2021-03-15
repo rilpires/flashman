@@ -1140,32 +1140,24 @@ $(document).ready(function() {
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
 
-          let dropdownDivider = '<div class="dropdown-divider"></div>';
+          let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
 
-          let baseAction = '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
-            '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
-          '</a>';
-
-          let baseActionBottom = dropdownDivider+'<a class="dropdown-item $REPLACE_BTN_CLASS">'+
-            '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
-          '</a>';
-
-          let logAction = baseActionBottom
+          let logAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
           .replace('$REPLACE_ICON', 'fa-file-alt')
           .replace('$REPLACE_TEXT', 'Logs do roteador');
 
-          let unblockAction = baseActionBottom
+          let unblockAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-reset-blocked')
           .replace('$REPLACE_ICON', 'fa-ban')
           .replace('$REPLACE_TEXT', 'Desbloquear dispositivos');
 
-          let portForwardAction = baseActionBottom
+          let portForwardAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-open-ports-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
-          let pingTestAction = baseActionBottom
+          let pingTestAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-ping-test-modal')
           .replace('$REPLACE_ICON', 'fa-stethoscope')
           .replace('$REPLACE_TEXT', 'Teste de latência e perda');
@@ -1175,105 +1167,89 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-network-wired')
           .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
 
-          let siteSurveyAction = baseActionBottom
+          let siteSurveyAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
           .replace('$REPLACE_ICON', 'fa-wifi')
           .replace('$REPLACE_TEXT', 'Redes ao redor');
 
-          let measureAction = baseActionBottom
+          let measureAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
-          let vlanAction = baseActionBottom
+          let vlanAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-vlan-modal')
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', 'Administrar VLANs');
 
-          let wanBytesAction = baseActionBottom
+          let wanBytesAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
           .replace('$REPLACE_TEXT', 'Tráfego WAN');
 
-          let factoryAction = baseActionBottom
+          let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
+
+          var idxMenu = 0;
+          let sideMenu = [];
+          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span></a>';
+          sideMenu[1] = '<div><a class="dropdown-item btn-reset-app"><i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span></a>';
+
+          if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
+            sideMenu[idxMenu] += logAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && !device.bridge_mode_enabled && grantResetDevices) {
+            sideMenu[idxMenu] += unblockAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
+            sideMenu[idxMenu] += portForwardAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && grantPingTest) {
+            sideMenu[idxMenu] += pingTestAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if ((isSuperuser || grantLanDevsAccess) && grantLanDevices) {
+            sideMenu[idxMenu] += devicesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+            sideMenu[idxMenu] += siteSurveyAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
+            sideMenu[idxMenu] += measureAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) && grantVlanSupport) {
+            sideMenu[idxMenu] += vlanAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+            sideMenu[idxMenu] += wanBytesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
+            sideMenu[idxMenu] += factoryAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+
+          sideMenu[0] += '</div>';
+          sideMenu[1] += '</div>';
 
           let devActions = '<button class="btn btn-primary dropdown-toggle" '+
           'type="button" data-toggle="dropdown">Opções</button>'+
           '<div class="dropdown-menu dropdown-menu-inline dropdown-menu-right" data-dropdown-in="fadeIn" '+
           'data-dropdown-out="fadeOut">'+
-            '<div><a class="dropdown-item btn-reboot">'+
-              '<i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span>'+
-            '</a>'+
-            dropdownDivider+
-            '<a class="dropdown-item btn-reset-app">'+
-              '<i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span>'+
-            '</a>'+
-            '$REPLACE_LOG_ACTION'+
-            '$REPLACE_UNBLOCK_ACTION'+
-            '$REPLACE_PORT_FORWARD_ACTION'+
-            '$REPLACE_PING_TEST_ACTION'+
-            '</div><div>'+
-            '$REPLACE_DEVICES_ACTION'+
-            '$REPLACE_SITESURVEY_ACTION'+
-            '$REPLACE_MEASURE_ACTION'+
-            '$REPLACE_VLAN_ACTION'+
-            '$REPLACE_WAN_BYTES_ACTION'+
-            '$REPLACE_FACTORY_ACTION'+
-            '</div>'+
+            "$REPLACE_LEFT_MENU"+
+            "$REPLACE_RIGHT_MENU"+
           '</div>';
-          if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
-            devActions = devActions.replace('$REPLACE_LOG_ACTION', logAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_LOG_ACTION', '');
-          }
-          if (!isTR069 && !device.bridge_mode_enabled && grantResetDevices) {
-            devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', unblockAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', '');
-          }
-          if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
-            devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', portForwardAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', '');
-          }
-          if (!isTR069 && grantPingTest) {
-            devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', pingTestAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
-          }
-          if ((isSuperuser || grantLanDevsAccess) && grantLanDevices) {
-            devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
-          }
-          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
-            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
-          }
-          if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
-            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
-          }
-          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) && grantVlanSupport) {
-            devActions = devActions.replace('$REPLACE_VLAN_ACTION', vlanAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_VLAN_ACTION', '');
-          }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
-          }
-          if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
-            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');
-          }
+          devActions = devActions.replace('$REPLACE_LEFT_MENU', sideMenu[0]);
+          devActions = devActions.replace('$REPLACE_RIGHT_MENU', sideMenu[1]);
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
             buildAboutTab(device, index, isTR069)+
