@@ -69,8 +69,8 @@ $(document).ready(function() {
         }
       });
     }
-    else if(!has_internet_vid) {
-      $('#frame-vlan-modal-alert').addClass('d-block').addClass('p-3').addClass('bg-warning').addClass('text-white').append($('<h5></h5>').html('Deve existir pelo menos uma porta associada a VLAN Internet!'));
+    else if(!has_internet_vid && vlans_on_modal.length != 0) {
+      $('#frame-vlan-modal-alert').addClass('d-block').addClass('p-3').addClass('bg-warning').addClass('text-white').append($('<h5></h5>').html('Deve existir pelo menos uma porta associada a VLAN Internet(VLAN Id = 1)!'));
       
       setTimeout(function() {
        $('#frame-vlan-modal-alert').removeClass('d-block').removeClass('p-3').removeClass('bg-warning').removeClass('text-white').html('');
@@ -135,44 +135,50 @@ const fetchVlanProfiles = async function() {
 const buildVlanModal = function(dc, can_edit) {
   let vlanCanvas = $("#vlan-ports-canvas").html('');
   let vlanBlock = $("<div></div>").addClass('d-flex').addClass('flex-row').addClass('flex-wrap');
-  for(let i = 0 ; i < dc.qtdPorts ; i++) {
-    let vlanPortInput = $("<div></div>").addClass('d-flex').addClass('flex-column').addClass('mr-3').addClass('mb-3');
 
-    vlanPortInput.append(
-        $("<label></label>").addClass('mb-0').text("Porta "+(i+1)+" :")
-      );
+  if(dc.vlan_profiles.length == 0) {
+    $('#frame-vlan-modal-alert').addClass('d-block').addClass('p-3').addClass('bg-danger').addClass('text-white').append($('<h5></h5>').html('É necessário pelo menos um Perfil de VLAN cadastrado!'));
+  }
+  else {
+    for(let i = 0 ; i < dc.qtdPorts ; i++) {
+      let vlanPortInput = $("<div></div>").addClass('d-flex').addClass('flex-column').addClass('mr-3').addClass('mb-3');
 
-    let profilesOptions;
-    if(can_edit) {
-      profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1));
-    }
-    else {
-      profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1)).attr('disabled', 'disabled');
-      $('#btn-vlan-update').attr('disabled', 'disabled');
-    }
+      vlanPortInput.append(
+          $("<label></label>").addClass('mb-0').text("Porta "+(i+1)+" :")
+        );
 
-    for(let j = 0 ; j < dc.vlan_profiles.length ; j++) {
-      let option = $("<option></option>").attr('value', dc.vlan_profiles[j].vlan_id).text(dc.vlan_profiles[j].profile_name);
-      if(dc.vlan !== undefined) {
-        for(let k = 0 ; k < dc.vlan.length ; k++) {
-          if(dc.vlan[0] !== null) {
-            if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
-              option.attr('selected', 'selected');
-              profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+      let profilesOptions;
+      if(can_edit) {
+        profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1));
+      }
+      else {
+        profilesOptions = $("<select></select>").addClass('browser-default').addClass('md-select').addClass('select-port-vlan').attr('name', (i+1)).attr('disabled', 'disabled');
+        $('#btn-vlan-update').attr('disabled', 'disabled');
+      }
+
+      for(let j = 0 ; j < dc.vlan_profiles.length ; j++) {
+        let option = $("<option></option>").attr('value', dc.vlan_profiles[j].vlan_id).text(dc.vlan_profiles[j].profile_name);
+        if(dc.vlan !== undefined) {
+          for(let k = 0 ; k < dc.vlan.length ; k++) {
+            if(dc.vlan[0] !== null) {
+              if(dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id && (i+1) == dc.vlan[k].port) {
+                option.attr('selected', 'selected');
+                profilesOptions.attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+              }
             }
           }
         }
+        profilesOptions.append(option);
       }
-      profilesOptions.append(option);
+
+      let profilesSelect = $("<div></div>").addClass('md-selectfield').append(profilesOptions);
+
+      vlanPortInput.append(profilesSelect);
+
+      vlanBlock.append(vlanPortInput);
     }
-
-    let profilesSelect = $("<div></div>").addClass('md-selectfield').append(profilesOptions);
-
-    vlanPortInput.append(profilesSelect);
-
-    vlanBlock.append(vlanPortInput);
+    vlanCanvas.append(vlanBlock);
   }
-  vlanCanvas.append(vlanBlock);
 
   $('#vlan-modal').modal('show');
 };
