@@ -21,8 +21,6 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -799,14 +797,14 @@ deviceListController.delDeviceReg = function(req, res) {
 };
 
 const downloadStockFirmware = function(model) {
-  return new Promise(async((resolve, reject)=>{
+  return new Promise(async (resolve, reject) => {
     let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
     try {
       // Download md5 hash
-      let targetMd5 = await(requestPromise({
+      let targetMd5 = await requestPromise({
         url: remoteFileUrl + '.md5',
         method: 'GET',
-      }));
+      });
       let currentMd5 = '';
       let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
       // Check for local md5 hash
@@ -849,11 +847,11 @@ const downloadStockFirmware = function(model) {
       }
       return resolve(false);
     }
-  }));
+  });
 };
 
 deviceListController.factoryResetDevice = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), async((err, device)=>{
+  DeviceModel.findById(req.params.id.toUpperCase(), async (err, device) => {
     if (err || !device) {
       return res.status(500).json({
         success: false,
@@ -861,7 +859,7 @@ deviceListController.factoryResetDevice = function(req, res) {
       });
     }
     const model = device.model.replace('N/', '');
-    if (!(await(downloadStockFirmware(model)))) {
+    if (!(await downloadStockFirmware(model))) {
       return res.status(500).json({
         success: false,
         msg: 'Erro baixando a firmware de fábrica',
@@ -870,13 +868,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await(device.save());
+    await device.save();
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
     // Start ack timeout
     deviceHandlers.timeoutUpdateAck(device._id);
-  }));
+  });
 };
 
 //

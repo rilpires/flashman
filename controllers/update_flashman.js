@@ -3,8 +3,6 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
 const request = require('request-promise-native');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const commandExists = require('command-exists');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
@@ -373,7 +371,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
 
 updateController.setAutoConfig = async function(req, res) {
   try {
-    let config = await(Config.findOne({is_default: true}));
+    let config = await Config.findOne({is_default: true});
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
@@ -405,7 +403,7 @@ updateController.setAutoConfig = async function(req, res) {
     // if one is already set and checkbox to update was marked
     if ((!config.measure_configs.auth_token || updateToken) &&
         measureToken !== '') {
-      let controlResp = await(sendTokenControl(req, measureToken));
+      let controlResp = await sendTokenControl(req, measureToken);
       if (!('controller_fqdn' in controlResp) ||
           !('zabbix_fqdn' in controlResp)) {
         throw new {};
@@ -463,7 +461,7 @@ updateController.setAutoConfig = async function(req, res) {
       });
     }
 
-    await(config.save());
+    await config.save();
     return res.status(200).json({
       type: 'success',
       message: message,

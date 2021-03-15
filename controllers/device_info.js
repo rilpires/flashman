@@ -1,4 +1,3 @@
-
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
@@ -11,8 +10,6 @@ const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const util = require('./handlers/util');
 const crypto = require("crypto");
 
@@ -1759,7 +1756,7 @@ deviceInfoController.receiveWpsResult = function(req, res) {
   });
 };
 
-deviceInfoController.getZabbixConfig = async(function(req, res) {
+deviceInfoController.getZabbixConfig = async function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
@@ -1773,14 +1770,14 @@ deviceInfoController.getZabbixConfig = async(function(req, res) {
 
   try {
     // Check if zabbix fqdn config is set
-    let config = await(Config.findOne({is_default: true}));
+    let config = await Config.findOne({is_default: true});
     if (!config) throw new {message: 'Config not found'};
     if (!config.measure_configs.zabbix_fqdn) {
       throw new {message: 'Zabbix FQDN not configured'};
     }
 
     // Check if device has a zabbix psk configured
-    let device = await(DeviceModel.findById(id));
+    let device = await DeviceModel.findById(id);
     if (!device) throw new {message: 'Device ' + id + ' not found'};
     if (!device.measure_config.measure_psk) {
       throw new {message: 'Device ' + id + ' has no psk configured'};
@@ -1797,6 +1794,6 @@ deviceInfoController.getZabbixConfig = async(function(req, res) {
     console.log(err);
     return res.status(500).json({success: 0});
   }
-});
+};
 
 module.exports = deviceInfoController;

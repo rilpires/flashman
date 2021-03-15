@@ -8,8 +8,6 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
 const mqtt = require('../mqtts');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const debug = require('debug')('APP');
 const fs = require('fs');
 
@@ -96,7 +94,7 @@ const pushCertification = function(arr, c, finished) {
   });
 };
 
-const generateSessionCredential = function(user) {
+const generateSessionCredential = async function(user) {
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -108,11 +106,11 @@ const generateSessionCredential = function(user) {
   };
   let buff = new Buffer(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
-  let encryptedB64Json = await(keyHandlers.encryptMsg(b64Json));
+  let encryptedB64Json = await keyHandlers.encryptMsg(b64Json);
   let session = {credential: b64Json, sign: encryptedB64Json};
   // Add onu config, if present
-  let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err));
+  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err);
   if (config && config.tr069 && config.tr069.web_password) {
     session.onuPassword = config.tr069.web_password;
   }
@@ -125,7 +123,7 @@ diagAppAPIController.sessionLogin = function(req, res) {
       return res.status(404).json({success: false,
                                    message: 'Usuário não encontrado'});
     }
-    Role.findOne({name: user.role}, async(function(err, role) {
+    Role.findOne({name: user.role}, async function(err, role) {
       if (err || (!user.is_superuser && !role)) {
         return res.status(500).json({success: false,
                                      message: 'Erro ao encontrar permissões'});
@@ -137,25 +135,25 @@ diagAppAPIController.sessionLogin = function(req, res) {
       let session = generateSessionCredential(user.name);
       session.success = true;
       return res.status(200).json(session);
-    }));
+    });
   });
 };
 
-diagAppAPIController.configureWifi = async(function(req, res) {
+diagAppAPIController.configureWifi = async function(req, res) {
   try {
     // Make sure we have a mac/id to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       if (req.body.isOnu && req.body.onuMac) {
-        device = await(DeviceModel.findById(req.body.onuMac));
+        device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await(DeviceModel.find({serial_tr069: req.body.mac}));
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
           device = devices[0];
         }
       } else {
-        device = await(DeviceModel.findById(req.body.mac));
+        device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
@@ -220,7 +218,7 @@ diagAppAPIController.configureWifi = async(function(req, res) {
       }
       // Apply changes to database and send mqtt message
       device.do_update_parameters = true;
-      await(device.save());
+      await device.save();
       if (device.use_tr069) {
         // tr-069 device, call acs
         acsDeviceInfo.updateInfo(device, changes);
@@ -237,14 +235,14 @@ diagAppAPIController.configureWifi = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.configureMeshMode = async(function(req, res) {
+diagAppAPIController.configureMeshMode = async function(req, res) {
   try {
     // Make sure we have a mac to verify in database
     if (req.body.mac) {
       // Fetch device from database
-      let device = await(DeviceModel.findById(req.body.mac));
+      let device = await DeviceModel.findById(req.body.mac);
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
       }
@@ -261,7 +259,7 @@ diagAppAPIController.configureMeshMode = async(function(req, res) {
       }
       // Apply changes to database and send mqtt message
       device.do_update_parameters = true;
-      await(device.save());
+      await device.save();
       meshHandlers.syncSlaves(device);
       mqtt.anlixMessageRouterUpdate(device._id);
       return res.status(200).json({'success': true});
@@ -272,14 +270,14 @@ diagAppAPIController.configureMeshMode = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.checkMeshStatus = async(function(req, res) {
+diagAppAPIController.checkMeshStatus = async function(req, res) {
   try {
     // Make sure we have a mac to verify in database
     if (req.body.mac) {
       // Fetch device from database
-      let device = await(DeviceModel.findById(req.body.mac));
+      let device = await DeviceModel.findById(req.body.mac);
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
       }
@@ -297,14 +295,14 @@ diagAppAPIController.checkMeshStatus = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.removeMeshSlave = async(function(req, res) {
+diagAppAPIController.removeMeshSlave = async function(req, res) {
   try {
     // Make sure we have a mac to remove from database
     if (req.body.remove_mac) {
       // Fetch device from database
-      let device = await(DeviceModel.findById(req.body.remove_mac));
+      let device = await DeviceModel.findById(req.body.remove_mac);
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
       }
@@ -320,11 +318,11 @@ diagAppAPIController.removeMeshSlave = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.receiveCertification = async(function(req, res) {
+diagAppAPIController.receiveCertification = async function(req, res) {
   try {
-    let result = await(UserModel.find({'name': req.body.user}));
+    let result = await UserModel.find({'name': req.body.user});
     if (!result) {
       return res.status(404).json({'error': 'User not found'});
     }
@@ -346,23 +344,23 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
       if (content.current.latitude && content.current.longitude) {
         let device;
         if (req.body.isOnu && req.body.onuMac) {
-          device = await(DeviceModel.findById(req.body.onuMac));
+          device = await DeviceModel.findById(req.body.onuMac);
         } else if (req.body.isOnu) {
-          let devices = await(DeviceModel.find({serial_tr069: req.body.mac}));
+          let devices = await DeviceModel.find({serial_tr069: req.body.mac});
           if (devices.length > 0) {
             device = devices[0];
           }
         } else {
-          device = await(DeviceModel.findById(req.body.mac));
+          device = await DeviceModel.findById(req.body.mac);
         }
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
-        await(device.save());
+        await device.save();
       }
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
-    await(user.save());
+    await user.save();
     let session = generateSessionCredential(user.name);
     session.success = true;
     return res.status(200).json(session);
@@ -370,23 +368,23 @@ diagAppAPIController.receiveCertification = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.verifyFlashman = async(function(req, res) {
+diagAppAPIController.verifyFlashman = async function(req, res) {
   try {
     // Make sure we have a mac to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       if (req.body.isOnu && req.body.onuMac) {
-        device = await(DeviceModel.findById(req.body.onuMac));
+        device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await(DeviceModel.find({serial_tr069: req.body.mac}));
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
           device = devices[0];
         }
       } else {
-        device = await(DeviceModel.findById(req.body.mac));
+        device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
         return res.status(200).json({
@@ -405,10 +403,10 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
         if (req.body.wifi5Pass) {
           device.wifi_password_5ghz = req.body.wifi5Pass;
         }
-        await(device.save());
+        await device.save();
         let tr069Info = {'url': '', 'interval': 0};
-        let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-          .exec().catch((err) => err));
+        let config = await ConfigModel.findOne({is_default: true}, 'tr069')
+          .exec().catch((err) => err);
         if (config.tr069) {
           tr069Info.url = config.tr069.server_url;
           tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
@@ -450,11 +448,11 @@ diagAppAPIController.verifyFlashman = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
-diagAppAPIController.getTR069Config = async(function(req, res) {
-  let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err));
+diagAppAPIController.getTR069Config = async function(req, res) {
+  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err);
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
@@ -463,23 +461,23 @@ diagAppAPIController.getTR069Config = async(function(req, res) {
     'url': config.tr069.server_url,
     'interval': parseInt(config.tr069.inform_interval/1000),
   });
-});
+};
 
-diagAppAPIController.configureWanOnu = async(function(req, res) {
+diagAppAPIController.configureWanOnu = async function(req, res) {
     try {
     // Make sure we have a mac/id to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       if (req.body.isOnu && req.body.onuMac) {
-        device = await(DeviceModel.findById(req.body.onuMac));
+        device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await(DeviceModel.find({serial_tr069: req.body.mac}));
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
           device = devices[0];
         }
       } else {
-        device = await(DeviceModel.findById(req.body.mac));
+        device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
@@ -492,7 +490,7 @@ diagAppAPIController.configureWanOnu = async(function(req, res) {
         device.pppoe_password = content.pppoe_password;
       }
       // Apply changes to database and reply
-      await(device.save());
+      await device.save();
       return res.status(200).json({'success': true});
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
@@ -501,6 +499,6 @@ diagAppAPIController.configureWanOnu = async(function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
-});
+};
 
 module.exports = diagAppAPIController;
