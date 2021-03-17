@@ -202,7 +202,7 @@ let deviceSchema = new Schema({
   wps_last_connected_mac: {type: String, default: ''},
   vlan : [{
     port: {type: Number, required: true, min: 1, max: 32, unique: true},
-    vlan_id: {type: Number, required: true, min: 1, max: 4094 , default: 1},
+    vlan_id: {type: Number, required: true, min: 1, max: 127 , default: 1},
   }],
 });
 

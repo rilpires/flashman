@@ -20,8 +20,8 @@ let checkVlanId = function(input) {
 };
 
 let checkVlanName = function(input) {
-  if (/[^A-Za-z\-0-9_]+/.test(input.value)) {
-    input.setCustomValidity('O nome deve ter caracteres alfanumericos, hífen ou sublinhado.');
+  if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(input.value) == false) {
+    input.setCustomValidity('O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes.');
   } else {
     let distinctValidity = false;
     vlanIdsOnTable = $('.td-profile-name');

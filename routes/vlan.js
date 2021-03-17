@@ -2,7 +2,7 @@
 const express = require('express');
 const vlanController = require('../controllers/vlan');
 const authController = require('../controllers/auth');
-const permission = 'grantVlan';
+const permissionVlan = 'grantVlan';
 const permissionProfile = 'grantVlanProfileEdit';
 
 let router = express.Router();
@@ -11,7 +11,7 @@ router.route('/profile').get(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
                            vlanController.showVlanProfiles);
 
-router.route('/profile/fetch').get(authController.ensureLogin(), vlanController.getAllVlanProfiles);
+router.route('/profile/fetch').get(authController.ensureLogin(), authController.ensurePermission(permissionVlan, 0), vlanController.getAllVlanProfiles);
 
 router.route('/profile/new').post(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
@@ -31,11 +31,11 @@ router.route('/profile/del').delete(authController.ensureLogin(),
                            vlanController.removeVlanProfile);
 
 router.route('/fetch/:deviceid').get(authController.ensureLogin(),
-                           authController.ensurePermission(permission),
+                           authController.ensurePermission(permissionVlan, 1),
                            vlanController.getVlans);
 
 router.route('/update/:deviceid').post(authController.ensureLogin(),
-                          authController.ensurePermission(permission),
+                          authController.ensurePermission(permissionVlan, 2),
                           vlanController.updateVlans);
 
 module.exports = router;

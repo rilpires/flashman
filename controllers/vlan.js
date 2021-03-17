@@ -172,16 +172,41 @@ vlanController.addVlanProfile = async function(req, res) {
   if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 10 || newVlanProfile.vlan_id > 127)) {
     return res.json({success: false, type: 'danger', message : "O VLAN ID não pode ser menor que 10 ou maior que 127!"});
   }
+  if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(newVlanProfile.profile_name) == false) {
+    return res.json({success: false, type: 'danger', message : "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!"});
+  }
+  if(newVlanProfile.profile_name.length > 32) {
+    return res.json({success: false, type: 'danger', message : "Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!"});
+  }
+  
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
     return res.json({success: false, type: 'danger', message : rej.message});
   });
   if(config && config.vlans_profiles) {
-    config.vlans_profiles.push(newVlanProfile);
-    config.save().then(function() {
-      return res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
-    }).catch(function(rej) {
-      return res.json({success: false, type: 'danger', message : rej.message});
-    });
+    var is_vlan_id_unique = true;
+    var is_profile_name_unique = true;
+    for(let i = 0 ; i < config.vlans_profiles.length ; i++) {
+      if(config.vlans_profiles[i].vlan_id == newVlanProfile.vlan_id) {
+        is_vlan_id_unique = false;
+      }
+      if(config.vlans_profiles[i].profile_name == newVlanProfile.profile_name) {
+        is_profile_name_unique = false;
+      }
+    }
+    if(is_vlan_id_unique && is_profile_name_unique) {
+      config.vlans_profiles.push(newVlanProfile);
+      config.save().then(function() {
+        return res.json({ success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
+      }).catch(function(rej) {
+        return res.json({success: false, type: 'danger', message : rej.message});
+      });
+    }
+    else if(!is_vlan_id_unique) {
+      return res.json({success: false, type: 'danger', message : "Já existe um perfil de VLAN com esse ID fornecido!"});
+    }
+    else if(!is_profile_name_unique) {
+      return res.json({success: false, type: 'danger', message : "Já existe um perfil de VLAN com esse nome fornecido!"});
+    }
   }
   else {
     return res.json({success: false, type: 'danger', message : "Erro ao acessar a configuração ao adicionar perfil de VLAN"});
@@ -224,17 +249,25 @@ vlanController.removeVlanProfile = async function(req, res) {
   if(config) {
     var is_to_delete, i, where_to_delete;
     
-    if(typeof req.body.ids === "string") {
-      req.body.ids = [req.body.ids]
+    if(typeof req.body.ids === 'string') {
+      req.body.ids = [req.body.ids];
     }
 
     for(i = 0; i < req.body.ids.length ; i++) {
       is_to_delete = false;
       where_to_delete = 0;
       for(j = 0; j < config.vlans_profiles.length ; j++) {
-        if(config.vlans_profiles[j]._id.toString() === req.body.ids[i]) {
-          is_to_delete = true;
-          where_to_delete = j;
+        if(typeof req.body.ids[i] === 'number') {
+          if(config.vlans_profiles[j]._id === undefined && config.vlans_profiles[j].vlan_id === req.body.ids[i]) {
+            is_to_delete = true;
+            where_to_delete = j;
+          }
+        }
+        else {
+          if(config.vlans_profiles[j]._id.toString() === req.body.ids[i]) {
+            is_to_delete = true;
+            where_to_delete = j;
+          }
         }
       }
       if(is_to_delete) {
@@ -349,7 +382,6 @@ vlanController.retrieveVlansToDevice = function(device) {
     retObj["2"] = wan_port.toString() + " " + cpu_port.toString() + "t";
   }
 
-  console.log(retObj);
   return retObj;
 };
 
