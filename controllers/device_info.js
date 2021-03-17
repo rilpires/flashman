@@ -726,7 +726,7 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
-            'vlan_hash': vlanHash,
+            'vlan_index': vlanHash,
             'vlan': fetchedVlans,
             'mesh_mode': matchedDevice.mesh_mode,
             'mesh_master': matchedDevice.mesh_master,
