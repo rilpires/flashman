@@ -1,6 +1,9 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const Notification = require('../models/notification');
+const Config = require('../models/config');
 const sio = require('../sio');
 
 const pako = require('pako');
@@ -140,10 +143,11 @@ const createRegistry = async function(req) {
   let hasPPPoE = (data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
+  let splitID = req.body.acs_id.split('-');
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
-    serial_tr069: req.body.acs_id.split('-')[2],
+    serial_tr069: splitID[splitID.length - 1],
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
@@ -175,6 +179,7 @@ const createRegistry = async function(req) {
   });
   try {
     await newDevice.save();
+    await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
     console.log(err);
     return false;
@@ -213,7 +218,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
   device.acs_id = req.body.acs_id;
-  device.serial_tr069 = req.body.acs_id.split('-')[2];
+  let splitID = req.body.acs_id.split('-');
+  device.serial_tr069 = splitID[splitID.length - 1];
   if (data.common.model) device.model = data.common.model;
   if (data.common.version) device.version = data.common.version;
   if (hasPPPoE) {
@@ -362,7 +368,8 @@ const fetchLogFromGenie = function(success, mac, acsID) {
     return;
   }
   let splitID = acsID.split('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
   let options = {
@@ -402,7 +409,8 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 // TODO: Move this function to external-genieacs?
 const fetchWanBytesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
@@ -451,7 +459,8 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
 // TODO: Move this function to external-genieacs?
 const fetchDevicesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   assocField = assocField.substring(0, assocField.indexOf('*')-1);
@@ -548,7 +557,8 @@ acsDeviceInfoController.requestLogs = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields.log;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
   let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
@@ -565,7 +575,8 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let task = {
@@ -584,7 +595,8 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   let totalAssocField = fields.devices.assoc_total;
@@ -604,7 +616,8 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], splitID[1]).fields;
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hasChanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   Object.keys(changes).forEach((masterKey)=>{
@@ -643,6 +656,107 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
   });
+};
+
+acsDeviceInfoController.pingOfflineDevices = async function() {
+  // Get TR-069 configs from database
+  let matchedConfig = await Config.findOne(
+    {is_default: true}, 'tr069',
+  ).exec().catch((err) => err);
+  if (matchedConfig.constructor === Error) {
+    console.log('Error getting user config in database to ping offline ONUs');
+    return;
+  }
+  // Compute offline threshold from options
+  let currentTime = Date.now();
+  let interval = matchedConfig.tr069.inform_interval;
+  let threshold = matchedConfig.tr069.offline_threshold;
+  let offlineThreshold = new Date(currentTime - (interval*threshold));
+  // Query database for offline ONU devices
+  let offlineDevices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$lt: offlineThreshold},
+  }, {
+    acs_id: true,
+  });
+  // Issue a task for every offline device to try and force it to reconnect
+  for (let i = 0; i < offlineDevices.length; i++) {
+    let id = offlineDevices[i].acs_id;
+    let splitID = id.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [fields.common.uptime],
+    };
+    await TasksAPI.addTask(id, task, true, 50, [], null);
+  }
+};
+
+acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
+  try {
+    let devicesArray = null;
+    if (!devices) {
+      devicesArray = await DeviceModel.find({
+        use_tr069: true,
+        is_license_active: {$exists: false}},
+      {
+        serial_tr069: true,
+        model: true,
+        version: true,
+        is_license_active: true});
+    } else {
+      devicesArray = devices;
+    }
+    if (!devicesArray || devicesArray.length == 0) {
+      // Nothing to report
+      return {success: false, message: 'Nenhum a reportar'};
+    }
+    let response = await controlApi.reportDevices(app, devicesArray);
+    if (response.success) {
+      for (let device of devicesArray) {
+        device.is_license_active = true;
+        await device.save();
+      }
+      if (response.noLicenses) {
+        let matchedNotif = await Notification.findOne({
+          'message_code': 4,
+          'target': 'general'});
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'Sua conta está sem licenças para ONUs sobrando. ' +
+                       'Entre em contato com seu representante comercial',
+            'message_code': 4,
+            'severity': 'danger',
+            'type': 'communication',
+            'allow_duplicate': false,
+            'target': 'general',
+          });
+          await notification.save();
+        }
+      } else if (response.licensesNum < 50) {
+        let matchedNotif = await Notification.findOne({
+          'message_code': 3,
+          'target': 'general'});
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'Sua conta está com apenas ' + response.licensesNum +
+                       ' licenças ONU sobrando. ' +
+                       'Entre em contato com seu representante comercial',
+            'message_code': 3,
+            'severity': 'alert',
+            'type': 'communication',
+            'allow_duplicate': false,
+            'target': 'general',
+          });
+          await notification.save();
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in license report: ' + err);
+    return {success: false, message: 'Erro na requisição'};
+  }
 };
 
 module.exports = acsDeviceInfoController;

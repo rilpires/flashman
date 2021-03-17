@@ -10,7 +10,11 @@ let notificationSchema = new mongoose.Schema({
   // Code makes each notification message unique
   message_code: {
     type: Number,
-    enum: [1, // MQTT secret doesn't match
+    enum: [
+      1, // MQTT secret doesn't match
+      2, // User account blocked
+      3, // Few licenses left
+      4, // No licenses left
     ],
     required: false,
   },

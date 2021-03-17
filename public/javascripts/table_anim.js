@@ -143,12 +143,12 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
  mark. */
 let fetchNotificationsForDevice = function(deviceId) {
   $.ajax({type: 'POST', url: '/notification/fetch', traditional: true,
-    data: {devices: [deviceId]}})
+    data: {targets: [deviceId]}})
   .done((response) => {
     let deviceTableContent = $('#devices-table-content');
     for (let notification of response.notifications) {
       changeDeviceStatusOnTable(deviceTableContent, deviceId, notification);
-    };
+    }
   });
 };
 
@@ -1136,6 +1136,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
+          formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
@@ -2251,7 +2252,7 @@ $(document).ready(function() {
           type: 'POST',
           traditional: true,
           data: {
-            devices: res.devices.map((device) => device._id),
+            targets: res.devices.map((device) => device._id),
           },
           success: function(res) {
             for (let idx = 0; idx < res.notifications.length; idx += 1) {

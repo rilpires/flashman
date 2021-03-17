@@ -2,8 +2,8 @@ const localPackageJson = require('../package.json');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
-const request = require('request-promise-native');
 const commandExists = require('command-exists');
+const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
 let updateController = {};
@@ -123,8 +123,39 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
+updateController.rebootGenie = function(instances) {
+  // Treat bugged case where "max" parameter may set instance count to 0 upon
+  // reloading the service - use value from nproc instead of bugged 0
+  exec('nproc', (err, stdout, stderr)=>{
+    if (instances === 0 || instances === '0') {
+      instances = stdout.trim(); // remove trailing newline
+    }
+    // We do a stop/start instead of restart to avoid racing conditions when
+    // genie's worker processes are killed and then respawned - this prevents
+    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+      // Replace genieacs instances config with what flashman gives us
+      let replace = 'const INSTANCES_COUNT = .*;';
+      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+      let sedExpr = 's/' + replace + '/' + newText + '/';
+      let targetFile = 'controllers/external-genieacs/devices-api.js';
+      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      exec(sedCommand, (err, stdout, stderr)=>{
+        exec('pm2 start genieacs-cwmp');
+      });
+    });
+  });
+};
+
 const rebootFlashman = function(version) {
-  exec('pm2 reload environment.config.json &');
+  // Stop genieacs before reloading flashman - this prevents exceptions and
+  // racing conditions when onus try to connect - we use the service name to
+  // avoid booting genieacs on servers where it was never booted in the first
+  // place (as opposed to using environment.genieacs.json)
+  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    // & necessary because otherwise process would kill itself and cause issues
+    exec('pm2 reload environment.config.json &');
+  });
 };
 
 const errorCallback = function(res) {
@@ -212,19 +243,6 @@ const updateFlashman = function(automatic, res) {
   }, () => errorCallback(res));
 };
 
-const sendTokenControl = function(req, token) {
-  return request({
-    url: 'https://controle.anlix.io/api/measure/token',
-    method: 'POST',
-    json: {
-      'token': token,
-    },
-  }).then(
-    (resp)=>Promise.resolve(resp),
-    (err)=>Promise.reject({message: 'Erro no token fornecido'}),
-  );
-};
-
 updateController.update = function() {
   if (process.env.FLM_DISABLE_AUTO_UPDATE !== 'true') {
     Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -282,7 +300,9 @@ updateController.getAutoConfig = function(req, res) {
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
         tr069ServerURL: matchedConfig.tr069.server_url,
+        tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
+        tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
@@ -301,41 +321,8 @@ updateController.getAutoConfig = function(req, res) {
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
 const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
-  // getting devices ids from genie.
-  let ids = await tasksApi.getFromCollection('devices', {}, '_id')
-  .catch((e) => {
-    console.error(e); // printing error to console.
-    // throwing error message that can be given to user interface.
-    throw new Error('Erro encontrando dispositivos do TR-069 no ACS.');
-  });
-  ids = ids.map((obj) => obj._id); // transforming object to string.
-
-
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-
-  // preparing a task to each device to change inform interval in genieacs.
-  let tasksChangeInform = new Array(ids.length); // one task for each device.
-  for (let i = 0; i < tasksChangeInform.length; i++) {
-    let taskInformInterval = {
-      name: 'setParameterValues',
-      parameterValues: [[parameterName, tr069InformInterval]],
-      // genie accepts inform interval as seconds.
-    };
-    // executing a promise and not waiting for it.
-    tasksChangeInform[i] = tasksApi.addTask(ids[i], taskInformInterval, false)
-     .catch((e) => {
-      console.error('error when sending inform interval for device id '+ids[i])
-      // if error throw object containing respective device id and task.
-      throw {task: taskInformInterval, id: ids[i], err: e};
-    });
-  }
-  // sending task to genieacs and waiting all promises to finish.
-  await Promise.all(tasksChangeInform).catch((e) => {
-    console.error(e.err); // print error message.
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS '
-     +`para dispositivo ${e.id}.`); // can be given to user interface.
-  });
 
   // updating inform interval in genie preset.
   /* we already have a preset in genieacs which _id is 'inform'. first we get
@@ -403,7 +390,7 @@ updateController.setAutoConfig = async function(req, res) {
     // if one is already set and checkbox to update was marked
     if ((!config.measure_configs.auth_token || updateToken) &&
         measureToken !== '') {
-      let controlResp = await sendTokenControl(req, measureToken);
+      let controlResp = await controlApi.sendTokenControl(req, measureToken);
       if (!('controller_fqdn' in controlResp) ||
           !('zabbix_fqdn' in controlResp)) {
         throw new {};
@@ -418,11 +405,17 @@ updateController.setAutoConfig = async function(req, res) {
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
+    let onuWebLogin = req.body['onu-web-login'];
+    if (!onuWebLogin) {
+      // in case of falsey value, use current one
+      onuWebLogin = config.tr069.web_login;
+    }
     let onuWebPassword = req.body['onu-web-password'];
     if (!onuWebPassword) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
     }
+    let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
     let tr069RecoveryThreshold =
@@ -447,7 +440,9 @@ updateController.setAutoConfig = async function(req, res) {
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
+        web_login: onuWebLogin,
         web_password: onuWebPassword,
+        remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,

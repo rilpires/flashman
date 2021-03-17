@@ -1,6 +1,9 @@
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
+const Notification = require('../models/notification');
+const controlApi = require('./external-api/control');
+
 let userController = {};
 
 userController.changePassword = function(req, res) {
@@ -164,16 +167,16 @@ userController.postRole = function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
-      'sem Controle de Atualização de Firmware',
+      message: 'Erro de conflito de classe: Controle de Atualização ' +
+               'de Firmware Restrita sem Controle de Atualização de Firmware',
     });
   } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
     return res.json({
       success: false,
       type: 'danger',
-      message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
-      'sem Controle de Atualização de Firmware',
+      message: 'Erro de conflito de classe: Controle de Atualização ' +
+               'de Firmware Beta sem Controle de Atualização de Firmware',
     });
   }
 
@@ -370,16 +373,16 @@ userController.editRole = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Restrita '+
-        'sem Controle de Atualização de Firmware',
+        message: 'Erro de conflito de classe: Controle de Atualização ' +
+                 'de Firmware Restrita sem Controle de Atualização de Firmware',
       });
     } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro de conflito de classe: Controle de Atualização de Firmware Beta '+
-        'sem Controle de Atualização de Firmware',
+        message: 'Erro de conflito de classe: Controle de Atualização ' +
+                 'de Firmware Beta sem Controle de Atualização de Firmware',
       });
     }
 
@@ -403,50 +406,51 @@ userController.editRole = function(req, res) {
 
 userController.deleteCertificates = async function(req, res) {
   let items = req.body.items;
-  if (!items) return res.status(500).json({
-    success: false,
-    type: 'danger',
-    message: 'Erro interno ao deletar certificações. '+
-    'Entre em contato com o desenvolvedor',
-  });
+  if (!items) {
+    return res.status(500).json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao deletar certificações. '+
+      'Entre em contato com o desenvolvedor',
+    });
+  }
   items = JSON.parse(items);
   let itemsById = {};
   let idList = [];
-  items.forEach((item)=>{
+  for (let item of items) {
     if (itemsById.hasOwnProperty(item.user)) {
       itemsById[item.user].push(item.timestamp);
     } else {
       idList.push(item.user);
       itemsById[item.user] = [item.timestamp];
     }
-  });
+  }
   try {
-    idList.forEach(async (userId) => {
+    for (let userId of idList) {
       let user = await User.findById(userId);
-      if (!user) throw("Usuário não existe");
+      if (!user) throw ('Usuário não existe');
       let timestamps = itemsById[userId];
-      timestamps.forEach((timestamp)=>{
+      for (let timestamp of timestamps) {
         let idx = user.deviceCertifications.findIndex(
-          (c)=>c.localEpochTimestamp === parseInt(timestamp)
-        );
+          (c) => c.localEpochTimestamp === parseInt(timestamp));
         if (idx != -1) {
           user.deviceCertifications.splice(idx, 1);
         }
-      });
+      }
       await user.save();
-    });
+    }
     return res.status(200).json({
       success: true,
       type: 'success',
       message: 'Certificações deletadas com sucesso',
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({
       success: false,
       type: 'danger',
-      message: 'Erro interno ao deletar certificações. '+
-      'Entre em contato com o desenvolvedor',
+      message: 'Erro interno ao deletar certificações. ' +
+               'Entre em contato com o desenvolvedor',
     });
   }
 };
@@ -474,7 +478,7 @@ userController.deleteUser = function(req, res) {
 };
 
 userController.deleteRole = function(req, res) {
-  User.count({'role': {$in: req.body.names}}, function(err, count) {
+  User.countDocuments({'role': {$in: req.body.names}}, function(err, count) {
     if (count == 0) {
       Role.find({'_id': {$in: req.body.ids}}, function(err, roles) {
         if (err || !roles) {
@@ -818,6 +822,37 @@ userController.setRoleCrudTrap = function(req, res) {
       });
     }
   });
+};
+
+userController.checkAccountIsBlocked = async function(app) {
+  try {
+    let response = await controlApi.isAccountBlocked(app);
+    if (response.success) {
+      if (response.isBlocked) {
+        let matchedNotif = await Notification.findOne({
+          'message_code': 2,
+          'target': 'general'});
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'A conta Anlix de seu provedor está bloqueada. ' +
+                       'Verifique se há faturas vencidas e entre em ' +
+                       'contato com seu representante comercial',
+            'message_code': 2,
+            'severity': 'danger',
+            'type': 'communication',
+            'allow_duplicate': false,
+            'target': 'general',
+          });
+          await notification.save();
+        }
+      }
+    } else {
+      console.error('Error checking account status: ' + response.message);
+    }
+  } catch (err) {
+    console.error('Error checking if user account is blocked: ' + err);
+    return {success: false, message: 'Erro ao verificar status'};
+  }
 };
 
 module.exports = userController;
