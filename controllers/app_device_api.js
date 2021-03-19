@@ -721,6 +721,14 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
         password: true,
       });
     }
+    if (req.body.content.personalizationHash &&
+      matchedDevice.personalizationHash ==
+      matchedDevice.personalizationHash_local) {
+      return res.status(403).json({
+        message: 'Erro na hash de personalização',
+        password: true,
+      });
+    }
 
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
