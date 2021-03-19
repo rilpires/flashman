@@ -10,26 +10,26 @@ const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
 
-let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
-  return new Promise((resolve, reject)=>{
-    DeviceModel.findById(id, (err, matchedDevice)=>{
+let checkUpdateParametersDone = function (id, ncalls, maxcalls) {
+  return new Promise((resolve, reject) => {
+    DeviceModel.findById(id, (err, matchedDevice) => {
       if (err || !matchedDevice) return reject();
       resolve(!matchedDevice.do_update_parameters);
     });
-  }).then((done)=>{
+  }).then((done) => {
     if (done) return Promise.resolve(true);
     if (ncalls >= maxcalls) return Promise.resolve(false);
-    return new Promise((resolve, reject)=>{
-      setTimeout(()=>{
-        checkUpdateParametersDone(id, ncalls+1, maxcalls).then(resolve, reject);
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        checkUpdateParametersDone(id, ncalls + 1, maxcalls).then(resolve, reject);
       }, 1000);
     });
-  }, (rejectedVal)=>{
+  }, (rejectedVal) => {
     return Promise.reject(rejectedVal);
   });
 };
 
-let doRollback = function(device, values) {
+let doRollback = function (device, values) {
   for (let key in values) {
     if (Object.prototype.hasOwnProperty.call(values, key)) {
       device[key] = values[key];
@@ -37,22 +37,22 @@ let doRollback = function(device, values) {
   }
 };
 
-let appSet = function(req, res, processFunction) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+let appSet = function (req, res, processFunction) {
+  DeviceModel.findById(req.body.id, function (err, matchedDevice) {
     if (err) {
-      return res.status(400).json({is_set: 0});
+      return res.status(400).json({ is_set: 0 });
     }
     if (!matchedDevice) {
-      return res.status(404).json({is_set: 0});
+      return res.status(404).json({ is_set: 0 });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({is_set: 0});
+      return res.status(404).json({ is_set: 0 });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(404).json({is_set: 0});
+      return res.status(404).json({ is_set: 0 });
     }
 
     if (util.isJSONObject(req.body.content)) {
@@ -83,26 +83,26 @@ let appSet = function(req, res, processFunction) {
       mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
       checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
-      .then((done)=>{
-        if (done) {
-          meshHandlers.syncSlaves(matchedDevice);
-          return res.status(200).json({is_set: 1});
-        }
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      }, (rejectedVal)=>{
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      });
+        .then((done) => {
+          if (done) {
+            meshHandlers.syncSlaves(matchedDevice);
+            return res.status(200).json({ is_set: 1 });
+          }
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({ is_set: 0 });
+        }, (rejectedVal) => {
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({ is_set: 0 });
+        });
     } else {
-      return res.status(500).json({is_set: 0});
+      return res.status(500).json({ is_set: 0 });
     }
   });
 };
 
-let processWifi = function(content, device, rollback) {
+let processWifi = function (content, device, rollback) {
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
@@ -167,7 +167,7 @@ let processWifi = function(content, device, rollback) {
   return updateParameters;
 };
 
-let processPassword = function(content, device, rollback) {
+let processPassword = function (content, device, rollback) {
   if (content.hasOwnProperty('app_password')) {
     rollback.app_password = device.app_password;
     device.app_password = content.app_password;
@@ -176,12 +176,12 @@ let processPassword = function(content, device, rollback) {
   return false;
 };
 
-let processBlacklist = function(content, device, rollback) {
+let processBlacklist = function (content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
-      content.blacklist_device.hasOwnProperty('mac') &&
-      content.blacklist_device.mac.match(macRegex)) {
+    content.blacklist_device.hasOwnProperty('mac') &&
+    content.blacklist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -220,10 +220,10 @@ let processBlacklist = function(content, device, rollback) {
     device.blocked_devices_index = Date.now();
     return true;
   } else if (content.hasOwnProperty('device_configs') &&
-           content.device_configs.hasOwnProperty('mac') &&
-           content.device_configs.mac.match(macRegex) &&
-           content.device_configs.hasOwnProperty('block') &&
-           content.device_configs.block === true) {
+    content.device_configs.hasOwnProperty('mac') &&
+    content.device_configs.mac.match(macRegex) &&
+    content.device_configs.hasOwnProperty('block') &&
+    content.device_configs.block === true) {
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
@@ -250,12 +250,12 @@ let processBlacklist = function(content, device, rollback) {
   return false;
 };
 
-let processWhitelist = function(content, device, rollback) {
+let processWhitelist = function (content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
-      content.whitelist_device.hasOwnProperty('mac') &&
-      content.whitelist_device.mac.match(macRegex)) {
+    content.whitelist_device.hasOwnProperty('mac') &&
+    content.whitelist_device.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -275,10 +275,10 @@ let processWhitelist = function(content, device, rollback) {
       }
     }
   } else if (content.hasOwnProperty('device_configs') &&
-           content.device_configs.hasOwnProperty('mac') &&
-           content.device_configs.mac.match(macRegex) &&
-           content.device_configs.hasOwnProperty('block') &&
-           content.device_configs.block === false) {
+    content.device_configs.hasOwnProperty('mac') &&
+    content.device_configs.mac.match(macRegex) &&
+    content.device_configs.hasOwnProperty('block') &&
+    content.device_configs.block === false) {
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
@@ -296,11 +296,11 @@ let processWhitelist = function(content, device, rollback) {
   return false;
 };
 
-let processDeviceInfo = function(content, device, rollback) {
+let processDeviceInfo = function (content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
-      content.device_configs.hasOwnProperty('mac') &&
-      content.device_configs.mac.match(macRegex)) {
+    content.device_configs.hasOwnProperty('mac') &&
+    content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -317,8 +317,8 @@ let processDeviceInfo = function(content, device, rollback) {
         newLanDevice = false;
         if (configs.hasOwnProperty('rules')) {
           let rules = configs.rules;
-          device.lan_devices[idx].port = rules.map((rule)=>rule.in);
-          device.lan_devices[idx].router_port = rules.map((rule)=>rule.out);
+          device.lan_devices[idx].port = rules.map((rule) => rule.in);
+          device.lan_devices[idx].router_port = rules.map((rule) => rule.out);
           device.forward_index = Date.now();
         }
       }
@@ -329,8 +329,8 @@ let processDeviceInfo = function(content, device, rollback) {
         mac: macDevice,
         name: configs.name,
         dmz: configs.dmz,
-        port: rules.map((rule)=>rule.in),
-        router_port: rules.map((rule)=>rule.out),
+        port: rules.map((rule) => rule.in),
+        router_port: rules.map((rule) => rule.out),
         first_seen: Date.now(),
         last_seen: Date.now(),
       });
@@ -340,12 +340,12 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
-let processUpnpInfo = function(content, device, rollback) {
+let processUpnpInfo = function (content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
-      content.device_configs.hasOwnProperty('upnp_allow') &&
-      content.device_configs.hasOwnProperty('mac') &&
-      content.device_configs.mac.match(macRegex)) {
+    content.device_configs.hasOwnProperty('upnp_allow') &&
+    content.device_configs.hasOwnProperty('mac') &&
+    content.device_configs.mac.match(macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -363,7 +363,7 @@ let processUpnpInfo = function(content, device, rollback) {
         } else if (content.device_configs.upnp_allow === false) {
           // Reject only if previous value was "accept" or if notification
           if (content.device_configs.upnp_notification ||
-              device.lan_devices[idx].upnp_permission === 'accept') {
+            device.lan_devices[idx].upnp_permission === 'accept') {
             allow = 'reject';
           }
         }
@@ -387,7 +387,7 @@ let processUpnpInfo = function(content, device, rollback) {
   return false;
 };
 
-let processAll = function(content, device, rollback) {
+let processAll = function (content, device, rollback) {
   processWifi(content, device, rollback);
   processPassword(content, device, rollback);
   processBlacklist(content, device, rollback);
@@ -396,11 +396,11 @@ let processAll = function(content, device, rollback) {
   processUpnpInfo(content, device, rollback);
 };
 
-let formatDevices = function(device) {
+let formatDevices = function (device) {
   let allRules = [];
-  let lanDevices = device.lan_devices.filter((device)=>{
+  let lanDevices = device.lan_devices.filter((device) => {
     return !deviceHandlers.isTooOld(device.last_seen);
-  }).map((lanDevice)=>{
+  }).map((lanDevice) => {
     let name = lanDevice.mac;
     if (lanDevice.name) {
       name = lanDevice.name;
@@ -429,7 +429,7 @@ let formatDevices = function(device) {
     return {
       mac: lanDevice.mac,
       id: (!lanDevice.dhcp_name ||
-           lanDevice.dhcp_name === '!') ? '*' : lanDevice.dhcp_name,
+        lanDevice.dhcp_name === '!') ? '*' : lanDevice.dhcp_name,
       ip: lanDevice.ip,
       blocked: lanDevice.is_blocked,
       name: name,
@@ -447,120 +447,120 @@ let formatDevices = function(device) {
   };
 };
 
-appDeviceAPIController.registerApp = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
-      if (err) {
-        return res.status(400).json({is_registered: 0});
-      }
-      if (!matchedDevice) {
-        return res.status(404).json({is_registered: 0});
-      }
-      if (req.body.app_mac) {
-        let deviceObj = matchedDevice.lan_devices.find((device)=>{
-          return device.mac === req.body.app_mac;
-        });
-        if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
-          deviceObj.app_uid = req.body.app_id;
-        } else if (!deviceObj) {
-          matchedDevice.lan_devices.push({
-            mac: req.body.app_mac,
-            app_uid: req.body.app_id,
-            first_seen: Date.now(),
-            last_seen: Date.now(),
-          });
-        }
-      }
-      let appObj = matchedDevice.apps.filter(function(app) {
-        return app.id === req.body.app_id;
-      });
-      if (appObj.length == 0) {
-        matchedDevice.apps.push({id: req.body.app_id,
-                                 secret: req.body.app_secret});
-      } else {
-        let objIdx = matchedDevice.apps.indexOf(appObj[0]);
-        matchedDevice.apps.splice(objIdx, 1);
-        appObj[0].secret = req.body.app_secret;
-        matchedDevice.apps.push(appObj[0]);
-      }
-      matchedDevice.save();
-      return res.status(200).json({is_registered: 1});
-    });
-  } else {
-    return res.status(401).json({is_registered: 0});
-  }
-};
+// appDeviceAPIController.registerApp = function(req, res) {
+//   if (req.body.secret == req.app.locals.secret) {
+//     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+//       if (err) {
+//         return res.status(400).json({is_registered: 0});
+//       }
+//       if (!matchedDevice) {
+//         return res.status(404).json({is_registered: 0});
+//       }
+//       if (req.body.app_mac) {
+//         let deviceObj = matchedDevice.lan_devices.find((device)=>{
+//           return device.mac === req.body.app_mac;
+//         });
+//         if (deviceObj && deviceObj.app_uid !== req.body.app_id) {
+//           deviceObj.app_uid = req.body.app_id;
+//         } else if (!deviceObj) {
+//           matchedDevice.lan_devices.push({
+//             mac: req.body.app_mac,
+//             app_uid: req.body.app_id,
+//             first_seen: Date.now(),
+//             last_seen: Date.now(),
+//           });
+//         }
+//       }
+//       let appObj = matchedDevice.apps.filter(function(app) {
+//         return app.id === req.body.app_id;
+//       });
+//       if (appObj.length == 0) {
+//         matchedDevice.apps.push({id: req.body.app_id,
+//                                  secret: req.body.app_secret});
+//       } else {
+//         let objIdx = matchedDevice.apps.indexOf(appObj[0]);
+//         matchedDevice.apps.splice(objIdx, 1);
+//         appObj[0].secret = req.body.app_secret;
+//         matchedDevice.apps.push(appObj[0]);
+//       }
+//       matchedDevice.save();
+//       return res.status(200).json({is_registered: 1});
+//     });
+//   } else {
+//     return res.status(401).json({is_registered: 0});
+//   }
+// };
 
-appDeviceAPIController.registerPassword = function(req, res) {
+appDeviceAPIController.registerPassword = function (req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
       if (err) {
-        return res.status(400).json({is_registered: 0});
+        return res.status(400).json({ is_registered: 0 });
       }
       if (!matchedDevice) {
-        return res.status(404).json({is_registered: 0});
+        return res.status(404).json({ is_registered: 0 });
       }
-      let appObj = matchedDevice.apps.filter(function(app) {
+      let appObj = matchedDevice.apps.filter(function (app) {
         return app.id === req.body.app_id;
       });
       if (appObj.length == 0) {
-        return res.status(404).json({is_set: 0});
+        return res.status(404).json({ is_set: 0 });
       }
       if (appObj[0].secret != req.body.app_secret) {
-        return res.status(403).json({is_set: 0});
+        return res.status(403).json({ is_set: 0 });
       }
       matchedDevice.app_password = req.body.router_passwd;
       matchedDevice.save();
-      return res.status(200).json({is_registered: 1});
+      return res.status(200).json({ is_registered: 1 });
     });
   } else {
-    return res.status(401).json({is_registered: 0});
+    return res.status(401).json({ is_registered: 0 });
   }
 };
 
-appDeviceAPIController.removeApp = function(req, res) {
+appDeviceAPIController.removeApp = function (req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
       if (err) {
-        return res.status(400).json({is_unregistered: 0});
+        return res.status(400).json({ is_unregistered: 0 });
       }
       if (!matchedDevice) {
-        return res.status(404).json({is_unregistered: 0});
+        return res.status(404).json({ is_unregistered: 0 });
       }
-      let appsFiltered = matchedDevice.apps.filter(function(app) {
+      let appsFiltered = matchedDevice.apps.filter(function (app) {
         return app.id !== req.body.app_id;
       });
       matchedDevice.apps = appsFiltered;
       matchedDevice.save();
-      return res.status(200).json({is_unregistered: 1});
+      return res.status(200).json({ is_unregistered: 1 });
     });
   } else {
-    return res.status(401).json({is_unregistered: 0});
+    return res.status(401).json({ is_unregistered: 0 });
   }
 };
 
-appDeviceAPIController.rebootRouter = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.rebootRouter = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     // Send mqtt message to reboot router
     mqtt.anlixMessageRouterReboot(req.body.id);
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
       return map[req.body.id.toUpperCase()];
     });
 
@@ -570,22 +570,22 @@ appDeviceAPIController.rebootRouter = function(req, res) {
   });
 };
 
-appDeviceAPIController.refreshInfo = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.refreshInfo = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     // Send mqtt message to update devices on flashman db
@@ -593,7 +593,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
     }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
       return map[req.body.id.toUpperCase()];
     });
 
@@ -604,22 +604,22 @@ appDeviceAPIController.refreshInfo = function(req, res) {
   });
 };
 
-appDeviceAPIController.doSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+appDeviceAPIController.doSpeedtest = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     // Send reply first, then send mqtt message
@@ -637,7 +637,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       lastErrorID = '';
     }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
       return map[req.body.id.toUpperCase()];
     });
 
@@ -649,11 +649,11 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
 
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
-    setTimeout(async(()=>{
+    setTimeout(async(() => {
       let config;
       try {
-        config = await(Config.findOne({is_default: true}).lean());
-        if (!config) throw {error: 'Config not found'};
+        config = await(Config.findOne({ is_default: true }).lean());
+        if (!config) throw { error: 'Config not found' };
       } catch (err) {
         console.log(err);
       }
@@ -662,45 +662,52 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
         // Send mqtt message to perform speedtest
         let url = config.measureServerIP + ':' + config.measureServerPort;
         mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
-                                         {name: 'App_Cliente'});
+          { name: 'App_Cliente' });
       }
-    }), 1.5*1000);
+    }), 1.5 * 1000);
   }));
 };
 
-appDeviceAPIController.appSetWifi = function(req, res) {
+appDeviceAPIController.appSetWifi = function (req, res) {
   appSet(req, res, processWifi);
 };
 
-appDeviceAPIController.appSetPassword = function(req, res) {
+appDeviceAPIController.appSetPassword = function (req, res) {
   appSet(req, res, processPassword);
 };
 
-appDeviceAPIController.appSetBlacklist = function(req, res) {
+appDeviceAPIController.appSetBlacklist = function (req, res) {
   appSet(req, res, processBlacklist);
 };
 
-appDeviceAPIController.appSetWhitelist = function(req, res) {
+appDeviceAPIController.appSetWhitelist = function (req, res) {
   appSet(req, res, processWhitelist);
 };
 
-appDeviceAPIController.appSetDeviceInfo = function(req, res) {
+appDeviceAPIController.appSetDeviceInfo = function (req, res) {
   appSet(req, res, processDeviceInfo);
 };
 
-appDeviceAPIController.appSetConfig = function(req, res) {
+appDeviceAPIController.appSetConfig = function (req, res) {
   appSet(req, res, processAll);
 };
 
-appDeviceAPIController.appGetLoginInfo = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+appDeviceAPIController.appGetLoginInfo = function (req, res) {
+  let config;
+  try {
+    config = await(Config.findOne({ is_default: true }).lean());
+    if (!config) throw new Error('Config not found');
+  } catch (err) {
+    console.log(err);
+  }
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
@@ -721,6 +728,15 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
         password: true,
       });
     }
+    // secret from the phone & secret on local == another secret
+    if (req.body.content.personalizationHash &&
+      matchedDevice.personalizationHash ==
+      matchedDevice.personalizationHash_local) {
+      return res.status(403).json({
+        message: 'Erro na hash de personalização',
+        password: true,
+      });
+    }
 
     // Send mqtt message to update devices on flashman db
     mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
@@ -730,15 +746,15 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let fcmid = req.body.content.fcmToken;
     let latitude = req.body.content.latitude;
     let longitude = req.body.content.longitude;
-    let lanDevice = matchedDevice.lan_devices.find((d)=>d.app_uid===appid);
+    let lanDevice = matchedDevice.lan_devices.find((d) => d.app_uid === appid);
     let mustUpdateFCM = (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid);
     let mustUpdateLocation = (latitude && longitude);
     if (mustUpdateFCM || mustUpdateLocation) {
       // Query again but this time without .lean() so we can edit register
-      DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
+      DeviceModel.findById(req.body.id).exec(function (err, matchedDeviceEdit) {
         if (err || !matchedDeviceEdit) return;
         if (mustUpdateFCM) {
-          let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+          let device = matchedDeviceEdit.lan_devices.find((d) => d.app_uid === appid);
           device.fcm_uid = fcmid;
           device.last_seen = Date.now();
         }
@@ -765,14 +781,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantUpnp = false;
     } else {
       permissions.grantBlockDevices = true;
-    }
-
-    let config;
-    try {
-      config = await(Config.findOne({is_default: true}).lean());
-      if (!config) throw new Error('Config not found');
-    } catch (err) {
-      console.log(err);
     }
 
     let speedtestInfo = {};
@@ -802,8 +810,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     }
 
     let notifications = [];
-    matchedDevice.upnp_requests.forEach((mac)=>{
-      let upnpDevice = matchedDevice.lan_devices.find((d)=>d.mac===mac);
+    matchedDevice.upnp_requests.forEach((mac) => {
+      let upnpDevice = matchedDevice.lan_devices.find((d) => d.mac === mac);
       if (!upnpDevice) return;
       let name = upnpDevice.upnp_name;
       if (upnpDevice.name) {
@@ -815,12 +823,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       });
     });
 
-    let localDevice = matchedDevice.lan_devices.find((device)=>{
+    let localDevice = matchedDevice.lan_devices.find((device) => {
       return req.body.app_id === device.app_uid;
     });
     let localMac = localDevice ? localDevice.mac : '';
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
       return map[req.body.id.toUpperCase()];
     });
 
@@ -839,22 +847,22 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
   }));
 };
 
-appDeviceAPIController.appGetVersion = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.appGetVersion = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     let permissions = DeviceVersion.findByVersion(
@@ -866,22 +874,22 @@ appDeviceAPIController.appGetVersion = function(req, res) {
   });
 };
 
-appDeviceAPIController.appGetDevices = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.appGetDevices = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     let devicesInfo = formatDevices(matchedDevice);
@@ -894,26 +902,26 @@ appDeviceAPIController.appGetDevices = function(req, res) {
   });
 };
 
-appDeviceAPIController.appGetPortForward = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.appGetPortForward = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     let devices = {};
-    matchedDevice.lan_devices.forEach((device)=>{
+    matchedDevice.lan_devices.forEach((device) => {
       let numRules = device.port.length;
       let rules = [];
       for (let i = 0; i < numRules; i++) {
@@ -922,7 +930,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
           out: device.router_port[i],
         });
       }
-      devices[device.mac] = {dmz: device.dmz, rules: rules};
+      devices[device.mac] = { dmz: device.dmz, rules: rules };
     });
 
     return res.status(200).json({
@@ -931,33 +939,33 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
   });
 };
 
-appDeviceAPIController.appGetSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+appDeviceAPIController.appGetSpeedtest = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     let config;
     try {
-      config = await(Config.findOne({is_default: true}).lean());
+      config = await(Config.findOne({ is_default: true }).lean());
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
     }
 
-    let reply = {'speedtest': {}};
+    let reply = { 'speedtest': {} };
     if (config && config.measureServerIP) {
       reply.speedtest.server = config.measureServerIP;
     }
@@ -980,22 +988,22 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
   }));
 };
 
-appDeviceAPIController.appGetWpsState = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.appGetWpsState = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    let appObj = matchedDevice.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
 
     return res.status(200).json({
@@ -1006,19 +1014,19 @@ appDeviceAPIController.appGetWpsState = function(req, res) {
   });
 };
 
-appDeviceAPIController.resetPassword = function(req, res) {
+appDeviceAPIController.resetPassword = function (req, res) {
   if (!req.body.content || !req.body.content.reset_mac ||
-      !req.body.content.reset_secret) {
-    return res.status(500).json({message: 'Erro nos parâmetros'});
+    !req.body.content.reset_secret) {
+    return res.status(500).json({ message: 'Erro nos parâmetros' });
   }
-  DeviceModel.findById(req.body.content.reset_mac).exec(async((err, device)=>{
+  DeviceModel.findById(req.body.content.reset_mac).exec(async((err, device) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!device) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({ message: 'Device não encontrado' });
     }
-    let appObj = device.apps.filter(function(app) {
+    let appObj = device.apps.filter(function (app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
@@ -1038,37 +1046,37 @@ appDeviceAPIController.resetPassword = function(req, res) {
     await(device.save());
     mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
 
-    return res.status(200).json({success: true});
+    return res.status(200).json({ success: true });
   }));
 };
 
-appDeviceAPIController.activateWpsButton = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
+appDeviceAPIController.activateWpsButton = function (req, res) {
+  DeviceModel.findById(req.body.id).lean().exec(function (err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({ message: 'Erro interno' });
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({ message: 'Roteador não encontrado' });
     }
-    let appObj = matchedDevice.apps.find(function(app) {
+    let appObj = matchedDevice.apps.find(function (app) {
       return app.id === req.body.app_id;
     });
     if (typeof appObj === 'undefined') {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({ message: 'App não encontrado' });
     }
     if (appObj.secret !== req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({ message: 'App não autorizado' });
     }
     if (!('content' in req.body) || !('activate' in req.body.content) ||
-        !(typeof req.body.content.activate === 'boolean')
+      !(typeof req.body.content.activate === 'boolean')
     ) {
-      return res.status(500).json({message: 'Erro na requisição'});
+      return res.status(500).json({ message: 'Erro na requisição' });
     }
 
     // Send mqtt message to activate WPS push button
     mqtt.anlixMessageRouterWpsButton(req.body.id, req.body.content.activate);
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
       return map[req.body.id.toUpperCase()];
     });
 
