@@ -694,6 +694,14 @@ appDeviceAPIController.appSetConfig = function(req, res) {
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+    let config;
+    try {
+      config = await(Config.findOne({is_default: true}).lean());
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+    console.log(req);
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
@@ -722,11 +730,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       });
     }
     if (req.body.content.personalizationHash &&
-      matchedDevice.personalizationHash ==
+      config.personalizationHash !==
       matchedDevice.personalizationHash_local) {
       return res.status(403).json({
         message: 'Erro na hash de personalização',
-        password: true,
+        personalizationHash: true,
       });
     }
 
@@ -775,13 +783,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantBlockDevices = true;
     }
 
-    let config;
-    try {
-      config = await(Config.findOne({is_default: true}).lean());
-      if (!config) throw new Error('Config not found');
-    } catch (err) {
-      console.log(err);
-    }
 
     let speedtestInfo = {};
     if (config && config.measureServerIP && permissions.grantSpeedTest) {
