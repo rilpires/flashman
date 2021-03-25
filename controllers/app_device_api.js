@@ -730,6 +730,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       });
     }
     if (req.body.content.personalizationHash &&
+      config.personalizationHash &&
       config.personalizationHash !==
       req.body.content.personalizationHash) {
       return res.status(403).json({
