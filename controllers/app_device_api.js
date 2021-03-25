@@ -731,7 +731,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     }
     if (req.body.content.personalizationHash &&
       config.personalizationHash !==
-      matchedDevice.personalizationHash_local) {
+      req.body.content.personalizationHash) {
       return res.status(403).json({
         message: 'Erro na hash de personalização',
         personalizationHash: true,
