@@ -125,18 +125,25 @@ const isRunningUserOwnerOfDirectory = function() {
 };
 
 updateController.rebootGenie = function(instances) {
-  // We do a stop/start instead of restart to avoid racing conditions when
-  // genie's worker processes are killed and then respawned - this prevents
-  // issues with ONU connections since exceptions lead to buggy exp. backoff
-  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
-    // Replace genieacs instances config with what flashman gives us
-    let replace = 'const INSTANCES_COUNT = .*;';
-    let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-    let sedExpr = 's/' + replace + '/' + newText + '/';
-    let targetFile = 'controllers/external-genieacs/devices-api.js';
-    let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
-    exec(sedCommand, (err, stdout, stderr)=>{
-      exec('pm2 start genieacs-cwmp');
+  // Treat bugged case where "max" parameter may set instance count to 0 upon
+  // reloading the service - use value from nproc instead of bugged 0
+  exec('nproc', (err, stdout, stderr)=>{
+    if (instances === 0 || instances === '0') {
+      instances = stdout.trim(); // remove trailing newline
+    }
+    // We do a stop/start instead of restart to avoid racing conditions when
+    // genie's worker processes are killed and then respawned - this prevents
+    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+      // Replace genieacs instances config with what flashman gives us
+      let replace = 'const INSTANCES_COUNT = .*;';
+      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+      let sedExpr = 's/' + replace + '/' + newText + '/';
+      let targetFile = 'controllers/external-genieacs/devices-api.js';
+      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      exec(sedCommand, (err, stdout, stderr)=>{
+        exec('pm2 start genieacs-cwmp');
+      });
     });
   });
 };
