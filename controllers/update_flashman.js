@@ -451,33 +451,33 @@ updateController.setAutoConfig = async function(req, res) {
     // if a parameter is defined and valid we assign it to config.
     let anyProblem = false; // goes to true if at least one value is invalid.
     let v; // shortening variable name.
-    v = req.body.['data_collecting_is_active'];
+    v = req.body['data_collecting_is_active'];
     if (!anyProblem && (v === undefined || v.constructor === Boolean)) {
       config.data_collecting.is_active = v;
     } else {
       anyProblem = true;
     }
-    v = req.body.['data_collecting_has_latency'];
+    v = req.body['data_collecting_has_latency'];
     if (!anyProblem && (v === undefined || v.constructor === Boolean)) {
       config.data_collecting.has_latency = v;
     } else {
       anyProblem = true;
     }
-    v = req.body.['data_collecting_alarm_fqdn'];
+    v = req.body['data_collecting_alarm_fqdn'];
     if (!anyProblem && (v === undefined || (v.constructor === String &&
     (((v = v.trim()) !== null && util.isFqdnValid(v)) || v === '')))) {
       config.data_collecting.alarm_fqdn = v;
     } else {
       anyProblem = true;
     }
-    v = req.body.['data_collecting_ping_fqdn'];
+    v = req.body['data_collecting_ping_fqdn'];
     if (!anyProblem && (v === undefined || (v.constructor === String &&
     (((v = v.trim()) !== null && util.isFqdnValid(v)) || v === '')))) {
       config.data_collecting.ping_fqdn = v;
     } else {
       anyProblem = true;
     }
-    v = parseInt(req.body.['data_collecting_ping_packets']);
+    v = parseInt(req.body['data_collecting_ping_packets']);
     if (!anyProblem && (v === undefined || (!isNaN(v) && v > 0 && v <= 100))) {
       config.data_collecting.ping_packets = v;
     } else {
