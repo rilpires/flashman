@@ -407,6 +407,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       // Schedule license report
       acsDeviceController.reportOnuDevices(app);
       userController.checkAccountIsBlocked(app);
+      updater.updateAppPersonalization(app);
     });
 
     acsDeviceController.reportOnuDevices(app);
