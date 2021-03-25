@@ -712,12 +712,15 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           }
           if (matchedConfig && matchedConfig.data_collecting.constructor === Object) {
             // matchedDevice value && matchedConfig value.
-            data_collecting.is_active &&= matchedConfig.data_collecting.is_active || false;
+            data_collecting.is_active = data_collecting.is_active &&
+              (matchedConfig.data_collecting.is_active || false);
             // matchedDevice value && matchedConfig value.
-            data_collecting.has_latency &&= matchedConfig.data_collecting.has_latency || false;
+            data_collecting.has_latency = data_collecting.has_latency &&
+              (matchedConfig.data_collecting.has_latency || false);
             data_collecting.alarm_fqdn = matchedConfig.data_collecting.alarm_fqdn || '';
             // preference for matchedDevice value.
-            data_collecting.ping_fqdn ||= matchedConfig.data_collecting.ping_fqdn || '';
+            data_collecting.ping_fqdn = data_collecting.ping_fqdn || 
+              (matchedConfig.data_collecting.ping_fqdn || '');
             data_collecting.ping_packets = matchedConfig.data_collecting.ping_packets || 100;
           }
 
@@ -1831,12 +1834,15 @@ deviceInfoController.getDataCollectingConfig = async(function(req, res) {
     }
     if (config && config.data_collecting.constructor === Object) {
       // device value && config value.
-      ret.is_active &&= config.data_collecting.is_active || false;
+      ret.is_active = ret.is_active &&
+        (config.data_collecting.is_active || false);
       // device value && config value.
-      ret.has_latency &&= config.data_collecting.has_latency || false;
+      ret.has_latency = ret.has_latency &&
+        (config.data_collecting.has_latency || false);
       ret.alarm_fqdn = config.data_collecting.alarm_fqdn || '';
       // preference for device value.
-      ret.ping_fqdn ||= matchedConfig.data_collecting.ping_fqdn || '';
+      ret.ping_fqdn = ret.ping_fqdn ||
+        (matchedConfig.data_collecting.ping_fqdn || '');
       ret.ping_packets = config.data_collecting.ping_packets || 100;
     }
 
