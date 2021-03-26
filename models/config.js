@@ -75,9 +75,9 @@ let configSchema = new mongoose.Schema({
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},
-  iosIdentifier: {type: String, default: ''},
   androidIdentifier: {type: String, default: ''},
-  personalizationHash_local: {type: String, default: ''},
+  iosIdentifier: {type: String, default: ''},
+  personalizationHash: {type: String, default: ''},
 });
 
 let config = mongoose.model('config', configSchema);

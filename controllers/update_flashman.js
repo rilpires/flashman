@@ -466,9 +466,9 @@ updateController.setAutoConfig = async function(req, res) {
 updateController.updateAppPersonalization = async function(app) {
   let controlReq = await controlApi.getPersonalizationHash(app);
   if (controlReq.success) {
-    let hash = controlReq.hash;
-    let android = controlReq.android;
-    let ios = controlReq.ios;
+    let hash = controlReq.personalizationHash;
+    let android = controlReq.androidIdentifier;
+    let ios = controlReq.iosIdentifier;
     let config = await config();
     if (!config) {
       console.log('Error accessing config to update app hash');
