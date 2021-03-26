@@ -463,4 +463,24 @@ updateController.setAutoConfig = async function(req, res) {
   }
 };
 
+updateController.updateAppPersonalization = async function(app) {
+  let controlReq = await controlApi.getPersonalizationHash(app);
+  if (controlReq.success) {
+    let hash = controlReq.hash;
+    let android = controlReq.android;
+    let ios = controlReq.ios;
+    let config = await config();
+    if (!config) {
+      console.log('Error accessing config to update app hash');
+      return;
+    }
+    config.app_personalizationHash.hash = hash;
+    config.app_personalizationHash.android = android;
+    config.app_personalizationHash.ios = ios;
+    await config.save();
+  } else {
+    console.log('Error at requisition on control');
+  }
+};
+
 module.exports = updateController;

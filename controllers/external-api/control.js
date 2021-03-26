@@ -203,4 +203,30 @@ controlController.reportDevices = function(app, devicesArray) {
   });
 };
 
+controlController.getPersonalizationHash = function(app) {
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/user/appinfo',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+      },
+    }).then((res) => {
+      if (res.success && res.getPersonalizationHash &&
+        res.androidID, res.iosLink) {
+        return resolve({
+          success: true,
+          hash: res.PersonalizationHash,
+          androidID: res.android,
+          iosLink: res.ios,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro: ' + err.message});
+    });
+  });
+};
+
 module.exports = controlController;
