@@ -45,24 +45,28 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
+      else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
+      else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
+      else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
+      else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
     default:
       return '';
@@ -160,6 +164,7 @@ const getDefaultFields = function() {
       host_mac: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.MACAddress',
       host_name: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName',
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
+      host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Layer2Interface',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice',
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
@@ -212,6 +217,24 @@ const getNokiaFields = function() {
   return fields;
 };
 
+const getStavixFields = function() {
+  let fields = getDefaultFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesSent';
+  fields.wifi2.ssid = fields.wifi5.ssid.replace(/1/g, '6');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '1');
+  fields.wifi2.password = fields.wifi5.password.replace(/1/g, '6');
+  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '1');
+  fields.wifi2.channel = fields.wifi5.channel.replace(/1/g, '6');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '1');
+  fields.wifi2.auto = fields.wifi5.auto.replace(/1/g, '6');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '1');
+  fields.wifi2.mode = fields.wifi5.mode.replace(/1/g, '6');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '1');
+  fields.wifi2.enable = fields.wifi5.enable.replace(/1/g, '6');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '1');
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -230,6 +253,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'GONUAC001': // Greatek Stavix G421R
+      message = '';
+      fields = getStavixFields();
+    break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();

@@ -51,6 +51,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case '11bg':
     case 'b':
     case 'g':
+    case 'bg':
     case 'b,g':
       return '11g';
     case '11bgn':
@@ -59,11 +60,15 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a':
     case 'n':
     case 'g,n':
+    case 'gn':
     case 'b,g,n':
+    case 'bgn':
+    case 'an':
     case 'a,n':
       return (is5ghz) ? '11na' : '11n';
     case '11ac':
     case 'ac':
+    case 'anac':
     case 'a,n,ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
@@ -498,6 +503,8 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         success = false;
       }
       if (success) {
+        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
+        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -510,6 +517,16 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Collect device ip
           let ipKey = fields.devices.host_ip.replace('*', i);
           device.ip = getFromNestedKey(data, ipKey+'._value');
+          // Collect layer 2 interface
+          let ifaceKey = fields.devices.host_layer2.replace('*', i);
+          let l2iface = getFromNestedKey(data, ifaceKey+'.value');
+          if (l2iface === iface2) {
+            device.wifi = true;
+            device.wifi_freq = 2.4;
+          } else if (l2iface === iface5) {
+            device.wifi = true;
+            device.wifi_freq = 5;
+          }
           // Push basic device information
           devices.push(device);
         });
@@ -529,6 +546,11 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;
+            if (interface == iface2) {
+              device.wifi_freq = 2.4;
+            } else if (interface == iface5) {
+              device.wifi_freq = 5;
+            }
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
