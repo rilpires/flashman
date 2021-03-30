@@ -666,19 +666,20 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         // fields if values exists and are valid.
         let v;
         v = req.body.data_collecting_is_active;
-        if ((v.constructor === String && (v = v.trim()) !== '') || v !== undefined) {
+        if (v !== undefined && v.constructor ===  Boolean) {
           // if parameter is a string and if, after trimming it, it's not empty or
           // if it's not undefined, we convert to boolean.
-          deviceSetQuery.data_collecting.is_active = Boolean(v); 
+          deviceSetQuery.data_collecting.is_active = v;
         }
         v = req.body.data_collecting_has_latency;
-        if ((v.constructor === String && (v = v.trim()) !== '') || v !== undefined) {
+        if (v !== undefined && v.constructor ===  Boolean) {
           // if parameter is a string and if, after trimming it, it's not empty or
           // if it's not undefined, we convert to boolean.
-          deviceSetQuery.data_collecting.has_latency = Boolean(v);
+          deviceSetQuery.data_collecting.has_latency = v;
         }
         v = req.body.data_collecting_ping_fqdn;
-        if (v.constructor === String && (v = v.trim()) !== null && util.isFqdnValid(v)) {
+        if (v !== undefined && v.constructor === String && (v = v.trim()) !== null &&
+         util.isFqdnValid(v)) {
           // if parameter is a string, then we trim it, and if it's a valid FQDN.
           deviceSetQuery.data_collecting.ping_fqdn = v; // assign parameter.
         }
@@ -704,13 +705,19 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
           // combining 'Device' and 'Config' data collecting parameters or setting defaults.
-          let data_collecting = {};
-          if (matchedDevice && matchedDevice.data_collecting.constructor === Object) {
-            data_collecting.is_active = matchedDevice.data_collecting.is_active || false;
-            data_collecting.has_latency = matchedDevice.data_collecting.has_latency || false;
-            data_collecting.ping_fqdn = matchedDevice.data_collecting.ping_fqdn || '';
+          let data_collecting = { // default values to be sent to router.
+            is_active: false,
+            has_latency: false,
+            ping_fqdn: '',
+            alarm_fqdn: '',
+            ping_packets: 100,
+          };
+          // copying router config.
+          for (let key in matchedDevice.data_collecting) {
+            data_collecting[key] = matchedDevice.data_collecting[key];
           }
-          if (matchedConfig && matchedConfig.data_collecting.constructor === Object) {
+          // combining 'Device' and 'Config'.
+          if (matchedConfig && matchedConfig.data_collecting !== undefined) {
             // matchedDevice value && matchedConfig value.
             data_collecting.is_active = data_collecting.is_active &&
               (matchedConfig.data_collecting.is_active || false);
