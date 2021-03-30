@@ -718,9 +718,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             let d = matchedDevice.data_collecting // parameters from device model.
             let p = data_collecting // the final parameters.
             // matchedDevice value && matchedConfig value if it exists.
-            d.is_active !== undefined ? p.is_active = p.is_active && d.is_active : _;
+            d.is_active !== undefined ? p.is_active = p.is_active && d.is_active : false;
             // matchedDevice value && matchedConfig value if it exists.
-            d.has_latency !== undefined ? p.has_latency = p.has_latency && d.has_latency : _;
+            d.has_latency !== undefined ? p.has_latency = p.has_latency && d.has_latency : false;
             // preference for matchedDevice value if it exists.
             d.ping_fqdn !== undefined ? p.ping_fqdn = d.ping_fqdn : _;
           }
