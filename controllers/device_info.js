@@ -712,17 +712,18 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           for (let key in matchedConfig.data_collecting) {
             data_collecting[key] = matchedConfig.data_collecting[key]; 
           }
-          // combining 'Device' and 'Config'.
-          // if data_collecting exists in Config.
+          // combining 'Device' and 'Config' if data_collecting exists in Config.
           if (matchedDevice.data_collecting !== undefined) {
-            let d = matchedDevice.data_collecting // parameters from device model.
-            let p = data_collecting // the final parameters.
-            // matchedDevice value && matchedConfig value if it exists.
-            d.is_active !== undefined ? p.is_active = p.is_active && d.is_active : false;
-            // matchedDevice value && matchedConfig value if it exists.
-            d.has_latency !== undefined ? p.has_latency = p.has_latency && d.has_latency : false;
-            // preference for matchedDevice value if it exists.
+            let d = matchedDevice.data_collecting; // parameters from device model.
+            let p = data_collecting; // the final parameters.
+            // for on/off buttons, device value && config value if it exists in device.
+            d.is_active !== undefined ? p.is_active = p.is_active && d.is_active : _;
+            d.has_latency !== undefined ? p.has_latency = p.has_latency && d.has_latency : _;
+            // preference for device value if it exists.
             d.ping_fqdn !== undefined ? p.ping_fqdn = d.ping_fqdn : _;
+          } else { // if data collecting doesn't exist, buttons are off.
+            data_collecting.is_active = false;
+            data_collecting.has_latency = false;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
