@@ -126,14 +126,14 @@ const getDefaultFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
-      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Username',
-      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Password',
+      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Username',
+      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Password',
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate',
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.DuplexMode',
-      wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
-      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.ExternalIPAddress',
-      uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Uptime',
-      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Uptime',
+      wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.ExternalIPAddress',
+      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress',
+      uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Uptime',
+      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
     },
@@ -174,8 +174,8 @@ const getDefaultFields = function() {
 
 const getHuaweiFields = function() {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesSent';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
@@ -219,20 +219,21 @@ const getNokiaFields = function() {
 
 const getStavixFields = function() {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesSent';
-  fields.wifi2.ssid = fields.wifi5.ssid.replace(/1/g, '6');
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wifi2.ssid = fields.wifi5.ssid.replace(/2/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '1');
-  fields.wifi2.password = fields.wifi5.password.replace(/1/g, '6');
+  fields.wifi2.password = fields.wifi5.password.replace(/2/g, '6');
   fields.wifi5.password = fields.wifi5.password.replace(/2/g, '1');
-  fields.wifi2.channel = fields.wifi5.channel.replace(/1/g, '6');
+  fields.wifi2.channel = fields.wifi5.channel.replace(/2/g, '6');
   fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '1');
-  fields.wifi2.auto = fields.wifi5.auto.replace(/1/g, '6');
+  fields.wifi2.auto = fields.wifi5.auto.replace(/2/g, '6');
   fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '1');
-  fields.wifi2.mode = fields.wifi5.mode.replace(/1/g, '6');
+  fields.wifi2.mode = fields.wifi5.mode.replace(/2/g, '6');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '1');
-  fields.wifi2.enable = fields.wifi5.enable.replace(/1/g, '6');
+  fields.wifi2.enable = fields.wifi5.enable.replace(/2/g, '6');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '1');
+  return fields;
 };
 
 const getModelFields = function(oui, model) {
@@ -256,7 +257,7 @@ const getModelFields = function(oui, model) {
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
       fields = getStavixFields();
-    break;
+      break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
