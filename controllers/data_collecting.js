@@ -278,11 +278,11 @@ async(function(req, res) {
   // Set license to true and set data collecting fqdn.
   ConfigModel.updateOne({is_default: true}, {
     '$set': {
-      'data_collecting.is_active': req.body.data_collecting_is_active,
-      'data_collecting.has_latency': req.body.data_collecting_has_latency,
-      'data_collecting.alarm_fqdn': req.body.data_collecting_alarm_fqdn,
-      'data_collecting.ping_fqdn': req.body.data_collecting_ping_fqdn,
-      'data_collecting.ping_packets': req.body.data_collecting_ping_packets,
+      'data_collecting.is_active': req.body.data_collecting_is_active || false,
+      'data_collecting.has_latency': req.body.data_collecting_has_latency || false,
+      'data_collecting.alarm_fqdn': req.body.data_collecting_alarm_fqdn || '',
+      'data_collecting.ping_fqdn': req.body.data_collecting_ping_fqdn || '',
+      'data_collecting.ping_packets': req.body.data_collecting_ping_packets || 100,
     }
   }, (err) => {
     if (err) {
