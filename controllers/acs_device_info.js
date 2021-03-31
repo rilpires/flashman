@@ -124,6 +124,7 @@ const saveDeviceData = async function(mac, landevices) {
       registered.dhcp_name = lanDev.name;
       registered.ip = lanDev.ip;
       registered.conn_type = (lanDev.wifi) ? 1 : 0;
+      if (lanDev.wifi_freq) registered.wifi_freq = lanDev.wifi_freq;
       if (lanDev.rssi) registered.wifi_signal = lanDev.rssi;
       if (lanDev.snr) registered.wifi_snr = lanDev.snr;
       registered.last_seen = Date.now();
@@ -134,6 +135,7 @@ const saveDeviceData = async function(mac, landevices) {
         ip: lanDev.ip,
         conn_type: (lanDev.wifi) ? 1 : 0,
         wifi_signal: (lanDev.rssi) ? lanDev.rssi : undefined,
+        wifi_freq: (lanDev.wifi_freq) ? lanDev.wifi_freq : undefined,
         wifi_snr: (lanDev.snr) ? lanDev.snr : undefined,
         last_seen: Date.now(),
         first_seen: Date.now(),
@@ -519,7 +521,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           device.ip = getFromNestedKey(data, ipKey+'._value');
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
-          let l2iface = getFromNestedKey(data, ifaceKey+'.value');
+          let l2iface = getFromNestedKey(data, ifaceKey+'._value');
           if (l2iface === iface2) {
             device.wifi = true;
             device.wifi_freq = 2.4;
@@ -530,6 +532,11 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Push basic device information
           devices.push(device);
         });
+        // Change iface identifiers to use only numerical identifier
+        iface2 = iface2.split('.');
+        iface5 = iface5.split('.');
+        iface2 = iface2[iface2.length-1];
+        iface5 = iface5[iface5.length-1];
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
