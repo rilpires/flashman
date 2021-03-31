@@ -203,7 +203,7 @@ controlController.reportDevices = function(app, devicesArray) {
   });
 };
 
-controlController.getPersonalizationHash = function(app, res) {
+controlController.getPersonalizationHash = function(app) {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/appinfo',
