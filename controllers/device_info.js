@@ -717,10 +717,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             let d = matchedDevice.data_collecting; // parameters from device model.
             let p = data_collecting; // the final parameters.
             // for on/off buttons, device value && config value if it exists in device.
-            d.is_active !== undefined ? p.is_active = p.is_active && d.is_active : _;
-            d.has_latency !== undefined ? p.has_latency = p.has_latency && d.has_latency : _;
+            d.is_active !== undefined && (p.is_active = p.is_active && d.is_active);
+            d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
             // preference for device value if it exists.
-            d.ping_fqdn !== undefined ? p.ping_fqdn = d.ping_fqdn : _;
+            d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
           } else { // if data collecting doesn't exist, buttons are off.
             data_collecting.is_active = false;
             data_collecting.has_latency = false;
