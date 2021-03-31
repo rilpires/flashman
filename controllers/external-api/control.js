@@ -213,12 +213,12 @@ controlController.getPersonalizationHash = function(app) {
       },
     }).then((res) => {
       if (res.success && res.personalizationHash &&
-        res.androidIdentifier, res.iosIdentifier) {
+        res.androidLink, res.iosLink) {
         return resolve({
           success: true,
           personalizationHash: res.personalizationHash,
-          androidIdentifier: res.androidIdentifier,
-          iosIdentifier: res.iosIdentifier,
+          androidLink: res.androidLink,
+          iosLink: res.iosLink,
         });
       } else {
         return resolve({success: false, message: res.message});

@@ -467,14 +467,14 @@ updateController.updateAppPersonalization = async function(app) {
   let controlReq = await controlApi.getPersonalizationHash(app);
   if (controlReq.success == true) {
     let hash = controlReq.personalizationHash;
-    let android = controlReq.androidIdentifier;
-    let ios = controlReq.iosIdentifier;
+    let android = controlReq.androidLink;
+    let ios = controlReq.iosLink;
 
-    await Config.findOne({is_default: true}, function(err, config) {
+    Config.findOne({is_default: true}, function(err, config) {
       if (err || !config) return console.log(err);
       config.personalizationHash = hash;
-      config.androidIdentifier = android;
-      config.iosIdentifier = ios;
+      config.androidLink = android;
+      config.iosLink = ios;
       config.save(function(err) {
         if (err) return console.log(err);
         console.log('Saved succussfully!');
