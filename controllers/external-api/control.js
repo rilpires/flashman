@@ -203,7 +203,7 @@ controlController.reportDevices = function(app, devicesArray) {
   });
 };
 
-controlController.getPersonalizationHash = function(app) {
+controlController.getPersonalizationHash = function(app, res) {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/appinfo',
@@ -212,13 +212,13 @@ controlController.getPersonalizationHash = function(app) {
         'secret': app.locals.secret,
       },
     }).then((res) => {
-      if (res.success && res.getPersonalizationHash &&
-        res.android, res.ios) {
+      if (res.success && res.personalizationHash &&
+        res.androidIdentifier, res.iosIdentifier) {
         return resolve({
           success: true,
-          hash: res.personalizationHash,
-          android: res.androidIdentifier,
-          ios: res.iosIdentifier,
+          personalizationHash: res.personalizationHash,
+          androidIdentifier: res.androidIdentifier,
+          iosIdentifier: res.iosIdentifier,
         });
       } else {
         return resolve({success: false, message: res.message});

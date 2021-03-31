@@ -701,7 +701,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     } catch (err) {
       console.log(err);
     }
-    console.log(req);
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }

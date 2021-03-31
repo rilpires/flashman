@@ -465,21 +465,23 @@ updateController.setAutoConfig = async function(req, res) {
 
 updateController.updateAppPersonalization = async function(app) {
   let controlReq = await controlApi.getPersonalizationHash(app);
-  if (controlReq.success) {
+  if (controlReq.success == true) {
     let hash = controlReq.personalizationHash;
     let android = controlReq.androidIdentifier;
     let ios = controlReq.iosIdentifier;
-    let config = await config();
-    if (!config) {
-      console.log('Error accessing config to update app hash');
-      return;
-    }
-    config.app_personalizationHash.hash = hash;
-    config.app_personalizationHash.android = android;
-    config.app_personalizationHash.ios = ios;
-    await config.save();
+
+    await Config.findOne({is_default: true}, function(err, config) {
+      if (err || !config) return console.log(err);
+      config.personalizationHash = hash;
+      config.androidIdentifier = android;
+      config.iosIdentifier = ios;
+      config.save(function(err) {
+        if (err) return console.log(err);
+        console.log('Saved succussfully!');
+      });
+    });
   } else {
-    console.log('Error at requisition on control');
+    console.log('Error at contact control');
   }
 };
 
