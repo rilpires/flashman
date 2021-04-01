@@ -854,9 +854,20 @@ const grantOpmode = function(version) {
 };
 
 const grantVlanSupport = function(version, model) {
+  var ret = { // default return value
+    'vlan_support': false,
+    'lan_ports': [1, 2, 3, 4],
+    'wan_port': 0,
+    'cpu_port': 6,
+    'soc':'',
+  };
+
+  if(dictDevices[model] !== undefined) {
+    ret = dictDevices[model];
+  }
   if (version.match(versionRegex)) {
     if(versionCompare(version, '0.31.0') >= 0) {
-      return dictDevices[model]['vlan_support'];
+      return ret['vlan_support'];
     }
     else {
       return false;
@@ -864,7 +875,7 @@ const grantVlanSupport = function(version, model) {
   }
   else {
     // Development version, enable everything by default
-    return dictDevices[model]['vlan_support'];
+    return ret['vlan_support'];
   }
 };
 

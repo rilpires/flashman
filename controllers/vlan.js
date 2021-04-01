@@ -373,13 +373,13 @@ vlanController.retrieveVlansToDevice = function(device) {
         // check vlan_id to pass the right vid in case device is realtek or not
         aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
 
-        if(aux_idx === '1' || aux_idx === '9') {
+        if(aux_idx == '1' || aux_idx == '9') {
           retObj[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+" ";
         }
         else {
           retObj[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+"t ";
 
-          vlan_ports += lan_ports[device.vlan[i].port-1].toString()+'t ';
+          vlan_ports += lan_ports[device.vlan[i].port-1].toString()+' ';
         }
       }
 
