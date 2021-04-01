@@ -735,6 +735,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return res.status(403).json({
         message: 'Erro na hash de personalização',
         personalizationHash: true,
+        androidLink: config.androidLink,
+        iosLink: config.iosLink,
       });
     }
 
