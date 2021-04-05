@@ -351,8 +351,15 @@ vlanController.retrieveVlansToDevice = function(device) {
       }
     }
     bridge_vlan_config += wan_port.toString()+" ";
-    bridge_vlan_config += cpu_port.toString()+"t"
-    retObj[vlan_of_lan] = bridge_vlan_config;
+    bridge_vlan_config += cpu_port.toString();
+    if(device_info["soc"] !== 'realtek') {
+      bridge_vlan_config += "t";
+    }
+    if(device_info["soc"] !== 'realtek') {
+      retObj[vlan_of_lan] = bridge_vlan_config;
+    } else {
+      retObj[vlan_of_wan] = bridge_vlan_config;
+    }
   }
 
   else {
