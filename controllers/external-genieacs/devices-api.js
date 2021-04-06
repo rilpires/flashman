@@ -140,8 +140,8 @@ const getDefaultFields = function() {
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
       subnet_mask: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceSubnetMask',
-      lease_min_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.MinAddress',
-      lease_max_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.MaxAddress',
+      lease_min_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MinAddress',
+      lease_max_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MaxAddress',
     },
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
