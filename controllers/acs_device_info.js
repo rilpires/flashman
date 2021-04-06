@@ -44,6 +44,18 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
+const convertSubnetMaskToRange = function(mask) {
+  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
+  if (mask === '255.255.255.0' || mask === 24) {
+    return {min: '33', max: '254'};
+  } else if (mask === '255.255.255.128' || mask === 25) {
+    return {min: '161', max: '254'};
+  } else if (mask === '255.255.255.192' || mask === 26) {
+    return {min: '225', max: '254'};
+  }
+  return {};
+};
+
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -648,6 +660,7 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hasChanges = false;
+  let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
@@ -666,6 +679,25 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
         }
         hasChanges = true;
         return;
+      }
+      if ((key === 'router_ip' || key === 'subnet_mask') &&
+          !hasUpdatedDHCPRanges) {
+        // Special case for lan ip/mask since we need to update dhcp range
+        let dhcpRanges = convertSubnetMaskToRange(device.lan_netmask);
+        if (dhcpRanges.min && dhcpRanges.max) {
+          let subnet = device.lan_subnet;
+          let networkPrefix = subnet.split('.').slice(0, 3).join('.');
+          let minIP = networkPrefix + '.' + dhcpRanges.min;
+          let maxIP = networkPrefix + '.' + dhcpRanges.max;
+          task.parameterValues.push([
+            fields['lan']['lease_min_ip'], minIP, 'xsd:string',
+          ]);
+          task.parameterValues.push([
+            fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
+          ]);
+          hasUpdatedDHCPRanges = true; // Avoid editing this field twice
+          hasChanges = true;
+        }
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
