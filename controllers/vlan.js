@@ -220,18 +220,20 @@ vlanController.editVlanProfile = async function(req, res) {
   if (config && config.vlans_profiles) {
     let exist_vlan_profile = false;
     for (let i = 0; i < config.vlans_profiles.length; i++) {
+      if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(req.body.profilename) == false) {
+        return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
+      }
+      if (req.body.profilename.length > 32) {
+        return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!'});
+      }
+      if (config.vlans_profiles[i].profile_name === req.body.profilename) {
+        return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN deve ser distinto dos já existentes!'});
+      }
+
       if (config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
         exist_vlan_profile = true;
 
-        if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(req.body.profilename) == false) {
-          return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
-        } else if (req.body.profilename.length > 32) {
-          return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!'});
-        } else if (config.vlans_profiles[i].profile_name === req.body.profile_name) {
-          return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN deve ser distinto dos já existentes!'});
-        } else {
-          config.vlans_profiles[i].profile_name = req.body.profilename;
-        }
+        config.vlans_profiles[i].profile_name = req.body.profilename;
       }
     }
 
