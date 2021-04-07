@@ -169,9 +169,11 @@ vlanController.getAllVlanProfiles = function(req, res) {
 
 vlanController.addVlanProfile = async function(req, res) {
   let newVlanProfile = {vlan_id: req.body.id, profile_name: req.body.name};
-
-  if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 10 || newVlanProfile.vlan_id > 127)) {
-    return res.json({success: false, type: 'danger', message: 'O VLAN ID não pode ser menor que 10 ou maior que 127!'});
+  
+  // restricted to this range of value by the definition of 802.1q protocol
+  // vlan 2 is restricted to wan
+  if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 3 || newVlanProfile.vlan_id > 4094)) {
+    return res.json({success: false, type: 'danger', message: 'O VLAN ID não pode ser menor que 3 ou maior que 4094!'});
   }
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(newVlanProfile.profile_name) == false) {
     return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
@@ -225,6 +227,8 @@ vlanController.editVlanProfile = async function(req, res) {
           return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
         } else if (req.body.profilename.length > 32) {
           return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!'});
+        } else if (config.vlans_profiles[i].profile_name === req.body.profile_name) {
+          return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN deve ser distinto dos já existentes!'});
         } else {
           config.vlans_profiles[i].profile_name = req.body.profilename;
         }
@@ -288,8 +292,10 @@ vlanController.updateVlans = async function(req, res) {
     if (Array.isArray(req.body.vlans)) {
       for (let v of req.body.vlans) {
         if (v.port !== undefined || v.vlan_id !== undefined) {
+          // restricted to this range of value by the definition of 802.1q protocol
+          // vlan 2 is restricted to wan
           if (typeof v.port !== 'number' || v.port < 1 || v.port > 4 ||
-            typeof v.vlan_id !== 'number' || v.vlan_id < 0 || (v.vlan_id > 1 && v.vlan_id < 10)) {
+            typeof v.vlan_id !== 'number' || v.vlan_id < 1 || v.vlan_id > 4094 || v.vlan_id == 2) {
             is_vlans_valid = false;
           }
         } else {

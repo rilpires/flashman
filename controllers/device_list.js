@@ -798,57 +798,57 @@ deviceListController.delDeviceReg = function(req, res) {
 };
 
 const downloadStockFirmware = async function(model) {
-  //return new Promise(async (resolve, reject) => {
-  let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
-  try {
-    // Download md5 hash
-    let targetMd5 = await requestPromise({
-      url: remoteFileUrl + '.md5',
-      method: 'GET',
-    });
-    let currentMd5 = '';
-    let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
-    // Check for local md5 hash
-    if (fs.existsSync(localMd5Path)) {
-      currentMd5 = fs.readFileSync(localMd5Path, 'utf8');
-    }
-    if (targetMd5 !== currentMd5) {
-      // Mismatch, download new zip file
-      console.log('UPDATE: Downloading factory reset fware for '+model+'...');
-      fs.writeFileSync(localMd5Path, targetMd5);
-      let responseStream = request({ url: remoteFileUrl, method: 'GET' })
-      .on('error', (err)=>{
-        console.log(err);
-        return false;
-      })
-      .on('response', (resp)=>{
-        if (resp.statusCode !== 200) {
-          return false;
-        }
-        responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
-          let fname = entry.path;
-          let writeStream = fs.createWriteStream(imageReleasesDir + fname);
-          writeStream.on('close', ()=>{
-            let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
-            let binfname = imageReleasesDir + fname;
-            let md5Checksum = md5File.sync(binfname);
-            fs.writeFileSync(md5fname, md5Checksum);
-            return true;
-          });
-          entry.pipe(writeStream);
-        });
+  return new Promise(async (resolve, reject) => {
+    let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
+    try {
+      // Download md5 hash
+      let targetMd5 = await requestPromise({
+        url: remoteFileUrl + '.md5',
+        method: 'GET',
       });
-    } else {
-      // Hashes match, local file is ok
-      return true;
+      let currentMd5 = '';
+      let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
+      // Check for local md5 hash
+      if (fs.existsSync(localMd5Path)) {
+        currentMd5 = fs.readFileSync(localMd5Path, 'utf8');
+      }
+      if (targetMd5 !== currentMd5) {
+        // Mismatch, download new zip file
+        console.log('UPDATE: Downloading factory reset fware for '+model+'...');
+        fs.writeFileSync(localMd5Path, targetMd5);
+        let responseStream = request({ url: remoteFileUrl, method: 'GET' })
+        .on('error', (err)=>{
+          console.log(err);
+          return resolve(false);
+        })
+        .on('response', (resp)=>{
+          if (resp.statusCode !== 200) {
+            return resolve(false);
+          }
+          responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
+            let fname = entry.path;
+            let writeStream = fs.createWriteStream(imageReleasesDir + fname);
+            writeStream.on('close', ()=>{
+              let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
+              let binfname = imageReleasesDir + fname;
+              let md5Checksum = md5File.sync(binfname);
+              fs.writeFileSync(md5fname, md5Checksum);
+              return resolve(true);
+            });
+            entry.pipe(writeStream);
+          });
+        });
+      } else {
+        // Hashes match, local file is ok
+        return resolve(true);
+      }
+    } catch (err) {
+      if (err.statusCode !== 404) {
+        console.log(err.statusCode);
+      }
+      return resolve(false);
     }
-  } catch (err) {
-    if (err.statusCode !== 404) {
-      console.log(err.statusCode);
-    }
-    return false;
-  }
-  //});
+  });
 };
 
 deviceListController.factoryResetDevice = function(req, res) {
