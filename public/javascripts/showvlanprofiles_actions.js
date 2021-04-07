@@ -1,19 +1,19 @@
 
 let checkVlanId = function(input) {
   if (input.value != 1 && (input.value < 10 || input.value > 127)) {
-    input.setCustomValidity('O VLAN ID não pode ser menor que 10 ou maior que 127.');
+    input.setCustomValidity('O VLAN ID não pode ser'+
+      ' menor que 10 ou maior que 127.');
   } else {
     let distinctValidity = false;
-    vlanIdsOnTable = $('.td-vlan-id');
-    for(i in vlanIdsOnTable) {
-      if(vlanIdsOnTable[i].innerText === input.value) {
+    let vlanIdsOnTable = $('.td-vlan-id');
+    for (let i in vlanIdsOnTable) {
+      if (vlanIdsOnTable[i].innerText === input.value) {
         distinctValidity = true;
       }
     }
-    if(distinctValidity) {
+    if (distinctValidity) {
       input.setCustomValidity('O VLAN ID deve ser distinto dos já existentes.');
-    }
-    else {
+    } else {
       input.setCustomValidity('');
     }
   }
@@ -21,19 +21,22 @@ let checkVlanId = function(input) {
 
 let checkVlanName = function(input) {
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(input.value) == false) {
-    input.setCustomValidity('O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes.');
+    input.setCustomValidity('O nome do Perfil de VLAN'+
+      ' deve começar com um caractere do alfabeto,'+
+      ' conter caracteres alfanuméricos, hífen ou '+
+      'sublinhado, não pode ser vazio e deve ser distinto dos já existentes.');
   } else {
     let distinctValidity = false;
-    vlanIdsOnTable = $('.td-profile-name');
-    for(i in vlanIdsOnTable) {
-      if(vlanIdsOnTable[i].innerText === input.value) {
+    let vlanIdsOnTable = $('.td-profile-name');
+    for (let i in vlanIdsOnTable) {
+      if (vlanIdsOnTable[i].innerText === input.value) {
         distinctValidity = true;
       }
     }
-    if(distinctValidity) {
-      input.setCustomValidity('O Nome do Perfil da VLAN deve ser distinto dos já existentes.');
-    }
-    else {
+    if (distinctValidity) {
+      input.setCustomValidity('O Nome do Perfil da VLAN deve'+
+        ' ser distinto dos já existentes.');
+    } else {
       input.setCustomValidity('');
     }
   }
@@ -53,19 +56,20 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
             $('<td></td>').addClass('col-xs-1').append(
               $('<input></input>').addClass('checkbox')
               .attr('type', 'checkbox')
-              .attr('id', vlanProfileObj._id)
+              .attr('id', vlanProfileObj._id),
             )
           ),
           $('<td></td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
-          $('<td></td>').addClass('td-profile-name').html(vlanProfileObj.profile_name),
+          $('<td></td>').addClass('td-profile-name').
+            html(vlanProfileObj.profile_name),
           $('<td></td>').append(
             $('<button></button>').append(
               $('<div></div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span></span>').html('&nbsp Editar')
+              $('<span></span>').html('&nbsp Editar'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
-            .attr('type', 'button')
-          )
+            .attr('type', 'button'),
+          ),
         );
         vlanProfilesTable.row.add(vlanProfileRow).draw();
       });
@@ -105,8 +109,8 @@ $(document).ready(function() {
   $('.dt-vlan-profiles-table-btns').append(
     $('<div></div>').addClass('btn-group').attr('role', 'group').append(
       $('<button></button>').addClass('btn btn-danger btn-trash').append(
-        $('<div></div>').addClass('fas fa-trash fa-lg'))
-    )
+        $('<div></div>').addClass('fas fa-trash fa-lg')),
+    ),
   );
   // Load table content
   fetchVlanProfiles(vlanProfilesTable);

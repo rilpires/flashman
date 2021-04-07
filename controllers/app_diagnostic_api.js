@@ -253,12 +253,12 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         return res.status(404).json({'error': 'MAC not found'});
       }
       let content = req.body;
-      let targetMode = parseInt(req.body.mesh_mode)
+      let targetMode = parseInt(req.body.mesh_mode);
       if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
         if (targetMode === 0 && device.mesh_slaves.length > 0) {
           // Cannot disable mesh mode with registered slaves
           return res.status(500).json({
-            'error': 'Cannot disable mesh with reigstered slaves'
+            'error': 'Cannot disable mesh with reigstered slaves',
           });
         }
         device.mesh_mode = targetMode;

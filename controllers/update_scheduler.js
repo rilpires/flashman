@@ -98,7 +98,13 @@ const scheduleOfflineWatchdog = function() {
   // Check for update slots every minute
   const interval = 1*60*1000;
   if (watchdogIntervalID) return;
-  watchdogIntervalID = setInterval(async () => markSeveral(), interval);
+  /*
+  set interval call a anonymous function that call a single async function,
+  so isn't necessary await
+  */
+  watchdogIntervalID = setInterval(
+  () => markSeveral(),
+  interval);
 };
 
 const removeOfflineWatchdog = function() {
