@@ -357,14 +357,15 @@ vlanController.retrieveVlansToDevice = function(device) {
       // initialize keys values with empty string
       for (let i = 0; i < device.vlan.length; i++) {
         // check vlan_id to pass the right vid in case device is realtek or not
-        aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
+        aux_idx = ((device.vlan[i].vlan_id == 1) ? vlan_of_lan : device.vlan[i].vlan_id);
 
         digestedVlans[aux_idx] = '';
         // check if is a vanilla configuration of vlan
-        if (device.vlan[i].vlan_id !== '1') {
+        if (device.vlan[i].vlan_id != 1) {
           is_a_vanilla_vlan_config = false;
         }
       }
+      console.log(is_a_vanilla_vlan_config, device.vlan);
       // deliver a empty config
       if (is_a_vanilla_vlan_config) {
         digestedVlans = {};
@@ -372,7 +373,7 @@ vlanController.retrieveVlansToDevice = function(device) {
         // put on every key an append to the value as the matching port
         for (let i = 0; i < device.vlan.length; i++) {
           // check vlan_id to pass the right vid in case device is realtek or not
-          aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
+          aux_idx = ((device.vlan[i].vlan_id == 1) ? vlan_of_lan : device.vlan[i].vlan_id);
 
           if (aux_idx == '1' || aux_idx == '9') {
             digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+' ';
