@@ -138,7 +138,7 @@ diagAppAPIController.sessionLogin = function(req, res) {
         return res.status(403).json({success: false,
                                      message: 'Permissão negada'});
       }
-      let session = generateSessionCredential(user.name);
+      let session = await generateSessionCredential(user.name);
       session.success = true;
       return res.status(200).json(session);
     });
@@ -367,7 +367,7 @@ diagAppAPIController.receiveCertification = async function(req, res) {
     }
     // Save changes to database and respond
     await user.save();
-    let session = generateSessionCredential(user.name);
+    let session = await generateSessionCredential(user.name);
     session.success = true;
     return res.status(200).json(session);
   } catch (err) {
