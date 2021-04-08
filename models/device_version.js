@@ -179,16 +179,16 @@ openwrt~v19.07.5-ANLIX~realtek~w51200f-v1~diffconfig (lshift=0, inverted=0, vlan
 const dictDevices = {
   'DWR116A3': {
     'vlan_support': false,
-    'lan_ports': [], // !todo
-    'wan_port': 0,
-    'cpu_port': 0,
+    'lan_ports': [0, 1, 2, 3], // !todo
+    'wan_port': 4,
+    'cpu_port': 6,
     'soc':'',
   },
   'W51200FV1': {
     'vlan_support': false,
-    'lan_ports': [], // !todo
+    'lan_ports': [1, 2, 3], // !todo
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'realtek',
   },
   'ACTIONRF1200V1': {
@@ -221,30 +221,30 @@ const dictDevices = {
   },
   'ARCHERC20V1': { // !todo
     'vlan_support': true,
-    'lan_ports': [], // 2 lshifts
+    'lan_ports': [3, 4, 1, 2], // 2 lshifts
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'ARCHERC20V4': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'ARCHERC20V5': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'ARCHERC20V5PRESET': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'ARCHERC50V3': {
@@ -263,15 +263,15 @@ const dictDevices = {
   },
   'ARCHERC60V2': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'ARCHERC60V3': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
@@ -298,9 +298,9 @@ const dictDevices = {
   },
   'DIR-819A1': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'DIR-815D1': {
@@ -312,30 +312,30 @@ const dictDevices = {
   },
   'DWR-116A1': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
-    'cpu_port': 0,
+    'lan_ports': [0, 1, 2, 3], // !todo
+    'wan_port': 4,
+    'cpu_port': 6,
     'soc':'',
   },
   'DWR-116A2': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
-    'cpu_port': 0,
+    'lan_ports': [0, 1, 2, 3], // !todo
+    'wan_port': 4,
+    'cpu_port': 6,
     'soc':'',
   },
   'DWR-116A3': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
-    'cpu_port': 0,
+    'lan_ports': [0, 1, 2, 3], // !todo
+    'wan_port': 4,
+    'cpu_port': 6,
     'soc':'',
   },
   'EMG1702-T10AA1': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'EC220-G5V2': {
@@ -382,27 +382,27 @@ const dictDevices = {
   },
   'NCLOUD': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'RE708V1': {
     'vlan_support': false,
-    'lan_ports': [0 ,1, 2, 3],
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
     'soc':'realtek',
   },
   'RE172V1': {
     'vlan_support': false,
-    'lan_ports': [0 ,1, 2, 3],
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
     'soc':'realtek',
   },
   'TL-MR3020V1': { // !todo
-    'vlan_support': true,
+    'vlan_support': false,
     'lan_ports': [],
     'wan_port': 0,
     'cpu_port': 0,
@@ -410,254 +410,254 @@ const dictDevices = {
   },
   'TL-WDR3500V1': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
+    'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WDR3600V1': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 5],
+    'wan_port': 1,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WDR4300V1': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 5],
+    'wan_port': 1,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR2543N/NDV1': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 9,
     'soc':'',
   },
   'TL-WR740N/NDV4': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR740NDV4': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR740N/NDV5': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR740NDV5': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR740N/NDV6': { // !todo
     'vlan_support': true,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR740NDV6': { // !todo
     'vlan_support': true,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR741N/NDV4': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1],
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR741NDV4': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR741N/NDV5': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1],
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR741NDV5': { // !todo
     'vlan_support': false,
-    'lan_ports': [],
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1],
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR840NV4': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR840NV5': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR840NV6': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR840NV62': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR840NV5PRESET': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR840NV6PRESET': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR841N/NDV7': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
+    'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 1,
     'soc':'',
   },
   'TL-WR841NDV7': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
+    'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR841N/NDV8': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR841NDV8': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR842N/NDV3': { // !todo
     'vlan_support': true,
-    'lan_ports': [], // lshift
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR842NDV3': { // !todo
     'vlan_support': true,
-    'lan_ports': [], // 1 lshift
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // 1 lshift
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR849NV4': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR849NV5': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR849NV6': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR849NV62': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR940NV4': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR940NV5': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR940NV6': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR949NV6': { // !todo
     'vlan_support': false,
-    'lan_ports': [], // inverted
-    'wan_port': 0,
+    'lan_ports': [4, 3, 2, 1], // inverted
+    'wan_port': 5,
     'cpu_port': 0,
     'soc':'',
   },
   'TL-WR845NV3': { // !todo
     'vlan_support': true,
-    'lan_ports': [],
+    'lan_ports': [4, 3, 2, 1],
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'TL-WR845NV4': { //
     'vlan_support': true,
-    'lan_ports': [], // inverted
+    'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
-    'cpu_port': 0,
+    'cpu_port': 6,
     'soc':'',
   },
   'W5-1200FV1': {
