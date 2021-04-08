@@ -396,11 +396,10 @@ vlanController.retrieveVlansToDevice = function(device) {
     }
   }
 
-  console.log('digestedVlans -> ', digestedVlans);
-
-  if (JSON.stringify(digestedVlans) == JSON.stringify({})) {
+  if (JSON.stringify(digestedVlans) != JSON.stringify({})) {
     hashVlan = crypto.createHash('md5').update(JSON.stringify(digestedVlans)).digest('base64');
   }
+  console.log('digestedVlans -> ', digestedVlans, 'hashVlan -> ', hashVlan);
   return {
     vlans: digestedVlans,
     hash: hashVlan,
