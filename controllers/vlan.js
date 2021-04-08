@@ -365,36 +365,37 @@ vlanController.retrieveVlansToDevice = function(device) {
           is_a_vanilla_vlan_config = false;
         }
       }
-      console.log(is_a_vanilla_vlan_config, device.vlan);
-      // deliver a empty config
-      if (is_a_vanilla_vlan_config) {
-        digestedVlans = {};
+      // put on every key an append to the value as the matching port
+      for (let i = 0; i < device.vlan.length; i++) {
+        // check vlan_id to pass the right vid in case device is realtek or not
+        aux_idx = ((device.vlan[i].vlan_id == 1) ? vlan_of_lan : device.vlan[i].vlan_id);
+
+        if (aux_idx == '1' || aux_idx == '9') {
+          digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+' ';
+        } else {
+          digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+'t ';
+
+          vlan_ports += lan_ports[device.vlan[i].port-1].toString()+' ';
+        }
+      }
+    } else {
+    // in the case of misconfiguration or none configuration of vlan at all, set the default configuration for vlan
+      let classic_vlan_config = '';
+      for (let i = 0; i < lan_ports.length; i++) {
+        classic_vlan_config += lan_ports[i].toString()+' ';
+      }
+      digestedVlans[vlan_of_lan] = classic_vlan_config;
+    }
+
+    // put the tagged ports
+    for (let key in digestedVlans) {
+      if (key == 1 || key == 9) {
+        digestedVlans[key] += cpu_port.toString()+'t';
       } else {
-        // put on every key an append to the value as the matching port
-        for (let i = 0; i < device.vlan.length; i++) {
-          // check vlan_id to pass the right vid in case device is realtek or not
-          aux_idx = ((device.vlan[i].vlan_id == 1) ? vlan_of_lan : device.vlan[i].vlan_id);
-
-          if (aux_idx == '1' || aux_idx == '9') {
-            digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+' ';
-          } else {
-            digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+'t ';
-
-            vlan_ports += lan_ports[device.vlan[i].port-1].toString()+' ';
-          }
-        }
-
-        // put the tagged ports
-        for (let key in digestedVlans) {
-          if (key === '1' || key === '9') {
-            digestedVlans[key] += cpu_port.toString()+'t';
-          } else {
-            digestedVlans[key] += wan_port.toString()+'t';
-          }
-        }
-        digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
+        digestedVlans[key] += wan_port.toString()+'t';
       }
     }
+    digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
   }
 
   if (JSON.stringify(digestedVlans) != JSON.stringify({})) {
