@@ -20963,4 +20963,12 @@ ul.stepper li.active a .label, ul.stepper li.completed a .label {
   flex-direction: row;
 }
 
+.md-selectfield.md-selectfield-vlan {
+  padding: 0;
+}
+
+.md-select.md-select-vlan {
+  padding: 0.6rem 1.2rem 0.4rem 0rem;
+}
+
 /*# sourceMappingURL=custom-bootstrap.css.map */

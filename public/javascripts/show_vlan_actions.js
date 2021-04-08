@@ -126,6 +126,7 @@ const buildVlanModal = function(dc, canEdit) {
   let vlanBlock = $('<div></div>').
       addClass('d-flex').
       addClass('flex-row').
+      addClass('justify-content-center').
       addClass('flex-wrap');
 
   if (dc.vlan_profiles.length == 0) {
@@ -155,12 +156,14 @@ const buildVlanModal = function(dc, canEdit) {
         profilesOptions = $('<select></select>').
           addClass('browser-default').
           addClass('md-select').
+          addClass('md-select-vlan').
           addClass('select-port-vlan').
           attr('name', (i+1));
       } else {
         profilesOptions = $('<select></select>').
           addClass('browser-default').
           addClass('md-select').
+          addClass('md-select-vlan').
           addClass('select-port-vlan').
           attr('name', (i+1)).
           attr('disabled', 'disabled');
@@ -189,6 +192,8 @@ const buildVlanModal = function(dc, canEdit) {
 
       let profilesSelect = $('<div></div>').
         addClass('md-selectfield').
+        addClass('md-selectfield-vlan').
+        addClass('form-control').
         append(profilesOptions);
 
       vlanPortInput.append(profilesSelect);
