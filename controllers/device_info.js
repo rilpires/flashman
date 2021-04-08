@@ -11,7 +11,6 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
-const crypto = require("crypto");
 
 let deviceInfoController = {};
 
@@ -684,11 +683,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             return map[matchedDevice._id];
           });
 
-
-          let fetchedVlans = vlanController.retrieveVlansToDevice(matchedDevice);
-
-          // hash the VLANs JSON for change check in device
-          let vlanHash = crypto.createHash('md5').update(JSON.stringify(fetchedVlans)).digest('base64');
+          let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+          let fetchedVlans = containerVlans.vlans;
+          let vlanHash = containerVlans.hash;
 
           let resJson = {
             'do_update': matchedDevice.do_update,

@@ -1603,6 +1603,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeEnabled !== matchedDevice.bridge_mode_enabled &&
                 !matchedDevice.use_tr069) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // in the case of changing from bridge to router : clear vlan configuration
+                if(matchedDevice.bridge_mode_enabled == true && bridgeEnabled == false) {
+                  matchedDevice.vlan = [];
+                }
+
                 matchedDevice.bridge_mode_enabled = bridgeEnabled;
                 updateParameters = true;
               } else {

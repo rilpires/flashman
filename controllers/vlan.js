@@ -6,6 +6,7 @@ let Config = require('../models/config');
 let DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const Role = require('../models/role');
+const crypto = require('crypto');
 
 let vlanController = {};
 
@@ -332,7 +333,9 @@ vlanController.retrieveVlansToDevice = function(device) {
     lack the sync by hash
   */
 
-  let retObj = {};
+  let digestedVlans = {};
+  let hashVlan = '';
+  let is_a_vanilla_vlan_config = true;
 
   let device_info = DeviceVersion.getDeviceInfo(device.model);
 
@@ -346,27 +349,7 @@ vlanController.retrieveVlansToDevice = function(device) {
     vlan_of_wan = '8';
   }
 
-  // in bridge mode there is no particular vlan configuration
-  if (device.bridge_mode_enabled) {
-    let bridge_vlan_config = '';
-
-    // if lan ports are enabled, add them to vid 1 config
-    if (!device.bridge_mode_switch_disable) {
-      for (let i = 0; i < lan_ports.length; i++) {
-        bridge_vlan_config += lan_ports[i].toString()+' ';
-      }
-    }
-    bridge_vlan_config += wan_port.toString()+' ';
-    bridge_vlan_config += cpu_port.toString();
-    if (device_info['soc'] !== 'realtek') {
-      bridge_vlan_config += 't';
-    }
-    if (device_info['soc'] !== 'realtek') {
-      retObj[vlan_of_lan] = bridge_vlan_config;
-    } else {
-      retObj[vlan_of_wan] = bridge_vlan_config;
-    }
-  } else {
+  if (!device.bridge_mode_enabled) {
     // on well behavior object of vlan that needs to treat others vlans
     let vlan_ports = '';
     let aux_idx; // auxiliar index to toggle vid 1 or 9
@@ -376,46 +359,52 @@ vlanController.retrieveVlansToDevice = function(device) {
         // check vlan_id to pass the right vid in case device is realtek or not
         aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
 
-        retObj[aux_idx] = '';
-      }
-
-      // put on every key an append to the value as the matching port
-      for (let i = 0; i < device.vlan.length; i++) {
-        // check vlan_id to pass the right vid in case device is realtek or not
-        aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
-
-        if (aux_idx == '1' || aux_idx == '9') {
-          retObj[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+' ';
-        } else {
-          retObj[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+'t ';
-
-          vlan_ports += lan_ports[device.vlan[i].port-1].toString()+' ';
+        digestedVlans[aux_idx] = '';
+        // check if is a vanilla configuration of vlan
+        if (device.vlan[i].vlan_id !== '1') {
+          is_a_vanilla_vlan_config = false;
         }
       }
+      // deliver a empty config
+      if (is_a_vanilla_vlan_config) {
+        digestedVlans = {};
+      } else {
+        // put on every key an append to the value as the matching port
+        for (let i = 0; i < device.vlan.length; i++) {
+          // check vlan_id to pass the right vid in case device is realtek or not
+          aux_idx = ((device.vlan[i].vlan_id === '1') ? vlan_of_lan : device.vlan[i].vlan_id);
 
-      // put the tagged ports
-      for (let key in retObj) {
-        if (key === '1' || key === '9') {
-          retObj[key] += cpu_port.toString()+'t';
-        } else {
-          retObj[key] += wan_port.toString()+'t';
+          if (aux_idx == '1' || aux_idx == '9') {
+            digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+' ';
+          } else {
+            digestedVlans[aux_idx] += lan_ports[device.vlan[i].port-1].toString()+'t ';
+
+            vlan_ports += lan_ports[device.vlan[i].port-1].toString()+' ';
+          }
         }
+
+        // put the tagged ports
+        for (let key in digestedVlans) {
+          if (key === '1' || key === '9') {
+            digestedVlans[key] += cpu_port.toString()+'t';
+          } else {
+            digestedVlans[key] += wan_port.toString()+'t';
+          }
+        }
+        digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
       }
-    } else {
-    // in the case of misconfiguration or none configuration of vlan at all, set the default configuration for vlan
-      let classic_vlan_config = '';
-      for (let i = 0; i < lan_ports.length; i++) {
-        classic_vlan_config += lan_ports[i].toString()+' ';
-      }
-      classic_vlan_config += cpu_port.toString()+'t';
-      retObj[vlan_of_lan] = classic_vlan_config;
     }
-
-    retObj[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
   }
-  console.log('retObj -> ', retObj);
 
-  return retObj;
+  console.log('digestedVlans -> ', digestedVlans);
+
+  if (JSON.stringify(digestedVlans) == JSON.stringify({})) {
+    hashVlan = crypto.createHash('md5').update(JSON.stringify(digestedVlans)).digest('base64');
+  }
+  return {
+    vlans: digestedVlans,
+    hash: hashVlan,
+  };
 };
 
 module.exports = vlanController;
