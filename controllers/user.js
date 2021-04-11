@@ -1,4 +1,3 @@
-
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
@@ -164,6 +163,8 @@ userController.postRole = function(req, res) {
     grantSiteSurvey: req.body['grant-site-survey'],
     grantMeasureDevices: parseInt(req.body['grant-measure-devices']),
     grantCsvExport: req.body['grant-csv-export'],
+    grantVlan: req.body['grant-vlan'],
+    grantVlanProfileEdit: req.body['grant-vlan-profile-edit'],
     grantWanBytesView: req.body['grant-wan-bytes'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
@@ -369,6 +370,8 @@ userController.editRole = function(req, res) {
     role.grantSiteSurvey = req.body['grant-site-survey'];
     role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
     role.grantCsvExport = req.body['grant-csv-export'];
+    role.grantVlan = req.body['grant-vlan'];
+    role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
     role.grantWanBytesView = req.body['grant-wan-bytes'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];

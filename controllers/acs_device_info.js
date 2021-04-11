@@ -552,14 +552,14 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
-        interfaces.forEach((interface)=>{
+        interfaces.forEach((iface)=>{
           // Find out how many devices are associated in this interface
-          let totalField = fields.devices.assoc_total.replace('*', interface);
+          let totalField = fields.devices.assoc_total.replace('*', iface);
           let assocCount = getFromNestedKey(data, totalField+'._value');
           for (let i = 1; i < assocCount+1; i++) {
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', interface).replace('*', i);
+            macKey = macKey.replace('*', iface).replace('*', i);
             let macVal = getFromNestedKey(data, macKey+'._value');
             let device = devices.find((d)=>d.mac===macVal);
             if (!device) continue;
@@ -573,13 +573,13 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', interface).replace('*', i);
+              rssiKey = rssiKey.replace('*', iface).replace('*', i);
               device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', interface).replace('*', i);
+              snrKey = snrKey.replace('*', iface).replace('*', i);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
           }
