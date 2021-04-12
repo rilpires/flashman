@@ -47,6 +47,8 @@ let args = {oui: oui, model: modelClass};
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 if (!result.success || !result.fields) {
   log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
+  log('OUI identified: ' + oui);
+  log('Model identified: ' + modelClass);
   return;
 }
 let fields = result.fields;
