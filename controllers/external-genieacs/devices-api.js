@@ -136,6 +136,9 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
+      pon_status: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.Status',
+      pon_rxpower: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.RXPower',
+      pon_txpower: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.TXPower'
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
