@@ -1048,6 +1048,9 @@ $(document).ready(function() {
             continue;
           }
           let isTR069 = device.use_tr069;
+          let ponStatus = device.pon_status;
+          let ponRXPower = device.pon_rxpower;
+          let ponTXPower = device.pon_txpower;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
@@ -1326,6 +1329,10 @@ $(document).ready(function() {
                       'dependendo das configurações de rede do seu provedor'+
                     '</h7>'+
                   '</div>'+
+                '</div>'+
+                '<div class="my-0">'+
+                  '<p clas="my-0">Intensidade optica</p>'+
+                  '<h6>' + ponRXPower + '</h6>'+
                 '</div>'+
                 '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+

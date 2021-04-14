@@ -214,6 +214,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Missing mac field',
     });
   }
+  
+  console.log(data);
 
   let device = await DeviceModel.findById(data.common.mac.toUpperCase());
   if (!device) {
