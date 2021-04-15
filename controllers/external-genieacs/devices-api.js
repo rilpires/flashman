@@ -152,12 +152,12 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
     },
     wifi5: {
-      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
-      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
-      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Channel',
-      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AutoChannelEnable',
-      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard',
-      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
+      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
+      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
+      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -178,12 +178,6 @@ const getHuaweiFields = function() {
   let fields = getDefaultFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
   return fields;
@@ -195,12 +189,6 @@ const getZTEFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
   return fields;
@@ -210,12 +198,6 @@ const getNokiaFields = function() {
   let fields = getDefaultFields();
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   return fields;
 };
 
@@ -223,18 +205,18 @@ const getStavixFields = function() {
   let fields = getDefaultFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wifi2.ssid = fields.wifi5.ssid.replace(/2/g, '6');
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '1');
-  fields.wifi2.password = fields.wifi5.password.replace(/2/g, '6');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '1');
-  fields.wifi2.channel = fields.wifi5.channel.replace(/2/g, '6');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '1');
-  fields.wifi2.auto = fields.wifi5.auto.replace(/2/g, '6');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '1');
-  fields.wifi2.mode = fields.wifi5.mode.replace(/2/g, '6');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '1');
-  fields.wifi2.enable = fields.wifi5.enable.replace(/2/g, '6');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '1');
+  fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
+  fields.wifi2.channel = fields.wifi5.channel.replace(/5/g, '6');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '1');
+  fields.wifi2.auto = fields.wifi5.auto.replace(/5/g, '6');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '1');
+  fields.wifi2.mode = fields.wifi5.mode.replace(/5/g, '6');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
+  fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
   return fields;
 };
 
@@ -247,7 +229,9 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getHuaweiFields();
       break;
-    case 'F670L': // ZTE F670L
+    case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'F670L': // Multilaser ZTE F670L
       message = '';
       fields = getZTEFields();
       break;
@@ -261,10 +245,6 @@ const getModelFields = function(oui, model) {
       fields = getStavixFields();
       break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
-      message = '';
-      fields = getDefaultFields();
-      break;
-    case 'IGD': // TP-Link Archer C5
       message = '';
       fields = getDefaultFields();
       break;
