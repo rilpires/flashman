@@ -360,8 +360,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   
   device.pon_status = data.wan.pon_status;
-  device.pon_rxpower = req.body.pon_rxpower;
-  device.pon_rxpower = req.body.pon_txpower;
+  device.pon_rxpower = data.wan.pon_rxpower;
+  device.pon_rxpower = data.wan.pon_txpower;
 
   await device.save();
   return res.status(200).json({success: true});
