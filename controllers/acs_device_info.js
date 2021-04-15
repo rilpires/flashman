@@ -358,6 +358,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!acceptLocalChanges) {
     acsDeviceInfoController.updateInfo(device, changes);
   }
+  
+  device.pon_status = data.wan.pon_status;
+  device.pon_rxpower = req.body.pon_rxpower;
+  device.pon_rxpower = req.body.pon_txpower;
+
   await device.save();
   return res.status(200).json({success: true});
 };
