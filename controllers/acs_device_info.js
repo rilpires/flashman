@@ -482,7 +482,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.substring(0, assocField.indexOf('*')-1);
+  assocField = assocField.split('.').slice(0, -2).join('.');
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -552,6 +552,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
+        if (fields.devices.associated_5) {
+          interfaces.push('5');
+        }
         interfaces.forEach((interface)=>{
           // Find out how many devices are associated in this interface
           let totalField = fields.devices.assoc_total.replace('*', interface);
@@ -645,6 +648,9 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
     name: 'getParameterValues',
     parameterNames: [hostsField, assocField, totalAssocField],
   };
+  if (fields.devices.associated_5) {
+    task.parameterNames.push(fields.devices.associated_5);
+  }
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchDevicesFromGenie(mac, acsID);

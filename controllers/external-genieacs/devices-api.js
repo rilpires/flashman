@@ -183,14 +183,23 @@ const getHuaweiFields = function() {
   return fields;
 };
 
-const getZTEFields = function() {
+const getZTEFields = function(model) {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
-  fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+  switch (model) {
+    case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+      fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
+      fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      break;
+    case 'F670L': // Multilaser ZTE F670L
+      fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+      fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+      break;
+  }
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
   return fields;
 };
 
@@ -233,7 +242,7 @@ const getModelFields = function(oui, model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
       message = '';
-      fields = getZTEFields();
+      fields = getZTEFields(model);
       break;
     case 'G-140W-C': // Nokia G-140W-C
     case 'G%2D140W%2DC': // URI encoded
