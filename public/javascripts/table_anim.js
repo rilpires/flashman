@@ -1330,9 +1330,13 @@ $(document).ready(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
-                '<div class="my-0">'+
-                  '<p clas="my-0">Intensidade optica</p>'+
-                  '<h6>' + ponRXPower + '</h6>'+
+                '<div class="md-form input-entry">'+
+                  '<label class="active">Intesidade do sinal optico</label>'+
+                  '<input class="form-control" type="text" maxlength="3" '+
+                  'value="'+
+                  ((ponRXPower) ? ponRXPower : 'Não disponível')+
+                  '" disabled></input>'+
+                  '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
