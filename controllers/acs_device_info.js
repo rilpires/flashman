@@ -568,9 +568,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;
-            if (interface == iface2) {
+            if (iface == iface2) {
               device.wifi_freq = 2.4;
-            } else if (interface == iface5) {
+            } else if (iface == iface5) {
               device.wifi_freq = 5;
             }
             // Collect rssi, if available
