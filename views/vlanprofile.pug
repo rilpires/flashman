@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  .row
+    .col-md-6.offset-md-3.col-12
+      .card.mt-5
+        h4.card-header.teal.lighten-2.white-text
+          .fas.fa-info.fa-lg
+          span &nbsp Perfil de VLAN
+        .card-body
+          form.needs-validation(method='post', action='/vlan/profile/edit/' + vlanprofile.vlan_id, novalidate)
+            .row
+              .col-md
+                .md-form
+                  label(for="vlanid") VLAN ID
+                  input#vlanid.form-control(
+                    type="number",
+                    name="vlanid",
+                    value=vlanprofile.vlan_id disabled
+                  )
+                .md-form
+                  label(for="profilename") Nome
+                  input#profilename.form-control(
+                    type="text",
+                    name="profilename",
+                    value=vlanprofile.profile_name
+                    oninput="checkVlanName(this)"
+                    required
+                  )
+                  .invalid-feedback O nome deve ter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes
+            .col-12.mt-3.text-center
+              .form-buttons
+                button.btn.btn-primary(type="submit") Atualizar
+
+block scripts
+  script(src='/javascripts/vlanprofile_actions.js')

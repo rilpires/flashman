@@ -1,0 +1,18 @@
+#vlan-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-project-diagram.fa-lg
+          strong &nbsp; Administrar VLANs de&nbsp;
+          strong(name="vlan-visual" id="vlan-visual")
+          span.d-none(name="vlan-hlabel" id="vlan-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      #frame-vlan-modal-alert
+      .modal-body#vlan-ports-canvas
+      .modal-footer
+        .col.text-left
+          button#btn-vlan-update.btn.btn-primary.btn-sm
+            i.fas.fa-check.fa-lg
+            span &nbsp Atualizar

@@ -10,8 +10,6 @@ const util = require('./handlers/util');
 
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 
 const maxRetries = 3;
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
@@ -100,7 +98,13 @@ const scheduleOfflineWatchdog = function() {
   // Check for update slots every minute
   const interval = 1*60*1000;
   if (watchdogIntervalID) return;
-  watchdogIntervalID = setInterval(async(()=>markSeveral()), interval);
+  /*
+  set interval call a anonymous function that call a single async function,
+  so isn't necessary await
+  */
+  watchdogIntervalID = setInterval(
+  () => markSeveral(),
+  interval);
 };
 
 const removeOfflineWatchdog = function() {
@@ -115,13 +119,13 @@ const resetMutex = function() {
   if (mutex.isLocked()) mutexRelease();
 };
 
-const getConfig = async(function(lean=true, needActive=true) {
+const getConfig = async function(lean=true, needActive=true) {
   let config = null;
   try {
     if (lean) {
-      config = await(Config.findOne({is_default: true}).lean());
+      config = await Config.findOne({is_default: true}).lean();
     } else {
-      config = await(Config.findOne({is_default: true}));
+      config = await Config.findOne({is_default: true});
     }
     if (!config || !config.device_update_schedule ||
         (needActive && !config.device_update_schedule.is_active)) {
@@ -132,22 +136,22 @@ const getConfig = async(function(lean=true, needActive=true) {
     return null;
   }
   return config;
-});
+};
 
-const getDevice = async(function(mac, lean=false) {
+const getDevice = async function(mac, lean=false) {
   let device = null;
   try {
     if (lean) {
-      device = await(DeviceModel.findById(mac.toUpperCase()).lean());
+      device = await DeviceModel.findById(mac.toUpperCase()).lean();
     } else {
-      device = await(DeviceModel.findById(mac.toUpperCase()));
+      device = await DeviceModel.findById(mac.toUpperCase());
     }
   } catch (err) {
     console.log(err);
     return null;
   }
   return device;
-});
+};
 
 const configQuery = function(setQuery, pullQuery, pushQuery) {
   let query = {};
@@ -157,22 +161,22 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
   return Config.updateOne({'is_default': true}, query);
 };
 
-const markSeveral = async(function() {
-  let config = await(getConfig());
+const markSeveral = async function() {
+  let config = await getConfig();
   if (!config) return; // this should never happen
   let inProgress = config.device_update_schedule.rule.in_progress_devices.length;
   let slotsAvailable = maxDownloads - inProgress;
   for (let i = 0; i < slotsAvailable; i++) {
-    let result = await(markNextForUpdate());
+    let result = await markNextForUpdate();
     if (!result.success) {
       return;
     } else if (result.success && !result.marked) {
       break;
     }
   }
-});
+};
 
-scheduleController.recoverFromOffline = async(function(config) {
+scheduleController.recoverFromOffline = async function(config) {
   // Move those in doing status downloading back to to_do
   let rule = config.device_update_schedule.rule;
   let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
@@ -180,21 +184,21 @@ scheduleController.recoverFromOffline = async(function(config) {
   let pushArray = pullArray.map((mac)=>{
     return {mac: mac, state: 'update', retry_count: 0};
   });
-  await(configQuery(
+  await configQuery(
     null,
     {'device_update_schedule.rule.in_progress_devices': {
       'mac': {'$in': pullArray},
     }},
     {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
-  ));
+  );
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
-  setTimeout(async(function() {
-    await(markSeveral());
+  setTimeout(async function() {
+    await markSeveral();
     scheduleOfflineWatchdog();
-  }), 5*60*1000);
-});
+  }, 5*60*1000);
+};
 
-const markNextForUpdate = async(function() {
+const markNextForUpdate = async function() {
   // This function should not have 2 running instances at the same time, since
   // async database access can lead to no longer valid reads after one instance
   // writes. This is necessary because mongo does not implement "table locks",
@@ -203,9 +207,9 @@ const markNextForUpdate = async(function() {
   // And so, we use a mutex to lock instances outside database access scope.
   // In addition, we add a random sleep to spread out requests a bit.
   let interval = Math.random() * 500; // scale to seconds, cap at 500ms
-  await(new Promise((resolve)=>setTimeout(resolve, interval)));
-  mutexRelease = await(mutex.acquire());
-  let config = await(getConfig());
+  await new Promise((resolve) => setTimeout(resolve, interval));
+  mutexRelease = await mutex.acquire();
+  let config = await getConfig();
   if (!config) {
     mutexRelease();
     console.log('Scheduler: não há um agendamento');
@@ -241,9 +245,9 @@ const markNextForUpdate = async(function() {
   if (!nextDevice) {
     // No online devices, mark them all as offline
     try {
-      await(configQuery({
+      await configQuery({
         'device_update_schedule.rule.to_do_devices.$[].state': 'offline',
-      }, null, null));
+      }, null, null);
     } catch (err) {
       console.log(err);
     }
@@ -252,7 +256,7 @@ const markNextForUpdate = async(function() {
     return {success: true, marked: false};
   }
   try {
-    await(configQuery(
+    await configQuery(
       null,
       // Remove from to do state
       {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
@@ -266,7 +270,7 @@ const markNextForUpdate = async(function() {
           'slave_updates_remaining': nextDevice.slave_count,
         },
       }
-    ));
+    );
     mutexRelease();
     console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
   } catch (err) {
@@ -276,11 +280,11 @@ const markNextForUpdate = async(function() {
   }
   try {
     // Mark device for update
-    let device = await(getDevice(nextDevice.mac));
+    let device = await getDevice(nextDevice.mac);
     device.do_update = true;
     device.do_update_status = 0;
     device.release = config.device_update_schedule.rule.release;
-    await(device.save());
+    await device.save();
     messaging.sendUpdateMessage(device);
     mqtt.anlixMessageRouterUpdate(device._id);
     // Start ack timeout
@@ -290,10 +294,10 @@ const markNextForUpdate = async(function() {
     return {success: false, error: 'Erro alterando base de dados'};
   }
   return {success: true, marked: true};
-});
+};
 
-scheduleController.initialize = async(function(macList, slaveCountPerMac) {
-  let config = await(getConfig());
+scheduleController.initialize = async function(macList, slaveCountPerMac) {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let devices = macList.map((mac)=>{
     return {
@@ -304,7 +308,7 @@ scheduleController.initialize = async(function(macList, slaveCountPerMac) {
     };
   });
   try {
-    await(configQuery(
+    await configQuery(
       {
         'device_update_schedule.rule.to_do_devices': devices,
         'device_update_schedule.rule.in_progress_devices': [],
@@ -312,9 +316,9 @@ scheduleController.initialize = async(function(macList, slaveCountPerMac) {
       },
       null,
       null,
-    ));
+    );
     for (let i = 0; i < maxDownloads; i++) {
-      let result = await(markNextForUpdate());
+      let result = await markNextForUpdate();
       if (!result.success) {
         return {success: false, error: result.error};
       } else if (result.success && !result.marked) {
@@ -327,33 +331,33 @@ scheduleController.initialize = async(function(macList, slaveCountPerMac) {
   }
   scheduleOfflineWatchdog();
   return {success: true};
-});
+};
 
-scheduleController.successDownload = async(function(mac) {
-  let config = await(getConfig());
+scheduleController.successDownload = async function(mac) {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status downloading to updating
   try {
-    await(Config.updateOne({
+    await Config.updateOne({
       'is_default': true,
       'device_update_schedule.rule.in_progress_devices.mac': mac,
     }, {
       '$set': {
         'device_update_schedule.rule.in_progress_devices.$.state': 'updating',
       },
-    }));
+    });
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
   return {success: true};
-});
+};
 
-scheduleController.successUpdate = async(function(mac) {
-  let config = await(getConfig());
+scheduleController.successUpdate = async function(mac) {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
@@ -364,7 +368,7 @@ scheduleController.successUpdate = async(function(mac) {
     if (device.slave_updates_remaining > 0 && device.state !== 'slave') {
       // This is a mesh master, simply update status to "slave" and reset retry
       // Mesh handler will properly propagate update to next slave
-      await(Config.updateOne({
+      await Config.updateOne({
         'is_default': true,
         'device_update_schedule.rule.in_progress_devices.mac': mac,
       }, {
@@ -372,12 +376,12 @@ scheduleController.successUpdate = async(function(mac) {
           'device_update_schedule.rule.in_progress_devices.$.state': 'slave',
           'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
         },
-      }));
+      });
     } else if (device.slave_updates_remaining > 1) {
       // This is a mesh slave, and not the last slave in the network.
       // Decrement remain counter and reset retry count, mesh handler propagates
       let remain = device.slave_updates_remaining - 1;
-      await(Config.updateOne({
+      await Config.updateOne({
         'is_default': true,
         'device_update_schedule.rule.in_progress_devices.mac': mac,
       }, {
@@ -385,11 +389,11 @@ scheduleController.successUpdate = async(function(mac) {
           'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
           'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
         },
-      }));
+      });
     } else {
       // This is either a regular router or the last slave in a mesh network
       // Move from in progress to done, with status ok
-      await(configQuery(
+      await configQuery(
         // Make schedule inactive if this is last device to enter done state
         {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
         // Remove from in progress state
@@ -403,7 +407,7 @@ scheduleController.successUpdate = async(function(mac) {
             'slave_updates_remaining': 0,
           },
         }
-      ));
+      );
     }
   } catch (err) {
     console.log(err);
@@ -414,10 +418,10 @@ scheduleController.successUpdate = async(function(mac) {
     removeOfflineWatchdog();
   }
   return {success: true};
-});
+};
 
-scheduleController.failedDownloadAck = async(function(mac) {
-  let config = await(getConfig());
+scheduleController.failedDownloadAck = async function(mac) {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
@@ -425,7 +429,7 @@ scheduleController.failedDownloadAck = async(function(mac) {
   if (!device) return {success: false, error: 'MAC não encontrado'};
   try {
     // Move from in progress to done, with status error
-    await(configQuery(
+    await configQuery(
       // Make schedule inactive if this is last device to enter done state
       {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
       // Remove from in progress state
@@ -439,7 +443,7 @@ scheduleController.failedDownloadAck = async(function(mac) {
           'slave_updates_remaining': device.slave_updates_remaining,
         },
       }
-    ));
+    );
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
@@ -449,10 +453,10 @@ scheduleController.failedDownloadAck = async(function(mac) {
     removeOfflineWatchdog();
   }
   return {success: true};
-});
+};
 
-scheduleController.failedDownload = async(function(mac, slave='') {
-  let config = await(getConfig());
+scheduleController.failedDownload = async function(mac, slave='') {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
@@ -509,14 +513,14 @@ scheduleController.failedDownload = async(function(mac, slave='') {
     } else if (slave !== '') {
       // Is a mesh slave, will retry immediately
       let retry = device.retry_count + 1;
-      await(Config.updateOne({
+      await Config.updateOne({
         'is_default': true,
         'device_update_schedule.rule.in_progress_devices.mac': mac,
       }, {
         '$set': {
           'device_update_schedule.rule.in_progress_devices.$.retry_count': retry,
         },
-      }));
+      });
       meshHandler.propagateUpdate(slave, rule.release);
       return {success: true};
     } else {
@@ -529,20 +533,20 @@ scheduleController.failedDownload = async(function(mac, slave='') {
         },
       };
     }
-    await(configQuery(setQuery, pullQuery, pushQuery));
+    await configQuery(setQuery, pullQuery, pushQuery);
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
   }
   return {success: true};
-});
+};
 
-scheduleController.abortSchedule = async(function(req, res) {
-  let config = await(getConfig());
+scheduleController.abortSchedule = async function(req, res) {
+  let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   // Mark scheduled update as aborted - separately to mitigate racing conditions
   try {
-    await(configQuery({'device_update_schedule.is_aborted': true}, null, null));
+    await configQuery({'device_update_schedule.is_aborted': true}, null, null);
     // Mark all todo devices as aborted
     let count = config.device_update_schedule.device_count;
     let rule = config.device_update_schedule.rule;
@@ -585,19 +589,19 @@ scheduleController.abortSchedule = async(function(req, res) {
     if ((rule.done_devices.length + pushArray.length) >= count) {
       setQuery['device_update_schedule.is_active'] = false;
     }
-    await(configQuery(
+    await configQuery(
       setQuery,
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}}
-    ));
+    );
     // Remove do_update from in_progress devices
-    rule.in_progress_devices.forEach(async((d)=>{
-      let device = await(getDevice(d.mac));
+    rule.in_progress_devices.forEach(async (d) => {
+      let device = await getDevice(d.mac);
       device.do_update = false;
       device.do_update_status = 4;
-      await(device.save());
+      await device.save();
       meshHandler.syncUpdateCancel(d, 4);
-    }));
+    });
   } catch (err) {
     console.log(err);
     return res.status(500).json({
@@ -610,7 +614,7 @@ scheduleController.abortSchedule = async(function(req, res) {
   return res.status(200).json({
     success: true,
   });
-});
+};
 
 scheduleController.getDevicesReleases = async function(req, res) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
@@ -630,17 +634,15 @@ scheduleController.getDevicesReleases = async function(req, res) {
      queryContents);
   } else {
     try {
-      let csvContents = await(
-        csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv')
-      );
+      let csvContents = await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map((line)=>{
-          return new Promise(async((resolve)=>{
+          return new Promise(async (resolve)=>{
             if (!line.field1.match(macRegex)) return resolve(null);
-            resolve(await(getDevice(line.field1, true)));
-          }));
+            resolve(await getDevice(line.field1, true));
+          });
         });
-        let values = await(Promise.all(promises));
+        let values = await Promise.all(promises);
         deviceList = values.filter((value)=>value!==null);
       }
     } catch (err) {
@@ -765,11 +767,11 @@ scheduleController.uploadDevicesFile = function(req, res) {
     }
     csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv').then((result)=>{
       let promises = result.map((line)=>{
-        return new Promise(async((resolve)=>{
+        return new Promise(async (resolve)=>{
           if (!line.field1.match(macRegex)) return resolve(0);
-          if (await(getDevice(line.field1, true)) !== null) return resolve(1);
+          if (await getDevice(line.field1, true) !== null) return resolve(1);
           else return resolve(0);
-        }));
+        });
       });
       Promise.all(promises).then((values)=>{
         return res.status(200).json({
@@ -804,17 +806,15 @@ scheduleController.startSchedule = async function(req, res) {
      queryContents);
   } else {
     try {
-      let csvContents = await(
-        csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv')
-      );
+      let csvContents = await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map((line)=>{
-          return new Promise(async((resolve)=>{
+          return new Promise(async (resolve) => {
             if (!line.field1.match(macRegex)) return resolve(null);
-            resolve(await(getDevice(line.field1, true)));
-          }));
+            resolve(await getDevice(line.field1, true));
+          });
         });
-        let values = await(Promise.all(promises));
+        let values = await Promise.all(promises);
         deviceList = values.filter((value)=>value!==null);
       }
     } catch (err) {
@@ -964,8 +964,8 @@ scheduleController.startSchedule = async function(req, res) {
   });
 };
 
-scheduleController.updateScheduleStatus = async(function(req, res) {
-  let config = await(getConfig(true, false));
+scheduleController.updateScheduleStatus = async function(req, res) {
+  let config = await getConfig(true, false);
   if (!config) {
     return res.status(500).json({
       message: 'Não há um agendamento cadastrado',
@@ -1005,7 +1005,7 @@ scheduleController.updateScheduleStatus = async(function(req, res) {
     done: done,
     error: error,
   });
-});
+};
 
 const translateState = function(state) {
   if (state === 'update') return 'Aguardando atualização';
@@ -1024,8 +1024,8 @@ const translateState = function(state) {
   return 'Status desconhecido';
 };
 
-scheduleController.scheduleResult = async(function(req, res) {
-  let config = await(getConfig(true, false));
+scheduleController.scheduleResult = async function(req, res) {
+  let config = await getConfig(true, false);
   if (!config) {
     return res.status(500).json({
       message: 'Não há um agendamento cadastrado',
@@ -1059,6 +1059,6 @@ scheduleController.scheduleResult = async(function(req, res) {
   res.set('Content-Disposition', 'attachment; filename=agendamento.csv');
   res.set('Content-Type', 'text/csv');
   res.status(200).send(csvData);
-});
+};
 
 module.exports = scheduleController;
