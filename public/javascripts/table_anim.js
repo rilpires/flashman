@@ -1334,7 +1334,7 @@ $(document).ready(function() {
                   '<label class="active">Intesidade do sinal optico</label>'+
                   '<input class="form-control" type="text" maxlength="3" '+
                   'value="'+
-                  ((ponStatus === "Up") ? ponRXPower : 'Não disponível')+
+                  ((ponStatus === "Up") ? ponRXPower + ' dbm' : 'Não disponível')+
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
