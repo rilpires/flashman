@@ -119,7 +119,7 @@ const appendBytesMeasure = function(original, recv, sent) {
 
 // pon_rxpower pon_txpower append function
 const appendPonSignal = function(original, rxPower, txPower) {
-  let now = Math.floor(Date.now / 1000);
+  let now = Math.floor(Date.now() / 1000);
   if (!original) original = {};
   let dbms = JSON.parse(JSON.stringify(original));
   if (Object.keys(dbms).length >= 100) {
@@ -371,7 +371,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     acsDeviceInfoController.updateInfo(device, changes);
   }
   
-  console.log(data)
   if (data.wan.pon_status) device.pon_status = data.wan.pon_status;
   if (data.wan.pon_rxpower) device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_rxpower);
   if (data.wan.pon_txpower) device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_txpower);
