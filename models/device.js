@@ -32,6 +32,7 @@ let deviceSchema = new Schema({
   pon_status: String,
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
+  pon_signal_measure: Object,
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,

@@ -121,7 +121,14 @@ const appendBytesMeasure = function(original, recv, sent) {
 const appendPonSignal = function(original, rxPower, txPower) {
   let now = Math.floor(Date.now / 1000);
   if (!original) original = {};
-  let dbm = JSON.parse(JSON.stringify(original));
+  let dbms = JSON.parse(JSON.stringify(original));
+  if (Object.keys(dbms).length >= 100) {
+    let keysNum = Object.keys(dbms).map((k) => parseInt(k));
+    let smallest = Math.min(...keysNum);
+    delete dbms[smallest];
+  }
+  dbms[now] = [rxPower, txPower];
+  return dbms;
 }
 
 const processHostFromURL = function(url) {
@@ -364,11 +371,16 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     acsDeviceInfoController.updateInfo(device, changes);
   }
   
+  console.log(data)
   if (data.wan.pon_status) device.pon_status = data.wan.pon_status;
   if (data.wan.pon_rxpower) device.pon_rxpower = data.wan.pon_rxpower;
   if (data.wan.pon_txpower) device.pon_rxpower = data.wan.pon_txpower;
   if (data.wan.pon_rxpower && data.wan.pon_txpower) {
-    device.pon_signal = appendPonSignal()
+    device.pon_signal_measure = appendPonSignal(
+      device.pon_signal_measure,
+      data.wan.pon_rxpower,
+      data.wan.pon_txpower
+    );
   }
 
   await device.save();
