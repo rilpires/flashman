@@ -384,7 +384,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   
   if (data.wan.pon_status) device.pon_status = data.wan.pon_status;
   if (data.wan.pon_rxpower) device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_rxpower);
-  if (data.wan.pon_txpower) device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_txpower);
+  if (data.wan.pon_txpower) device.pon_txpower = convertToDbm(data.common.model, data.wan.pon_txpower);
   if (data.wan.pon_rxpower && data.wan.pon_txpower) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
