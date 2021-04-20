@@ -89,6 +89,17 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
+const convertToDbm = function(model, rxPower) {
+  //let rxPowerLength = rxPower.toString().length;
+  switch (model) {
+    case 'GONUAC001':
+      return rxPower;
+    default:
+      return rxPower;
+  }
+};
+
+
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {

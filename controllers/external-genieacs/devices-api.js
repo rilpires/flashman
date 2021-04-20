@@ -73,16 +73,6 @@ const convertWifiMode = function(mode, oui, model) {
   }
 };
 
-const convertToDbm = function(model, rxPower) {
-  //let rxPowerLength = rxPower.toString().length;
-  switch (model) {
-    case 'GONUAC001':
-      return rxPower;
-    default:
-      return rxPower;
-  }
-};
-
 const convertWifiBand = function(band) {
   switch (band) {
     case 'HT20':
