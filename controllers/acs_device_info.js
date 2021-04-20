@@ -117,6 +117,13 @@ const appendBytesMeasure = function(original, recv, sent) {
   return bytes;
 };
 
+// pon_rxpower pon_txpower append function
+const appendPonSignal = function(original, rxPower, txPower) {
+  let now = Math.floor(Date.now / 1000);
+  if (!original) original = {};
+  let dbm = JSON.parse(JSON.stringify(original));
+}
+
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
   let doubleSlash = url.indexOf('//');
@@ -215,8 +222,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     });
   }
   
-  console.log(data);
-
   let device = await DeviceModel.findById(data.common.mac.toUpperCase());
   if (!device) {
     if (await createRegistry(req)) {
@@ -362,6 +367,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wan.pon_status) device.pon_status = data.wan.pon_status;
   if (data.wan.pon_rxpower) device.pon_rxpower = data.wan.pon_rxpower;
   if (data.wan.pon_txpower) device.pon_rxpower = data.wan.pon_txpower;
+  if (data.wan.pon_rxpower && data.wan.pon_txpower) {
+    device.pon_signal = appendPonSignal()
+  }
 
   await device.save();
   return res.status(200).json({success: true});
