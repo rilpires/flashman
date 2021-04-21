@@ -44,7 +44,7 @@ $(document).ready(function() {
       let txMeasure = Object.keys(data.pon_signal_measure).map(function(time) {
         let epochInUs = Number(time) * 1000;
         // Also create upBytes array
-        upBytes.push([epochInUs, data.pon_signal_measure[time][1]]);
+        rxMeasure.push([epochInUs, data.pon_signal_measure[time][1]]);
         // Downstream
         return [epochInUs, data.pon_signal_measure[time][0]];
       });
