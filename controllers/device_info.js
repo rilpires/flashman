@@ -1110,7 +1110,7 @@ deviceInfoController.receiveDevices = function(req, res) {
     if (err) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({processed: 0});
+:     return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Devices Receiving for device ' +
@@ -1301,6 +1301,11 @@ deviceInfoController.receiveDevices = function(req, res) {
     return res.status(200).json({processed: 1});
   });
 };
+
+deviceInfoController.receivePonSignalMeasure = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+}
 
 
 deviceInfoController.receiveSiteSurvey = function(req, res) {
@@ -1699,6 +1704,7 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
+    sio.anlixSendPonSignalNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };

@@ -128,7 +128,6 @@ const appendBytesMeasure = function(original, recv, sent) {
   return bytes;
 };
 
-// pon_rxpower pon_txpower append function
 const appendPonSignal = function(original, rxPower, txPower) {
   let now = Math.floor(Date.now() / 1000);
   if (!original) original = {};
@@ -512,6 +511,55 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
+const fetchPonSignal = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let rxPower = fields.wan.pon_rxpower;
+  let txPower = fields.wan.pon_txpower;
+  let query = {_id: acsID};
+  let projection = rxPower + ',' + txPower;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let ponSignalMeasure = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, rxPower+'._value') &&
+          checkForNestedKey(data, txPower+'._value')) {
+        success = true;
+        ponSignalMeasure = {
+          pon_rxpower: getFromNestedKey(data, rxPower+'._value'),
+          pon_txpower: getFromNestedKey(data, txPower+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        wanBytes = appendPonSignal(
+          deviceEdit.pon_signal_measure,
+          ponSignalMeasure.pon_rxpower,
+          ponSignalMeasure.pon_txpower,
+        );
+        deviceEdit.pon_signal_measure = ponSignalMeasure;
+        await deviceEdit.save();
+      }
+      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignalMeasure});
+    });
+  });
+  req.end();
+}
+
 // TODO: Move this function to external-genieacs?
 const fetchDevicesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -664,6 +712,26 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchWanBytesFromGenie(mac, acsID);
+  });
+};
+
+acsDeviceInfoController.requestPonSignal = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let rxPower = fields.wan.pon_rxpower;
+  let txPower = fields.wan.pon_txpower;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [rxPower, txPower],
+  };
+  TasksAPI.addTask(acsID, task, true, 10000, [], (result) => {
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchPonSignal(mac, acsID);
   });
 };
 

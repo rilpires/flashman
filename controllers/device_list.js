@@ -1022,6 +1022,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           if (device && device.use_tr069) {
             acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestPonSignal(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
             slaves.forEach((slave)=>{

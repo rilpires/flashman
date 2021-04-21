@@ -11,6 +11,7 @@ const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
+const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
 const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
 
 sio.anlixConnections = {};
@@ -295,6 +296,15 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
                                macaddr, upStatusData, macaddr);
   return found;
 };
+
+sio.anlixSendPonSignalNotification = function(macaddr, ponSignalMeasure) {
+  if (!macaddr) {
+    return false;
+  }
+  let found = emitNotification(SIO_NOTIFICATION_PON_SIGNAL,
+                               macaddr, ponSignalMeasure, macaddr);
+  return found;
+}
 
 sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
   if (!session) {
