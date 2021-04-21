@@ -1,0 +1,42 @@
+#pon-signal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-chart-line.fa-lg
+          strong &nbsp; Sinal ONU de&nbsp;
+          strong(name="pon-signal-visual" id="pon-signal-visual")
+          span.d-none(name="pon-signal-hlabel" id="pon-signal-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body
+        .row
+          .col.p-0.text-right
+            button#btn-pon-signal-refresh.btn.btn-primary.btn-sm
+              i.fas.fa-sync-alt.fa-lg
+              span &nbsp Atualizar
+        .row#pon-signal-placeholder-ready
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span Atualize os dados para visualizar
+        .row#pon-signal-placeholder-progress
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              span Atualizando sinal trafegados...
+        .row#pon-signal-placeholder-none
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span Nenhum dado encontrado
+        #pon-signal-graphs
+          #pon-signal-rxpower-graph
+          hr
+          #pon-signal-txpower-graph
