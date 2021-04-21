@@ -736,6 +736,7 @@ acsDeviceInfoController.requestPonSignal = function(device) {
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchPonSignal(mac, acsID);
   });
+  fetchPonSignal(mac, acsID);
 };
 
 acsDeviceInfoController.requestConnectedDevices = function(device) {
