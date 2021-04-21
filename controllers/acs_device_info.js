@@ -546,7 +546,7 @@ const fetchPonSignal = function(mac, acsID) {
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
-        wanBytes = appendPonSignal(
+        ponSignalMeasure = appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignalMeasure.pon_rxpower,
           ponSignalMeasure.pon_txpower,
