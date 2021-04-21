@@ -54,7 +54,7 @@ $(document).ready(function() {
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette4'},
         title: {text: 'Download', align: 'center'},
-        series: [{name: 'Download', data: downBytes}],
+        series: [{name: 'Download', data: rxMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       let txOptions = {
@@ -63,7 +63,7 @@ $(document).ready(function() {
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette5'},
         title: {text: 'Upload', align: 'center'},
-        series: [{name: 'Upload', data: upBytes}],
+        series: [{name: 'Upload', data: txMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       if (ponSignalRXId === '') {
