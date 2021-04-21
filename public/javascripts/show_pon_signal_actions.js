@@ -82,7 +82,7 @@ $(document).ready(function() {
           txOptions,
         );
         ponSignalTXId = txOptions.chart.id;
-        chartUpObj.render();
+        chartTXObj.render();
       } else {
         ApexCharts.exec(ponSignalTXId, 'updateOptions', txOptions, false, true);
       }
