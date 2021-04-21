@@ -65,7 +65,6 @@ $(document).ready(function() {
         title: {text: 'Upload', align: 'center'},
         series: [{name: 'Upload', data: upBytes}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
-        },
       };
       if (ponSignalRXId === '') {
         let chartDownObj = new ApexCharts(
