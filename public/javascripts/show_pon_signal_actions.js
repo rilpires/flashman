@@ -56,7 +56,6 @@ $(document).ready(function() {
         title: {text: 'Download', align: 'center'},
         series: [{name: 'Download', data: downBytes}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
-        },
       };
       let txOptions = {
         chart: {id: 'upChart', type: 'line', toolbar: false,
