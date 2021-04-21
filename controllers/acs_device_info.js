@@ -519,6 +519,8 @@ const fetchPonSignal = function(mac, acsID) {
   let txPower = fields.wan.pon_txpower;
   let query = {_id: acsID};
   let projection = rxPower + ',' + txPower;
+  let device = DeviceModel.findOne(query);
+  /*
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -558,6 +560,7 @@ const fetchPonSignal = function(mac, acsID) {
     });
   });
   req.end();
+  */
 }
 
 // TODO: Move this function to external-genieacs?
