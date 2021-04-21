@@ -1110,7 +1110,7 @@ deviceInfoController.receiveDevices = function(req, res) {
     if (err) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Cant get device profile.');
-:     return res.status(400).json({processed: 0});
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Devices Receiving for device ' +
