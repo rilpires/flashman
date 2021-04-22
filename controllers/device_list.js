@@ -953,6 +953,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
+      case 'ponsignal':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
