@@ -519,7 +519,7 @@ const fetchPonSignal = function(mac, acsID) {
   //let query = {_id: acsID};
   //let projection = rxPower + ',' + txPower;
   let device = DeviceModel.findById(mac);
-  sio.anlixSendPonSignalNotifcation(mac, {ponsignalmeasure: device.pon_signal_measure});
+  sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: device.pon_signal_measure});
   /*
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
