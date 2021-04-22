@@ -1022,13 +1022,10 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           if (device && device.use_tr069) {
             acsDeviceInfo.requestWanBytes(device);
-            acsDeviceInfo.requestPonSignal(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
             slaves.forEach((slave)=>{
               mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-              mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
             });
           }
         } else if (msgtype === 'log') {
@@ -1057,6 +1054,15 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
+        } else if (msgtype === 'ponsignal') {
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestPonSignal(device);
+          } else {
+            mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
+            slaves.forEach((slave)=>{
+              mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
+            });
+          }
         } else {
           return res.status(200).json({
             success: false,
