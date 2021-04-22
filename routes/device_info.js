@@ -22,6 +22,8 @@ router.route('/receive/pingresult').post(
   deviceInfoController.receivePingResult);
 router.route('/receive/routerstatus').post(
   deviceInfoController.receiveRouterUpStatus);
+router.route('/receive/ponsignalmeasure').post(
+  deviceInfoController.receiveRouterPonSignal);
 router.route('/receive/speedtestresult').post(
   deviceInfoController.receiveSpeedtestResult);
 router.route('/receive/wps').post(
