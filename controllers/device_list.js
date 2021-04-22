@@ -1025,8 +1025,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestPonSignal(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+            mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
             slaves.forEach((slave)=>{
               mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+              mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
             });
           }
         } else if (msgtype === 'log') {
