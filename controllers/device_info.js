@@ -1302,12 +1302,6 @@ deviceInfoController.receiveDevices = function(req, res) {
   });
 };
 
-deviceInfoController.receivePonSignalMeasure = function(req, res) {
-  let id = req.headers['x-anlix-id'];
-  let envsec = req.headers['x-anlix-sec'];
-}
-
-
 deviceInfoController.receiveSiteSurvey = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
@@ -1704,6 +1698,35 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
+    return res.status(200).json({processed: 1});
+  });
+};
+
+deviceInfoController.receiveRouterPonSignal = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+    let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
+    matchedDevice.sys_up_time = sysUpTime;
+    if (util.isJSONObject(req.body.ponsignalmeasure)) {
+      matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
+    }
+    matchedDevice.save();
+    sio.anlixSendPonSignalNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
