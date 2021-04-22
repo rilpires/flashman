@@ -512,14 +512,14 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
 };
 
 const fetchPonSignal = function(mac, acsID) {
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let rxPower = fields.wan.pon_rxpower;
-  let txPower = fields.wan.pon_txpower;
-  let query = {_id: acsID};
-  let projection = rxPower + ',' + txPower;
-  let device = DeviceModel.findOne(query);
+  //let splitID = acsID.split('-');
+  //let model = splitID.slice(1, splitID.length-1).join('-');
+  //let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  //let ponSignalMeasure = fields.pon_signal_measure;
+  //let query = {_id: acsID};
+  //let projection = rxPower + ',' + txPower;
+  let device = DeviceModel.findById(mac);
+  sio.anlixSendPonSignalNotifcation(mac, {ponsignalmeasure: device.pon_signal_measure});
   /*
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {

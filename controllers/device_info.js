@@ -1704,7 +1704,6 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
-    sio.anlixSendPonSignalNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
