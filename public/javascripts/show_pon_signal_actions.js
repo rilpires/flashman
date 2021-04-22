@@ -42,12 +42,12 @@ $(document).ready(function() {
     if (data.ponsignalmeasure && macaddr === $('#pon-signal-hlabel').text()) {
       $('#pon-signal-graph').empty();
       let rxMeasure = [];
-      let txMeasure = Object.keys(data.pon_signal_measure).map(function(time) {
+      let txMeasure = Object.keys(data.ponsignalmeasure).map(function(time) {
         let epochInUs = Number(time) * 1000;
         // Also create upBytes array
-        rxMeasure.push([epochInUs, data.pon_signal_measure[time][1]]);
+        rxMeasure.push([epochInUs, data.ponsignalmeasure[time][1]]);
         // Downstream
-        return [epochInUs, data.pon_signal_measure[time][0]];
+        return [epochInUs, data.ponsignalmeasure[time][0]];
       });
       let rxOptions = {
         chart: {id: 'downChart', type: 'line', toolbar: false,
