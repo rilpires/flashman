@@ -1,5 +1,5 @@
 
-#port-forward-onu.modal.fade(tabindex="-1", role="dialog")
+#port-forward-onu-modal.modal.fade(tabindex="-1", role="dialog")
   .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
     .modal-content
       .modal-header
@@ -52,21 +52,22 @@
             title="Habilita formas mais amigáveis de abrir um conjunto de portas",
           )
         .row
-          .collapse#port-forward-onu-advanced-options-collapse
-            .custom-control.custom-checkbox
-              input.custom-control-input(type="checkbox", onchange="checkAdvancedOptions(this)")#port-forward-onu-range-of-ports-checkbox
-              label.mx-3.custom-control-label(for="port-forward-onu-range-of-ports-checkbox") Abrir uma faixa de portas
-              a.fas.fa-question-circle(
-                data-toggle="tooltip",
-                title="Possibilita abrir uma sequência de portas, sendo passado uma porta inicial e uma porta final",
-              )
-            .custom-control.custom-checkbox
-              input.custom-control-input(type="checkbox" onchange="checkAdvancedOptions(this)")#port-forward-onu-asym-opening-checkbox
-              label.mx-3.custom-control-label(for="port-forward-onu-asym-opening-checkbox") Abrir de forma assimétrica
-              a.fas.fa-question-circle(
-                data-toggle="tooltip",
-                title="Possibilita associar uma porta externa comum(Porta de Origem) a uma porta interna específica(Porta de Destino)",
-              )
+          .col
+            .collapse#port-forward-onu-advanced-options-collapse
+              .custom-control.custom-checkbox
+                input.custom-control-input(type="checkbox", onchange="checkAdvancedOptions(this)")#port-forward-onu-range-of-ports-checkbox
+                label.mx-3.custom-control-label(for="port-forward-onu-range-of-ports-checkbox") Abrir uma faixa de portas
+                a.fas.fa-question-circle(
+                  data-toggle="tooltip",
+                  title="Possibilita abrir uma sequência de portas, sendo passado uma porta inicial e uma porta final",
+                )
+              .custom-control.custom-checkbox
+                input.custom-control-input(type="checkbox" onchange="checkAdvancedOptions(this)")#port-forward-onu-asym-opening-checkbox
+                label.mx-3.custom-control-label(for="port-forward-onu-asym-opening-checkbox") Abrir de forma assimétrica
+                a.fas.fa-question-circle(
+                  data-toggle="tooltip",
+                  title="Possibilita associar uma porta externa comum(Porta de Origem) a uma porta interna específica(Porta de Destino)",
+                )
         .row
           .col
             .table-responsive
@@ -74,7 +75,7 @@
                 thead
                   tr
                     th.text-left.col-4 Dispositivos
-                    th.text-left.col-8 Portas
+                    th.text-center.col-8 Portas
                     th &nbsp;
                 tbody#port-forward-onu-table
       .modal-footer 
