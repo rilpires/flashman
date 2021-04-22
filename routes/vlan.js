@@ -30,6 +30,10 @@ router.route('/profile/del').delete(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
                            vlanController.removeVlanProfile);
 
+router.route('/profile/check/:profileid').get(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.checkDevicesBeforeUpdate);
+
 router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permissionVlan, 1),
                            vlanController.getVlans);

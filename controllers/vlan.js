@@ -253,6 +253,57 @@ vlanController.editVlanProfile = async function(req, res) {
   }
 };
 
+vlanController.checkDevicesBeforeUpdate = async function(req, res) {
+  console.log('inside checkdevices');
+  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+    return res.json({success: false, type: 'danger', message: rej.message});
+  });
+  if (config) {
+    let vlanId;
+
+    config.vlans_profiles.forEach((vlanProfile) => {
+      if (vlanProfile._id == req.params.profileid) {
+        vlanId = vlanProfile.vlan_id;
+      }
+    });
+
+    DeviceModel.find({'vlan': {'$exists': true, '$not': {'$size': 0}}},
+    function(err, matchedDevices) {
+      if (err) {
+        return res.json({success: false, type: 'danger', message: 'Dispositivos não encontrados'});
+      }
+      let updateDevices = [];
+      matchedDevices.every((device) => {
+        let doUpdate = false;
+        let vlans = device.vlan;
+        for (let j = 0; j < device.vlan.length; j++) {
+          console.log('vlan '+j+': '+device.vlan[j].vlan_id);
+          if (vlanId == device.vlan[j].vlan_id) {
+            let deviceInfo = DeviceVersion.getDeviceInfo(device.model);
+            if (deviceInfo['soc'] === 'realtek') {
+              vlans[j].vlan_id = 9;
+            } else {
+              vlans[j].vlan_id = 1;
+            }
+            doUpdate = true;
+          }
+        }
+        if (doUpdate) {
+          let updateDeviceObj = {
+            deviceId: device.id,
+            vlans: JSON.stringify(vlans),
+          };
+          updateDevices.push(JSON.stringify(updateDeviceObj));
+        }
+        return true;
+      });
+      return res.json({success: true, type: 'success', updateDevices: updateDevices});
+    });
+  } else {
+    res.json({success: false, type: 'danger', message: config});
+  }
+};
+
 vlanController.removeVlanProfile = async function(req, res) {
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
     return res.json({success: false, type: 'danger', message: rej.message});
@@ -295,7 +346,7 @@ vlanController.updateVlans = async function(req, res) {
 
     if (Array.isArray(req.body.vlans)) {
       for (let v of req.body.vlans) {
-        if (v.port !== undefined || v.vlan_id !== undefined) {
+        if (v.port !== undefined && v.vlan_id !== undefined) {
           // restricted to this range of value by the definition of 802.1q protocol
           // vlan 2 is restricted to wan
           if (typeof v.port !== 'number' || v.port < 1 || v.port > 4 ||
