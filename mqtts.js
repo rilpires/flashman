@@ -408,20 +408,6 @@ mqtts.anlixMessageRouterUpStatus = function(id) {
   }
 };
 
-mqtts.anlixMessageRouterPonSignalMeasure = function(id) {
-  const serverId = findServerId(id);
-  if (serverId !== null) {
-    const packet = {
-      id: id,
-      qos: 2,
-      retain: false,
-      payload: 'ponsignal',
-    };
-    toPublishPacket(serverId, packet);
-    debug('MQTT SEND Message STATUS to ' + id);
-  }
-};
-
 mqtts.anlixMessageRouterWifiState = function(id, state, wirelessRadio) {
   const serverId = findServerId(id);
   if (serverId !== null) {

@@ -953,7 +953,6 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'ponsignal':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1055,20 +1054,6 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
-        } else if (msgtype === 'ponsignal') {
-          if (device && device.use_tr069) {
-            acsDeviceInfo.requestPonSignal(device);
-          } else {
-            mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterPonSignalMeasure(req.params.id.toUpperCase())
-            });
-          }
-        } else {
-          return res.status(200).json({
-            success: false,
-            message: 'Esse comando não existe',
-          });
         }
         break;
       }
@@ -2406,6 +2391,27 @@ deviceListController.updateLicenseStatus = async function(req, res) {
                                  message: 'Erro externo de comunicação'});
   }
 };
+
+deviceListController.receivePonSignalMeasure = async function(req, res) {
+  let deviceId = req.query.deviceid;
+
+  DeviceModel.findById(id, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+    let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
+    matchedDevice.sys_up_time = sysUpTime;
+    if (util.isJSONObject(req.body.ponsignalmeasure)) {
+      matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
+    }
+    matchedDevice.save();
+    sio.anlixSendPonSignalNotification(id, matchedDevice);
+    return res.status(200).json({processed: 1});
+  });
+}
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

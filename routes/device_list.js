@@ -156,4 +156,9 @@ router.route('/export').get(
   authController.ensureLogin(),
   deviceListController.exportDevicesCsv);
 
+router.route('/ponsignal').get(
+  authController.ensureLogin(),
+  deviceListController
+)
+
 module.exports = router;
