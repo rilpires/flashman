@@ -93,7 +93,7 @@ const convertToDbm = function(model, rxPower) {
   //let rxPowerLength = rxPower.toString().length;
   switch (model) {
     case 'F670L':
-      return rxPower = 10 * Math.log10(rxPower*0.0001);
+      return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
     case 'GONUAC001':
     default:
       return rxPower;
