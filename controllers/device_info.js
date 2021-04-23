@@ -84,17 +84,17 @@ const createRegistry = async function(req, res) {
   let vlanFiltered;
   let vlanInfo;
   if (vlan !== '') {
-    console.log('vlan recebida: '+ vlan);
     vlanConverted = vlanController.convertDeviceVlan(model, vlan);
-    console.log('vlan convertida: '+ vlanConverted);
-    vlanInfo = vlanController.getValidVlan(vlanConverted);
+    vlanInfo = await vlanController.getValidVlan(model, vlanConverted);
     if (vlanInfo.success === true) {
-      console.log('vlan filtrada: ' +vlanFiltered);
       vlanFiltered = vlanInfo.vlan;
       didFilterVlan = vlanInfo.didChange;
       if (didFilterVlan === true) {
         vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanFiltered)).digest('base64');
       }
+    } else {
+      console.log('Error creating entry: ' + vlanInfo.message);
+      return res.status(500).end();
     }
   }
 
