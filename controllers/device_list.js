@@ -2409,7 +2409,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendPonSignalNotification(deviceId, matchedDevice);
-    return res.status(200).json({processed: 1});
+    return res.status(200).json({processed: 1, success: true});
   });
 }
 
