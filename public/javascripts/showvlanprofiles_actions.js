@@ -125,54 +125,90 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '.btn-trash', async function(event) {
-    let updatesFailed = false;
-    let deviceFailed;
-    for (let i = 0; i < selectedItens.length; i++) {
-      let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
-      if (res.type == 'success') {
-        res.updateDevices.every((updateObj) => {
-          updateObj = JSON.parse(updateObj);
-          $.ajax({
-            type: 'POST',
-            url: '/vlan/update/'+updateObj.deviceId,
-            traditional: true,
-            data: {
-              vlans: updateObj.vlans,
-            },
-            success: function(res) {
-              return true;
-            },
-            error: function(res) {
-              updatesFailed = true;
-              deviceFailed = updateObj.deviceId;
-              return false;
-            },
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Podem existir dispositivos cuja configuração de VLAN utiliza ' +
+        'este perfil de VLAN. Prosseguir com essa deleção irá resettar ' +
+        'as portas que estão neste perfil de VLAN para o perfil de VLAN padrão. ' +
+        'Deseja continuar mesmo assim?',
+      confirmButtonText: 'Prosseguir',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then(async function(result) {
+      if (!result.value) return;
+      let updatesFailed = false;
+      let deviceFailed;
+      for (let i = 0; i < selectedItens.length; i++) {
+        let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
+        if (res.type == 'success') {
+          res.updateDevices.every((updateObj) => {
+            updateObj = JSON.parse(updateObj);
+            $.ajax({
+              type: 'POST',
+              url: '/vlan/update/'+updateObj.deviceId,
+              traditional: true,
+              data: {
+                vlans: updateObj.vlans,
+              },
+              success: function(res) {
+                return true;
+              },
+              error: function(res) {
+                updatesFailed = true;
+                deviceFailed = updateObj.deviceId;
+                return false;
+              },
+            });
           });
-        });
-      } else {
-        displayAlertMsg(res);
+        } else {
+          swal.close();
+          swal({
+            type: 'error',
+            title: 'Erro ao excluir perfis de VLAN',
+            text: 'Perfis de VLAN nao encontrados. ' +
+            'Por favor tente novamente',
+            confirmButtonColor: '#4db6ac',
+          });
+        }
+        if (updatesFailed === true) {
+          break;
+        }
       }
       if (updatesFailed === true) {
-        break;
+        swal.close();
+        swal({
+          type: 'error',
+          title: 'Erro ao excluir perfis de VLAN',
+          text: 'Exclusão de perfis não foi possível pois dispositivo ' +
+          deviceFailed +' não atualizou sua configuração de VLAN.',
+          confirmButtonColor: '#4db6ac',
+        });
+      } else {
+        $.ajax({
+          type: 'DELETE',
+          url: '/vlan/profile/del',
+          traditional: true,
+          data: {ids: selectedItens},
+          success: function(res) {
+            swal.close();
+            swal({
+              type: 'success',
+              title: 'Perfil removido com sucesso!',
+              confirmButtonColor: '#4db6ac',
+            });
+            if (res.type == 'success') {
+              fetchVlanProfiles(vlanProfilesTable);
+            }
+          },
+          error: function(res) {
+            console.log('deleção falhou;');
+          },
+        });
       }
-    }
-    if (updatesFailed === true) {
-      displayAlertMsg('Deleção de perfis não foi possível pois dispositivo ' +
-        deviceFailed+' não atualizou.');
-    } else {
-      $.ajax({
-        type: 'DELETE',
-        url: '/vlan/profile/del',
-        traditional: true,
-        data: {ids: selectedItens},
-        success: function(res) {
-          displayAlertMsg(res);
-          if (res.type == 'success') {
-            fetchVlanProfiles(vlanProfilesTable);
-          }
-        },
-      });
-    }
+    });
   });
 
   // Use this format when adding button with AJAX
