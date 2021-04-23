@@ -2393,7 +2393,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
 };
 
 deviceListController.receivePonSignalMeasure = async function(req, res) {
-  let deviceId = req.query.deviceid;
+  let deviceId = req.params.deviceId;
 
   DeviceModel.findById(deviceId, function(err, matchedDevice) {
     if (err) {
