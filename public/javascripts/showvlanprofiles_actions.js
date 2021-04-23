@@ -203,9 +203,6 @@ $(document).ready(function() {
               fetchVlanProfiles(vlanProfilesTable);
             }
           },
-          error: function(res) {
-            console.log('deleção falhou;');
-          },
         });
       }
     });
