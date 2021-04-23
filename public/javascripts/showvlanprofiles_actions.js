@@ -129,9 +129,9 @@ $(document).ready(function() {
       type: 'warning',
       title: 'Atenção!',
       text: 'Podem existir dispositivos cuja configuração de VLAN utiliza ' +
-        'este perfil de VLAN. Prosseguir com essa deleção irá resettar ' +
-        'as portas que estão neste perfil de VLAN para o perfil de VLAN padrão. ' +
-        'Deseja continuar mesmo assim?',
+        'estes perfis de VLAN. Prosseguir com esta exclusão irá associar ' +
+        'as portas que estão associadas a estes perfis de VLAN ' +
+        'ao perfil de VLAN padrão. Deseja continuar mesmo assim?',
       confirmButtonText: 'Prosseguir',
       confirmButtonColor: '#4db6ac',
       cancelButtonText: 'Cancelar',
@@ -196,7 +196,7 @@ $(document).ready(function() {
             swal.close();
             swal({
               type: 'success',
-              title: 'Perfil removido com sucesso!',
+              title: 'Perfis excluídos com sucesso!',
               confirmButtonColor: '#4db6ac',
             });
             if (res.type == 'success') {
