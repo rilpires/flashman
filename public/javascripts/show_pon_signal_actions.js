@@ -103,11 +103,11 @@ $(document).ready(function() {
   const createPonSignalTable = function(ponSignalMeasure, macaddr) {
     if (ponSignalMeasure && macaddr === $('#pon-signal-hlabel').text()) {
       $('#pon-signal-graph').empty();
-      let rxMeasure = [];
-      let txMeasure = Object.keys(ponSignalMeasure).map(function(time) {
+      let txMeasure = [];
+      let rxMeasure = Object.keys(ponSignalMeasure).map(function(time) {
         let epochInUs = Number(time) * 1000;
         // Also create upBytes array
-        rxMeasure.push([epochInUs, ponSignalMeasure[time][1]]);
+        txMeasure.push([epochInUs, ponSignalMeasure[time][1]]);
         // Downstream
         return [epochInUs, ponSignalMeasure[time][0]];
       });
@@ -126,7 +126,7 @@ $(document).ready(function() {
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette5'},
         title: {text: 'TX', align: 'center'},
-        series: [{name: 'RX', data: txMeasure}],
+        series: [{name: 'TX', data: txMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       if (ponSignalRXId === '') {
