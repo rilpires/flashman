@@ -11,13 +11,13 @@ $(document).ready(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          ponSignalMeasure = res.ponsignalmeasure;
           $('#btn-pon-signal-refresh > i').addClass('animated rotateOut infinite');
           if ($('#pon-signal-graphs').is(':hidden')) {
             $('#pon-signal-placeholder-ready').hide();
             $('#pon-signal-placeholder-progress').show();
             $('#pon-signal-placeholder-none').hide();
           }
+          createPonSignalTable(res.ponsignalmeasure, deviceId)
         } else {
           $('#btn-pon-signal-refresh').prop('disabled', false);
           if ($('#pon-signal-graphs').is(':hidden')) {
@@ -163,7 +163,6 @@ $(document).ready(function() {
   $(document).on('click', '#btn-pon-signal-refresh', function(event) {
     let id = $('#pon-signal-hlabel').text();
     refreshPonSignal(id);
-    createPonSignalTable(ponSignalMeasure, id)
   });
 
   $(document).on('click', '.btn-pon-signal-modal', function(event) {
