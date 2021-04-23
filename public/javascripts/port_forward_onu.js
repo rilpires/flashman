@@ -209,36 +209,130 @@ let checkPortsValues = function(portsValues) {
 };
 
 let removeOnePortMapping = function(input) {
-  console.log(input);
+  let ip = input.dataset['ip'];
+  let portMapping = input.dataset['portMapping'];
+
+  let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
+  let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings-'+ip));
+  let mapOfExternalPorts = new Set(JSON.parse(sessionStorage.getItem('mapOfExternalPorts-'+ip)));
+  let mapOfInternalPorts = new Set(JSON.parse(sessionStorage.getItem('mapOfInternalPorts-'+ip)));
+
+  let ports = portMapping.split(/-|:/);
+  let isRangeOfPorts = portMapping.includes('-');
+  let i;
+  let j;
+
+  /* remove the one port mapping */
+  if (ports.length == 1) {
+    // 'ip' | 'ports[0]'
+    portsBadges = portsBadges.filter((p) => {
+        return p != portMapping;
+      });
+    listOfMappings = listOfMappings.filter((l) => {
+      return l.external != ports[0] &&
+      l.internal != ports[0];
+    });
+    mapOfExternalPorts.delete(parseInt(ports[0]));
+    mapOfInternalPorts.delete(parseInt(ports[0]));
+    // console.log('!1');
+  } else if (ports.length == 2) {
+    // 'ip' | 'ports[0]-ports[1]'
+    if (isRangeOfPorts) {
+      portsBadges = portsBadges.filter((p) => {
+        return p != portMapping;
+      });
+      for (i = parseInt(ports[0]); i <= parseInt(ports[1]); i++) {
+        listOfMappings = listOfMappings.filter((l) => {
+          return l.external != i &&
+          l.internal != i;
+        });
+        mapOfExternalPorts.delete(i);
+        mapOfInternalPorts.delete(i);
+      }
+      // console.log('!2');
+    } else {
+      // 'ip' | 'ports[0]:ports[1]'
+      portsBadges = portsBadges.filter((p) => {
+        return p != portMapping;
+      });
+      listOfMappings = listOfMappings.filter((l) => {
+        return l.external != ports[0] &&
+        l.internal != ports[1];
+      });
+      mapOfExternalPorts.delete(parseInt(ports[0]));
+      mapOfInternalPorts.delete(parseInt(ports[1]));
+      // console.log('!3');
+    }
+  } else if (ports.length == 4) {
+    // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
+    portsBadges = portsBadges.filter((p) => {
+        return p != portMapping;
+      });
+    for (i = parseInt(ports[0]); i <= parseInt(ports[1]); i++) {
+      j = parseInt(ports[2])+(i-parseInt(ports[0]));
+      listOfMappings = listOfMappings.filter((l) => {
+        return l.external != i &&
+        l.internal != j;
+      });
+      mapOfExternalPorts.delete(i);
+      mapOfInternalPorts.delete(j);
+    }
+    // console.log('!4');
+  } else {
+    triggerRedAlert('Algo muito errado aconteceu...');
+  }
+  /* *** */
+
+  sessionStorage.setItem('listOfMappings-'+ip, JSON.stringify(listOfMappings));
+  sessionStorage.setItem('portsBadges-'+ip, JSON.stringify(portsBadges));
+  sessionStorage.setItem('mapOfExternalPorts-'+ip,
+   JSON.stringify(Array.from(mapOfExternalPorts)));
+  sessionStorage.setItem('mapOfInternalPorts-'+ip,
+   JSON.stringify(Array.from(mapOfInternalPorts)));
+
+  $(input.parentElement).remove();
+};
+
+let removeSetOfPortMapping = function(input) {
+  let ip = input.dataset['ip'];
+  let portMappingTable = $('#port-forward-onu-table');
+
+  sessionStorage.setItem('listOfMappings-'+ip, null);
+  sessionStorage.setItem('portsBadges-'+ip, null);
+  sessionStorage.setItem('mapOfExternalPorts-'+ip, null);
+  sessionStorage.setItem('mapOfInternalPorts-'+ip, null);
+
+  portMappingTable.find('[data-ip="' + ip + '"]').remove();
+};
+
+let removeAllPortMapping = function() {
+  let portMappingTable = $('#port-forward-onu-table');
+  let deviceId = sessionStorage.getItem('deviceId');
+  let serialId = sessionStorage.getItem('serialId');
+  let lanSubnet = sessionStorage.getItem('lanSubnet');
+  let lanSubmask = sessionStorage.getItem('lanSubmask');
+
+  portMappingTable.empty();
+  sessionStorage.clear();
+
+  sessionStorage.setItem('deviceId', deviceId);
+  sessionStorage.setItem('serialId', serialId);
+  sessionStorage.setItem('lanSubnet', lanSubnet);
+  sessionStorage.setItem('lanSubmask', lanSubmask);
 };
 
 let putPortMapping = function(ip, ports) {
   /*
-  DELETE:
-  let row = $(event.target).parents('tr');
-  let mac = row.data('device');
-  // Delete row form table
-  let rulesTable = $('#openFirewallPortsRules');
-  rulesTable.find('[data-device="' + mac + '"]').remove();
-
-  CLEAR:
-  rulesTable.empty();
-
-  dictOfIps: [
-    address: {
-      // to present to modal
-      portsBadges: [{String}],
-      //  to save to database
-      listOfPorts: [{
-        external: Number,
-        internal: Number,
-        isOnRange: Boolean,
-      }]
-      // to check superposition
-      mapOfPorts: Set({Integer}),
-    }
-  }]
-
+    // to present to modal
+    portsBadges: [{String}],
+    //  to save to database
+    listOfMappings: [{
+      external: Number,
+      internal: Number,
+      isOnRange: Boolean,
+    }]
+    // to check superposition
+    mapOfPorts: Set({Integer}),
   */
   let i;
   let j;
@@ -246,113 +340,107 @@ let putPortMapping = function(ip, ports) {
   let portMappingTable = $('#port-forward-onu-table');
   let isRangeOfPorts = $('#port-forward-onu-range-of-ports-checkbox')[0].checked;
 
-  let portsBadges = [];
-  let listOfPorts = [];
-  let mapOfExternalPorts = [];
-  let mapOfInternalPorts = [];
+  let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
+  let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings-'+ip));
+  let mapOfExternalPorts = JSON.parse(sessionStorage.getItem('mapOfExternalPorts-'+ip));
+  let mapOfInternalPorts = JSON.parse(sessionStorage.getItem('mapOfInternalPorts-'+ip));
 
-  if (portsBadges[ip] == undefined) {
-    portsBadges[ip] = [];
+  if (portsBadges == null) {
+    portsBadges = [];
   }
-  if (listOfPorts[ip] == undefined) {
-    listOfPorts[ip] = [];
+  if (listOfMappings == null) {
+    listOfMappings = [];
   }
-  if (mapOfExternalPorts[ip] == undefined) {
-    console.log(mapOfExternalPorts);
-    mapOfExternalPorts[ip] = new Set();
-    console.log(mapOfExternalPorts);
-  }
-  if (mapOfInternalPorts[ip] == undefined) {
-    mapOfInternalPorts[ip] = new Set();
-  }
+  mapOfExternalPorts = new Set(mapOfExternalPorts);
+
+  mapOfInternalPorts = new Set(mapOfInternalPorts);
+
 
   if (ports.length == 1) {
     // 'ip' | 'ports[0]'
-    if (!mapOfExternalPorts[ip].has(ports[0])) {
-      portsBadges[ip].push(ports[0].toString());
-      listOfPorts[ip].push({
+    if (!mapOfExternalPorts.has(ports[0])) {
+      portsBadges.push(ports[0].toString());
+      listOfMappings.push({
         'external': ports[0],
         'internal': ports[0],
         'is_on_range': false,
       });
-      mapOfExternalPorts[ip].add(ports[0]);
-      mapOfInternalPorts[ip].add(ports[0]);
-      console.log('2');
+      mapOfExternalPorts.add(ports[0]);
+      mapOfInternalPorts.add(ports[0]);
+      // console.log('#1');
     } else {
       isOverlapping = true;
-      console.log('3');
+      // console.log('#2');
     }
   } else if (ports.length == 2) {
     // 'ip' | 'ports[0]-ports[1]'
     if (isRangeOfPorts) {
-      for (i = ports[0]; i <= (ports[1]-ports[0]); i++) {
-        if (mapOfExternalPorts[ip].has(i)
-          || mapOfInternalPorts[ip].has(i)) {
+      for (i = ports[0]; i <= ports[1]; i++) {
+        if (mapOfExternalPorts.has(i)
+          || mapOfInternalPorts.has(i)) {
           isOverlapping = true;
-          console.log('4');
+          // console.log('#3');
         }
       }
       if (!isOverlapping) {
-        portsBadges[ip].push(ports[0].toString()+
+        portsBadges.push(ports[0].toString()+
           '-' + ports[1].toString());
-        for (i = ports[0]; i <= (ports[1]-ports[0]); i++) {
-          listOfPorts[ip].push({
+        for (i = ports[0]; i <= ports[1]; i++) {
+          listOfMappings.push({
             'external': i,
             'internal': i,
             'is_on_range': true,
           });
-          mapOfExternalPorts[ip].add(i);
-          mapOfInternalPorts[ip].add(i);
+          mapOfExternalPorts.add(i);
+          mapOfInternalPorts.add(i);
         }
-        console.log('5');
+        // console.log('#4');
       }
     } else {
       // 'ip' | 'ports[0]:ports[1]'
-      if (!mapOfExternalPorts[ip].has(ports[0])
-          && !mapOfInternalPorts[ip].has(ports[1])) {
-        portsBadges[ip].push(ports[0].toString()+
+      if (!mapOfExternalPorts.has(ports[0])
+          && !mapOfInternalPorts.has(ports[1])) {
+        portsBadges.push(ports[0].toString()+
           ':' + ports[1].toString());
-        listOfPorts[ip].push({
+        listOfMappings.push({
           'external': ports[0],
           'internal': ports[1],
           'is_on_range': false,
         });
-        mapOfExternalPorts[ip].add(ports[0]);
-        mapOfInternalPorts[ip].add(ports[1]);
-        console.log('6');
+        mapOfExternalPorts.add(ports[0]);
+        mapOfInternalPorts.add(ports[1]);
+        // console.log('#5');
       } else {
         isOverlapping = true;
-        console.log('7');
+        // console.log('#6');
       }
     }
   } else if (ports.length == 4) {
     // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
-    for (i = ports[0]; i <= (ports[1]-ports[0]); i++) {
-      j = ports[2]+i;
-      if (mapOfExternalPorts[ip].has(i)
-        || mapOfExternalPorts[ip].has(i)
-        || mapOfInternalPorts[ip].has(j)
-        || mapOfInternalPorts[ip].has(j)) {
+    for (i = ports[0]; i <= ports[1]; i++) {
+      j = ports[2]+(i-ports[0]);
+      if (mapOfExternalPorts.has(i)
+        || mapOfInternalPorts.has(j)) {
         isOverlapping = true;
-        console.log('8');
+        // console.log('#7');
       }
     }
     if (!isOverlapping) {
-      portsBadges[ip].push(ports[0].toString()+
+      portsBadges.push(ports[0].toString()+
           '-' + ports[1].toString() +
           ':' + ports[2].toString() +
           '-' + ports[3].toString());
-      for (i = ports[0]; i <= (ports[1]-ports[0]); i++) {
-        j = ports[2]+i;
-        listOfPorts[ip].push({
+      for (i = ports[0]; i <= ports[1]; i++) {
+        j = ports[2]+(i-ports[0]);
+        listOfMappings.push({
           'external': i,
           'internal': j,
           'is_on_range': true,
         });
-        mapOfExternalPorts[ip].add(i);
-        mapOfInternalPorts[ip].add(j);
+        mapOfExternalPorts.add(i);
+        mapOfInternalPorts.add(j);
       }
-      console.log('9');
+      // console.log('#8');
     }
   } else {
     triggerRedAlert('Algo muito errado aconteceu...');
@@ -362,26 +450,34 @@ let putPortMapping = function(ip, ports) {
     triggerRedAlert('Porta estão sobrepostas!');
   } else {
     let listOfBadges = $('<td>').
-          addClass('text-center');
-    for (i = 0; i < portsBadges[ip].length; i++) {
+          addClass('d-flex').
+          addClass('flex-row').
+          addClass('align-items-center').
+          addClass('justify-content-center').
+          addClass('flex-wrap');
+    for (i = 0; i < portsBadges.length; i++) {
       listOfBadges.append(
-            $('<span></span>').
-              addClass('badge badge-primary badge-pill').
-              html(
-                portsBadges[ip][i],
+            $('<div>').
+              addClass('badge badge-primary badge-pill mr-2').
+              append(
+                $('<label>').
+                css('margin-top', '0.4rem').
+                addClass('mr-1').
+                html(
+                  portsBadges[i],
+                ),
               ).
               append(
-                $('<button></button>').
+                $('<a>').
                   addClass('close').
-                  attr('type', 'button').
                   attr('onclick', 'removeOnePortMapping(this)').
-                  append($('<span></span>').
-                    addClass('white-text').
-                    html('&times;')),
-                ),
-            );
+                  attr('data-ip', ip).
+                  attr('data-port-mapping', portsBadges[i]).
+                  addClass('white-text').
+                  html('&times;')),
+              );
     }
-    portMappingTable.find('[ip="' + ip + '"]').remove();
+    portMappingTable.find('[data-id="' + ip + '"]').remove();
     portMappingTable.append(
       $('<tr>').append(
         $('<td>').
@@ -400,20 +496,22 @@ let putPortMapping = function(ip, ports) {
               $('<div>').
               addClass('fas fa-times fa-lg'),
             ).
-            addClass('btn btn-sm btn-danger my-0 port-forward-onu-remove-ip-button')
+            addClass('btn btn-sm btn-danger my-0')
             .attr('type', 'button')
-            .attr('ip', ip),
+            .attr('onclick', 'removeSetOfPortMapping(this)')
+            .attr('data-ip', ip),
           ),
       ).addClass('bounceIn')
-      .attr('ip', ip),
+      .attr('data-ip', ip)
+      .attr('data-id', ip),
     );
 
-    /* find a way to store:
-        portsBadges
-        listOfPorts
-        mapOfExternalPorts
-        mapOfInternalPorts
-    */
+    sessionStorage.setItem('listOfMappings-'+ip, JSON.stringify(listOfMappings));
+    sessionStorage.setItem('portsBadges-'+ip, JSON.stringify(portsBadges));
+    sessionStorage.setItem('mapOfExternalPorts-'+ip,
+     JSON.stringify(Array.from(mapOfExternalPorts)));
+    sessionStorage.setItem('mapOfInternalPorts-'+ip,
+     JSON.stringify(Array.from(mapOfInternalPorts)));
   }
 };
 
@@ -451,6 +549,7 @@ let checkPortMappingInputs = function() {
 $(document).ready(function() {
   $(document).on('click', '.btn-port-forward-onu-modal', function(event) {
     let row = $(event.target).parents('tr');
+    sessionStorage.clear();
     sessionStorage.setItem('deviceId', row.data('deviceid'));
     sessionStorage.setItem('serialId', row.data('serialid'));
     sessionStorage.setItem('lanSubnet', row.data('lanSubnet'));
@@ -461,7 +560,7 @@ $(document).ready(function() {
     /*
     $.ajax({
       type: 'GET',
-      url: '/devicelist/uiportforward/' + id,
+      url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
       dataType: 'json',
       success: function(res) {
         if (res.success) {
@@ -480,5 +579,11 @@ $(document).ready(function() {
       },
     });
     */
+  });
+
+  $(document).on('click', '#port-forward-onu-submit-button',
+    function(event) {
+    // let portMappingTable = $('#port-forward-onu-table');
+    // portMappingTable.find('[data-id]')[0].dataset['id'];
   });
 });

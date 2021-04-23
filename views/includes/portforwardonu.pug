@@ -43,13 +43,14 @@
             button.input-group-text.btn-primary.waves-effect.waves-light#port-forward-onu-add-port-mapping-button(type="button", onclick='checkPortMappingInputs()')
               .fas.fa-plus.fa-lg
         .row
-          label.mr-3 Opções Avançadas
-          a.fas.mr-3.hover-effect.fa-chevron-down#port-forward-onu-advanced-options-chevron(data-toggle="collapse",
-                    href="#port-forward-onu-advanced-options-collapse",
-                    role="button")
-          a.fas.mr-3.fa-question-circle(
-            data-toggle="tooltip",
-            title="Habilita formas mais amigáveis de abrir um conjunto de portas",
+          .col
+            label.mr-3 Opções Avançadas
+            a.fas.mr-3.hover-effect.fa-chevron-down#port-forward-onu-advanced-options-chevron(data-toggle="collapse",
+                      href="#port-forward-onu-advanced-options-collapse",
+                      role="button")
+            a.fas.mr-3.fa-question-circle(
+              data-toggle="tooltip",
+              title="Habilita formas mais amigáveis de abrir um conjunto de portas",
           )
         .row
           .col
@@ -74,9 +75,15 @@
               table.table
                 thead
                   tr
-                    th.text-left.col-4 Dispositivos
-                    th.text-center.col-8 Portas
-                    th &nbsp;
+                    th.text-left.col-2 Dispositivos
+                    th.text-center.col-6 Portas
+                    th.text-center.col-2
+                      button.btn.btn-sm.btn-danger.m-0(type='button', onclick='removeAllPortMapping()')
+                        .fas.fa-trash.fa-lg
+                      a.fas.fa-question-circle.ml-2(
+                        data-toggle="tooltip",
+                        title="Remove todos os mapeamentos de portas desse dispositivo",
+                      )
                 tbody#port-forward-onu-table
       .modal-footer 
         button.btn.btn-primary#port-forward-onu-submit-button(type="button")
