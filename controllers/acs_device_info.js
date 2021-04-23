@@ -388,8 +388,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wan.pon_rxpower && data.wan.pon_txpower) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
-      data.wan.pon_rxpower,
-      data.wan.pon_txpower
+      device.pon_rxpower,
+      device.pon_txpower
     );
   }
 
