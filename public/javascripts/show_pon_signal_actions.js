@@ -5,7 +5,7 @@ $(document).ready(function() {
   const refreshPonSignal = function(deviceId) {
     $('#btn-pon-signal-refresh').prop('disabled', true);
     $.ajax({
-      url: '/devicelist/pongsignal?deviceid=' + deviceId,
+      url: '/devicelist/ponsignal?deviceid=' + deviceId,
       type: 'get',
       dataType: 'json',
       success: function(res) {
