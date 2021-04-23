@@ -718,27 +718,6 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   });
 };
 
-acsDeviceInfoController.requestPonSignal = function(device) {
-  // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
-  let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let rxPower = fields.wan.pon_rxpower;
-  let txPower = fields.wan.pon_txpower;
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [rxPower, txPower],
-  };
-  TasksAPI.addTask(acsID, task, true, 10000, [], (result) => {
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchPonSignal(mac, acsID);
-  });
-  fetchPonSignal(mac, acsID);
-};
-
 acsDeviceInfoController.requestConnectedDevices = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
