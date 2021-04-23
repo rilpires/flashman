@@ -38,7 +38,7 @@ $(document).ready(function() {
 
   // Important: include and initialize socket.io first using socket var
   socket.on('PONSIGNAL', function(macaddr, data) {
-    console.log('XD')
+    console.log(data);
     if (data.ponsignalmeasure && macaddr === $('#pon-signal-hlabel').text()) {
       $('#pon-signal-graph').empty();
       let rxMeasure = [];
