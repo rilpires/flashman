@@ -459,4 +459,89 @@ vlanController.retrieveVlansToDevice = function(device) {
   };
 };
 
+vlanController.getValidVlan = async function(model, convertedVlan) {
+  let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  let soc = deviceInfo.soc;
+  let lanVlan;
+  if (soc === 'realtek') {
+    lanVlan = '1';
+  } else {
+    lanVlan = '9';
+  }
+  console.log('inside getValidVlan');
+  let didChange = false;
+  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+    console.log('getValidVlan failed to fetch 1');
+    return {success: false, type: 'danger', message: rej.message};
+  });
+  if (config && config.vlans_profiles) {
+    let vlans = [];
+    for (let i = 0; i < config.vlans_profiles.length; i++) {
+      vlans.push(config.vlans_profiles[i].vlan_id);
+    }
+    for (let i = 0; i < convertedVlan.length; i++) {
+      if (! vlans.include(convertedVlan[i].vlan_id)) {
+        convertedVlan[i].vlan_id = lanVlan;
+      }
+    }
+  } else {
+    console.log('getValidVlan failed to fetch 2');
+    return {success: false, type: 'danger', message: config};
+  }
+  console.log('leaving getValidVlan with vlan: ' +convertedVlan);
+  return {
+    success: true,
+    vlan: convertedVlan,
+    didChange: didChange,
+  };
+};
+
+vlanController.convertDeviceVlan = function(model, vlanObj) {
+  let receivedVlan = JSON.parse(vlanObj);
+  let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  let hashVlan = '';
+  let lanPorts = deviceInfo.lan_ports;
+  let wanPort = deviceInfo.wan_port;
+  let cpuPort = deviceInfo.cpu_port;
+  let soc = deviceInfo.soc;
+  let lanVlan;
+  let wanVlan;
+  if (soc === 'realtek') {
+    lanVlan = '1';
+    wanVlan = '2';
+  } else {
+    lanVlan = '9';
+    wanVlan = '8';
+  }
+  console.log('inside convertedDeviceVlan');
+  let vids = Object.keys(receivedVlan);
+  let idxLan = vids.indexOf(lanVlan);
+  let vidsFiltered = vids.splice(idxLan, 1);
+  let idxWan = vidsFiltered.indexOf(wanVlan);
+  vidsFiltered = vidsFiltered.splice(idxWan, 1);
+  // now vidsFiltered only has ids of vlans that were added
+  let vlan = [];
+  for (let i = 0; i < lanPorts.length; i++) {
+    let port = i+1;
+    let vid = parseInt(lanVlan);
+    for (let j = 0; j < vidsFiltered.length; j++) {
+      let ports = receivedVlan.vidsFiltered[j].replace('t', '');
+      ports = ports.replace(cpuPort.toString(), '');
+      ports = ports.replace(wanPort.toString(), '');
+      ports = ports.split(' ');
+      if (ports.include(lanPorts.toString())) {
+        vid = parseInt(vidsFiltered[j]);
+        break;
+      }
+    }
+    let vlanObj = {
+      port: port,
+      vlan_id: vid,
+    };
+    vlan.push(vlanObj);
+  }
+  console.log('leaving convertDeviceVlan, with vlan: '+vlan);
+  return vlan;
+};
+
 module.exports = vlanController;

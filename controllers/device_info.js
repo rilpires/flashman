@@ -25,7 +25,7 @@ const genericValidate = function(field, func, key, minlength, errors) {
   }
 };
 
-const createRegistry = function(req, res) {
+const createRegistry = async function(req, res) {
   if (typeof req.body.id == 'undefined') {
     return res.status(400).end();
   }
@@ -77,6 +77,26 @@ const createRegistry = function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
+  let vlan = util.returnObjOrEmptyStr(req.body.vlan);
+  let vlanHash = '';
+  let vlanConverted;
+  let didFilterVlan;
+  let vlanFiltered;
+  let vlanInfo;
+  if (vlan !== '') {
+    console.log('vlan recebida: '+ vlan);
+    vlanConverted = vlanController.convertDeviceVlan(model, vlan);
+    console.log('vlan convertida: '+ vlanConverted);
+    vlanInfo = vlanController.getValidVlan(vlanConverted);
+    if (vlanInfo.success === true) {
+      console.log('vlan filtrada: ' +vlanFiltered);
+      vlanFiltered = vlanInfo.vlan;
+      didFilterVlan = vlanInfo.didChange;
+      if (didFilterVlan === true) {
+        vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanFiltered)).digest('base64');
+      }
+    }
+  }
 
   let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
@@ -212,6 +232,8 @@ const createRegistry = function(req, res) {
         'bridge_mode_ip': bridgeFixIP,
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
+        'vlan_index': vlanHash,
+        'vlan': vlanFiltered,
         'mesh_mode': meshMode,
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
@@ -305,7 +327,7 @@ deviceInfoController.syncDate = function(req, res) {
 
 
 // Create new device entry or update an existing one
-deviceInfoController.updateDevicesInfo = function(req, res) {
+deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
