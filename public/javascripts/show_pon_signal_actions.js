@@ -131,7 +131,7 @@ $(document).ready(function() {
       };
       if (ponSignalRXId === '') {
         let chartRXObj = new ApexCharts(
-          document.querySelector('#pon-signal-down-graph'),
+          document.querySelector('#pon-signal-rxpower-graph'),
           rxOptions,
         );
         ponSignalRXId = rxOptions.chart.id;
@@ -141,7 +141,7 @@ $(document).ready(function() {
       }
       if (ponSignalTXId === '') {
         let chartTXObj = new ApexCharts(
-          document.querySelector('#pon-signal-up-graph'),
+          document.querySelector('#pon-signal-txpower-graph'),
           txOptions,
         );
         ponSignalTXId = txOptions.chart.id;
