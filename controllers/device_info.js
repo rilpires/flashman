@@ -11,6 +11,7 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const crypto = require('crypto');
 
 let deviceInfoController = {};
 
@@ -78,24 +79,24 @@ const createRegistry = async function(req, res) {
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
   let vlan = util.returnObjOrEmptyStr(req.body.vlan);
-  let vlanHash = '';
-  let vlanConverted;
-  let didFilterVlan;
   let vlanFiltered;
-  let vlanInfo;
+  let vlanDidChange = false;
   if (vlan !== '') {
-    vlanConverted = vlanController.convertDeviceVlan(model, vlan);
-    vlanInfo = await vlanController.getValidVlan(model, vlanConverted);
-    if (vlanInfo.success === true) {
-      vlanFiltered = vlanInfo.vlan;
-      didFilterVlan = vlanInfo.didChange;
-      if (didFilterVlan === true) {
-        vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanFiltered)).digest('base64');
+    let vlanConverted = vlanController.convertDeviceVlan(model, vlan);
+    let vlanInfo = await vlanController.getValidVlan(model, vlanConverted);
+    if (vlanInfo.success) {
+      vlanFiltered = Array.from(vlanInfo.vlan);
+      if (vlanInfo.didChange) {
+        vlanDidChange = true;
       }
     } else {
-      console.log('Error creating entry: ' + vlanInfo.message);
+      console.log('Error creating entry: ' + res);
       return res.status(500).end();
     }
+  }
+  let vlanParsed;
+  if (vlanDidChange) {
+    vlanParsed = vlanFiltered.map((el) => JSON.parse(el));
   }
 
   let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
@@ -185,7 +186,7 @@ const createRegistry = async function(req, res) {
     if (errors.length < 1) {
       let newMeshId = meshHandlers.genMeshID();
       let newMeshKey = meshHandlers.genMeshKey();
-      let newDeviceModel = new DeviceModel({
+      let deviceObj = {
         '_id': macAddr,
         'created_at': new Date(),
         'model': model,
@@ -232,13 +233,15 @@ const createRegistry = async function(req, res) {
         'bridge_mode_ip': bridgeFixIP,
         'bridge_mode_gateway': bridgeFixGateway,
         'bridge_mode_dns': bridgeFixDNS,
-        'vlan_index': vlanHash,
-        'vlan': vlanFiltered,
         'mesh_mode': meshMode,
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
-      });
+      };
+      if (vlanDidChange) {
+        deviceObj.vlan = vlanParsed;
+      }
+      let newDeviceModel = new DeviceModel(deviceObj);
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
       }
@@ -247,12 +250,19 @@ const createRegistry = async function(req, res) {
           console.log('Error creating entry: ' + err);
           return res.status(500).end();
         } else {
-          return res.status(200).json({'do_update': false,
-                                       'do_newprobe': true,
-                                       'release_id:': installedRelease,
-                                       'mesh_mode': meshMode,
-                                       'mesh_id': newMeshId,
-                                       'mesh_key': newMeshKey});
+          let response = {'do_update': false,
+                          'do_newprobe': true,
+                          'release_id:': installedRelease,
+                          'mesh_mode': meshMode,
+                          'mesh_id': newMeshId,
+                          'mesh_key': newMeshKey};
+          if (vlanDidChange) {
+            let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
+            let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
+            response.vlan = vlanToDevice;
+            response.vlan_index = vlanHash;
+          }
+          return res.status(200).json(response);
         }
       });
     } else {
