@@ -1,7 +1,6 @@
 $(document).ready(function() {
   let ponSignalRXId = '';
   let ponSignalTXId = '';
-  let ponSignalMeasure;
 
   const refreshPonSignal = function(deviceId) {
     $('#btn-pon-signal-refresh').prop('disabled', true);
@@ -113,30 +112,30 @@ $(document).ready(function() {
         return [epochInUs, ponSignalMeasure[time][0]];
       });
       let rxOptions = {
-        chart: {id: 'downChart', type: 'line', toolbar: false,
+        chart: {id: 'rxSignalChart', type: 'line', toolbar: false,
                 animations: {enabled: false}},
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette4'},
-        title: {text: 'Download', align: 'center'},
-        series: [{name: 'Download', data: rxMeasure}],
+        title: {text: 'RX', align: 'center'},
+        series: [{name: 'RX', data: rxMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       let txOptions = {
-        chart: {id: 'upChart', type: 'line', toolbar: false,
+        chart: {id: 'txSignalChart', type: 'line', toolbar: false,
                 animations: {enabled: false}},
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette5'},
-        title: {text: 'Upload', align: 'center'},
-        series: [{name: 'Upload', data: txMeasure}],
+        title: {text: 'TX', align: 'center'},
+        series: [{name: 'RX', data: txMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       if (ponSignalRXId === '') {
-        let chartDownObj = new ApexCharts(
+        let chartRXObj = new ApexCharts(
           document.querySelector('#pon-signal-down-graph'),
           rxOptions,
         );
         ponSignalRXId = rxOptions.chart.id;
-        chartDownObj.render();
+        chartRXObj.render();
       } else {
         ApexCharts.exec(ponSignalRXId, 'updateOptions', rxOptions, false, true);
       }
