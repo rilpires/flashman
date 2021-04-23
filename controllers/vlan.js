@@ -362,9 +362,6 @@ vlanController.updateVlans = async function(req, res) {
     if (is_vlans_valid) {
       device.vlan = req.body.vlans;
 
-      console.log('update vlan vlan: '+device.vlan);
-      console.log('update vlan vlan type: '+typeof device.vlan);
-
       mqtt.anlixMessageRouterUpdate(device._id);
 
       device.save().then(function() {
