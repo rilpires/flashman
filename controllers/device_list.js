@@ -2395,7 +2395,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
 deviceListController.receivePonSignalMeasure = async function(req, res) {
   let deviceId = req.query.deviceid;
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(deviceId, function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({processed: 0});
     }
@@ -2408,7 +2408,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
     }
     matchedDevice.save();
-    sio.anlixSendPonSignalNotification(id, matchedDevice);
+    sio.anlixSendPonSignalNotification(deviceId, matchedDevice);
     return res.status(200).json({processed: 1});
   });
 }
