@@ -170,8 +170,8 @@ const createRegistry = async function(req) {
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
-    installed_release: '0000-ONU',
-    release: '0000-ONU',
+    installed_release: data.common.version,
+    release: data.common.version,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
@@ -341,6 +341,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       data.wan.recv_bytes,
       data.wan.sent_bytes,
     );
+  }
+  if (data.common.version && data.common.version !== device.installed_release) {
+    device.installed_release = data.common.version;
   }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
