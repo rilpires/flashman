@@ -52,9 +52,8 @@ const testIPv6 = function (ipv6) {
   let maxparts = /:\d{1,3}\./.test(ipv6) ? 7 : 8; // has an ipv4 at the end or not.
   if (parts.length > maxparts || parts.length < 3) return false;
   let hasDoubleColon = ipv6.indexOf('::') > -1;
-  if (parts.length === maxparts && hasDoubleColon) {
-    return false;
-  } else if (hasDoubleColon) {
+  if (parts.length === maxparts && hasDoubleColon) return false;
+  if (hasDoubleColon) {
     let notEmptyCounter = 0;
     for (let i = 0; i < parts.length; i++) {
       if (parts[i].length > 0) notEmptyCounter++;
