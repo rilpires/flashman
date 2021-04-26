@@ -185,6 +185,16 @@ deviceListController.index = function(req, res) {
     indexContent.disableAutoUpdate = false;
   }
 
+  // Check Flashman data collecting availability
+  if (typeof process.env.FLM_ENABLE_DATA_COLLECTING !== 'undefined' && (
+             process.env.FLM_ENABLE_DATA_COLLECTING === 'true' ||
+             process.env.FLM_ENABLE_DATA_COLLECTING === true)
+  ) {
+    indexContent.enable_data_collecting = true;
+  } else {
+    indexContent.enable_data_collecting = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;

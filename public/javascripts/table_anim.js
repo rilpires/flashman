@@ -347,6 +347,10 @@ $(document).ready(function() {
     $('#upgrade-scheduler').modal('show');
   });
 
+  $(document).on('click', '#btn-config-data_collecting', function(event) {
+    $('#data_collecting').modal('show');
+  });
+
   // Refresh table content
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
