@@ -512,58 +512,6 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
-const fetchPonSignal = function(mac, acsID) {
-  //let splitID = acsID.split('-');
-  //let model = splitID.slice(1, splitID.length-1).join('-');
-  //let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  //let ponSignalMeasure = fields.pon_signal_measure;
-  //let query = {_id: acsID};
-  //let projection = rxPower + ',' + txPower;
-  let device = DeviceModel.findById(mac);
-  sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: device.pon_signal_measure});
-  /*
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let ponSignalMeasure = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
-      let success = false;
-      if (checkForNestedKey(data, rxPower+'._value') &&
-          checkForNestedKey(data, txPower+'._value')) {
-        success = true;
-        ponSignalMeasure = {
-          pon_rxpower: getFromNestedKey(data, rxPower+'._value'),
-          pon_txpower: getFromNestedKey(data, txPower+'._value'),
-        };
-      }
-      if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();
-        ponSignalMeasure = appendPonSignal(
-          deviceEdit.pon_signal_measure,
-          ponSignalMeasure.pon_rxpower,
-          ponSignalMeasure.pon_txpower,
-        );
-        deviceEdit.pon_signal_measure = ponSignalMeasure;
-        await deviceEdit.save();
-      }
-      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignalMeasure});
-    });
-  });
-  req.end();
-  */
-}
-
 // TODO: Move this function to external-genieacs?
 const fetchDevicesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
