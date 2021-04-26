@@ -1,4 +1,5 @@
 const Validator = require('../public/javascripts/device_validator');
+const DevicesAPI = require('./external-genieacs/devices-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
