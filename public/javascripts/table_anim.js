@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -112,7 +113,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
         }
         swal(options).then(function(result) {
           if (result.value) {
-            let deleteNotification = function () {
+            let deleteNotification = function() {
               $.ajax({type: 'POST', url: '/notification/del',
                 traditional: true, data: {id: data._id}})
               .done(() => {
@@ -132,7 +133,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
             .done(() => {
               data.seen = true;
             });
-          };
+          }
         });
       });
     }
@@ -161,7 +162,8 @@ $(document).ready(function() {
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
-  let visibleColumnsOnPage = $('#devices-table-content').data('visiblecolumnsonpage');
+  let visibleColumnsOnPage = $('#devices-table-content').
+    data('visiblecolumnsonpage');
   let isSuperuser = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
@@ -180,6 +182,7 @@ $(document).ready(function() {
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
+  let grantVlan = 0;
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
@@ -208,6 +211,7 @@ $(document).ready(function() {
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
+    grantVlan = role.grantVlan;
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
@@ -391,14 +395,16 @@ $(document).ready(function() {
             tooltip = 'Atualizando roteador mestre...';
           } else if (remain > 0) {
             let current = slaveCount - remain + 1;
-            tooltip = 'Atualizando roteador slave '+current+' de '+slaveCount+'...';
+            tooltip = 'Atualizando roteador slave '+
+              current+' de '+slaveCount+'...';
           }
           upgradeStatus.find('.status-waiting').attr('title', tooltip);
         } else if (status == 1) {
           upgradeStatus.find('.status-ok').removeClass('d-none');
         } else if (status >= 2) {
           let slaveCount = row.data('slave-count');
-          let progress = (remain === slaveCount+1) ? 0 : slaveCount - remain + 1;
+          let progress = (remain === slaveCount+1) ? 0
+            : slaveCount - remain + 1;
           let errorAnchor = upgradeStatus.find('.status-error');
           errorAnchor.attr('data-progress', progress);
           errorAnchor.attr('data-mac', mac);
@@ -418,8 +424,9 @@ $(document).ready(function() {
       url: '/devicelist/uiupdate/' + localDeviceId,
       type: 'GET',
       success: function(res) {
-        slaveRow.find('.device-status').removeClass('green-text red-text grey-text')
-                                       .addClass(res.status_color + '-text');
+        slaveRow.find('.device-status').
+          removeClass('green-text red-text grey-text').
+          addClass(res.status_color + '-text');
         slaveRow.find('.device-wan-ip').html(res.wan_ip);
         slaveRow.find('.device-ip').html(res.ip);
         slaveRow.find('.device-installed-release').html(res.installed_release);
@@ -431,7 +438,8 @@ $(document).ready(function() {
           localStatus = res.do_update_status;
           localMac = res._id;
         }
-        updateSlavesRecursively(row, iter-1, localUpdate, localStatus, remain, localMac);
+        updateSlavesRecursively(row, iter-1, localUpdate,
+          localStatus, remain, localMac);
       },
     });
   };
@@ -441,8 +449,8 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     let thisBtn = $(this);
-    let sysUptime = row.find('.device-sys-up-time')
-    let wanUptime = row.find('.device-wan-up-time')
+    let sysUptime = row.find('.device-sys-up-time');
+    let wanUptime = row.find('.device-wan-up-time');
     // Stop event from reaching tr element
     event.stopPropagation();
     // Block button until response has been received
@@ -461,7 +469,7 @@ $(document).ready(function() {
         },
       });
     }
-    
+
     // fetch notifications and set triangle with exclamation mark.
     fetchNotificationsForDevice(deviceId);
 
@@ -485,7 +493,7 @@ $(document).ready(function() {
           res.do_update,
           res.do_update_status,
           res.do_update_mesh_remaining,
-          deviceId
+          deviceId,
         );
       },
       complete: function(xhr, status) {
@@ -573,7 +581,8 @@ $(document).ready(function() {
     let upgradeCol = (isTR069) ? '<td></td>':
     '<td>'+
       '<div class="btn-group device-update">'+
-        '<button class="btn btn-sm px-2 btn-cancel-update btn-danger" $NO_UPDATE>'+
+        '<button class="btn btn-sm px-2'+
+        ' btn-cancel-update btn-danger" $NO_UPDATE>'+
           '<div class="fas fa-times"></div>'+
         '</button>'+
         '<div class="btn-group">'+
@@ -962,10 +971,10 @@ $(document).ready(function() {
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
-            $('<i>').addClass('fas fa-spinner fa-pulse fa-2x grey-text')
-          )
-        )
-      )
+            $('<i>').addClass('fas fa-spinner fa-pulse fa-2x grey-text'),
+          ),
+        ),
+      ),
     );
     $.ajax({
       url: '/devicelist/search?page=' + selelectedPage,
@@ -983,7 +992,7 @@ $(document).ready(function() {
           deviceTableContent.html(
             '<tr><td class="grey lighten-5 text-center" colspan="12">'+
               '<h5>Nenhum roteador encontrado</h5>'+
-            '</td></tr>'
+            '</td></tr>',
           );
           // Attach elements back to DOM after manipulation
           $('#devices-table').append(deviceTableContent);
@@ -1072,6 +1081,7 @@ $(document).ready(function() {
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
+          let grantVlanSupport = device.permissions.grantVlanSupport;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
@@ -1129,6 +1139,7 @@ $(document).ready(function() {
           formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+(!device.use_tr069 && grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
+          formAttr += ' data-validate-vlan-access="'+(isSuperuser?2:grantVlan)+'"';
           formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
@@ -1137,11 +1148,9 @@ $(document).ready(function() {
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
+          formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
 
-          let baseAction = '<div class="dropdown-divider"></div>'+
-          '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
-            '<i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span>'+
-          '</a>';
+          let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
 
           let logAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
@@ -1178,6 +1187,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
           .replace('$REPLACE_TEXT', 'Medição de Velocidade');
 
+          let vlanAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-vlan-modal')
+          .replace('$REPLACE_ICON', 'fa-project-diagram')
+          .replace('$REPLACE_TEXT', 'Administrar VLANs');
+
           let wanBytesAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
@@ -1188,72 +1202,65 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
 
-          let devActions = '<button class="btn btn-primary dropdown-toggle" '+
-          'type="button" data-toggle="dropdown">Opções</button>'+
-          '<div class="dropdown-menu dropdown-menu-right" data-dropdown-in="fadeIn" '+
-          'data-dropdown-out="fadeOut">'+
-            '<a class="dropdown-item btn-reboot">'+
-              '<i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span>'+
-            '</a>'+
-            '<div class="dropdown-divider"></div>'+
-            '<a class="dropdown-item btn-reset-app">'+
-              '<i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span>'+
-            '</a>'+
-            '$REPLACE_LOG_ACTION'+
-            '$REPLACE_UNBLOCK_ACTION'+
-            '$REPLACE_PORT_FORWARD_ACTION'+
-            '$REPLACE_PING_TEST_ACTION'+
-            '$REPLACE_DEVICES_ACTION'+
-            '$REPLACE_SITESURVEY_ACTION'+
-            '$REPLACE_MEASURE_ACTION'+
-            '$REPLACE_WAN_BYTES_ACTION'+
-            '$REPLACE_FACTORY_ACTION'+
-          '</div>';
+          let idxMenu = 0;
+          let sideMenu = [];
+          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span></a>';
+          sideMenu[1] = '<div><a class="dropdown-item btn-reset-app"><i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span></a>';
+
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
-            devActions = devActions.replace('$REPLACE_LOG_ACTION', logAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_LOG_ACTION', '');
+            sideMenu[idxMenu] += logAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && !device.bridge_mode_enabled && grantResetDevices) {
-            devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', unblockAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_UNBLOCK_ACTION', '');
+            sideMenu[idxMenu] += unblockAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
-            devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', portForwardAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_PORT_FORWARD_ACTION', '');
+            sideMenu[idxMenu] += portForwardAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && grantPingTest) {
-            devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', pingTestAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_PING_TEST_ACTION', '');
+            sideMenu[idxMenu] += pingTestAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if ((isSuperuser || grantLanDevsAccess) && grantLanDevices) {
-            devActions = devActions.replace('$REPLACE_DEVICES_ACTION', devicesAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_DEVICES_ACTION', '');
+            sideMenu[idxMenu] += devicesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
-            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', siteSurveyAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_SITESURVEY_ACTION', '');
+            sideMenu[idxMenu] += siteSurveyAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
-            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', measureAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_MEASURE_ACTION', '');
+            sideMenu[idxMenu] += measureAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) && grantVlanSupport) {
+            sideMenu[idxMenu] += vlanAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', wanBytesAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_WAN_BYTES_ACTION', '');
+            sideMenu[idxMenu] += wanBytesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
-            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', factoryAction);
-          } else {
-            devActions = devActions.replace('$REPLACE_FACTORY_ACTION', '');
+            sideMenu[idxMenu] += factoryAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
+
+          sideMenu[0] += '</div>';
+          sideMenu[1] += '</div>';
+
+          let devActions = '<button class="btn btn-primary dropdown-toggle" '+
+          'type="button" data-toggle="dropdown">Opções</button>'+
+          '<div class="dropdown-menu dropdown-menu-inline'+
+          ' dropdown-menu-right" data-dropdown-in="fadeIn" '+
+          'data-dropdown-out="fadeOut">'+
+            '$REPLACE_LEFT_MENU'+
+            '$REPLACE_RIGHT_MENU'+
+          '</div>';
+          devActions = devActions.replace('$REPLACE_LEFT_MENU', sideMenu[0]);
+          devActions = devActions.replace('$REPLACE_RIGHT_MENU', sideMenu[1]);
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
             buildAboutTab(device, index, isTR069)+
@@ -1998,7 +2005,7 @@ $(document).ready(function() {
 
           let modeEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'opmode')
-          .replace('$REPLACE_TAB_NAME', 'Modo')
+          .replace('$REPLACE_TAB_NAME', 'Modo');
 
           let wifiEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'wifi')
@@ -2215,8 +2222,8 @@ $(document).ready(function() {
                       $('<a>')
                       .addClass('page-link primary-color')
                       .attr('id', 'curr-page-link')
-                      .html(idx)
-                    )
+                      .html(idx),
+                    ),
                   );
                 } else {
                   if (idx == res.pages &&
@@ -2224,28 +2231,28 @@ $(document).ready(function() {
                   ) {
                     opts.append(
                       $('<li>').addClass('page-item').append(
-                        $('<h3>').addClass('page-link disabled').html('...')
-                      )
+                        $('<h3>').addClass('page-link disabled').html('...'),
+                      ),
                     );
                   }
                   opts.append(
                     $('<li>').addClass('page-item').append(
                       $('<a>').addClass('page-link change-page-link')
-                      .html(idx)
-                    )
+                      .html(idx),
+                    ),
                   );
                   if (idx == 1 && (currPage - delta > delta)) {
                     opts.append(
                       $('<li>').addClass('page-item').append(
-                        $('<h3>').addClass('page-link disabled').html('...')
-                      )
+                        $('<h3>').addClass('page-link disabled').html('...'),
+                      ),
                     );
                   }
                 }
               }
             }
             return opts.html();
-          })
+          }),
         );
         // Apply IP mask on LAN subnet field
         deviceTableContent.find('.ip-mask-field').mask('099.099.099.099');
@@ -2293,14 +2300,14 @@ $(document).ready(function() {
             row.find('.device-sys-up-time')
             .removeClass('grey-text pending-update')
             .html(
-              secondsTimeSpanToHMS(parseInt(data.sysuptime))
+              secondsTimeSpanToHMS(parseInt(data.sysuptime)),
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
             .removeClass('grey-text pending-update')
             .html(
-              secondsTimeSpanToHMS(parseInt(data.wanuptime))
+              secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
           }
         });

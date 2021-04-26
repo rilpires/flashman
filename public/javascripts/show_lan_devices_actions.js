@@ -349,8 +349,7 @@ $(document).ready(function() {
               $('<h6>').text(device.dhcp_name),
               $('<h6>').text(device.mac)
             ),
-            (device.conn_type == 1 && device.wifi_signal &&
-             device.is_online) ?
+            (device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
               $('<h6>').text(((device.wifi_freq) ? device.wifi_freq : 'N/D') + ' GHz'),
               $('<h6>').text('Modo: ' + ((device.wifi_mode) ? device.wifi_mode : 'N/D')),

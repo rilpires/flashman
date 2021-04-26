@@ -13,6 +13,7 @@ router.use('/upgrade', require('./upgrade'));
 router.use('/notification', require('./notification'));
 router.use('/api', require('./api/api'));
 router.use('/acs', require('./genieacs'));
+router.use('/vlan', require('./vlan'));
 
 router.get('/', function(req, res) {
   res.redirect('/devicelist');

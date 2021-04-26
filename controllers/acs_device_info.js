@@ -44,6 +44,18 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
+const convertSubnetMaskToRange = function(mask) {
+  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
+  if (mask === '255.255.255.0' || mask === 24) {
+    return {min: '33', max: '254'};
+  } else if (mask === '255.255.255.128' || mask === 25) {
+    return {min: '161', max: '254'};
+  } else if (mask === '255.255.255.192' || mask === 26) {
+    return {min: '225', max: '254'};
+  }
+  return {};
+};
+
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -51,6 +63,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case '11bg':
     case 'b':
     case 'g':
+    case 'bg':
     case 'b,g':
       return '11g';
     case '11bgn':
@@ -59,11 +72,15 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a':
     case 'n':
     case 'g,n':
+    case 'gn':
     case 'b,g,n':
+    case 'bgn':
+    case 'an':
     case 'a,n':
       return (is5ghz) ? '11na' : '11n';
     case '11ac':
     case 'ac':
+    case 'anac':
     case 'a,n,ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
@@ -119,6 +136,7 @@ const saveDeviceData = async function(mac, landevices) {
       registered.dhcp_name = lanDev.name;
       registered.ip = lanDev.ip;
       registered.conn_type = (lanDev.wifi) ? 1 : 0;
+      if (lanDev.wifi_freq) registered.wifi_freq = lanDev.wifi_freq;
       if (lanDev.rssi) registered.wifi_signal = lanDev.rssi;
       if (lanDev.snr) registered.wifi_snr = lanDev.snr;
       registered.last_seen = Date.now();
@@ -129,6 +147,7 @@ const saveDeviceData = async function(mac, landevices) {
         ip: lanDev.ip,
         conn_type: (lanDev.wifi) ? 1 : 0,
         wifi_signal: (lanDev.rssi) ? lanDev.rssi : undefined,
+        wifi_freq: (lanDev.wifi_freq) ? lanDev.wifi_freq : undefined,
         wifi_snr: (lanDev.snr) ? lanDev.snr : undefined,
         last_seen: Date.now(),
         first_seen: Date.now(),
@@ -498,6 +517,8 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         success = false;
       }
       if (success) {
+        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
+        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -510,35 +531,55 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Collect device ip
           let ipKey = fields.devices.host_ip.replace('*', i);
           device.ip = getFromNestedKey(data, ipKey+'._value');
+          // Collect layer 2 interface
+          let ifaceKey = fields.devices.host_layer2.replace('*', i);
+          let l2iface = getFromNestedKey(data, ifaceKey+'._value');
+          if (l2iface === iface2) {
+            device.wifi = true;
+            device.wifi_freq = 2.4;
+          } else if (l2iface === iface5) {
+            device.wifi = true;
+            device.wifi_freq = 5;
+          }
           // Push basic device information
           devices.push(device);
         });
+        // Change iface identifiers to use only numerical identifier
+        iface2 = iface2.split('.');
+        iface5 = iface5.split('.');
+        iface2 = iface2[iface2.length-1];
+        iface5 = iface5[iface5.length-1];
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
-        interfaces.forEach((interface)=>{
+        interfaces.forEach((iface)=>{
           // Find out how many devices are associated in this interface
-          let totalField = fields.devices.assoc_total.replace('*', interface);
+          let totalField = fields.devices.assoc_total.replace('*', iface);
           let assocCount = getFromNestedKey(data, totalField+'._value');
           for (let i = 1; i < assocCount+1; i++) {
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', interface).replace('*', i);
+            macKey = macKey.replace('*', iface).replace('*', i);
             let macVal = getFromNestedKey(data, macKey+'._value');
             let device = devices.find((d)=>d.mac===macVal);
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;
+            if (interface == iface2) {
+              device.wifi_freq = 2.4;
+            } else if (interface == iface5) {
+              device.wifi_freq = 5;
+            }
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', interface).replace('*', i);
+              rssiKey = rssiKey.replace('*', iface).replace('*', i);
               device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', interface).replace('*', i);
+              snrKey = snrKey.replace('*', iface).replace('*', i);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
           }
@@ -619,6 +660,7 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hasChanges = false;
+  let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
@@ -637,6 +679,25 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
         }
         hasChanges = true;
         return;
+      }
+      if ((key === 'router_ip' || key === 'subnet_mask') &&
+          !hasUpdatedDHCPRanges) {
+        // Special case for lan ip/mask since we need to update dhcp range
+        let dhcpRanges = convertSubnetMaskToRange(device.lan_netmask);
+        if (dhcpRanges.min && dhcpRanges.max) {
+          let subnet = device.lan_subnet;
+          let networkPrefix = subnet.split('.').slice(0, 3).join('.');
+          let minIP = networkPrefix + '.' + dhcpRanges.min;
+          let maxIP = networkPrefix + '.' + dhcpRanges.max;
+          task.parameterValues.push([
+            fields['lan']['lease_min_ip'], minIP, 'xsd:string',
+          ]);
+          task.parameterValues.push([
+            fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
+          ]);
+          hasUpdatedDHCPRanges = true; // Avoid editing this field twice
+          hasChanges = true;
+        }
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], splitID[1], changes[masterKey][key],

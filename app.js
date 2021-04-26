@@ -46,7 +46,7 @@ mongoose.connect(
 mongoose.set('useCreateIndex', true);
 
 // Release dir must exists
-if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR)) {
+if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) && process.env.FLM_IMG_RELEASE_DIR !== undefined) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
 }
 
@@ -136,6 +136,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         grantSiteSurvey: true,
         grantMeasureDevices: 2,
         grantOpmodeEdit: true,
+        grantVlan: 2,
+        grantVlanProfileEdit: true,
         grantWanBytesView: true,
         grantCsvExport: true,
         grantFirmwareBetaUpgrade: true,
