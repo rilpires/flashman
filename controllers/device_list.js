@@ -2402,8 +2402,8 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
-    let mac = device._id;
-    let acsID = device.acs_id;
+    let mac = matchedDevice._id;
+    let acsID = matchedDevice.acs_id;
     let splitID = acsID.split('-');
     let model = splitID.slice(1, splitID.length-1).join('-');
     let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
