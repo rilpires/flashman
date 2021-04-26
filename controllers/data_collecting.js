@@ -1,5 +1,3 @@
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const request = require('request-promise-native');
 const mqtt = require('../mqtts');
 const util = require('./handlers/util');
@@ -270,7 +268,7 @@ const executeCustomRequestChecks = function(req, extraHandlersArray) {
 // });
 
 dataCollectingController.updateDataCollectingParameters =
-async(function(req, res) {
+async function(req, res) {
   let checks = [checkIsActive, checkHaslatency, checkAlarmFqdn, checkPingFqdn,
    checkPingPackets];
   if (!handleErrors(checks)) return;
@@ -292,7 +290,7 @@ async(function(req, res) {
     }
     return res.status(200).end();
   });
-});
+};
 
 // // expects a request body being an object where keys are MACs and values are
 // // booleans.
