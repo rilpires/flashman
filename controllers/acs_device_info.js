@@ -513,6 +513,59 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
+const fetchPonSignalFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let query = {_id: acsID};
+  let projection = rxPowerFields + ',' + txPowerField;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let ponSignal = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, rxPowerField+'._value') &&
+          checkForNestedKey(data, txPowerField+'._value')) {
+        success = true;
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerField+'._value'),
+          txpower: getFromNestedKey(data, txPowerField+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();      
+        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
+        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+        ponSignal = appendPonSignal(
+          deviceEdit.pon_signal_measure,
+          ponSignal.rxpower,
+          ponSignal.txpower,
+        );
+        deviceEdit.pon_signal_measure = ponSignal;
+        await deviceEdit.save();
+      }
+      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
+      return ponSignal;
+    });
+  });
+  req.end();
+};
+
+// TODO: Move this function to external-genieacs?
 const fetchDevicesFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');

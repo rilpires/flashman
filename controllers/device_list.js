@@ -2402,13 +2402,30 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
+    let mac = device._id;
+    let acsID = device.acs_id;
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let rxPowerField = fields.wan.pon_rxpower;
+    let txPowerField = fields.wan.pon_txpower;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [rxPowerField, txPowerField],
+    };
+    
+    TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
+      if (result.task.name !== 'getParameterValues') return;
+      if (result.finished) fetchPonSignalFromGenie(mac, acsID);
+    });
+
     let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
     matchedDevice.sys_up_time = sysUpTime;
     if (util.isJSONObject(req.body.ponsignalmeasure)) {
       matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
     }
     matchedDevice.save();
-    sio.anlixSendPonSignalNotification(deviceId, matchedDevice);
+    sio.anlixSendPonSignalNotification(deviceId, {ponsignalmeasure: matchedDevice.pon_signal_measure});
     return res.status(200).json({processed: 1,
                                  success: true,
                                  ponsignalmeasure: matchedDevice.pon_signal_measure});
