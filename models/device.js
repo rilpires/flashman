@@ -91,6 +91,14 @@ let deviceSchema = new Schema({
       'none', // never asked
     ]},
   }],
+  port_forward_rules: [{
+    ip: String,
+    ports_badges: [String],
+    ports_mappings: [{
+      external_port: {type: Number, required: true, min: 1, max: 65535, unique: true},
+      internal_port: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    }],
+  }],
   ap_survey: [{
     mac: String,
     ssid: String,
