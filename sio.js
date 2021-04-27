@@ -297,6 +297,17 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   return found;
 };
 
+sio.anlixWaitForPonSignalNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+  if (!macaddr) {
+    return false;
+  }
+  registerNotification(session, SIO_NOTIFICATION_PON_SIGNAL, macaddr);
+  return true;
+};
+
 sio.anlixSendPonSignalNotification = function(macaddr, ponSignalMeasure) {
   if (!macaddr) {
     return false;
