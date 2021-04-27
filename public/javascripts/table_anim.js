@@ -1168,7 +1168,7 @@ $(document).ready(function() {
           let portForwardOnuAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-onu-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
-          .replace('$REPLACE_TEXT', 'Abertura de portas (ONU)');
+          .replace('$REPLACE_TEXT', 'Abertura de portas');
 
           let pingTestAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-ping-test-modal')
