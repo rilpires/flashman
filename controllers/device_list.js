@@ -2420,29 +2420,21 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
         fetchPonSignalFromGenie(mac, acsID);
-        let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
-        matchedDevice.sys_up_time = sysUpTime;
-        if (util.isJSONObject(req.body.ponsignalmeasure)) {
-          matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
-        }
-        matchedDevice.save();
-        sio.anlixSendPonSignalNotification(
-          deviceId,
-          {ponsignalmeasure: matchedDevice.pon_signal_measure},
-        );
-        return res.status(200).json({
-          processed: 1,
-          success: true,
-          ponsignalmeasure: matchedDevice.pon_signal_measure,
-        });
-      } else {
-        return res.status(500).json({
-          processed: 0,
-          success: false,
-          message: "Algo deu errado na hora de rodar task!",
-        });
       }
     });
+
+    let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
+    matchedDevice.sys_up_time = sysUpTime;
+    if (util.isJSONObject(req.body.ponsignalmeasure)) {
+      matchedDevice.pon_signal_measure = req.body.ponsignalmeasure;
+    }
+    matchedDevice.save();
+    sio.anlixWaitForPonSignal(req.sessionID, mac);
+    sio.anlixSendPonSignalNotification(
+      deviceId,
+      {ponsignalmeasure: matchedDevice.pon_signal_measure},
+    );
+    return res.status(200).json({success: true});
   });
 }
 

@@ -16,7 +16,6 @@ $(document).ready(function() {
             $('#pon-signal-placeholder-progress').show();
             $('#pon-signal-placeholder-none').hide();
           }
-          createPonSignalTable(res.ponsignalmeasure, deviceId)
         } else {
           $('#btn-pon-signal-refresh').prop('disabled', false);
           if ($('#pon-signal-graphs').is(':hidden')) {
