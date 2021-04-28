@@ -40,6 +40,7 @@ $(document).ready(function() {
   socket.on('PONSIGNAL', function(macaddr, data) {
     console.log(data);
     if (data.ponSignalMeasure && macaddr === $('#pon-signal-hlabel').text()) {
+      let ponSignalMeasure = data.ponSignalMeasure;
       $('#pon-signal-graph').empty();
       let txMeasure = [];
       let rxMeasure = Object.keys(ponSignalMeasure).map(function(time) {
