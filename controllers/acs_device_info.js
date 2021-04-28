@@ -520,7 +520,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let query = {_id: acsID};
-  let projection = rxPowerFields + ',' + txPowerField;
+  let projection = rxPowerField + ',' + txPowerField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
