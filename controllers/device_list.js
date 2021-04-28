@@ -2419,7 +2419,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     TasksAPI.addTask(acsID, task, true, 100000, [50000, 1000000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
-        fetchPonSignalFromGenie(mac, acsID);
+        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
       }
     });
 
@@ -2430,7 +2430,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     matchedDevice.save();
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-    let ponSignal = fetchPonSignalFromGenie(mac, acsID);
+    let ponSignal = acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
     sio.anlixSendPonSignalNotification(
       deviceId,
       {ponsignalmeasure: matchedDevice.pon_signal_measure},
