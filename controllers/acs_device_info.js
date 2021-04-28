@@ -513,7 +513,7 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
-acsDeviceInfo.fetchPonSignalFromGenie = function(mac, acsID) {
+acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
