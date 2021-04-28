@@ -38,50 +38,49 @@ $(document).ready(function() {
   };
 
   // Important: include and initialize socket.io first using socket var
-  /*
   socket.on('PONSIGNAL', function(macaddr, data) {
     console.log(data);
-    if (data.ponsignalmeasure && macaddr === $('#pon-signal-hlabel').text()) {
+    if (ponSignalMeasure && macaddr === $('#pon-signal-hlabel').text()) {
       $('#pon-signal-graph').empty();
-      let rxMeasure = [];
-      let txMeasure = Object.keys(data.ponsignalmeasure).map(function(time) {
+      let txMeasure = [];
+      let rxMeasure = Object.keys(ponSignalMeasure).map(function(time) {
         let epochInUs = Number(time) * 1000;
         // Also create upBytes array
-        rxMeasure.push([epochInUs, data.ponsignalmeasure[time][1]]);
+        txMeasure.push([epochInUs, ponSignalMeasure[time][1]]);
         // Downstream
-        return [epochInUs, data.ponsignalmeasure[time][0]];
+        return [epochInUs, ponSignalMeasure[time][0]];
       });
       let rxOptions = {
-        chart: {id: 'downChart', type: 'line', toolbar: false,
+        chart: {id: 'rxSignalChart', type: 'line', toolbar: false,
                 animations: {enabled: false}},
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette4'},
-        title: {text: 'Download', align: 'center'},
-        series: [{name: 'Download', data: rxMeasure}],
+        title: {text: 'RX', align: 'center'},
+        series: [{name: 'RX', data: rxMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       let txOptions = {
-        chart: {id: 'upChart', type: 'line', toolbar: false,
+        chart: {id: 'txSignalChart', type: 'line', toolbar: false,
                 animations: {enabled: false}},
         tooltip: {x: {format: 'HH:mm'}},
         theme: {palette: 'palette5'},
-        title: {text: 'Upload', align: 'center'},
-        series: [{name: 'Upload', data: txMeasure}],
+        title: {text: 'TX', align: 'center'},
+        series: [{name: 'TX', data: txMeasure}],
         xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
       };
       if (ponSignalRXId === '') {
-        let chartDownObj = new ApexCharts(
-          document.querySelector('#pon-signal-down-graph'),
+        let chartRXObj = new ApexCharts(
+          document.querySelector('#pon-signal-rxpower-graph'),
           rxOptions,
         );
         ponSignalRXId = rxOptions.chart.id;
-        chartDownObj.render();
+        chartRXObj.render();
       } else {
         ApexCharts.exec(ponSignalRXId, 'updateOptions', rxOptions, false, true);
       }
       if (ponSignalTXId === '') {
         let chartTXObj = new ApexCharts(
-          document.querySelector('#pon-signal-up-graph'),
+          document.querySelector('#pon-signal-txpower-graph'),
           txOptions,
         );
         ponSignalTXId = txOptions.chart.id;
@@ -98,7 +97,6 @@ $(document).ready(function() {
       $('#pon-signal-graphs').show();
     }
   });
-  */
 
   const createPonSignalTable = function(ponSignalMeasure, macaddr) {
     if (ponSignalMeasure && macaddr === $('#pon-signal-hlabel').text()) {
