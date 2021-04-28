@@ -2399,10 +2399,10 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
 
   DeviceModel.findById(deviceId, function(err, matchedDevice) {
     if (err) {
-      return res.status(400).json({processed: 0});
+      return res.status(400).json({processed: 0, success: false});
     }
     if (!matchedDevice) {
-      return res.status(404).json({processed: 0});
+      return res.status(404).json({processed: 0, success: false});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
