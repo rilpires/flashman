@@ -299,9 +299,13 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
 
 sio.anlixWaitForPonSignalNotification = function(session, macaddr) {
   if (!session) {
+    debug('ERROR: SIO: ' +
+                'Try to add ponsignal notification with an invalid session!');
     return false;
   }
   if (!macaddr) {
+    debug('ERROR: SIO: Try to add ponsignal ' +
+                'notification with an invalid mac address!');
     return false;
   }
   registerNotification(session, SIO_NOTIFICATION_PON_SIGNAL, macaddr);
