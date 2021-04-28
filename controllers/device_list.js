@@ -2416,7 +2416,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       parameterNames: [rxPowerField, txPowerField],
     };
     
-    TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
+    TasksAPI.addTask(acsID, task, true, 100000, [50000, 1000000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
         fetchPonSignalFromGenie(mac, acsID);
