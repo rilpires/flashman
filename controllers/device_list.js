@@ -2430,10 +2430,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     matchedDevice.save();
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-    sio.anlixSendPonSignalNotification(
-      deviceId,
-      {ponsignalmeasure: matchedDevice.pon_signal_measure},
-    );
+    fetchPonSignalFromGenie(mac, acsID);
     return res.status(200).json({success: true});
   });
 }
