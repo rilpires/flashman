@@ -318,6 +318,10 @@ sio.anlixSendPonSignalNotification = function(macaddr, ponSignalMeasure) {
   }
   let found = emitNotification(SIO_NOTIFICATION_PON_SIGNAL,
                                macaddr, ponSignalMeasure, macaddr);
+  if (!found) {
+    debug('SIO: NO Session found for ' +
+                macaddr + '! Discarding message...');
+  }
   return found;
 }
 
