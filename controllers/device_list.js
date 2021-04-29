@@ -2440,6 +2440,10 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
         acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
+        sio.anlixSendPonSignalNotification(
+          deviceId,
+          {ponsignalmeasure: matchedDevice.pon_signal_measure},
+        );
       }
     }).catch((err) => {
       console.log(err);
