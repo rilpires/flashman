@@ -2402,7 +2402,10 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       return res.status(400).json({processed: 0, success: false});
     }
     if (!matchedDevice) {
-      return res.status(404).json({processed: 0, success: false});
+      return res.status(404).json({success: false, message: "ONU não encontrada"});
+    }
+    if (!matchedDevice.use_tr69) {
+      return res.status(404).json({success: false, message: "ONU não encontrada"});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
