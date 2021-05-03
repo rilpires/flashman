@@ -1091,6 +1091,10 @@ deviceInfoController.getPortForward = function(req, res) {
           'forward_index': matchedDevice.forward_index,
           'forward_rules': outData,
         });
+      } else {
+        console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+          'failed: No index found.');
+        return res.status(404).json({success: false});
       }
     });
   } else {
