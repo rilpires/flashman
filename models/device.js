@@ -93,10 +93,11 @@ let deviceSchema = new Schema({
   }],
   port_forward_rules: [{
     ip: String,
-    ports_badges: [String],
     ports_mappings: [{
-      external_port: {type: Number, required: true, min: 1, max: 65535, unique: true},
-      internal_port: {type: Number, required: true, min: 1, max: 65535, unique: true},
+      external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
+      external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+      internal_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
+      internal_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
     }],
   }],
   ap_survey: [{
