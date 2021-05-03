@@ -2419,15 +2419,13 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       parameterNames: [rxPowerField, txPowerField],
     };
 
+    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
+
     res.status(200).json({success: true});
     TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
-        let ponSignal = acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
-        sio.anlixSendPonSignalNotification(
-          deviceId,
-          {ponsignalmeasure: matchedDevice.pon_signal_measure},
-        );
+        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
       }
     });
   });
