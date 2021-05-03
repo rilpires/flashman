@@ -97,65 +97,6 @@ $(document).ready(function() {
     }
   });
 
-  const createPonSignalTable = function(ponSignalMeasure, macaddr) {
-    if (ponSignalMeasure && macaddr === $('#pon-signal-hlabel').text()) {
-      $('#pon-signal-graph').empty();
-      let txMeasure = [];
-      let rxMeasure = Object.keys(ponSignalMeasure).map(function(time) {
-        let epochInUs = Number(time) * 1000;
-        // Also create upBytes array
-        txMeasure.push([epochInUs, ponSignalMeasure[time][1]]);
-        // Downstream
-        return [epochInUs, ponSignalMeasure[time][0]];
-      });
-      let rxOptions = {
-        chart: {id: 'rxSignalChart', type: 'line', toolbar: false,
-                animations: {enabled: false}},
-        tooltip: {x: {format: 'HH:mm'}},
-        theme: {palette: 'palette4'},
-        title: {text: 'RX', align: 'center'},
-        series: [{name: 'RX', data: rxMeasure}],
-        xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
-      };
-      let txOptions = {
-        chart: {id: 'txSignalChart', type: 'line', toolbar: false,
-                animations: {enabled: false}},
-        tooltip: {x: {format: 'HH:mm'}},
-        theme: {palette: 'palette5'},
-        title: {text: 'TX', align: 'center'},
-        series: [{name: 'TX', data: txMeasure}],
-        xaxis: {type: 'datetime', labels: {datetimeUTC: false}},
-      };
-      if (ponSignalRXId === '') {
-        let chartRXObj = new ApexCharts(
-          document.querySelector('#pon-signal-rxpower-graph'),
-          rxOptions,
-        );
-        ponSignalRXId = rxOptions.chart.id;
-        chartRXObj.render();
-      } else {
-        ApexCharts.exec(ponSignalRXId, 'updateOptions', rxOptions, false, true);
-      }
-      if (ponSignalTXId === '') {
-        let chartTXObj = new ApexCharts(
-          document.querySelector('#pon-signal-txpower-graph'),
-          txOptions,
-        );
-        ponSignalTXId = txOptions.chart.id;
-        chartTXObj.render();
-      } else {
-        ApexCharts.exec(ponSignalTXId, 'updateOptions', txOptions, false, true);
-      }
-      // Adjust modal content
-      $('#btn-pon-signal-refresh').prop('disabled', false);
-      $('#btn-pon-signal-refresh > i').removeClass('animated rotateOut infinite');
-      $('#pon-signal-placeholder-ready').hide();
-      $('#pon-signal-placeholder-progress').hide();
-      $('#pon-signal-placeholder-none').hide();
-      $('#pon-signal-graphs').show();
-    }
-  }
-
   $(document).on('click', '#btn-pon-signal-refresh', function(event) {
     let id = $('#pon-signal-hlabel').text();
     refreshPonSignal(id);
