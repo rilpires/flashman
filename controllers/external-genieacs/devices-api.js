@@ -222,6 +222,8 @@ const getNokiaFields = function() {
   fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
   fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = fields.wan.pon_txpower.replace(/WANGponInterfaceConfig/g, 'X_CMCC_GponInterfaceConfig');
   return fields;
 };
 
