@@ -211,3 +211,16 @@
 
   color: $primary-color-dark;
 }
+
+.dropdown-menu.dropdown-menu-inline.show {
+  display: flex;
+  flex-direction: row;
+}
+
+.md-selectfield.md-selectfield-vlan {
+  padding: 0;
+}
+
+.md-select.md-select-vlan {
+  padding : 0.6rem 1.2rem 0.4rem 0rem;
+}

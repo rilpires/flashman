@@ -1,4 +1,3 @@
-
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
@@ -9,9 +8,8 @@ const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
 const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
+const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const util = require('./handlers/util');
 
 let deviceInfoController = {};
@@ -684,6 +682,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
+
+          let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+          let fetchedVlans = containerVlans.vlans;
+          let vlanHash = containerVlans.hash;
+
           let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
@@ -724,6 +727,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'bridge_mode_ip': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_ip),
             'bridge_mode_gateway': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_gateway),
             'bridge_mode_dns': util.returnObjOrEmptyStr(matchedDevice.bridge_mode_dns),
+            'vlan_index': vlanHash,
+            'vlan': fetchedVlans,
             'mesh_mode': matchedDevice.mesh_mode,
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,
@@ -1086,6 +1091,10 @@ deviceInfoController.getPortForward = function(req, res) {
           'forward_index': matchedDevice.forward_index,
           'forward_rules': outData,
         });
+      } else {
+        console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+          'failed: No index found.');
+        return res.status(404).json({success: false});
       }
     });
   } else {
@@ -1752,7 +1761,7 @@ deviceInfoController.receiveWpsResult = function(req, res) {
   });
 };
 
-deviceInfoController.getZabbixConfig = async(function(req, res) {
+deviceInfoController.getZabbixConfig = async function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
@@ -1766,14 +1775,14 @@ deviceInfoController.getZabbixConfig = async(function(req, res) {
 
   try {
     // Check if zabbix fqdn config is set
-    let config = await(Config.findOne({is_default: true}));
+    let config = await Config.findOne({is_default: true});
     if (!config) throw new {message: 'Config not found'};
     if (!config.measure_configs.zabbix_fqdn) {
       throw new {message: 'Zabbix FQDN not configured'};
     }
 
     // Check if device has a zabbix psk configured
-    let device = await(DeviceModel.findById(id));
+    let device = await DeviceModel.findById(id);
     if (!device) throw new {message: 'Device ' + id + ' not found'};
     if (!device.measure_config.measure_psk) {
       throw new {message: 'Device ' + id + ' has no psk configured'};
@@ -1790,6 +1799,6 @@ deviceInfoController.getZabbixConfig = async(function(req, res) {
     console.log(err);
     return res.status(500).json({success: 0});
   }
-});
+};
 
 module.exports = deviceInfoController;

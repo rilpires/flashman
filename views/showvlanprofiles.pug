@@ -1,0 +1,67 @@
+extends layout
+
+block stylesheets
+  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
+
+block content
+  .row.justify-content-center
+    .col-12.col-lg-8.mt-5
+      .card
+        h4.card-header.teal.lighten-2.white-text(id="card-header",
+                                                  data-toggle="collapse",
+                                                  data-target="#new-vlan-profile-card",
+                                                  style="cursor: pointer;")
+          .row
+            .col-1
+              .fas.fa-plus
+            .col-10.text-center
+              span.card-title Adicionar novo perfil de VLAN
+        .card-body.collapse.out(id="new-vlan-profile-card")
+          form.needs-validation(
+            id="new-vlan-profile-form",
+            method='post',
+            action='/vlan/profile/new',
+            novalidate
+          )
+            .md-form.input-entry
+              label(for="new_vlan-id") VLAN ID
+              input.form-control(type="number",
+                                 id="new_vlan-id",
+                                 name="id",
+                                 oninput="checkVlanId(this)", 
+                                 required)
+              .invalid-feedback O VLAN ID deve ser distinto, não pode ser menor que 3 ou maior que 4094
+            .md-form.input-entry
+              label(for="new_vlan-profile-name") Nome
+              input.form-control(type="text",
+                                 id="new_vlan-profile-name",
+                                 name="name",
+                                 oninput="checkVlanName(this)"
+                                 required)
+              .invalid-feedback O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes
+            .col.text-center.mt-3
+              .form-buttons
+                button.btn.btn-primary(type="submit")
+                  .fas.fa-check.fa-lg
+                  span &nbsp Adicionar
+  .card.mt-4.mb-4
+    h4.card-header.teal.lighten-2.white-text
+      .fas.fa-project-diagram.fa-lg
+      span &nbsp Perfis de VLANs
+    .card-body
+      h3#loading-vlan-profile.text-center
+        i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
+      #vlan-profile-table-wrapper.table-responsive(style="display: none;")
+        table#vlan-profile-table.table
+          thead
+            tr
+              th.text-center
+                input.checkbox(type="checkbox" id="checkall")
+              th.text-center VLAN ID
+              th.text-center Nome
+              th.text-center
+
+block scripts
+  script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
+  script(src='/scripts/datatables.net-bs4/js/dataTables.bootstrap4.min.js')
+  script(src='/javascripts/showvlanprofiles_actions.js')

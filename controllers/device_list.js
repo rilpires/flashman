@@ -22,8 +22,6 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -524,7 +522,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
-    } else if (tag === 'onu') { // ONU routers.
+    } else if (tag === 'tr069') { // ONU routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
@@ -715,6 +713,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
           device.model,
         );
 
+        // amount ports a device have
+        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model); 
+
         // Fill default value if wi-fi state does not exist
         if (device.wifi_state === undefined) {
           device.wifi_state = 1;
@@ -796,15 +797,15 @@ deviceListController.delDeviceReg = function(req, res) {
   });
 };
 
-const downloadStockFirmware = function(model) {
-  return new Promise(async((resolve, reject)=>{
+const downloadStockFirmware = async function(model) {
+  return new Promise(async (resolve, reject) => {
     let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
     try {
       // Download md5 hash
-      let targetMd5 = await(requestPromise({
+      let targetMd5 = await requestPromise({
         url: remoteFileUrl + '.md5',
         method: 'GET',
-      }));
+      });
       let currentMd5 = '';
       let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
       // Check for local md5 hash
@@ -847,11 +848,11 @@ const downloadStockFirmware = function(model) {
       }
       return resolve(false);
     }
-  }));
+  });
 };
 
 deviceListController.factoryResetDevice = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), async((err, device)=>{
+  DeviceModel.findById(req.params.id.toUpperCase(), async (err, device) => {
     if (err || !device) {
       return res.status(500).json({
         success: false,
@@ -859,7 +860,7 @@ deviceListController.factoryResetDevice = function(req, res) {
       });
     }
     const model = device.model.replace('N/', '');
-    if (!(await(downloadStockFirmware(model)))) {
+    if (!(await downloadStockFirmware(model))) {
       return res.status(500).json({
         success: false,
         msg: 'Erro baixando a firmware de fábrica',
@@ -868,13 +869,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await(device.save());
+    await device.save();
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
     // Start ack timeout
     deviceHandlers.timeoutUpdateAck(device._id);
-  }));
+  });
 };
 
 //
@@ -1602,6 +1603,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeEnabled !== matchedDevice.bridge_mode_enabled &&
                 !matchedDevice.use_tr069) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // in the case of changing from bridge to router : clear vlan configuration
+                if(matchedDevice.bridge_mode_enabled == true && bridgeEnabled == false) {
+                  matchedDevice.vlan = [];
+                }
+
                 matchedDevice.bridge_mode_enabled = bridgeEnabled;
                 updateParameters = true;
               } else {
