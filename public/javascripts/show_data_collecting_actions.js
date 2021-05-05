@@ -65,10 +65,10 @@ let datalistFqdn = (e) => {
 };
 let isFqdnValid = (fqdn) => domainNameRegex.test(fqdn) || ipv4Regex.test(fqdn) || testIPv6(fqdn);
 
-let hideModalShowAllert = function (modalElement, message, type, shouldReload=false) {
-  modalElement.modal('hide').on('hidden.bs.modal', function() {
+let hideModalShowAllert = function (modalJQueryElement, message, type, shouldReload=false) {
+  modalJQueryElement.modal('hide').on('hidden.bs.modal', function() {
     displayAlertMsg({message: message, type: type});
-    modalElement.off('hidden.bs.modal');
+    modalJQueryElement.off('hidden.bs.modal');
     if (shouldReload) setTimeout(() => window.location.reload(), 1000);
   });
 }
@@ -87,7 +87,7 @@ let sendDataCollectingParameters = function(data, form, successMessage, shouldRe
   .catch((body) => hideModalShowAllert(modalElement, body.message, 'danger'));
 }
 
-let validateServiceParameters = function (event) {
+let submitServiceParameters = function (event) {
   let is_active = document.getElementById('data_collecting_is_active');
   let alarm_fqdn = document.getElementById('data_collecting_alarm_fqdn');
   let ping_fqdn = document.getElementById('data_collecting_ping_fqdn');
@@ -113,7 +113,7 @@ let validateServiceParameters = function (event) {
   return false;
 };
 
-let validateUpdateManyParameters = function (event) {
+let submitUpdateManyParameters = function (event) {
   let is_active = document.getElementById('data_collecting_mass_update_is_active');
   let has_latency = document.getElementById('data_collecting_mass_update_has_latency');
   let ping_fqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
@@ -170,9 +170,10 @@ let lastDevicesSearchInputQuery = '';
 let totalDevicesFromSearch = 0;
 
 $(document).ready(function() {
-  [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel))
-  document.getElementById("data_collecting_serviceForm").addEventListener('submit', validateServiceParameters);
-  document.getElementById("data_collecting_updateManyForm").addEventListener('submit', validateUpdateManyParameters);
+  document.getElementById('btn-config-data_collecting').onclick = (event) => $('#data_collecting').modal('show');
+  [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel));
+  document.getElementById("data_collecting_serviceForm").onsubmit = submitServiceParameters;
+  document.getElementById("data_collecting_updateManyForm").onsubmit = submitUpdateManyParameters;
   document.getElementById("devices-search-form").addEventListener('submit', () => {
     // when a search is submitted, we save the value that was in the search input.
     lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
