@@ -351,10 +351,6 @@ $(document).ready(function() {
     $('#upgrade-scheduler').modal('show');
   });
 
-  $(document).on('click', '#btn-config-data_collecting', function(event) {
-    $('#data_collecting').modal('show');
-  });
-
   // Refresh table content
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
@@ -1205,6 +1201,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
 
+          let data_collectingAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
+          .replace('$REPLACE_ICON', 'fa-chart-bar')
+          .replace('$REPLACE_TEXT', 'Coleta de dados');
+
           let idxMenu = 0;
           let sideMenu = [];
           sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span></a>';
@@ -1244,6 +1245,10 @@ $(document).ready(function() {
           }
           if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
             sideMenu[idxMenu] += wanBytesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (!isTR069) {
+            sideMenu[idxMenu] += data_collectingAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
