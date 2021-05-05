@@ -79,6 +79,7 @@ const createRegistry = async function(req, res) {
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
   let vlan = util.returnObjOrEmptyStr(req.body.vlan);
+  console.log('vlan received: '+vlan);
   let vlanFiltered;
   let vlanDidChange = false;
   if (vlan !== '') {
@@ -94,10 +95,12 @@ const createRegistry = async function(req, res) {
       return res.status(500).end();
     }
   }
+  console.log('vlan filtered: '+vlanFiltered);
   let vlanParsed;
-  if (vlanDidChange) {
+  if (vlanFiltered !== undefined) {
     vlanParsed = vlanFiltered.map((el) => JSON.parse(el));
   }
+  console.log('vlan parsed: '+vlanParsed);
 
   let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
@@ -238,7 +241,7 @@ const createRegistry = async function(req, res) {
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
       };
-      if (vlanDidChange) {
+      if (vlanParsed !== undefined) {
         deviceObj.vlan = vlanParsed;
       }
       let newDeviceModel = new DeviceModel(deviceObj);
@@ -259,6 +262,8 @@ const createRegistry = async function(req, res) {
           if (vlanDidChange) {
             let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
             let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
+            console.log('vlan to device: '+vlanToDevice);
+            console.log('vlan index: '+vlanHash);
             response.vlan = vlanToDevice;
             response.vlan_index = vlanHash;
           }
