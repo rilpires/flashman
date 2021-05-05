@@ -60,7 +60,7 @@ const testIPv6 = function (ipv6) {
     }
     let remaining = maxparts-notEmptyCounter;
     let substitute = ipv6[0] === ':' ? '' : ':';
-    for (let i = 0; i < remaining; i++) substitute+='0:';
+    for (let i = 0; i < remaining; i++) substitute += '0:';
     if (ipv6[ipv6.length-1] === ':') substitute = substitute.slice(0, -1);
     ipv6 = ipv6.replace('::', substitute);
   }

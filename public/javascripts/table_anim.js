@@ -999,6 +999,9 @@ $(document).ready(function() {
           return false;
         }
 
+        // fill amount of devices from result.
+        fillTotalDevicesFromSearch(res.status.totalnum);
+
         // Fill multiple update form
         updateSearchResultsScheduler(res);
         let finalHtml = '';
