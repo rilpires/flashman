@@ -51,6 +51,10 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
               a.dropdown-item(href="/user/certificates")
                 i.fas.fa-file-alt.fa-lg.mr-2
                 | Ver Certificações
+            if (superuser || role.grantVlanProfileEdit)
+              a.dropdown-item(href="/vlan/profile")
+                i.fas.fa-project-diagram.fa-lg.mr-2
+                | Perfis de VLANs
             if (superuser || role.grantFlashmanManage)
               a.dropdown-item(
                 data-toggle="modal",

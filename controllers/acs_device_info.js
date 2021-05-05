@@ -196,8 +196,8 @@ const createRegistry = async function(req) {
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
-    installed_release: '0000-ONU',
-    release: '0000-ONU',
+    installed_release: data.common.version,
+    release: data.common.version,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
@@ -367,6 +367,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       data.wan.recv_bytes,
       data.wan.sent_bytes,
     );
+  }
+  if (data.common.version && data.common.version !== device.installed_release) {
+    device.installed_release = data.common.version;
   }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
@@ -573,7 +576,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.substring(0, assocField.indexOf('*')-1);
+  assocField = assocField.split('.').slice(0, -2).join('.');
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -643,34 +646,37 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
-        interfaces.forEach((interface)=>{
+        if (fields.devices.associated_5) {
+          interfaces.push('5');
+        }
+        interfaces.forEach((iface)=>{
           // Find out how many devices are associated in this interface
-          let totalField = fields.devices.assoc_total.replace('*', interface);
+          let totalField = fields.devices.assoc_total.replace('*', iface);
           let assocCount = getFromNestedKey(data, totalField+'._value');
           for (let i = 1; i < assocCount+1; i++) {
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', interface).replace('*', i);
+            macKey = macKey.replace('*', iface).replace('*', i);
             let macVal = getFromNestedKey(data, macKey+'._value');
             let device = devices.find((d)=>d.mac===macVal);
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;
-            if (interface == iface2) {
+            if (iface == iface2) {
               device.wifi_freq = 2.4;
-            } else if (interface == iface5) {
+            } else if (iface == iface5) {
               device.wifi_freq = 5;
             }
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', interface).replace('*', i);
+              rssiKey = rssiKey.replace('*', iface).replace('*', i);
               device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', interface).replace('*', i);
+              snrKey = snrKey.replace('*', iface).replace('*', i);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
           }
@@ -736,6 +742,9 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
     name: 'getParameterValues',
     parameterNames: [hostsField, assocField, totalAssocField],
   };
+  if (fields.devices.associated_5) {
+    task.parameterNames.push(fields.devices.associated_5);
+  }
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchDevicesFromGenie(mac, acsID);

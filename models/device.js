@@ -204,6 +204,11 @@ let deviceSchema = new Schema({
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
+  vlan: [{
+    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    // restricted to this range of value by the definition of 802.1q protocol
+    vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
+  }],
 });
 
 deviceSchema.set('autoIndex', false);

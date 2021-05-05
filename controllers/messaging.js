@@ -1,9 +1,6 @@
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
-
 const request = require('request-promise-native');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 
 let messagingController = {};
 
@@ -14,22 +11,22 @@ const randomBackoff = function(factor, offset) {
   return Math.floor(interval);
 };
 
-const getMessagingConfig = async(function() {
-  let config = await(Config.findOne({is_default: true}));
+const getMessagingConfig = async function() {
+  let config = await Config.findOne({is_default: true});
   if (!config || !config.messaging_configs.functions_fqdn ||
       !config.messaging_configs.secret_token) {
     return null;
   }
   return config;
-});
+};
 
 const getTokensFromDevice = function(device) {
   // Filter devices that have a FCM uid registered
   return device.lan_devices.filter((d)=>d.fcm_uid).map((d)=>d.fcm_uid);
 };
 
-const sendMessage = async(function(device, funcName, strName, data, retry=0) {
-  let config = await(getMessagingConfig());
+const sendMessage = async function(device, funcName, strName, data, retry=0) {
+  let config = await getMessagingConfig();
   if (!config) {
     console.log('No valid config to send message');
     return;
@@ -49,19 +46,19 @@ const sendMessage = async(function(device, funcName, strName, data, retry=0) {
       token: tokens,
       data: data,
     }
-  }).then((resp)=>{
+  }).then( (resp) => {
     console.log('Sent ' + strName + ' message to device ID ' + device._id);
-  }, (err)=>{
+  }, async (err) => {
     // Check for quota exceeded
     if (err.statusCode === 429 && retry <= 3) {
       // Retry with exponential backoff
       let interval = randomBackoff(retry+1, (retry*2)+1);
-      await(new Promise((resolve)=>setTimeout(resolve, interval)));
+      await new Promise((resolve)=>setTimeout(resolve, interval));
       return sendMessage(device, funcName, strName, data, retry+1);
     }
     console.log('Error sending ' + strName + ' message');
   });
-});
+};
 
 messagingController.sendUpdateMessage = function(device) {
   sendMessage(device, 'sendUpdateMsg', 'update', null);
