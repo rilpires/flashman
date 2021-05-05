@@ -119,11 +119,13 @@ $(document).ready(function() {
     return false;
   });
 
+  let lastDevicesSearchInputQuery = '';
   let stepper = $('.bs-stepper');
   if (stepper.length > 0) {
     stepper = new Stepper(stepper[0], {animation: true});
     resetStepperData(stepper);
     $(document).on('submit', '#devices-search-form', function(event) {
+      lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
       resetStepperData(stepper);
       stepper.to(1);
       return false;
@@ -167,7 +169,7 @@ $(document).ready(function() {
       let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = $('#devices-search-input').val();
+      let filterList = lastDevicesSearchInputQuery;//$('#devices-search-input').val();
       let useAll = (useCsv) ? false :
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       $.ajax({
@@ -309,7 +311,7 @@ $(document).ready(function() {
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = $('#devices-search-input').val();
+      let filterList = lastDevicesSearchInputQuery;//$('#devices-search-input').val();
       let release = $('#selected-release').html();
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
