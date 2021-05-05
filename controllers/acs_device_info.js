@@ -170,8 +170,8 @@ const createRegistry = async function(req) {
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
-    installed_release: '0000-ONU',
-    release: '0000-ONU',
+    installed_release: data.common.version,
+    release: data.common.version,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
@@ -342,6 +342,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       data.wan.sent_bytes,
     );
   }
+  if (data.common.version && data.common.version !== device.installed_release) {
+    device.installed_release = data.common.version;
+  }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
   if (data.common.uptime) device.sys_up_time = data.common.uptime;
@@ -482,7 +485,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.substring(0, assocField.indexOf('*')-1);
+  assocField = assocField.split('.').slice(0, -2).join('.');
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -552,6 +555,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Filter wlan interfaces
         let interfaces = Object.keys(getFromNestedKey(data, assocField));
         interfaces = interfaces.filter((i)=>i[0]!='_');
+        if (fields.devices.associated_5) {
+          interfaces.push('5');
+        }
         interfaces.forEach((iface)=>{
           // Find out how many devices are associated in this interface
           let totalField = fields.devices.assoc_total.replace('*', iface);
@@ -565,9 +571,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;
-            if (interface == iface2) {
+            if (iface == iface2) {
               device.wifi_freq = 2.4;
-            } else if (interface == iface5) {
+            } else if (iface == iface5) {
               device.wifi_freq = 5;
             }
             // Collect rssi, if available
@@ -645,6 +651,9 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
     name: 'getParameterValues',
     parameterNames: [hostsField, assocField, totalAssocField],
   };
+  if (fields.devices.associated_5) {
+    task.parameterNames.push(fields.devices.associated_5);
+  }
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchDevicesFromGenie(mac, acsID);
