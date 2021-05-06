@@ -381,8 +381,9 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
   let is_a_vanilla_vlan_config = true;
 
-  console.log('received vlanObj pure: '+vlanObj);
-  console.log('received vlanObj parsed: '+JSON.parse(vlanObj));
+  if (vlanObj === undefined) {
+    vlanObj = '';
+  }
   vlanObj = JSON.parse(vlanObj);
 
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
@@ -452,8 +453,6 @@ vlanController.retrieveVlansToDevice = function(device) {
     lack the sync by hash
   */
 
-  console.log('vlan pure: '+ device.vlan);
-  console.log('vlan stringified: '+ JSON.stringify(device.vlan));
   let digestedVlans = vlanController.convertFlashmanVlan(device.model, JSON.stringify(device.vlan));
   let hashVlan = '';
 
