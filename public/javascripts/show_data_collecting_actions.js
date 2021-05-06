@@ -55,14 +55,16 @@ let checkFqdn = (e) => {
 };
 let datalistFqdn = (e) => {
   if (e.target.value === "Apagar" || e.target.value === "Não alterar") return true;
-  if (isFqdnValid(e.target.value)) {
-    e.target.nextElementSibling.style.display = 'none';
-    e.target.setCustomValidity('');
-  } else {
-    e.target.nextElementSibling.style.display = 'block';
-    e.target.setCustomValidity('Insira um endereço válido');
-  };
+  checkFqdn(e);
+  // if (isFqdnValid(e.target.value)) {
+  //   e.target.nextElementSibling.style.display = 'none';
+  //   e.target.setCustomValidity('');
+  // } else {
+  //   e.target.nextElementSibling.style.display = 'block';
+  //   e.target.setCustomValidity('Insira um endereço válido');
+  // };
 };
+let deviceFQDN = (e) => e.target.value === '' ? true : checkFqdn(e) 
 let isFqdnValid = (fqdn) => domainNameRegex.test(fqdn) || ipv4Regex.test(fqdn) || testIPv6(fqdn);
 
 let hideModalShowAllert = function (modalJQueryElement, message, type, shouldReload=false) {
@@ -73,104 +75,218 @@ let hideModalShowAllert = function (modalJQueryElement, message, type, shouldRel
   });
 }
 
-let sendDataCollectingParameters = function(data, form, successMessage, shouldReload=false) {
-  let modalElement = $('#data_collecting');
-  return fetch(form.getAttribute('action'), {
-    method: form.getAttribute('method'),
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(data)
-  })
-  .catch((e) => {throw e})
-  .then((res) => res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) : 
-                                    Promise.resolve(res.json()).then((b) => {throw b}))
-  .then((body) => hideModalShowAllert(modalElement, successMessage, 'success', shouldReload))
-  .catch((body) => hideModalShowAllert(modalElement, body.message, 'danger'));
-}
+// The amount of devices in search result from device list.
+let totalDevicesFromSearch = 0;
 
-let submitServiceParameters = function (event) {
-  let is_active = document.getElementById('data_collecting_is_active');
-  let alarm_fqdn = document.getElementById('data_collecting_alarm_fqdn');
-  let ping_fqdn = document.getElementById('data_collecting_ping_fqdn');
-  let ping_packets = document.getElementById('data_collecting_ping_packets');
-  [alarm_fqdn, ping_fqdn].forEach((input) => input.setCustomValidity(''));
+$(document).ready(function() {
+  let deviceForm = document.getElementById("data_collecting_deviceForm");
+  let serviceModal = $('#data_collecting-service-modal');
+  let deviceModal = $('#data_collecting-device-modal');
+  let devicesParamters = {};
 
-  let fqdnErrorMsg = 'Insira um endereço válido';
-  if (!isFqdnValid(alarm_fqdn.value)) alarm_fqdn.setCustomValidity(fqdnErrorMsg);
-  if (!isFqdnValid(ping_fqdn.value)) ping_fqdn.setCustomValidity(fqdnErrorMsg);
+  // the search value when the search was submitted. As it starts empty, we can initialize this variable as empty.
+  let lastDevicesSearchInputQuery = '';
 
-  let form = event.target;
-  let valid = form.checkValidity();
-  form.classList.add('was-validated');
-  if (valid) {
-    let data = {
-      is_active: is_active.checked,
-      alarm_fqdn: alarm_fqdn.value,
-      ping_fqdn: ping_fqdn.value,
-      ping_packets: Number(ping_packets.value)
-    };
-    sendDataCollectingParameters(data, form, 'Parâmeteros salvos.');
-  }
-  return false;
-};
-
-let submitUpdateManyParameters = function (event) {
-  let is_active = document.getElementById('data_collecting_mass_update_is_active');
-  let has_latency = document.getElementById('data_collecting_mass_update_has_latency');
-  let ping_fqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
-  [ping_fqdn].forEach((input) => input.setCustomValidity(''))
-
-  // defining boolean set statements. we never unset boolean parameters.
-  let data = {}
-  let anyChange = false
-  let booleanFields = { // these are not check boxes. values can be true, false or no change.
-    is_active: is_active.value,
-    has_latency: has_latency.value
-  };
-  for (let fieldname in booleanFields) {
-    let value = booleanFields[fieldname];
-    if (value === '') continue;
-    if (value === "True") value = true;
-    else if (value === "False") value = false;
-    if (data.$set === undefined) data.$set = {};
-    data.$set[fieldname] = value;
-    anyChange = true;
+  let sendDataCollectingParameters = function(data, form, successMessage, shouldReload=false) {
+    let modalElement = $(form.closest('.modal'));
+    return fetch(form.getAttribute('action'), {
+      method: form.getAttribute('method'),
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    })
+    .catch((e) => {
+        console.log(e);
+        throw e;
+    })
+    .then((res) => res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) : 
+                                      Promise.resolve(res.json()).then((b) => {throw b}))
+    .then((body) => hideModalShowAllert(modalElement, successMessage, 'success', shouldReload))
+    .catch((body) => hideModalShowAllert(modalElement, body.message, 'danger'));
   }
 
-  // defining ping_fqdn set or unset statement.
-  if (ping_fqdn.value === "Apagar") { // when to unset.
-    if (data.$unset === undefined) data.$unset = {};
-    data.$unset['ping_fqdn'] = '';
-    anyChange = true;
-  } else if (ping_fqdn.value !== '' && ping_fqdn.value !== "Não alterar") { // when to set.
-    if (data.$set === undefined) data.$set = {};
-    // if invalid, set input as invalid. if valid, set data.
-    if (!isFqdnValid(ping_fqdn.value)) ping_fqdn.setCustomValidity('Insira um endereço válido');
-    else data.$set['ping_fqdn'] = ping_fqdn.value;
-    anyChange = true;
-  }
+  let submitServiceParameters = function (event) {
+    let is_active = document.getElementById('data_collecting_service_is_active');
+    let alarm_fqdn = document.getElementById('data_collecting_service_alarm_fqdn');
+    let ping_fqdn = document.getElementById('data_collecting_service_ping_fqdn');
+    let ping_packets = document.getElementById('data_collecting_service_ping_packets');
 
-  if (anyChange) {
+    // FQDN text inputs.
+    [alarm_fqdn, ping_fqdn].forEach((input) => {
+      input.setCustomValidity('');
+      input.value = input.value.trim();
+      if (!isFqdnValid(input.value)) input.setCustomValidity('Insira um endereço válido');
+    });
+
     let form = event.target;
     let valid = form.checkValidity();
     form.classList.add('was-validated');
     if (valid) {
-      data.filter_list = lastDevicesSearchInputQuery;
-      let plural = totalDevicesFromSearch > 1 ? 's' : '';
-      let msg = `Parâmeteros salvos em ${totalDevicesFromSearch} dispositivo${plural}.` 
-      sendDataCollectingParameters(data, form, msg, true);
+      let data = {
+        is_active: is_active.checked,
+        alarm_fqdn: alarm_fqdn.value,
+        ping_fqdn: ping_fqdn.value,
+        ping_packets: Number(ping_packets.value)
+      };
+      sendDataCollectingParameters(data, form, 'Parâmetros salvos.');
     }
-  } else {
-    hideModalShowAllert($('#data_collecting'), 'Nada a ser alterado', 'danger');
+    return false;
+  };
+
+  let submitUpdateManyParameters = function (event) {
+    let is_active = document.getElementById('data_collecting_mass_update_is_active');
+    let has_latency = document.getElementById('data_collecting_mass_update_has_latency');
+    let ping_fqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
+    [ping_fqdn].forEach((input) => {
+      input.setCustomValidity('');
+      input.value = input.value.trim();
+    })
+
+    // defining boolean set statements. we never unset boolean parameters.
+    let data = {};
+    let anyChange = false;
+    let booleanFields = { // these are not check boxes. values can be true, false or no change.
+      is_active: is_active.value,
+      has_latency: has_latency.value
+    };
+    for (let fieldname in booleanFields) {
+      let value = booleanFields[fieldname];
+      if (value === '') continue;
+      if (value === "True") value = true;
+      else if (value === "False") value = false;
+      if (data.$set === undefined) data.$set = {};
+      data.$set[fieldname] = value;
+      anyChange = true;
+    }
+
+    // defining ping_fqdn set or unset statement for mass update input text.
+    if (ping_fqdn.value === "Apagar") { // when to unset.
+      if (data.$unset === undefined) data.$unset = {};
+      data.$unset['ping_fqdn'] = '';
+      anyChange = true;
+    } else if (ping_fqdn.value !== '' && ping_fqdn.value !== "Não alterar") { // when to set.
+      if (data.$set === undefined) data.$set = {};
+      // if invalid, set input as invalid. if valid, set data.
+      if (!isFqdnValid(ping_fqdn.value)) ping_fqdn.setCustomValidity('Insira um endereço válido');
+      else data.$set['ping_fqdn'] = ping_fqdn.value;
+      anyChange = true;
+    }
+
+    if (anyChange) {
+      let form = event.target;
+      let valid = form.checkValidity();
+      form.classList.add('was-validated');
+      if (valid) {
+        data.filter_list = lastDevicesSearchInputQuery;
+        let plural = totalDevicesFromSearch > 1 ? 's' : '';
+        let msg = `Parâmetros salvos em ${totalDevicesFromSearch} dispositivo${plural}.` 
+        sendDataCollectingParameters(data, form, msg, true);
+      }
+    } else {
+      hideModalShowAllert(serviceModal, 'Nada a ser alterado', 'danger');
+    }
+    return false;
+  };
+
+  let submitDeviceParameters = function (event) {
+    is_active = document.getElementById('data_collecting_device_is_active');
+    has_latency = document.getElementById('data_collecting_device_has_latency');
+    ping_fqdn = document.getElementById('data_collecting_device_ping_fqdn');
+    // keys match flashman's device model's data_collecting attribute keys.
+    let inputs = {is_active, has_latency, ping_fqdn};
+    
+    let data = { // to be sent in request
+      is_active: is_active.checked, 
+      has_latency: has_latency.checked
+    };
+
+    // FQDN text inputs.
+    let fqdnInputs = {ping_fqdn};
+    for (let key in fqdnInputs) {
+      let input = fqdnInputs[key];
+      input.setCustomValidity('');
+      input.value = input.value.trim();
+      if (!isFqdnValid(input.value)) input.setCustomValidity('Insira um endereço válido');
+      if (input.value !== '') data[key] = input.value;
+    }
+
+    let form = event.target;
+    let idUrlEncoded = form.getAttribute('data-id')
+    deviceData = devicesParamters[idUrlEncoded];
+
+    let anyChange = false;
+    for (let key in inputs) {
+      let input = inputs[key];
+      let inputValue;
+      if (input.getAttribute('type') === 'text') inputValue = input.value;
+      if (input.getAttribute('type') === 'checkbox') inputValue = input.checked;
+      if (deviceData[key] !== inputValue) {
+        anyChange = true;
+        break;
+      }
+    }
+
+    if (anyChange) {
+      let valid = form.checkValidity();
+      form.classList.add('was-validated');
+      if (valid) {
+        sendDataCollectingParameters(data, form,
+          `Parâmetros salvos para o dispositivo ${idUrlEncoded.replace(/_/g, ':')}.`)
+      }
+    } else {
+      hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
+    }
+    return false;
   }
-  return false;
-};
 
-// the search value when the search was submitted. As it starts empty, we can initialize this variable as empty.
-let lastDevicesSearchInputQuery = '';
-let totalDevicesFromSearch = 0;
+  let loadDeviceParamaters = function (event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    let idUrlEncoded = id.replace(/:/g, '_');
+    deviceForm.setAttribute('data-id', idUrlEncoded);
+    deviceForm.setAttribute('action', `/data_collecting/${idUrlEncoded}/parameters`)
+    deviceForm.classList.remove('was-validated');
+    document.getElementById('data_collecting_deviceId').innerHTML = id;
+    let spinner = document.getElementById('data_collecting-devices-placeholder')
 
-$(document).ready(function() {
-  document.getElementById('btn-config-data_collecting').onclick = (event) => $('#data_collecting').modal('show');
+    let is_active = document.getElementById('data_collecting_device_is_active');
+    let has_latency = document.getElementById('data_collecting_device_has_latency');
+    let ping_fqdn = document.getElementById('data_collecting_device_ping_fqdn');
+    let inputs = [is_active, has_latency, ping_fqdn];
+    let setInputParameters = (parameters) => {
+      is_active.checked = parameters.is_active || false;
+      has_latency.checked = parameters.has_latency || false;
+      ping_fqdn.value = parameters.ping_fqdn || '';
+      [ping_fqdn].forEach((input) => { // for every text input.
+        if (input && input.value !== '') input.previousElementSibling.classList.add('active');
+      })
+      inputs.forEach((input) => input.disabled = false);
+      spinner.style.display = 'none';
+      deviceForm.style.display = 'block';
+    }
+
+    let deviceParamters = devicesParamters[idUrlEncoded];
+    if (deviceParamters === undefined) { // if device's data collecting parameters are not in memory.
+
+      inputs.forEach((input) => input.disabled = true);
+      deviceForm.style.display = 'none';
+      spinner.style.display = 'block';
+
+      fetch(deviceForm.getAttribute('action'))
+      .catch((e) => {
+        console.log(e);
+        throw e;
+      })
+      .then((res) => res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) : 
+                                        Promise.resolve(res.json()).then((b) => {throw b}))
+      .then((body) => setInputParameters(devicesParamters[idUrlEncoded] = body))
+      .catch((e) => hideModalShowAllert(deviceModal, e.message, 'danger'));
+    } else {
+      setInputParameters(deviceParamters);
+    }
+    deviceModal.modal('show');
+  }
+
+  document.getElementById('btn-data_collecting-modal').onclick = (event) => serviceModal.modal('show');
   [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel));
   document.getElementById("data_collecting_serviceForm").onsubmit = submitServiceParameters;
   document.getElementById("data_collecting_updateManyForm").onsubmit = submitUpdateManyParameters;
@@ -179,4 +295,6 @@ $(document).ready(function() {
     lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
     return false;
   });
+  $(document).on('click', '.btn-data_collecting-device-modal', loadDeviceParamaters);
+  deviceForm.onsubmit = submitDeviceParameters;
 });

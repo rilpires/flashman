@@ -158,6 +158,12 @@ const checkBody = function(body) {
   return body
 };
 
+const checkIdUrlParameter = function(params) {
+  params.id = params.id.replace(/_/g, ":");
+  if (!util.isMacValid(params.id)) throw new HttpError(400, 
+    `Erro no ID recebido: '${params.id}'.`);
+}
+
 // For each field check function in given array ('fieldCheckFunctions'), 
 // executes the checks passing the given 'obj' and returns an object containing
 // all fields with their names being their full path inside a MongoDB document 
@@ -207,7 +213,7 @@ const readChangesAndBuildMongoDBUpdateObject = function (changes) {
       // values to be set.
       let fields = checkDataCollectingFields(change.obj, change.fieldChecks);
       if (Object.keys(fields).length > 0) { // if any existing and valid field.
-        noChange = false; // we not at least one update will be made.
+        noChange = false; // at least one update will be made.
         update[changeKey] = fields; // build $set, or $unset, statement.
       }
     }
@@ -300,32 +306,28 @@ dataCollectingController.updateManyParameters = async function
 dataCollectingController.returnDeviceParameters = function
 (req, res) {
   Promise.resolve()
-  .then(() => checkBody(req.body))
-  .then(() => checkDataCollectingFields(req.body, [checkId]))
-  .then(() => DeviceModel.findOne({_id: req.body.id}, 'data_collecting')
+  .then(() => checkIdUrlParameter(req.params))
+  .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')
     .exec().catch((e) => printErrorAndThrows(e, 500, 'Erro ao buscar os '+
-      `parâmetros de coleta de dados do dispositivo ${req.body.id}.`)))
-  .then((config) => sendOkResponse(res, parameters || {}))
+      `parâmetros de coleta de dados do dispositivo ${req.params.id}.`)))
+  .then((device) => sendOkResponse(res, device.data_collecting || {}))
   .catch((e) => sendErrorResponse(res, e));
 }
 
 dataCollectingController.updateDeviceParameters = async function
 (req, res) {
   Promise.resolve()
+  .then(() => checkIdUrlParameter(req.params))
   .then(() => checkBody(req.body))
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
-      obj: req.body.$set,
+      obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn]
-    },
-    $unset: {
-      obj: req.body.$unset,
-      fieldChecks: [checkPingFqdnExists]
     }
   }))
-  .then((update) => DeviceModel.updateOne({_id: req.body.id}, update)
+  .then((update) => DeviceModel.updateOne({_id: req.params.id}, update)
     .exec().catch((e) => printErrorAndThrows(e, 500, 'Erro ao salvar os '+
-      `parâmetros de coleta de dados para o dispositivo ${req.body.id}.`)))
+      `parâmetros de coleta de dados para o dispositivo ${req.params.id}.`)))
   .then(() => sendOkResponse(res))
   .catch((e) => sendErrorResponse(res, e));
 }
