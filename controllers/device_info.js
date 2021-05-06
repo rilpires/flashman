@@ -395,7 +395,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let sentBridgeEnabled = util.returnObjOrEmptyStr(req.body.bridge_enabled).trim();
         if (typeof req.body.local_change_wan !== 'undefined' && changeWAN === '1') {
           if (sentBridgeEnabled === '1') {
-            console.log('is bridge');
             // Device was set to bridge mode, change relevant fields
             // IP, Gateway and DNS are changed separately to treat legacy case
             let sentSwitch = util.returnObjOrEmptyStr(req.body.bridge_switch_disable).trim();
