@@ -117,6 +117,16 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
+const portForwardOnuCompatibleModels = [
+ 'F670L',
+ 'ZXHN H198A V3.0',
+];
+const portForwardOnuCompatibleVersions = [
+ 'V1.1.20P3N3',
+ 'V3.0.0C5_MUL',
+ 'V3.0.0C6_MUL',
+];
+
 
 /*
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wdr3500-v1~diffconfig (lshift=0, inverted=1, vlan=0)
@@ -698,9 +708,12 @@ const grantResetDevices = function(version) {
   }
 };
 
-const grantPortForward = function(version) {
+const grantPortForward = function(version, model) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.10.0') >= 0);
+  } else if (!portForwardOnuCompatibleModels.includes(model) ||
+    !portForwardOnuCompatibleVersions.includes(version)) {
+    return false;
   } else {
     // Development version, enable everything by default
     return true;
@@ -927,7 +940,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
-  result.grantPortForward = grantPortForward(version);
+  result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
