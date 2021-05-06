@@ -11,7 +11,7 @@ router.route('/service/parameters')
 router.route('/massupdate/parameters')
 .post(dataCollectingController.updateManyParameters);
 
-router.route('/device/parameters')
+router.route('/:id/parameters')
 .get(dataCollectingController.returnDeviceParameters)
 .post(dataCollectingController.updateDeviceParameters);
 
