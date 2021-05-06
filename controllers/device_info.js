@@ -723,6 +723,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           let fetchedVlans = '';
           let vlanHash = '';
           if (sentBridgeEnabled !== '1') {
+            console.log('matched device: '+matchedDevice);
+            console.log('matched device vlan: '+matchedDevice.vlan);
             let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
             fetchedVlans = containerVlans.vlans;
             vlanHash = containerVlans.hash;
