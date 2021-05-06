@@ -395,6 +395,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let sentBridgeEnabled = util.returnObjOrEmptyStr(req.body.bridge_enabled).trim();
         if (typeof req.body.local_change_wan !== 'undefined' && changeWAN === '1') {
           if (sentBridgeEnabled === '1') {
+            console.log('is bridge');
             // Device was set to bridge mode, change relevant fields
             // IP, Gateway and DNS are changed separately to treat legacy case
             let sentSwitch = util.returnObjOrEmptyStr(req.body.bridge_switch_disable).trim();
@@ -720,9 +721,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             return map[matchedDevice._id];
           });
 
-          let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
-          let fetchedVlans = containerVlans.vlans;
-          let vlanHash = containerVlans.hash;
+          let fetchedVlans = '';
+          let vlanHash = '';
+          if (sentBridgeEnabled !== '1') {
+            let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+            fetchedVlans = containerVlans.vlans;
+            vlanHash = containerVlans.hash;
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,
