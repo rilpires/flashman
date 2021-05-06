@@ -382,7 +382,7 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let is_a_vanilla_vlan_config = true;
 
   if (vlanObj === undefined) {
-    vlanObj = '';
+    vlanObj = [];
   }
   vlanObj = JSON.parse(vlanObj);
 
