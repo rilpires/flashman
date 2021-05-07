@@ -103,7 +103,7 @@ const convertToDbm = function(model, rxPower) {
 
 
 const convertWifiBand = function(band, mode) {
-  let isAC1 = convertWifiMode(mode) === '11ac';
+  let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
     case '20MHz':
       return (isAC) ? 'VHT20' : 'HT20';
