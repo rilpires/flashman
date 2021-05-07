@@ -381,7 +381,7 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
   let is_a_vanilla_vlan_config = true;
 
-  console.log('vlan object: '+vlanObj);
+  console.log('vlan object in convertFlashmanVlan: '+vlanObj);
 
   if (vlanObj === undefined) {
     vlanObj = '';
@@ -389,9 +389,11 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
     vlanObj = JSON.parse(vlanObj);
   }
 
-  console.log('vlan object after parse: '+vlanObj);
+  console.log('vlan object after parse in convertFlashmanVlan: '+vlanObj);
 
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
+
+  console.log('device info in convertFlashmanVlan: '+deviceInfo);
 
   let lan_ports = deviceInfo['lan_ports'];
   let wan_port = deviceInfo['wan_port'];
@@ -450,6 +452,8 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   }
   digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
 
+  console.log('digestedVlans in convertFlashmanVlan: '+digestedVlans);
+
   return digestedVlans;
 };
 
@@ -472,7 +476,9 @@ vlanController.retrieveVlansToDevice = function(device) {
 };
 
 vlanController.getValidVlan = async function(model, convertedVlan) {
+  console.log('convertedVlan in getValidVlan: '+convertedVlan);
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  console.log('deviceInfo in getValidVlan: '+deviceInfo);
   let soc = deviceInfo.soc;
   let lanVlan;
   let filteredVlan = [];
@@ -503,6 +509,8 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
   } else {
     return {success: false, type: 'danger', message: config};
   }
+  console.log('filteredVlan in getValidVlan: '+filteredVlan);
+  console.log('didChange in getValidVlan: '+didChange);
   return {
     success: true,
     vlan: filteredVlan,
@@ -511,8 +519,11 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
 };
 
 vlanController.convertDeviceVlan = function(model, vlanObj) {
+  console.log('vlanObj in convertDeviceVlan: '+vlanObj);
   let receivedVlan = JSON.parse(vlanObj);
+  console.log('receivedVlan in convertDeviceVlan: '+receivedVlan);
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  console.log('deviceInfo in convertDeviceVlan: '+deviceInfo);
   let lanPorts = deviceInfo.lan_ports;
   let wanPort = deviceInfo.wan_port;
   let cpuPort = deviceInfo.cpu_port;
@@ -552,6 +563,7 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
     };
     vlan.push(JSON.stringify(vlanObj));
   }
+  console.log('vlan output in convertDeviceVlan: '+vlan);
   return vlan;
 };
 
