@@ -12,7 +12,6 @@ router.route('/mqtt/add').post(deviceInfoController.registerMqtt);
 router.route('/mesh/add').post(deviceInfoController.registerMeshSlave);
 router.route('/get/portforward').post(deviceInfoController.getPortForward);
 router.route('/get/pinghosts').post(deviceInfoController.getPingHosts);
-router.route('/get/measureconfig').post(deviceInfoController.getDataCollectingConfig);
 router.route('/get/upnpdevices').post(deviceInfoController.getUpnpDevsPerm);
 router.route('/receive/upnp').post(deviceInfoController.receiveUpnp);
 router.route('/receive/devices').post(deviceInfoController.receiveDevices);
