@@ -1057,6 +1057,8 @@ $(document).ready(function() {
             continue;
           }
           let isTR069 = device.use_tr069;
+          let ponRXPower = device.pon_rxpower;
+          let ponTXPower = device.pon_txpower;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
@@ -1193,6 +1195,11 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-chart-line')
           .replace('$REPLACE_TEXT', 'Tráfego WAN');
 
+          let ponSignalAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
+          .replace('$REPLACE_ICON', 'fa-wave-square')
+          .replace('$REPLACE_TEXT', 'Sinal Óptico');
+
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
@@ -1237,6 +1244,10 @@ $(document).ready(function() {
           }
           if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
             sideMenu[idxMenu] += wanBytesAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+            sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
@@ -1333,6 +1344,14 @@ $(document).ready(function() {
                       'dependendo das configurações de rede do seu provedor'+
                     '</h7>'+
                   '</div>'+
+                '</div>'+
+                '<div class="md-form input-entry">'+
+                  '<label class="active">Intesidade do sinal óptico (RXPower/Recebido)</label>'+
+                  '<input class="form-control" type="text" maxlength="3" '+
+                  'value="'+
+                  ((ponStatus === "Up") ? ponRXPower + ' dBm' : 'Não disponível')+
+                  '" disabled></input>'+
+                  '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
