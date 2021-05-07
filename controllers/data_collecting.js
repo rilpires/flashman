@@ -54,7 +54,7 @@ const checkAlarmFqdn = (obj) =>
   checkField(obj, 'alarm_fqdn', util.isFqdnValid);
 const checkPingFqdn = (obj) =>
   checkField(obj, 'ping_fqdn', util.isFqdnValid);
-const checkPingToUnset = (obj) => 
+const checkPingFqdnToUnset = (obj) => 
   fieldExistenceForUnset(obj, 'ping_fqdn');
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets', checkNumericFieldInsideInterval(100, 100));
@@ -204,7 +204,7 @@ dataCollectingController.updateManyParameters = async function(req, res) {
     },
     $unset: {
       obj: req.body.$unset,
-      fieldChecks: [checkPingToUnset]
+      fieldChecks: [checkPingFqdnToUnset]
     }
   }))
   .then(async (update) => {
@@ -243,8 +243,12 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   .then(() => checkBody(req.body))
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
-      obj: req.body,
+      obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn]
+    },
+    $unset: {
+      obj: req.body.$unset,
+      fieldChecks: [checkPingFqdnToUnset]
     }
   }))
   .then((update) => DeviceModel.updateOne({_id: req.params.id}, update)
