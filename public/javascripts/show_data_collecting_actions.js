@@ -1,24 +1,9 @@
 let fillTotalDevicesFromSearch = function (amount) {
   totalDevicesFromSearch = amount;
-  [...document.getElementsByClassName('amountOfDevices')].forEach((e) => e.innerHTML = String(totalDevicesFromSearch))
-  let pluralElements = [...document.getElementsByClassName('plural')]
+  [...document.getElementsByClassName('amountOfDevices')].forEach((e) => e.innerHTML = String(totalDevicesFromSearch));
+  let pluralElements = [...document.getElementsByClassName('plural')];
   if (totalDevicesFromSearch > 1) pluralElements.forEach((e) => e.innerHTML = 's');
   else pluralElements.forEach((e) => e.innerHTML = '');
-};
-
-let hideShowPannel = function (event) {
-  let arrow = event.target;
-  let arrowClasses = arrow.classList;
-  let panelStyle = arrow.parentElement.parentElement.nextElementSibling.style;
-  if (arrowClasses.contains('text-primary')) {
-    arrowClasses.remove('text-primary', 'fa-chevron-up');
-    arrowClasses.add('fa-chevron-down');
-    panelStyle.display = 'none';
-  } else {
-    arrowClasses.remove('fa-chevron-down');
-    arrowClasses.add('text-primary', 'fa-chevron-up');
-    panelStyle.display = 'block';
-  }
 };
 
 const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
@@ -35,7 +20,9 @@ const testIPv6 = function (ipv6) {
   if (parts.length === maxparts && hasDoubleColon) return false;
   if (hasDoubleColon) {
     let notEmptyCounter = 0;
-    for (let i = 0; i < parts.length; i++) { if (parts[i].length > 0) notEmptyCounter++; }
+    for (let i = 0; i < parts.length; i++) {
+      if (parts[i].length > 0) notEmptyCounter++;
+    }
     let remaining = maxparts-notEmptyCounter;
     let substitute = ipv6[0] === ':' ? '' : ':';
     for (let i = 0; i < remaining; i++) substitute += '0:';
@@ -53,17 +40,7 @@ let checkFqdn = (e) => {
     e.target.setCustomValidity('Insira um endereço válido');
   };
 };
-let datalistFqdn = (e) => {
-  if (e.target.value === "Apagar" || e.target.value === "Não alterar") return true;
-  checkFqdn(e);
-  // if (isFqdnValid(e.target.value)) {
-  //   e.target.nextElementSibling.style.display = 'none';
-  //   e.target.setCustomValidity('');
-  // } else {
-  //   e.target.nextElementSibling.style.display = 'block';
-  //   e.target.setCustomValidity('Insira um endereço válido');
-  // };
-};
+let datalistFqdn = (e) => e.target.value === "Apagar" || e.target.value === "Não alterar" ? true : checkFqdn(e);
 let deviceFQDN = (e) => e.target.value === '' ? true : checkFqdn(e) 
 let isFqdnValid = (fqdn) => domainNameRegex.test(fqdn) || ipv4Regex.test(fqdn) || testIPv6(fqdn);
 
@@ -73,20 +50,9 @@ let hideModalShowAllert = function (modalJQueryElement, message, type, shouldRel
     modalJQueryElement.off('hidden.bs.modal');
     if (shouldReload) setTimeout(() => window.location.reload(), 1000);
   });
-}
+};
 
-// The amount of devices in search result from device list.
-let totalDevicesFromSearch = 0;
-
-// prints argument and throws argument. Can be used to fill some promise catches.
-const printsAndThrows = function (x) {
-  console.log(x);
-  throw x;
-}
-
-const unwrapsResponseJson = (res) => 
-  res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) :
-                     Promise.resolve(res.json()).then(printsAndThrows)
+let totalDevicesFromSearch = 0; // The amount of devices in search result from device list.
 
 $(document).ready(function() {
   let deviceForm = document.getElementById("data_collecting_deviceForm");
@@ -96,6 +62,16 @@ $(document).ready(function() {
 
   // the search value when the search was submitted. As it starts empty, we can initialize this variable as empty.
   let lastDevicesSearchInputQuery = '';
+
+  // prints argument and throws argument. Can be used to fill some promise catches.
+  const printsAndThrows = function (x) {
+    console.log(x);
+    throw x;
+  };
+
+  const unwrapsResponseJson = (res) => 
+    res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) :
+                       Promise.resolve(res.json()).then(printsAndThrows);
 
   let sendDataCollectingParameters = function(data, form, successMessage, shouldReload=false) {
     let modalElement = $(form.closest('.modal'));
@@ -108,7 +84,7 @@ $(document).ready(function() {
     .then(unwrapsResponseJson)
     .then((body) => hideModalShowAllert(modalElement, successMessage, 'success', shouldReload))
     .catch((body) => hideModalShowAllert(modalElement, body.message, 'danger'));
-  }
+  };
 
   let submitServiceParameters = function (event) {
     let is_active = document.getElementById('data_collecting_service_is_active');
@@ -216,7 +192,7 @@ $(document).ready(function() {
     }
 
     let form = event.target;
-    let deviceId = form.getAttribute('data-id')
+    let deviceId = form.getAttribute('data-id');
     let deviceData = devicesParamters[deviceId];
 
     // checking if submitted data is any different from data in memory.
@@ -237,23 +213,22 @@ $(document).ready(function() {
       form.classList.add('was-validated');
       if (valid) {
         devicesParamters[deviceId] = data; // saving valid data in memory.
-        sendDataCollectingParameters(data, form,
-          `Parâmetros salvos para o dispositivo ${deviceId}.`)
+        sendDataCollectingParameters(data, form, `Parâmetros salvos para o dispositivo ${deviceId}.`);
       }
     } else {
       hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
     }
     return false;
-  }
+  };
 
   let loadDeviceParamaters = function (event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     deviceForm.setAttribute('data-id', deviceId);
-    deviceForm.setAttribute('action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`)
+    deviceForm.setAttribute('action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`);
     deviceForm.classList.remove('was-validated');
     document.getElementById('data_collecting_deviceId').innerHTML = deviceId;
-    let spinner = document.getElementById('data_collecting-devices-placeholder')
+    let spinner = document.getElementById('data_collecting-devices-placeholder');
 
     let is_active = document.getElementById('data_collecting_device_is_active');
     let has_latency = document.getElementById('data_collecting_device_has_latency');
@@ -265,11 +240,11 @@ $(document).ready(function() {
       ping_fqdn.value = parameters.ping_fqdn || '';
       [ping_fqdn].forEach((input) => { // for every text input.
         if (input && input.value !== '') input.previousElementSibling.classList.add('active');
-      })
+      });
       inputs.forEach((input) => input.disabled = false);
       spinner.style.display = 'none';
       deviceForm.style.display = 'block';
-    }
+    };
 
     let deviceData = devicesParamters[deviceId];
     if (deviceData === undefined) { // if device's data collecting parameters are not in memory.
@@ -287,7 +262,22 @@ $(document).ready(function() {
       setInputParameters(deviceData);
     }
     deviceModal.modal('show');
-  }
+  };
+
+  let hideShowPannel = function (event) {
+    let arrow = event.target;
+    let arrowClasses = arrow.classList;
+    let panelStyle = arrow.parentElement.parentElement.nextElementSibling.style;
+    if (arrowClasses.contains('text-primary')) {
+      arrowClasses.remove('text-primary', 'fa-chevron-up');
+      arrowClasses.add('fa-chevron-down');
+      panelStyle.display = 'none';
+    } else {
+      arrowClasses.remove('fa-chevron-down');
+      arrowClasses.add('text-primary', 'fa-chevron-up');
+      panelStyle.display = 'block';
+    }
+  };
 
   document.getElementById('btn-data_collecting-modal').onclick = (event) => serviceModal.modal('show');
   [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel));
