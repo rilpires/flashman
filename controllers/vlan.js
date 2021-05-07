@@ -507,7 +507,6 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
 };
 
 vlanController.convertDeviceVlan = function(model, vlanObj) {
-  console.log('vlanObj in convertDeviceVlan: '+vlanObj);
   let receivedVlan = JSON.parse(vlanObj);
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
   let lanPorts = deviceInfo.lan_ports;
@@ -524,32 +523,21 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
     wanVlan = 2;
   }
   let vids = Object.keys(receivedVlan);
-  console.log('vids in convertDeviceVlan: '+vids);
   let idxLan = vids.indexOf(lanVlan.toString());
   vids.splice(idxLan, 1);
   let idxWan = vids.indexOf(wanVlan.toString());
   vids.splice(idxWan, 1);
-  console.log('vids after splice in convertDeviceVlan: '+vids);
   // now vidsFiltered only has ids of vlans that were added
   let vlan = [];
   for (let i = 0; i < lanPorts.length; i++) {
     let port = i+1;
     let vid = lanVlan;
-    console.log('lan port in convertDeviceVlan: '+lanPorts[i]);
-    console.log('port in convertDeviceVlan: '+port);
     for (let j = 0; j < vids.length; j++) {
-      let ports_before = receivedVlan[vids[j].toString()];
-      console.log('ports before parse in convertDeviceVlan: '+ports_before);
       let ports = receivedVlan[vids[j].toString()].replace(/t/g, '');
-      console.log('ports after parse 1 in convertDeviceVlan: '+ports);
       ports = ports.replace(cpuPort.toString(), '');
-      console.log('ports after parse 2 in convertDeviceVlan: '+ports);
       ports = ports.replace(wanPort.toString(), '');
-      console.log('ports after parse 3 in convertDeviceVlan: '+ports);
       ports = ports.split(' ');
-      console.log('ports after parse 4 in convertDeviceVlan: '+ports);
       if (ports.includes(lanPorts[i].toString())) {
-        console.log('includes!');
         vid = parseInt(vids[j]);
         break;
       }
@@ -560,7 +548,6 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
     };
     vlan.push(JSON.stringify(vlanObj));
   }
-  console.log('vlan output in convertDeviceVlan: '+vlan);
   return vlan;
 };
 
