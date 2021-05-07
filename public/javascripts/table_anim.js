@@ -1349,7 +1349,7 @@ $(document).ready(function() {
                   '<label class="active">Intesidade do sinal óptico (RXPower/Recebido)</label>'+
                   '<input class="form-control" type="text" maxlength="3" '+
                   'value="'+
-                  ((ponStatus === "Up") ? ponRXPower + ' dbm' : 'Não disponível')+
+                  ((ponStatus === "Up") ? ponRXPower + ' dBm' : 'Não disponível')+
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
