@@ -1947,7 +1947,7 @@ deviceListController.setPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -1963,80 +1963,79 @@ deviceListController.setPortForward = function(req, res) {
     }
     // tr-069 routers
     if (matchedDevice.use_tr069) {
-      let isOnSubnetRange;
-      let isRangeOfPorts;
-      let rules;
       let i;
       let j;
-      try {
-        rules = JSON.parse(req.body.content);
-      } catch (e) {
-        console.log(e.message);
-        return res.status(200).json({
-          success: false,
-          message: 'JSON mal formatado',
-        });
-      }
-      for (i = 0; i < rules.length; i++) {
-        // verify if the given ip is on subnet range
-        isOnSubnetRange = deviceListController.checkAddressSubnetRange(
-          matchedDevice.lan_subnet,
-          rules[i].ip,
-          matchedDevice.lan_netmask,
-        );
-        if (!isOnSubnetRange) {
+      let rules;
+      let isOnSubnetRange;
+      let newForwardIndex = crypto.createHash('md5').update(JSON.stringify(req.body.content)).digest('base64');
+      if (matchedDevice.forward_index != newForwardIndex) {
+        try {
+          rules = JSON.parse(req.body.content);
+        } catch (e) {
+          console.log(e.message);
           return res.status(200).json({
             success: false,
-            message: ''+rules[i].ip+' está fora da faixa de subrede',
+            message: 'JSON mal formatado',
           });
         }
-        for (j = 0; j < rules[i].ports_mappings.length; j++) {
-          // check if has a port out of range
-          if (rules[i].ports_mappings[j].external_port_start < 1 ||
-            rules[i].ports_mappings[j].external_port_end > 65535 ||
-            rules[i].ports_mappings[j].internal_port_start < 1 ||
-            rules[i].ports_mappings[j].internal_port_end > 65535) {
+        for (i = 0; i < rules.length; i++) {
+          // verify if the given ip is on subnet range
+          isOnSubnetRange = deviceListController.checkAddressSubnetRange(
+            matchedDevice.lan_subnet,
+            rules[i].ip,
+            matchedDevice.lan_netmask,
+          );
+          if (!isOnSubnetRange) {
             return res.status(200).json({
               success: false,
-              message: ''+rules[i].ip+' possui porta fora da faixa entre 1 e 65535',
+              message: ''+rules[i].ip+' está fora da faixa de subrede',
             });
           }
-          // get info : is range of port
-          if (rules[i].ports_mappings[j].external_port_start ==
-            rules[i].ports_mappings[j].internal_port_start) {
-            isRangeOfPorts = true;
-          } else {
-            isRangeOfPorts = false;
+          for (j = 0; j < rules[i].ports_mappings.length; j++) {
+            // check if has a port out of range
+            if (rules[i].ports_mappings[j].external_port_start < 1 ||
+              rules[i].ports_mappings[j].external_port_end > 65535 ||
+              rules[i].ports_mappings[j].internal_port_start < 1 ||
+              rules[i].ports_mappings[j].internal_port_end > 65535) {
+              return res.status(200).json({
+                success: false,
+                message: ''+rules[i].ip+' possui porta fora da faixa entre 1 e 65535',
+              });
+            }
+          }
+          // check for each port mapping overlapping ports among the same ip mapping rules
+          if (deviceListController.checkOverlappingPorts(rules[i].ports_mappings)) {
+            return res.status(200).json({
+                success: false,
+                message: ''+rules[i].ip+' possui mapeamento sobreposto',
+              });
           }
         }
-        // check for each port mapping overlapping ports among the same ip mapping rules
-        if (deviceListController.checkOverlappingPorts(rules[i].ports_mappings)) {
-          return res.status(200).json({
+        // passed by validations, json is clean to put in the document
+        matchedDevice.port_forward_rules = rules;
+        // push a hash from rules json
+        matchedDevice.forward_index = newForwardIndex;
+        matchedDevice.save(function(err) {
+          if (err) {
+            console.log('Error Saving Port Forward: '+err);
+            return res.status(200).json({
               success: false,
-              message: ''+rules[i].ip+' possui mapeamento sobreposto',
+              message: 'Erro ao salvar regras no servidor',
             });
-        }
-      }
-      // passed by validations, json is clean to put in the document
-      matchedDevice.port_forward_rules = rules;
-      // push a hash from rules json
-      matchedDevice.forward_index = crypto.createHash('md5').update(JSON.stringify(req.body.content)).digest('base64');
-
-      matchedDevice.save(function(err) {
-        if (err) {
-          console.log('Error Saving Port Forward: '+err);
+          }
+          // geniacs-api call
+          acsDeviceInfo.changePortForwardRules(matchedDevice);
           return res.status(200).json({
-            success: false,
-            message: 'Erro ao salvar regras no servidor',
+            success: true,
+            message: 'Mapeamento de portas no dispositivo '+matchedDevice.acs_id+' salvo com sucesso',
           });
-        }
-        // replace with geniacs-api call
-        // mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+        });
+      } else {
         return res.status(200).json({
           success: true,
-          message: 'Mapeamento de portas no dispositivo '+matchedDevice.acs_id+' salvo com sucesso',
+          message: 'Mapeamento de portas no dispositivo '+matchedDevice.acs_id+' não apresenta diferença',
         });
-      });
+      }
     // vanilla routers
     } else {
       console.log('Updating Port Forward for ' + matchedDevice._id);
@@ -2218,7 +2217,7 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
