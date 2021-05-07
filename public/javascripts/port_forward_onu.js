@@ -490,7 +490,6 @@ let checkPortMappingInputs = function() {
   let portsInputs = $('.port-forward-onu-port-input');
   let isAddressValid;
   let isPortsValid;
-  let isPortsAlreadyDefined;
   let portsValues = [];
 
   isAddressValid = checkAddressSubnetRange(deviceIp, ipAddressGiven, maskBits);
