@@ -655,29 +655,6 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        // Updating data collecting device parameters.
-        // coping current data collecting parameters, or creating new one.
-        deviceSetQuery.data_collecting = matchedDevice.data_collecting || {
-          is_active: false, has_latency: false, ping_fqdn: '',
-        };
-        // if any data collecting parameter exists in request and if they are
-        // valid, parses values and sets fields.
-        let v; // temporary variable with a short name.
-        v = req.body.data_collecting_is_active;
-        if (v !== undefined && v.constructor === Boolean) { // if boolean.
-          deviceSetQuery.data_collecting.is_active = v;
-        }
-        v = req.body.data_collecting_has_latency;
-        if (v !== undefined && v.constructor === Boolean) { // if boolean.
-          deviceSetQuery.data_collecting.has_latency = v;
-        }
-        v = req.body.data_collecting_ping_fqdn;
-        if (v !== undefined && v.constructor === String && // if a string,
-         (v = v.trim()) !== null && util.isFqdnValid(v)) { // we trim it and,
-          // if it's a valid FQDN.
-          deviceSetQuery.data_collecting.ping_fqdn = v; // assign parameter.
-        }
-
         let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
@@ -696,10 +673,12 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
+
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          // combining 'Device' and 'Config' data collecting parameters or setting defaults.
-          let data_collecting = { // default values to be sent to router.
+          // data collecting parameters to be sent to device. initiating with default values
+          // nothing happens in device with these parameters.
+          let data_collecting = { // default values to be sent to device.
             is_active: false,
             has_latency: false,
             ping_fqdn: '',
@@ -1806,63 +1785,6 @@ deviceInfoController.receiveWpsResult = function(req, res) {
     console.log('Wps: ' + id + ' received successfully');
     return res.status(200).json({processed: 1});
   });
-};
-
-deviceInfoController.getDataCollectingConfig = async function(req, res) {
-  let id = req.headers['x-anlix-id'];
-  let envsec = req.headers['x-anlix-sec'];
-
-  // Check secret to authenticate api call
-  if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec !== req.app.locals.secret) {
-      console.log('Router ' + id + ' Get Data Collecting Conf fail: Secret not match');
-      return res.status(403).json({success: 0});
-    }
-  }
-
-  try {
-    // Check if data collecting fqdn config is set
-    let config = await Config.findOne({is_default: true});
-    if (!config) throw new {message: 'Config not found'};
-    if (!config.data_collecting.alarm_fqdn) {
-      throw new {message: 'Data Collecting Alarm Server FQDN not configured'};
-    }
-
-    // Check if device exists
-    let device = await DeviceModel.findById(id);
-    if (!device) throw new {message: 'Device ' + id + ' not found'};
-    if (!device.data_collecting.ping_fqdn) {
-      throw new {message: 'Data Collecting Ping Machine FQDN not configured'};
-    }
-
-    // combining 'Device' and 'Config' data collecting parameters or 
-    // setting defaults.
-    let ret = {success: 1};
-    if (device && device.data_collecting.constructor === Object) {
-      ret.is_active = device.data_collecting.is_active || false;
-      ret.has_latency = device.data_collecting.has_latency || false;
-      ret.ping_fqdn = device.data_collecting.ping_fqdn || '';
-    }
-    if (config && config.data_collecting.constructor === Object) {
-      // device value && config value.
-      ret.is_active = ret.is_active &&
-        (config.data_collecting.is_active || false);
-      // device value && config value.
-      ret.has_latency = ret.has_latency &&
-        (config.data_collecting.has_latency || false);
-      ret.alarm_fqdn = config.data_collecting.alarm_fqdn || '';
-      // preference for device value.
-      ret.ping_fqdn = ret.ping_fqdn ||
-        (matchedConfig.data_collecting.ping_fqdn || '');
-      ret.ping_packets = config.data_collecting.ping_packets || 100;
-    }
-
-    // Reply with both data collecting FQDNs.
-    return res.status(200).json(data_collecting);
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({success: 0});
-  }
 };
 
 module.exports = deviceInfoController;
