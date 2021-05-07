@@ -178,15 +178,15 @@ const checkPreset = function(preset) {
 /* sends a put request with a given 'provision' to genieacs and returns the
  genie json response parsed to javascript object. may throw unhandled errors */
 genie.putProvision = async function(script) {
-  let encodedScript = encodeURI(script);
+  script = script.slice(0, -1); // Remove EOF
   return request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
     path: '/provisions/flashman',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(encodedScript),
+      'Content-Type': 'application/javascript',
+      'Content-Length': Buffer.byteLength(script),
     },
-  }, encodedScript);
+  }, script);
 };
 
 /* sends a put request with a given 'preset' to genieacs and returns the genie

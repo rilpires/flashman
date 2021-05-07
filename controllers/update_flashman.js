@@ -118,14 +118,15 @@ const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
     let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
     // Get config from database
-    Config.findOne({is_default: true}).then((err, config)=>{
-      if (err) {
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
         console.log('Error reading configs from database in update GenieACS!');
         return reject();
       }
       // Update genie repository if needed
       let waitForUpdate;
       if (upgrades.updateGenie) {
+        console.log('Updating GenieACS version...');
         waitForUpdate = updateGenieRepo(upgrades.newGenieRef);
       } else {
         waitForUpdate = Promise.resolve();
@@ -135,8 +136,9 @@ const updateGenieACS = function(upgrades) {
       if (upgrades.updateProvision) {
         try {
           let provisionScript = fs.readFileSync(
-            './controllers/external-genieacs/provision.js',
+            './controllers/external-genieacs/provision.js', 'utf8'
           );
+          console.log('Updating GenieACS provision...');
           waitForProvision = tasksApi.putProvision(provisionScript);
         } catch (e) {
           waitForProvision = Promise.reject();
@@ -146,14 +148,16 @@ const updateGenieACS = function(upgrades) {
       }
       // Update preset json if needed
       let waitForPreset;
-      if (upgrades.updateProvision) {
+      if (upgrades.updatePreset) {
         try {
           let preset = JSON.parse(fs.readFileSync(
             './controllers/external-genieacs/flashman-preset.json',
           ));
           // Alter the periodic inform interval based on database config
-          let interval = parseInt(config.tr069.inform_interval / 1000); // ms->s
+          let interval = '' + parseInt(config.tr069.inform_interval / 1000);
           preset.configurations.find((c) => c.name === field).value = interval;
+          preset._id = 'inform';
+          console.log('Updating GenieACS preset...');
           waitForPreset = tasksApi.putPreset(preset);
         } catch (e) {
           waitForPreset = Promise.reject();
@@ -227,8 +231,8 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
       'updatePreset': updatePreset,
     };
   }
-  let localGenieRef = localPackageJson.genieacs.provisionHash;
-  let remoteGenieRef = remotePackageJson.genieacs.provisionHash;
+  let localGenieRef = localPackageJson.genieacs.ref;
+  let remoteGenieRef = remotePackageJson.genieacs.ref;
   if (localGenieRef && remoteGenieRef &&
       localGenieRef !== remoteGenieRef) {
     // GenieACS version has changed, needs to update it
