@@ -1198,7 +1198,7 @@ $(document).ready(function() {
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
           .replace('$REPLACE_ICON', 'fa-wave-square')
-          .replace('$REPLACE_TEXT', 'Intensidade do Sinal');
+          .replace('$REPLACE_TEXT', 'Sinal Óptico');
 
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
