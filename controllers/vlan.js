@@ -540,7 +540,7 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
     for (let j = 0; j < vids.length; j++) {
       let ports_before = receivedVlan[vids[j].toString()];
       console.log('ports before parse in convertDeviceVlan: '+ports_before);
-      let ports = receivedVlan[vids[j].toString()].replaceAll('t', '');
+      let ports = receivedVlan[vids[j].toString()].toString().replaceAll('t', '');
       console.log('ports after parse 1 in convertDeviceVlan: '+ports);
       ports = ports.replace(cpuPort.toString(), '');
       console.log('ports after parse 2 in convertDeviceVlan: '+ports);
