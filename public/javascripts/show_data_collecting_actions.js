@@ -78,6 +78,16 @@ let hideModalShowAllert = function (modalJQueryElement, message, type, shouldRel
 // The amount of devices in search result from device list.
 let totalDevicesFromSearch = 0;
 
+// prints argument and throws argument. Can be used to fill some promise catches.
+const printsAndThrows = function (x) {
+  console.log(x);
+  throw x;
+}
+
+const unwrapsResponseJson = (res) => 
+  res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) :
+                     Promise.resolve(res.json()).then(printsAndThrows)
+
 $(document).ready(function() {
   let deviceForm = document.getElementById("data_collecting_deviceForm");
   let serviceModal = $('#data_collecting-service-modal');
@@ -94,12 +104,8 @@ $(document).ready(function() {
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(data)
     })
-    .catch((e) => {
-        console.log(e);
-        throw e;
-    })
-    .then((res) => res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) : 
-                                      Promise.resolve(res.json()).then((b) => {throw b}))
+    .catch(printsAndThrows)
+    .then(unwrapsResponseJson)
     .then((body) => hideModalShowAllert(modalElement, successMessage, 'success', shouldReload))
     .catch((body) => hideModalShowAllert(modalElement, body.message, 'danger'));
   }
@@ -210,9 +216,10 @@ $(document).ready(function() {
     }
 
     let form = event.target;
-    let idUrlEncoded = form.getAttribute('data-id')
-    deviceData = devicesParamters[idUrlEncoded];
+    let deviceId = form.getAttribute('data-id')
+    let deviceData = devicesParamters[deviceId];
 
+    // checking if submitted data is any different from data in memory.
     let anyChange = false;
     for (let key in inputs) {
       let input = inputs[key];
@@ -229,8 +236,9 @@ $(document).ready(function() {
       let valid = form.checkValidity();
       form.classList.add('was-validated');
       if (valid) {
+        devicesParamters[deviceId] = data; // saving valid data in memory.
         sendDataCollectingParameters(data, form,
-          `Parâmetros salvos para o dispositivo ${idUrlEncoded.replace(/_/g, ':')}.`)
+          `Parâmetros salvos para o dispositivo ${deviceId}.`)
       }
     } else {
       hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
@@ -240,12 +248,11 @@ $(document).ready(function() {
 
   let loadDeviceParamaters = function (event) {
     let row = $(event.target).parents('tr');
-    let id = row.data('deviceid');
-    let idUrlEncoded = id.replace(/:/g, '_');
-    deviceForm.setAttribute('data-id', idUrlEncoded);
-    deviceForm.setAttribute('action', `/data_collecting/${idUrlEncoded}/parameters`)
+    let deviceId = row.data('deviceid');
+    deviceForm.setAttribute('data-id', deviceId);
+    deviceForm.setAttribute('action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`)
     deviceForm.classList.remove('was-validated');
-    document.getElementById('data_collecting_deviceId').innerHTML = id;
+    document.getElementById('data_collecting_deviceId').innerHTML = deviceId;
     let spinner = document.getElementById('data_collecting-devices-placeholder')
 
     let is_active = document.getElementById('data_collecting_device_is_active');
@@ -264,24 +271,20 @@ $(document).ready(function() {
       deviceForm.style.display = 'block';
     }
 
-    let deviceParamters = devicesParamters[idUrlEncoded];
-    if (deviceParamters === undefined) { // if device's data collecting parameters are not in memory.
+    let deviceData = devicesParamters[deviceId];
+    if (deviceData === undefined) { // if device's data collecting parameters are not in memory.
 
       inputs.forEach((input) => input.disabled = true);
       deviceForm.style.display = 'none';
       spinner.style.display = 'block';
 
       fetch(deviceForm.getAttribute('action'))
-      .catch((e) => {
-        console.log(e);
-        throw e;
-      })
-      .then((res) => res.status < 300 ? Promise.resolve(res.json()).catch((e) => {}) : 
-                                        Promise.resolve(res.json()).then((b) => {throw b}))
-      .then((body) => setInputParameters(devicesParamters[idUrlEncoded] = body))
+      .catch(printsAndThrows)
+      .then(unwrapsResponseJson)
+      .then((body) => setInputParameters(devicesParamters[deviceId] = body)) // saving parameters in memory
       .catch((e) => hideModalShowAllert(deviceModal, e.message, 'danger'));
     } else {
-      setInputParameters(deviceParamters);
+      setInputParameters(deviceData);
     }
     deviceModal.modal('show');
   }
