@@ -29,7 +29,6 @@ let deviceSchema = new Schema({
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
   pppoe_password: String,
-  pon_status: String,
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
