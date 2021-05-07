@@ -262,11 +262,8 @@ const createRegistry = async function(req, res) {
                           'mesh_id': newMeshId,
                           'mesh_key': newMeshKey};
           if (vlanDidChange) {
-            console.log('sending vlan to device');
             let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
             let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
-            console.log('vlan to device: '+vlanToDevice);
-            console.log('vlan index: '+vlanHash);
             response.vlan = vlanToDevice;
             response.vlan_index = vlanHash;
           }
