@@ -1346,7 +1346,7 @@ $(document).ready(function() {
                   '</div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">Intesidade do sinal optico (RXPower/Recebido)</label>'+
+                  '<label class="active">Intesidade do sinal óptico (RXPower/Recebido)</label>'+
                   '<input class="form-control" type="text" maxlength="3" '+
                   'value="'+
                   ((ponStatus === "Up") ? ponRXPower + ' dbm' : 'Não disponível')+
