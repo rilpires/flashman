@@ -186,14 +186,6 @@
           span.white-text &times;
       .modal-body
 
-        .row.pt-3#data_collecting-devices-placeholder
-          .col
-            h2.text-center.grey-text.mb-3
-              i.fas.fa-spinner.fa-pulse.fa-4x
-              br
-              br
-              span Requsitando parâmetros deste dispositivo...
-
         form(method="post",
              name="data_collecting_deviceForm",
              id="data_collecting_deviceForm",
@@ -234,11 +226,11 @@
                   input.form-control(type="text",
                                      id="data_collecting_device_ping_fqdn",
                                      minlength="3",
-                                     oninput="deviceFQDN(event)")
+                                     oninput="checkDeviceFqdn(event)")
                   .invalid-feedback Insira um endereço válido
                 .input-group-append(
                   data-toggle="tooltip",
-                  title="IPv4, IPv6 ou endereço de DNS."
+                  title="IPv4, IPv6 ou endereço de DNS. Campo vazio faz o dispositivo seguir o valor padrão do serviço."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg

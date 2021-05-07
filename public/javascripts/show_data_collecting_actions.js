@@ -31,18 +31,21 @@ const testIPv6 = function (ipv6) {
   }
   return ipv6Regex.test(ipv6);
 };
-let checkFqdn = (e) => {
-  if (isFqdnValid(e.target.value)) {
-    e.target.nextElementSibling.style.display = 'none';
-    e.target.setCustomValidity('');
-  } else {
-    e.target.nextElementSibling.style.display = 'block';
-    e.target.setCustomValidity('Insira um endereço válido');
-  };
-};
-let datalistFqdn = (e) => e.target.value === "Apagar" || e.target.value === "Não alterar" ? true : checkFqdn(e);
-let deviceFQDN = (e) => e.target.value === '' ? true : checkFqdn(e) 
 let isFqdnValid = (fqdn) => domainNameRegex.test(fqdn) || ipv4Regex.test(fqdn) || testIPv6(fqdn);
+let setFieldValidLabel = (target) => {
+  target.nextElementSibling.style.display = 'none';
+  target.setCustomValidity('');
+}
+let setFieldInvalidLabel = (target) => {
+  target.nextElementSibling.style.display = 'block';
+  target.setCustomValidity('Insira um endereço válido');
+}
+let checkFqdn = (e) =>
+  isFqdnValid(e.target.value) ? setFieldValidLabel(e.target) : setFieldInvalidLabel(e.target);
+let datalistFqdn = (e) =>
+  e.target.value === "Apagar" || e.target.value === "Não alterar" ? setFieldValidLabel(e.target) : checkFqdn(e);
+let checkDeviceFqdn = (e) =>
+  e.target.value === '' ? setFieldValidLabel(e.target) : checkFqdn(e);
 
 let hideModalShowAllert = function (modalJQueryElement, message, type, shouldReload=false) {
   modalJQueryElement.modal('hide').on('hidden.bs.modal', function() {
@@ -58,7 +61,19 @@ $(document).ready(function() {
   let deviceForm = document.getElementById("data_collecting_deviceForm");
   let serviceModal = $('#data_collecting-service-modal');
   let deviceModal = $('#data_collecting-device-modal');
-  let devicesParamters = {};
+  let deviceRow;
+
+  let getDeviceParameters = (row) => ({
+    is_active: row.getAttribute('data-data_collecting-is_active') === 'true',
+    has_latency: row.getAttribute('data-data_collecting-has_latency') === 'true',
+    ping_fqdn: row.getAttribute('data-data_collecting-ping_fqdn') || '',
+  })
+
+  let setDeviceParameters = (row, parameters) => {
+    row.setAttribute('data-data_collecting-is_active', ''+parameters.is_active);
+    row.setAttribute('data-data_collecting-has_latency', ''+parameters.has_latency);
+    row.setAttribute('data-data_collecting-ping_fqdn', parameters.ping_fqdn || '');
+  }
 
   // the search value when the search was submitted. As it starts empty, we can initialize this variable as empty.
   let lastDevicesSearchInputQuery = '';
@@ -170,97 +185,90 @@ $(document).ready(function() {
   };
 
   let submitDeviceParameters = function (event) {
+    try{
     is_active = document.getElementById('data_collecting_device_is_active');
     has_latency = document.getElementById('data_collecting_device_has_latency');
     ping_fqdn = document.getElementById('data_collecting_device_ping_fqdn');
-    // keys match flashman's device model's data_collecting attribute keys.
-    let inputs = {is_active, has_latency, ping_fqdn};
-    
-    let data = { // to be sent in request
-      is_active: is_active.checked, 
-      has_latency: has_latency.checked
-    };
-
-    // FQDN text inputs.
-    let fqdnInputs = {ping_fqdn};
-    for (let key in fqdnInputs) {
-      let input = fqdnInputs[key];
+    [ping_fqdn].forEach((input) => { // all text fields.
       input.setCustomValidity('');
       input.value = input.value.trim();
-      if (!isFqdnValid(input.value)) input.setCustomValidity('Insira um endereço válido');
-      if (input.value !== '') data[key] = input.value;
-    }
+      if (input.value !== '' && !isFqdnValid(input.value)) input.setCustomValidity('Insira um endereço válido');
+    })
 
-    let form = event.target;
-    let deviceId = form.getAttribute('data-id');
-    let deviceData = devicesParamters[deviceId];
-
-    // checking if submitted data is any different from data in memory.
+    // checking if submitted data is any different from data already saved.
+    let submittedDeviceData = { // user submitted data.
+      is_active: is_active.checked,
+      has_latency: has_latency.checked,
+      ping_fqdn: ping_fqdn.value,
+    };
+    let savedDeviceData = getDeviceParameters(deviceRow);
     let anyChange = false;
-    for (let key in inputs) {
-      let input = inputs[key];
-      let inputValue;
-      if (input.getAttribute('type') === 'text') inputValue = input.value;
-      if (input.getAttribute('type') === 'checkbox') inputValue = input.checked;
-      if (deviceData[key] !== inputValue) {
+    for (let key in savedDeviceData) {
+      if (savedDeviceData[key] !== submittedDeviceData[key]) {
         anyChange = true;
         break;
       }
     }
 
     if (anyChange) {
+      let form = event.target;
       let valid = form.checkValidity();
       form.classList.add('was-validated');
+      let deviceId = form.getAttribute('data-id');
+      
       if (valid) {
-        devicesParamters[deviceId] = data; // saving valid data in memory.
+        let data = {
+          $set: {
+            is_active: is_active.checked,
+            has_latency: has_latency.checked
+          }
+        };
+
+        // FQDN text inputs.
+        let textInputs = {ping_fqdn};
+        for (let key in textInputs) {
+          let input = textInputs[key];
+          if (input.value === '') {
+            if (data.$unset === undefined) data.$unset = {};
+            data.$unset[key] = '';
+          } else {
+            data.$set[key] = input.value;
+          }
+        }
+        
+        setDeviceParameters(deviceRow, submittedDeviceData);
         sendDataCollectingParameters(data, form, `Parâmetros salvos para o dispositivo ${deviceId}.`);
       }
     } else {
       hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
     }
+  }catch(e){console.log(e)}
     return false;
   };
 
   let loadDeviceParamaters = function (event) {
-    let row = $(event.target).parents('tr');
-    let deviceId = row.data('deviceid');
+    deviceRow = event.target.closest('tr');
+    let deviceId = deviceRow.getAttribute('data-deviceid');
     deviceForm.setAttribute('data-id', deviceId);
     deviceForm.setAttribute('action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`);
     deviceForm.classList.remove('was-validated');
     document.getElementById('data_collecting_deviceId').innerHTML = deviceId;
-    let spinner = document.getElementById('data_collecting-devices-placeholder');
 
     let is_active = document.getElementById('data_collecting_device_is_active');
     let has_latency = document.getElementById('data_collecting_device_has_latency');
     let ping_fqdn = document.getElementById('data_collecting_device_ping_fqdn');
-    let inputs = [is_active, has_latency, ping_fqdn];
-    let setInputParameters = (parameters) => {
-      is_active.checked = parameters.is_active || false;
-      has_latency.checked = parameters.has_latency || false;
-      ping_fqdn.value = parameters.ping_fqdn || '';
-      [ping_fqdn].forEach((input) => { // for every text input.
-        if (input && input.value !== '') input.previousElementSibling.classList.add('active');
-      });
-      inputs.forEach((input) => input.disabled = false);
-      spinner.style.display = 'none';
-      deviceForm.style.display = 'block';
-    };
 
-    let deviceData = devicesParamters[deviceId];
-    if (deviceData === undefined) { // if device's data collecting parameters are not in memory.
-
-      inputs.forEach((input) => input.disabled = true);
-      deviceForm.style.display = 'none';
-      spinner.style.display = 'block';
-
-      fetch(deviceForm.getAttribute('action'))
-      .catch(printsAndThrows)
-      .then(unwrapsResponseJson)
-      .then((body) => setInputParameters(devicesParamters[deviceId] = body)) // saving parameters in memory
-      .catch((e) => hideModalShowAllert(deviceModal, e.message, 'danger'));
-    } else {
-      setInputParameters(deviceData);
-    }
+    let parameters = getDeviceParameters(deviceRow);
+    is_active.checked = parameters.is_active;
+    has_latency.checked = parameters.has_latency;
+    ping_fqdn.value = parameters.ping_fqdn;
+    [ping_fqdn].forEach((input) => { // for every text input.
+      if (input) {
+        input.setCustomValidity('');
+        setFieldValidLabel(input);
+        if (input.value !== '') input.previousElementSibling.classList.add('active');
+      }
+    });
     deviceModal.modal('show');
   };
 

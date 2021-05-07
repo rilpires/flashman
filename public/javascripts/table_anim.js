@@ -1148,6 +1148,11 @@ $(document).ready(function() {
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
+          if (device.data_collecting !== undefined) {
+            formAttr += ' data-data_collecting-is_active="'+(device.data_collecting.is_active ? 'true' : 'false')+'"';
+            formAttr += ' data-data_collecting-has_latency="'+(device.data_collecting.has_latency ? 'true' : 'false')+'"';
+            formAttr += ' data-data_collecting-ping_fqdn="'+(device.data_collecting.ping_fqdn || '')+'"';
+          }
 
           let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
 
