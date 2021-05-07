@@ -1057,6 +1057,11 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: 'Esse comando não existe',
+          });
         }
         break;
       }
