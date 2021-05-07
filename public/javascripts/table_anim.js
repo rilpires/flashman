@@ -1057,7 +1057,6 @@ $(document).ready(function() {
             continue;
           }
           let isTR069 = device.use_tr069;
-          let ponStatus = device.pon_status;
           let ponRXPower = device.pon_rxpower;
           let ponTXPower = device.pon_txpower;
           let grantWifiBand = device.permissions.grantWifiBand;
