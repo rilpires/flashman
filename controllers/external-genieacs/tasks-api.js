@@ -175,6 +175,20 @@ const checkPreset = function(preset) {
   return true;
 };
 
+/* sends a put request with a given 'provision' to genieacs and returns the
+ genie json response parsed to javascript object. may throw unhandled errors */
+genie.putProvision = async function(script) {
+  let encodedScript = encodeURI(script);
+  return request({
+    method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
+    path: '/provisions/flashman',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Length': Buffer.byteLength(encodedScript),
+    },
+  }, encodedScript);
+};
+
 /* sends a put request with a given 'preset' to genieacs and returns the genie
  json response parsed to javascript object. may throw unhandled errors. */
 genie.putPreset = async function(preset) {
