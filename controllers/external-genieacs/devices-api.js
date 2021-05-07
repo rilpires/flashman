@@ -136,7 +136,6 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
-      pon_status: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.Status',
       pon_rxpower: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.RXPower',
       pon_txpower: 'InternetGatewayDevice.WANDevice.1.WANGponInterfaceConfig.TXPower'
     },
@@ -200,7 +199,6 @@ const getZTEFields = function(model) {
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
-      fields.wan.pon_status = fields.wan.pon_status.replace(/WANGponInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = fields.wan.pon_txpower.replace(/WANGponInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       break;
@@ -223,7 +221,6 @@ const getStavixFields = function() {
   let fields = getDefaultFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wan.pon_status = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Status';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
