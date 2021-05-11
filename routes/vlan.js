@@ -38,6 +38,10 @@ router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permissionVlan, 1),
                            vlanController.getVlans);
 
+router.route('/fetchmaxvid/:deviceid').get(authController.ensureLogin(),
+                           authController.ensurePermission(permissionVlan, 1),
+                           vlanController.getMaxVid);
+
 router.route('/update/:deviceid').post(authController.ensureLogin(),
                           authController.ensurePermission(permissionVlan, 2),
                           vlanController.updateVlans);

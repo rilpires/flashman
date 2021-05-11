@@ -551,4 +551,17 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
   return vlan;
 };
 
+vlanController.getMaxVid = function(req, res) {
+  DeviceModel.findById(req.params.deviceid, function(err, matchedDevice) {
+    if (err || !matchedDevice) {
+      console.log(err);
+      return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
+    } else {
+      let deviceInfo = DeviceVersion.getDeviceInfo(matchedDevice.model);
+      console.log('max vid: '+deviceInfo.max_vid);
+      return res.json({success: true, type: 'success', maxVid: deviceInfo.max_vid});
+    }
+  });
+};
+
 module.exports = vlanController;

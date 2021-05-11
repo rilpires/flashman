@@ -14,6 +14,7 @@ $(document).ready(function() {
         dataControl.qtdPorts = row.data('qtdPorts');
         dataControl.vlan_profiles = await fetchVlanProfiles();
         dataControl.vlan = await fetchVlanDeviceInfo(id);
+        dataControl.id = id;
 
         // build modal
         $('#vlan-hlabel').text(id);
@@ -171,24 +172,42 @@ const buildVlanModal = function(dc, canEdit) {
           attr('disabled', 'disabled');
       }
 
-      for (let j = 0; j < dc.vlan_profiles.length; j++) {
-        let option = $('<option></option>').
-          attr('value', dc.vlan_profiles[j].vlan_id).
-          text(dc.vlan_profiles[j].profile_name);
-        if (dc.vlan !== undefined) {
-          for (let k = 0; k < dc.vlan.length; k++) {
-            if (dc.vlan[0] !== null) {
-              if (dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id &&
-                (i+1) == dc.vlan[k].port) {
-                option.attr('selected', 'selected');
-                profilesOptions.
-                  attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+      $.ajax({
+        type: 'GET',
+        url: '/vlan/fetchmaxvid/' + dc.id,
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function(res) {
+          if (res.success) {
+            let maxVid = res.maxVid;
+            for (let j = 0; j < dc.vlan_profiles.length; j++) {
+              if (dc.vlan_profiles[j].vlan_id <= maxVid) {
+                let option = $('<option></option>').
+                  attr('value', dc.vlan_profiles[j].vlan_id).
+                  text(dc.vlan_profiles[j].profile_name);
+                if (dc.vlan !== undefined) {
+                  for (let k = 0; k < dc.vlan.length; k++) {
+                    if (dc.vlan[0] !== null) {
+                      if (dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id &&
+                        (i+1) == dc.vlan[k].port) {
+                        option.attr('selected', 'selected');
+                        profilesOptions.
+                            attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+                      }
+                    }
+                  }
+                }
+                profilesOptions.append(option);
               }
             }
+          } else {
+            displayAlertMsg(res.message);
           }
-        }
-        profilesOptions.append(option);
-      }
+        },
+        error: function(res) {
+          displayAlertMsg(res.message);
+        },
+      });
 
       let profilesSelect = $('<div></div>').
         addClass('md-selectfield').
