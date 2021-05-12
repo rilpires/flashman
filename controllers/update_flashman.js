@@ -136,7 +136,7 @@ const updateGenieACS = function(upgrades) {
       if (upgrades.updateProvision) {
         try {
           let provisionScript = fs.readFileSync(
-            './controllers/external-genieacs/provision.js', 'utf8'
+            './controllers/external-genieacs/provision.js', 'utf8',
           );
           console.log('Updating GenieACS provision...');
           waitForProvision = tasksApi.putProvision(provisionScript);
@@ -180,6 +180,7 @@ const updateGenieACS = function(upgrades) {
         if (values.some((v) => v.status !== 'fulfilled')) {
           return reject();
         } else {
+          console.log('GenieACS updated successfully!');
           return resolve();
         }
       });
@@ -219,45 +220,57 @@ const isRunningUserOwnerOfDirectory = function() {
 };
 
 const checkGenieNeedsUpdate = function(remotePackageJson) {
-  let updateGenie = false;
-  let updateProvision = false;
-  let updatePreset = false;
-  if (!remotePackageJson.genieacs || !localPackageJson.genieacs) {
-    // Either remote or local dont have genieacs information - cannot compare
-    // data, so it makes no sense to upgrade anything
-    return {
-      'updateGenie': updateGenie,
-      'updateProvision': updateProvision,
-      'updatePreset': updatePreset,
-    };
-  }
-  let localGenieRef = localPackageJson.genieacs.ref;
-  let remoteGenieRef = remotePackageJson.genieacs.ref;
-  if (localGenieRef && remoteGenieRef &&
-      localGenieRef !== remoteGenieRef) {
-    // GenieACS version has changed, needs to update it
-    updateGenie = true;
-  }
-  let localProvisionHash = localPackageJson.genieacs.provisionHash;
-  let remoteProvisionHash = remotePackageJson.genieacs.provisionHash;
-  if (localProvisionHash && remoteProvisionHash &&
-      localProvisionHash !== remoteProvisionHash) {
-    // Provision script has changed, needs to update it
-    updateProvision = true;
-  }
-  let localPresetHash = localPackageJson.genieacs.presetHash;
-  let remotePresetHash = remotePackageJson.genieacs.presetHash;
-  if (localPresetHash && remotePresetHash &&
-      localPresetHash !== remotePresetHash) {
-    // Preset json has changed, needs to update it
-    updatePreset = true;
-  }
-  return {
-    'updateGenie': updateGenie,
-    'updateProvision': updateProvision,
-    'updatePreset': updatePreset,
-    'newGenieRef': remoteGenieRef,
-  };
+  return new Promise((resolve, reject)=>{
+    let updateGenie = false;
+    let updateProvision = false;
+    let updatePreset = false;
+    if (!remotePackageJson.genieacs || !localPackageJson.genieacs) {
+      // Either remote or local dont have genieacs information - cannot compare
+      // data, so it makes no sense to upgrade anything
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+      });
+    }
+    exec('[ -d "../genieacs" ]', (err, stdout, stderr) => {
+      if (err) {
+        // No genieacs directory - no TR-069 installation, so no upgrades
+        return resolve({
+          'updateGenie': updateGenie,
+          'updateProvision': updateProvision,
+          'updatePreset': updatePreset,
+        });
+      }
+      let localGenieRef = localPackageJson.genieacs.ref;
+      let remoteGenieRef = remotePackageJson.genieacs.ref;
+      if (localGenieRef && remoteGenieRef &&
+          localGenieRef !== remoteGenieRef) {
+        // GenieACS version has changed, needs to update it
+        updateGenie = true;
+      }
+      let localProvisionHash = localPackageJson.genieacs.provisionHash;
+      let remoteProvisionHash = remotePackageJson.genieacs.provisionHash;
+      if (localProvisionHash && remoteProvisionHash &&
+          localProvisionHash !== remoteProvisionHash) {
+        // Provision script has changed, needs to update it
+        updateProvision = true;
+      }
+      let localPresetHash = localPackageJson.genieacs.presetHash;
+      let remotePresetHash = remotePackageJson.genieacs.presetHash;
+      if (localPresetHash && remotePresetHash &&
+          localPresetHash !== remotePresetHash) {
+        // Preset json has changed, needs to update it
+        updatePreset = true;
+      }
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+        'newGenieRef': remoteGenieRef,
+      });
+    });
+  });
 };
 
 updateController.rebootGenie = function(instances) {
@@ -346,8 +359,14 @@ const updateFlashman = function(automatic, res) {
             if (gitExists) {
               isRunningUserOwnerOfDirectory().then((isOwner) => {
                 if (isOwner) {
-                  let genieUpgrades = checkGenieNeedsUpdate(remotePackage);
-                  downloadUpdate(remoteVersion)
+                  let genieUpgrades;
+                  checkGenieNeedsUpdate(remotePackage)
+                  .then((result)=>{
+                    genieUpgrades = result;
+                    return downloadUpdate(remoteVersion);
+                  }, (rejectedValue)=>{
+                    return Promise.reject(rejectedValue);
+                  })
                   .then(()=>{
                     return updateDependencies();
                   }, (rejectedValue)=>{
