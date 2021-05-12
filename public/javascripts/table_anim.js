@@ -165,6 +165,7 @@ $(document).ready(function() {
   let visibleColumnsOnPage = $('#devices-table-content').
     data('visiblecolumnsonpage');
   let isSuperuser = false;
+  let enableDataCollecting = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
   let grantNotificationPopups = false;
@@ -192,6 +193,9 @@ $(document).ready(function() {
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
+  }
+  if ($('#devices-table-content').data('enabledatacollecting')) {
+    enableDataCollecting = $('#devices-table-content').data('enabledatacollecting');
   }
   if ($('#devices-table-content').data('role')) {
     grantFirmwareUpgrade = role.grantFirmwareUpgrade;
@@ -1212,7 +1216,7 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
 
-          let data_collectingAction = baseAction
+          let dataCollectingAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', 'Coleta de dados');
@@ -1258,8 +1262,8 @@ $(document).ready(function() {
             sideMenu[idxMenu] += wanBytesAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069) {
-            sideMenu[idxMenu] += data_collectingAction;
+          if (!isTR069 && isSuperuser && enableDataCollecting) {
+            sideMenu[idxMenu] += dataCollectingAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {

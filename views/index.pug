@@ -126,7 +126,7 @@ block content
                   button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
                     i.fas.fa-trash
                     span &nbsp; Remover vários
-              if (enable_data_collecting)
+              if (superuser && enable_data_collecting)
                 .col-lg-auto.pr-0
                   button.ml-0.btn.btn-primary(type="button", id="btn-data_collecting-modal")
                     .fas.fa-chart-bar
@@ -183,6 +183,7 @@ block content
                 tbody#devices-table-content(
                   data-role=role,
                   data-superuser=superuser ? "true" : "false",
+                  data-enabledatacollecting=enable_data_collecting,
                   data-visiblecolumnsonpage=visiblecolumnsonpage)
         .row.mt-3.mb-3
           .col-md-9
