@@ -1337,7 +1337,6 @@ deviceInfoController.receiveDevices = function(req, res) {
   });
 };
 
-
 deviceInfoController.receiveSiteSurvey = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
