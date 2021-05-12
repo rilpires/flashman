@@ -120,15 +120,17 @@ $(document).ready(function() {
           url: '/vlan/fetchmaxvid',
           traditional: true,
           data: {
-            idsormodels: compatibleModels,
+            models: JSON.stringify(compatibleModels),
           },
           success: function(res) {
             if (res.success) {
               let maxVids = res.maxVids;
-              for (let idx = 0; idx < maxVids.length; idx++) {
+              for (let model of compatibleModels) {
                 $('#max-vlan-table').append(
-                  $('tr').append($('td').text(compatibleModels[idx])).append(
-                    $('td').text(maxVids[idx])),
+                  $('<tr>').append(
+                    $('<td>').text(model),
+                    $('<td>').text(maxVids[model])
+                  ),
                 );
               }
             } else {

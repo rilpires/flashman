@@ -14,7 +14,7 @@ $(document).ready(function() {
         dataControl.qtdPorts = row.data('qtdPorts');
         dataControl.vlan_profiles = await fetchVlanProfiles();
         dataControl.vlan = await fetchVlanDeviceInfo(id);
-        dataControl.id = id;
+        dataControl.deviceModel = row.data('device-model');
 
         // build modal
         $('#vlan-hlabel').text(id);
@@ -173,17 +173,17 @@ const buildVlanModal = function(dc, canEdit) {
       }
 
       $.ajax({
-        type: 'GET',
+        type: 'POST',
         url: '/vlan/fetchmaxvid',
         traditional: true,
         data: {
-          idsormodels: [dc.id],
+          models: JSON.stringify([dc.deviceModel]),
         },
         success: function(res) {
           if (res.success) {
             let maxVids = res.maxVids;
             for (let j = 0; j < dc.vlan_profiles.length; j++) {
-              if (dc.vlan_profiles[j].vlan_id <= maxVids[0]) {
+              if (dc.vlan_profiles[j].vlan_id <= maxVids[dc.deviceModel]) {
                 let option = $('<option></option>').
                   attr('value', dc.vlan_profiles[j].vlan_id).
                   text(dc.vlan_profiles[j].profile_name);

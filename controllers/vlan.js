@@ -7,6 +7,7 @@ let DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const Role = require('../models/role');
 const crypto = require('crypto');
+const util = require('./handlers/util');
 
 let vlanController = {};
 
@@ -552,27 +553,25 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
 };
 
 vlanController.getMaxVid = function(req, res) {
-  let maxVids = [];
-  console.log('received idsormodels:'+req.body.idsormodels);
-  if (req.body.idsormodels[0].includes(':')) { // it's an id array
-    req.body.idsormodels.forEach(function(id) {
-      DeviceModel.findById(id, function(err, matchedDevice) {
-        if (err || !matchedDevice) {
-          console.log(err);
-          return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
-        } else {
-          let deviceInfo = DeviceVersion.getDeviceInfo(matchedDevice.model);
-          maxVids.push(deviceInfo.max_vid);
-        }
-      });
+  let maxVids = {};
+  let models = req.body.models;
+  if (util.isJsonString(models)) {
+    models = JSON.parse(models);
+    for (let model of models) {
+      let deviceInfo = DeviceVersion.getDeviceInfo(model);
+      maxVids[model] = deviceInfo.max_vid;
+    }
+    return res.json({
+      success: true,
+      type: 'success',
+      maxVids: maxVids
     });
-    return res.json({success: true, type: 'success', maxVids: maxVids});
-  } else { // it's a model array
-    req.body.idsormodels.forEach(function(id) {
-      let deviceInfo = DeviceVersion.getDeviceInfo(id);
-      maxVids.push(deviceInfo.max_vid);
+  } else {
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao tratar JSON',
+      errors: [],
     });
-    return res.json({success: true, type: 'success', maxVids: maxVids});
   }
 };
 
