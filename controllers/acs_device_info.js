@@ -336,7 +336,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.wifi_band = band2;
   } else if (device.wifi_band !== band2) {
     changes.wifi2.band = device.wifi_band;
-    hasChanges = true;
   }
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
@@ -364,7 +363,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.wifi_band_5ghz = band5;
   } else if (device.wifi_band_5ghz !== band5) {
     changes.wifi5.band = device.wifi_band_5ghz;
-    hasChanges = true;
   }
 
   if (data.lan.router_ip && !device.lan_subnet) {
