@@ -414,7 +414,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let syncLimit = 5;
     if (device.acs_sync_loops === syncLimit) {
       // Inform via log that this device has entered a sync loop
-      console.log('Device '+device.acs_id+' has entered a sync loop: '+changes);
+      let serialChanges = JSON.stringify(changes);
+      console.log(
+        'Device '+device.acs_id+' has entered a sync loop: '+serialChanges,
+      );
     } else if (device.acs_sync_loops <= syncLimit) {
       // Guard against looping syncs - do not force changes if over limit
       // Possibly TODO: Let acceptLocalChanges be configurable for the admin
