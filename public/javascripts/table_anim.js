@@ -1266,7 +1266,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += dataCollectingAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+          if (isTR069 && (isSuperuser || grantWanBytes) && grantWanBytesSupport) {
             sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
