@@ -24,7 +24,7 @@ router.route('/receive/routerstatus').post(
 router.route('/receive/wps').post(
   deviceInfoController.receiveWpsResult);
 router.route('/receive/speedtestresult').post(
-  deviceInfoController.receiveSpeedTestResult);
+  deviceInfoController.receiveSpeedtestResult);
 router.use('/app', require('./app_api'));
 
 module.exports = router;
