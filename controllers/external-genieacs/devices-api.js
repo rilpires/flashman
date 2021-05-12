@@ -83,6 +83,8 @@ const convertWifiBand = function(band) {
       return '40MHz';
     case 'VHT80':
       return '80MHz';
+    case 'auto':
+      return 'auto';
     default:
       return '';
   }
