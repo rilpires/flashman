@@ -676,9 +676,9 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
 
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          // data collecting parameters to be sent to device. initiating with default values
-          // nothing happens in device with these parameters.
-          let data_collecting = { // default values to be sent to device.
+          // data collecting parameters to be sent to device.
+          // initiating with default values.
+          let data_collecting = { // nothing happens in device with these parameters.
             is_active: false,
             has_latency: false,
             ping_fqdn: '',
@@ -686,8 +686,10 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             ping_packets: 100,
           };
           // for each data_collecting parameter, in config, we copy its value.
+          // This also makes the code compatible with a data base with no data
+          // collecting parameters.
           for (let key in matchedConfig.data_collecting) {
-            data_collecting[key] = matchedConfig.data_collecting[key]; 
+            data_collecting[key] = matchedConfig.data_collecting[key];
           }
           // combining 'Device' and 'Config' if data_collecting exists in Config.
           if (matchedDevice.data_collecting !== undefined) {
@@ -698,9 +700,8 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
             // preference for device value if it exists.
             d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
-          } else { // if data collecting doesn't exist, buttons are off.
+          } else { // if data collecting doesn't exist, device won't collect anything.
             data_collecting.is_active = false;
-            data_collecting.has_latency = false;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
