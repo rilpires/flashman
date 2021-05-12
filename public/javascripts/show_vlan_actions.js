@@ -174,14 +174,16 @@ const buildVlanModal = function(dc, canEdit) {
 
       $.ajax({
         type: 'GET',
-        url: '/vlan/fetchmaxvid/' + dc.id,
-        dataType: 'json',
-        contentType: 'application/json',
+        url: '/vlan/fetchmaxvid',
+        traditional: true,
+        data: {
+          idsormodels: [dc.id],
+        },
         success: function(res) {
           if (res.success) {
-            let maxVid = res.maxVid;
+            let maxVids = res.maxVids;
             for (let j = 0; j < dc.vlan_profiles.length; j++) {
-              if (dc.vlan_profiles[j].vlan_id <= maxVid) {
+              if (dc.vlan_profiles[j].vlan_id <= maxVids[0]) {
                 let option = $('<option></option>').
                   attr('value', dc.vlan_profiles[j].vlan_id).
                   text(dc.vlan_profiles[j].profile_name);

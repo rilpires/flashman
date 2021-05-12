@@ -552,16 +552,32 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
 };
 
 vlanController.getMaxVid = function(req, res) {
-  DeviceModel.findById(req.params.deviceid, function(err, matchedDevice) {
-    if (err || !matchedDevice) {
-      console.log(err);
-      return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
-    } else {
-      let deviceInfo = DeviceVersion.getDeviceInfo(matchedDevice.model);
-      console.log('max vid: '+deviceInfo.max_vid);
-      return res.json({success: true, type: 'success', maxVid: deviceInfo.max_vid});
-    }
-  });
+  let maxVids = [];
+  console.log('received idsormodels:'+req.body.idsormodels);
+  if (req.body.idsormodels[0].includes(':')) { // it's an id array
+    req.body.idsormodels.forEach(function(id) {
+      DeviceModel.findById(id, function(err, matchedDevice) {
+        if (err || !matchedDevice) {
+          console.log(err);
+          return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
+        } else {
+          let deviceInfo = DeviceVersion.getDeviceInfo(matchedDevice.model);
+          maxVids.push(deviceInfo.max_vid);
+        }
+      });
+    });
+    return res.json({success: true, type: 'success', maxVids: maxVids});
+  } else { // it's a model array
+    req.body.idsormodels.forEach(function(id) {
+      let deviceInfo = DeviceVersion.getDeviceInfo(id);
+      maxVids.push(deviceInfo.max_vid);
+    });
+    return res.json({success: true, type: 'success', maxVids: maxVids});
+  }
+};
+
+vlanController.getVlanCompatibleModels = function(req, res) {
+  return res.json({success: true, type: 'success', compatibleModels: DeviceVersion.getVlanCompatible()});
 };
 
 module.exports = vlanController;
