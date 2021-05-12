@@ -287,7 +287,10 @@ $(document).ready(function() {
     }
   };
 
-  document.getElementById('btn-data_collecting-modal').onclick = (event) => serviceModal.modal('show');
+  let btnDataCollecting = document.getElementById('btn-data_collecting-modal');
+  if (btnDataCollecting) {
+    btnDataCollecting.onclick = (event) => serviceModal.modal('show');
+  }
   [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel));
   document.getElementById("data_collecting_serviceForm").onsubmit = submitServiceParameters;
   document.getElementById("data_collecting_updateManyForm").onsubmit = submitUpdateManyParameters;
