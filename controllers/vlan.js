@@ -55,12 +55,6 @@ vlanController.showVlanProfiles = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              let active = matchedConfig.measure_configs.is_active;
-                indexContent.measure_active = active;
-                indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
-              indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
 
@@ -121,12 +115,6 @@ vlanController.updateVlanProfile = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              let active = matchedConfig.measure_configs.is_active;
-                indexContent.measure_active = active;
-                indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
-              indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
 
