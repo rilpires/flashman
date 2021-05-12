@@ -183,7 +183,7 @@ block content
                 tbody#devices-table-content(
                   data-role=role,
                   data-superuser=superuser ? "true" : "false",
-                  data-enabledatacollecting=enable_data_collecting,
+                  data-enabledatacollecting=enable_data_collecting ? "true" : "false",
                   data-visiblecolumnsonpage=visiblecolumnsonpage)
         .row.mt-3.mb-3
           .col-md-9
