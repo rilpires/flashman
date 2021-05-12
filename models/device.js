@@ -23,8 +23,8 @@ let deviceSchema = new Schema({
   release: String,
   is_license_active: Boolean,
   data_collecting: {
-    is_active: {type: Boolean, required: true, default: false}, // logical AND with config.js value.
-    has_latency: {type: Boolean, required: true, default: false}, // logical AND with config.js value.
+    is_active: Boolean, // logical AND with config.js value.
+    has_latency: Boolean, // logical AND with config.js value.
     ping_fqdn: String, // should use config.js value if this value is falsifiable.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},

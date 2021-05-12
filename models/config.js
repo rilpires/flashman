@@ -24,11 +24,11 @@ let configSchema = new mongoose.Schema({
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
   data_collecting: {
-    is_active: {type: Boolean, required: true, default: false},
-    has_latency: {type: Boolean, required: true, default: false},
-    alarm_fqdn: {type: String, required: true, default: ''},
-    ping_fqdn: {type: String, required: true, default: ''},
-    ping_packets: {type: Number, required: true, default: 100},
+    is_active: Boolean,
+    has_latency: Boolean,
+    alarm_fqdn: String,
+    ping_fqdn: String,
+    ping_packets: Number,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
