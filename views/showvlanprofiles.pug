@@ -17,6 +17,14 @@ block content
             .col-10.text-center
               span.card-title Adicionar novo perfil de VLAN
         .card-body.collapse.out(id="new-vlan-profile-card")
+          .alert.alert-info
+            .fas.fa-info-circle.fa-lg
+            table
+              thead
+                tr
+                  th Modelo
+                  th Número de VLAN máximo
+              tbody#max-vlan-table
           form.needs-validation(
             id="new-vlan-profile-form",
             method='post',

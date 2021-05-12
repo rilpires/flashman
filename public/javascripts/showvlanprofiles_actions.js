@@ -107,6 +107,41 @@ $(document).ready(function() {
            '<"row" <"col-6"l>                                  ' +
            '       <"col-6"p>                                 >',
   });
+  $.ajax({
+    type: 'GET',
+    url: '/vlan/fetchvlancompatible',
+    dataType: 'json',
+    contentType: 'application/json',
+    success: function(res) {
+      if (res.success) {
+        let compatibleModels = res.compatibleModels;
+        $.ajax({
+          type: 'POST',
+          url: '/vlan/fetchmaxvid',
+          traditional: true,
+          data: {
+            idsormodels: compatibleModels,
+          },
+          success: function(res) {
+            if (res.success) {
+              let maxVids = res.maxVids;
+              for (let idx = 0; idx < maxVids.length; idx++) {
+                $('#max-vlan-table').append(
+                  $('tr').append($('td').text(compatibleModels[idx])).append(
+                    $('td').text(maxVids[idx])),
+                );
+              }
+            } else {
+              displayAlertMsg(res.message);
+            }
+          },
+          error: function(res) {
+            displayAlertMsg(res.message);
+          },
+        });
+      }
+    },
+  });
   // Initialize custom options on dataTable
   $('.dt-vlan-profiles-table-btns').append(
     $('<div></div>').addClass('btn-group').attr('role', 'group').append(
