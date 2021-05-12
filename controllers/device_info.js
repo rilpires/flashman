@@ -673,12 +673,37 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
+
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          let zabbixFqdn = '';
-          if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
-            zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
+          // data collecting parameters to be sent to device.
+          // initiating with default values.
+          let data_collecting = { // nothing happens in device with these parameters.
+            is_active: false,
+            has_latency: false,
+            ping_fqdn: '',
+            alarm_fqdn: '',
+            ping_packets: 100,
+          };
+          // for each data_collecting parameter, in config, we copy its value.
+          // This also makes the code compatible with a data base with no data
+          // collecting parameters.
+          for (let key in matchedConfig.data_collecting) {
+            data_collecting[key] = matchedConfig.data_collecting[key];
           }
+          // combining 'Device' and 'Config' if data_collecting exists in Config.
+          if (matchedDevice.data_collecting !== undefined) {
+            let d = matchedDevice.data_collecting; // parameters from device model.
+            let p = data_collecting; // the final parameters.
+            // for on/off buttons, device value && config value if it exists in device.
+            d.is_active !== undefined && (p.is_active = p.is_active && d.is_active);
+            d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
+            // preference for device value if it exists.
+            d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
+          } else { // if data collecting doesn't exist, device won't collect anything.
+            data_collecting.is_active = false;
+          }
+
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
@@ -714,9 +739,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
-            'zabbix_fqdn': zabbixFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'data_collecting_is_active': data_collecting.is_active,
+            'data_collecting_has_latency': data_collecting.has_latency,
+            'data_collecting_alarm_fqdn': data_collecting.alarm_fqdn,
+            'data_collecting_ping_fqdn': data_collecting.ping_fqdn,
+            'data_collecting_ping_packets': data_collecting.ping_packets,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1758,46 +1785,6 @@ deviceInfoController.receiveWpsResult = function(req, res) {
     console.log('Wps: ' + id + ' received successfully');
     return res.status(200).json({processed: 1});
   });
-};
-
-deviceInfoController.getZabbixConfig = async function(req, res) {
-  let id = req.headers['x-anlix-id'];
-  let envsec = req.headers['x-anlix-sec'];
-
-  // Check secret to authenticate api call
-  if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec !== req.app.locals.secret) {
-      console.log('Router ' + id + ' Get Zabbix Conf fail: Secret not match');
-      return res.status(403).json({success: 0});
-    }
-  }
-
-  try {
-    // Check if zabbix fqdn config is set
-    let config = await Config.findOne({is_default: true});
-    if (!config) throw new {message: 'Config not found'};
-    if (!config.measure_configs.zabbix_fqdn) {
-      throw new {message: 'Zabbix FQDN not configured'};
-    }
-
-    // Check if device has a zabbix psk configured
-    let device = await DeviceModel.findById(id);
-    if (!device) throw new {message: 'Device ' + id + ' not found'};
-    if (!device.measure_config.measure_psk) {
-      throw new {message: 'Device ' + id + ' has no psk configured'};
-    }
-
-    // Reply with zabbix fqdn and device zabbix psk
-    return res.status(200).json({
-      success: 1,
-      psk: device.measure_config.measure_psk,
-      fqdn: config.measure_configs.zabbix_fqdn,
-      is_active: device.measure_config.is_active,
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({success: 0});
-  }
 };
 
 module.exports = deviceInfoController;

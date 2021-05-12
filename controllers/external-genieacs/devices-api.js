@@ -185,7 +185,7 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function(model) {
   let fields = getDefaultFields();
- 
+
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded

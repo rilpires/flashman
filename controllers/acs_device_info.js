@@ -90,7 +90,6 @@ const convertWifiMode = function(mode, is5ghz) {
 };
 
 const convertToDbm = function(model, rxPower) {
-  //let rxPowerLength = rxPower.toString().length;
   switch (model) {
     case 'F670L':
     case 'G-140W-C':
@@ -385,9 +384,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!acceptLocalChanges) {
     acsDeviceInfoController.updateInfo(device, changes);
   }
-  
-  if (data.wan.pon_rxpower) device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_rxpower);
-  if (data.wan.pon_txpower) device.pon_txpower = convertToDbm(data.common.model, data.wan.pon_txpower);
+
+  if (data.wan.pon_rxpower) device.pon_rxpower = convertToDbm(data.common.model,
+                                                              data.wan.pon_rxpower);
+  if (data.wan.pon_txpower) device.pon_txpower = convertToDbm(data.common.model,
+                                                              data.wan.pon_txpower);
   if (data.wan.pon_rxpower && data.wan.pon_txpower) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
@@ -550,9 +551,11 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();      
-        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
-        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+        deviceEdit.last_contact = Date.now();
+        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.rxpower);
+        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.txpower);
         ponSignal = appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,

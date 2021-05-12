@@ -185,6 +185,16 @@ deviceListController.index = function(req, res) {
     indexContent.disableAutoUpdate = false;
   }
 
+  // Check Flashman data collecting availability
+  if (typeof process.env.FLM_ENABLE_DATA_COLLECTING !== 'undefined' && (
+             process.env.FLM_ENABLE_DATA_COLLECTING === 'true' ||
+             process.env.FLM_ENABLE_DATA_COLLECTING === true)
+  ) {
+    indexContent.enable_data_collecting = true;
+  } else {
+    indexContent.enable_data_collecting = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;
@@ -199,12 +209,6 @@ deviceListController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-        let active = matchedConfig.measure_configs.is_active;
-        indexContent.measure_active = active;
-        indexContent.measure_token = (active) ?
-            matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
         indexContent.update_schedule = {
           is_active: matchedConfig.device_update_schedule.is_active,
           device_total: matchedConfig.device_update_schedule.device_count,
@@ -2413,10 +2417,12 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       return res.status(400).json({processed: 0, success: false});
     }
     if (!matchedDevice) {
-      return res.status(404).json({success: false, message: "ONU não encontrada"});
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
     }
     if (!matchedDevice.use_tr069) {
-      return res.status(404).json({success: false, message: "ONU não encontrada"});
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;

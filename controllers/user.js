@@ -545,12 +545,6 @@ userController.getProfile = function(req, res) {
       } else {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-        let active = matchedConfig.measure_configs.is_active;
-          indexContent.measure_active = active;
-          indexContent.measure_token = (active) ?
-              matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
       }
       indexContent.superuser = req.user.is_superuser;
       indexContent.username = req.user.name;
@@ -630,12 +624,6 @@ userController.showCertificates = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              let active = matchedConfig.measure_configs.is_active;
-                indexContent.measure_active = active;
-                indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
-              indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
 
@@ -696,12 +684,6 @@ userController.showAll = function(req, res) {
             } else {
               indexContent.update = matchedConfig.hasUpdate;
               indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-              let active = matchedConfig.measure_configs.is_active;
-                indexContent.measure_active = active;
-                indexContent.measure_token = (active) ?
-                    matchedConfig.measure_configs.auth_token : '';
-              let license = matchedConfig.measure_configs.is_license_active;
-              indexContent.measure_license = license;
             }
             indexContent.username = req.user.name;
 
@@ -754,12 +736,6 @@ userController.showRoles = function(req, res) {
           } else {
             indexContent.update = matchedConfig.hasUpdate;
             indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
-            let active = matchedConfig.measure_configs.is_active;
-              indexContent.measure_active = active;
-              indexContent.measure_token = (active) ?
-                  matchedConfig.measure_configs.auth_token : '';
-            let license = matchedConfig.measure_configs.is_license_active;
-            indexContent.measure_license = license;
           }
           indexContent.username = req.user.name;
 
