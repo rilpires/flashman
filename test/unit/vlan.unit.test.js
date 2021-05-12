@@ -97,7 +97,7 @@ describe('VLAN Controller : addVlanProfile', () => {
     const res = await reqMaker('localhost:8000').post('/vlan/profile/new').send({id: '4096', name: 'fourhundred'}).set('Cookie', adminCk).set('Accept', 'application/json');
     expect(res.body.success).toBeFalsy();
     expect(res.body.type).toMatch(/danger/);
-    expect(res.body.message).toMatch(/O VLAN ID não pode ser menor que 10 ou maior que 127/);
+    expect(res.body.message).toMatch(/O VLAN ID não pode ser menor que 3 ou maior que 4094/);
     expect(res.statusCode).toBe(200);
   });
 
