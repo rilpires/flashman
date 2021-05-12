@@ -239,28 +239,28 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   device.serial_tr069 = splitID[splitID.length - 1];
-  if (data.common.model) device.model = data.common.model;
-  if (data.common.version) device.version = data.common.version;
+  if (data.common.model) device.model = data.common.model.trim();
+  if (data.common.version) device.version = data.common.version.trim();
   if (hasPPPoE) {
     if (device.connection_type !== 'pppoe') {
-      changes.wan.pppoe_user = data.wan.pppoe_user;
-      changes.wan.pppoe_pass = data.wan.pppoe_pass;
+      changes.wan.pppoe_user = data.wan.pppoe_user.trim();
+      changes.wan.pppoe_pass = data.wan.pppoe_pass.trim();
     }
     if (!device.pppoe_user) {
-      device.pppoe_user = data.wan.pppoe_user;
-    } else if (device.pppoe_user !== data.wan.pppoe_user) {
-      changes.wan.pppoe_user = device.pppoe_user;
+      device.pppoe_user = data.wan.pppoe_user.trim();
+    } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.trim()) {
+      changes.wan.pppoe_user = device.pppoe_user.trim();
     }
     if (!device.pppoe_password) {
-      device.pppoe_password = data.wan.pppoe_pass;
+      device.pppoe_password = data.wan.pppoe_pass.trim();
     } else if (data.wan.pppoe_pass && // make sure this onu reports the password
-               device.pppoe_password !== data.wan.pppoe_pass) {
-      changes.wan.pppoe_pass = device.pppoe_password;
+               device.pppoe_password.trim() !== data.wan.pppoe_pass.trim()) {
+      changes.wan.pppoe_pass = device.pppoe_password.trim();
     }
   } else {
     if (device.connection_type !== 'dhcp') {
-      changes.wan.pppoe_user = device.pppoe_user;
-      changes.wan.pppoe_pass = device.pppoe_password;
+      changes.wan.pppoe_user = device.pppoe_user.trim();
+      changes.wan.pppoe_pass = device.pppoe_password.trim();
     }
   }
 
@@ -278,9 +278,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
 
   if (data.wifi2.ssid && !device.wifi_ssid) {
-    device.wifi_ssid = data.wifi2.ssid;
-  } else if (device.wifi_ssid !== data.wifi2.ssid) {
-    changes.wifi2.ssid = device.wifi_ssid;
+    device.wifi_ssid = data.wifi2.ssid.trim();
+  } else if (device.wifi_ssid.trim() !== data.wifi2.ssid.trim()) {
+    changes.wifi2.ssid = device.wifi_ssid.trim();
   }
   let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
   if (channel2 && !device.wifi_channel) {
@@ -302,9 +302,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
-    device.wifi_ssid_5ghz = data.wifi5.ssid;
-  } else if (device.wifi_ssid_5ghz !== data.wifi5.ssid) {
-    changes.wifi5.ssid = device.wifi_ssid_5ghz;
+    device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
+  } else if (device.wifi_ssid_5ghz.trim() !== data.wifi5.ssid.trim()) {
+    changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
   }
   let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
   if (channel5 && !device.wifi_channel_5ghz) {
