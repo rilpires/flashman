@@ -165,6 +165,7 @@ $(document).ready(function() {
   let visibleColumnsOnPage = $('#devices-table-content').
     data('visiblecolumnsonpage');
   let isSuperuser = false;
+  let enableDataCollecting = false;
   let grantFirmwareUpgrade = false;
   let grantMassFirmwareUpgrade = false;
   let grantNotificationPopups = false;
@@ -192,6 +193,9 @@ $(document).ready(function() {
 
   if ($('#devices-table-content').data('superuser')) {
     isSuperuser = $('#devices-table-content').data('superuser');
+  }
+  if ($('#devices-table-content').data('enabledatacollecting')) {
+    enableDataCollecting = $('#devices-table-content').data('enabledatacollecting');
   }
   if ($('#devices-table-content').data('role')) {
     grantFirmwareUpgrade = role.grantFirmwareUpgrade;
@@ -1060,6 +1064,7 @@ $(document).ready(function() {
             continue;
           }
           let isTR069 = device.use_tr069;
+          let ponRXPower = device.pon_rxpower;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
@@ -1201,12 +1206,17 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-chart-line')
           .replace('$REPLACE_TEXT', 'Tráfego WAN');
 
+          let ponSignalAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
+          .replace('$REPLACE_ICON', 'fa-wave-square')
+          .replace('$REPLACE_TEXT', 'Sinal Óptico');
+
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
           .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
 
-          let data_collectingAction = baseAction
+          let dataCollectingAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', 'Coleta de dados');
@@ -1252,8 +1262,12 @@ $(document).ready(function() {
             sideMenu[idxMenu] += wanBytesAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069) {
-            sideMenu[idxMenu] += data_collectingAction;
+          if (!isTR069 && isSuperuser && enableDataCollecting) {
+            sideMenu[idxMenu] += dataCollectingAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (isTR069 && (isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+            sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
@@ -1351,6 +1365,17 @@ $(document).ready(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
+                (isTR069 ?
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">Intesidade do sinal óptico (RXPower/Recebido)</label>'+
+                    '<input class="form-control" type="text" maxlength="3" '+
+                    'value="'+
+                    ((ponRXPower) ? ponRXPower + ' dBm' : 'Não disponível')+
+                    '" disabled></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>':
+                  ''
+                )+
                 '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
                   '$REPLACE_SELECTED_IPV6_ENABLED></input>'+
