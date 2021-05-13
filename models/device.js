@@ -91,15 +91,14 @@ let deviceSchema = new Schema({
       'none', // never asked
     ]},
   }],
-  port_forward_rules: [{
+  port_mapping: [{
     ip: String,
-    ports_mappings: [{
-      external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
-      external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
-      internal_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
-      internal_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
-    }],
+    external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    internal_port_start: {type: Number, required: true, min: 1, max: 65535},
+    internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
+  port_mapping_entries: Number,
   ap_survey: [{
     mac: String,
     ssid: String,
