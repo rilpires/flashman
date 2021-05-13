@@ -445,7 +445,7 @@ updateController.setAutoConfig = async function(req, res) {
       });
     }
 
-    await(config.save());
+    await config.save();
     return res.status(200).json({
       type: 'success',
       message: message,
