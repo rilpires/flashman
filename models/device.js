@@ -12,6 +12,7 @@ let deviceSchema = new Schema({
   use_tr069: {type: Boolean, default: false},
   serial_tr069: String,
   acs_id: {type: String, sparse: true},
+  acs_sync_loops: {type: Number, default: 0},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},

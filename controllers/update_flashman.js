@@ -33,7 +33,7 @@ const versionCompare = function(foo, bar) {
   return 0;
 };
 
-const getRemoteVersion = function() {
+const getRemotePackage = function() {
   return new Promise((resolve, reject)=>{
     let jsonHost = localPackageJson.updater.jsonHost;
     let gitUser = localPackageJson.updater.githubUser;
@@ -45,7 +45,7 @@ const getRemoteVersion = function() {
       if (error || resp.statusCode !== 200) {
         reject();
       } else {
-        resolve(JSON.parse(body).version);
+        resolve(JSON.parse(body));
       }
     });
   });
@@ -93,6 +93,102 @@ const updateDependencies = function() {
   });
 };
 
+const updateGenieRepo = function(ref) {
+  let fetch = 'cd ../genieacs && git fetch';
+  let checkout = 'cd ../genieacs && git checkout ' + ref;
+  let install = 'cd ../genieacs && npm install';
+  let build = 'cd ../genieacs && npm run build';
+  return new Promise((resolve, reject)=>{
+    exec(fetch, (err, stdout, stderr)=>{
+      if (err) return reject();
+      exec(checkout, (err, stdout, stderr) => {
+        if (err) return reject();
+        exec(install, (err, stdout, stderr) => {
+          if (err) return reject();
+          exec(build, (err, stdout, stderr) => {
+            if (err) return reject();
+            return resolve();
+          });
+        });
+      });
+    });
+  });
+};
+
+const updateGenieACS = function(upgrades) {
+  return new Promise((resolve, reject) => {
+    let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
+    // Get config from database
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
+        console.log('Error reading configs from database in update GenieACS!');
+        return reject();
+      }
+      // Update genie repository if needed
+      let waitForUpdate;
+      if (upgrades.updateGenie) {
+        console.log('Updating GenieACS version...');
+        waitForUpdate = updateGenieRepo(upgrades.newGenieRef);
+      } else {
+        waitForUpdate = Promise.resolve();
+      }
+      // Update provision script if needed
+      let waitForProvision;
+      if (upgrades.updateProvision) {
+        try {
+          let provisionScript = fs.readFileSync(
+            './controllers/external-genieacs/provision.js', 'utf8',
+          );
+          console.log('Updating GenieACS provision...');
+          waitForProvision = tasksApi.putProvision(provisionScript);
+        } catch (e) {
+          waitForProvision = Promise.reject();
+        }
+      } else {
+        waitForProvision = Promise.resolve();
+      }
+      // Update preset json if needed
+      let waitForPreset;
+      if (upgrades.updatePreset) {
+        try {
+          let preset = JSON.parse(fs.readFileSync(
+            './controllers/external-genieacs/flashman-preset.json',
+          ));
+          // Alter the periodic inform interval based on database config
+          let interval = '' + parseInt(config.tr069.inform_interval / 1000);
+          preset.configurations.find((c) => c.name === field).value = interval;
+          preset._id = 'inform';
+          console.log('Updating GenieACS preset...');
+          waitForPreset = tasksApi.putPreset(preset);
+        } catch (e) {
+          waitForPreset = Promise.reject();
+        }
+      } else {
+        waitForPreset = Promise.resolve();
+      }
+      // Wait for all promises and check results
+      let promises = [waitForUpdate, waitForProvision, waitForPreset];
+      Promise.allSettled(promises).then((values)=>{
+        if (values[0].status !== 'fulfilled') {
+          console.log('Error updating GenieACS repository!');
+        }
+        if (values[1].status !== 'fulfilled') {
+          console.log('Error updating GenieACS provision script!');
+        }
+        if (values[2].status !== 'fulfilled') {
+          console.log('Error updating GenieACS preset json!');
+        }
+        if (values.some((v) => v.status !== 'fulfilled')) {
+          return reject();
+        } else {
+          console.log('GenieACS updated successfully!');
+          return resolve();
+        }
+      });
+    });
+  });
+};
+
 const isRunningUserOwnerOfDirectory = function() {
   return new Promise((resolve, reject) => {
     // Check if running user is the same on current directory
@@ -120,6 +216,60 @@ const isRunningUserOwnerOfDirectory = function() {
       } else {
         return resolve(false);
       }
+    });
+  });
+};
+
+const checkGenieNeedsUpdate = function(remotePackageJson) {
+  return new Promise((resolve, reject)=>{
+    let updateGenie = false;
+    let updateProvision = false;
+    let updatePreset = false;
+    if (!remotePackageJson.genieacs || !localPackageJson.genieacs) {
+      // Either remote or local dont have genieacs information - cannot compare
+      // data, so it makes no sense to upgrade anything
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+      });
+    }
+    exec('[ -d "../genieacs" ]', (err, stdout, stderr) => {
+      if (err) {
+        // No genieacs directory - no TR-069 installation, so no upgrades
+        return resolve({
+          'updateGenie': updateGenie,
+          'updateProvision': updateProvision,
+          'updatePreset': updatePreset,
+        });
+      }
+      let localGenieRef = localPackageJson.genieacs.ref;
+      let remoteGenieRef = remotePackageJson.genieacs.ref;
+      if (localGenieRef && remoteGenieRef &&
+          localGenieRef !== remoteGenieRef) {
+        // GenieACS version has changed, needs to update it
+        updateGenie = true;
+      }
+      let localProvisionHash = localPackageJson.genieacs.provisionHash;
+      let remoteProvisionHash = remotePackageJson.genieacs.provisionHash;
+      if (localProvisionHash && remoteProvisionHash &&
+          localProvisionHash !== remoteProvisionHash) {
+        // Provision script has changed, needs to update it
+        updateProvision = true;
+      }
+      let localPresetHash = localPackageJson.genieacs.presetHash;
+      let remotePresetHash = remotePackageJson.genieacs.presetHash;
+      if (localPresetHash && remotePresetHash &&
+          localPresetHash !== remotePresetHash) {
+        // Preset json has changed, needs to update it
+        updatePreset = true;
+      }
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+        'newGenieRef': remoteGenieRef,
+      });
     });
   });
 };
@@ -172,7 +322,8 @@ const errorCallback = function(res) {
 };
 
 const updateFlashman = function(automatic, res) {
-  getRemoteVersion().then((remoteVersion) => {
+  getRemotePackage().then((remotePackage) => {
+    let remoteVersion = remotePackage.version;
     let localVersion = getLocalVersion();
     let needsUpdate = versionCompare(remoteVersion, localVersion) > 0;
     let majorUpgrade = isMajorUpgrade(remoteVersion, localVersion);
@@ -209,9 +360,21 @@ const updateFlashman = function(automatic, res) {
             if (gitExists) {
               isRunningUserOwnerOfDirectory().then((isOwner) => {
                 if (isOwner) {
-                  downloadUpdate(remoteVersion)
+                  let genieUpgrades;
+                  checkGenieNeedsUpdate(remotePackage)
+                  .then((result)=>{
+                    genieUpgrades = result;
+                    return downloadUpdate(remoteVersion);
+                  }, (rejectedValue)=>{
+                    return Promise.reject(rejectedValue);
+                  })
                   .then(()=>{
                     return updateDependencies();
+                  }, (rejectedValue)=>{
+                    return Promise.reject(rejectedValue);
+                  })
+                  .then(()=>{
+                    return updateGenieACS(genieUpgrades);
                   }, (rejectedValue)=>{
                     return Promise.reject(rejectedValue);
                   })
