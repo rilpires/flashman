@@ -11,6 +11,7 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const crypto = require('crypto');
 
 let deviceInfoController = {};
 
@@ -25,7 +26,7 @@ const genericValidate = function(field, func, key, minlength, errors) {
   }
 };
 
-const createRegistry = function(req, res) {
+const createRegistry = async function(req, res) {
   if (typeof req.body.id == 'undefined') {
     return res.status(400).end();
   }
@@ -77,6 +78,26 @@ const createRegistry = function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
+  let vlan = util.returnObjOrEmptyStr(req.body.vlan);
+  let vlanFiltered;
+  let vlanDidChange = false;
+  if (vlan !== '') {
+    let vlanConverted = vlanController.convertDeviceVlan(model, vlan);
+    let vlanInfo = await vlanController.getValidVlan(model, vlanConverted);
+    if (vlanInfo.success) {
+      vlanFiltered = Array.from(vlanInfo.vlan);
+      if (vlanInfo.didChange) {
+        vlanDidChange = true;
+      }
+    } else {
+      console.log('Error creating entry: ' + res);
+      return res.status(500).end();
+    }
+  }
+  let vlanParsed;
+  if (vlanFiltered !== undefined) {
+    vlanParsed = vlanFiltered.map((el) => JSON.parse(el));
+  }
 
   let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
@@ -165,7 +186,7 @@ const createRegistry = function(req, res) {
     if (errors.length < 1) {
       let newMeshId = meshHandlers.genMeshID();
       let newMeshKey = meshHandlers.genMeshKey();
-      let newDeviceModel = new DeviceModel({
+      let deviceObj = {
         '_id': macAddr,
         'created_at': new Date(),
         'model': model,
@@ -216,7 +237,11 @@ const createRegistry = function(req, res) {
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
-      });
+      };
+      if (vlanParsed !== undefined) {
+        deviceObj.vlan = vlanParsed;
+      }
+      let newDeviceModel = new DeviceModel(deviceObj);
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
       }
@@ -225,12 +250,19 @@ const createRegistry = function(req, res) {
           console.log('Error creating entry: ' + err);
           return res.status(500).end();
         } else {
-          return res.status(200).json({'do_update': false,
-                                       'do_newprobe': true,
-                                       'release_id:': installedRelease,
-                                       'mesh_mode': meshMode,
-                                       'mesh_id': newMeshId,
-                                       'mesh_key': newMeshKey});
+          let response = {'do_update': false,
+                          'do_newprobe': true,
+                          'release_id:': installedRelease,
+                          'mesh_mode': meshMode,
+                          'mesh_id': newMeshId,
+                          'mesh_key': newMeshKey};
+          if (vlanDidChange) {
+            let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
+            let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
+            response.vlan = vlanToDevice;
+            response.vlan_index = vlanHash;
+          }
+          return res.status(200).json(response);
         }
       });
     } else {
@@ -305,7 +337,7 @@ deviceInfoController.syncDate = function(req, res) {
 
 
 // Create new device entry or update an existing one
-deviceInfoController.updateDevicesInfo = function(req, res) {
+deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
@@ -708,9 +740,13 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             return map[matchedDevice._id];
           });
 
-          let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
-          let fetchedVlans = containerVlans.vlans;
-          let vlanHash = containerVlans.hash;
+          let fetchedVlans = '';
+          let vlanHash = '';
+          if (sentBridgeEnabled !== '1') {
+            let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+            fetchedVlans = containerVlans.vlans;
+            vlanHash = containerVlans.hash;
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,

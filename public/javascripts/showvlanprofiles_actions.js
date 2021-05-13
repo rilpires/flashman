@@ -52,22 +52,22 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
       $('#vlan-profile-table-wrapper').show();
 
       res.vlanProfiles.forEach(function(vlanProfileObj) {
-        let vlanProfileRow = $('<tr></tr>').append(
+        let vlanProfileRow = $('<tr>').append(
           (vlanProfileObj.is_superuser || vlanProfileObj.vlan_id == 1 ?
-            $('<td></td>') :
-            $('<td></td>').addClass('col-xs-1').append(
-              $('<input></input>').addClass('checkbox')
+            $('<td>') :
+            $('<td>').addClass('col-xs-1').append(
+              $('<input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', vlanProfileObj._id),
             )
           ),
-          $('<td></td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
-          $('<td></td>').addClass('td-profile-name').
+          $('<td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
+          $('<td>').addClass('td-profile-name').
             html(vlanProfileObj.profile_name),
-          $('<td></td>').append(
-            $('<button></button>').append(
-              $('<div></div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span></span>').html('&nbsp Editar'),
+          $('<td>').append(
+            $('<button>').append(
+              $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
+              $('<span>').html('&nbsp Editar'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
@@ -107,11 +107,48 @@ $(document).ready(function() {
            '<"row" <"col-6"l>                                  ' +
            '       <"col-6"p>                                 >',
   });
+  $.ajax({
+    type: 'GET',
+    url: '/vlan/fetchvlancompatible',
+    dataType: 'json',
+    contentType: 'application/json',
+    success: function(res) {
+      if (res.success) {
+        let compatibleModels = res.compatibleModels;
+        $.ajax({
+          type: 'POST',
+          url: '/vlan/fetchmaxvid',
+          traditional: true,
+          data: {
+            models: JSON.stringify(compatibleModels),
+          },
+          success: function(res) {
+            if (res.success) {
+              let maxVids = res.maxVids;
+              for (let model of compatibleModels) {
+                $('#max-vlan-table').append(
+                  $('<tr>').append(
+                    $('<td>').text(model),
+                    $('<td>').text(maxVids[model])
+                  ),
+                );
+              }
+            } else {
+              displayAlertMsg(res.message);
+            }
+          },
+          error: function(res) {
+            displayAlertMsg(res.message);
+          },
+        });
+      }
+    },
+  });
   // Initialize custom options on dataTable
   $('.dt-vlan-profiles-table-btns').append(
-    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-      $('<button></button>').addClass('btn btn-danger btn-trash').append(
-        $('<div></div>').addClass('fas fa-trash fa-lg')),
+    $('<div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg')),
     ),
   );
   // Load table content
@@ -124,18 +161,87 @@ $(document).ready(function() {
     cross.removeClass('fa-times').addClass('fa-plus');
   });
 
-  $(document).on('click', '.btn-trash', function(event) {
-    $.ajax({
-      type: 'DELETE',
-      url: '/vlan/profile/del',
-      traditional: true,
-      data: {ids: selectedItens},
-      success: function(res) {
-        displayAlertMsg(res);
+  $(document).on('click', '.btn-trash', async function(event) {
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Podem existir dispositivos cuja configuração de VLAN utiliza ' +
+        'estes perfis de VLAN. Prosseguir com esta exclusão irá associar ' +
+        'as portas que estão associadas a estes perfis de VLAN ' +
+        'ao perfil de VLAN padrão. Deseja continuar mesmo assim?',
+      confirmButtonText: 'Prosseguir',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then(async function(result) {
+      if (!result.value) return;
+      let updatesFailed = false;
+      let deviceFailed;
+      for (let i = 0; i < selectedItens.length; i++) {
+        let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
         if (res.type == 'success') {
-          fetchVlanProfiles(vlanProfilesTable);
+          res.updateDevices.every((updateObj) => {
+            updateObj = JSON.parse(updateObj);
+            $.ajax({
+              type: 'POST',
+              url: '/vlan/update/'+updateObj.deviceId,
+              traditional: true,
+              data: {
+                vlans: updateObj.vlans,
+              },
+              success: function(res) {
+                return true;
+              },
+              error: function(res) {
+                updatesFailed = true;
+                deviceFailed = updateObj.deviceId;
+                return false;
+              },
+            });
+          });
+        } else {
+          swal.close();
+          swal({
+            type: 'error',
+            title: 'Erro ao excluir perfis de VLAN',
+            text: 'Perfis de VLAN nao encontrados. ' +
+            'Por favor tente novamente',
+            confirmButtonColor: '#4db6ac',
+          });
         }
-      },
+        if (updatesFailed === true) {
+          break;
+        }
+      }
+      if (updatesFailed === true) {
+        swal.close();
+        swal({
+          type: 'error',
+          title: 'Erro ao excluir perfis de VLAN',
+          text: 'Exclusão de perfis não foi possível pois dispositivo ' +
+          deviceFailed +' não atualizou sua configuração de VLAN.',
+          confirmButtonColor: '#4db6ac',
+        });
+      } else {
+        $.ajax({
+          type: 'DELETE',
+          url: '/vlan/profile/del',
+          traditional: true,
+          data: {ids: selectedItens},
+          success: function(res) {
+            swal.close();
+            swal({
+              type: 'success',
+              title: 'Perfis excluídos com sucesso!',
+              confirmButtonColor: '#4db6ac',
+            });
+            if (res.type == 'success') {
+              fetchVlanProfiles(vlanProfilesTable);
+            }
+          },
+        });
+      }
     });
   });
 
