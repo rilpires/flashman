@@ -169,53 +169,53 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let changes = {wifi2: {}, wifi5: {}};
       // Replace relevant wifi fields with new values
       if (content.wifi_ssid) {
-        device.wifi_ssid = content.wifi_ssid;
-        changes.wifi2.ssid = content.wifi_ssid;
+        device.wifi_ssid = content.wifi_ssid.trim();
+        changes.wifi2.ssid = content.wifi_ssid.trim();
         updateParameters = true;
       }
       if (content.wifi_ssid_5ghz) {
-        device.wifi_ssid_5ghz = content.wifi_ssid_5ghz;
-        changes.wifi5.ssid = content.wifi_ssid_5ghz;
+        device.wifi_ssid_5ghz = content.wifi_ssid_5ghz.trim();
+        changes.wifi5.ssid = content.wifi_ssid_5ghz.trim();
         updateParameters = true;
       }
       if (content.wifi_password) {
-        device.wifi_password = content.wifi_password;
-        changes.wifi2.password = content.wifi_password;
+        device.wifi_password = content.wifi_password.trim();
+        changes.wifi2.password = content.wifi_password.trim();
         updateParameters = true;
       }
       if (content.wifi_password_5ghz) {
-        device.wifi_password_5ghz = content.wifi_password_5ghz;
-        changes.wifi5.password = content.wifi_password_5ghz;
+        device.wifi_password_5ghz = content.wifi_password_5ghz.trim();
+        changes.wifi5.password = content.wifi_password_5ghz.trim();
         updateParameters = true;
       }
       if (content.wifi_channel) {
-        device.wifi_channel = content.wifi_channel;
-        changes.wifi2.channel = content.wifi_channel;
+        device.wifi_channel = content.wifi_channel.trim();
+        changes.wifi2.channel = content.wifi_channel.trim();
         updateParameters = true;
       }
       if (content.wifi_band) {
-        device.wifi_band = content.wifi_band;
-        changes.wifi2.band = content.wifi_band;
+        device.wifi_band = content.wifi_band.trim();
+        changes.wifi2.band = content.wifi_band.trim();
         updateParameters = true;
       }
       if (content.wifi_mode) {
-        device.wifi_mode = content.wifi_mode;
-        changes.wifi2.mode = content.wifi_mode;
+        device.wifi_mode = content.wifi_mode.trim();
+        changes.wifi2.mode = content.wifi_mode.trim();
         updateParameters = true;
       }
       if (content.wifi_channel_5ghz) {
-        device.wifi_channel_5ghz = content.wifi_channel_5ghz;
-        changes.wifi5.channel = content.wifi_channel_5ghz;
+        device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
+        changes.wifi5.channel = content.wifi_channel_5ghz.trim();
         updateParameters = true;
       }
       if (content.wifi_band_5ghz) {
-        device.wifi_band_5ghz = content.wifi_band_5ghz;
-        changes.wifi5.band = content.wifi_band_5ghz;
+        device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
+        changes.wifi5.band = content.wifi_band_5ghz.trim();
         updateParameters = true;
       }
       if (content.wifi_mode_5ghz) {
-        device.wifi_mode_5ghz = content.wifi_mode_5ghz;
-        changes.wifi5.mode = content.wifi_mode_5ghz;
+        device.wifi_mode_5ghz = content.wifi_mode_5ghz.trim();
+        changes.wifi5.mode = content.wifi_mode_5ghz.trim();
         updateParameters = true;
       }
       // If no fields were changed, we can safely reply here
@@ -506,10 +506,10 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       }
       let content = req.body;
       if (content.pppoe_user) {
-        device.pppoe_user = content.pppoe_user;
+        device.pppoe_user = content.pppoe_user.trim();
       }
       if (content.pppoe_password) {
-        device.pppoe_password = content.pppoe_password;
+        device.pppoe_password = content.pppoe_password.trim();
       }
       // Apply changes to database and reply
       await device.save();

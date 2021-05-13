@@ -83,6 +83,8 @@ const convertWifiBand = function(band) {
       return '40MHz';
     case 'VHT80':
       return '80MHz';
+    case 'auto':
+      return 'auto';
     default:
       return '';
   }
@@ -198,7 +200,7 @@ const getZTEFields = function(model) {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
-      fields.wan.pon_txpower = fields.wan.pon_txpower.replace(/WANGponInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       break;
   }
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
@@ -211,7 +213,7 @@ const getNokiaFields = function() {
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = fields.wan.pon_txpower.replace(/WANGponInterfaceConfig/g, 'X_CMCC_GponInterfaceConfig');
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
   return fields;
 };
 
