@@ -19,11 +19,12 @@ block content
         .card-body.collapse.out(id="new-vlan-profile-card")
           .alert.alert-info
             .fas.fa-info-circle.fa-lg
-            table
+            span &nbsp; Importante! Os modelos de roteadores possuem diferentes valores máximos de VLAN ID
+            table.table.table-sm.table-borderless.text-center
               thead
                 tr
                   th Modelo
-                  th Número de VLAN máximo
+                  th ID de VLAN máximo
               tbody#max-vlan-table
           form.needs-validation(
             id="new-vlan-profile-form",

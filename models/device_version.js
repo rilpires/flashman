@@ -117,20 +117,6 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
-const vlanCompatible = [
-  'ARCHERC2V1',
-  'ARCHERC5V4',
-  'ARCHERC6V2US',
-  'ARCHERC7V5',
-  'DIR-819A1',
-  'COVR-C1200A1',
-  'EMG1702-T10AA1',
-  'EC220-G5V2',
-  'TL-WDR3600V1',
-  'TL-WDR4300V1',
-  'TL-WR2543N/NDV1',
-];
-
 /*
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wdr3500-v1~diffconfig (lshift=0, inverted=1, vlan=0)
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wr740n-v4~diffconfig (lshift=1, inverted=0, vlan=0)
@@ -601,7 +587,8 @@ const dictDevices = {
     'max_vid':0,
   },
   'TL-WR740N/NDV6': { 
-    'vlan_support': false, //even though it's in openwrt 19 it splits wan/lan into different interfaces
+    'vlan_support': false, // even though it's in openwrt 19 it splits
+                           // wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
@@ -611,7 +598,8 @@ const dictDevices = {
     'max_vid':0,
   },
   'TL-WR740NDV6': { 
-    'vlan_support': true,
+    'vlan_support': false, // even though it's in openwrt 19 it splits
+                           // wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
@@ -1209,7 +1197,9 @@ DeviceVersion.getDeviceInfo = function(model) {
 };
 
 DeviceVersion.getVlanCompatible = function() {
-  return vlanCompatible;
+  let vlanCompatible = Object.fromEntries(
+    Object.entries(dictDevices).filter(([k, device]) => device.vlan_support));
+  return Object.keys(vlanCompatible);
 };
 
 module.exports = DeviceVersion;
