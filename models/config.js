@@ -23,12 +23,12 @@ let configSchema = new mongoose.Schema({
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
-  measure_configs: {
-    is_active: {type: Boolean, default: false},
-    is_license_active: {type: Boolean, default: false},
-    auth_token: {type: String},
-    controller_fqdn: String,
-    zabbix_fqdn: String,
+  data_collecting: {
+    is_active: Boolean,
+    has_latency: Boolean,
+    alarm_fqdn: String,
+    ping_fqdn: String,
+    ping_packets: Number,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},

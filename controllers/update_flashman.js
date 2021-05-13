@@ -3,6 +3,7 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
 const commandExists = require('command-exists');
+const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
@@ -307,6 +308,11 @@ updateController.getAutoConfig = function(req, res) {
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
+        data_collecting_is_active: matchedConfig.data_collecting.is_active,
+        data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
+        data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
+        data_collecting_ping_packets: 
+          matchedConfig.data_collecting.ping_packets,
       });
     } else {
       return res.status(200).json({
@@ -384,24 +390,7 @@ updateController.setAutoConfig = async function(req, res) {
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
     let message = 'Salvo com sucesso!';
-    let updateToken = (req.body.token_update === 'on') ? true : false;
-    let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
-    // Update configs if either no token is set and form sets one, or
-    // if one is already set and checkbox to update was marked
-    if ((!config.measure_configs.auth_token || updateToken) &&
-        measureToken !== '') {
-      let controlResp = await controlApi.sendTokenControl(req, measureToken);
-      if (!('controller_fqdn' in controlResp) ||
-          !('zabbix_fqdn' in controlResp)) {
-        throw new {};
-      }
-      config.measure_configs.is_active = true;
-      config.measure_configs.is_license_active = true;
-      config.measure_configs.auth_token = measureToken;
-      config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
-      config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
-      message += ' Seus dispositivos começarão a medir em breve.';
-    }
+
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -456,7 +445,7 @@ updateController.setAutoConfig = async function(req, res) {
       });
     }
 
-    await config.save();
+    await(config.save());
     return res.status(200).json({
       type: 'success',
       message: message,

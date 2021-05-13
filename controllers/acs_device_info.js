@@ -89,6 +89,18 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
+const convertToDbm = function(model, rxPower) {
+  switch (model) {
+    case 'F670L':
+    case 'G-140W-C':
+      return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+    case 'GONUAC001':
+    default:
+      return rxPower;
+  }
+};
+
+
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
@@ -116,6 +128,19 @@ const appendBytesMeasure = function(original, recv, sent) {
   bytes[now] = [recv, sent];
   return bytes;
 };
+
+const appendPonSignal = function(original, rxPower, txPower) {
+  let now = Math.floor(Date.now() / 1000);
+  if (!original) original = {};
+  let dbms = JSON.parse(JSON.stringify(original));
+  if (Object.keys(dbms).length >= 100) {
+    let keysNum = Object.keys(dbms).map((k) => parseInt(k));
+    let smallest = Math.min(...keysNum);
+    delete dbms[smallest];
+  }
+  dbms[now] = [rxPower, txPower];
+  return dbms;
+}
 
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
@@ -359,6 +384,19 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!acceptLocalChanges) {
     acsDeviceInfoController.updateInfo(device, changes);
   }
+
+  if (data.wan.pon_rxpower) device.pon_rxpower = convertToDbm(data.common.model,
+                                                              data.wan.pon_rxpower);
+  if (data.wan.pon_txpower) device.pon_txpower = convertToDbm(data.common.model,
+                                                              data.wan.pon_txpower);
+  if (data.wan.pon_rxpower && data.wan.pon_txpower) {
+    device.pon_signal_measure = appendPonSignal(
+      device.pon_signal_measure,
+      device.pon_rxpower,
+      device.pon_txpower
+    );
+  }
+
   await device.save();
   return res.status(200).json({success: true});
 };
@@ -473,6 +511,61 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
         await deviceEdit.save();
       }
       sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
+    });
+  });
+  req.end();
+};
+
+// TODO: Move this function to external-genieacs?
+acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let query = {_id: acsID};
+  let projection = rxPowerField + ',' + txPowerField;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let ponSignal = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, rxPowerField+'._value') &&
+          checkForNestedKey(data, txPowerField+'._value')) {
+        success = true;
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerField+'._value'),
+          txpower: getFromNestedKey(data, txPowerField+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.rxpower);
+        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.txpower);
+        ponSignal = appendPonSignal(
+          deviceEdit.pon_signal_measure,
+          ponSignal.rxpower,
+          ponSignal.txpower,
+        );
+        deviceEdit.pon_signal_measure = ponSignal;
+        await deviceEdit.save();
+      }
+      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
+      return ponSignal;
     });
   });
   req.end();

@@ -22,13 +22,17 @@ let deviceSchema = new Schema({
   installed_release: String,
   release: String,
   is_license_active: Boolean,
-  measure_config: {
-    measure_psk: String,
-    is_active: {type: Boolean, default: false},
+  data_collecting: {
+    is_active: Boolean, // logical AND with config.js value.
+    has_latency: Boolean, // logical AND with config.js value.
+    ping_fqdn: String, // should use config.js value if this value is falsifiable.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
   pppoe_password: String,
+  pon_rxpower: {type: Number},
+  pon_txpower: {type: Number},
+  pon_signal_measure: Object,
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
