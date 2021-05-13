@@ -136,18 +136,18 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
-      port_mapping: {
-        template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.2.PortMapping.*',
-        enable: 'PortMappingEnabled',
-        lease: 'PortMappingLeaseDuration',
-        external_port_start: 'ExternalPort',
-        external_port_end: 'ExternalPortEndRange',
-        internal_port_start: 'InternalPort',
-        internal_port_end: '',
-        protocol: 'PortMappingProtocol',
-        client: 'InternalClient',
-      },
       port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+    },
+    port_mapping: {
+      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
+      enable: 'PortMappingEnabled',
+      lease: 'PortMappingLeaseDuration',
+      external_port_start: 'ExternalPort',
+      external_port_end: 'ExternalPortEndRange',
+      internal_port_start: 'InternalPort',
+      internal_port_end: '',
+      protocol: 'PortMappingProtocol',
+      client: 'InternalClient',
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -223,7 +223,6 @@ const getZTERouterFields = function() {
   let fields = getDefaultFields();
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
-  fields.wan.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
@@ -234,6 +233,7 @@ const getZTERouterFields = function() {
   fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+  fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
   return fields;
 };
 
