@@ -1,4 +1,4 @@
-/* eslint-disable max-len, camelcase */
+/* eslint-disable camelcase */
 
 const mqtt = require('../mqtts');
 let User = require('../models/user');
@@ -164,7 +164,8 @@ vlanController.getAllVlanProfiles = function(req, res) {
       return res.json({success: false, type: 'danger',
                        message: 'Erro ao buscar perfis de VLAN'});
     } else {
-      return res.json({success: true, type: 'success', vlanProfiles: config.vlans_profiles});
+      return res.json({success: true, type: 'success',
+                       vlanProfiles: config.vlans_profiles});
     }
   });
 };
@@ -174,14 +175,29 @@ vlanController.addVlanProfile = async function(req, res) {
   
   // restricted to this range of value by the definition of 802.1q protocol
   // vlan 2 is restricted to wan
-  if (newVlanProfile.vlan_id != 1 && (newVlanProfile.vlan_id < 3 || newVlanProfile.vlan_id > 4094)) {
-    return res.json({success: false, type: 'danger', message: 'O VLAN ID não pode ser menor que 3 ou maior que 4094!'});
+  if (newVlanProfile.vlan_id != 1 &&
+     (newVlanProfile.vlan_id < 3 || newVlanProfile.vlan_id > 4094)) {
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'O VLAN ID não pode ser menor que 3 ou maior que 4094!',
+    });
   }
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(newVlanProfile.profile_name) == false) {
-    return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'O nome do Perfil de VLAN deve começar com um caractere ' +
+               'do alfabeto, conter caracteres alfanuméricos, hífen ou ' +
+               'sublinhado, não pode ser vazio e ' +
+               'deve ser distinto dos já existentes!'});
   }
   if (newVlanProfile.profile_name.length > 32) {
-    return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!'});
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Nome do Perfil de VLAN não deve ser ' +
+               'maior do que 32 caracteres!'});
   }
 
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
@@ -201,17 +217,27 @@ vlanController.addVlanProfile = async function(req, res) {
     if (is_vlan_id_unique && is_profile_name_unique) {
       config.vlans_profiles.push(newVlanProfile);
       config.save().then(function() {
-        return res.json({success: true, type: 'success', message: 'Perfil de VLAN criado com sucesso!'});
+        return res.json({success: true, type: 'success',
+                         message: 'Perfil de VLAN criado com sucesso!'});
       }).catch(function(rej) {
         return res.json({success: false, type: 'danger', message: rej.message});
       });
     } else if (!is_vlan_id_unique) {
-      return res.json({success: false, type: 'danger', message: 'Já existe um perfil de VLAN com esse ID fornecido!'});
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Já existe um perfil de VLAN com esse ID fornecido!'});
     } else if (!is_profile_name_unique) {
-      return res.json({success: false, type: 'danger', message: 'Já existe um perfil de VLAN com esse nome fornecido!'});
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Já existe um perfil de VLAN com esse nome fornecido!'});
     }
   } else {
-    return res.json({success: false, type: 'danger', message: 'Erro ao acessar a configuração ao adicionar perfil de VLAN'});
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro ao acessar a configuração ao adicionar perfil de VLAN'});
   }
 };
 
@@ -222,32 +248,48 @@ vlanController.editVlanProfile = async function(req, res) {
   if (config && config.vlans_profiles) {
     let exist_vlan_profile = false;
     if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(req.body.profilename) == false) {
-      return res.json({success: false, type: 'danger', message: 'O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes!'});
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'O nome do Perfil de VLAN deve começar com ' +
+                 'um caractere do alfabeto, conter caracteres ' +
+                 'alfanuméricos, hífen ou sublinhado, não pode ' +
+                 'ser vazio e deve ser distinto dos já existentes!'});
     }
     if (req.body.profilename.length > 32) {
-      return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN não deve ser maior do que 32 caracteres!'});
+      return res.json({
+        success: false,
+        type: 'danger',
+        message: 'Nome do Perfil de VLAN não ' +
+                 'deve ser maior do que 32 caracteres!'});
     }
 
     for (let i = 0; i < config.vlans_profiles.length; i++) {
       if (config.vlans_profiles[i].profile_name === req.body.profilename) {
-        return res.json({success: false, type: 'danger', message: 'Nome do Perfil de VLAN deve ser distinto dos já existentes!'});
+        return res.json({
+          success: false, type: 'danger',
+          message: 'Nome do Perfil de VLAN deve ' +
+                   'ser distinto dos já existentes!'});
       }
 
       if (config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
         exist_vlan_profile = true;
-
         config.vlans_profiles[i].profile_name = req.body.profilename;
       }
     }
 
     if (exist_vlan_profile) {
       config.save().then(function() {
-        return res.json({success: true, type: 'success', message: 'Perfil de VLAN atualizado com sucesso!'});
+        return res.json({
+          success: true,
+          type: 'success',
+          message: 'Perfil de VLAN atualizado com sucesso!'});
       }).catch(function(rej) {
         return res.json({success: false, type: 'danger', message: rej.message});
       });
     } else {
-      return res.json({success: false, type: 'danger', message: 'VLAN ID não foi encontrado!'});
+      return res.json({success: false, type: 'danger',
+                       message: 'VLAN ID não foi encontrado!'});
     }
   } else {
     res.json({success: false, type: 'danger', message: config});
@@ -270,7 +312,8 @@ vlanController.checkDevicesBeforeUpdate = async function(req, res) {
     DeviceModel.find({'vlan': {'$exists': true, '$not': {'$size': 0}}},
     function(err, matchedDevices) {
       if (err) {
-        return res.json({success: false, type: 'danger', message: 'Dispositivos não encontrados'});
+        return res.json({success: false, type: 'danger',
+                         message: 'Dispositivos não encontrados'});
       }
       let updateDevices = [];
       matchedDevices.every((device) => {
@@ -296,7 +339,8 @@ vlanController.checkDevicesBeforeUpdate = async function(req, res) {
         }
         return true;
       });
-      return res.json({success: true, type: 'success', updateDevices: updateDevices});
+      return res.json({success: true, type: 'success',
+                       updateDevices: updateDevices});
     });
   } else {
     res.json({success: false, type: 'danger', message: config});
@@ -312,10 +356,16 @@ vlanController.removeVlanProfile = async function(req, res) {
       req.body.ids = [req.body.ids];
     }
 
-    config.vlans_profiles = config.vlans_profiles.filter((obj) => !req.body.ids.includes(obj.vlan_id.toString()) && !req.body.ids.includes(obj._id.toString()));
+    config.vlans_profiles = config.vlans_profiles.filter(
+      (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
+               !req.body.ids.includes(obj._id.toString())
+    );
 
     config.save().then(function() {
-      return res.json({success: true, type: 'success', message: 'Perfis de VLAN deletados com sucesso!'});
+      return res.json({
+        success: true,
+        type: 'success',
+        message: 'Perfis de VLAN deletados com sucesso!'});
     }).catch(function(rej) {
       return res.json({success: false, type: 'danger', message: rej.message});
     });
@@ -328,7 +378,8 @@ vlanController.getVlans = function(req, res) {
   DeviceModel.findById(req.params.deviceid, function(err, matchedDevice) {
     if (err || !matchedDevice) {
       console.log(err);
-      return res.json({success: false, type: 'danger', message: 'Erro ao encontrar dispositivo'});
+      return res.json({success: false, type: 'danger',
+                       message: 'Erro ao encontrar dispositivo'});
     } else {
       return res.json({success: true, type: 'success', vlan: matchedDevice.vlan});
     }
@@ -336,7 +387,8 @@ vlanController.getVlans = function(req, res) {
 };
 
 vlanController.updateVlans = async function(req, res) {
-  let device = await DeviceModel.findById(req.params.deviceid).catch(function(rej) {
+  let device = await DeviceModel.findById(req.params.deviceid)
+  .catch(function(rej) {
     return res.json({success: false, type: 'danger', message: rej.message});
   });
   if (device) {
@@ -349,7 +401,8 @@ vlanController.updateVlans = async function(req, res) {
           // restricted to this range of value by the definition of 802.1q protocol
           // vlan 2 is restricted to wan
           if (typeof v.port !== 'number' || v.port < 1 || v.port > 4 ||
-            typeof v.vlan_id !== 'number' || v.vlan_id < 1 || v.vlan_id > 4094 || v.vlan_id == 2) {
+              typeof v.vlan_id !== 'number' || v.vlan_id < 1 ||
+              v.vlan_id > 4094 || v.vlan_id == 2) {
             is_vlans_valid = false;
           }
         } else {
@@ -366,15 +419,21 @@ vlanController.updateVlans = async function(req, res) {
       mqtt.anlixMessageRouterUpdate(device._id);
 
       device.save().then(function() {
-        return res.json({success: true, type: 'success', message: 'VLANs do dispositivo '+req.params.deviceid+' atualizada com sucesso!'});
+        return res.json({
+          success: true,
+          type: 'success',
+          message: 'VLANs do dispositivo ' +
+                   req.params.deviceid + ' atualizada com sucesso!'});
       }).catch(function(rej) {
         return res.json({success: false, type: 'danger', message: rej.message});
       });
     } else {
-      return res.json({success: false, type: 'danger', message: 'Formato de VLANs inválido!'});
+      return res.json({success: false, type: 'danger',
+                       message: 'Formato de VLANs inválido!'});
     }
   } else {
-    res.json({success: false, type: 'danger', message: 'Dispositivo não encontrado.'});
+    res.json({success: false, type: 'danger',
+              message: 'Dispositivo não encontrado.'});
   }
 };
 
@@ -429,7 +488,8 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       }
     }
   } else {
-  // in the case of misconfiguration or none configuration of vlan at all, set the default configuration for vlan
+  // in the case of misconfiguration or none configuration of
+  // vlan at all, set the default configuration for vlan
     let classic_vlan_config = '';
     for (let i = 0; i < lan_ports.length; i++) {
       classic_vlan_config += lan_ports[i].toString()+' ';
@@ -445,7 +505,8 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       digestedVlans[key] += wan_port.toString()+'t';
     }
   }
-  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + vlan_ports + cpu_port.toString() + 't';
+  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' +
+                               vlan_ports + cpu_port.toString() + 't';
 
   return digestedVlans;
 };
@@ -455,13 +516,14 @@ vlanController.retrieveVlansToDevice = function(device) {
     lack the sync by hash
   */
 
-  let digestedVlans = vlanController.convertFlashmanVlan(device.model, JSON.stringify(device.vlan));
+  let digestedVlans = vlanController.convertFlashmanVlan(
+    device.model, JSON.stringify(device.vlan));
   let hashVlan = '';
 
   if (JSON.stringify(digestedVlans) != JSON.stringify({})) {
-    hashVlan = crypto.createHash('md5').update(JSON.stringify(digestedVlans)).digest('base64');
+    hashVlan = crypto.createHash('md5').update(
+      JSON.stringify(digestedVlans)).digest('base64');
   }
-  console.log('digestedVlans -> ', digestedVlans, 'hashVlan -> ', hashVlan);
   return {
     vlans: digestedVlans,
     hash: hashVlan,
@@ -576,7 +638,11 @@ vlanController.getMaxVid = function(req, res) {
 };
 
 vlanController.getVlanCompatibleModels = function(req, res) {
-  return res.json({success: true, type: 'success', compatibleModels: DeviceVersion.getVlanCompatible()});
+  return res.json({
+    success: true,
+    type: 'success',
+    compatibleModels: DeviceVersion.getVlanCompatible(),
+  });
 };
 
 module.exports = vlanController;
