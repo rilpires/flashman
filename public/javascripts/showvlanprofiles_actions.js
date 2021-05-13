@@ -52,22 +52,22 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
       $('#vlan-profile-table-wrapper').show();
 
       res.vlanProfiles.forEach(function(vlanProfileObj) {
-        let vlanProfileRow = $('<tr></tr>').append(
+        let vlanProfileRow = $('<tr>').append(
           (vlanProfileObj.is_superuser || vlanProfileObj.vlan_id == 1 ?
-            $('<td></td>') :
-            $('<td></td>').addClass('col-xs-1').append(
-              $('<input></input>').addClass('checkbox')
+            $('<td>') :
+            $('<td>').addClass('col-xs-1').append(
+              $('<input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', vlanProfileObj._id),
             )
           ),
-          $('<td></td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
-          $('<td></td>').addClass('td-profile-name').
+          $('<td>').addClass('td-vlan-id').html(vlanProfileObj.vlan_id),
+          $('<td>').addClass('td-profile-name').
             html(vlanProfileObj.profile_name),
-          $('<td></td>').append(
-            $('<button></button>').append(
-              $('<div></div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span></span>').html('&nbsp Editar'),
+          $('<td>').append(
+            $('<button>').append(
+              $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
+              $('<span>').html('&nbsp Editar'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
@@ -146,9 +146,9 @@ $(document).ready(function() {
   });
   // Initialize custom options on dataTable
   $('.dt-vlan-profiles-table-btns').append(
-    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-      $('<button></button>').addClass('btn btn-danger btn-trash').append(
-        $('<div></div>').addClass('fas fa-trash fa-lg')),
+    $('<div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg')),
     ),
   );
   // Load table content
