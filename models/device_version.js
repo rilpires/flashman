@@ -344,7 +344,7 @@ const dictDevices = {
     'soc':'ath79',
     'network_chip':'',
     'wifi_chip':'',
-    'max_vid':0,
+    'max_vid':4094,
   },
   'DIR-819A1': { 
     'vlan_support': true,
