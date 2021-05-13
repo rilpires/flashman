@@ -218,6 +218,7 @@ let taskParameterIdFromType = {
   setParameterValues: 'parameterValues',
   refreshObject: 'objectName',
   addObject: 'objectName',
+  deleteObject: 'objectName',
   download: 'file',
   reboot: null,
 };
