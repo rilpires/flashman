@@ -1968,6 +1968,7 @@ deviceListController.setPortForward = function(req, res) {
       let rules;
       let isOnSubnetRange;
       let newForwardIndex = crypto.createHash('md5').update(JSON.stringify(req.body.content)).digest('base64');
+      let diffPortForwardLength;
       if (matchedDevice.forward_index != newForwardIndex) {
         try {
           rules = JSON.parse(req.body.content);
@@ -1976,6 +1977,14 @@ deviceListController.setPortForward = function(req, res) {
           return res.status(200).json({
             success: false,
             message: 'JSON mal formatado',
+          });
+        }
+
+        // check overlapping port mapping
+        if (deviceListController.checkOverlappingPorts(rules)) {
+          return res.status(200).json({
+            success: false,
+            message: 'Possui mapeamento sobreposto',
           });
         }
         for (i = 0; i < rules.length; i++) {
@@ -1991,28 +2000,21 @@ deviceListController.setPortForward = function(req, res) {
               message: ''+rules[i].ip+' está fora da faixa de subrede',
             });
           }
-          for (j = 0; j < rules[i].ports_mappings.length; j++) {
-            // check if has a port out of range
-            if (rules[i].ports_mappings[j].external_port_start < 1 ||
-              rules[i].ports_mappings[j].external_port_end > 65535 ||
-              rules[i].ports_mappings[j].internal_port_start < 1 ||
-              rules[i].ports_mappings[j].internal_port_end > 65535) {
-              return res.status(200).json({
-                success: false,
-                message: ''+rules[i].ip+' possui porta fora da faixa entre 1 e 65535',
-              });
-            }
-          }
-          // check for each port mapping overlapping ports among the same ip mapping rules
-          if (deviceListController.checkOverlappingPorts(rules[i].ports_mappings)) {
+          // check boundaries
+          if (rules[i].external_port_start < 1 ||
+            rules[i].external_port_end > 65535 ||
+            rules[i].internal_port_start < 1 ||
+            rules[i].internal_port_end > 65535) {
             return res.status(200).json({
-                success: false,
-                message: ''+rules[i].ip+' possui mapeamento sobreposto',
-              });
+              success: false,
+              message: ''+rules[i].ip+' possui porta fora da faixa entre 1 e 65535',
+            });
           }
         }
+        // get the difference of length between new entries and old entries
+        diffPortForwardLength = rules.length - matchedDevice.port_mapping.length;
         // passed by validations, json is clean to put in the document
-        matchedDevice.port_forward_rules = rules;
+        matchedDevice.port_mapping = rules;
         // push a hash from rules json
         matchedDevice.forward_index = newForwardIndex;
         matchedDevice.save(function(err) {
@@ -2024,7 +2026,7 @@ deviceListController.setPortForward = function(req, res) {
             });
           }
           // geniacs-api call
-          acsDeviceInfo.changePortForwardRules(matchedDevice);
+          acsDeviceInfo.changePortForwardRules(matchedDevice, diffPortForwardLength);
           return res.status(200).json({
             success: true,
             message: 'Mapeamento de portas no dispositivo '+matchedDevice.acs_id+' salvo com sucesso',
@@ -2228,7 +2230,7 @@ deviceListController.getPortForward = function(req, res) {
     if (matchedDevice.use_tr069) {
       return res.status(200).json({
         success: true,
-        content: matchedDevice.port_forward_rules,
+        content: matchedDevice.port_mapping,
       });
     }
 
