@@ -719,88 +719,99 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   });
 };
 
-acsDeviceInfoController.changePortForwardRules = function(device, rulesDiffLength) {
+acsDeviceInfoController.changePortForwardRules = async function(device, rulesDiffLength) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let i;
+  let ret;
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
-  let updateEntriesTask = {name: 'setParameterValues', parameterValues: []};
-  let updateTasks = [];
-
+  let updateTasks = {name: 'setParameterValues', parameterValues: []};
+  let specFields = fields.port_mapping;
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
-  }
-  for (i = 0; i < rulesDiffLength; i++) {
-    await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-      3000, [5000, 10000], (result) => {});
+    for (i = device.port_mapping.length;
+        i > (device.port_mapping.length - rulesDiffLength);
+        i--) {
+      changeEntriesSizeTask.objectName = specFields.template + '.' + i;
+      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+        3000, [5000, 10000]);
+      if(!ret.finished) {
+        return;
+      }
+    }
+  } else {
+    changeEntriesSizeTask.objectName = specFields.template;
+    for (i = 0; i < rulesDiffLength; i++) {
+      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+        3000, [5000, 10000]);
+      if(!ret.finished) {
+        return;
+      }
+    }
   }
   i = 0;
-  let specFields = fields.wan.port_mapping;
   Object.keys(device.port_mapping).forEach((pm) => {
     i++;
-    updateEntriesTask.parameterValues = [];
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    // lack genieacs type
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.' 
       +
       specFields.enable,
       true,
     ]);
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.' 
       +
       specFields.lease,
       0,
     ]);
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.' 
       +
       specFields.external_port_start,
       pm.external_port_start,
     ]);
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.' 
       +
       specFields.external_port_end,
       pm.external_port_end,
     ]);
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.' 
       +
       specFields.internal_port_start,
       pm.internal_port_start,
     ]);
     if (specFields.internal_port_end != '') {
-      updateEntriesTask.parameterValues.push([
-        specFields.template.replace('*', i)
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + i + '.'
         +
         specFields.internal_port_end,
         pm.internal_port_end,
       ]);
     }
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.'
       +
       specFields.protocol,
       'TCP AND UDP',
     ]);
-    updateEntriesTask.parameterValues.push([
-      specFields.template.replace('*', i)
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + i + '.'
       +
       specFields.client,
       pm.ip,
     ]);
-    updateTasks.push(updateEntriesTask);
   });
-  for (i = 0; i < updateTasks.length; i++) {
-    TasksAPI.addTask(acsID, updateTasks[i],
-      true, 3000, [5000, 10000], (result) => {});
-  }
+  TasksAPI.addTask(acsID, updateTasks,
+      true, 3000, [5000, 10000]);
 };
 
 acsDeviceInfoController.pingOfflineDevices = async function() {
