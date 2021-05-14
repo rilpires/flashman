@@ -683,7 +683,7 @@ $(document).ready(function() {
       url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
       dataType: 'json',
       data: JSON.stringify({
-        'content': sessionStorage.getItem('listOfMappings'),
+        'content': sessionStorage.getItem('listOfMappings') == null ? '[]':sessionStorage.getItem('listOfMappings'),
       }),
       contentType: 'application/json',
       success: function(res) {

@@ -735,8 +735,8 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
-    for (i = device.port_mapping.length;
-        i > (device.port_mapping.length - rulesDiffLength);
+    for (i = (device.port_mapping.length + rulesDiffLength);
+        i > device.port_mapping.length ;
         i--) {
       changeEntriesSizeTask.objectName = specFields.template + '.' + i;
       ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
@@ -755,68 +755,59 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       }
     }
   }
-  i = 0;
-  Object.keys(device.port_mapping).forEach((pm) => {
-    i++;
+  for(i = 0; i < device.port_mapping.length; i++) {
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.' 
+      specFields.template + '.' + (i+1) + '.' 
       +
       specFields.enable,
       true,
       'xsd:boolean',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.' 
-      +
-      specFields.lease,
-      0,
-      'xsd:unsignedInt',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.' 
+      specFields.template + '.' + (i+1) + '.' 
       +
       specFields.external_port_start,
-      pm.external_port_start,
+      device.port_mapping[i].external_port_start,
       'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.' 
+      specFields.template + '.' + (i+1) + '.' 
       +
       specFields.external_port_end,
-      pm.external_port_end,
+      device.port_mapping[i].external_port_end,
       'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.' 
+      specFields.template + '.' + (i+1) + '.' 
       +
       specFields.internal_port_start,
-      pm.internal_port_start,
+      device.port_mapping[i].internal_port_start,
       'xsd:unsignedInt',
     ]);
     if (specFields.internal_port_end != '') {
       updateTasks.parameterValues.push([
-        specFields.template + '.' + i + '.'
+        specFields.template + '.' + (i+1) + '.'
         +
         specFields.internal_port_end,
-        pm.internal_port_end,
+        device.port_mapping[i].internal_port_end,
         'xsd:unsignedInt',
       ]);
     }
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.'
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.protocol,
       'TCP AND UDP',
       'xsd:string',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + i + '.'
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.client,
-      pm.ip,
+      device.port_mapping[i].ip,
       'xsd:string',
     ]);
-  });
+  }
   TasksAPI.addTask(acsID, updateTasks,
       true, 3000, [5000, 10000]);
 };
