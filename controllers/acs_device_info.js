@@ -758,36 +758,40 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   i = 0;
   Object.keys(device.port_mapping).forEach((pm) => {
     i++;
-    // lack genieacs type
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.' 
       +
       specFields.enable,
       true,
+      'xsd:boolean',
     ]);
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.' 
       +
       specFields.lease,
       0,
+      'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.' 
       +
       specFields.external_port_start,
       pm.external_port_start,
+      'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.' 
       +
       specFields.external_port_end,
       pm.external_port_end,
+      'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.' 
       +
       specFields.internal_port_start,
       pm.internal_port_start,
+      'xsd:unsignedInt',
     ]);
     if (specFields.internal_port_end != '') {
       updateTasks.parameterValues.push([
@@ -795,6 +799,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
         +
         specFields.internal_port_end,
         pm.internal_port_end,
+        'xsd:unsignedInt',
       ]);
     }
     updateTasks.parameterValues.push([
@@ -802,12 +807,14 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       +
       specFields.protocol,
       'TCP AND UDP',
+      'xsd:string',
     ]);
     updateTasks.parameterValues.push([
       specFields.template + '.' + i + '.'
       +
       specFields.client,
       pm.ip,
+      'xsd:string',
     ]);
   });
   TasksAPI.addTask(acsID, updateTasks,
