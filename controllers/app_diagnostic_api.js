@@ -399,6 +399,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
       }
+      console.log(config);
       if (!device) {
         return res.status(200).json({
           'success': true,
