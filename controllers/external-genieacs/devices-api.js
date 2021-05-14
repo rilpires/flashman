@@ -148,6 +148,8 @@ const getDefaultFields = function() {
       internal_port_end: '',
       protocol: 'PortMappingProtocol',
       client: 'InternalClient',
+      description: 'PortMappingDescription',
+      remote_host: 'RemoteHost',
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -316,6 +318,19 @@ const getModelFields = function(oui, model) {
   };
 };
 
+const getProtocolByModel = function(model) {
+  let ret = '';
+  switch(model) {
+    case 'ZXHN%20H198A%20V3%2E0':
+      ret = 'BOTH';
+      break;
+    default:
+      ret = 'TCP AND UDP';
+      break;
+  }
+  return ret;
+};
+
 const getDeviceFields = function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.oui || !params.model) {
@@ -384,5 +399,6 @@ const syncDeviceData = function(args, callback) {
 
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
+exports.getProtocolByModel = getProtocolByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;

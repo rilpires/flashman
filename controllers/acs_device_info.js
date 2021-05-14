@@ -719,6 +719,8 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   });
 };
 
+
+
 acsDeviceInfoController.changePortForwardRules = async function(device, rulesDiffLength) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -766,6 +768,13 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     updateTasks.parameterValues.push([
       specFields.template + '.' + (i+1) + '.' 
       +
+      specFields.lease,
+      0,
+      'xsd:unsignedInt',
+    ]);
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + (i+1) + '.' 
+      +
       specFields.external_port_start,
       device.port_mapping[i].external_port_start,
       'xsd:unsignedInt',
@@ -797,7 +806,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       specFields.template + '.' + (i+1) + '.'
       +
       specFields.protocol,
-      'TCP AND UDP',
+      DevicesAPI.getProtocolByModel(model),
       'xsd:string',
     ]);
     updateTasks.parameterValues.push([
@@ -805,6 +814,20 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       +
       specFields.client,
       device.port_mapping[i].ip,
+      'xsd:string',
+    ]);
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + (i+1) + '.'
+      +
+      specFields.description,
+      '',
+      'xsd:string',
+    ]);
+    updateTasks.parameterValues.push([
+      specFields.template + '.' + (i+1) + '.'
+      +
+      specFields.remote_host,
+      '0.0.0.0',
       'xsd:string',
     ]);
   }
