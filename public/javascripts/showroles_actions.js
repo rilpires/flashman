@@ -1,4 +1,5 @@
 /* eslint require-jsdoc: 0 */
+import {displayAlertMsg} from './common_actions.js';
 
 $(document).ready(function() {
   let selectedItens = [];

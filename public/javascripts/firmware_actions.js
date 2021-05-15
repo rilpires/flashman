@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
   $.get('/firmware/fetch', function(res) {

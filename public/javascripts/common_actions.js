@@ -91,3 +91,5 @@ $(document).on('click', '.btn-notif-action', function(event) {
     fetchNotifications();
   });
 });
+
+export {displayAlertMsg};

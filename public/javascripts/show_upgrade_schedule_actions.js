@@ -1,3 +1,4 @@
+
 let updateSearchResultsScheduler = function(result) {
   $('#allDevicesLabel').html(' ' + result.status.totalnum);
   let pageCount = $('#input-elements-pp option:selected').text();
@@ -617,3 +618,5 @@ $(document).ready(function() {
 
   $('#prev-config-panel').hide();
 });
+
+export {updateSearchResultsScheduler};
