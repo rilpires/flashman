@@ -11,6 +11,7 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const crypto = require('crypto');
 
 let deviceInfoController = {};
 
@@ -25,7 +26,7 @@ const genericValidate = function(field, func, key, minlength, errors) {
   }
 };
 
-const createRegistry = function(req, res) {
+const createRegistry = async function(req, res) {
   if (typeof req.body.id == 'undefined') {
     return res.status(400).end();
   }
@@ -77,6 +78,26 @@ const createRegistry = function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
+  let vlan = util.returnObjOrEmptyStr(req.body.vlan);
+  let vlanFiltered;
+  let vlanDidChange = false;
+  if (vlan !== '') {
+    let vlanConverted = vlanController.convertDeviceVlan(model, vlan);
+    let vlanInfo = await vlanController.getValidVlan(model, vlanConverted);
+    if (vlanInfo.success) {
+      vlanFiltered = Array.from(vlanInfo.vlan);
+      if (vlanInfo.didChange) {
+        vlanDidChange = true;
+      }
+    } else {
+      console.log('Error creating entry: ' + res);
+      return res.status(500).end();
+    }
+  }
+  let vlanParsed;
+  if (vlanFiltered !== undefined) {
+    vlanParsed = vlanFiltered.map((el) => JSON.parse(el));
+  }
 
   let sentWifiLastChannel = util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
@@ -165,7 +186,7 @@ const createRegistry = function(req, res) {
     if (errors.length < 1) {
       let newMeshId = meshHandlers.genMeshID();
       let newMeshKey = meshHandlers.genMeshKey();
-      let newDeviceModel = new DeviceModel({
+      let deviceObj = {
         '_id': macAddr,
         'created_at': new Date(),
         'model': model,
@@ -216,7 +237,11 @@ const createRegistry = function(req, res) {
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
-      });
+      };
+      if (vlanParsed !== undefined) {
+        deviceObj.vlan = vlanParsed;
+      }
+      let newDeviceModel = new DeviceModel(deviceObj);
       if (connectionType != '') {
         newDeviceModel.connection_type = connectionType;
       }
@@ -225,12 +250,19 @@ const createRegistry = function(req, res) {
           console.log('Error creating entry: ' + err);
           return res.status(500).end();
         } else {
-          return res.status(200).json({'do_update': false,
-                                       'do_newprobe': true,
-                                       'release_id:': installedRelease,
-                                       'mesh_mode': meshMode,
-                                       'mesh_id': newMeshId,
-                                       'mesh_key': newMeshKey});
+          let response = {'do_update': false,
+                          'do_newprobe': true,
+                          'release_id:': installedRelease,
+                          'mesh_mode': meshMode,
+                          'mesh_id': newMeshId,
+                          'mesh_key': newMeshKey};
+          if (vlanDidChange) {
+            let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
+            let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
+            response.vlan = vlanToDevice;
+            response.vlan_index = vlanHash;
+          }
+          return res.status(200).json(response);
         }
       });
     } else {
@@ -305,7 +337,7 @@ deviceInfoController.syncDate = function(req, res) {
 
 
 // Create new device entry or update an existing one
-deviceInfoController.updateDevicesInfo = function(req, res) {
+deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
@@ -673,19 +705,48 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             }
           }
         );
+
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          let zabbixFqdn = '';
-          if (matchedConfig && matchedConfig.measure_configs.zabbix_fqdn) {
-            zabbixFqdn = matchedConfig.measure_configs.zabbix_fqdn;
+          // data collecting parameters to be sent to device.
+          // initiating with default values.
+          let data_collecting = { // nothing happens in device with these parameters.
+            is_active: false,
+            has_latency: false,
+            ping_fqdn: '',
+            alarm_fqdn: '',
+            ping_packets: 100,
+          };
+          // for each data_collecting parameter, in config, we copy its value.
+          // This also makes the code compatible with a data base with no data
+          // collecting parameters.
+          for (let key in matchedConfig.data_collecting) {
+            data_collecting[key] = matchedConfig.data_collecting[key];
           }
+          // combining 'Device' and 'Config' if data_collecting exists in Config.
+          if (matchedDevice.data_collecting !== undefined) {
+            let d = matchedDevice.data_collecting; // parameters from device model.
+            let p = data_collecting; // the final parameters.
+            // for on/off buttons, device value && config value if it exists in device.
+            d.is_active !== undefined && (p.is_active = p.is_active && d.is_active);
+            d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
+            // preference for device value if it exists.
+            d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
+          } else { // if data collecting doesn't exist, device won't collect anything.
+            data_collecting.is_active = false;
+          }
+
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
 
-          let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
-          let fetchedVlans = containerVlans.vlans;
-          let vlanHash = containerVlans.hash;
+          let fetchedVlans = '';
+          let vlanHash = '';
+          if (sentBridgeEnabled !== '1') {
+            let containerVlans = vlanController.retrieveVlansToDevice(matchedDevice);
+            fetchedVlans = containerVlans.vlans;
+            vlanHash = containerVlans.hash;
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,
@@ -714,9 +775,11 @@ deviceInfoController.updateDevicesInfo = function(req, res) {
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'zabbix_psk': util.returnObjOrEmptyStr(matchedDevice.measure_config.measure_psk),
-            'zabbix_fqdn': zabbixFqdn,
-            'zabbix_active': util.returnObjOrEmptyStr(matchedDevice.measure_config.is_active),
+            'data_collecting_is_active': data_collecting.is_active,
+            'data_collecting_has_latency': data_collecting.has_latency,
+            'data_collecting_alarm_fqdn': data_collecting.alarm_fqdn,
+            'data_collecting_ping_fqdn': data_collecting.ping_fqdn,
+            'data_collecting_ping_packets': data_collecting.ping_packets,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -1091,6 +1154,10 @@ deviceInfoController.getPortForward = function(req, res) {
           'forward_index': matchedDevice.forward_index,
           'forward_rules': outData,
         });
+      } else {
+        console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+          'failed: No index found.');
+        return res.status(404).json({success: false});
       }
     });
   } else {
@@ -1306,7 +1373,6 @@ deviceInfoController.receiveDevices = function(req, res) {
     return res.status(200).json({processed: 1});
   });
 };
-
 
 deviceInfoController.receiveSiteSurvey = function(req, res) {
   let id = req.headers['x-anlix-id'];
@@ -1755,46 +1821,6 @@ deviceInfoController.receiveWpsResult = function(req, res) {
     console.log('Wps: ' + id + ' received successfully');
     return res.status(200).json({processed: 1});
   });
-};
-
-deviceInfoController.getZabbixConfig = async function(req, res) {
-  let id = req.headers['x-anlix-id'];
-  let envsec = req.headers['x-anlix-sec'];
-
-  // Check secret to authenticate api call
-  if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec !== req.app.locals.secret) {
-      console.log('Router ' + id + ' Get Zabbix Conf fail: Secret not match');
-      return res.status(403).json({success: 0});
-    }
-  }
-
-  try {
-    // Check if zabbix fqdn config is set
-    let config = await Config.findOne({is_default: true});
-    if (!config) throw new {message: 'Config not found'};
-    if (!config.measure_configs.zabbix_fqdn) {
-      throw new {message: 'Zabbix FQDN not configured'};
-    }
-
-    // Check if device has a zabbix psk configured
-    let device = await DeviceModel.findById(id);
-    if (!device) throw new {message: 'Device ' + id + ' not found'};
-    if (!device.measure_config.measure_psk) {
-      throw new {message: 'Device ' + id + ' has no psk configured'};
-    }
-
-    // Reply with zabbix fqdn and device zabbix psk
-    return res.status(200).json({
-      success: 1,
-      psk: device.measure_config.measure_psk,
-      fqdn: config.measure_configs.zabbix_fqdn,
-      is_active: device.measure_config.is_active,
-    });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({success: 0});
-  }
 };
 
 module.exports = deviceInfoController;

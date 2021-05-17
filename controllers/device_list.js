@@ -1,4 +1,6 @@
 const Validator = require('../public/javascripts/device_validator');
+const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -184,6 +186,16 @@ deviceListController.index = function(req, res) {
     indexContent.disableAutoUpdate = false;
   }
 
+  // Check Flashman data collecting availability
+  if (typeof process.env.FLM_ENABLE_DATA_COLLECTING !== 'undefined' && (
+             process.env.FLM_ENABLE_DATA_COLLECTING === 'true' ||
+             process.env.FLM_ENABLE_DATA_COLLECTING === true)
+  ) {
+    indexContent.enable_data_collecting = true;
+  } else {
+    indexContent.enable_data_collecting = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;
@@ -198,12 +210,6 @@ deviceListController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-        let active = matchedConfig.measure_configs.is_active;
-        indexContent.measure_active = active;
-        indexContent.measure_token = (active) ?
-            matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
         indexContent.update_schedule = {
           is_active: matchedConfig.device_update_schedule.is_active,
           device_total: matchedConfig.device_update_schedule.device_count,
@@ -523,7 +529,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
-    } else if (tag === 'onu') { // ONU routers.
+    } else if (tag === 'tr069') { // ONU routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
@@ -2588,6 +2594,45 @@ deviceListController.updateLicenseStatus = async function(req, res) {
                                  message: 'Erro externo de comunicação'});
   }
 };
+
+deviceListController.receivePonSignalMeasure = async function(req, res) {
+  let deviceId = req.params.deviceId;
+
+  DeviceModel.findById(deviceId, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0, success: false});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
+    }
+    if (!matchedDevice.use_tr069) {
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
+    }
+    let mac = matchedDevice._id;
+    let acsID = matchedDevice.acs_id;
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let rxPowerField = fields.wan.pon_rxpower;
+    let txPowerField = fields.wan.pon_txpower;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [rxPowerField, txPowerField],
+    };
+
+    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
+
+    res.status(200).json({success: true});
+    TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+      if (result.task.name !== 'getParameterValues') return;
+      if (result.finished) {
+        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
+      }
+    });
+  });
+}
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

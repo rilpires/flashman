@@ -30,9 +30,21 @@ router.route('/profile/del').delete(authController.ensureLogin(),
                            authController.ensurePermission(permissionProfile),
                            vlanController.removeVlanProfile);
 
+router.route('/profile/check/:profileid').get(authController.ensureLogin(),
+                           authController.ensurePermission(permissionProfile),
+                           vlanController.checkDevicesBeforeUpdate);
+
 router.route('/fetch/:deviceid').get(authController.ensureLogin(),
                            authController.ensurePermission(permissionVlan, 1),
                            vlanController.getVlans);
+
+router.route('/fetchmaxvid').post(authController.ensureLogin(),
+                           authController.ensurePermission(permissionVlan, 1),
+                           vlanController.getMaxVid);
+
+router.route('/fetchvlancompatible').get(authController.ensureLogin(),
+                           authController.ensurePermission(permissionVlan, 1),
+                           vlanController.getVlanCompatibleModels);
 
 router.route('/update/:deviceid').post(authController.ensureLogin(),
                           authController.ensurePermission(permissionVlan, 2),

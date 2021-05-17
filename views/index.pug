@@ -17,8 +17,10 @@ block content
   include includes/showsitesurvey
   include includes/showvlanmodal
   include includes/showbyteswan
+  include includes/showponsignalmeasure
   include includes/showupgradescheduler
   include includes/showrebootmesh
+  include includes/showdatacollectingmodal
 
   if (superuser || (role.grantSearchLevel >= 1))
     if (superuser || (role.grantSearchLevel == 2))
@@ -75,7 +77,7 @@ block content
         .row
           .col-12.col-lg-9
             .row.mt-4
-              .col-12.col-lg-3.pr-0
+              .col-lg-auto.pr-0
                 .dropdown
                   a.btn.btn-primary.dropdown-toggle(
                     href="#", role="button", data-toggle="dropdown").ml-0
@@ -121,10 +123,15 @@ block content
                         .fas.fa-save.fa-lg.mr-2
                         | Salvar
               if (superuser || role.grantDeviceMassRemoval)
-                .col-12.col-lg-9
+                .col-lg-auto.pr-0
                   button.ml-0.btn.btn-danger.disabled(type="button", id="btn-trash-multiple")
                     i.fas.fa-trash
                     span &nbsp; Remover vários
+              if (superuser && enable_data_collecting)
+                .col-lg-auto.pr-0
+                  button.ml-0.btn.btn-primary(type="button", id="btn-data_collecting-modal")
+                    .fas.fa-chart-bar
+                    span &nbsp; Coleta de Dados
 
           .col-12.col-lg-3
             .md-form.mb-0
@@ -177,6 +184,7 @@ block content
                 tbody#devices-table-content(
                   data-role=role,
                   data-superuser=superuser ? "true" : "false",
+                  data-enabledatacollecting=enable_data_collecting ? "true" : "false",
                   data-visiblecolumnsonpage=visiblecolumnsonpage)
         .row.mt-3.mb-3
           .col-md-9
@@ -214,8 +222,10 @@ block scripts
   script(src='/javascripts/show_speed_test_actions.js')
   script(src='/javascripts/show_vlan_actions.js')
   script(src='/javascripts/show_wan_bytes_actions.js')
+  script(src='/javascripts/show_pon_signal_actions.js')
   script(src='/javascripts/show_lan_devices_actions.js')
   script(src='/javascripts/show_site_survey_actions.js')
   script(src='/javascripts/show_upgrade_schedule_actions.js')
+  script(src='/javascripts/show_data_collecting_actions.js')
   script(src='/javascripts/update_device.js')
   script(src='/javascripts/table_anim.js')

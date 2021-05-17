@@ -366,17 +366,31 @@ mqtts.anlixMessageRouterSiteSurvey = function(id) {
   }
 };
 
-mqtts.anlixMessageRouterMeasure = function(id, status) {
+mqtts.anlixMessageRouterDataCollecting = function(id, status) {
   const serverId = findServerId(id);
   if (serverId !== null) {
     const packet = {
       id: id,
       qos: 2,
       retain: true,
-      payload: 'measure ' + status,
+      payload: 'datacollecting ' + status,
     };
     toPublishPacket(serverId, packet);
-    debug('MQTT SEND Message MEASURE to '+ id);
+    debug('MQTT SEND Message DATACOLLECTING to '+ id);
+  }
+};
+
+mqtts.anlixMessageRouterDataCollectingLatency = function(id, status) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'collectlatency ' + status,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message COLLECTLATENCY to '+ id);
   }
 };
 
