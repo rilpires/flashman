@@ -1,3 +1,6 @@
+import { io } from 'socket.io-client';
+
+const socket = io();
 
 const displayAlertMsg = function(res) {
   $('#frame-modal-alert .modal-dialog').removeClass(

@@ -1,4 +1,5 @@
-
+const webpack = require('webpack');
+const path = require('path');
 module.exports = {
   target: 'web',
   mode: 'development',
@@ -47,7 +48,7 @@ module.exports = {
   module: {
     rules: [
      {
-        test: /\.js$/,
+        test: /\.(js|jsm)$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -56,6 +57,49 @@ module.exports = {
           },
         },
       },
+      {
+        test: /\.css$/i,
+        use: ['style-loader', 'css-loader'],
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        use: [
+          'style-loader',
+          'css-loader',
+          'sass-loader',
+        ],
+      },
+      {
+        test: /\.(woff(2)?|ttf|eot|svg|png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'fonts/',
+            },
+          },
+        ],
+      },
+      {
+        test: /\.(png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'images/',
+            },
+          },
+        ],
+      },
     ],
   },
+  plugins: [
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jQuery: 'jquery',
+    }),
+  ],
+  devtool: 'source-map',
 };

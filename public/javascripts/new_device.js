@@ -1,3 +1,4 @@
+import 'jquery-mask-plugin';
 
 let renderDeviceErrors = function(errors) {
   for (let key in errors) {

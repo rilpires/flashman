@@ -1,4 +1,5 @@
 import {displayAlertMsg} from './common_actions.js';
+import 'jquery-mask-plugin';
 
 let forceUpdateFlashman = function() {
   swal({

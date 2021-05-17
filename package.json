@@ -76,6 +76,7 @@
     "serve-favicon": "~2.4.2",
     "serve-static": "~1.14.1",
     "socket.io": "~2.2.0",
+    "socket.io-client": "^4.1.1",
     "sweetalert2": "~7.19.3",
     "tags-input": "~1.1.1",
     "tempusdominus-bootstrap-4": "~5.1.2",
@@ -85,12 +86,16 @@
   },
   "devDependencies": {
     "clean-css-cli": "^4.3.0",
+    "css-loader": "^5.2.4",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.9.1",
+    "file-loader": "^6.2.0",
     "jest": "^25.4.0",
     "mqtt": "^2.18.8",
     "node-sass": "^4.14.1",
     "nodemon": "^2.0.3",
+    "sass-loader": "^11.1.1",
+    "style-loader": "^2.0.0",
     "supertest": "^6.1.3"
   }
 }

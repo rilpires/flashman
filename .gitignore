@@ -90,5 +90,6 @@ Session.vim
 tags
 
 # compiled bundles from wepback
-bin/*.bundle.js
+bin/
+
 # End of https://www.gitignore.io/api/code,vim,node
