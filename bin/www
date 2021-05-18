@@ -14,7 +14,6 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
-const {exec} = require('child_process');
 
 /* APP */
 
@@ -349,16 +348,3 @@ if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
                   process.env.FLM_TEMPORARY_MQTT_BROKER_PORT);
   });
 }
-
-// trigger ´npm run build´ to bundle front-end javascript with webpack
-exec('npm run build', (error, stdout, stderr) => {
-    if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-    }
-    console.log(`stdout: ${stdout}`);
-});
