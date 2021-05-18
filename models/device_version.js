@@ -121,11 +121,11 @@ const portForwardOnuCompatibleModels = [
  'F670L',
  'ZXHN H198A V3.0',
 ];
-const portForwardOnuCompatibleVersions = [
- 'V1.1.20P3N3',
- 'V3.0.0C5_MUL',
- 'V3.0.0C6_MUL',
-];
+const portForwardOnuCompatibleVersions = {
+ 'V1.1.20P3N3': [true, true, false, false],
+ 'V3.0.0C5_MUL': [true, true, true, false],
+ 'V3.0.0C6_MUL': [true, true, true, false],
+};
 
 /*
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wdr3500-v1~diffconfig (lshift=0, inverted=1, vlan=0)
@@ -923,7 +923,7 @@ const grantPortForward = function(version, model) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.10.0') >= 0);
   } else if (!portForwardOnuCompatibleModels.includes(model) ||
-    !portForwardOnuCompatibleVersions.includes(version)) {
+    portForwardOnuCompatibleVersions[version] === undefined) {
     return false;
   } else {
     // Development version, enable everything by default
@@ -1213,6 +1213,10 @@ DeviceVersion.getVlanCompatible = function() {
   let vlanCompatible = Object.fromEntries(
     Object.entries(dictDevices).filter(([k, device]) => device.vlan_support));
   return Object.keys(vlanCompatible);
+};
+
+DeviceVersion.getPortForwardOnuCompatibility = function(version) {
+  return portForwardOnuCompatibleVersions[version];
 };
 
 module.exports = DeviceVersion;

@@ -1914,8 +1914,8 @@ deviceListController.checkOverlappingPorts = function(listOfMappings) {
   let j;
   let pi = [];
   let pj = [];
-  if(listOfMappings.length > 1) {
-    for (i = 0; i < listOfMappings.length ; i++) {
+  if (listOfMappings.length > 1) {
+    for (i = 0; i < listOfMappings.length; i++) {
       pi[0] = listOfMappings[i].external_port_start;
       pi[1] = listOfMappings[i].external_port_end;
       pi[2] = listOfMappings[i].internal_port_start;
@@ -1970,10 +1970,10 @@ deviceListController.setPortForward = function(req, res) {
     // tr-069 routers
     if (matchedDevice.use_tr069) {
       let i;
-      let j;
       let rules;
       let isOnSubnetRange;
-      let newForwardIndex = crypto.createHash('md5').update(JSON.stringify(req.body.content)).digest('base64');
+      let newForwardIndex = crypto.createHash('md5').
+      update(JSON.stringify(req.body.content)).digest('base64');
       let diffPortForwardLength;
       if (matchedDevice.forward_index != newForwardIndex) {
         try {
@@ -2237,6 +2237,8 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
+        compatibility: DeviceVersion.
+        getPortForwardOnuCompatibility(matchedDevice.version),
       });
     }
 
