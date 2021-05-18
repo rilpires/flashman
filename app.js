@@ -327,24 +327,8 @@ app.use('/scripts/bs-stepper',
 app.use('/scripts/tempusdominus',
   express.static(path.join(__dirname, 'node_modules/tempusdominus-bootstrap-4/build'))
 );
-app.use('/scripts/selectize',
-  express.static(path.join(__dirname, 'node_modules/selectize/dist'))
-);
-app.use('/scripts/selectize-bootstrap',
-  express.static(path.join(__dirname,
-                           'node_modules/selectize-bootstrap4-theme/dist'))
-);
 app.use('/scripts/sweetalert2',
   express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))
-);
-app.use('/scripts/tags-input',
-  express.static(path.join(__dirname, 'node_modules/tags-input'))
-);
-app.use('/scripts/datatables.net',
-  express.static(path.join(__dirname, 'node_modules/datatables.net'))
-);
-app.use('/scripts/datatables.net-bs4',
-  express.static(path.join(__dirname, 'node_modules/datatables.net-bs4'))
 );
 app.use('/scripts/apexcharts',
   express.static(path.join(__dirname, 'node_modules/apexcharts/dist'))

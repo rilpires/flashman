@@ -1,3 +1,4 @@
+import 'datatables.net-bs4';
 
 let checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol

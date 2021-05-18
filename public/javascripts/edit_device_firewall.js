@@ -1,4 +1,5 @@
 import {socket} from './common_actions.js';
+import 'selectize';
 
 const selectizeOptionsMacs = {
   create: true,

@@ -1,4 +1,5 @@
 import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
 
 const check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {

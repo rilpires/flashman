@@ -1,4 +1,5 @@
 import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
 
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
