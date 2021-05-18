@@ -83,6 +83,8 @@ const convertWifiBand = function(band) {
       return '40MHz';
     case 'VHT80':
       return '80MHz';
+    case 'auto':
+      return 'auto';
     default:
       return '';
   }
@@ -185,6 +187,7 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function(model) {
   let fields = getDefaultFields();
+
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
@@ -196,6 +199,8 @@ const getZTEFields = function(model) {
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       break;
   }
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
@@ -207,6 +212,8 @@ const getNokiaFields = function() {
   let fields = getDefaultFields();
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
   return fields;
 };
 
@@ -214,6 +221,8 @@ const getStavixFields = function() {
   let fields = getDefaultFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');

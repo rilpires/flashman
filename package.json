@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
@@ -15,6 +15,11 @@
     "githubUser": "anlix-io",
     "githubRepo": "flashman",
     "githubBranch": "master"
+  },
+  "genieacs": {
+    "ref": "d29448e3a7d3f3ae9cdbcfeae7b9c7ec4e9ee675",
+    "presetHash": "e78ed54d55253b6114ac8a7e841f547e",
+    "provisionHash": "cceb25eb11e4203674233b2195963985"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",

@@ -63,7 +63,15 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    await createNotificationForDevice(doc.detail.stack, doc.device);
+    let errorMsg = "";
+    if (doc.detail !== undefined) {
+      errorMsg += doc.detail.stack;
+    } else if (doc.provision !== undefined) {
+      errorMsg += doc.message + ": provision " + doc.provision;
+    } else {
+      errorMsg += JSON.stringify(doc);
+    }
+    await createNotificationForDevice(errorMsg, doc.device);
     console.log('WARNING: genieacs created a fault'+(doc.device ? 
       ' for device id '+doc.device : '')+'.');
   });
@@ -73,12 +81,12 @@ const watchGenieFaults = async function() {
  'stackError' and with the device id 'genieDeviceId' as the notification target
  for that notification. If no 'genieDeviceId' is given, the error is considered
  to be from Genie itself. */
-const createNotificationForDevice = async function(stackError, genieDeviceId) {
+const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
   // notification values.
   let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
-    message_error: stackError};
+    message_error: errorMsg};
   if (genieDeviceId !== undefined) { // if error has an associated device.
     params.message = 'Erro na ONU '+genieDeviceId+'. Chamar supporte.';
     params.target = device._id;
@@ -173,6 +181,20 @@ const checkPreset = function(preset) {
     }
   }
   return true;
+};
+
+/* sends a put request with a given 'provision' to genieacs and returns the
+ genie json response parsed to javascript object. may throw unhandled errors */
+genie.putProvision = async function(script) {
+  script = script.slice(0, -1); // Remove EOF
+  return request({
+    method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
+    path: '/provisions/flashman',
+    headers: {
+      'Content-Type': 'application/javascript',
+      'Content-Length': Buffer.byteLength(script),
+    },
+  }, script);
 };
 
 /* sends a put request with a given 'preset' to genieacs and returns the genie

@@ -21,12 +21,12 @@ ZIP_FIRMWARES_FNAME="$COMPANY"_firmwaredata.zip
 ZIP_CERTS_FNAME="$COMPANY"_onucertificates.zip
 
 # Test commands
-command -v pip > /dev/null
-if [ $? -ne 0 ]
-then
-  echo "Erro! Comando pip não encontrado!"
-  exit -1
-fi
+#command -v pip > /dev/null
+#if [ $? -ne 0 ]
+#then
+#  echo "Erro! Comando pip não encontrado!"
+#  exit -1
+#fi
 command -v zip > /dev/null
 if [ $? -ne 0 ]
 then
@@ -35,8 +35,8 @@ then
 fi
 
 # Setup
-pip install -q "setuptools>=20.2"
-pip install -q "b2==1.2.0"
+#pip install -q "setuptools>=20.2"
+#pip install -q "b2==1.2.0"
 command -v b2 > /dev/null
 if [ $? -ne 0 ]
 then

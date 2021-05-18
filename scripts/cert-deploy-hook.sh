@@ -24,7 +24,9 @@ for domain in $RENEWED_DOMAINS; do
       "$flashman_mqtt_cert_root/key.pem"
     chmod 400 "$flashman_mqtt_cert_root/cert.pem" \
       "$flashman_mqtt_cert_root/key.pem"
-
+    cat "$flashman_mqtt_cert_root/cert.pem" \
+      "$flashman_mqtt_cert_root/key.pem" > \
+      "$flashman_mqtt_cert_root/combined.pem"
     ;;
   esac
 done

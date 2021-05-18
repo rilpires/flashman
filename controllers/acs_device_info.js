@@ -89,9 +89,23 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
+const convertToDbm = function(model, rxPower) {
+  switch (model) {
+    case 'F670L':
+    case 'G-140W-C':
+      return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+    case 'GONUAC001':
+    default:
+      return rxPower;
+  }
+};
+
+
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
+    case 'auto':
+      return 'auto';
     case '20MHz':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
@@ -116,6 +130,19 @@ const appendBytesMeasure = function(original, recv, sent) {
   bytes[now] = [recv, sent];
   return bytes;
 };
+
+const appendPonSignal = function(original, rxPower, txPower) {
+  let now = Math.floor(Date.now() / 1000);
+  if (!original) original = {};
+  let dbms = JSON.parse(JSON.stringify(original));
+  if (Object.keys(dbms).length >= 100) {
+    let keysNum = Object.keys(dbms).map((k) => parseInt(k));
+    let smallest = Math.min(...keysNum);
+    delete dbms[smallest];
+  }
+  dbms[now] = [rxPower, txPower];
+  return dbms;
+}
 
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
@@ -236,31 +263,36 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+  let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   device.serial_tr069 = splitID[splitID.length - 1];
-  if (data.common.model) device.model = data.common.model;
-  if (data.common.version) device.version = data.common.version;
+  if (data.common.model) device.model = data.common.model.trim();
+  if (data.common.version) device.version = data.common.version.trim();
   if (hasPPPoE) {
     if (device.connection_type !== 'pppoe') {
-      changes.wan.pppoe_user = data.wan.pppoe_user;
-      changes.wan.pppoe_pass = data.wan.pppoe_pass;
+      changes.wan.pppoe_user = data.wan.pppoe_user.trim();
+      changes.wan.pppoe_pass = data.wan.pppoe_pass.trim();
+      hasChanges = true;
     }
     if (!device.pppoe_user) {
-      device.pppoe_user = data.wan.pppoe_user;
-    } else if (device.pppoe_user !== data.wan.pppoe_user) {
-      changes.wan.pppoe_user = device.pppoe_user;
+      device.pppoe_user = data.wan.pppoe_user.trim();
+    } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.trim()) {
+      changes.wan.pppoe_user = device.pppoe_user.trim();
+      hasChanges = true;
     }
     if (!device.pppoe_password) {
-      device.pppoe_password = data.wan.pppoe_pass;
+      device.pppoe_password = data.wan.pppoe_pass.trim();
     } else if (data.wan.pppoe_pass && // make sure this onu reports the password
-               device.pppoe_password !== data.wan.pppoe_pass) {
-      changes.wan.pppoe_pass = device.pppoe_password;
+               device.pppoe_password.trim() !== data.wan.pppoe_pass.trim()) {
+      changes.wan.pppoe_pass = device.pppoe_password.trim();
+      hasChanges = true;
     }
   } else {
     if (device.connection_type !== 'dhcp') {
-      changes.wan.pppoe_user = device.pppoe_user;
-      changes.wan.pppoe_pass = device.pppoe_password;
+      changes.wan.pppoe_user = device.pppoe_user.trim();
+      changes.wan.pppoe_pass = device.pppoe_password.trim();
+      hasChanges = true;
     }
   }
 
@@ -268,31 +300,36 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let enable = (data.wifi2.enable) ? 1 : 0;
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
+      hasChanges = true;
     }
   }
   if (typeof data.wifi5.enable !== 'undefined') {
     let enable = (data.wifi5.enable) ? 1 : 0;
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
+      hasChanges = true;
     }
   }
 
   if (data.wifi2.ssid && !device.wifi_ssid) {
-    device.wifi_ssid = data.wifi2.ssid;
-  } else if (device.wifi_ssid !== data.wifi2.ssid) {
-    changes.wifi2.ssid = device.wifi_ssid;
+    device.wifi_ssid = data.wifi2.ssid.trim();
+  } else if (device.wifi_ssid.trim() !== data.wifi2.ssid.trim()) {
+    changes.wifi2.ssid = device.wifi_ssid.trim();
+    hasChanges = true;
   }
   let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
   if (channel2 && !device.wifi_channel) {
     device.wifi_channel = channel2;
   } else if (device.wifi_channel !== channel2) {
     changes.wifi2.channel = device.wifi_channel;
+    hasChanges = true;
   }
   let mode2 = convertWifiMode(data.wifi2.mode, false);
   if (data.wifi2.mode && !device.wifi_mode) {
     device.wifi_mode = mode2;
   } else if (device.wifi_mode !== mode2) {
     changes.wifi2.mode = device.wifi_mode;
+    hasChanges = true;
   }
   let band2 = convertWifiBand(data.wifi2.band, data.wifi2.mode);
   if (data.wifi2.band && !device.wifi_band) {
@@ -302,21 +339,24 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
-    device.wifi_ssid_5ghz = data.wifi5.ssid;
-  } else if (device.wifi_ssid_5ghz !== data.wifi5.ssid) {
-    changes.wifi5.ssid = device.wifi_ssid_5ghz;
+    device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
+  } else if (device.wifi_ssid_5ghz.trim() !== data.wifi5.ssid.trim()) {
+    changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
+    hasChanges = true;
   }
   let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
   if (channel5 && !device.wifi_channel_5ghz) {
     device.wifi_channel_5ghz = channel5;
   } else if (device.wifi_channel_5ghz !== channel5) {
     changes.wifi5.channel = device.wifi_channel_5ghz;
+    hasChanges = true;
   }
   let mode5 = convertWifiMode(data.wifi5.mode, true);
   if (data.wifi5.mode && !device.wifi_mode_5ghz) {
     device.wifi_mode_5ghz = mode5;
   } else if (device.wifi_mode_5ghz !== mode5) {
     changes.wifi5.mode = device.wifi_mode_5ghz;
+    hasChanges = true;
   }
   let band5 = convertWifiBand(data.wifi5.band, data.wifi5.mode);
   if (data.wifi5.band && !device.wifi_band_5ghz) {
@@ -329,17 +369,32 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.lan_subnet = data.lan.router_ip;
   } else if (device.lan_subnet !== data.lan.router_ip) {
     changes.lan.router_ip = device.lan_subnet;
+    hasChanges = true;
   }
   if (subnetNumber > 0 && !device.lan_netmask) {
     device.lan_netmask = subnetNumber;
   } else if (device.lan_netmask !== subnetNumber) {
     changes.lan.subnet_mask = device.lan_netmask;
+    hasChanges = true;
   }
   if (data.wan.recv_bytes && data.wan.sent_bytes) {
     device.wan_bytes = appendBytesMeasure(
       device.wan_bytes,
       data.wan.recv_bytes,
       data.wan.sent_bytes,
+    );
+  }
+  if (data.wan.pon_rxpower) {
+    device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_rxpower);
+  }
+  if (data.wan.pon_txpower) {
+    device.pon_txpower = convertToDbm(data.common.model, data.wan.pon_txpower);
+  }
+  if (data.wan.pon_rxpower && data.wan.pon_txpower) {
+    device.pon_signal_measure = appendPonSignal(
+      device.pon_signal_measure,
+      device.pon_rxpower,
+      device.pon_txpower,
     );
   }
   if (data.common.version && data.common.version !== device.installed_release) {
@@ -353,12 +408,32 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
-  device.last_contact = Date.now();
-  // Possibly TODO: Let acceptLocalChanges be configurable for the admin
-  let acceptLocalChanges = false;
-  if (!acceptLocalChanges) {
-    acsDeviceInfoController.updateInfo(device, changes);
+  if (hasChanges) {
+    // Increment sync task loops
+    device.acs_sync_loops += 1;
+    let syncLimit = 5;
+    if (device.acs_sync_loops === syncLimit) {
+      // Inform via log that this device has entered a sync loop
+      let serialChanges = JSON.stringify(changes);
+      console.log(
+        'Device '+device.acs_id+' has entered a sync loop: '+serialChanges,
+      );
+    } else if (device.acs_sync_loops <= syncLimit) {
+      // Guard against looping syncs - do not force changes if over limit
+      // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+      let acceptLocalChanges = false;
+      if (!acceptLocalChanges) {
+        acsDeviceInfoController.updateInfo(device, changes);
+      }
+    }
+  } else {
+    let informDiff = Date.now() - device.last_contact;
+    if (informDiff >= 20000) {
+      // 20s - Guard against any very short inform repetitions from GenieACS
+      device.acs_sync_loops = 0;
+    }
   }
+  device.last_contact = Date.now();
   await device.save();
   return res.status(200).json({success: true});
 };
@@ -473,6 +548,61 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
         await deviceEdit.save();
       }
       sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
+    });
+  });
+  req.end();
+};
+
+// TODO: Move this function to external-genieacs?
+acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let query = {_id: acsID};
+  let projection = rxPowerField + ',' + txPowerField;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let ponSignal = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, rxPowerField+'._value') &&
+          checkForNestedKey(data, txPowerField+'._value')) {
+        success = true;
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerField+'._value'),
+          txpower: getFromNestedKey(data, txPowerField+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.rxpower);
+        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model,
+                                                                ponSignal.txpower);
+        ponSignal = appendPonSignal(
+          deviceEdit.pon_signal_measure,
+          ponSignal.rxpower,
+          ponSignal.txpower,
+        );
+        deviceEdit.pon_signal_measure = ponSignal;
+        await deviceEdit.save();
+      }
+      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
+      return ponSignal;
     });
   });
   req.end();
@@ -719,9 +849,6 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
       hasChanges = true;
     });
   });
-  if (task.parameterValues.length > 0) {
-    console.log(task);
-  }
   if (!hasChanges) return; // No need to sync data with genie
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?

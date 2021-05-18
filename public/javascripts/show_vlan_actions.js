@@ -14,6 +14,7 @@ $(document).ready(function() {
         dataControl.qtdPorts = row.data('qtdPorts');
         dataControl.vlan_profiles = await fetchVlanProfiles();
         dataControl.vlan = await fetchVlanDeviceInfo(id);
+        dataControl.deviceModel = row.data('device-model');
 
         // build modal
         $('#vlan-hlabel').text(id);
@@ -123,85 +124,77 @@ const fetchVlanProfiles = async function() {
 
 const buildVlanModal = function(dc, canEdit) {
   let vlanCanvas = $('#vlan-ports-canvas').html('');
-  let vlanBlock = $('<div></div>').
-      addClass('d-flex').
-      addClass('flex-row').
-      addClass('justify-content-center').
-      addClass('flex-wrap');
+  let vlanBlock = $('<div>').addClass('d-flex flex-row justify-content-center')
+                            .addClass('flex-wrap');
 
   if (dc.vlan_profiles.length == 0) {
-    $('#frame-vlan-modal-alert').
-      addClass('d-block').
-      addClass('p-3').
-      addClass('bg-danger').
-      addClass('text-white').
-      append($('<h5></h5>').
-      html('É necessário pelo menos um Perfil de VLAN cadastrado!'));
+    $('#frame-vlan-modal-alert').addClass('d-block p-3 bg-danger text-white')
+      .append(
+        $('<h5>').html('É necessário pelo menos um Perfil de VLAN cadastrado!')
+      );
   } else {
     for (let i = 0; i < dc.qtdPorts; i++) {
-      let vlanPortInput = $('<div></div>').
-        addClass('d-flex').
-        addClass('flex-column').
-        addClass('mr-3').
-        addClass('mb-3');
-
+      let vlanPortInput = $('<div>').addClass('d-flex flex-column mr-3 mb-3');
       vlanPortInput.append(
-          $('<label></label>').
-            addClass('mb-0').
-            text('Porta '+(i+1)+' :'),
-        );
+        $('<label>').addClass('mb-0').text('Porta '+(i+1)+' :')
+      );
 
-      let profilesOptions;
-      if (canEdit) {
-        profilesOptions = $('<select></select>').
-          addClass('browser-default').
-          addClass('md-select').
-          addClass('md-select-vlan').
-          addClass('select-port-vlan').
-          attr('name', (i+1));
-      } else {
-        profilesOptions = $('<select></select>').
-          addClass('browser-default').
-          addClass('md-select').
-          addClass('md-select-vlan').
-          addClass('select-port-vlan').
-          attr('name', (i+1)).
-          attr('disabled', 'disabled');
-        $('#btn-vlan-update').
-          attr('disabled', 'disabled');
+      let profilesOptions = $('<select>').addClass('browser-default md-select')
+                                         .addClass('md-select-vlan')
+                                         .addClass('select-port-vlan')
+                                         .attr('name', (i+1));
+      if (!canEdit) {
+        profilesOptions.attr('disabled', 'disabled');
+        $('#btn-vlan-update').attr('disabled', 'disabled');
       }
 
-      for (let j = 0; j < dc.vlan_profiles.length; j++) {
-        let option = $('<option></option>').
-          attr('value', dc.vlan_profiles[j].vlan_id).
-          text(dc.vlan_profiles[j].profile_name);
-        if (dc.vlan !== undefined) {
-          for (let k = 0; k < dc.vlan.length; k++) {
-            if (dc.vlan[0] !== null) {
-              if (dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id &&
-                (i+1) == dc.vlan[k].port) {
-                option.attr('selected', 'selected');
-                profilesOptions.
-                  attr('data-vlan-id', dc.vlan_profiles[j].vlan_id);
+      $.ajax({
+        type: 'POST',
+        url: '/vlan/fetchmaxvid',
+        traditional: true,
+        data: {
+          models: JSON.stringify([dc.deviceModel]),
+        },
+        success: function(res) {
+          if (res.success) {
+            let maxVids = res.maxVids;
+            for (let j = 0; j < dc.vlan_profiles.length; j++) {
+              if (dc.vlan_profiles[j].vlan_id <= maxVids[dc.deviceModel]) {
+                let option = $('<option>')
+                             .attr('value', dc.vlan_profiles[j].vlan_id)
+                             .text(dc.vlan_profiles[j].profile_name);
+                if (dc.vlan !== undefined) {
+                  for (let k = 0; k < dc.vlan.length; k++) {
+                    if (dc.vlan[0] !== null) {
+                      if (dc.vlan_profiles[j].vlan_id == dc.vlan[k].vlan_id &&
+                          (i+1) == dc.vlan[k].port) {
+                        option.attr('selected', 'selected');
+                        profilesOptions.attr('data-vlan-id',
+                                             dc.vlan_profiles[j].vlan_id);
+                      }
+                    }
+                  }
+                }
+                profilesOptions.append(option);
               }
             }
+          } else {
+            displayAlertMsg(res.message);
           }
-        }
-        profilesOptions.append(option);
-      }
+        },
+        error: function(res) {
+          displayAlertMsg(res.message);
+        },
+      });
 
-      let profilesSelect = $('<div></div>').
-        addClass('md-selectfield').
-        addClass('md-selectfield-vlan').
-        addClass('form-control').
-        append(profilesOptions);
-
+      let profilesSelect = $('<div>').addClass('md-selectfield')
+                                     .addClass('md-selectfield-vlan')
+                                     .addClass('form-control')
+                                     .append(profilesOptions);
       vlanPortInput.append(profilesSelect);
-
       vlanBlock.append(vlanPortInput);
     }
     vlanCanvas.append(vlanBlock);
   }
-
   $('#vlan-modal').modal('show');
 };

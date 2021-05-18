@@ -113,7 +113,7 @@ let recoveryOfflineErrorElement =
 const resetRecoveryOfflineInputDependencyError = function() {
   recoveryInput.setCustomValidity('');
   offlineInput.setCustomValidity('');
-  recoveryOfflineErrorElement.style.display = '';
+  recoveryOfflineErrorElement.style.display = 'none';
   recoveryErrorElement.style.display = '';
   offlineErrorElement.style.display = '';
 };
@@ -219,6 +219,17 @@ $(document).ready(function() {
       $('#inform-interval').val(resp.tr069InformInterval);
       $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);
       $('#lost-informs-offline-threshold').val(resp.tr069OfflineThreshold);
+      let is_active = document.getElementById('data_collecting_service_is_active');
+      if (is_active) is_active.checked = resp.data_collecting_is_active || false;
+      let alarm_fqdn = document.getElementById('data_collecting_service_alarm_fqdn');
+      if (alarm_fqdn) alarm_fqdn.value = resp.data_collecting_alarm_fqdn || '';
+      let ping_fqdn = document.getElementById('data_collecting_service_ping_fqdn');
+      if (ping_fqdn) ping_fqdn.value = resp.data_collecting_ping_fqdn || '';
+      let ping_packets = document.getElementById('data_collecting_service_ping_packets');
+      if (ping_packets) ping_packets.value = resp.data_collecting_ping_packets;
+      [alarm_fqdn, ping_fqdn].forEach((input) => {
+        if (input && input.value !== '') input.previousElementSibling.classList.add('active');
+      })
     },
   });
 });
