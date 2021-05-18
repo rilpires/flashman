@@ -1,3 +1,4 @@
+import {socket} from './common_actions.js';
 
 // Store log to be downloadable
 let logBodyRawContent = '';

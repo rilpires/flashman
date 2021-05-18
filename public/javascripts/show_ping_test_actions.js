@@ -1,4 +1,4 @@
-import {displayAlertMsg} from './common_actions.js';
+import {displayAlertMsg, socket} from './common_actions.js';
 
 let isPingHostListInitialized = false;
 

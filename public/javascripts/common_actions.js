@@ -1,4 +1,4 @@
-import { io } from 'socket.io-client';
+import {io} from 'socket.io-client';
 
 const socket = io();
 
@@ -96,3 +96,4 @@ $(document).on('click', '.btn-notif-action', function(event) {
 });
 
 export {displayAlertMsg};
+export {socket};
