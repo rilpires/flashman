@@ -855,8 +855,6 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   });
 };
 
-
-
 acsDeviceInfoController.changePortForwardRules = async function(device, rulesDiffLength) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -879,7 +877,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       changeEntriesSizeTask.objectName = specFields.template + '.' + i;
       ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
         3000, [5000, 10000]);
-      if(!ret.finished) {
+      if (!ret.finished) {
         return;
       }
     }
@@ -888,42 +886,42 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     for (i = 0; i < rulesDiffLength; i++) {
       ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
         3000, [5000, 10000]);
-      if(!ret.finished) {
+      if (!ret.finished) {
         return;
       }
     }
   }
-  for(i = 0; i < device.port_mapping.length; i++) {
+  for (i = 0; i < device.port_mapping.length; i++) {
     updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.' 
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.enable,
       true,
       'xsd:boolean',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.' 
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.lease,
       0,
       'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.' 
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.external_port_start,
       device.port_mapping[i].external_port_start,
       'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.' 
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.external_port_end,
       device.port_mapping[i].external_port_end,
       'xsd:unsignedInt',
     ]);
     updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.' 
+      specFields.template + '.' + (i+1) + '.'
       +
       specFields.internal_port_start,
       device.port_mapping[i].internal_port_start,
