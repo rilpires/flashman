@@ -145,7 +145,7 @@ const getDefaultFields = function() {
       enable: 'PortMappingEnabled',
       lease: 'PortMappingLeaseDuration',
       external_port_start: 'ExternalPort',
-      external_port_end: 'ExternalPortEndRange',
+      external_port_end: '',
       internal_port_start: 'InternalPort',
       internal_port_end: '',
       protocol: 'PortMappingProtocol',
@@ -207,9 +207,11 @@ const getZTEFields = function(model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
+      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';

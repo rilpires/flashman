@@ -913,13 +913,15 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       device.port_mapping[i].external_port_start,
       'xsd:unsignedInt',
     ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.external_port_end,
-      device.port_mapping[i].external_port_end,
-      'xsd:unsignedInt',
-    ]);
+    if (specFields.external_port_end != '') {
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.external_port_end,
+        device.port_mapping[i].external_port_end,
+        'xsd:unsignedInt',
+      ]);
+    }
     updateTasks.parameterValues.push([
       specFields.template + '.' + (i+1) + '.'
       +
