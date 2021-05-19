@@ -1,4 +1,6 @@
+import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
+import 'regenerator-runtime/runtime';
 
 let checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol
@@ -153,7 +155,9 @@ $(document).ready(function() {
     ),
   );
   // Load table content
-  fetchVlanProfiles(vlanProfilesTable);
+  if (window.location.href.indexOf('/vlan/profile') !== -1) {
+    fetchVlanProfiles(vlanProfilesTable);
+  }
 
   $(document).on('click', '#card-header', function() {
     let plus = $(this).find('.fa-plus');

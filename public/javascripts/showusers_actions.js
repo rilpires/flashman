@@ -20,14 +20,17 @@ const fetchUsers = function(usersTable) {
         let userRow = $('<tr></tr>').append(
           (userObj.is_superuser ?
             $('<td></td>') :
-            $('<td></td>').addClass('col-xs-1').append(
+            $('<td></td>').append(
               $('<input></input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', userObj._id)
             )
           ),
           $('<td></td>').html(userObj.name),
-          $('<td></td>').html(userObj.role),
+          (userObj.role ?
+            $('<td></td>').html(userObj.role) :
+            $('<td></td>')
+          ),
           $('<td></td>').html(new Date(userObj.createdAt).toLocaleString()),
           (userObj.lastLogin ?
             $('<td></td>').html(new Date(userObj.lastLogin).toLocaleString()) :

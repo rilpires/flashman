@@ -25,6 +25,11 @@ module.exports = {
     './public/javascripts/showusers_actions.js',
     './public/javascripts/common_actions.js',
     './public/javascripts/upgrade_flashman.js',
+    './public/javascripts/showvlanprofiles_actions.js',
+    './public/javascripts/show_data_collecting_actions.js',
+    './public/javascripts/show_pon_signal_actions.js',
+    './public/javascripts/show_vlan_actions.js',
+    './public/javascripts/vlanprofile_actions.js',
     ],
   },
   output: {

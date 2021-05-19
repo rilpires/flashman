@@ -4,6 +4,7 @@ import 'popper.js';
 import {io} from 'socket.io-client';
 import 'tempusdominus-bootstrap-4';
 import 'apexcharts';
+import 'datatables.net-bs4';
 
 const socket = io();
 

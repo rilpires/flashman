@@ -1,8 +1,5 @@
 extends layout
 
-block stylesheets
-  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
-
 block content
   .row.justify-content-center
     .col-12.col-lg-8.mt-5
@@ -77,8 +74,4 @@ block content
               th.text-center Data de criação
               th.text-center Último acesso
               th.text-center
-
-block scripts
-  script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
-  script(src='/scripts/datatables.net-bs4/js/dataTables.bootstrap4.min.js')
-  script(src='/dist/flashman.bundle.js')
+          tbody
