@@ -1,4 +1,5 @@
 import Stepper from 'bs-stepper';
+import 'tempusdominus-bootstrap-4';
 
 let updateSearchResultsScheduler = function(result) {
   $('#allDevicesLabel').html(' ' + result.status.totalnum);

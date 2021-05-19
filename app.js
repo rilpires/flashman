@@ -244,11 +244,6 @@ app.use('/stylesheets',
     dotfiles: 'ignore',
     maxAge: false,
 }));
-app.use('/javascripts',
-  serveStatic(path.join(__dirname, 'public/javascripts'), {
-    dotfiles: 'ignore',
-    maxAge: false,
-}));
 app.use('/dist',
   serveStatic(path.join(__dirname, 'public/dist'), {
     dotfiles: 'ignore',
@@ -295,55 +290,6 @@ let sessParam = session({
 
 app.use(sessParam);
 sio.anlixBindSession(sessParam);
-
-// create static routes for public libraries
-app.use('/scripts/jquery',
-  express.static(path.join(__dirname, 'node_modules/jquery/dist'))
-);
-app.use('/scripts/jquery-mask',
-  express.static(path.join(__dirname, 'node_modules/jquery-mask-plugin/dist'))
-);
-app.use('/scripts/jquery-highlight',
-  express.static(path.join(__dirname, 'node_modules/jquery-highlight'))
-);
-app.use('/scripts/pako',
-  express.static(path.join(__dirname, 'node_modules/pako/dist'))
-);
-app.use('/scripts/popper',
-  express.static(path.join(__dirname, 'node_modules/popper.js/dist'))
-);
-app.use('/scripts/moment',
-  express.static(path.join(__dirname, 'node_modules/moment/min'))
-);
-app.use('/scripts/bootstrap',
-  express.static(path.join(__dirname, 'node_modules/bootstrap/dist'))
-);
-app.use('/scripts/mdbootstrap',
-  express.static(path.join(__dirname, 'node_modules/mdbootstrap'))
-);
-app.use('/scripts/bs-stepper',
-  express.static(path.join(__dirname, 'node_modules/bs-stepper/dist'))
-);
-app.use('/scripts/tempusdominus',
-  express.static(path.join(__dirname, 'node_modules/tempusdominus-bootstrap-4/build'))
-);
-app.use('/scripts/sweetalert2',
-  express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))
-);
-app.use('/scripts/apexcharts',
-  express.static(path.join(__dirname, 'node_modules/apexcharts/dist'))
-);
-app.use('/scripts/fontawesome/css',
-  express.static(path.join(
-    __dirname,
-    'node_modules/@fortawesome/fontawesome-free/css'))
-);
-app.use('/scripts/fontawesome/webfonts',
-  express.static(path.join(
-    __dirname,
-    'node_modules/@fortawesome/fontawesome-free/webfonts'))
-);
-
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(fileUpload());

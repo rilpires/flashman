@@ -1,8 +1,6 @@
-import 'bootstrap';
 import 'mdbootstrap';
 import 'popper.js';
 import {io} from 'socket.io-client';
-import 'tempusdominus-bootstrap-4';
 import 'apexcharts';
 import 'datatables.net-bs4';
 
