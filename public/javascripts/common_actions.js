@@ -1,6 +1,11 @@
+import 'bootstrap';
+import bsCustomFileInput from 'bs-custom-file-input';
+import 'mdbootstrap';
 import {io} from 'socket.io-client';
 
 const socket = io();
+
+global.bsCustomFileInput = bsCustomFileInput;
 
 const displayAlertMsg = function(res) {
   $('#frame-modal-alert .modal-dialog').removeClass(
@@ -80,6 +85,9 @@ let fetchNotifications = function() {
 };
 
 $(document).ready(function() {
+  if ($('#frame-modal-alert-message').text() !== '') {
+    $('#frame-modal-alert').modal('show');
+  }
   if (!window.location.href.includes('/login')) {
     fetchNotifications();
   }
@@ -93,6 +101,13 @@ $(document).on('click', '.btn-notif-action', function(event) {
   .done(() => {
     fetchNotifications();
   });
+});
+
+// Preloader
+$(window).on('load', function() { // makes sure the whole site is loaded
+  $('#status').fadeOut(); // will first fade out the loading animation
+  $('#preloader').delay(350).fadeOut('slow');
+  $('body').delay(350).css({'overflow': 'visible'});
 });
 
 export {displayAlertMsg};
