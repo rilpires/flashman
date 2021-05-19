@@ -46,6 +46,7 @@ let showCompatibilityMessage = function(compatibility) {
   +' não suporta as seguintes formas de a abertura de portas: ';
   let show = false;
   let i;
+  compatInfoList.html('');
   for (i = 0; i < compatibility.length; i++) {
     if (!compatibility[i]) {
       show = true;
