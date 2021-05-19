@@ -33,7 +33,7 @@ module.exports = {
   },
   module: {
     rules: [
-     {
+      {
         test: /\.(js|jsm)$/,
         exclude: /node_modules/,
         use: {
@@ -42,18 +42,6 @@ module.exports = {
             presets: ['@babel/preset-env'],
           },
         },
-      },
-      {
-        test: /\.css$/i,
-        use: ['style-loader', 'css-loader'],
-      },
-      {
-        test: /\.s[ac]ss$/i,
-        use: [
-          'style-loader',
-          'css-loader',
-          'sass-loader',
-        ],
       },
       {
         test: /\.(woff(2)?|ttf|eot|svg|png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
