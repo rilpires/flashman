@@ -11,9 +11,16 @@
           span.white-text &times;
       #port-forward-onu-modal-alert.d-none.p-3.bg-danger.text-white
       .modal-body
-        #port-forward-onu-modal-compat-info.d-none.row.p-3.alert.alert-info
-          .fas.fa-info-circle.fa-lg.mr-2
-          span#port-forward-onu-modal-compat-info-message  
+        #port-forward-onu-modal-compat-info.d-none.row.p-3.alert.alert-info(aria-alert="true")
+          .row
+            .col-11
+              .fas.fa-info-circle.fa-lg.mr-2
+              span#port-forward-onu-modal-compat-info-message
+            .col-1
+              button.text-white.close(type="button", data-dismiss="alert")
+                .fas.fa-times
+          .row
+            ul#port-forward-onu-modal-compat-info-list
         .row.d-none#port-forward-onu-advanced-options-labels
           .col-3
           .col-4.text-center

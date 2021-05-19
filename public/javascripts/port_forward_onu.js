@@ -26,67 +26,98 @@ let triggerRedAlert = function(message) {
 };
 
 let showCompatibilityMessage = function(compatibility) {
+  let portInputs = $('.port-forward-onu-port-input');
+  let isRangeOfPorts = $('#port-forward-onu-'+
+    'range-of-ports-checkbox')[0];
+  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0];
+  let compatInfoDiv = $('#port-forward-onu-modal-compat-info');
+  let compatInfoMessage = $('#port-forward-onu-modal-compat-info-message');
+  let compatInfoList = $('#port-forward-onu-modal-compat-info-list');
   let messageType = [
-    'simples + simétrica ;',
-    'simples + assimétrica ;',
-    'faixa de portas + simétrica ;',
-    'faixa de portas + assimétrica ;',
+    'simples simétrica',
+    'simples assimétrica',
+    'faixa de portas simétrica',
+    'faixa de portas assimétrica',
   ];
   let message = 'O modelo '+
   sessionStorage.getItem('model')
   +' versão '+
   sessionStorage.getItem('version')
-  +' não suporta as seguintes formas de se realizar a abertura de portas: ';
+  +' não suporta as seguintes formas de a abertura de portas: ';
   let show = false;
   let i;
   for (i = 0; i < compatibility.length; i++) {
     if (!compatibility[i]) {
       show = true;
-      message += messageType[i];
+      compatInfoList.append(
+        $('<li>').html(messageType[i]),
+      );
     }
   }
   message += '';
   if (show) {
-    $('#port-forward-onu-modal-compat-info').
+    compatInfoDiv.
         removeClass('d-none').
         addClass('d-block');
-    $('#port-forward-onu-modal-compat-info-message').
-    html(message);
+    compatInfoMessage.
+      html(message);
+  }
+  if (!compatibility[0]) {
+    portInputs[0].disabled = portInputs[1].disabled =
+     portInputs[2].disabled = portInputs[3].disabled = true;
+  }
+  if (!compatibility[1]) {
+    isAsymOpening.disabled = true;
+  }
+  if (!compatibility[2]) {
+    isRangeOfPorts.disabled = true;
   }
 };
 
 let checkAdvancedOptions = function() {
-  let isRangeOfPorts = $('#port-forward-onu-'+
-    'range-of-ports-checkbox')[0].checked;
-  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0].checked;
-  let advOptionsLabel = $('#port-forward-onu-advanced-options-labels')[0];
   let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
-
+  let isRangeOfPorts = $('#port-forward-onu-'+
+    'range-of-ports-checkbox')[0];
+  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0];
+  let advOptionsLabel = $('#port-forward-onu-advanced-options-labels')[0];
   let portBox = $('.port-forward-onu-port');
   let portLabel = $('.port-forward-onu-port-label');
   let portInputs = $('.port-forward-onu-port-input');
 
-  if (isRangeOfPorts == false && isAsymOpening == false) {
+  if (compatibility[1] && compatibility[2] && !compatibility[3]) {
+    if (isRangeOfPorts.checked) {
+      isAsymOpening.disabled = true;
+    } else {
+      isAsymOpening.disabled = false;
+    }
+    if (isAsymOpening.checked) {
+      isRangeOfPorts.disabled = true;
+    } else {
+      isRangeOfPorts.disabled = false;
+    }
+  }
+
+  if (isRangeOfPorts.checked == false && isAsymOpening.checked == false) {
     advOptionsLabel.className = 'row d-none';
     portBox[1].className = portBox[2].className =
      portBox[3].className = 'col-md-2 col-4 port-forward-onu-port d-none';
     portLabel[0].innerHTML = 'Porta';
     portInputs[1].value = portInputs[2].value = portInputs[3].value = '';
-  } else if (isRangeOfPorts != isAsymOpening) {
+  } else if (isRangeOfPorts.checked != isAsymOpening.checked) {
     advOptionsLabel.className = 'row d-none';
     portBox[1].className = 'col-md-2 col-4 port-forward-onu-port';
     portBox[2].className =
     portBox[3].className = 'col-md-2 col-4 port-forward-onu-port d-none';
 
     portInputs[2].value = portInputs[3].value = '';
-    if (isRangeOfPorts) {
+    if (isRangeOfPorts.checked) {
       portLabel[0].innerHTML = 'Inicial';
       portLabel[1].innerHTML = 'Final';
     } else {
       portLabel[0].innerHTML = 'Origem';
       portLabel[1].innerHTML = 'Destino';
     }
-  } else if (isRangeOfPorts == true && isAsymOpening == true) {
+  } else if (isRangeOfPorts.checked == true && isAsymOpening.checked == true) {
     advOptionsLabel.className = 'row';
     portBox[1].className = portBox[2].className =
      portBox[3].className = 'col-md-2 col-4 port-forward-onu-port';
@@ -315,7 +346,7 @@ let removeAllPortMapping = function() {
   sessionStorage.clear();
 };
 
-let checkOverlappingPorts = function(listOfMappings, ports, isRangeOfPorts) {
+let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) {
   let ret = false;
   let i;
   for (i = 0; i < listOfMappings.length; i++) {
@@ -376,6 +407,7 @@ let putPortMapping = function(ip, ports) {
   let isRangeOfPorts = $('#port-forward-onu-'+
     'range-of-ports-checkbox')[0].checked;
 
+  let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
   let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
   let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
 
@@ -388,56 +420,78 @@ let putPortMapping = function(ip, ports) {
   isOverlapping = checkOverlappingPorts(listOfMappings, ports, isRangeOfPorts);
   if (isOverlapping) {
     triggerRedAlert('Porta estão sobrepostas!');
+    return;
   } else {
     if (ports.length == 1) {
       // 'ip' | 'ports[0]'
-      portsBadges.push(ports[0].toString());
-      listOfMappings.push({
-        'ip': ip,
-        'external_port_start': ports[0],
-        'external_port_end': ports[0],
-        'internal_port_start': ports[0],
-        'internal_port_end': ports[0],
-      });
-    } else if (ports.length == 2) {
-      // 'ip' | 'ports[0]-ports[1]'
-      if (isRangeOfPorts) {
-        portsBadges.push(ports[0].toString()+
-          '-' + ports[1].toString());
-        listOfMappings.push({
-          'ip': ip,
-          'external_port_start': ports[0],
-          'external_port_end': ports[1],
-          'internal_port_start': ports[0],
-          'internal_port_end': ports[1],
-        });
-      } else {
-        // 'ip' | 'ports[0]:ports[1]'
-        portsBadges.push(ports[0].toString()+
-          ':' + ports[1].toString());
+      if (compatibility[0]) {
+        portsBadges.push(ports[0].toString());
         listOfMappings.push({
           'ip': ip,
           'external_port_start': ports[0],
           'external_port_end': ports[0],
-          'internal_port_start': ports[1],
-          'internal_port_end': ports[1],
+          'internal_port_start': ports[0],
+          'internal_port_end': ports[0],
         });
+      } else {
+        triggerRedAlert('Opção não compatível!');
+        return;
+      }
+    } else if (ports.length == 2) {
+      // 'ip' | 'ports[0]-ports[1]'
+      if (isRangeOfPorts) {
+        if (compatibility[2]) {
+          portsBadges.push(ports[0].toString()+
+            '-' + ports[1].toString());
+          listOfMappings.push({
+            'ip': ip,
+            'external_port_start': ports[0],
+            'external_port_end': ports[1],
+            'internal_port_start': ports[0],
+            'internal_port_end': ports[1],
+          });
+        } else {
+          triggerRedAlert('Opção não compatível!');
+          return;
+        }
+      } else {
+        // 'ip' | 'ports[0]:ports[1]'
+        if (compatibility[1]) {
+          portsBadges.push(ports[0].toString()+
+            ':' + ports[1].toString());
+          listOfMappings.push({
+            'ip': ip,
+            'external_port_start': ports[0],
+            'external_port_end': ports[0],
+            'internal_port_start': ports[1],
+            'internal_port_end': ports[1],
+          });
+        } else {
+          triggerRedAlert('Opção não compatível!');
+          return;
+        }
       }
     } else if (ports.length == 4) {
       // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
-      portsBadges.push(ports[0].toString()+
-          '-' + ports[1].toString() +
-          ':' + ports[2].toString() +
-          '-' + ports[3].toString());
-      listOfMappings.push({
-        'ip': ip,
-        'external_port_start': ports[0],
-        'external_port_end': ports[1],
-        'internal_port_start': ports[2],
-        'internal_port_end': ports[3],
-      });
+      if (compatibility[3]) {
+        portsBadges.push(ports[0].toString()+
+            '-' + ports[1].toString() +
+            ':' + ports[2].toString() +
+            '-' + ports[3].toString());
+        listOfMappings.push({
+          'ip': ip,
+          'external_port_start': ports[0],
+          'external_port_end': ports[1],
+          'internal_port_start': ports[2],
+          'internal_port_end': ports[3],
+        });
+      } else {
+        triggerRedAlert('Opção não compatível!');
+        return;
+      }
     } else {
       triggerRedAlert('Algo muito errado aconteceu...');
+      return;
     }
     let listOfBadges = $('<td>').
           addClass('d-flex').
@@ -667,7 +721,6 @@ $(document).ready(function() {
     checkAdvancedOptions();
     portMappingTable.empty();
     sessionStorage.clear();
-    console.log(row);
     sessionStorage.setItem('deviceId', row.data('deviceid'));
     sessionStorage.setItem('serialId', row.data('serialid'));
     sessionStorage.setItem('model', row.data('deviceModel'));
