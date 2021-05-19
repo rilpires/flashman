@@ -1908,29 +1908,67 @@ deviceListController.checkAddressSubnetRange = function(deviceIp, ipAddressGiven
   return isOnRange && isIpFormatCorrect;
 };
 
-deviceListController.checkOverlappingPorts = function(listOfMappings) {
+deviceListController.checkOverlappingPorts = function(rules) {
   let ret = false;
   let i;
   let j;
+  let ipI;
+  let ipJ;
   let pi = [];
   let pj = [];
-  if (listOfMappings.length > 1) {
-    for (i = 0; i < listOfMappings.length; i++) {
-      pi[0] = listOfMappings[i].external_port_start;
-      pi[1] = listOfMappings[i].external_port_end;
-      pi[2] = listOfMappings[i].internal_port_start;
-      pi[3] = listOfMappings[i].internal_port_end;
-      for (j = i+1; j < listOfMappings.length; j++) {
-        pj[0] = listOfMappings[j].external_port_start;
-        pj[1] = listOfMappings[j].external_port_end;
-        pj[2] = listOfMappings[j].internal_port_start;
-        pj[3] = listOfMappings[j].internal_port_end;
+  if (rules.length > 1) {
+    for (i = 0; i < rules.length; i++) {
+      ipI = rules[i].ip;
+      pi[0] = rules[i].external_port_start;
+      pi[1] = rules[i].external_port_end;
+      pi[2] = rules[i].internal_port_start;
+      pi[3] = rules[i].internal_port_end;
+      for (j = i+1; j < rules.length; j++) {
+        ipJ = rules[j].ip;
+        pj[0] = rules[j].external_port_start;
+        pj[1] = rules[j].external_port_end;
+        pj[2] = rules[j].internal_port_start;
+        pj[3] = rules[j].internal_port_end;
         if ((pj[0] >= pi[0] && pj[0] <= pi[1]) ||
             (pj[1] >= pi[0] && pj[1] <= pi[1]) ||
-            (pj[2] >= pi[2] && pj[2] <= pi[3]) ||
-            (pj[3] >= pi[2] && pj[3] <= pi[3])) {
+            (ipI == ipJ && pj[2] >= pi[2] && pj[2] <= pi[3]) ||
+            (ipI == ipJ && pj[3] >= pi[2] && pj[3] <= pi[3])) {
           ret = true;
         }
+      }
+    }
+  }
+  return ret;
+};
+
+deviceListController.checkCompatibility = function(rules, compatibility) {
+  let ret = false;
+  let i;
+  let p = [];
+  for (i = 0; i < rules.length; i++) {
+    p[0] = rules[i].external_port_start;
+    p[1] = rules[i].external_port_end;
+    p[2] = rules[i].internal_port_start;
+    p[3] = rules[i].internal_port_end;
+    if (!compatibility[0]) {
+      if (p[0] == p[1] && p[2] == [3]) {
+        ret = true;
+      }
+    }
+    if (!compatibility[1]) {
+      if (p[0] != p[2] && p[1] != [3]) {
+        ret = true;
+      }
+    }
+    if (!compatibility[2]) {
+      if (p[0] != p[1] && p[2] != [3]) {
+        ret = true;
+      }
+    }
+    if (!compatibility[3]) {
+      if (p[0] != p[2] && p[1] != [3] &&
+         p[0] != p[1] && p[2] != [3]) {
+        ret = true;
       }
     }
   }
@@ -1953,7 +1991,8 @@ deviceListController.setPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -1970,11 +2009,23 @@ deviceListController.setPortForward = function(req, res) {
     // tr-069 routers
     if (matchedDevice.use_tr069) {
       let i;
+      let j;
       let rules;
       let isOnSubnetRange;
+      let isPortsNumber;
+      let isPortsOnRange;
+      let isPortsNotEmpty;
+      let isRangeOfSameSize;
+      let isRangeNegative;
+      let isJsonInFormat;
+      let portToCheck;
+      let portsValues;
+      let firstSlice;
+      let secondSlice;
+      let diffPortForwardLength;
       let newForwardIndex = crypto.createHash('md5').
       update(JSON.stringify(req.body.content)).digest('base64');
-      let diffPortForwardLength;
+
       if (matchedDevice.forward_index != newForwardIndex) {
         try {
           rules = JSON.parse(req.body.content);
@@ -1982,10 +2033,106 @@ deviceListController.setPortForward = function(req, res) {
           console.log(e.message);
           return res.status(200).json({
             success: false,
-            message: 'JSON mal formatado',
+            message: 'Não é um JSON',
           });
         }
 
+        // verify well formation of rules object
+        if (Array.isArray(rules)) {
+          isJsonInFormat = rules.every((r) => {
+            return r.ip != undefined &&
+             r.external_port_start != undefined &&
+             r.external_port_end != undefined &&
+             r.internal_port_start != undefined &&
+             r.internal_port_end != undefined;
+          });
+        } else {
+          isJsonInFormat = false;
+        }
+        if (!isJsonInFormat) {
+          return res.status(200).json({
+            success: false,
+            message: 'JSON fora do formato',
+          });
+        }
+        for (i = 0; i < rules.length; i++) {
+          isPortsNumber = true;
+          isPortsOnRange = true;
+          isPortsNotEmpty = true;
+          isRangeOfSameSize = true;
+          isRangeNegative = true;
+          portsValues = [];
+          portsValues[0] = rules[i].external_port_start;
+          portsValues[1] = rules[i].external_port_end;
+          portsValues[2] = rules[i].internal_port_start;
+          portsValues[3] = rules[i].internal_port_end;
+          // verify if the given ip is on subnet range
+          isOnSubnetRange = deviceListController.checkAddressSubnetRange(
+            matchedDevice.lan_subnet,
+            rules[i].ip,
+            matchedDevice.lan_netmask,
+          );
+          // verify if is number, empty, on 2^16 range,
+          for (j = 0; j < 4; j++) {
+            portToCheck = portsValues[j];
+            if (portToCheck == '') {
+              isPortsNotEmpty = false;
+            } else if (isNaN(parseInt(portToCheck))) {
+              isPortsNumber = false;
+            } else if (!(parseInt(portToCheck) >= 1 &&
+                         parseInt(portToCheck) <= 65535)) {
+              isPortsOnRange = false;
+            }
+          }
+          // verify if range is on same size and start/end order
+          firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
+          secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
+          if (firstSlice != secondSlice) {
+            isRangeOfSameSize = false;
+          }
+          if (firstSlice < 0 || secondSlice < 0) {
+            isRangeNegative = false;
+          }
+          if (!isPortsNumber) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+': As portas devem ser números',
+            });
+          }
+          if (!isPortsOnRange) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+
+              ': As portas devem estar na faixa entre 1 - 65535',
+            });
+          }
+          if (!isPortsNotEmpty) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+': Os campos devem ser preenchidos',
+            });
+          }
+          if (!isRangeOfSameSize) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+
+              ': As faixas de portas são de tamanhos diferentes',
+            });
+          }
+          if (!isRangeNegative) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+
+              ': As faixas de portas estão com limites invertidos',
+            });
+          }
+          if (!isOnSubnetRange) {
+            return res.status(200).json({
+              success: false,
+              message: ''+rules[i].ip+' está fora da faixa de subrede',
+            });
+          }
+        }
         // check overlapping port mapping
         if (deviceListController.checkOverlappingPorts(rules)) {
           return res.status(200).json({
@@ -1993,29 +2140,13 @@ deviceListController.setPortForward = function(req, res) {
             message: 'Possui mapeamento sobreposto',
           });
         }
-        for (i = 0; i < rules.length; i++) {
-          // verify if the given ip is on subnet range
-          isOnSubnetRange = deviceListController.checkAddressSubnetRange(
-            matchedDevice.lan_subnet,
-            rules[i].ip,
-            matchedDevice.lan_netmask,
-          );
-          if (!isOnSubnetRange) {
-            return res.status(200).json({
-              success: false,
-              message: ''+rules[i].ip+' está fora da faixa de subrede',
-            });
-          }
-          // check boundaries
-          if (rules[i].external_port_start < 1 ||
-            rules[i].external_port_end > 65535 ||
-            rules[i].internal_port_start < 1 ||
-            rules[i].internal_port_end > 65535) {
-            return res.status(200).json({
-              success: false,
-              message: ''+rules[i].ip+' possui porta fora da faixa entre 1 e 65535',
-            });
-          }
+        // check compatibility in mode of port mapping
+        if (deviceListController.checkCompatibility(rules, DeviceVersion.
+        getPortForwardOnuCompatibility(matchedDevice.version))) {
+          return res.status(200).json({
+            success: false,
+            message: 'Possui regra não compatível',
+          });
         }
         // get the difference of length between new entries and old entries
         diffPortForwardLength = rules.length - matchedDevice.port_mapping.length;
