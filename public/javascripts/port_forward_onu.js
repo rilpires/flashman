@@ -353,8 +353,9 @@ let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) 
     if (ports.length == 1) {
       if ((ports[0] >= listOfMappings[i].external_port_start &&
         ports[0] <= listOfMappings[i].external_port_end) ||
-        (ports[0] >= listOfMappings[i].internal_port_start &&
-        ports[0] <= listOfMappings[i].internal_port_end)) {
+        (ip == listOfMappings[i].ip &&
+          ports[0] >= listOfMappings[i].internal_port_start &&
+          ports[0] <= listOfMappings[i].internal_port_end)) {
         ret = true;
       }
     } else if (ports.length == 2) {
@@ -362,14 +363,21 @@ let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) 
         if ((ports[0] >= listOfMappings[i].external_port_start &&
           ports[0] <= listOfMappings[i].external_port_end) ||
           (ports[1] >= listOfMappings[i].external_port_start &&
-          ports[1] <= listOfMappings[i].external_port_end)) {
+          ports[1] <= listOfMappings[i].external_port_end) ||
+          (ip == listOfMappings[i].ip &&
+            ports[0] >= listOfMappings[i].internal_port_start &&
+            ports[0] <= listOfMappings[i].internal_port_end) ||
+          (ip == listOfMappings[i].ip &&
+            ports[1] >= listOfMappings[i].internal_port_start &&
+            ports[1] <= listOfMappings[i].internal_port_end)) {
           ret = true;
         }
       } else {
         if ((ports[0] >= listOfMappings[i].external_port_start &&
           ports[0] <= listOfMappings[i].external_port_end) ||
-          (ports[1] >= listOfMappings[i].internal_port_start &&
-          ports[1] <= listOfMappings[i].internal_port_end)) {
+          (ip == listOfMappings[i].ip &&
+            ports[1] >= listOfMappings[i].internal_port_start &&
+            ports[1] <= listOfMappings[i].internal_port_end)) {
           ret = true;
         }
       }
@@ -378,10 +386,12 @@ let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) 
           ports[0] <= listOfMappings[i].external_port_end) ||
           (ports[1] >= listOfMappings[i].external_port_start &&
           ports[1] <= listOfMappings[i].external_port_end) ||
-          (ports[2] >= listOfMappings[i].internal_port_start &&
-          ports[2] <= listOfMappings[i].internal_port_end) ||
-          (ports[3] >= listOfMappings[i].internal_port_start &&
-          ports[3] <= listOfMappings[i].internal_port_end)) {
+          (ip == listOfMappings[i].ip &&
+            ports[2] >= listOfMappings[i].internal_port_start &&
+            ports[2] <= listOfMappings[i].internal_port_end) ||
+          (ip == listOfMappings[i].ip &&
+            ports[3] >= listOfMappings[i].internal_port_start &&
+            ports[3] <= listOfMappings[i].internal_port_end)) {
         ret = true;
       }
     } else {
@@ -417,7 +427,7 @@ let putPortMapping = function(ip, ports) {
   if (listOfMappings == null) {
     listOfMappings = [];
   }
-  isOverlapping = checkOverlappingPorts(listOfMappings, ports, isRangeOfPorts);
+  isOverlapping = checkOverlappingPorts(ip, listOfMappings, ports, isRangeOfPorts);
   if (isOverlapping) {
     triggerRedAlert('Porta estão sobrepostas!');
     return;
