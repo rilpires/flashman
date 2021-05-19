@@ -7,6 +7,7 @@
  */
 @import url(../../node_modules/tags-input/tags-input.css);
 @import url(../../node_modules/bs-stepper/dist/css/bs-stepper.css);
+@import url(../../node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css);
 :root {
   --blue: #007bff;
   --indigo: #6610f2;
