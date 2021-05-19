@@ -12895,36 +12895,36 @@ button.bg-light:focus {
 @font-face {
   font-family: Roboto;
   font-weight: 200;
-  src: local(Roboto Thin), url("/scripts/mdbootstrap/font/roboto/Roboto-Thin.eot");
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Thin.eot?#iefix") format("embedded-opentype"), url("/scripts/mdbootstrap/font/roboto/Roboto-Thin.woff2") format("woff2"), url("/scripts/mdbootstrap/font/roboto/Roboto-Thin.woff") format("woff"), url("/scripts/mdbootstrap/font/roboto/Roboto-Thin.ttf") format("truetype");
+  src: local(Roboto Thin), url("/dist/fonts/Roboto-Thin.eot");
+  src: url("/dist/fonts/Roboto-Thin.eot?#iefix") format("embedded-opentype"), url("/dist/fonts/Roboto-Thin.woff2") format("woff2"), url("/dist/fonts/Roboto-Thin.woff") format("woff"), url("/dist/fonts/Roboto-Thin.ttf") format("truetype");
 }
 
 @font-face {
   font-family: Roboto;
   font-weight: 300;
-  src: local(Roboto Light), url("/scripts/mdbootstrap/font/roboto/Roboto-Light.eot");
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Light.eot?#iefix") format("embedded-opentype"), url("/scripts/mdbootstrap/font/roboto/Roboto-Light.woff2") format("woff2"), url("/scripts/mdbootstrap/font/roboto/Roboto-Light.woff") format("woff"), url("/scripts/mdbootstrap/font/roboto/Roboto-Light.ttf") format("truetype");
+  src: local(Roboto Light), url("/dist/fonts/Roboto-Light.eot");
+  src: url("/dist/fonts/Roboto-Light.eot?#iefix") format("embedded-opentype"), url("/dist/fonts/Roboto-Light.woff2") format("woff2"), url("/dist/fonts/Roboto-Light.woff") format("woff"), url("/dist/fonts/Roboto-Light.ttf") format("truetype");
 }
 
 @font-face {
   font-family: Roboto;
   font-weight: 400;
-  src: local(Roboto Regular), url("/scripts/mdbootstrap/font/roboto/Roboto-Regular.eot");
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Regular.eot?#iefix") format("embedded-opentype"), url("/scripts/mdbootstrap/font/roboto/Roboto-Regular.woff2") format("woff2"), url("/scripts/mdbootstrap/font/roboto/Roboto-Regular.woff") format("woff"), url("/scripts/mdbootstrap/font/roboto/Roboto-Regular.ttf") format("truetype");
+  src: local(Roboto Regular), url("/dist/fonts/Roboto-Regular.eot");
+  src: url("/dist/fonts/Roboto-Regular.eot?#iefix") format("embedded-opentype"), url("/dist/fonts/Roboto-Regular.woff2") format("woff2"), url("/dist/fonts/Roboto-Regular.woff") format("woff"), url("/dist/fonts/Roboto-Regular.ttf") format("truetype");
 }
 
 @font-face {
   font-family: Roboto;
   font-weight: 500;
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Medium.eot");
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Medium.eot?#iefix") format("embedded-opentype"), url("/scripts/mdbootstrap/font/roboto/Roboto-Medium.woff2") format("woff2"), url("/scripts/mdbootstrap/font/roboto/Roboto-Medium.woff") format("woff"), url("/scripts/mdbootstrap/font/roboto/Roboto-Medium.ttf") format("truetype");
+  src: url("/dist/fonts/Roboto-Medium.eot");
+  src: url("/dist/fonts/Roboto-Medium.eot?#iefix") format("embedded-opentype"), url("/dist/fonts/Roboto-Medium.woff2") format("woff2"), url("/dist/fonts/Roboto-Medium.woff") format("woff"), url("/dist/fonts/Roboto-Medium.ttf") format("truetype");
 }
 
 @font-face {
   font-family: Roboto;
   font-weight: 700;
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Bold.eot");
-  src: url("/scripts/mdbootstrap/font/roboto/Roboto-Bold.eot?#iefix") format("embedded-opentype"), url("/scripts/mdbootstrap/font/roboto/Roboto-Bold.woff2") format("woff2"), url("/scripts/mdbootstrap/font/roboto/Roboto-Bold.woff") format("woff"), url("/scripts/mdbootstrap/font/roboto/Roboto-Bold.ttf") format("truetype");
+  src: url("/dist/fonts/Roboto-Bold.eot");
+  src: url("/dist/fonts/Roboto-Bold.eot?#iefix") format("embedded-opentype"), url("/dist/fonts/Roboto-Bold.woff2") format("woff2"), url("/dist/fonts/Roboto-Bold.woff") format("woff"), url("/dist/fonts/Roboto-Bold.ttf") format("truetype");
 }
 
 body {
