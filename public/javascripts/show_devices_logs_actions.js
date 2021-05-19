@@ -1,4 +1,6 @@
 import {socket} from './common_actions.js';
+import 'jquery-highlight';
+import 'pako';
 
 // Store log to be downloadable
 let logBodyRawContent = '';

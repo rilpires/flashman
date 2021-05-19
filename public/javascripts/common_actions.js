@@ -1,11 +1,11 @@
 import 'bootstrap';
-import bsCustomFileInput from 'bs-custom-file-input';
 import 'mdbootstrap';
+import 'popper.js';
 import {io} from 'socket.io-client';
+import 'tempusdominus-bootstrap-4';
+import 'apexcharts';
 
 const socket = io();
-
-global.bsCustomFileInput = bsCustomFileInput;
 
 const displayAlertMsg = function(res) {
   $('#frame-modal-alert .modal-dialog').removeClass(
@@ -110,5 +110,4 @@ $(window).on('load', function() { // makes sure the whole site is loaded
   $('body').delay(350).css({'overflow': 'visible'});
 });
 
-export {displayAlertMsg};
-export {socket};
+export {displayAlertMsg, secondsTimeSpanToHMS, socket};

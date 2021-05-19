@@ -1,7 +1,10 @@
+import 'jquery-mask-plugin';
 import {tagsInput} from 'tags-input';
-import {displayAlertMsg, socket} from './common_actions.js';
 import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
 import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
+import {displayAlertMsg,
+        secondsTimeSpanToHMS,
+        socket} from './common_actions.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -2356,7 +2359,7 @@ $(document).ready(function() {
     });
   };
   // Initial table
-  if (window.location.href.split('/').includes('devicelist')) {
+  if (window.location.href.indexOf('devicelist') !== -1) {
     loadDevicesTable();
   }
 

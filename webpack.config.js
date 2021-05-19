@@ -73,6 +73,9 @@ module.exports = {
     new webpack.ProvidePlugin({
       $: 'jquery',
       jQuery: 'jquery',
+      moment: 'moment',
+      bsCustomFileInput: 'bs-custom-file-input',
+      swal: 'sweetalert2',
     }),
   ],
   devtool: 'source-map',

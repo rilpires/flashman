@@ -1,3 +1,4 @@
+import Stepper from 'bs-stepper';
 
 let updateSearchResultsScheduler = function(result) {
   $('#allDevicesLabel').html(' ' + result.status.totalnum);
