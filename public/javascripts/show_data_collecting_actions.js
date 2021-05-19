@@ -1,4 +1,5 @@
-let fillTotalDevicesFromSearch = function (amount) {
+
+const fillTotalDevicesFromSearch = function (amount) {
   totalDevicesFromSearch = amount;
   [...document.getElementsByClassName('amountOfDevices')].forEach((e) => e.innerHTML = String(totalDevicesFromSearch));
   let pluralElements = [...document.getElementsByClassName('plural')];
@@ -145,7 +146,7 @@ $(document).ready(function() {
       is_active: is_active.value,
       has_latency: has_latency.value
     };
-    for (let fieldname in booleanFields) {
+    for (let fieldname of booleanFields) {
       let value = booleanFields[fieldname];
       if (value === '') continue;
       if (value === "True") value = true;
@@ -292,13 +293,26 @@ $(document).ready(function() {
     btnDataCollecting.onclick = (event) => serviceModal.modal('show');
   }
   [...document.getElementsByClassName('panel-arrow')].forEach((e) => e.addEventListener("click", hideShowPannel));
-  document.getElementById("data_collecting_serviceForm").onsubmit = submitServiceParameters;
-  document.getElementById("data_collecting_updateManyForm").onsubmit = submitUpdateManyParameters;
-  document.getElementById("devices-search-form").addEventListener('submit', () => {
-    // when a search is submitted, we save the value that was in the search input.
-    lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
-    return false;
-  });
+  let serviceForm = document.getElementById('data_collecting_serviceForm');
+  if (serviceForm) {
+    serviceForm.onsubmit = submitServiceParameters;
+  }
+  let updateManyForm = document.getElementById('data_collecting_updateManyForm');
+  if (updateManyForm) {
+    updateManyForm.onsubmit = submitUpdateManyParameters;
+  }
+  let searchForm = document.getElementById('devices-search-form');
+  if (serviceForm) {
+    searchForm.addEventListener('submit', () => {
+      // when a search is submitted, we save the value that was in the search input.
+      lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
+      return false;
+    });
+  }
   $(document).on('click', '.btn-data_collecting-device-modal', loadDeviceParamaters);
-  deviceForm.onsubmit = submitDeviceParameters;
+  if (deviceForm) {
+    deviceForm.onsubmit = submitDeviceParameters;
+  }
 });
+
+export {fillTotalDevicesFromSearch};
