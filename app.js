@@ -240,7 +240,7 @@ app.use(logger('combined', {
 }));
 app.use(cookieParser());
 app.use('/stylesheets',
-  serveStatic(path.join(__dirname, 'public/stylesheets'), {
+  serveStatic(path.join(__dirname, 'public/dist/stylesheets'), {
     dotfiles: 'ignore',
     maxAge: false,
 }));
