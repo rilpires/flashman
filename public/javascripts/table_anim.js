@@ -1,7 +1,7 @@
-import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
-import {displayAlertMsg, socket} from './common_actions.js';
 import {tagsInput} from 'tags-input';
-import 'mdbootstrap/css/mdb.css';
+import {displayAlertMsg, socket} from './common_actions.js';
+import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
+import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -2356,7 +2356,9 @@ $(document).ready(function() {
     });
   };
   // Initial table
-  loadDevicesTable();
+  if (window.location.href.split('/').includes('devicelist')) {
+    loadDevicesTable();
+  }
 
   $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-input').val();
