@@ -408,6 +408,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
+  // data.port_mapping
+  /*
+    check difference between data.port_mapping and device.port_mapping
+    both are in different format, so check in terms of similarity
+  */
+  console.log(JSON.parse(data.port_mapping));
   if (hasChanges) {
     // Increment sync task loops
     device.acs_sync_loops += 1;

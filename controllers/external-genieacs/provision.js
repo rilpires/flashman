@@ -4,22 +4,22 @@ profile with no precondition, so that it runs for every device on every inform
 
 Create a provision with the code below as the script argument on the API call
 Make sure you properly escape quotation marks!
-curl -X PUT -i 'http://localhost:7557/provisions/mynewprovision' --data \
-'log("Provision started at " + Date.now());'
+curl -X PUT -i 'http://localhost:7557/provisions/mynewprovision' --data \\
+'log(\"Provision started at \" + Date.now());'
 
 The preset should follow this format, linking to the provision created above:
 {
-  "precondition": true,
-  "configurations": [{
-    "type" : "provision",
-    "name" : "mynewprovision"
+  \"precondition\": true,
+  \"configurations\": [{
+    \"type\" : \"provision\",
+    \"name\" : \"mynewprovision\"
   }],
 }
 
 You can add it to genieacs via the API:
-curl -i 'http://localhost:7557/presets/inform' -X PUT --data \
-'{"precondition":true,"configurations":[{"type":"provision","name":\
-"mynewprovision"}]}'
+curl -i 'http://localhost:7557/presets/inform' -X PUT --data \\
+'{\"precondition\":true,\"configurations\":[{\"type\":\"provision\",\"name\":\\
+\"mynewprovision\"}]}'
 */
 
 const now = Date.now();
@@ -35,6 +35,10 @@ const updateConfiguration = function(fields) {
     }
   });
   return result;
+};
+
+const fetchAllTreeBelow = function(field) {
+  return JSON.stringify(declare(field, {value: now}));
 };
 
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
@@ -59,6 +63,7 @@ let data = {
   lan: updateConfiguration(fields.lan),
   wifi2: updateConfiguration(fields.wifi2),
   wifi5: updateConfiguration(fields.wifi5),
+  port_mapping: fetchAllTreeBelow(fields.port_mapping.template),
 };
 
 args = {acs_id: genieID, data: data};
