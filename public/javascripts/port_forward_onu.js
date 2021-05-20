@@ -719,7 +719,6 @@ let buildMappingTable = function(ip) {
 $(document).ready(function() {
   $(document).on('click', '.btn-port-forward-onu-modal', function(event) {
     let row = $(event.target).parents('tr');
-
     // clean modal
     let portMappingTable = $('#port-forward-onu-table');
     let portInputs = $('.port-forward-onu-port-input');
@@ -729,7 +728,6 @@ $(document).ready(function() {
     $('#port-forward-onu-range-of-ports-checkbox')[0].checked = false;
     $('#port-forward-onu-asym-opening-checkbox')[0].checked = false;
     $('#port-forward-onu-ip-address-input')[0].value = '';
-    checkAdvancedOptions();
     portMappingTable.empty();
     sessionStorage.clear();
     sessionStorage.setItem('deviceId', row.data('deviceid'));
@@ -738,20 +736,21 @@ $(document).ready(function() {
     sessionStorage.setItem('version', row.data('deviceVersion'));
     sessionStorage.setItem('lanSubnet', row.data('lanSubnet'));
     sessionStorage.setItem('lanSubmask', row.data('lanSubmask'));
-
-    $('#port-forward-onu-main-label').text(sessionStorage.getItem('serialId'));
-    $('#port-forward-onu-modal').modal('show');
-
     $.ajax({
       type: 'GET',
       url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
       dataType: 'json',
       success: function(res) {
+        console.log(res);
         if (res.success) {
           fillSessionStorage(res.content);
+          console.log(res.compatibility);
           showCompatibilityMessage(res.compatibility);
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
+          checkAdvancedOptions();
+          $('#port-forward-onu-main-label').text(sessionStorage.getItem('serialId'));
+          $('#port-forward-onu-modal').modal('show');
         }
       },
       error: function(xhr, status, error) {
