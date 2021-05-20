@@ -409,6 +409,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
   // different sizes of entries is a first indicator that needs to sync to device
+  data.port_mapping = JSON.parse(data.port_mapping);
+  console.log(device.port_mapping.length, data.port_mapping.length);
   if (device.port_mapping.length != data.port_mapping.length) {
     acsDeviceInfoController.changePortForwardRules(device,
       device.port_mapping.length - data.port_mapping.length);
@@ -990,6 +992,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       'xsd:string',
     ]);
   }
+  console.log('!@# -> Task sent to update port mapping entries in '+acsID);
   TasksAPI.addTask(acsID, updateTasks,
       true, 3000, [5000, 10000]);
 };
