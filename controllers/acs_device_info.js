@@ -408,12 +408,29 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
-  // data.port_mapping
-  /*
-    check difference between data.port_mapping and device.port_mapping
-    both are in different format, so check in terms of similarity
-  */
-  console.log(JSON.parse(data.port_mapping));
+  // different sizes of entries is a first indicator that needs to sync to device
+  if (device.port_mapping.length != data.port_mapping.length) {
+    acsDeviceInfoController.changePortForwardRules(device,
+      device.port_mapping.length - data.port_mapping.length);
+  } else {
+    let i;
+    for (i = 0; i < device.port_mapping.length; i++) {
+      if (device.port_mapping[i].ip !=
+        data.port_mapping[i].ip ||
+        device.port_mapping[i].external_port_start !=
+        data.port_mapping[i].external_port_start ||
+        device.port_mapping[i].external_port_end !=
+        data.port_mapping[i].external_port_end ||
+        device.port_mapping[i].internal_port_start !=
+        data.port_mapping[i].internal_port_start ||
+        device.port_mapping[i].internal_port_end !=
+        data.port_mapping[i].internal_port_end) {
+        // if some entry is different, so need to snyc
+        acsDeviceInfoController.changePortForwardRules(device, 0);
+        break;
+      }
+    }
+  }
   if (hasChanges) {
     // Increment sync task loops
     device.acs_sync_loops += 1;
