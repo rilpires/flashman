@@ -553,7 +553,6 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
-    let message = 'Salvo com sucesso!';
 
     let ponSignalThreshold = parseInt(req.body['pon-singal-threshold']);
     if (isNaN(ponSignalThreshold)) {
