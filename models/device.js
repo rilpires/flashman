@@ -103,7 +103,6 @@ let deviceSchema = new Schema({
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
-  port_mapping_entries: Number,
   ap_survey: [{
     mac: String,
     ssid: String,
