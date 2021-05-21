@@ -554,7 +554,7 @@ updateController.setAutoConfig = async function(req, res) {
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
 
-    let ponSignalThreshold = parseInt(req.body['pon-singal-threshold']);
+    let ponSignalThreshold = parseInt(req.body['pon-signal-threshold']);
     if (isNaN(ponSignalThreshold)) {
       ponSignalThreshold = config.tr069.pon_signal_threshold;
     }
