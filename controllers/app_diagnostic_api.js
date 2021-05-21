@@ -431,6 +431,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
                                       config.tr069.web_password_user : '';
           onuConfig.onuRemote = config.tr069.remote_access;
           onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
+          onuConfig.onuPonThresholdCritical = config.tr069.pon_signal_threshold_critical;
+          onuConfig.onuPonThresholdCriticalHigh = config.tr069.pon_signal_threshold_critical_high;
         }
         return res.status(200).json({
           'success': true,
