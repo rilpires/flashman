@@ -566,7 +566,7 @@ updateController.setAutoConfig = async function(req, res) {
         message: 'Erro validando os campos',
       })
     }
-    config.tr069.pon_signal_threshold = ponSignalThresholdCritical;
+    config.tr069.pon_signal_threshold = ponSignalThreshold;
 
     let ponSignalThresholdCritical = parseInt(req.body['pon-signal-threshold-critical']);
     if (isNaN(ponSignalThresholdCritical)) {
