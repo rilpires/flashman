@@ -212,8 +212,7 @@ controlController.getPersonalizationHash = function(app) {
         'secret': app.locals.secret,
       },
     }).then((res) => {
-      if (res.success && res.personalizationHash &&
-        res.androidLink, res.iosLink) {
+      if (res.success) {
         return resolve({
           success: true,
           personalizationHash: res.personalizationHash,
