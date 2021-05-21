@@ -42,8 +42,8 @@ let setFieldInvalidLabel = (target) => {
 }
 let checkFqdn = (e) =>
   isFqdnValid(e.target.value) ? setFieldValidLabel(e.target) : setFieldInvalidLabel(e.target);
-let datalistFqdn = (e) =>
-  e.target.value === "Apagar" || e.target.value === "Não alterar" ? setFieldValidLabel(e.target) : checkFqdn(e);
+let datalistFqdn = (e) => e.target.value === "Apagar" || e.target.value === "Não alterar" ||
+  e.target.value === '' ? setFieldValidLabel(e.target) : checkFqdn(e);
 let checkDeviceFqdn = (e) =>
   e.target.value === '' ? setFieldValidLabel(e.target) : checkFqdn(e);
 

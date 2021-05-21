@@ -154,11 +154,12 @@
                     input.form-control(list="ping_mass_update",
                                        id="data_collecting_mass_update_ping_fqdn",
                                        type="text"
-                                       style="flex-grow: 1;")
-                    datalist(id="ping_mass_update")
-                        option(value="Não alterar") 
-                        option(value="Apagar")
+                                       style="flex-grow: 1;",
+                                       oninput="datalistFqdn(event)")
                     .invalid-feedback Insira um endereço válido
+                    datalist(id="ping_mass_update")
+                        option(value="Não alterar")
+                        option(value="Apagar")
                   .input-group-append(
                       data-toggle="tooltip",
                       title="Usados por todos os dispositivos. Campo em branco signfica que esta configuração não será alterada."
