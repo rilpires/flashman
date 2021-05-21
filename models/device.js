@@ -158,6 +158,7 @@ let deviceSchema = new Schema({
   last_site_survey: Date,
   last_devices_refresh: Date,
   last_contact: Date,
+  last_contact_daily: Date,
   last_hardreset: Date,
   do_update: Boolean,
   do_update_parameters: Boolean,
