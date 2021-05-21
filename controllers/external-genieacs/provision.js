@@ -40,59 +40,6 @@ const updateConfiguration = function(fields) {
   return result;
 };
 
-const fetchPortMappingValues = function(pmFields, pmEntries) {
-  let i;
-  let resp;
-  let entriesLength;
-  let pmValues = [];
-  let pmObj = {};
-  resp = declare(pmEntries, {value: now});
-  if (resp.value) {
-    entriesLength = resp.value[0];
-  }
-  for (i = 1; i <= entriesLength; i++) {
-    resp = declare(pmFields['template'] + '.' + i +
-     '.' + pmFields['external_port_start'], {value: now});
-    if (resp.value) {
-      pmObj.external_port_start = resp.value[0];
-    }
-
-    if (pmFields['external_port_end'] != '') {
-      resp = declare(pmFields['template'] + '.' + i +
-       '.' + pmFields['external_port_end'], {value: now});
-      if (resp.value) {
-        pmObj.external_port_end = resp.value[0];
-      }
-    } else {
-      pmObj.external_port_end = resp.value[0];
-    }
-
-    resp = declare(pmFields['template'] + '.' + i +
-     '.' + pmFields['internal_port_start'], {value: now});
-    if (resp.value) {
-      pmObj.internal_port_start = resp.value[0];
-    }
-
-    if (pmFields['internal_port_end'] != '') {
-      resp = declare(pmFields['template'] + '.' + i +
-       '.' + pmFields['internal_port_end'], {value: now});
-      if (resp.value) {
-        pmObj.internal_port_end = resp.value[0];
-      }
-    } else {
-      pmObj.internal_port_end = resp.value[0];
-    }
-
-    resp = declare(pmFields['template'] + '.' + i +
-     '.' + pmFields['client'], {value: now});
-    if (resp.value) {
-      pmObj.ip = resp.value[0];
-    }
-    pmValues.push(pmObj);
-  }
-  return JSON.stringify(pmValues);
-};
-
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
@@ -115,8 +62,6 @@ let data = {
   lan: updateConfiguration(fields.lan),
   wifi2: updateConfiguration(fields.wifi2),
   wifi5: updateConfiguration(fields.wifi5),
-  port_mapping: fetchPortMappingValues(fields.port_mapping,
-    fields.wan.port_mapping_entries),
 };
 
 args = {acs_id: genieID, data: data};
