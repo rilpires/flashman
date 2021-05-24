@@ -266,7 +266,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
-  device.serial_tr069 = splitID[splitID.internal_port_startlength - 1];
+  device.serial_tr069 = splitID[splitID.length - 1];
   if (data.common.model) device.model = data.common.model.trim();
   if (data.common.version) device.version = data.common.version.trim();
   if (hasPPPoE) {
@@ -411,8 +411,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // different sizes of entries is a first indicator that needs to sync to device
   let hasChangesPortForward = false;
   // check different size for update
-  console.log('sizes', device.port_mapping.length, data.wan.port_mapping_entries);
   if (data.wan.port_mapping_entries != device.port_mapping.length) {
+    console.log('sizes', device.port_mapping.length, data.wan.port_mapping_entries);
     hasChangesPortForward = true;
   }
   if (hasChanges || hasChangesPortForward) {
@@ -890,108 +890,141 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let specFields = fields.port_mapping;
-  if (rulesDiffLength < 0) {
-    rulesDiffLength = -rulesDiffLength;
-    changeEntriesSizeTask.name = 'deleteObject';
-    for (i = (device.port_mapping.length + rulesDiffLength);
-        i > device.port_mapping.length ;
-        i--) {
-      changeEntriesSizeTask.objectName = specFields.template + '.' + i;
-      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-        3000, [5000, 10000]);
-      if (!ret.finished) {
-        return;
-      }
-    }
+  // check if already exists add, delete, set sent tasks
+  // getting older tasks for this device id.
+  let query = {device: acsID}; // selecting all tasks for a given device id.
+  let tasks = await TasksAPI.getFromCollection('tasks', query).catch((e) => {
+  /* rejected value will be error object in case of connection errors.*/
+    throw new Error(`!@# -> ${e.code} when getting old tasks from genieacs rest api, `
+     +`for device ${acsID}.`); // return error code in error message.
+  });
+  /* if find some task with name addObject,
+  deletObject or setParameterValues */
+  let hasAlreadySentTasks = (tasks.find((t) => {
+    return t.name === 'addObject' ||
+    t.name === 'deleteObject' ||
+    t.name === 'setParameterValues';
+  // if defined, was found a task with the names above
+  // so we have tasks sent
+  }) !== undefined) ? true : false;
+  /* drop this call of changePortForwardRules 
+  */
+  if (hasAlreadySentTasks) {
+    console.log('!@# -> Dropped change port forward rules in '+acsID);
+    return;
   } else {
-    changeEntriesSizeTask.objectName = specFields.template;
-    for (i = 0; i < rulesDiffLength; i++) {
-      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-        3000, [5000, 10000]);
-      if (!ret.finished) {
-        return;
+    // change array size via addObject or deleteObject
+    if (rulesDiffLength < 0) {
+      rulesDiffLength = -rulesDiffLength;
+      changeEntriesSizeTask.name = 'deleteObject';
+      for (i = (device.port_mapping.length + rulesDiffLength);
+          i > device.port_mapping.length;
+          i--) {
+        changeEntriesSizeTask.objectName = specFields.template + '.' + i;
+        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+          3000, [5000, 10000]);
+        if (!ret.finished) {
+          return;
+        }
+        console.log('!@# -> Task sent to delete '+
+          rulesDiffLength+
+          ' port mapping entries in '+acsID);
       }
+    } else {
+      changeEntriesSizeTask.objectName = specFields.template;
+      for (i = 0; i < rulesDiffLength; i++) {
+        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+          3000, [5000, 10000]);
+        if (!ret.finished) {
+          return;
+        }
+      }
+      console.log('!@# -> Task sent to add '+
+        rulesDiffLength+
+        ' port mapping entries in '+acsID);
     }
-  }
-  for (i = 0; i < device.port_mapping.length; i++) {
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.enable,
-      true,
-      'xsd:boolean',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.lease,
-      0,
-      'xsd:unsignedInt',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.external_port_start,
-      device.port_mapping[i].external_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.external_port_end != '') {
+    // set entries values for respective array in the device
+    for (i = 0; i < device.port_mapping.length; i++) {
       updateTasks.parameterValues.push([
         specFields.template + '.' + (i+1) + '.'
         +
-        specFields.external_port_end,
-        device.port_mapping[i].external_port_end,
-        'xsd:unsignedInt',
+        specFields.enable,
+        true,
+        'xsd:boolean',
       ]);
-    }
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.internal_port_start,
-      device.port_mapping[i].internal_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.internal_port_end != '') {
       updateTasks.parameterValues.push([
         specFields.template + '.' + (i+1) + '.'
         +
-        specFields.internal_port_end,
-        device.port_mapping[i].internal_port_end,
+        specFields.lease,
+        0,
         'xsd:unsignedInt',
       ]);
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.external_port_start,
+        device.port_mapping[i].external_port_start,
+        'xsd:unsignedInt',
+      ]);
+      if (specFields.external_port_end != '') {
+        updateTasks.parameterValues.push([
+          specFields.template + '.' + (i+1) + '.'
+          +
+          specFields.external_port_end,
+          device.port_mapping[i].external_port_end,
+          'xsd:unsignedInt',
+        ]);
+      }
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.internal_port_start,
+        device.port_mapping[i].internal_port_start,
+        'xsd:unsignedInt',
+      ]);
+      if (specFields.internal_port_end != '') {
+        updateTasks.parameterValues.push([
+          specFields.template + '.' + (i+1) + '.'
+          +
+          specFields.internal_port_end,
+          device.port_mapping[i].internal_port_end,
+          'xsd:unsignedInt',
+        ]);
+      }
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.protocol,
+        DevicesAPI.getProtocolByModel(model),
+        'xsd:string',
+      ]);
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.client,
+        device.port_mapping[i].ip,
+        'xsd:string',
+      ]);
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.description,
+        '',
+        'xsd:string',
+      ]);
+      updateTasks.parameterValues.push([
+        specFields.template + '.' + (i+1) + '.'
+        +
+        specFields.remote_host,
+        '0.0.0.0',
+        'xsd:string',
+      ]);
     }
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.protocol,
-      DevicesAPI.getProtocolByModel(model),
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.client,
-      device.port_mapping[i].ip,
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.description,
-      '',
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      specFields.template + '.' + (i+1) + '.'
-      +
-      specFields.remote_host,
-      '0.0.0.0',
-      'xsd:string',
-    ]);
+    console.log('!@# -> Task sent to update port mapping entries in '+acsID);
+    TasksAPI.addTask(acsID, updateTasks,
+        true, 3000, [5000, 10000]);
+
   }
-  console.log('!@# -> Task sent to update port mapping entries in '+acsID);
-  TasksAPI.addTask(acsID, updateTasks,
-      true, 3000, [5000, 10000]);
 };
 
 
