@@ -433,11 +433,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         if (hasChanges) {
           acsDeviceInfoController.updateInfo(device, changes);
         }
-        if (hasChangesPortForward) {
-          acsDeviceInfoController.changePortForwardRules(device,
-            device.port_mapping.length - data.wan.port_mapping_entries);
-        }
       }
+    }
+    /* not protected by sync loops but partially
+    protected against race condition on sending tasks
+    when changePortForwardRules*/
+    if (hasChangesPortForward) {
+      acsDeviceInfoController.changePortForwardRules(device,
+        device.port_mapping.length - data.wan.port_mapping_entries);
     }
   } else {
     let informDiff = Date.now() - device.last_contact;
