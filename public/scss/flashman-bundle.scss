@@ -4,35 +4,15 @@
 
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/mdbootstrap/scss/mdb';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/brands';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/regular';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/solid';
 @import '../../node_modules/selectize-bootstrap4-theme/scss/selectize.bootstrap4';
 @import '../../node_modules/tempusdominus-bootstrap-4/src/sass/tempusdominus-bootstrap-4';
 @import '../../node_modules/tags-input/tags-input.css';
 @import '../../node_modules/bs-stepper/dist/css/bs-stepper.css';
 @import '../../node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css';
-
-// Preloader
-#preloader {
-  background-color: $white;
-  bottom: 0;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 0;
-  z-index: 99;
-}
-
-// Preloader
-#status {
-  background-image: url('../images/preloading.gif');
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 200px;
-  left: 50%;
-  margin: -100px 0 0 -100px;
-  position: absolute;
-  top: 50%;
-  width: 200px;
-}
 
 // Extend selectize bootstrap theme
 .selectize-control {

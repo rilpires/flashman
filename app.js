@@ -239,11 +239,6 @@ app.use(logger('combined', {
   },
 }));
 app.use(cookieParser());
-app.use('/stylesheets',
-  serveStatic(path.join(__dirname, 'public/dist/stylesheets'), {
-    dotfiles: 'ignore',
-    maxAge: false,
-}));
 app.use('/dist',
   serveStatic(path.join(__dirname, 'public/dist'), {
     dotfiles: 'ignore',

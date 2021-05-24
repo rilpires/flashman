@@ -4,6 +4,9 @@ import {io} from 'socket.io-client';
 import 'apexcharts';
 import 'datatables.net-bs4';
 
+// Import styles
+import '../scss/flashman-bundle.scss';
+
 const socket = io();
 
 const displayAlertMsg = function(res) {
