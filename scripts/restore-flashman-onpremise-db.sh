@@ -18,12 +18,12 @@ ZIP_MONGODB_FNAME="$COMPANY"_dbdata.zip
 ZIP_FIRMWARES_FNAME="$COMPANY"_firmwaredata.zip
 
 # Test commands
-command -v pip > /dev/null
-if [ $? -ne 0 ]
-then
-  echo "Erro! Comando pip não encontrado!"
-  exit -1
-fi
+#command -v pip > /dev/null
+#if [ $? -ne 0 ]
+#then
+#  echo "Erro! Comando pip não encontrado!"
+#  exit -1
+#fi
 command -v unzip > /dev/null
 if [ $? -ne 0 ]
 then
@@ -32,8 +32,8 @@ then
 fi
 
 # Setup
-pip install -q "setuptools>=20.2"
-pip install -q b2
+#pip install -q "setuptools>=20.2"
+#pip install -q b2
 command -v b2 > /dev/null
 if [ $? -ne 0 ]
 then

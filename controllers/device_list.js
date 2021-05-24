@@ -1,4 +1,6 @@
 const Validator = require('../public/javascripts/device_validator');
+const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -22,8 +24,6 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -185,6 +185,16 @@ deviceListController.index = function(req, res) {
     indexContent.disableAutoUpdate = false;
   }
 
+  // Check Flashman data collecting availability
+  if (typeof process.env.FLM_ENABLE_DATA_COLLECTING !== 'undefined' && (
+             process.env.FLM_ENABLE_DATA_COLLECTING === 'true' ||
+             process.env.FLM_ENABLE_DATA_COLLECTING === true)
+  ) {
+    indexContent.enable_data_collecting = true;
+  } else {
+    indexContent.enable_data_collecting = false;
+  }
+
   User.findOne({name: req.user.name}, function(err, user) {
     if (err || !user) {
       indexContent.superuser = false;
@@ -199,12 +209,6 @@ deviceListController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
         indexContent.minlengthpasspppoe = matchedConfig.pppoePassLength;
-        let active = matchedConfig.measure_configs.is_active;
-        indexContent.measure_active = active;
-        indexContent.measure_token = (active) ?
-            matchedConfig.measure_configs.auth_token : '';
-        let license = matchedConfig.measure_configs.is_license_active;
-        indexContent.measure_license = license;
         indexContent.update_schedule = {
           is_active: matchedConfig.device_update_schedule.is_active,
           device_total: matchedConfig.device_update_schedule.device_count,
@@ -524,7 +528,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
-    } else if (tag === 'onu') { // ONU routers.
+    } else if (tag === 'tr069') { // ONU routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
@@ -715,6 +719,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
           device.model,
         );
 
+        // amount ports a device have
+        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model); 
+
         // Fill default value if wi-fi state does not exist
         if (device.wifi_state === undefined) {
           device.wifi_state = 1;
@@ -796,15 +803,15 @@ deviceListController.delDeviceReg = function(req, res) {
   });
 };
 
-const downloadStockFirmware = function(model) {
-  return new Promise(async((resolve, reject)=>{
+const downloadStockFirmware = async function(model) {
+  return new Promise(async (resolve, reject) => {
     let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
     try {
       // Download md5 hash
-      let targetMd5 = await(requestPromise({
+      let targetMd5 = await requestPromise({
         url: remoteFileUrl + '.md5',
         method: 'GET',
-      }));
+      });
       let currentMd5 = '';
       let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
       // Check for local md5 hash
@@ -847,11 +854,11 @@ const downloadStockFirmware = function(model) {
       }
       return resolve(false);
     }
-  }));
+  });
 };
 
 deviceListController.factoryResetDevice = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(), async((err, device)=>{
+  DeviceModel.findById(req.params.id.toUpperCase(), async (err, device) => {
     if (err || !device) {
       return res.status(500).json({
         success: false,
@@ -859,7 +866,7 @@ deviceListController.factoryResetDevice = function(req, res) {
       });
     }
     const model = device.model.replace('N/', '');
-    if (!(await(downloadStockFirmware(model)))) {
+    if (!(await downloadStockFirmware(model))) {
       return res.status(500).json({
         success: false,
         msg: 'Erro baixando a firmware de fábrica',
@@ -868,13 +875,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await(device.save());
+    await device.save();
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
     // Start ack timeout
     deviceHandlers.timeoutUpdateAck(device._id);
-  }));
+  });
 };
 
 //
@@ -1602,6 +1609,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeEnabled !== matchedDevice.bridge_mode_enabled &&
                 !matchedDevice.use_tr069) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // in the case of changing from bridge to router : clear vlan configuration
+                if(matchedDevice.bridge_mode_enabled == true && bridgeEnabled == false) {
+                  matchedDevice.vlan = [];
+                }
+
                 matchedDevice.bridge_mode_enabled = bridgeEnabled;
                 updateParameters = true;
               } else {
@@ -2396,6 +2408,45 @@ deviceListController.updateLicenseStatus = async function(req, res) {
                                  message: 'Erro externo de comunicação'});
   }
 };
+
+deviceListController.receivePonSignalMeasure = async function(req, res) {
+  let deviceId = req.params.deviceId;
+
+  DeviceModel.findById(deviceId, function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0, success: false});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
+    }
+    if (!matchedDevice.use_tr069) {
+      return res.status(404).json({success: false,
+                                   message: "ONU não encontrada"});
+    }
+    let mac = matchedDevice._id;
+    let acsID = matchedDevice.acs_id;
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let rxPowerField = fields.wan.pon_rxpower;
+    let txPowerField = fields.wan.pon_txpower;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [rxPowerField, txPowerField],
+    };
+
+    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
+
+    res.status(200).json({success: true});
+    TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+      if (result.task.name !== 'getParameterValues') return;
+      if (result.finished) {
+        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
+      }
+    });
+  });
+}
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

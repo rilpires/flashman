@@ -45,24 +45,28 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
+      else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
+      else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
+      else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
+      else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
     default:
       return '';
@@ -79,6 +83,8 @@ const convertWifiBand = function(band) {
       return '40MHz';
     case 'VHT80':
       return '80MHz';
+    case 'auto':
+      return 'auto';
     default:
       return '';
   }
@@ -122,20 +128,22 @@ const getDefaultFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
-      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Username',
-      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Password',
+      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Username',
+      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Password',
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate',
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.DuplexMode',
-      wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
-      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.ExternalIPAddress',
-      uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Uptime',
-      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Uptime',
+      wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.ExternalIPAddress',
+      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress',
+      uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Uptime',
+      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
       subnet_mask: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceSubnetMask',
+      lease_min_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MinAddress',
+      lease_max_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MaxAddress',
     },
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
@@ -146,12 +154,12 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
     },
     wifi5: {
-      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
-      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
-      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Channel',
-      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AutoChannelEnable',
-      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard',
-      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
+      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
+      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
+      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
+      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -160,6 +168,7 @@ const getDefaultFields = function() {
       host_mac: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.MACAddress',
       host_name: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName',
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
+      host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Layer2Interface',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice',
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
@@ -169,33 +178,33 @@ const getDefaultFields = function() {
 
 const getHuaweiFields = function() {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.*.Stats.EthernetBytesSent';
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
   return fields;
 };
 
-const getZTEFields = function() {
+const getZTEFields = function(model) {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
-  fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+
+  switch (model) {
+    case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+      fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
+      fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      break;
+    case 'F670L': // Multilaser ZTE F670L
+      fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+      fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
+      break;
+  }
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
   return fields;
 };
 
@@ -203,12 +212,29 @@ const getNokiaFields = function() {
   let fields = getDefaultFields();
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/2/g, '5');
-  fields.wifi5.password = fields.wifi5.password.replace(/2/g, '5');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/2/g, '5');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/2/g, '5');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/2/g, '5');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/2/g, '5');
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+  return fields;
+};
+
+const getStavixFields = function() {
+  let fields = getDefaultFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+  fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
+  fields.wifi2.channel = fields.wifi5.channel.replace(/5/g, '6');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '1');
+  fields.wifi2.auto = fields.wifi5.auto.replace(/5/g, '6');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '1');
+  fields.wifi2.mode = fields.wifi5.mode.replace(/5/g, '6');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
+  fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
   return fields;
 };
 
@@ -221,20 +247,22 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getHuaweiFields();
       break;
-    case 'F670L': // ZTE F670L
+    case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'F670L': // Multilaser ZTE F670L
       message = '';
-      fields = getZTEFields();
+      fields = getZTEFields(model);
       break;
     case 'G-140W-C': // Nokia G-140W-C
     case 'G%2D140W%2DC': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
-    case 'HG6245D': // Fiberhome AN5506-04-CG
+    case 'GONUAC001': // Greatek Stavix G421R
       message = '';
-      fields = getDefaultFields();
+      fields = getStavixFields();
       break;
-    case 'IGD': // TP-Link Archer C5
+    case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
       break;

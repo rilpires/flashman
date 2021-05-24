@@ -12,6 +12,7 @@ let deviceSchema = new Schema({
   use_tr069: {type: Boolean, default: false},
   serial_tr069: String,
   acs_id: {type: String, sparse: true},
+  acs_sync_loops: {type: Number, default: 0},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -22,13 +23,17 @@ let deviceSchema = new Schema({
   installed_release: String,
   release: String,
   is_license_active: Boolean,
-  measure_config: {
-    measure_psk: String,
-    is_active: {type: Boolean, default: false},
+  data_collecting: {
+    is_active: Boolean, // logical AND with config.js value.
+    has_latency: Boolean, // logical AND with config.js value.
+    ping_fqdn: String, // should use config.js value if this value is falsifiable.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
   pppoe_password: String,
+  pon_rxpower: {type: Number},
+  pon_txpower: {type: Number},
+  pon_signal_measure: Object,
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
@@ -200,6 +205,11 @@ let deviceSchema = new Schema({
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
+  vlan: [{
+    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    // restricted to this range of value by the definition of 802.1q protocol
+    vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
+  }],
 });
 
 deviceSchema.set('autoIndex', false);

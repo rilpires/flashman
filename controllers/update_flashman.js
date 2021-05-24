@@ -3,6 +3,7 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
 const commandExists = require('command-exists');
+const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
@@ -32,7 +33,7 @@ const versionCompare = function(foo, bar) {
   return 0;
 };
 
-const getRemoteVersion = function() {
+const getRemotePackage = function() {
   return new Promise((resolve, reject)=>{
     let jsonHost = localPackageJson.updater.jsonHost;
     let gitUser = localPackageJson.updater.githubUser;
@@ -44,7 +45,7 @@ const getRemoteVersion = function() {
       if (error || resp.statusCode !== 200) {
         reject();
       } else {
-        resolve(JSON.parse(body).version);
+        resolve(JSON.parse(body));
       }
     });
   });
@@ -92,6 +93,102 @@ const updateDependencies = function() {
   });
 };
 
+const updateGenieRepo = function(ref) {
+  let fetch = 'cd ../genieacs && git fetch';
+  let checkout = 'cd ../genieacs && git checkout ' + ref;
+  let install = 'cd ../genieacs && npm install';
+  let build = 'cd ../genieacs && npm run build';
+  return new Promise((resolve, reject)=>{
+    exec(fetch, (err, stdout, stderr)=>{
+      if (err) return reject();
+      exec(checkout, (err, stdout, stderr) => {
+        if (err) return reject();
+        exec(install, (err, stdout, stderr) => {
+          if (err) return reject();
+          exec(build, (err, stdout, stderr) => {
+            if (err) return reject();
+            return resolve();
+          });
+        });
+      });
+    });
+  });
+};
+
+const updateGenieACS = function(upgrades) {
+  return new Promise((resolve, reject) => {
+    let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
+    // Get config from database
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
+        console.log('Error reading configs from database in update GenieACS!');
+        return reject();
+      }
+      // Update genie repository if needed
+      let waitForUpdate;
+      if (upgrades.updateGenie) {
+        console.log('Updating GenieACS version...');
+        waitForUpdate = updateGenieRepo(upgrades.newGenieRef);
+      } else {
+        waitForUpdate = Promise.resolve();
+      }
+      // Update provision script if needed
+      let waitForProvision;
+      if (upgrades.updateProvision) {
+        try {
+          let provisionScript = fs.readFileSync(
+            './controllers/external-genieacs/provision.js', 'utf8',
+          );
+          console.log('Updating GenieACS provision...');
+          waitForProvision = tasksApi.putProvision(provisionScript);
+        } catch (e) {
+          waitForProvision = Promise.reject();
+        }
+      } else {
+        waitForProvision = Promise.resolve();
+      }
+      // Update preset json if needed
+      let waitForPreset;
+      if (upgrades.updatePreset) {
+        try {
+          let preset = JSON.parse(fs.readFileSync(
+            './controllers/external-genieacs/flashman-preset.json',
+          ));
+          // Alter the periodic inform interval based on database config
+          let interval = '' + parseInt(config.tr069.inform_interval / 1000);
+          preset.configurations.find((c) => c.name === field).value = interval;
+          preset._id = 'inform';
+          console.log('Updating GenieACS preset...');
+          waitForPreset = tasksApi.putPreset(preset);
+        } catch (e) {
+          waitForPreset = Promise.reject();
+        }
+      } else {
+        waitForPreset = Promise.resolve();
+      }
+      // Wait for all promises and check results
+      let promises = [waitForUpdate, waitForProvision, waitForPreset];
+      Promise.allSettled(promises).then((values)=>{
+        if (values[0].status !== 'fulfilled') {
+          console.log('Error updating GenieACS repository!');
+        }
+        if (values[1].status !== 'fulfilled') {
+          console.log('Error updating GenieACS provision script!');
+        }
+        if (values[2].status !== 'fulfilled') {
+          console.log('Error updating GenieACS preset json!');
+        }
+        if (values.some((v) => v.status !== 'fulfilled')) {
+          return reject();
+        } else {
+          console.log('GenieACS updated successfully!');
+          return resolve();
+        }
+      });
+    });
+  });
+};
+
 const isRunningUserOwnerOfDirectory = function() {
   return new Promise((resolve, reject) => {
     // Check if running user is the same on current directory
@@ -123,19 +220,80 @@ const isRunningUserOwnerOfDirectory = function() {
   });
 };
 
+const checkGenieNeedsUpdate = function(remotePackageJson) {
+  return new Promise((resolve, reject)=>{
+    let updateGenie = false;
+    let updateProvision = false;
+    let updatePreset = false;
+    if (!remotePackageJson.genieacs || !localPackageJson.genieacs) {
+      // Either remote or local dont have genieacs information - cannot compare
+      // data, so it makes no sense to upgrade anything
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+      });
+    }
+    exec('[ -d "../genieacs" ]', (err, stdout, stderr) => {
+      if (err) {
+        // No genieacs directory - no TR-069 installation, so no upgrades
+        return resolve({
+          'updateGenie': updateGenie,
+          'updateProvision': updateProvision,
+          'updatePreset': updatePreset,
+        });
+      }
+      let localGenieRef = localPackageJson.genieacs.ref;
+      let remoteGenieRef = remotePackageJson.genieacs.ref;
+      if (localGenieRef && remoteGenieRef &&
+          localGenieRef !== remoteGenieRef) {
+        // GenieACS version has changed, needs to update it
+        updateGenie = true;
+      }
+      let localProvisionHash = localPackageJson.genieacs.provisionHash;
+      let remoteProvisionHash = remotePackageJson.genieacs.provisionHash;
+      if (localProvisionHash && remoteProvisionHash &&
+          localProvisionHash !== remoteProvisionHash) {
+        // Provision script has changed, needs to update it
+        updateProvision = true;
+      }
+      let localPresetHash = localPackageJson.genieacs.presetHash;
+      let remotePresetHash = remotePackageJson.genieacs.presetHash;
+      if (localPresetHash && remotePresetHash &&
+          localPresetHash !== remotePresetHash) {
+        // Preset json has changed, needs to update it
+        updatePreset = true;
+      }
+      return resolve({
+        'updateGenie': updateGenie,
+        'updateProvision': updateProvision,
+        'updatePreset': updatePreset,
+        'newGenieRef': remoteGenieRef,
+      });
+    });
+  });
+};
+
 updateController.rebootGenie = function(instances) {
-  // We do a stop/start instead of restart to avoid racing conditions when
-  // genie's worker processes are killed and then respawned - this prevents
-  // issues with ONU connections since exceptions lead to buggy exp. backoff
-  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
-    // Replace genieacs instances config with what flashman gives us
-    let replace = 'const INSTANCES_COUNT = .*;';
-    let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-    let sedExpr = 's/' + replace + '/' + newText + '/';
-    let targetFile = 'controllers/external-genieacs/devices-api.js';
-    let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
-    exec(sedCommand, (err, stdout, stderr)=>{
-      exec('pm2 start genieacs-cwmp');
+  // Treat bugged case where "max" parameter may set instance count to 0 upon
+  // reloading the service - use value from nproc instead of bugged 0
+  exec('nproc', (err, stdout, stderr)=>{
+    if (instances === 0 || instances === '0') {
+      instances = stdout.trim(); // remove trailing newline
+    }
+    // We do a stop/start instead of restart to avoid racing conditions when
+    // genie's worker processes are killed and then respawned - this prevents
+    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+      // Replace genieacs instances config with what flashman gives us
+      let replace = 'const INSTANCES_COUNT = .*;';
+      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+      let sedExpr = 's/' + replace + '/' + newText + '/';
+      let targetFile = 'controllers/external-genieacs/devices-api.js';
+      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      exec(sedCommand, (err, stdout, stderr)=>{
+        exec('pm2 start genieacs-cwmp');
+      });
     });
   });
 };
@@ -164,7 +322,8 @@ const errorCallback = function(res) {
 };
 
 const updateFlashman = function(automatic, res) {
-  getRemoteVersion().then((remoteVersion) => {
+  getRemotePackage().then((remotePackage) => {
+    let remoteVersion = remotePackage.version;
     let localVersion = getLocalVersion();
     let needsUpdate = versionCompare(remoteVersion, localVersion) > 0;
     let majorUpgrade = isMajorUpgrade(remoteVersion, localVersion);
@@ -201,9 +360,21 @@ const updateFlashman = function(automatic, res) {
             if (gitExists) {
               isRunningUserOwnerOfDirectory().then((isOwner) => {
                 if (isOwner) {
-                  downloadUpdate(remoteVersion)
+                  let genieUpgrades;
+                  checkGenieNeedsUpdate(remotePackage)
+                  .then((result)=>{
+                    genieUpgrades = result;
+                    return downloadUpdate(remoteVersion);
+                  }, (rejectedValue)=>{
+                    return Promise.reject(rejectedValue);
+                  })
                   .then(()=>{
                     return updateDependencies();
+                  }, (rejectedValue)=>{
+                    return Promise.reject(rejectedValue);
+                  })
+                  .then(()=>{
+                    return updateGenieACS(genieUpgrades);
                   }, (rejectedValue)=>{
                     return Promise.reject(rejectedValue);
                   })
@@ -300,6 +471,11 @@ updateController.getAutoConfig = function(req, res) {
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
+        data_collecting_is_active: matchedConfig.data_collecting.is_active,
+        data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
+        data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
+        data_collecting_ping_packets: 
+          matchedConfig.data_collecting.ping_packets,
       });
     } else {
       return res.status(200).json({
@@ -377,24 +553,7 @@ updateController.setAutoConfig = async function(req, res) {
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
     let message = 'Salvo com sucesso!';
-    let updateToken = (req.body.token_update === 'on') ? true : false;
-    let measureToken = returnStrOrEmptyStr(req.body['measure-token']);
-    // Update configs if either no token is set and form sets one, or
-    // if one is already set and checkbox to update was marked
-    if ((!config.measure_configs.auth_token || updateToken) &&
-        measureToken !== '') {
-      let controlResp = await controlApi.sendTokenControl(req, measureToken);
-      if (!('controller_fqdn' in controlResp) ||
-          !('zabbix_fqdn' in controlResp)) {
-        throw new {};
-      }
-      config.measure_configs.is_active = true;
-      config.measure_configs.is_license_active = true;
-      config.measure_configs.auth_token = measureToken;
-      config.measure_configs.controller_fqdn = controlResp.controller_fqdn;
-      config.measure_configs.zabbix_fqdn = controlResp.zabbix_fqdn;
-      message += ' Seus dispositivos começarão a medir em breve.';
-    }
+
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];

@@ -1,27 +1,24 @@
-
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const request = require('request-promise-native');
 const NodeRSA = require('node-rsa');
 const Config = require('../../models/config');
 
 let keyHandlers = {};
 
-keyHandlers.generateAuthKeyPair = async(function() {
+keyHandlers.generateAuthKeyPair = async function() {
   let keyRSA = new NodeRSA({b: 2048});
   let keyPub = keyRSA.exportKey('pkcs8-public-pem');
   let keyPriv = keyRSA.exportKey('pkcs8-pem');
 
-  let config = await(Config.findOne({is_default: true}));
+  let config = await Config.findOne({is_default: true});
   if (!config) {
     return false;
   }
   config.auth_pubkey = keyPub;
   config.auth_privkey = keyPriv;
-  await(config.save());
+  await config.save();
 
   return true;
-});
+};
 
 keyHandlers.sendPublicKey = function(url, secret) {
   // Avoid using async/await inside Promise
@@ -47,8 +44,8 @@ keyHandlers.sendPublicKey = function(url, secret) {
   });
 };
 
-keyHandlers.encryptMsg = async(function(b64Message) {
-  let config = await(Config.findOne({is_default: true}));
+keyHandlers.encryptMsg = async function(b64Message) {
+  let config = await Config.findOne({is_default: true});
   if (!config || config.auth_privkey === '') {
     return false;
   }
@@ -57,6 +54,6 @@ keyHandlers.encryptMsg = async(function(b64Message) {
   const encryptedMsg = privKey.sign(b64Message, 'base64');
 
   return encryptedMsg;
-});
+};
 
 module.exports = keyHandlers;

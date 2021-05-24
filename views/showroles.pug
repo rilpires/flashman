@@ -128,6 +128,13 @@ block content
                     select.browser-default.md-select(name="grant-firmware-restricted-upgrade")
                       option(value="false") Bloquear
                       option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Informações de VLANs
+                    select.browser-default.md-select(name="grant-vlan")
+                      option(value=0) Não Visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e Editar
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -222,6 +229,12 @@ block content
                     select.browser-default.md-select(name="grant-search-summary")
                       option(value="false") Não visualizar
                       option(value="true") Visualizar
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Adição/Edição/Remoção de Perfis de VLANs
+                    select.browser-default.md-select(name="grant-vlan-profile-edit")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
             .row
               .col.text-center
                 .form-buttons

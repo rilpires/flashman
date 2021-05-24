@@ -4,8 +4,6 @@ const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
-const async = require('asyncawait/async');
-const await = require('asyncawait/await');
 const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
@@ -605,7 +603,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
 };
 
 appDeviceAPIController.doSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+  DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
@@ -649,10 +647,10 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
 
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
-    setTimeout(async(()=>{
+    setTimeout(async () => {
       let config;
       try {
-        config = await(Config.findOne({is_default: true}).lean());
+        config = await Config.findOne({is_default: true}).lean();
         if (!config) throw {error: 'Config not found'};
       } catch (err) {
         console.log(err);
@@ -664,8 +662,8 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
         mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
                                          {name: 'App_Cliente'});
       }
-    }), 1.5*1000);
-  }));
+    }, 1.5*1000);
+  });
 };
 
 appDeviceAPIController.appSetWifi = function(req, res) {
@@ -693,15 +691,15 @@ appDeviceAPIController.appSetConfig = function(req, res) {
 };
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+  DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     let config;
     try {
-      config = await(Config.findOne({is_default: true}).lean());
+      config = await Config.findOne({is_default: true}).lean();
       if (!config) throw new Error('Config not found');
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.log(error);
     }
-    if (err) {
+    if (err || !config) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
@@ -785,7 +783,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantBlockDevices = true;
     }
 
-
     let speedtestInfo = {};
     if (config && config.measureServerIP && permissions.grantSpeedTest) {
       speedtestInfo.server = config.measureServerIP;
@@ -847,7 +844,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
     });
-  }));
+  });
 };
 
 appDeviceAPIController.appGetVersion = function(req, res) {
@@ -943,7 +940,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
 };
 
 appDeviceAPIController.appGetSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async((err, matchedDevice)=>{
+  DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
@@ -962,7 +959,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
 
     let config;
     try {
-      config = await(Config.findOne({is_default: true}).lean());
+      config = await Config.findOne({is_default: true}).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
@@ -988,7 +985,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
     }
 
     return res.status(200).json(reply);
-  }));
+  });
 };
 
 appDeviceAPIController.appGetWpsState = function(req, res) {
@@ -1022,7 +1019,7 @@ appDeviceAPIController.resetPassword = function(req, res) {
       !req.body.content.reset_secret) {
     return res.status(500).json({message: 'Erro nos parâmetros'});
   }
-  DeviceModel.findById(req.body.content.reset_mac).exec(async((err, device)=>{
+  DeviceModel.findById(req.body.content.reset_mac).exec(async (err, device) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
@@ -1046,11 +1043,11 @@ appDeviceAPIController.resetPassword = function(req, res) {
     }
 
     device.app_password = undefined;
-    await(device.save());
+    await device.save();
     mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
 
     return res.status(200).json({success: true});
-  }));
+  });
 };
 
 appDeviceAPIController.activateWpsButton = function(req, res) {

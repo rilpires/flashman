@@ -145,21 +145,6 @@
                       //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                       .invalid-feedback#error-lost-informs-offline-threshold Insira uma quantidade válida
                 .invalid-feedback#error-recovery-offline-thresholds Valor para instável precisa ser menor que o valor offline.
-                br
-                .input-entry
-                  label(for="measure-token") Token de ativação da ferramenta de medição
-                  input.form-control(type="text", value=measure_token, name="measure-token", id="measure-token")
-                if (measure_active)
-                  br
-                  .custom-control.custom-checkbox
-                    input.custom-control-input(
-                      name="token_update",
-                      type="checkbox",
-                      id="token_update"
-                    )
-                    label.custom-control-label(for="token_update")
-                      | Reconfigurar ferramenta de medição com este token
-                    .invalid-feedback
           .row.mt-3
             .col.text-center
               button.btn.btn-primary(type="submit")

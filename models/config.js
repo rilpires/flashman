@@ -23,12 +23,12 @@ let configSchema = new mongoose.Schema({
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
   },
-  measure_configs: {
-    is_active: {type: Boolean, default: false},
-    is_license_active: {type: Boolean, default: false},
-    auth_token: {type: String},
-    controller_fqdn: String,
-    zabbix_fqdn: String,
+  data_collecting: {
+    is_active: Boolean,
+    has_latency: Boolean,
+    alarm_fqdn: String,
+    ping_fqdn: String,
+    ping_packets: Number,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
@@ -78,6 +78,11 @@ let configSchema = new mongoose.Schema({
   androidLink: {type: String, default: ''},
   iosLink: {type: String, default: ''},
   personalizationHash: {type: String, default: ''},
+  vlans_profiles: [{
+    // restricted to this range of value by the definition of 802.1q protocol
+    vlan_id: {type: Number, required: true, min: 1, max: 4095},
+    profile_name: {type: String, required: true, match: /[A-Za-z0-9_-]/, maxLength: 32},
+  }],
 });
 
 let config = mongoose.model('config', configSchema);
