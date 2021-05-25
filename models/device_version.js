@@ -122,9 +122,24 @@ const portForwardOnuCompatibleModels = [
  'ZXHN H198A V3.0',
 ];
 const portForwardOnuCompatibleVersions = {
- 'V1.1.20P3N3': [true, true, false, false],
- 'V3.0.0C5_MUL': [true, true, true, false],
- 'V3.0.0C6_MUL': [true, true, true, false],
+ 'V1.1.20P3N3': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C5_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C6_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
 };
 
 /*

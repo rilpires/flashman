@@ -25,7 +25,7 @@ let triggerRedAlert = function(message) {
   }
 };
 
-let showCompatibilityMessage = function(compatibility) {
+let showIncompatibilityMessage = function(compatibility) {
   let portInputs = $('.port-forward-onu-port-input');
   let isRangeOfPorts = $('#port-forward-onu-'+
     'range-of-ports-checkbox')[0];
@@ -33,27 +33,36 @@ let showCompatibilityMessage = function(compatibility) {
   let compatInfoDiv = $('#port-forward-onu-modal-compat-info');
   let compatInfoMessage = $('#port-forward-onu-modal-compat-info-message');
   let compatInfoList = $('#port-forward-onu-modal-compat-info-list');
-  let messageType = [
-    'simples simétrica',
-    'simples assimétrica',
-    'faixa de portas simétrica',
-    'faixa de portas assimétrica',
-  ];
   let message = 'O modelo '+
   sessionStorage.getItem('model')
   +' versão '+
   sessionStorage.getItem('version')
   +' não suporta as seguintes formas de a abertura de portas: ';
   let show = false;
-  let i;
   compatInfoList.html('');
-  for (i = 0; i < compatibility.length; i++) {
-    if (!compatibility[i]) {
-      show = true;
-      compatInfoList.append(
-        $('<li>').html(messageType[i]),
-      );
-    }
+  if (!compatibility.simpleSymmetric) {
+    show = true;
+    compatInfoList.append(
+      $('<li>').html('simples simétrica'),
+    );
+  }
+  if (!compatibility.simpleAsymmetric) {
+    show = true;
+    compatInfoList.append(
+      $('<li>').html('simples assimétrica'),
+    );
+  }
+  if (!compatibility.rangeSymmetric) {
+    show = true;
+    compatInfoList.append(
+      $('<li>').html('faixa de portas simétrica'),
+    );
+  }
+  if (!compatibility.rangeAsymmetric) {
+    show = true;
+    compatInfoList.append(
+      $('<li>').html('faixa de portas assimétrica'),
+    );
   }
   message += '';
   if (show) {
@@ -63,14 +72,14 @@ let showCompatibilityMessage = function(compatibility) {
     compatInfoMessage.
       html(message);
   }
-  if (!compatibility[0]) {
+  if (!compatibility.simpleSymmetric) {
     portInputs[0].disabled = portInputs[1].disabled =
      portInputs[2].disabled = portInputs[3].disabled = true;
   }
-  if (!compatibility[1]) {
+  if (!compatibility.simpleAsymmetric) {
     isAsymOpening.disabled = true;
   }
-  if (!compatibility[2]) {
+  if (!compatibility.rangeSymmetric) {
     isRangeOfPorts.disabled = true;
   }
 };
@@ -85,7 +94,9 @@ let checkAdvancedOptions = function() {
   let portLabel = $('.port-forward-onu-port-label');
   let portInputs = $('.port-forward-onu-port-input');
 
-  if (compatibility[1] && compatibility[2] && !compatibility[3]) {
+  if (compatibility.simpleSymmetric &&
+    compatibility.simpleAsymmetric &&
+    !compatibility.rangeAsymmetric) {
     if (isRangeOfPorts.checked) {
       isAsymOpening.disabled = true;
     } else {
@@ -127,81 +138,6 @@ let checkAdvancedOptions = function() {
   }
 };
 
-let checkAddressSubnetRange = function(deviceIp, ipAddressGiven, maskBits) {
-  let i;
-  let aux;
-  let numberRegex = /[0-9]+/;
-  let lanSubmask = [];
-  let lanSubnet = [];
-  let subnetRange = [];
-  let maxRange = [];
-  let isOnRange = true;
-  let isIpFormatCorrect = true;
-
-  deviceIp = deviceIp.split('.');
-  ipAddressGiven = ipAddressGiven.split('.');
-
-  if (ipAddressGiven.length != 4 || deviceIp.length != 4) {
-    isIpFormatCorrect = false;
-  } else {
-    for (i = 0; i < ipAddressGiven.length; i++) {
-      if (!numberRegex.test(ipAddressGiven[i]) ||
-          !numberRegex.test(deviceIp[i])) {
-        isIpFormatCorrect = false;
-      }
-    }
-  }
-  if (isIpFormatCorrect) {
-    // build the mask address from the number of bits that mask have
-    for (i = 0; i < 4; i++) {
-      if (maskBits > 7) {
-        lanSubmask.push((2**8)-1);
-      } else if (maskBits >= 0) {
-        // based on (sum of (2^(8-k)) from 0 to j)  - 256
-        // to generate the sequence :
-        // 0, 128, 192, 224, 240, 248, 252, 254
-        lanSubmask.push(256-2**(8-maskBits));
-      } else {
-        lanSubmask.push(0);
-      }
-      subnetRange.push(255 - lanSubmask[i]);
-      maskBits -= 8;
-    }
-
-    for (i = 0; i < lanSubmask.length; i++) {
-      // apply the mask to get the start of the subnet
-      aux = lanSubmask[i] & deviceIp[i];
-      lanSubnet.push(aux);
-      // get the range of ip's that is allowed in that subnet
-      maxRange.push(aux + subnetRange[i]);
-    }
-
-    // check if the given ip address for port mapping is in the range
-    for (i = 0; i < ipAddressGiven.length; i ++) {
-      if (!(ipAddressGiven[i] >= lanSubnet[i] &&
-            ipAddressGiven[i] <= maxRange[i])) {
-        // whenever block is out of range, put to false
-        isOnRange = false;
-      }
-    }
-    // check if is broadcast or subnet id
-    if (ipAddressGiven.every(function(e, idx) {
-      return (e == lanSubnet[idx] || e == maxRange[idx]);
-    })) {
-      isOnRange = false;
-    }
-  }
-  if (!isOnRange) {
-    triggerRedAlert('O Endereço IP fornecido não está na faixa de subrede do roteador!');
-  }
-
-  if (!isIpFormatCorrect) {
-    triggerRedAlert('Formato do Endereço dado está errado!');
-  }
-
-  return isOnRange && isIpFormatCorrect;
-};
-
 let checkPortsValues = function(portsValues) {
   let i;
   let isPortsNumber = true;
@@ -237,26 +173,25 @@ let checkPortsValues = function(portsValues) {
   } else {
     isPortsNumber = false;
   }
-
-  if (isRangeOfPorts) {
-    let firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
-    if (isAsymOpening) {
-      let secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
-      if (firstSlice != secondSlice) {
-        isRangeOfSameSize = false;
-      }
-      if (firstSlice < 1 || secondSlice < 1) {
-        isRangeNegative = false;
-      }
-    } else {
-      if (firstSlice < 1) {
-        isRangeNegative = false;
-      }
-    }
-  }
-
   if (!isPortsNumber) {
     triggerRedAlert('As portas devem ser números!');
+  } else {
+    if (isRangeOfPorts) {
+      let firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
+      if (isAsymOpening) {
+        let secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
+        if (firstSlice != secondSlice) {
+          isRangeOfSameSize = false;
+        }
+        if (firstSlice < 1 || secondSlice < 1) {
+          isRangeNegative = false;
+        }
+      } else {
+        if (firstSlice < 1) {
+          isRangeNegative = false;
+        }
+      }
+    }
   }
   if (!isPortsOnRange) {
     triggerRedAlert('As portas devem estar na faixa entre 1 - 65535!');
@@ -319,7 +254,7 @@ let removeOnePortMapping = function(input) {
         l.internal_port_end != ports[3];
       });
     } else {
-      triggerRedAlert('Algo muito errado aconteceu...');
+      triggerRedAlert('Um erro inesperado aconteceu');
     }
     /* *** */
     sessionStorage.setItem('listOfMappings', JSON.stringify(listOfMappings));
@@ -396,7 +331,7 @@ let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) 
         ret = true;
       }
     } else {
-      triggerRedAlert('Algo muito errado aconteceu...');
+      triggerRedAlert('Um erro inesperado aconteceu');
     }
   }
   return ret;
@@ -435,7 +370,7 @@ let putPortMapping = function(ip, ports) {
   } else {
     if (ports.length == 1) {
       // 'ip' | 'ports[0]'
-      if (compatibility[0]) {
+      if (compatibility.simpleSymmetric) {
         portsBadges.push(ports[0].toString());
         listOfMappings.push({
           'ip': ip,
@@ -451,7 +386,7 @@ let putPortMapping = function(ip, ports) {
     } else if (ports.length == 2) {
       // 'ip' | 'ports[0]-ports[1]'
       if (isRangeOfPorts) {
-        if (compatibility[2]) {
+        if (compatibility.rangeSymmetric) {
           portsBadges.push(ports[0].toString()+
             '-' + ports[1].toString());
           listOfMappings.push({
@@ -467,7 +402,7 @@ let putPortMapping = function(ip, ports) {
         }
       } else {
         // 'ip' | 'ports[0]:ports[1]'
-        if (compatibility[1]) {
+        if (compatibility.simpleAsymmetric) {
           portsBadges.push(ports[0].toString()+
             ':' + ports[1].toString());
           listOfMappings.push({
@@ -484,7 +419,7 @@ let putPortMapping = function(ip, ports) {
       }
     } else if (ports.length == 4) {
       // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
-      if (compatibility[3]) {
+      if (compatibility.rangeAsymmetric) {
         portsBadges.push(ports[0].toString()+
             '-' + ports[1].toString() +
             ':' + ports[2].toString() +
@@ -501,7 +436,7 @@ let putPortMapping = function(ip, ports) {
         return;
       }
     } else {
-      triggerRedAlert('Algo muito errado aconteceu...');
+      triggerRedAlert('Um erro inesperado aconteceu');
       return;
     }
     let listOfBadges = $('<td>').
@@ -574,23 +509,28 @@ let checkPortMappingInputs = function() {
   let isAddressValid;
   let isPortsValid;
   let portsValues = [];
-
-  isAddressValid = checkAddressSubnetRange(deviceIp, ipAddressGiven, maskBits);
-
-  for (i = 0; i < portsInputs.length; i++) {
-    portsValues.push(portsInputs[i].value);
-  }
-  isPortsValid = checkPortsValues(portsValues);
-  portsValues = [];
-  for (i = 0; i < portsInputs.length; i++) {
-    if (!isNaN(parseInt(portsInputs[i].value))) {
-      portsValues.push(parseInt(portsInputs[i].value));
+  let validator = new Validator();
+  isAddressValid = validator.
+  checkAddressSubnetRange(deviceIp,
+    ipAddressGiven, maskBits);
+  if (!isAddressValid) {
+    triggerRedAlert('Endereço IP inválido!');
+  } else {
+    for (i = 0; i < portsInputs.length; i++) {
+      portsValues.push(portsInputs[i].value);
+    }
+    isPortsValid = checkPortsValues(portsValues);
+    portsValues = [];
+    for (i = 0; i < portsInputs.length; i++) {
+      if (!isNaN(parseInt(portsInputs[i].value))) {
+        portsValues.push(parseInt(portsInputs[i].value));
+      }
+    }
+    if (isAddressValid && isPortsValid) {
+      putPortMapping(ipAddressGiven, portsValues);
     }
   }
 
-  if (isAddressValid && isPortsValid) {
-    putPortMapping(ipAddressGiven, portsValues);
-  }
 };
 
 let fillSessionStorage = function(rules) {
@@ -741,11 +681,9 @@ $(document).ready(function() {
       url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
       dataType: 'json',
       success: function(res) {
-        console.log(res);
         if (res.success) {
           fillSessionStorage(res.content);
-          console.log(res.compatibility);
-          showCompatibilityMessage(res.compatibility);
+          showIncompatibilityMessage(res.compatibility);
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
           checkAdvancedOptions();

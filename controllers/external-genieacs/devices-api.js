@@ -201,17 +201,14 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function(model) {
   let fields = getDefaultFields();
-
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
-      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
-      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
@@ -220,6 +217,7 @@ const getZTEFields = function(model) {
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       break;
   }
+  fields.port_mapping.external_port_end = 'ExternalPortEndRange';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   return fields;
@@ -297,7 +295,8 @@ const getModelFields = function(oui, model) {
 
 const getProtocolByModel = function(model) {
   let ret = '';
-  switch(model) {
+  switch (model) {
+    case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
       ret = 'BOTH';
       break;

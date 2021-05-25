@@ -408,14 +408,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
-  // different sizes of entries is a first indicator that needs to sync to device
-  let hasChangesPortForward = false;
-  // check different size for update
-  if (data.wan.port_mapping_entries != device.port_mapping.length) {
-    console.log('sizes', device.port_mapping.length, data.wan.port_mapping_entries);
-    hasChangesPortForward = true;
-  }
-  if (hasChanges || hasChangesPortForward) {
+
+  if (hasChanges) {
     // Increment sync task loops
     device.acs_sync_loops += 1;
     let syncLimit = 5;
@@ -435,13 +429,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         }
       }
     }
-    /* not protected by sync loops but partially
-    protected against race condition on sending tasks
-    when changePortForwardRules*/
-    if (hasChangesPortForward) {
-      acsDeviceInfoController.changePortForwardRules(device,
-        device.port_mapping.length - data.wan.port_mapping_entries);
-    }
   } else {
     let informDiff = Date.now() - device.last_contact;
     if (informDiff >= 20000) {
@@ -453,11 +440,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // daily data fetching
   if (!device.last_contact_daily) {
     device.last_contact_daily = Date.now();
-  } else if (Date.now() - device.last_contact_daily > 24*60*60*1000 &&
-    !hasChangesPortForward) {
+  } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
     // for every day fetch to device port forward entries
     device.last_contact_daily = Date.now();
-    acsDeviceInfoController.checkPortForwardRules(device);
+    acsDeviceInfoController.
+    checkPortForwardRules(device,
+      device.port_mapping.length - data.wan.port_mapping_entries);
   }
   await device.save();
   return res.status(200).json({success: true});
@@ -898,140 +886,144 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let query = {device: acsID}; // selecting all tasks for a given device id.
   let tasks = await TasksAPI.getFromCollection('tasks', query).catch((e) => {
   /* rejected value will be error object in case of connection errors.*/
-    throw new Error(`!@# -> ${e.code} when getting old tasks from genieacs rest api, `
-     +`for device ${acsID}.`); // return error code in error message.
+    console.log('!@# -> '+e.code+
+      'when getting old tasks from genieacs rest api'+
+      ', for device '+acsID+'.');
+    return undefined;
   });
+  if (!tasks) {
+    return;
+  }
   /* if find some task with name addObject,
   deletObject or setParameterValues */
-  let hasAlreadySentTasks = (tasks.find((t) => {
+  let hasAlreadySentTasks = tasks.some((t) => {
     return t.name === 'addObject' ||
     t.name === 'deleteObject' ||
     t.name === 'setParameterValues';
   // if defined, was found a task with the names above
   // so we have tasks sent
-  }) !== undefined) ? true : false;
+  });
   /* drop this call of changePortForwardRules 
   */
   if (hasAlreadySentTasks) {
     console.log('!@# -> Dropped change port forward rules in '+acsID);
     return;
-  } else {
-    // change array size via addObject or deleteObject
-    if (rulesDiffLength < 0) {
-      rulesDiffLength = -rulesDiffLength;
-      changeEntriesSizeTask.name = 'deleteObject';
-      for (i = (device.port_mapping.length + rulesDiffLength);
-          i > device.port_mapping.length;
-          i--) {
-        changeEntriesSizeTask.objectName = specFields.template + '.' + i;
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
-        if (!ret.finished) {
-          return;
-        }
-        console.log('!@# -> Task sent to delete '+
-          rulesDiffLength+
-          ' port mapping entries in '+acsID);
+  }
+  // change array size via addObject or deleteObject
+  if (rulesDiffLength < 0) {
+    rulesDiffLength = -rulesDiffLength;
+    changeEntriesSizeTask.name = 'deleteObject';
+    for (i = (device.port_mapping.length + rulesDiffLength);
+        i > device.port_mapping.length;
+        i--) {
+      changeEntriesSizeTask.objectName = specFields.template + '.' + i;
+      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+        3000, [5000, 10000]);
+      if (!ret.finished) {
+        return;
       }
-    } else {
-      changeEntriesSizeTask.objectName = specFields.template;
-      for (i = 0; i < rulesDiffLength; i++) {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
-        if (!ret.finished) {
-          return;
-        }
-      }
-      console.log('!@# -> Task sent to add '+
+      console.log('!@# -> Task sent to delete '+
         rulesDiffLength+
         ' port mapping entries in '+acsID);
     }
-    // set entries values for respective array in the device
-    for (i = 0; i < device.port_mapping.length; i++) {
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.enable,
-        true,
-        'xsd:boolean',
-      ]);
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.lease,
-        0,
-        'xsd:unsignedInt',
-      ]);
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.external_port_start,
-        device.port_mapping[i].external_port_start,
-        'xsd:unsignedInt',
-      ]);
-      if (specFields.external_port_end != '') {
-        updateTasks.parameterValues.push([
-          specFields.template + '.' + (i+1) + '.'
-          +
-          specFields.external_port_end,
-          device.port_mapping[i].external_port_end,
-          'xsd:unsignedInt',
-        ]);
+  } else {
+    changeEntriesSizeTask.objectName = specFields.template;
+    for (i = 0; i < rulesDiffLength; i++) {
+      ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
+        3000, [5000, 10000]);
+      if (!ret.finished) {
+        return;
       }
+    }
+    console.log('!@# -> Task sent to add '+
+      rulesDiffLength+
+      ' port mapping entries in '+acsID);
+  }
+  // set entries values for respective array in the device
+  for (i = 0; i < device.port_mapping.length; i++) {
+    let iterateTemplate = specFields.template + '.' + (i+1) + '.';
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.enable,
+      true,
+      'xsd:boolean',
+    ]);
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.lease,
+      0,
+      'xsd:unsignedInt',
+    ]);
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.external_port_start,
+      device.port_mapping[i].external_port_start,
+      'xsd:unsignedInt',
+    ]);
+    if (specFields.external_port_end != '') {
       updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
+        iterateTemplate
         +
-        specFields.internal_port_start,
-        device.port_mapping[i].internal_port_start,
+        specFields.external_port_end,
+        device.port_mapping[i].external_port_end,
         'xsd:unsignedInt',
-      ]);
-      if (specFields.internal_port_end != '') {
-        updateTasks.parameterValues.push([
-          specFields.template + '.' + (i+1) + '.'
-          +
-          specFields.internal_port_end,
-          device.port_mapping[i].internal_port_end,
-          'xsd:unsignedInt',
-        ]);
-      }
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.protocol,
-        DevicesAPI.getProtocolByModel(model),
-        'xsd:string',
-      ]);
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.client,
-        device.port_mapping[i].ip,
-        'xsd:string',
-      ]);
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.description,
-        '',
-        'xsd:string',
-      ]);
-      updateTasks.parameterValues.push([
-        specFields.template + '.' + (i+1) + '.'
-        +
-        specFields.remote_host,
-        '0.0.0.0',
-        'xsd:string',
       ]);
     }
-    console.log('!@# -> Task sent to update port mapping entries in '+acsID);
-    TasksAPI.addTask(acsID, updateTasks,
-        true, 3000, [5000, 10000]);
-
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.internal_port_start,
+      device.port_mapping[i].internal_port_start,
+      'xsd:unsignedInt',
+    ]);
+    if (specFields.internal_port_end != '') {
+      updateTasks.parameterValues.push([
+        iterateTemplate
+        +
+        specFields.internal_port_end,
+        device.port_mapping[i].internal_port_end,
+        'xsd:unsignedInt',
+      ]);
+    }
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.protocol,
+      DevicesAPI.getProtocolByModel(model),
+      'xsd:string',
+    ]);
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.client,
+      device.port_mapping[i].ip,
+      'xsd:string',
+    ]);
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.description,
+      '',
+      'xsd:string',
+    ]);
+    updateTasks.parameterValues.push([
+      iterateTemplate
+      +
+      specFields.remote_host,
+      '0.0.0.0',
+      'xsd:string',
+    ]);
   }
+  console.log('!@# -> Task sent to update port mapping entries in '+acsID);
+  TasksAPI.addTask(acsID, updateTasks,
+      true, 3000, [5000, 10000]);
 };
 
 
-acsDeviceInfoController.checkPortForwardRules = async function(device) {
+acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
@@ -1042,6 +1034,15 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
     name: 'getParameterValues',
     parameterNames: [fields.port_mapping.template],
   };
+  /*
+    if entries sizes are not the same, no need to check
+    entry by entry differences
+  */
+  if (rulesDiffLength != 0) {
+    acsDeviceInfoController.changePortForwardRules(device,
+      rulesDiffLength);
+    return;
+  }
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (result.finished == true && result.task.name === 'getParameterValues') {
     let query = {_id: acsID};
@@ -1064,7 +1065,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         data = JSON.parse(data)[0];
-        console.log(data);
         let isDiff = false;
         let template = '';
         if (checkForNestedKey(data, projection1)) {
@@ -1074,74 +1074,59 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
         }
         if (template != '') {
           for (i = 0; i < device.port_mapping.length; i++) {
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.enable)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.enable) != true) {
+            let iterateTemplate = template+'.'+(i+1)+'.';
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.enable)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.enable) != true) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.lease)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.lease) != 0) {
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.lease)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.lease) != 0) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.protocol)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.protocol) !=
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.protocol)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.protocol) !=
                DevicesAPI.getProtocolByModel(model)) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.client)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.client) !=
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.client)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.client) !=
                 device.port_mapping[i].ip) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.external_port_start)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.external_port_start) !=
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start) !=
                 device.port_mapping[i].external_port_start) {
                 isDiff = true;
                 break;
               }
             }
             if (fields.port_mapping.external_port_end != '') {
-              if (checkForNestedKey(data, template+'.'+(i+1)+
-                '.'+fields.port_mapping.external_port_end)) {
-                if (getFromNestedKey(data, template+'.'+(i+1)+
-                '.'+fields.port_mapping.external_port_end) !=
+              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end)) {
+                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end) !=
                   device.port_mapping[i].external_port_end) {
                   isDiff = true;
                   break;
                 }
               }
             }
-            if (checkForNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.internal_port_start)) {
-              if (getFromNestedKey(data, template+'.'+(i+1)+
-              '.'+fields.port_mapping.internal_port_start) !=
+            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start) !=
                 device.port_mapping[i].internal_port_start) {
                 isDiff = true;
                 break;
               }
             }
             if (fields.port_mapping.internal_port_end != '') {
-              if (checkForNestedKey(data, template+'.'+(i+1)+
-                '.'+fields.port_mapping.internal_port_end)) {
-                if (getFromNestedKey(data, template+'.'+(i+1)+
-                '.'+fields.port_mapping.internal_port_end) !=
+              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end)) {
+                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end) !=
                   device.port_mapping[i].internal_port_end) {
                   isDiff = true;
                   break;
