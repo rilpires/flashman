@@ -1991,7 +1991,13 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
       } else if (isNaN(parseInt(portToCheck))) {
         isPortsNumber = false;
       } else if (!(parseInt(portToCheck) >= 1 &&
-                   parseInt(portToCheck) <= 65535)) {
+                   parseInt(portToCheck) <= 65535 &&
+                   parseInt(portToCheck) != 22 &&
+                   parseInt(portToCheck) != 23 &&
+                   parseInt(portToCheck) != 80 &&
+                   parseInt(portToCheck) != 443 &&
+                   parseInt(portToCheck) != 7547 &&
+                   parseInt(portToCheck) != 58000)) {
         isPortsOnRange = false;
       }
     }
@@ -2012,7 +2018,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     if (!isPortsOnRange) {
       ret.success = false;
       ret.message = ''+rules[i].ip+
-        ': As portas devem estar na faixa entre 1 - 65535';
+        ': As portas devem estar na faixa entre 1 - 65535 (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)';
       return ret;
     }
     if (!isPortsNotEmpty) {

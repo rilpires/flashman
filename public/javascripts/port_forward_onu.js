@@ -166,7 +166,13 @@ let checkPortsValues = function(portsValues) {
       } else if (isNaN(parseInt(portToCheck))) {
         isPortsNumber = false;
       } else if (!(parseInt(portToCheck) >= 1 &&
-                   parseInt(portToCheck) <= 65535)) {
+                   parseInt(portToCheck) <= 65535 &&
+                   parseInt(portToCheck) != 22 &&
+                   parseInt(portToCheck) != 23 &&
+                   parseInt(portToCheck) != 80 &&
+                   parseInt(portToCheck) != 443 &&
+                   parseInt(portToCheck) != 7547 &&
+                   parseInt(portToCheck) != 58000)) {
         isPortsOnRange = false;
       }
     }
@@ -194,7 +200,7 @@ let checkPortsValues = function(portsValues) {
     }
   }
   if (!isPortsOnRange) {
-    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535!');
+    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)');
   }
   if (!isPortsNotEmpty) {
     triggerRedAlert('Os campos devem ser preenchidos!');
