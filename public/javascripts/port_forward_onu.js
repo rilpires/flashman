@@ -689,12 +689,12 @@ $(document).ready(function() {
       success: function(res) {
         if (res.success) {
           fillSessionStorage(res.content);
-          showIncompatibilityMessage(res.compatibility);
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
           checkAdvancedOptions();
           $('#port-forward-onu-main-label').text(sessionStorage.getItem('serialId'));
           $('#port-forward-onu-modal').modal('show');
+          showIncompatibilityMessage(res.compatibility);
         }
       },
       error: function(xhr, status, error) {
