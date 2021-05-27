@@ -891,19 +891,15 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       ', for device '+acsID+'.');
     return undefined;
   });
-  if (!tasks) {
+  if (!Array.isArray(tasks)) {
     return;
   }
-  /* if find some task with name addObject,
-  deletObject or setParameterValues */
+  /* if find some task with name addObject or deleteObject */
   let hasAlreadySentTasks = tasks.some((t) => {
     return t.name === 'addObject' ||
-    t.name === 'deleteObject' ||
-    t.name === 'setParameterValues';
-  // if defined, was found a task with the names above
-  // so we have tasks sent
+    t.name === 'deleteObject';
   });
-  /* drop this call of changePortForwardRules 
+  /* drop this call of changePortForwardRules
   */
   if (hasAlreadySentTasks) {
     console.log('!@# -> Dropped change port forward rules in '+acsID);
