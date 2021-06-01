@@ -240,6 +240,7 @@ let taskParameterIdFromType = {
   setParameterValues: 'parameterValues',
   refreshObject: 'objectName',
   addObject: 'objectName',
+  deleteObject: 'objectName',
   download: 'file',
   reboot: null,
 };
@@ -632,7 +633,7 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
     throw new Error('device id not valid. Received:', deviceid);
   }
   // checking task format and data types.
-  if (!checkTask(task)) throw new Error('task not valid.');
+  if (!checkTask(task)) throw new Error('task not valid: '+JSON.stringify(task));
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.

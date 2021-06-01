@@ -1133,6 +1133,8 @@ $(document).ready(function() {
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-serialid="'+device.serial_tr069+'"';
+          formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
+          formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
@@ -1173,6 +1175,11 @@ $(document).ready(function() {
 
           let portForwardAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-open-ports-modal')
+          .replace('$REPLACE_ICON', 'fa-lock-open')
+          .replace('$REPLACE_TEXT', 'Abertura de portas');
+
+          let portForwardOnuAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-onu-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
@@ -1236,6 +1243,10 @@ $(document).ready(function() {
           }
           if (!isTR069 && !device.bridge_mode_enabled && grantPortForward) {
             sideMenu[idxMenu] += portForwardAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (isTR069 && !device.bridge_mode_enabled && grantPortForward) {
+            sideMenu[idxMenu] += portForwardOnuAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && grantPingTest) {
