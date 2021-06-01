@@ -120,8 +120,8 @@ if (Promise.allSettled === undefined) {
 
 /* promisifying a nodejs http request. 'options' are the http.request option as
  defined by nodejs api. 'body' is the content of the request (should be a
- string) and it up to the caller to set the correct header in case body is used.
- */
+ string) and it is up to the caller to set the correct header in case body is 
+ used. */
 const request = (options, body) => {
   return new Promise((resolve, reject) => {
     let req = http.request(options, (res) => {
