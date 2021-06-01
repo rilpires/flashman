@@ -1,3 +1,4 @@
+import {displayAlertMsg} from './common_actions.js';
 
 $(document).ready(function() {
   $(document).on('click', '.btn-vlan-modal', async function(event) {

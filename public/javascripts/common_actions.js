@@ -1,3 +1,4 @@
+import 'bootstrap';
 import 'mdbootstrap';
 import 'popper.js';
 import {io} from 'socket.io-client';
