@@ -1,7 +1,7 @@
 
 let triggerRedAlert = function(message) {
-  if ($('#port-forward-onu-modal-alert')[0].classList.contains('d-block')) {
-    $('#port-forward-onu-modal-alert').
+  if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
+    $('#port-forward-tr069-modal-alert').
       append(
         $('<hr></hr>'),
       ).
@@ -10,7 +10,7 @@ let triggerRedAlert = function(message) {
           html(message),
       );
   } else {
-    $('#port-forward-onu-modal-alert').
+    $('#port-forward-tr069-modal-alert').
       removeClass('d-none').
       addClass('d-block').
       html(
@@ -18,7 +18,7 @@ let triggerRedAlert = function(message) {
           html(message),
       );
     setTimeout(function() {
-        $('#port-forward-onu-modal-alert').
+        $('#port-forward-tr069-modal-alert').
           removeClass('d-block').
           addClass('d-none');
       }, 2500);
@@ -26,13 +26,13 @@ let triggerRedAlert = function(message) {
 };
 
 let showIncompatibilityMessage = function(compatibility) {
-  let portInputs = $('.port-forward-onu-port-input');
-  let isRangeOfPorts = $('#port-forward-onu-'+
+  let portInputs = $('.port-forward-tr069-port-input');
+  let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0];
-  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0];
-  let compatInfoDiv = $('#port-forward-onu-modal-compat-info');
-  let compatInfoMessage = $('#port-forward-onu-modal-compat-info-message');
-  let compatInfoList = $('#port-forward-onu-modal-compat-info-list');
+  let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0];
+  let compatInfoDiv = $('#port-forward-tr069-modal-compat-info');
+  let compatInfoMessage = $('#port-forward-tr069-modal-compat-info-message');
+  let compatInfoList = $('#port-forward-tr069-modal-compat-info-list');
   let message = 'O modelo '+
   sessionStorage.getItem('model')
   +' versão '+
@@ -86,13 +86,13 @@ let showIncompatibilityMessage = function(compatibility) {
 
 let checkAdvancedOptions = function() {
   let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
-  let isRangeOfPorts = $('#port-forward-onu-'+
+  let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0];
-  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0];
-  let advOptionsLabel = $('#port-forward-onu-advanced-options-labels')[0];
-  let portBox = $('.port-forward-onu-port');
-  let portLabel = $('.port-forward-onu-port-label');
-  let portInputs = $('.port-forward-onu-port-input');
+  let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0];
+  let advOptionsLabel = $('#port-forward-tr069-advanced-options-labels')[0];
+  let portBox = $('.port-forward-tr069-port');
+  let portLabel = $('.port-forward-tr069-port-label');
+  let portInputs = $('.port-forward-tr069-port-input');
 
   if (compatibility.simpleSymmetric &&
     compatibility.simpleAsymmetric &&
@@ -112,14 +112,14 @@ let checkAdvancedOptions = function() {
   if (isRangeOfPorts.checked == false && isAsymOpening.checked == false) {
     advOptionsLabel.className = 'row d-none';
     portBox[1].className = portBox[2].className =
-     portBox[3].className = 'col-md-2 col-4 port-forward-onu-port d-none';
+     portBox[3].className = 'col-md-2 col-4 port-forward-tr069-port d-none';
     portLabel[0].innerHTML = 'Porta';
     portInputs[1].value = portInputs[2].value = portInputs[3].value = '';
   } else if (isRangeOfPorts.checked != isAsymOpening.checked) {
     advOptionsLabel.className = 'row d-none';
-    portBox[1].className = 'col-md-2 col-4 port-forward-onu-port';
+    portBox[1].className = 'col-md-2 col-4 port-forward-tr069-port';
     portBox[2].className =
-    portBox[3].className = 'col-md-2 col-4 port-forward-onu-port d-none';
+    portBox[3].className = 'col-md-2 col-4 port-forward-tr069-port d-none';
 
     portInputs[2].value = portInputs[3].value = '';
     if (isRangeOfPorts.checked) {
@@ -132,7 +132,7 @@ let checkAdvancedOptions = function() {
   } else if (isRangeOfPorts.checked == true && isAsymOpening.checked == true) {
     advOptionsLabel.className = 'row';
     portBox[1].className = portBox[2].className =
-     portBox[3].className = 'col-md-2 col-4 port-forward-onu-port';
+     portBox[3].className = 'col-md-2 col-4 port-forward-tr069-port';
     portLabel[0].innerHTML = portLabel[2].innerHTML = 'Inicial';
     portLabel[1].innerHTML = portLabel[3].innerHTML = 'Final';
   }
@@ -145,8 +145,8 @@ let checkPortsValues = function(portsValues) {
   let isPortsNotEmpty = true;
   let isRangeOfSameSize = true;
   let isRangeNegative = true;
-  let isRangeOfPorts = $('#port-forward-onu-range-of-ports-checkbox')[0].checked;
-  let isAsymOpening = $('#port-forward-onu-asym-opening-checkbox')[0].checked;
+  let isRangeOfPorts = $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
+  let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0].checked;
   let checkUntil = 1;
   let portToCheck;
 
@@ -271,7 +271,7 @@ let removeOnePortMapping = function(input) {
 
 let removeSetOfPortMapping = function(input) {
   let ip = input.dataset['ip'];
-  let portMappingTable = $('#port-forward-onu-table');
+  let portMappingTable = $('#port-forward-tr069-table');
   let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
   listOfMappings = listOfMappings.filter((lm) => {
     return ip != lm.ip;
@@ -283,7 +283,7 @@ let removeSetOfPortMapping = function(input) {
 };
 
 let removeAllPortMapping = function() {
-  let portMappingTable = $('#port-forward-onu-table');
+  let portMappingTable = $('#port-forward-tr069-table');
   portMappingTable.empty();
   sessionStorage.clear();
 };
@@ -355,8 +355,8 @@ let putPortMapping = function(ip, ports) {
   */
   let i;
   let isOverlapping = false;
-  let portMappingTable = $('#port-forward-onu-table');
-  let isRangeOfPorts = $('#port-forward-onu-'+
+  let portMappingTable = $('#port-forward-tr069-table');
+  let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0].checked;
 
   let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
@@ -510,8 +510,8 @@ let checkPortMappingInputs = function() {
   let i;
   let deviceIp = sessionStorage.getItem('lanSubnet');
   let maskBits = sessionStorage.getItem('lanSubmask');
-  let ipAddressGiven = $('#port-forward-onu-ip-address-input')[0].value;
-  let portsInputs = $('.port-forward-onu-port-input');
+  let ipAddressGiven = $('#port-forward-tr069-ip-address-input')[0].value;
+  let portsInputs = $('.port-forward-tr069-port-input');
   let isAddressValid;
   let isPortsValid;
   let portsValues = [];
@@ -604,7 +604,7 @@ let fillSessionStorage = function(rules) {
 
 let buildMappingTable = function(ip) {
   let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
-  let portMappingTable = $('#port-forward-onu-table');
+  let portMappingTable = $('#port-forward-tr069-table');
   let listOfBadges = $('<td>').
           addClass('d-flex').
           addClass('flex-row').
@@ -663,17 +663,17 @@ let buildMappingTable = function(ip) {
 };
 
 $(document).ready(function() {
-  $(document).on('click', '.btn-port-forward-onu-modal', function(event) {
+  $(document).on('click', '.btn-port-forward-tr069-modal', function(event) {
     let row = $(event.target).parents('tr');
     // clean modal
-    let portMappingTable = $('#port-forward-onu-table');
-    let portInputs = $('.port-forward-onu-port-input');
+    let portMappingTable = $('#port-forward-tr069-table');
+    let portInputs = $('.port-forward-tr069-port-input');
     for (let i = 0; i < portInputs.length; i++) {
       portInputs[i].value = '';
     }
-    $('#port-forward-onu-range-of-ports-checkbox')[0].checked = false;
-    $('#port-forward-onu-asym-opening-checkbox')[0].checked = false;
-    $('#port-forward-onu-ip-address-input')[0].value = '';
+    $('#port-forward-tr069-range-of-ports-checkbox')[0].checked = false;
+    $('#port-forward-tr069-asym-opening-checkbox')[0].checked = false;
+    $('#port-forward-tr069-ip-address-input')[0].value = '';
     portMappingTable.empty();
     sessionStorage.clear();
     sessionStorage.setItem('deviceId', row.data('deviceid'));
@@ -692,8 +692,8 @@ $(document).ready(function() {
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
           checkAdvancedOptions();
-          $('#port-forward-onu-main-label').text(sessionStorage.getItem('serialId'));
-          $('#port-forward-onu-modal').modal('show');
+          $('#port-forward-tr069-main-label').text(sessionStorage.getItem('serialId'));
+          $('#port-forward-tr069-modal').modal('show');
           showIncompatibilityMessage(res.compatibility);
         }
       },
@@ -712,7 +712,7 @@ $(document).ready(function() {
     });
   });
 
-  $(document).on('click', '#port-forward-onu-submit-button',
+  $(document).on('click', '#port-forward-tr069-submit-button',
     function(event) {
     $.ajax({
       type: 'POST',

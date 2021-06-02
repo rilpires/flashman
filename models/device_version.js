@@ -117,11 +117,11 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
-const portForwardOnuCompatibleModels = [
+const portForwardTr069CompatibleModels = [
  'F670L',
  'ZXHN H198A V3.0',
 ];
-const portForwardOnuCompatibleVersions = {
+const portForwardTr069CompatibleVersions = {
  'V1.1.20P3N3': {
   simpleSymmetric: true,
   simpleAsymmetric: true,
@@ -937,8 +937,8 @@ const grantResetDevices = function(version) {
 const grantPortForward = function(version, model) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.10.0') >= 0);
-  } else if (!portForwardOnuCompatibleModels.includes(model) ||
-    portForwardOnuCompatibleVersions[version] === undefined) {
+  } else if (!portForwardTr069CompatibleModels.includes(model) ||
+    portForwardTr069CompatibleVersions[version] === undefined) {
     return false;
   } else {
     // Development version, enable everything by default
@@ -1230,8 +1230,8 @@ DeviceVersion.getVlanCompatible = function() {
   return Object.keys(vlanCompatible);
 };
 
-DeviceVersion.getPortForwardOnuCompatibility = function(version) {
-  return portForwardOnuCompatibleVersions[version];
+DeviceVersion.getPortForwardTr069Compatibility = function(version) {
+  return portForwardTr069CompatibleVersions[version];
 };
 
 module.exports = DeviceVersion;
