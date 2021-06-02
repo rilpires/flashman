@@ -164,7 +164,7 @@ $(document).ready(function() {
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets
   // all classes after loading
-  $('.tags-input').addClass('form-control');
+  $('.tags-input').addClass('form-control').css('padding', '0');
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
