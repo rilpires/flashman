@@ -41,13 +41,12 @@ const selectizeOptionsPorts = {
     if (input.indexOf(':') == -1) {
       return checkVal(input);
     } else {
-      res = input.split(':', 2);
+      let res = input.split(':', 2);
       if (!checkVal(res[0])) {
         return false;
       }
       return checkVal(res[1]);
     }
-    return false;
   },
   render: {
     option_create: function(data, escape) {
@@ -57,7 +56,7 @@ const selectizeOptionsPorts = {
           $('<strong></strong>').html(escape(data.input))
         );
       } else {
-        res = data.input.split(':', 2);
+        let res = data.input.split(':', 2);
         return $('<div></div>').addClass('create').append(
           'Dispositivo: ',
           $('<strong></strong>').html(escape(res[0])),
@@ -219,7 +218,7 @@ $(document).ready(function() {
             let deviceLabel = value.mac;
             deviceLabel = value.dhcp_name ? value.dhcp_name : deviceLabel;
             deviceLabel = value.name ? value.name : deviceLabel;
-            devicePortAsym = hasPortForwardAsym ? value.router_port : null;
+            let devicePortAsym = hasPortForwardAsym ? value.router_port : null;
             insertOpenFirewallDoorRule({
               mac: value.mac, port: value.port, router_port: devicePortAsym,
               dmz: value.dmz, label: deviceLabel, has_dhcpv6: value.has_dhcpv6,
@@ -230,7 +229,7 @@ $(document).ready(function() {
           $('#open-firewall-ports').modal('show');
           $('.btn-syncOnlineDevs').trigger('click');
         } else {
-          badge = $(event.target).closest('.actions-opts')
+          let badge = $(event.target).closest('.actions-opts')
                                  .find('.badge-warning');
           if (res.message) {
             badge.text(res.message);
@@ -242,9 +241,9 @@ $(document).ready(function() {
         }
       },
       error: function(xhr, status, error) {
-        badge = $(event.target).closest('.actions-opts')
+        let badge = $(event.target).closest('.actions-opts')
                                .find('.badge-warning');
-        if (res.message) {
+        if (xhr.responseText) {
           badge.text(status + ': ' + error);
         }
         badge.show();
@@ -367,7 +366,7 @@ $(document).ready(function() {
         portsFinal = portsFinal.concat(parseInt(portValue));
         asymPortsFinal = asymPortsFinal.concat(parseInt(portValue));
       } else {
-        res = portValue.split(':', 2);
+        let res = portValue.split(':', 2);
         intPort = res[0];
         portFinal = res[1];
         portsFinal = portsFinal.concat(parseInt(intPort));
@@ -411,7 +410,7 @@ $(document).ready(function() {
       deviceMac = deviceId;
       deviceLabel = deviceId;
     }
-    asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
+    let asymPortsValue = hasPortForwardAsym ? asymPortsFinal : null;
     insertOpenFirewallDoorRule({
       mac: deviceMac, port: portsFinal, router_port: asymPortsValue,
       dmz: dmz, label: deviceLabel, has_dhcpv6: hasDhcpv6,
