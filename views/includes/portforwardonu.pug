@@ -1,0 +1,101 @@
+
+#port-forward-onu-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-lock-open.fa-lg
+          strong &nbsp; Abertura de portas na ONU &nbsp;
+            label(name="port-forward-onu-main-label" id="port-forward-onu-main-label")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      #port-forward-onu-modal-alert.d-none.p-3.bg-danger.text-white
+      .modal-body
+        #port-forward-onu-modal-compat-info.d-none.row.p-3.alert.alert-info(aria-alert="true")
+          .row
+            .col-11
+              .fas.fa-info-circle.fa-lg.mr-2
+              span#port-forward-onu-modal-compat-info-message
+            .col-1
+              button.text-white.close(type="button", data-dismiss="alert")
+                .fas.fa-times
+          .row
+            ul#port-forward-onu-modal-compat-info-list
+        .row.d-none#port-forward-onu-advanced-options-labels
+          .col-3
+          .col-4.text-center
+            label Portas de Origem
+          .col-4.text-center
+            label Portas de Destino
+        .row.justify-content-start.align-items-center.flexwrap
+          .col-md-3.col-6
+            .md-form.input-entry
+              label#port-forward-onu-ip-address-label Endereço IP
+              input.form-control.ip-mask-field#port-forward-onu-ip-address-input(type="text")
+              .invalid-feedback O IP precisa estar na mesma faixa de subrede do roteador
+          .col-md-2.col-4.port-forward-onu-port
+            .md-form.input-entry
+              label.port-forward-onu-port-label Porta
+              input.form-control.port-forward-onu-port-input(type="number", min="0", max="65535")
+          .col-md-2.col-4.d-none.port-forward-onu-port
+            .md-form.input-entry
+              label.port-forward-onu-port-label Porta2
+              input.form-control.port-forward-onu-port-input(type="number", min="0", max="65535")
+          .col-md-2.col-4.d-none.port-forward-onu-port
+            .md-form.input-entry
+              label.port-forward-onu-port-label Porta3
+              input.form-control.port-forward-onu-port-input(type="number", min="0", max="65535")
+          .col-md-2.col-4.d-none.port-forward-onu-port
+            .md-form.input-entry
+              label.port-forward-onu-port-label Porta4
+              input.form-control.port-forward-onu-port-input(type="number", min="0", max="65535")
+          div
+            button.input-group-text.btn-primary.waves-effect.waves-light#port-forward-onu-add-port-mapping-button(type="button", onclick='checkPortMappingInputs()')
+              .fas.fa-plus.fa-lg
+        .row
+          .col
+            label.mr-3 Opções Avançadas
+            a.fas.mr-3.hover-effect.fa-chevron-down#port-forward-onu-advanced-options-chevron(data-toggle="collapse",
+                      href="#port-forward-onu-advanced-options-collapse",
+                      role="button")
+            a.fas.mr-3.fa-question-circle(
+              data-toggle="tooltip",
+              title="Habilita formas mais amigáveis de abrir um conjunto de portas",
+          )
+        .row
+          .col
+            .collapse#port-forward-onu-advanced-options-collapse
+              .custom-control.custom-checkbox
+                input.custom-control-input(type="checkbox", onchange="checkAdvancedOptions()")#port-forward-onu-range-of-ports-checkbox
+                label.mx-3.custom-control-label(for="port-forward-onu-range-of-ports-checkbox") Abrir uma faixa de portas
+                a.fas.fa-question-circle(
+                  data-toggle="tooltip",
+                  title="Possibilita abrir uma sequência de portas, sendo passado uma porta inicial e uma porta final",
+                )
+              .custom-control.custom-checkbox
+                input.custom-control-input(type="checkbox" onchange="checkAdvancedOptions(this)")#port-forward-onu-asym-opening-checkbox
+                label.mx-3.custom-control-label(for="port-forward-onu-asym-opening-checkbox") Abrir de forma assimétrica
+                a.fas.fa-question-circle(
+                  data-toggle="tooltip",
+                  title="Possibilita associar uma porta externa comum(Porta de Origem) a uma porta interna específica(Porta de Destino)",
+                )
+        .row
+          .col
+            .table-responsive
+              table.table
+                thead
+                  tr
+                    th.text-left.col-2 Dispositivos
+                    th.text-center.col-6 Portas
+                    th.text-center.col-2
+                      a.fas.fa-question-circle.mr-4(
+                        data-toggle="tooltip",
+                        title="Remove todos os mapeamentos de portas desse dispositivo",
+                      )
+                      button.btn.btn-sm.btn-danger.m-0(type='button', onclick='removeAllPortMapping()')
+                        .fas.fa-trash.fa-lg
+                tbody#port-forward-onu-table
+      .modal-footer 
+        button.btn.btn-primary#port-forward-onu-submit-button(type="button")
+          .fas.fa-check.fa-lg
+          span &nbsp Aplicar
