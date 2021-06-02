@@ -671,7 +671,7 @@ $(document).ready(function() {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave || isTR069) ? '' :
+    let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
