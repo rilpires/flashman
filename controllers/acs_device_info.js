@@ -566,6 +566,58 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
+const fetchUpTimeFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let query = {_id: acsID};
+  let projection = fields.common.uptime + ',' + fields.wan.uptime +
+   ',' + fields.wan.uptime_ppp+ ',' + fields.wan.pppoe_user;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let upTimes = {};
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let success = false;
+      if (checkForNestedKey(data, fields.common.uptime+'._value') &&
+        (checkForNestedKey(data, fields.wan.uptime+'._value') ||
+        checkForNestedKey(data, fields.wan.uptime_ppp+'._value') ||
+        checkForNestedKey(data, fields.wan.pppoe_user+'._value'))) {
+        let hasPPPoE = (
+          getFromNestedKey(data, fields.wan.pppoe_user+'._value') !== ''
+        );
+        success = true;
+        upTimes = {
+          sysuptime: getFromNestedKey(data, fields.common.uptime+'._value'),
+          wanuptime: (hasPPPoE) ?
+            getFromNestedKey(data, fields.wan.uptime_ppp+'._value')
+          : getFromNestedKey(data, fields.wan.uptime+'._value'),
+        };
+      }
+      if (success) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        deviceEdit.sys_up_time = upTimes.sysuptime;
+        deviceEdit.wan_up_time = upTimes.wanuptime;
+        await deviceEdit.save();
+      }
+      sio.anlixSendUpStatusNotification(mac, upTimes);
+    });
+  });
+  req.end();
+};
+
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -1189,14 +1241,9 @@ acsDeviceInfoController.pingDevice = async function(device) {
     name: 'getParameterValues',
     parameterNames: [fields.common.uptime],
   };
-  await TasksAPI.addTask(acsID, task, true, 50, [], async (result) => {
+  await TasksAPI.addTask(acsID, task, true, 1000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) {
-      device.last_contact = Date.now();
-      await device.save();
-      sio.anlixSendUpStatusNotification(mac,
-      {upTime: device.sys_up_time});
-    }
+    if (result.finished) fetchUpTimeFromGenie(mac, acsID);
   });
 };
 
