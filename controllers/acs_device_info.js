@@ -1238,6 +1238,7 @@ acsDeviceInfoController.pingDevice = async function(device) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let task = {
+    name: 'getParameterValues',
     parameterNames: [
       fields.common.uptime,
       fields.wan.uptime,
