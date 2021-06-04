@@ -1029,6 +1029,7 @@ deviceListController.sendMqttMsg = function(req, res) {
             });
           }
           if (device && device.use_tr069) {
+            acsDeviceInfo.pingDevice(device);
             acsDeviceInfo.requestWanBytes(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
