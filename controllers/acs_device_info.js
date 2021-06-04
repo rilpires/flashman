@@ -1238,8 +1238,12 @@ acsDeviceInfoController.pingDevice = async function(device) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let task = {
-    name: 'getParameterValues',
-    parameterNames: [fields.common.uptime],
+    parameterNames: [
+      fields.common.uptime,
+      fields.wan.uptime,
+      fields.wan.uptime_ppp,
+      fields.wan.pppoe_user,
+    ],
   };
   await TasksAPI.addTask(acsID, task, true, 1000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
