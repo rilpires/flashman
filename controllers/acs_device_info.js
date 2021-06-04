@@ -1177,6 +1177,29 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   }
 };
 
+acsDeviceInfoController.pingDevice = async function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [fields.common.uptime],
+  };
+  await TasksAPI.addTask(acsID, task, true, 50, [], async (result) => {
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) {
+      device.last_contact = Date.now();
+      await device.save();
+      sio.anlixSendUpStatusNotification(mac,
+      {upTime: device.sys_up_time});
+    }
+  });
+};
+
 acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   try {
     let devicesArray = null;
