@@ -523,8 +523,19 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
+  let upTimeField = fields.wan.uptime.replace('*', 1);
+  let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
+  let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+  let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
+  let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
   let query = {_id: acsID};
-  let projection = recvField + ',' + sentField;
+  let projection = recvField + ',' + sentField +
+      ',' + fields.common.uptime +
+      ',' + upTimeField +
+      ',' + upTimePPPField1 +
+      ',' + upTimePPPField2 +
+      ',' + PPPoEUser1 +
+      ',' + PPPoEUser2;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -537,6 +548,8 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
     resp.setEncoding('utf8');
     let data = '';
     let wanBytes = {};
+    let sysUpTime = 0;
+    let wanUpTime = 0;
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       data = JSON.parse(data)[0];
@@ -549,74 +562,53 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
           sent: getFromNestedKey(data, sentField+'._value'),
         };
       }
-      if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();
-        wanBytes = appendBytesMeasure(
-          deviceEdit.wan_bytes,
-          wanBytes.recv,
-          wanBytes.sent,
-        );
-        deviceEdit.wan_bytes = wanBytes;
-        await deviceEdit.save();
-      }
-      sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
-    });
-  });
-  req.end();
-};
-
-const fetchUpTimeFromGenie = function(mac, acsID) {
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let query = {_id: acsID};
-  let projection = fields.common.uptime + ',' + fields.wan.uptime +
-   ',' + fields.wan.uptime_ppp+ ',' + fields.wan.pppoe_user;
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let upTimes = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
-      let success = false;
-      if (checkForNestedKey(data, fields.common.uptime+'._value') &&
-        (checkForNestedKey(data, fields.wan.uptime+'._value') ||
-        checkForNestedKey(data, fields.wan.uptime_ppp+'._value') ||
-        checkForNestedKey(data, fields.wan.pppoe_user+'._value'))) {
-        let hasPPPoE = (
-          getFromNestedKey(data, fields.wan.pppoe_user+'._value') !== ''
-        );
+      if (checkForNestedKey(data, fields.common.uptime+'._value')) {
         success = true;
-        upTimes = {
-          sysuptime: getFromNestedKey(data, fields.common.uptime+'._value'),
-          wanuptime: (hasPPPoE) ?
-            getFromNestedKey(data, fields.wan.uptime_ppp+'._value')
-          : getFromNestedKey(data, fields.wan.uptime+'._value'),
-        };
+        sysUpTime = getFromNestedKey(data, fields.common.uptime+'._value');
+      }
+      if (checkForNestedKey(data, PPPoEUser1+'._value')) {
+        success = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser1+'._value');
+        if (hasPPPoE) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField1+'._value');
+        } else {
+          wanUpTime = getFromNestedKey(data, upTimeField+'._value');
+        }
+      }
+      if (checkForNestedKey(data, PPPoEUser2+'._value')) {
+        success = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser2+'._value');
+        if (hasPPPoE) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField2+'._value');
+        } else {
+          wanUpTime = getFromNestedKey(data, upTimeField+'._value');
+        }
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
-        deviceEdit.sys_up_time = upTimes.sysuptime;
-        deviceEdit.wan_up_time = upTimes.wanuptime;
+        if (Object.keys(wanBytes).length === 0 &&
+            wanBytes.constructor === Object) {
+          wanBytes = appendBytesMeasure(
+            deviceEdit.wan_bytes,
+            wanBytes.recv,
+            wanBytes.sent,
+          );
+        }
+        deviceEdit.wan_bytes = wanBytes;
+        deviceEdit.sys_up_time = sysUpTime;
+        deviceEdit.wan_up_time = wanUpTime;
         await deviceEdit.save();
       }
-      sio.anlixSendUpStatusNotification(mac, upTimes);
+      sio.anlixSendUpStatusNotification(mac, {
+        wanbytes: wanBytes,
+        sysuptime: sysUpTime,
+        wanuptime: wanUpTime,
+      });
     });
   });
   req.end();
 };
-
 
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
@@ -823,7 +815,14 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let sentField = fields.wan.sent_bytes;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [recvField, sentField],
+    parameterNames: [
+      fields.common.uptime,
+      fields.wan.uptime,
+      fields.wan.uptime_ppp,
+      fields.wan.pppoe_user,
+      recvField,
+      sentField,
+    ],
   };
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
@@ -1227,29 +1226,6 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
     };
     await TasksAPI.addTask(id, task, true, 50, [], null);
   }
-};
-
-acsDeviceInfoController.pingDevice = async function(device) {
-  // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
-  let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [
-      fields.common.uptime,
-      fields.wan.uptime,
-      fields.wan.uptime_ppp,
-      fields.wan.pppoe_user,
-    ],
-  };
-  await TasksAPI.addTask(acsID, task, true, 1000, [], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchUpTimeFromGenie(mac, acsID);
-  });
 };
 
 acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
