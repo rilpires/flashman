@@ -587,7 +587,7 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
-        if (Object.keys(wanBytes).length === 0 &&
+        if (Object.keys(wanBytes).length !== 0 &&
             wanBytes.constructor === Object) {
           wanBytes = appendBytesMeasure(
             deviceEdit.wan_bytes,
