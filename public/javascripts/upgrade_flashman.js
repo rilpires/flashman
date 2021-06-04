@@ -164,10 +164,10 @@ let configFlashman = function(event) {
   if (allValid) {
     $.post($(this).attr('action'), $(this).serialize(), 'json')
       .done(function(res) {
-        $('#config-flashman-menu').modal('hide').on('hidden.bs.modal',
+        $('#config-flashman-form',
           function() {
             displayAlertMsg(res);
-            $('#config-flashman-menu').off('hidden.bs.modal');
+            $('#config-flashman-form');
             setTimeout(function() {
               window.location.reload();
             }, 1000);
@@ -175,10 +175,10 @@ let configFlashman = function(event) {
         );
       })
       .fail(function(jqXHR, textStatus, errorThrown) {
-        $('#config-flashman-menu').modal('hide').on('hidden.bs.modal',
+        $('#config-flashman-form',
           function() {
             displayAlertMsg(JSON.parse(jqXHR.responseText));
-            $('#config-flashman-menu').off('hidden.bs.modal');
+            $('#config-flashman-form');
           }
         );
       });

@@ -841,4 +841,63 @@ userController.checkAccountIsBlocked = async function(app) {
   }
 };
 
+userController.settings = function(req, res) {
+  let indexContent = {};
+  let queryUserId = req.user._id;
+
+  if ('id' in req.params) {
+    queryUserId = req.params.id;
+  }
+
+  // Check Flashman automatic update availability
+  if (typeof process.env.FLM_DISABLE_AUTO_UPDATE !== 'undefined' && (
+             process.env.FLM_DISABLE_AUTO_UPDATE === 'true' ||
+             process.env.FLM_DISABLE_AUTO_UPDATE === true)
+  ) {
+    indexContent.disableAutoUpdate = true;
+  } else {
+    indexContent.disableAutoUpdate = false;
+  }
+
+  User.findById(queryUserId, function(err, user) {
+    Config.findOne({is_default: true}, function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        indexContent.update = false;
+      } else {
+        indexContent.update = matchedConfig.hasUpdate;
+        indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
+      }
+      indexContent.superuser = req.user.is_superuser;
+      indexContent.username = req.user.name;
+      indexContent.user = user;
+
+      Role.find(function(err, roles) {
+        if (err) {
+          console.log(err);
+          indexContent.type = 'danger';
+          indexContent.message = 'Erro ao acessar base de dados';
+          return res.render('error', indexContent);
+        }
+        let userRole = roles.find(function(role) {
+          return role.name === req.user.role;
+        });
+        if (typeof userRole === 'undefined' && !req.user.is_superuser) {
+          indexContent.type = 'danger';
+          indexContent.message = 'Permissão não encontrada';
+          return res.render('error', indexContent);
+        } else {
+          indexContent.role = userRole;
+
+          // List roles if superuser or has permission and not on profile
+          if ((req.user.is_superuser || indexContent.role.grantUserManage) &&
+              queryUserId != req.user._id) {
+            indexContent.roles = roles;
+          }
+          return res.render('settings', indexContent);
+        }
+      });
+    });
+  });
+};
+
 module.exports = userController;
