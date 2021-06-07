@@ -471,11 +471,6 @@ updateController.getAutoConfig = function(req, res) {
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
-        data_collecting_is_active: matchedConfig.data_collecting.is_active,
-        data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
-        data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
-        data_collecting_ping_packets: 
-          matchedConfig.data_collecting.ping_packets,
       });
     } else {
       return res.status(200).json({

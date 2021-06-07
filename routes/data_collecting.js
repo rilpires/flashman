@@ -15,4 +15,7 @@ router.route('/:id/parameters')
 .get(dataCollectingController.returnDeviceParameters)
 .post(dataCollectingController.updateDeviceParameters);
 
+router.route('/config')
+.get(dataCollectingController.getConfig);
+
 module.exports = router;

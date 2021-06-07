@@ -5,6 +5,7 @@ const mqtt = require('../mqtts');
 const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
+const Config = require('../models/config');
 
 let dataCollectingController = {};
 
@@ -260,6 +261,25 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
     .catch((e) => console.log('Error when forcing sync for device '
       +`'${req.params.id}' after saving data its collecting parameters.\n`, e)))
   .catch((e) => sendErrorResponse(res, e));
-}
+};
+
+dataCollectingController.getConfig = function(req, res) {
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+      return res.status(200).json({
+        data_collecting_is_active: matchedConfig.data_collecting.is_active,
+        data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
+        data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
+        data_collecting_ping_packets:
+          matchedConfig.data_collecting.ping_packets,
+      });
+    } else {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro ao obter parâmetros de coleta de dados',
+      });
+    }
+  });
+};
 
 module.exports = dataCollectingController;
