@@ -8,6 +8,5 @@
         "node": true,
         "es6": true,
         "jquery": true
-    },
-    "require-jsdoc": false
+    }
 }

@@ -138,6 +138,20 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
+      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+    },
+    port_mapping: {
+      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
+      enable: 'PortMappingEnabled',
+      lease: 'PortMappingLeaseDuration',
+      external_port_start: 'ExternalPort',
+      external_port_end: '',
+      internal_port_start: 'InternalPort',
+      internal_port_end: '',
+      protocol: 'PortMappingProtocol',
+      client: 'InternalClient',
+      description: 'PortMappingDescription',
+      remote_host: 'RemoteHost',
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -187,12 +201,12 @@ const getHuaweiFields = function() {
 
 const getZTEFields = function(model) {
   let fields = getDefaultFields();
-
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
@@ -203,6 +217,7 @@ const getZTEFields = function(model) {
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       break;
   }
+  fields.port_mapping.external_port_end = 'ExternalPortEndRange';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   return fields;
@@ -278,6 +293,20 @@ const getModelFields = function(oui, model) {
   };
 };
 
+const getProtocolByModel = function(model) {
+  let ret = '';
+  switch (model) {
+    case 'ZXHN H198A V3.0':
+    case 'ZXHN%20H198A%20V3%2E0':
+      ret = 'BOTH';
+      break;
+    default:
+      ret = 'TCP AND UDP';
+      break;
+  }
+  return ret;
+};
+
 const getDeviceFields = function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.oui || !params.model) {
@@ -346,5 +375,6 @@ const syncDeviceData = function(args, callback) {
 
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
+exports.getProtocolByModel = getProtocolByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
