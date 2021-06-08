@@ -79,6 +79,49 @@ block content
               )
               .invalid-feedback Insira uma porta válida
 
+          h5.card-header.primary-color.white-text(
+            data-toggle="collapse",
+            data-target="#technicianapp",
+            style="cursor: pointer"
+          )
+            .row
+              .col-1
+                .fas.fa-chevron-down
+              .col-10.text-center
+                span.card-title Configurações para App do Técnico
+
+          #technicianapp.card-body.collapse.out
+            .md-form.input-entry
+              label Valor de alerta amarelo do sinal óptico (dBm)
+              input#pon-signal-threshold.form-control(
+                type="number",
+                name="pon-signal-threshold",
+                min=-100,
+                max=100,
+                value=-18
+              )
+              .invalid-feedback Insira um número em dBm válido
+            .md-form.input-entry
+              label Valor de alerta vermelho do sinal óptico (dBm)
+              input#pon-signal-threshold-critical.form-control(
+                type="number",
+                name="pon-signal-threshold-critical",
+                min=-100,
+                max=100,
+                value=-23
+              )
+              .invalid-feedback Insira um número em dBm válido
+            .md-form.input-entry
+              label Valor de alerta vermelho do sinal óptico elevado (dBm)
+              input#pon-signal-threshold-critical-high.form-control(
+                type="number",
+                name="pon-signal-threshold-critical-high",
+                min=-100,
+                max=100,
+                value=3
+              )
+              .invalid-feedback Insira um número em dBm válido
+
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
               data-toggle="collapse",
@@ -137,14 +180,14 @@ block content
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
                 .col-6
                   .md-form.input-entry
-                    label Login para a interface web das ONUs
+                    label Login para a interface web das CPEs
                     input#onu-web-login.form-control(
                       type="text",
                       name="onu-web-login"
                     )
                     .invalid-feedback Insira um login válido
                   .md-form.input-entry
-                    label Senha para a interface web das ONUs
+                    label Senha para a interface web das CPEs
                     input#onu-web-password.form-control(
                       type="text",
                       name="onu-web-password"
