@@ -57,7 +57,7 @@ module.exports = {
       './public/javascripts/new_device.js',
       './public/javascripts/edit_device.js',
       './public/javascripts/edit_device_firewall.js',
-      './public/javascripts/port_forward_onu.js',
+      './public/javascripts/port_forward_tr069.js',
       './public/javascripts/show_devices_logs_actions.js',
       './public/javascripts/show_ping_test_actions.js',
       './public/javascripts/show_speed_test_actions.js',

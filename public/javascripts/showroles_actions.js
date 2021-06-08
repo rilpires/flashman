@@ -467,7 +467,7 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Monitorar a Ferramenta de Medições'),
+                        .text('Configuração de parâmetros do TR-069'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-monitor-manage').append(

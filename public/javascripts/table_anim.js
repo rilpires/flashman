@@ -1184,8 +1184,8 @@ $(document).ready(function() {
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
-          let portForwardOnuAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-onu-modal')
+          let portForwardTr069Action = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-tr069-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
@@ -1252,7 +1252,7 @@ $(document).ready(function() {
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (isTR069 && !device.bridge_mode_enabled && grantPortForward) {
-            sideMenu[idxMenu] += portForwardOnuAction;
+            sideMenu[idxMenu] += portForwardTr069Action;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && grantPingTest) {
