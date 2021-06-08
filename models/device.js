@@ -96,6 +96,13 @@ let deviceSchema = new Schema({
       'none', // never asked
     ]},
   }],
+  port_mapping: [{
+    ip: String,
+    external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    internal_port_start: {type: Number, required: true, min: 1, max: 65535},
+    internal_port_end: {type: Number, required: true, min: 1, max: 65535},
+  }],
   ap_survey: [{
     mac: String,
     ssid: String,
@@ -151,6 +158,7 @@ let deviceSchema = new Schema({
   last_site_survey: Date,
   last_devices_refresh: Date,
   last_contact: Date,
+  last_contact_daily: Date,
   last_hardreset: Date,
   do_update: Boolean,
   do_update_parameters: Boolean,

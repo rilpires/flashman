@@ -16,6 +16,7 @@ const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
+const crypto = require('crypto');
 
 let deviceListController = {};
 
@@ -1839,9 +1840,251 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
+deviceListController.checkOverlappingPorts = function(rules) {
+  let i;
+  let j;
+  let ipI;
+  let ipJ;
+  let exStart;
+  let exEnd;
+  let inStart;
+  let inEnd;
+  if (rules.length > 1) {
+    for (i = 0; i < rules.length; i++) {
+      ipI = rules[i].ip;
+      exStart = rules[i].external_port_start;
+      exEnd = rules[i].external_port_end;
+      inStart = rules[i].internal_port_start;
+      inEnd = rules[i].internal_port_end;
+      for (j = i+1; j < rules.length; j++) {
+        ipJ = rules[j].ip;
+        let port = rules[j].external_port_start;
+        if (port >= exStart && port <= exEnd) {
+          return true;
+        }
+        port = rules[j].external_port_end;
+        if (port >= exStart && port <= exEnd) {
+          return true;
+        }
+        port = rules[j].internal_port_start;
+        if (ipI == ipJ && port >= inStart && port <= inEnd) {
+          return true;
+        }
+        port = rules[j].internal_port_end;
+        if (ipI == ipJ && port >= inStart && port <= inEnd) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+/*
+Function to check if exists rules that are not compatible to the device:
+  Returns true case exist a rule that is not possible to do in the device;
+  False if is all clean;
+*/
+deviceListController.checkIncompatibility = function(rules, compatibility) {
+  let ret = false;
+  let i;
+  let exStart;
+  let exEnd;
+  let inStart;
+  let inEnd;
+  for (i = 0; i < rules.length; i++) {
+    exStart = rules[i].external_port_start;
+    exEnd = rules[i].external_port_end;
+    inStart = rules[i].internal_port_start;
+    inEnd = rules[i].internal_port_end;
+    if (!compatibility.simpleSymmetric) {
+      if (exStart == exEnd && inStart == inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.simpleAsymmetric) {
+      if (exStart != inStart && exEnd != inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.rangeSymmetric) {
+      if (exStart != exEnd && inStart != inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.rangeAsymmetric) {
+      if (exStart != inStart && exEnd != inEnd &&
+         exStart != exEnd && inStart != inEnd) {
+        ret = true;
+      }
+    }
+  }
+  return ret;
+};
+
+deviceListController.setPortForwardTr069 = async function(device, content) {
+  let i;
+  let j;
+  let rules;
+  let isOnSubnetRange;
+  let isPortsNumber;
+  let isPortsOnRange;
+  let isPortsNotEmpty;
+  let isRangeOfSameSize;
+  let isRangeNegative;
+  let isJsonInFormat;
+  let portToCheck;
+  let portsValues;
+  let firstSlice;
+  let secondSlice;
+  let diffPortForwardLength;
+  let ret = {};
+  try {
+    rules = JSON.parse(content);
+  } catch (e) {
+    console.log(e.message);
+    ret.success = false;
+    ret.message = 'Não é um JSON';
+    return ret;
+  }
+
+  // verify well formation of rules object
+  if (Array.isArray(rules)) {
+    isJsonInFormat = rules.every((r) => {
+      return !!r.ip &&
+       !!r.external_port_start &&
+       !!r.external_port_end &&
+       !!r.internal_port_start &&
+       !!r.internal_port_end;
+    });
+  } else {
+    isJsonInFormat = false;
+  }
+  if (!isJsonInFormat) {
+    ret.success = false;
+    ret.message = 'JSON fora do formato';
+    return ret;
+  }
+  for (i = 0; i < rules.length; i++) {
+    isPortsNumber = true;
+    isPortsOnRange = true;
+    isPortsNotEmpty = true;
+    isRangeOfSameSize = true;
+    isRangeNegative = true;
+    portsValues = [];
+    portsValues[0] = rules[i].external_port_start;
+    portsValues[1] = rules[i].external_port_end;
+    portsValues[2] = rules[i].internal_port_start;
+    portsValues[3] = rules[i].internal_port_end;
+    // verify if the given ip is on subnet range
+    let validator = new Validator();
+    isOnSubnetRange = validator.checkAddressSubnetRange(
+      device.lan_subnet,
+      rules[i].ip,
+      device.lan_netmask,
+    );
+    // verify if is number, empty, on 2^16 range,
+    for (j = 0; j < 4; j++) {
+      portToCheck = portsValues[j];
+      if (portToCheck == '') {
+        isPortsNotEmpty = false;
+      } else if (isNaN(parseInt(portToCheck))) {
+        isPortsNumber = false;
+      } else if (!(parseInt(portToCheck) >= 1 &&
+                   parseInt(portToCheck) <= 65535 &&
+                   parseInt(portToCheck) != 22 &&
+                   parseInt(portToCheck) != 23 &&
+                   parseInt(portToCheck) != 80 &&
+                   parseInt(portToCheck) != 443 &&
+                   parseInt(portToCheck) != 7547 &&
+                   parseInt(portToCheck) != 58000)) {
+        isPortsOnRange = false;
+      }
+    }
+    if (!isPortsNumber) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+': As portas devem ser números';
+      return ret;
+    }
+    // verify if range is on same size and start/end order
+    firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
+    secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
+    if (firstSlice != secondSlice) {
+      isRangeOfSameSize = false;
+    }
+    if (firstSlice < 0 || secondSlice < 0) {
+      isRangeNegative = false;
+    }
+    if (!isPortsOnRange) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+
+        ': As portas devem estar na faixa entre 1 - 65535 (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)';
+      return ret;
+    }
+    if (!isPortsNotEmpty) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+': Os campos devem ser preenchidos';
+      return ret;
+    }
+    if (!isRangeOfSameSize) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+
+        ': As faixas de portas são de tamanhos diferentes';
+      return ret;
+    }
+    if (!isRangeNegative) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+
+        ': As faixas de portas estão com limites invertidos';
+      return ret;
+    }
+    if (!isOnSubnetRange) {
+      ret.success = false;
+      ret.message = ''+rules[i].ip+' está fora da faixa de subrede';
+      return ret;
+    }
+  }
+  // check overlapping port mapping
+  if (deviceListController.checkOverlappingPorts(rules)) {
+    ret.success = false;
+    ret.message = 'Possui mapeamento sobreposto';
+    return ret;
+  }
+  // check compatibility in mode of port mapping
+  if (deviceListController.checkIncompatibility(rules, DeviceVersion.
+  getPortForwardTr069Compatibility(device.version))) {
+    ret.success = false;
+    ret.message = 'Possui regra não compatível';
+    return ret;
+  }
+  // get the difference of length between new entries and old entries
+  diffPortForwardLength = rules.length - device.port_mapping.length;
+  // passed by validations, json is clean to put in the document
+  device.port_mapping = rules;
+  // push a hash from rules json
+  device.forward_index = crypto.createHash('md5').
+  update(JSON.stringify(content)).digest('base64');
+  await device.save(function(err) {
+    let ret = {};
+    if (err) {
+      console.log('Error Saving Port Forward: '+err);
+      ret.success = false;
+      ret.message = 'Erro ao salvar regras no servidor';
+      return ret;
+    }
+    // geniacs-api call
+    acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
+  });
+  ret.success = true;
+  ret.message = 'Mapeamento de portas no dispositivo '+
+    device.acs_id+
+    ' salvo com sucesso';
+  return ret;
+};
+
 deviceListController.setPortForward = function(req, res) {
   DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
         success: false,
@@ -1855,7 +2098,8 @@ deviceListController.setPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -1869,163 +2113,174 @@ deviceListController.setPortForward = function(req, res) {
                  'liberar acesso a portas',
       });
     }
-
-    console.log('Updating Port Forward for ' + matchedDevice._id);
-    if (util.isJsonString(req.body.content)) {
-      let content = JSON.parse(req.body.content);
-
-      let usedAsymPorts = [];
-
-      content.forEach((r) => {
-        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-
-        if (!r.hasOwnProperty('mac') ||
-            !r.hasOwnProperty('dmz') ||
-            !r.mac.match(macRegex)) {
-          return res.status(200).json({
-            success: false,
-            message: 'Dados de Endereço MAC do Dispositivo Invalidos No JSON',
-          });
-        }
-
-        if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-          !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
-        ) {
-          return res.status(200).json({
-            success: false,
-            message: 'Portas Internas de Dispositivo invalidas no JSON',
-          });
-        }
-
-        let localPorts = r.port.map((p) => parseInt(p));
-          // Get unique port set
-        let localUniquePorts = [...new Set(localPorts)];
-
-        if (r.hasOwnProperty('router_port')) {
-          if (!permissions.grantPortForwardAsym) {
-            return res.status(200).json({
-              success: false,
-              message: 'Roteador não aceita portas assimétricas',
-            });
-          }
-
-          if (!Array.isArray(r.router_port) ||
-            !(r.router_port.map((p) => parseInt(p)).every(
-                (p) => (p >= 1 && p <= 65535)
-              )
-            )
-          ) {
-            return res.status(200).json({
-              success: false,
-              message: 'Portas Externas invalidas no JSON',
-            });
-          }
-
-          let localAsymPorts = r.router_port.map((p) => parseInt(p));
-          // Get unique port set
-          let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-          if (localUniqueAsymPorts.length != localAsymPorts.length) {
-            return res.status(200).json({
-              success: false,
-              message: 'Portas Externas Repetidas no JSON',
-            });
-          }
-
-          if (localUniqueAsymPorts.length != localUniquePorts.length) {
-            return res.status(200).json({
-              success: false,
-              message: 'Portas Internas e Externas não conferem no JSON',
-            });
-          }
-
-          if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
-          ) {
-            return res.status(200).json({
-              success: false,
-              message: 'Portas Externas Repetidas no JSON',
-            });
-          }
-
-          usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
-        } else {
-          if (!(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))) {
-            return res.status(200).json({
-              success: false,
-              message: 'Portas Externas Repetidas no JSON',
-            });
-          }
-          usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
-        }
-      });
-
-      // If we get here, all is validated!
-
-      // Remove all old firewall rules
-      for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-        if (matchedDevice.lan_devices[idx].port.length > 0) {
-          matchedDevice.lan_devices[idx].port = [];
-          matchedDevice.lan_devices[idx].router_port = [];
-          matchedDevice.lan_devices[idx].dmz = false;
-        }
-      }
-
-      // Update with new ones
-      content.forEach((r) => {
-        let newRuleMac = r.mac.toLowerCase();
-        let portsArray = r.port.map((p) => parseInt(p));
-        portsArray = [...new Set(portsArray)];
-        let portAsymArray = [];
-
-        if (r.hasOwnProperty('router_port')) {
-          portAsymArray = r.router_port.map((p) => parseInt(p));
-          portAsymArray = [...new Set(portAsymArray)];
-        }
-
-        let newLanDevice = true;
-        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-          if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
-            matchedDevice.lan_devices[idx].port = portsArray;
-            matchedDevice.lan_devices[idx].router_port = portAsymArray;
-            matchedDevice.lan_devices[idx].dmz = r.dmz;
-            matchedDevice.lan_devices[idx].last_seen = Date.now();
-            newLanDevice = false;
-            break;
-          }
-        }
-        if (newLanDevice) {
-          matchedDevice.lan_devices.push({
-            mac: newRuleMac,
-            port: portsArray,
-            router_port: portAsymArray,
-            dmz: r.dmz,
-            first_seen: Date.now(),
-            last_seen: Date.now(),
-          });
-        }
-      });
-
-      matchedDevice.forward_index = Date.now();
-
-      matchedDevice.save(function(err) {
-        if (err) {
-          console.log('Error Saving Port Forward: '+err);
-          return res.status(200).json({
-            success: false,
-            message: 'Erro salvando regras no servidor',
-          });
-        }
-        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-        return res.status(200).json({
-          success: true,
-          message: '',
-        });
-      });
-    } else {
+    // tr-069 routers
+    if (matchedDevice.use_tr069) {
+      let result = await deviceListController.
+      setPortForwardTr069(matchedDevice,
+        req.body.content);
       return res.status(200).json({
-        success: false,
-        message: 'Erro ao tratar JSON',
+        success: result.success,
+        message: result.message,
       });
+    // vanilla routers
+    } else {
+      console.log('Updating Port Forward for ' + matchedDevice._id);
+      if (util.isJsonString(req.body.content)) {
+        let content = JSON.parse(req.body.content);
+
+        let usedAsymPorts = [];
+
+        content.forEach((r) => {
+          let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+
+          if (!r.hasOwnProperty('mac') ||
+              !r.hasOwnProperty('dmz') ||
+              !r.mac.match(macRegex)) {
+            return res.status(200).json({
+              success: false,
+              message: 'Dados de Endereço MAC do Dispositivo Invalidos No JSON',
+            });
+          }
+
+          if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
+            !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: 'Portas Internas de Dispositivo invalidas no JSON',
+            });
+          }
+
+          let localPorts = r.port.map((p) => parseInt(p));
+            // Get unique port set
+          let localUniquePorts = [...new Set(localPorts)];
+
+          if (r.hasOwnProperty('router_port')) {
+            if (!permissions.grantPortForwardAsym) {
+              return res.status(200).json({
+                success: false,
+                message: 'Roteador não aceita portas assimétricas',
+              });
+            }
+
+            if (!Array.isArray(r.router_port) ||
+              !(r.router_port.map((p) => parseInt(p)).every(
+                  (p) => (p >= 1 && p <= 65535)
+                )
+              )
+            ) {
+              return res.status(200).json({
+                success: false,
+                message: 'Portas Externas invalidas no JSON',
+              });
+            }
+
+            let localAsymPorts = r.router_port.map((p) => parseInt(p));
+            // Get unique port set
+            let localUniqueAsymPorts = [...new Set(localAsymPorts)];
+            if (localUniqueAsymPorts.length != localAsymPorts.length) {
+              return res.status(200).json({
+                success: false,
+                message: 'Portas Externas Repetidas no JSON',
+              });
+            }
+
+            if (localUniqueAsymPorts.length != localUniquePorts.length) {
+              return res.status(200).json({
+                success: false,
+                message: 'Portas Internas e Externas não conferem no JSON',
+              });
+            }
+
+            if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
+            ) {
+              return res.status(200).json({
+                success: false,
+                message: 'Portas Externas Repetidas no JSON',
+              });
+            }
+
+            usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
+          } else {
+            if (!(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))) {
+              return res.status(200).json({
+                success: false,
+                message: 'Portas Externas Repetidas no JSON',
+              });
+            }
+            usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
+          }
+        });
+
+        // If we get here, all is validated!
+
+        // Remove all old firewall rules
+        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+          if (matchedDevice.lan_devices[idx].port.length > 0) {
+            matchedDevice.lan_devices[idx].port = [];
+            matchedDevice.lan_devices[idx].router_port = [];
+            matchedDevice.lan_devices[idx].dmz = false;
+          }
+        }
+
+        // Update with new ones
+        content.forEach((r) => {
+          let newRuleMac = r.mac.toLowerCase();
+          let portsArray = r.port.map((p) => parseInt(p));
+          portsArray = [...new Set(portsArray)];
+          let portAsymArray = [];
+
+          if (r.hasOwnProperty('router_port')) {
+            portAsymArray = r.router_port.map((p) => parseInt(p));
+            portAsymArray = [...new Set(portAsymArray)];
+          }
+
+          let newLanDevice = true;
+          for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+            if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
+              matchedDevice.lan_devices[idx].port = portsArray;
+              matchedDevice.lan_devices[idx].router_port = portAsymArray;
+              matchedDevice.lan_devices[idx].dmz = r.dmz;
+              matchedDevice.lan_devices[idx].last_seen = Date.now();
+              newLanDevice = false;
+              break;
+            }
+          }
+          if (newLanDevice) {
+            matchedDevice.lan_devices.push({
+              mac: newRuleMac,
+              port: portsArray,
+              router_port: portAsymArray,
+              dmz: r.dmz,
+              first_seen: Date.now(),
+              last_seen: Date.now(),
+            });
+          }
+        });
+
+        matchedDevice.forward_index = Date.now();
+
+        matchedDevice.save(function(err) {
+          if (err) {
+            console.log('Error Saving Port Forward: '+err);
+            return res.status(200).json({
+              success: false,
+              message: 'Erro salvando regras no servidor',
+            });
+          }
+          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+          return res.status(200).json({
+            success: true,
+            message: '',
+          });
+        });
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: 'Erro ao tratar JSON',
+        });
+      }
     }
   });
 };
@@ -2046,11 +2301,20 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
         message: 'Roteador não possui essa função',
+      });
+    }
+
+    if (matchedDevice.use_tr069) {
+      return res.status(200).json({
+        success: true,
+        content: matchedDevice.port_mapping,
+        compatibility: DeviceVersion.
+        getPortForwardTr069Compatibility(matchedDevice.version),
       });
     }
 

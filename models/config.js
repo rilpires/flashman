@@ -78,6 +78,9 @@ let configSchema = new mongoose.Schema({
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},
+  androidLink: {type: String, default: ''},
+  iosLink: {type: String, default: ''},
+  personalizationHash: {type: String, default: ''},
   vlans_profiles: [{
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095},

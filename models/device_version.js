@@ -117,6 +117,31 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
+const portForwardTr069CompatibleModels = [
+ 'F670L',
+ 'ZXHN H198A V3.0',
+];
+const portForwardTr069CompatibleVersions = {
+ 'V1.1.20P3N3': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C5_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C6_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
+};
+
 /*
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wdr3500-v1~diffconfig (lshift=0, inverted=1, vlan=0)
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wr740n-v4~diffconfig (lshift=1, inverted=0, vlan=0)
@@ -909,9 +934,12 @@ const grantResetDevices = function(version) {
   }
 };
 
-const grantPortForward = function(version) {
+const grantPortForward = function(version, model) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.10.0') >= 0);
+  } else if (!portForwardTr069CompatibleModels.includes(model) ||
+    portForwardTr069CompatibleVersions[version] === undefined) {
+    return false;
   } else {
     // Development version, enable everything by default
     return true;
@@ -1141,7 +1169,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
-  result.grantPortForward = grantPortForward(version);
+  result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
@@ -1200,6 +1228,10 @@ DeviceVersion.getVlanCompatible = function() {
   let vlanCompatible = Object.fromEntries(
     Object.entries(dictDevices).filter(([k, device]) => device.vlan_support));
   return Object.keys(vlanCompatible);
+};
+
+DeviceVersion.getPortForwardTr069Compatibility = function(version) {
+  return portForwardTr069CompatibleVersions[version];
 };
 
 module.exports = DeviceVersion;
