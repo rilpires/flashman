@@ -113,6 +113,45 @@
                 )
                 .invalid-feedback Insira uma quantidade válida
                 br
+                .input-entry
+                label Valor de alerta do sinal óptico
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold",
+                  id="pon-signal-threshold",
+                  min=-100,
+                  max=100,
+                  value=-15,
+                  placeholder="-15"
+                )
+                .invalid-feedback Insira uma quantidade válida
+                br
+                .input-entry
+                label Valor de alerta do sinal óptico critico
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold-critical",
+                  id="pon-signal-threshold-critical",
+                  min=-100,
+                  max=100,
+                  value=-30,
+                  placeholder="-15"
+                )
+                .invalid-feedback Insira uma quantidade válida
+                br
+                .input-entry
+                label Valor de alerta do sinal óptico critico de alto sinal
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold-critical-high",
+                  id="pon-signal-threshold-critical-high",
+                  min=-100,
+                  max=100,
+                  value=3,
+                  placeholder="3"
+                )
+                .invalid-feedback Insira uma quantidade válida
+                br
                 table
                   tr
                     td(style='vertical-align: top;')

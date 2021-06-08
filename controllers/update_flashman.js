@@ -471,6 +471,9 @@ updateController.getAutoConfig = function(req, res) {
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
+        pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
+        pon_signal_threshold_critical: matchedConfig.tr069.pon_signal_threshold_critical,
+        pon_signal_threshold_critical_high: matchedConfig.tr069.pon_signal_threshold_critical_high,
         data_collecting_is_active: matchedConfig.data_collecting.is_active,
         data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
         data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
@@ -552,8 +555,43 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
-    let message = 'Salvo com sucesso!';
 
+    let ponSignalThreshold = parseInt(req.body['pon-signal-threshold']);
+    if (isNaN(ponSignalThreshold)) {
+      ponSignalThreshold = config.tr069.pon_signal_threshold;
+    }
+    if (ponSignalThreshold && (ponSignalThreshold < -100 || ponSignalThreshold > 100)) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      })
+    }
+    config.tr069.pon_signal_threshold = ponSignalThreshold;
+
+    let ponSignalThresholdCritical = parseInt(req.body['pon-signal-threshold-critical']);
+    if (isNaN(ponSignalThresholdCritical)) {
+      ponSignalThresholdCritical = config.tr069.pon_signal_threshold_critical;
+    }
+    if (ponSignalThresholdCritical && (ponSignalThresholdCritical < -100 || ponSignalThresholdCritical > 100)) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      })
+    }
+    config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
+
+    let ponSignalThresholdCriticalHigh = parseInt(req.body['pon-signal-threshold-critical-high']);
+    if (isNaN(ponSignalThresholdCriticalHigh)) {
+      ponSignalThresholdCriticalHigh = config.tr069.pon_signal_threshold;
+    }
+    if (ponSignalThresholdCriticalHigh && (ponSignalThresholdCriticalHigh < -100 || ponSignalThresholdCriticalHigh > 100)) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      })
+    }
+    config.tr069.pon_signal_threshold_critical_high = ponSignalThresholdCriticalHigh;
+    let message = 'Salvo com sucesso!';
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -599,6 +637,9 @@ updateController.setAutoConfig = async function(req, res) {
         inform_interval: tr069InformInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
         offline_threshold: tr069OfflineThreshold,
+        pon_signal_threshold: ponSignalThreshold,
+        pon_signal_threshold_critical: ponSignalThresholdCritical,
+        pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
