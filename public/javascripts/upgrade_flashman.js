@@ -204,6 +204,18 @@ $(document).ready(function() {
       $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
       $('#measure-server-ip').val(resp.measureServerIP);
       $('#measure-server-port').val(resp.measureServerPort);
+      if (resp.pon_signal_threshold) {
+        $('#pon-signal-threshold')
+          .val(resp.pon_signal_threshold);
+      }
+      if (resp.pon_signal_threshold_critical) {
+        $('#pon-signal-threshold-critical')
+          .val(resp.pon_signal_threshold_critical);
+      }
+      if (resp.pon_signal_threshold_critical_high) {
+        $('#pon-signal-threshold-critical-high')
+          .val(resp.pon_signal_threshold_critical_high);
+      }
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL);
       }
