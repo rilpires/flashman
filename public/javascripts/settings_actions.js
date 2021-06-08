@@ -111,6 +111,21 @@ $(document).ready(function() {
         $('#measure-server-port').val(resp.measureServerPort)
                                  .siblings('label').addClass('active');
       }
+      if (resp.pon_signal_threshold) {
+        $('#pon-signal-threshold')
+          .val(resp.pon_signal_threshold)
+          .siblings('label').addClass('active');
+      }
+      if (resp.pon_signal_threshold_critical) {
+        $('#pon-signal-threshold-critical')
+          .val(resp.pon_signal_threshold_critical)
+          .siblings('label').addClass('active');
+      }
+      if (resp.pon_signal_threshold_critical_high) {
+        $('#pon-signal-threshold-critical-high')
+          .val(resp.pon_signal_threshold_critical_high)
+          .siblings('label').addClass('active');
+      }
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL)
                               .siblings('label').addClass('active');
