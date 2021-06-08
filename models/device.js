@@ -210,6 +210,10 @@ let deviceSchema = new Schema({
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
+  user_interface: {
+    name: {type: String},
+    password: {type: String},
+  },
 });
 
 deviceSchema.set('autoIndex', false);

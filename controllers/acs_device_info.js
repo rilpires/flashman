@@ -397,6 +397,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.pon_txpower,
     );
   }
+  if (data.user_interface.name) {
+    device.user_interface.name = data.user_interface.name;
+  }
+  if (data.user_interface.password) {
+    device.user_interface.password = data.user_interface.password;
+  }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
   }
