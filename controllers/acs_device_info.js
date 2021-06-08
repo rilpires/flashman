@@ -1002,7 +1002,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       iterateTemplate
       +
       specFields.description,
-      '',
+      'Regra '+(i+1),
       'xsd:string',
     ]);
     updateTasks.parameterValues.push([
