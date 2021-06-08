@@ -252,7 +252,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
       }
-      let content = req.body;
       let targetMode = parseInt(req.body.mesh_mode);
       if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
         if (targetMode === 0 && device.mesh_slaves.length > 0) {
@@ -399,7 +398,6 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
       }
-      console.log(config);
       if (!device) {
         return res.status(200).json({
           'success': true,
