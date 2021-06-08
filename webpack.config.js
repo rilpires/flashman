@@ -50,6 +50,10 @@ module.exports = {
       './public/javascripts/upgrade_flashman.js',
       './public/javascripts/vlanprofile_actions.js',
     ],
+    settings: [
+      './public/src/common.index.js',
+      './public/javascripts/settings_actions.js',
+    ],
     index: [
       './public/src/common.index.js',
       './public/javascripts/upgrade_flashman.js',

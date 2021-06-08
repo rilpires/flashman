@@ -59253,12 +59253,10 @@ var __webpack_exports__ = {};
   !*** ./public/javascripts/upgrade_flashman.js ***!
   \************************************************/
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _common_actions_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./common_actions.js */ "./public/javascripts/common_actions.js");
-/* harmony import */ var jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! jquery-mask-plugin */ "./node_modules/jquery-mask-plugin/dist/jquery.mask.js");
-/* harmony import */ var jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jquery-mask-plugin */ "./node_modules/jquery-mask-plugin/dist/jquery.mask.js");
+/* harmony import */ var jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(jquery_mask_plugin__WEBPACK_IMPORTED_MODULE_0__);
 /* provided dependency */ var swal = __webpack_require__(/*! sweetalert2 */ "./node_modules/sweetalert2/dist/sweetalert2.all.js");
 /* provided dependency */ var $ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
-
 
 
 var forceUpdateFlashman = function forceUpdateFlashman() {
@@ -59355,132 +59353,24 @@ var checkUpdateFlashman = function checkUpdateFlashman() {
       }
     }
   });
-}; // assigning tr069 elements.
-
-
-var recoveryInput = document.getElementById('lost-informs-recovery-threshold');
-var recoveryErrorElement = document.getElementById('error-lost-informs-recovery-threshold');
-var offlineInput = document.getElementById('lost-informs-offline-threshold');
-var offlineErrorElement = document.getElementById('error-lost-informs-offline-threshold');
-var recoveryOfflineErrorElement = document.getElementById('error-recovery-offline-thresholds'); // resets errors and message styles for tr069 recovery and offline iputs.
-
-var resetRecoveryOfflineInputDependencyError = function resetRecoveryOfflineInputDependencyError() {
-  recoveryInput.setCustomValidity('');
-  offlineInput.setCustomValidity('');
-  recoveryOfflineErrorElement.style.display = 'none';
-  recoveryErrorElement.style.display = '';
-  offlineErrorElement.style.display = '';
-}; // sets custom validity message, hides error element of both recovery and
-// offline inputs and shows an error message that belongs to both input fields.
-
-
-var setRecoveryOfflineInputDependencyError = function setRecoveryOfflineInputDependencyError() {
-  // setting custom validity, which means inpute becomes invalid.
-  recoveryInput.setCustomValidity('recovery precisa ser menor que offline');
-  offlineInput.setCustomValidity('offline precisa ser maior que recovery'); // we report validity by showing a text right below the inputs and hide
-  // each input's individual error text message.
-
-  recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
-
-  offlineErrorElement.style.display = 'none'; // hidding offline's error.
-
-  recoveryOfflineErrorElement.style.display = 'block'; // showing error for both
-}; // will be called in every input after the first time save button is pressed.
-
-
-window.checkrecoveryOfflineInputDependency = function () {
-  // check if recovery value is bigger, or equal, to offline value.
-  if (Number(recoveryInput.value) >= Number(offlineInput.value)) {
-    setRecoveryOfflineInputDependencyError(); // set error message.
-  } else {
-    // if fields have valid values. we reset errors and message styles.
-    resetRecoveryOfflineInputDependencyError(); // reset error message.
-  }
-}; // called after save button is pressed.
-
-
-var configFlashman = function configFlashman(event) {
-  resetRecoveryOfflineInputDependencyError(); // reseting errors and message
-  // styles for recovery and offline inputs to default values.
-  // executing browser validation on all fields.
-
-  var allValid = $(this)[0].checkValidity(); // if browser validation is okay for recovery and offline threshold inputs,
-  // check for their values. if one value is not compatible with the other, set
-  // error message that belongs to both input fields.
-
-  if (recoveryInput.validity.valid && offlineInput.validity.valid && Number(recoveryInput.value) >= Number(offlineInput.value)) {
-    setRecoveryOfflineInputDependencyError(); // set error message.
-
-    allValid = false; // we won't send the configurations.
-  } // take action after validation is ready.
-
-
-  if (allValid) {
-    $.post($(this).attr('action'), $(this).serialize(), 'json').done(function (res) {
-      $('#config-flashman-menu').modal('hide').on('hidden.bs.modal', function () {
-        (0,_common_actions_js__WEBPACK_IMPORTED_MODULE_0__.displayAlertMsg)(res);
-        $('#config-flashman-menu').off('hidden.bs.modal');
-        setTimeout(function () {
-          window.location.reload();
-        }, 1000);
-      });
-    }).fail(function (jqXHR, textStatus, errorThrown) {
-      $('#config-flashman-menu').modal('hide').on('hidden.bs.modal', function () {
-        (0,_common_actions_js__WEBPACK_IMPORTED_MODULE_0__.displayAlertMsg)(JSON.parse(jqXHR.responseText));
-        $('#config-flashman-menu').off('hidden.bs.modal');
-      });
-    });
-  } else {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  $(this).addClass('was-validated');
-  return false;
 };
 
 $(document).ready(function () {
   $(document).on('click', '.update', checkUpdateFlashman);
-  $('#config-flashman-form').submit(configFlashman);
-  $('.ip-mask-field').mask('099.099.099.099'); // Load configuration options
-
+  $('.ip-mask-field').mask('099.099.099.099');
   $.ajax({
     type: 'GET',
-    url: '/upgrade/config',
+    url: '/data_collecting/config',
     success: function success(resp) {
-      $('#autoupdate').prop('checked', resp.auto).change();
-      $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe);
-      $('#measure-server-ip').val(resp.measureServerIP);
-      $('#measure-server-port').val(resp.measureServerPort);
-
-      if (resp.tr069ServerURL) {
-        $('#tr069-server-url').val(resp.tr069ServerURL);
-      }
-
-      if (resp.tr069WebLogin) {
-        $('#onu-web-login').val(resp.tr069WebLogin);
-      }
-
-      if (resp.tr069WebPassword) {
-        $('#onu-web-password').val(resp.tr069WebPassword);
-      }
-
-      if (resp.tr069WebRemote) {
-        $('#onu_web_remote').prop('checked', true).change();
-      }
-
-      $('#inform-interval').val(resp.tr069InformInterval);
-      $('#lost-informs-recovery-threshold').val(resp.tr069RecoveryThreshold);
-      $('#lost-informs-offline-threshold').val(resp.tr069OfflineThreshold);
-      var is_active = document.getElementById('data_collecting_service_is_active');
-      if (is_active) is_active.checked = resp.data_collecting_is_active || false;
-      var alarm_fqdn = document.getElementById('data_collecting_service_alarm_fqdn');
-      if (alarm_fqdn) alarm_fqdn.value = resp.data_collecting_alarm_fqdn || '';
-      var ping_fqdn = document.getElementById('data_collecting_service_ping_fqdn');
-      if (ping_fqdn) ping_fqdn.value = resp.data_collecting_ping_fqdn || '';
-      var ping_packets = document.getElementById('data_collecting_service_ping_packets');
-      if (ping_packets) ping_packets.value = resp.data_collecting_ping_packets;
-      [alarm_fqdn, ping_fqdn].forEach(function (input) {
+      var isActive = document.getElementById('data_collecting_service_is_active');
+      if (isActive) isActive.checked = resp.data_collecting_is_active || false;
+      var alarmFqdn = document.getElementById('data_collecting_service_alarm_fqdn');
+      if (alarmFqdn) alarmFqdn.value = resp.data_collecting_alarm_fqdn || '';
+      var pingFqdn = document.getElementById('data_collecting_service_ping_fqdn');
+      if (pingFqdn) pingFqdn.value = resp.data_collecting_ping_fqdn || '';
+      var pingPackets = document.getElementById('data_collecting_service_ping_packets');
+      if (pingPackets) pingPackets.value = resp.data_collecting_ping_packets;
+      [alarmFqdn, pingFqdn].forEach(function (input) {
         if (input && input.value !== '') input.previousElementSibling.classList.add('active');
       });
     }
