@@ -3,14 +3,10 @@ const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
 const commandExists = require('command-exists');
-const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 let Config = require('../models/config');
 let updateController = {};
-
-const returnStrOrEmptyStr = (query) =>
-    (typeof query === 'string') ? query : '';
 
 const isMajorUpgrade = function(target, current) {
   let targetMajor = parseInt(target.split('.')[0]);
