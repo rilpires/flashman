@@ -2,6 +2,8 @@ let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 
+const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-.*$/;
+
 const speedTestCompatibleModels = {
   'ACTIONRF1200V1': 100,
   'ACTIONRG1200V1': 200,
@@ -935,14 +937,21 @@ const grantResetDevices = function(version) {
 };
 
 const grantPortForward = function(version, model) {
-  if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.10.0') >= 0);
-  } else if (!portForwardTr069CompatibleModels.includes(model) ||
-    portForwardTr069CompatibleVersions[version] === undefined) {
-    return false;
-  } else {
-    // Development version, enable everything by default
+  if (portForwardTr069CompatibleModels.includes(model) &&
+    portForwardTr069CompatibleVersions[version] !== undefined) {
+    // Compatible TR-069 CPE
     return true;
+  } else {
+    if (version.match(versionRegex)) {
+      // Oficial Flashbox firmware
+      return (versionCompare(version, '0.10.0') >= 0);
+    } else if (version.match(devVersionRegex)) {
+      // Development version, enable everything by default
+      return true;
+    } else {
+      // Unknown device and or version
+      return false;
+    }
   }
 };
 
