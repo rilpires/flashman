@@ -961,6 +961,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
+      case 'upstatustr069':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1035,6 +1036,23 @@ deviceListController.sendMqttMsg = function(req, res) {
             slaves.forEach((slave)=>{
               mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
             });
+          }
+        } else if (msgtype === 'upstatustr069') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForUpStatusTr069Notification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForUpStatusTr069Notification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
+          }
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestUpStatus(device);
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to

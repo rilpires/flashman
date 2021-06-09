@@ -454,6 +454,11 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    let isTR069 = row.data('isTr069');
+    let upstatusCmd = 'upstatus';
+    if (isTR069) {
+      upstatusCmd += 'tr069';
+    }
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
@@ -466,7 +471,7 @@ $(document).ready(function() {
     if (!sysUptime.hasClass('pending-update') &&
         !wanUptime.hasClass('pending-update')) {
       $.ajax({
-        url: '/devicelist/command/' + deviceId + '/upstatus',
+        url: '/devicelist/command/' + deviceId + '/' + upstatusCmd,
         type: 'post',
         dataType: 'json',
         success: function(res) {
@@ -677,7 +682,7 @@ $(document).ready(function() {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave || isTR069) ? '' :
+    let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
@@ -2350,6 +2355,24 @@ $(document).ready(function() {
         });
         // Important: include and initialize socket.io first using socket var
         socket.on('UPSTATUS', function(macaddr, data) {
+          let row = $('[id="' + macaddr + '"]');
+          if (data.sysuptime) {
+            row.find('.device-sys-up-time')
+            .removeClass('grey-text pending-update')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.sysuptime)),
+            );
+          }
+          if (data.wanuptime) {
+            row.find('.device-wan-up-time')
+            .removeClass('grey-text pending-update')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.wanuptime)),
+            );
+          }
+        });
+        // Important: include and initialize socket.io first using socket var
+        socket.on('UPSTATUSTR069', function(macaddr, data) {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
