@@ -1087,6 +1087,7 @@ $(document).ready(function() {
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
           let rowAttr = buildRowData(device, index);
@@ -1277,7 +1278,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += dataCollectingAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (isTR069 && (isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+          if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
