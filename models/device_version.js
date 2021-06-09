@@ -122,7 +122,6 @@ const lanPorts = {
 const portForwardTr069CompatibleModels = [
  'F670L',
  'ZXHN H198A V3.0',
- 'HG8245Q2',
 ];
 
 const portForwardTr069CompatibleVersions = {
@@ -150,12 +149,6 @@ const portForwardTr069CompatibleVersions = {
   rangeSymmetric: true,
   rangeAsymmetric: false,
  },
- 'V3R017C10S100': {
-  simpleSymmetric: true,
-  simpleAsymmetric: true,
-  rangeSymmetric: true,
-  rangeAsymmetric: false,
-  },
 };
 
 const ponSignalTr069CompatibleModels = [
