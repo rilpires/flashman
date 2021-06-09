@@ -449,9 +449,9 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
     let isTR069 = row.data('isTr069');
-    let SIOMSG = 'upstatus';
+    let upstatusCmd = 'upstatus';
     if (isTR069) {
-      SIOMSG += 'tr069';
+      upstatusCmd += 'tr069';
     }
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
@@ -465,7 +465,7 @@ $(document).ready(function() {
     if (!sysUptime.hasClass('pending-update') &&
         !wanUptime.hasClass('pending-update')) {
       $.ajax({
-        url: '/devicelist/command/' + deviceId + '/' + SIOMSG,
+        url: '/devicelist/command/' + deviceId + '/' + upstatusCmd,
         type: 'post',
         dataType: 'json',
         success: function(res) {
