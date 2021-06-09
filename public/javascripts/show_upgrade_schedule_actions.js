@@ -1,3 +1,6 @@
+import Stepper from 'bs-stepper';
+import 'tempusdominus-bootstrap-4';
+
 let updateSearchResultsScheduler = function(result) {
   $('#allDevicesLabel').html(' ' + result.status.totalnum);
   let pageCount = $('#input-elements-pp option:selected').text();
@@ -617,3 +620,5 @@ $(document).ready(function() {
 
   $('#prev-config-panel').hide();
 });
+
+export {updateSearchResultsScheduler};

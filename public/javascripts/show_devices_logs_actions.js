@@ -1,3 +1,6 @@
+import {socket} from './common_actions.js';
+import 'jquery-highlight';
+import {ungzip} from 'pako';
 
 // Store log to be downloadable
 let logBodyRawContent = '';
@@ -11,7 +14,7 @@ socket.on('LIVELOG', function(macaddr, data) {
       let textarea = $('#logArea');
       if (textarea.text() == 'Aguardando resposta do roteador...') {
         let usrtypes = ['user', 'daemon', 'kern', 'local1', 'authpriv'];
-        let logContent = pako.ungzip(data, {to: 'string'});
+        let logContent = ungzip(data, {to: 'string'});
         // Store log to be downloadable
         logBodyRawContent = logContent;
         textarea.html('<code>' + logContent + '</code>');

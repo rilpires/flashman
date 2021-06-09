@@ -3,54 +3,28 @@ html
   head
     meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
     title Flashman
-
-    link(rel='stylesheet', href='/scripts/fontawesome/css/all.min.css')
-    link(rel='stylesheet', href='/stylesheets/custom-bootstrap.min.css')
-    link(rel='stylesheet', href='/scripts/tags-input/tags-input.css')
-    link(rel='stylesheet', href='/stylesheets/style.css')
     block stylesheets
 
   body
-    // Preloader
-    #preloader
-      #status &nbsp
+    //- Preloader
+    #preloader(style="background-color: #ffffff;" +
+                     "bottom: 0; left: 0; position: fixed;" +
+                     "right: 0; top: 0; z-index: 99;")
+      #status(style="background-image: url('/images/preloading.gif');" +
+                    "background-position: center;" +
+                    "background-repeat: no-repeat;" +
+                    "height: 200px; left: 50%; margin: -100px 0 0 -100px;" +
+                    "position: absolute; top: 50%; width: 200px;") &nbsp;
 
     include includes/navbar
     p.ml-2.mt-2.version-label #{appVersion}
-    .container
+    .container(
+      data-superuser=(superuser?"true":"false"),
+      data-major-upgrade=(majorUpdate?"true":"false"),
+      data-upgrade=(update?"true":"false"),
+    )
       include includes/flash
       include includes/alertsflashman
       block content
 
-    script(src='/scripts/jquery/jquery.min.js')
-    script(src='/scripts/jquery-mask/jquery.mask.min.js')
-    script(src='/scripts/popper/umd/popper.min.js')
-    script(src='/scripts/bootstrap/js/bootstrap.min.js')
-    script(src='/scripts/selectize/js/standalone/selectize.min.js')
-    script(src='/scripts/mdbootstrap/js/mdb.min.js')
-    script(src='/scripts/sweetalert2/sweetalert2.all.min.js')
-    script(src='/javascripts/common_actions.js')
-    script(src='/javascripts/upgrade_flashman.js')
-    script.
-      let message = '#{message}';
-      if (message) {
-        $('#frame-modal-alert').modal('show');
-      }
-      let superuser = '#{superuser}';
-      let update = '#{update}' === "true";
-      let majorUpdate = '#{majorUpdate}' === "true";
-      if (superuser && majorUpdate) {
-        alertMajorUpdateFlashman();
-      } else if (superuser && update && Math.random() < 0.3) {
-        alertUpdateFlashman();
-      }
-
     block scripts
-
-    // Preloader
-    script.
-      $(window).on('load', function() { // makes sure the whole site is loaded
-        $('#status').fadeOut(); // will first fade out the loading animation
-        $('#preloader').delay(350).fadeOut('slow');
-        $('body').delay(350).css({'overflow':'visible'});
-      })

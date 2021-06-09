@@ -1,11 +1,5 @@
 extends layout
 
-block stylesheets
-  link(rel='stylesheet', href='/scripts/tempusdominus/css/tempusdominus-bootstrap-4.min.css')
-  link(rel='stylesheet', href='/scripts/bs-stepper/css/bs-stepper.min.css')
-  // import style again because we need to override bs-stepper colors
-  link(rel='stylesheet', href='/stylesheets/style.css')
-
 block content
   include includes/showsearchterms
   include includes/showdevicelogs
@@ -202,30 +196,4 @@ block content
       span Não há informações disponíveis
 
 block scripts
-  script(src='/scripts/tags-input/tags-input.js')
-  script(src='/socket.io/socket.io.js')
-  script.
-    let socket = io()
-  script(src='/scripts/jquery-highlight/jquery.highlight.js')
-  script(src='/scripts/pako/pako.js')
-  script(src='/scripts/moment/moment.min.js')
-  script(src='/scripts/tempusdominus/js/tempusdominus-bootstrap-4.min.js')
-  script(src='/scripts/bs-stepper/js/bs-stepper.min.js')
-  script(src='/scripts/apexcharts/apexcharts.min.js')
-  script(src='/javascripts/device_validator.js')
-  script(src='/javascripts/new_device.js')
-  script(src='/javascripts/edit_device.js')
-  script(src='/javascripts/edit_device_firewall.js')
-  script(src='/javascripts/port_forward_tr069.js')
-  script(src='/javascripts/show_devices_logs_actions.js')
-  script(src='/javascripts/show_ping_test_actions.js')
-  script(src='/javascripts/show_speed_test_actions.js')
-  script(src='/javascripts/show_vlan_actions.js')
-  script(src='/javascripts/show_wan_bytes_actions.js')
-  script(src='/javascripts/show_pon_signal_actions.js')
-  script(src='/javascripts/show_lan_devices_actions.js')
-  script(src='/javascripts/show_site_survey_actions.js')
-  script(src='/javascripts/show_upgrade_schedule_actions.js')
-  script(src='/javascripts/show_data_collecting_actions.js')
-  script(src='/javascripts/update_device.js')
-  script(src='/javascripts/table_anim.js')
+  script(src='/dist/index.bundle.js')

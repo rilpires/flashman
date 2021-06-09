@@ -1,4 +1,10 @@
-/* eslint-disable max-len */
+import 'jquery-mask-plugin';
+import {tagsInput} from 'tags-input';
+import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
+import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
+import {displayAlertMsg,
+        secondsTimeSpanToHMS,
+        socket} from './common_actions.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -158,7 +164,7 @@ $(document).ready(function() {
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets
   // all classes after loading
-  $('.tags-input').addClass('form-control');
+  $('.tags-input').addClass('form-control').css('padding', '0');
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
@@ -2387,7 +2393,9 @@ $(document).ready(function() {
     });
   };
   // Initial table
-  loadDevicesTable();
+  if (window.location.href.indexOf('devicelist') !== -1) {
+    loadDevicesTable();
+  }
 
   $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-input').val();

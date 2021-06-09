@@ -1,3 +1,5 @@
+import 'jquery-mask-plugin';
+import Validator from './device_validator.js';
 
 let renderDeviceErrors = function(errors) {
   for (let key in errors) {

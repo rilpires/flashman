@@ -1,8 +1,5 @@
 extends layout
 
-block stylesheets
-  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
-
 block content
   .row.justify-content-center
     .col-12.col-lg-8.mt-5
@@ -263,4 +260,4 @@ block content
           tbody#roles-table-content
 
 block scripts
-  script(src='/javascripts/showroles_actions.js')
+  script(src='/dist/showroles.bundle.js')

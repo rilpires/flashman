@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+
 // assigning tr069 elements.
 let recoveryInput =
   document.getElementById('lost-informs-recovery-threshold');

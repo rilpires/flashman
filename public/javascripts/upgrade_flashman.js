@@ -1,3 +1,5 @@
+import 'jquery-mask-plugin';
+
 let forceUpdateFlashman = function() {
   swal({
     title: 'Atualizando Flashman...',
@@ -118,4 +120,12 @@ $(document).ready(function() {
       });
     },
   });
+  let isSuperuser = $('.container').data('superuser');
+  let hasUpgrade = $('.container').data('upgrade');
+  let hasMajorUpgrade = $('.container').data('major-upgrade');
+  if (isSuperuser && hasMajorUpgrade) {
+    alertMajorUpdateFlashman();
+  } else if (isSuperuser && hasUpgrade && Math.random() < 0.3) {
+    alertUpdateFlashman();
+  }
 });
