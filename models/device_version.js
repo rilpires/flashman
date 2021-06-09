@@ -124,6 +124,12 @@ const portForwardTr069CompatibleModels = [
  'ZXHN H198A V3.0',
 ];
 const portForwardTr069CompatibleVersions = {
+ 'V1.1.20P1T4': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
  'V1.1.20P3N3': {
   simpleSymmetric: true,
   simpleAsymmetric: true,
