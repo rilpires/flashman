@@ -566,6 +566,78 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
+const fetchUpStatusFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let upTimeField = fields.wan.uptime.replace('*', 1);
+  let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
+  let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+  let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
+  let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let query = {_id: acsID};
+  let projection = fields.common.uptime +
+      ',' + upTimeField +
+      ',' + upTimePPPField1 +
+      ',' + upTimePPPField2 +
+      ',' + PPPoEUser1 +
+      ',' + PPPoEUser2;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let sysUpTime = 0;
+    let wanUpTime = 0;
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let successSys = false;
+      let successWan = false;
+      if (checkForNestedKey(data, fields.common.uptime+'._value')) {
+        successSys = true;
+        sysUpTime = getFromNestedKey(data, fields.common.uptime+'._value');
+      }
+      if (checkForNestedKey(data, PPPoEUser1+'._value')) {
+        successWan = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser1+'._value');
+        if (hasPPPoE && checkForNestedKey(data, upTimePPPField1+'._value')) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField1+'._value');
+        }
+      } else if (checkForNestedKey(data, PPPoEUser2+'._value')) {
+        successWan = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser2+'._value');
+        if (hasPPPoE && checkForNestedKey(data, upTimePPPField2+'._value')) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField2+'._value');
+        }
+      } else {
+          successWan = true;
+          if (checkForNestedKey(data, upTimeField+'._value')) {
+            wanUpTime = getFromNestedKey(data, upTimeField+'._value');
+          }
+      }
+      if (successSys || successWan) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        deviceEdit.sys_up_time = sysUpTime;
+        deviceEdit.wan_up_time = wanUpTime;
+        await deviceEdit.save();
+      }
+      sio.anlixSendUpStatusTr069Notification(mac, {
+        sysuptime: sysUpTime,
+        wanuptime: wanUpTime,
+      });
+    });
+  });
+  req.end();
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -771,11 +843,38 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let sentField = fields.wan.sent_bytes;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [recvField, sentField],
+    parameterNames: [
+      recvField,
+      sentField,
+    ],
   };
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchWanBytesFromGenie(mac, acsID);
+  });
+};
+
+
+acsDeviceInfoController.requestUpStatus = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [
+      fields.common.uptime,
+      fields.wan.uptime,
+      fields.wan.uptime_ppp,
+      fields.wan.pppoe_user,
+    ],
+  };
+  TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchUpStatusFromGenie(mac, acsID);
   });
 };
 
