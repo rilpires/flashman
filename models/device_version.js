@@ -155,6 +155,7 @@ const ponSignalTr069CompatibleModels = [
  'F670L',
  'GONUAC001',
  'G-140W-C',
+ 'HG8245Q2',
 ];
 
 /*

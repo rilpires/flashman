@@ -488,7 +488,7 @@ diagAppAPIController.getTR069Config = async function(req, res) {
 };
 
 diagAppAPIController.configureWanOnu = async function(req, res) {
-    try {
+  try {
     // Make sure we have a mac/id to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
@@ -516,6 +516,41 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       // Apply changes to database and reply
       await device.save();
       return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+};
+
+diagAppAPIController.fetchOnuConfig = async function(req, res) {
+  try {
+    // Make sure we have a mac/id to verify in database
+    if (req.body.mac) {
+      // Fetch device from database - query depends on if it's ONU or not
+      let device;
+      if (req.body.isOnu && req.body.onuMac) {
+        device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu) {
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
+        if (devices.length > 0) {
+          device = devices[0];
+        }
+      } else {
+        device = await DeviceModel.findById(req.body.mac);
+      }
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      return res.status(200).json({
+        'success': true,
+        'pppoeUser': device.pppoe_user,
+        'pppoePass': device.pppoe_password,
+        'wifiPass': device.wifi_password,
+        'wifiPass5ghz': device.wifi_password_5ghz,
+      });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
     }
