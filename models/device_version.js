@@ -1,8 +1,8 @@
 let DeviceVersion = {};
 
-const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 
-const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-.*$/;
+const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const speedTestCompatibleModels = {
   'ACTIONRF1200V1': 100,
