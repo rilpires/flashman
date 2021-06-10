@@ -17,6 +17,8 @@ const convertDiagnostic = function(diagnostic) {
   return {
     wan: (diagnostic && diagnostic.wan === 0),
     tr069: (diagnostic && diagnostic.tr069 === 0),
+    pon: (diagnostic && 'pon' in diagnostic) ? diagnostic.pon : -1,
+    rxpower: (diagnostic && diagnostic.rxpower) ? diagnostic.rxpower : 0,
     ipv4: (diagnostic && diagnostic.ipv4 === 0),
     ipv6: (diagnostic && diagnostic.ipv6 === 0),
     dns: (diagnostic && diagnostic.dns === 0),
