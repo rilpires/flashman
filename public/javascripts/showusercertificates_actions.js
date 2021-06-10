@@ -91,6 +91,7 @@ const fetchCertification = function(id, name, timestamp) {
       if (cert.isOnu) {
         $('#router-data').hide();
         $('#onu-data').show();
+        $('#diagnostic-header-onu').show();
         $('#onu-serial').html('&nbsp;'+cert.mac);
         $('#onu-model').html('&nbsp;'+cert.routerModel);
         $('#onu-hardware').html('&nbsp;'+cert.routerVersion);
@@ -100,6 +101,7 @@ const fetchCertification = function(id, name, timestamp) {
       } else {
         $('#onu-data').hide();
         $('#router-data').show();
+        $('#diagnostic-header-router').show();
         $('#router-mac').html('&nbsp;'+cert.mac);
         $('#router-model').html('&nbsp;'+cert.routerModel);
         $('#router-version').html('&nbsp;'+cert.routerVersion);
