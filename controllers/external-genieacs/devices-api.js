@@ -173,7 +173,6 @@ const getDefaultFields = function() {
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
-    user_interface: {}
   };
 };
 

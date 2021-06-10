@@ -211,8 +211,8 @@ let deviceSchema = new Schema({
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
   user_interface: {
-    name: {type: String},
-    password: {type: String},
+    name: String,
+    password: String,
   },
 });
 
