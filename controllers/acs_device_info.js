@@ -398,10 +398,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     );
   }
   if (data.user_interface.name) {
-    device.user_interface.name = data.user_interface.name;
+    device.wan.name = data.wan.name;
   }
   if (data.user_interface.password) {
-    device.user_interface.password = data.user_interface.password;
+    device.wan.password = data.wan.password;
   }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
