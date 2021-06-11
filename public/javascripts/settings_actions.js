@@ -128,6 +128,15 @@ $(document).ready(function() {
           .val(resp.pon_signal_threshold_critical_high)
           .siblings('label').addClass('active');
       }
+      if (resp.isClientPayingPersonalizationApp) {
+        $('#is-ssid-prefix-enabled-div').
+          removeClass('d-none').
+          addClass('d-block');
+        $('#is-ssid-prefix-enabled').
+          prop('checked', resp.isSsidPrefixEnabled).change();
+        $('#ssid-prefix').val(resp.ssidPrefix)
+          .siblings('label').addClass('active');
+      }
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL)
                               .siblings('label').addClass('active');
@@ -158,5 +167,18 @@ $(document).ready(function() {
           .siblings('label').addClass('active');
       }
     },
+  });
+
+  // change prefix ssid input visibility
+  $('#is-ssid-prefix-enabled').on('change', (input) => {
+    if (input.target.checked) {
+      $('#ssid-prefix-div').
+        removeClass('d-none').
+        addClass('d-block');
+    } else {
+      $('#ssid-prefix-div').
+        removeClass('d-block').
+        addClass('d-none');
+    }
   });
 });
