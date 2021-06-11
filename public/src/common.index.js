@@ -1,7 +1,4 @@
-import 'bootstrap/js/src/modal';
-import 'bootstrap/js/src/collapse'; // Collapse animation
-import 'bootstrap/js/src/dropdown'; // Dropdown animation
-import 'bootstrap/js/src/tab'; // Tab animation
+import 'bootstrap/js/src/index'; // Bootstrap animations
 import 'mdbootstrap/js/mdb'; // MDB animations
 
 // Import styles
