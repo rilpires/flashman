@@ -472,6 +472,9 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
+        isClientPayingPersonalizationApp: !!matchedConfig.personalizationHash,
+        isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
+        ssidPrefix: matchedConfig.ssidPrefix,
       });
     } else {
       return res.status(200).json({
@@ -572,6 +575,9 @@ updateController.setAutoConfig = async function(req, res) {
       })
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
+
+    config.isSsidPrefixEnabled = (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+    config.ssidPrefix = req.body['ssid-prefix']; // validate!
 
     let ponSignalThresholdCriticalHigh = parseInt(req.body['pon-signal-threshold-critical-high']);
     if (isNaN(ponSignalThresholdCriticalHigh)) {
