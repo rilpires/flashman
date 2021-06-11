@@ -427,7 +427,6 @@ vlanController.updateVlans = async function(req, res) {
 
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
-  let is_a_vanilla_vlan_config = true;
 
   if (vlanObj === undefined) {
     vlanObj = '';
@@ -457,10 +456,6 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
 
       digestedVlans[aux_idx] = '';
-      // check if is a vanilla configuration of vlan
-      if (vlanObj[i].vlan_id != 1) {
-        is_a_vanilla_vlan_config = false;
-      }
     }
     // put on every key an append to the value as the matching port
     for (let i = 0; i < vlanObj.length; i++) {
