@@ -86,6 +86,8 @@ let configSchema = new mongoose.Schema({
     vlan_id: {type: Number, required: true, min: 1, max: 4095},
     profile_name: {type: String, required: true, match: /[A-Za-z0-9_-]/, maxLength: 32},
   }],
+  isSsidPrefixEnabled: {type: Boolean, default: false},
+  ssidPrefix: {type: String, default: ''},
 });
 
 let config = mongoose.model('config', configSchema);
