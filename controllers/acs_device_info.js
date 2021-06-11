@@ -781,8 +781,8 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
             macKey = macKey.replace('*', iface).replace('*', i);
-            let macVal = getFromNestedKey(data, macKey+'._value');
-            let device = devices.find((d)=>d.mac===macVal);
+            let macVal = getFromNestedKey(data, macKey+'._value').toUpperCase();
+            let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
             if (!device) continue;
             // Mark device as a wifi device
             device.wifi = true;

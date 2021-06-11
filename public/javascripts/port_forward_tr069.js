@@ -284,8 +284,27 @@ let removeSetOfPortMapping = function(input) {
 
 let removeAllPortMapping = function() {
   let portMappingTable = $('#port-forward-tr069-table');
+  // get needful variables
+  let deviceId = sessionStorage.getItem('deviceId');
+  let serialId = sessionStorage.getItem('serialId');
+  let model = sessionStorage.getItem('model');
+  let version = sessionStorage.getItem('version');
+  let lanSubnet = sessionStorage.getItem('lanSubnet');
+  let lanSubmask = sessionStorage.getItem('lanSubmask');
+  let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
+  // clean dom table and session storage
   portMappingTable.empty();
   sessionStorage.clear();
+  // return needful variables to session storage
+  sessionStorage.setItem('deviceId', deviceId);
+  sessionStorage.setItem('serialId', serialId);
+  sessionStorage.setItem('model', model);
+  sessionStorage.setItem('version', version);
+  sessionStorage.setItem('lanSubnet', lanSubnet);
+  sessionStorage.setItem('lanSubmask', lanSubmask);
+  sessionStorage.setItem('compatibility',
+            JSON.stringify(compatibility));
+
 };
 
 let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) {

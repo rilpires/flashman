@@ -192,10 +192,16 @@ const getDefaultFields = function() {
 
 const getHuaweiFields = function() {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
+  fields.port_mapping.external_port_end = 'ExternalPortEndRange';
   return fields;
 };
 
@@ -299,6 +305,9 @@ const getProtocolByModel = function(model) {
     case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
       ret = 'BOTH';
+      break;
+    case 'HG8245Q2':
+      ret = 'TCP/UDP';
       break;
     default:
       ret = 'TCP AND UDP';

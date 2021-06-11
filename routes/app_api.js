@@ -81,4 +81,10 @@ router.route('/diagnostic/certificate').post(
   diagAPIController.receiveCertification,
 );
 
+router.route('/diagnostic/getConfig').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.fetchOnuConfig,
+);
+
 module.exports = router;
