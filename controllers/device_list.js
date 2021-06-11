@@ -767,6 +767,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
+                  config: matchedConfig,
                 });
               });
             }, (error) => {
