@@ -189,7 +189,7 @@ scheduleController.recoverFromOffline = async function(config) {
     {'device_update_schedule.rule.in_progress_devices': {
       'mac': {'$in': pullArray},
     }},
-    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
+    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
   );
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
   setTimeout(async function() {
@@ -269,7 +269,7 @@ const markNextForUpdate = async function() {
           'slave_count': nextDevice.slave_count,
           'slave_updates_remaining': nextDevice.slave_count,
         },
-      }
+      },
     );
     mutexRelease();
     console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
@@ -406,7 +406,7 @@ scheduleController.successUpdate = async function(mac) {
             'slave_count': device.slave_count,
             'slave_updates_remaining': 0,
           },
-        }
+        },
       );
     }
   } catch (err) {
@@ -442,7 +442,7 @@ scheduleController.failedDownloadAck = async function(mac) {
           'slave_count': device.slave_count,
           'slave_updates_remaining': device.slave_updates_remaining,
         },
-      }
+      },
     );
   } catch (err) {
     console.log(err);
@@ -592,7 +592,7 @@ scheduleController.abortSchedule = async function(req, res) {
     await configQuery(
       setQuery,
       null,
-      {'device_update_schedule.rule.done_devices': {'$each': pushArray}}
+      {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
     // Remove do_update from in_progress devices
     rule.in_progress_devices.forEach(async (d) => {

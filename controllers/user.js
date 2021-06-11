@@ -85,7 +85,7 @@ userController.changeVisibleColumnsOnPage = function(req, res) {
 userController.postUser = function(req, res) {
   // 23 Chars is maximum allowed currently due to MQTT body message limitations
   if (req.body.name.length > 23) {
-    console.log('Error creating user: ' + err);
+    console.log('Error creating user');
     return res.json({
       success: false,
       type: 'danger',

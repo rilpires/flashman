@@ -22,8 +22,8 @@ let configSchema = new mongoose.Schema({
     inform_interval: {type: Number, required: true, default: 1*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
-    pon_signal_threshold: {type: Number, default: -15},
-    pon_signal_threshold_critical: {type: Number, default: -20},
+    pon_signal_threshold: {type: Number, default: -18},
+    pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
   },
   data_collecting: {

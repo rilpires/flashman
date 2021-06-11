@@ -68,10 +68,10 @@ const syncUpdateScheduler = async function(mac) {
     // Move from in progress to done, with status error
     let query = {
       '$set': {
-        'device_update_schedule.is_active': (doneLength+1 !== count)
+        'device_update_schedule.is_active': (doneLength+1 !== count),
       },
       '$pull': {
-        'device_update_schedule.rule.in_progress_devices': {'mac': mac}
+        'device_update_schedule.rule.in_progress_devices': {'mac': mac},
       },
       '$push': {
         'device_update_schedule.rule.done_devices': {

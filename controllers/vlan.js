@@ -160,7 +160,7 @@ vlanController.getAllVlanProfiles = function(req, res) {
 
 vlanController.addVlanProfile = async function(req, res) {
   let newVlanProfile = {vlan_id: req.body.id, profile_name: req.body.name};
-  
+
   // restricted to this range of value by the definition of 802.1q protocol
   // vlan 2 is restricted to wan
   if (newVlanProfile.vlan_id != 1 &&
@@ -346,8 +346,7 @@ vlanController.removeVlanProfile = async function(req, res) {
 
     config.vlans_profiles = config.vlans_profiles.filter(
       (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
-               !req.body.ids.includes(obj._id.toString())
-    );
+               !req.body.ids.includes(obj._id.toString()));
 
     config.save().then(function() {
       return res.json({
@@ -369,7 +368,8 @@ vlanController.getVlans = function(req, res) {
       return res.json({success: false, type: 'danger',
                        message: 'Erro ao encontrar dispositivo'});
     } else {
-      return res.json({success: true, type: 'success', vlan: matchedDevice.vlan});
+      return res.json({success: true,
+                       type: 'success', vlan: matchedDevice.vlan});
     }
   });
 };
@@ -386,8 +386,8 @@ vlanController.updateVlans = async function(req, res) {
     if (Array.isArray(req.body.vlans)) {
       for (let v of req.body.vlans) {
         if (v.port !== undefined && v.vlan_id !== undefined) {
-          // restricted to this range of value by the definition of 802.1q protocol
-          // vlan 2 is restricted to wan
+          // restricted to this range of value by the definition
+          // of 802.1q protocol vlan 2 is restricted to wan
           if (typeof v.port !== 'number' || v.port < 1 || v.port > 4 ||
               typeof v.vlan_id !== 'number' || v.vlan_id < 1 ||
               v.vlan_id > 4094 || v.vlan_id == 2) {
@@ -427,7 +427,6 @@ vlanController.updateVlans = async function(req, res) {
 
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
-  let is_a_vanilla_vlan_config = true;
 
   if (vlanObj === undefined) {
     vlanObj = '';
@@ -457,10 +456,6 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
 
       digestedVlans[aux_idx] = '';
-      // check if is a vanilla configuration of vlan
-      if (vlanObj[i].vlan_id != 1) {
-        is_a_vanilla_vlan_config = false;
-      }
     }
     // put on every key an append to the value as the matching port
     for (let i = 0; i < vlanObj.length; i++) {
@@ -614,7 +609,7 @@ vlanController.getMaxVid = function(req, res) {
     return res.json({
       success: true,
       type: 'success',
-      maxVids: maxVids
+      maxVids: maxVids,
     });
   } else {
     return res.status(500).json({
