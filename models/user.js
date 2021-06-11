@@ -37,6 +37,8 @@ let userSchema = new mongoose.Schema({
     diagnostic: {
       wan: {type: Boolean, default: false},
       tr069: {type: Boolean, default: false},
+      pon: {type: Number, default: -1},
+      rxpower: {type: Number, default: 0},
       ipv4: {type: Boolean, default: false},
       ipv6: {type: Boolean, default: false},
       dns: {type: Boolean, default: false},

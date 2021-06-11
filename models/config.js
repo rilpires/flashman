@@ -22,6 +22,9 @@ let configSchema = new mongoose.Schema({
     inform_interval: {type: Number, required: true, default: 1*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
+    pon_signal_threshold: {type: Number, default: -18},
+    pon_signal_threshold_critical: {type: Number, default: -23},
+    pon_signal_threshold_critical_high: {type: Number, default: 3},
   },
   data_collecting: {
     is_active: Boolean,
@@ -75,6 +78,9 @@ let configSchema = new mongoose.Schema({
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},
+  androidLink: {type: String, default: ''},
+  iosLink: {type: String, default: ''},
+  personalizationHash: {type: String, default: ''},
   vlans_profiles: [{
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095},

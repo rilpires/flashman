@@ -1,6 +1,8 @@
 let DeviceVersion = {};
 
-const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
+
+const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const speedTestCompatibleModels = {
   'ACTIONRF1200V1': 100,
@@ -117,6 +119,45 @@ const lanPorts = {
   'MAXLINKAC1200GV1': 3,
 };
 
+const portForwardTr069CompatibleModels = [
+ 'F670L',
+ 'ZXHN H198A V3.0',
+];
+
+const portForwardTr069CompatibleVersions = {
+ 'V1.1.20P1T4': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
+ 'V1.1.20P3N3': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C5_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
+ 'V3.0.0C6_MUL': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: false,
+ },
+};
+
+const ponSignalTr069CompatibleModels = [
+ 'F670L',
+ 'GONUAC001',
+ 'G-140W-C',
+ 'HG8245Q2',
+];
+
 /*
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wdr3500-v1~diffconfig (lshift=0, inverted=1, vlan=0)
 openwrt~v18.06.8-ANLIX~ar71xx~tl-wr740n-v4~diffconfig (lshift=1, inverted=0, vlan=0)
@@ -178,705 +219,705 @@ openwrt~v19.07.5-ANLIX~realtek~w51200f-v1~diffconfig (lshift=0, inverted=0, vlan
 const dictDevices = {
   'DWR116A3': {
     'vlan_support': false,
-    'lan_ports': [0, 1, 2, 3], 
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'W51200FV1': {
     'vlan_support': false,
-    'lan_ports': [1, 2, 3], 
+    'lan_ports': [1, 2, 3],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ACTIONRF1200V1': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ACTIONRG1200V1': {
     'vlan_support': false,
     'lan_ports': [2, 1, 0], // inverted
     'wan_port': 3,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ARCHERC2V1': {
     'vlan_support': true,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':31,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 31,
   },
   'ARCHERC5V4': {
     'vlan_support': true,
     'lan_ports': [3, 2, 1, 0], // inverted
     'wan_port': 4,
     'cpu_port': 5,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
-  'ARCHERC20V1': { 
+  'ARCHERC20V1': {
     'vlan_support': false,
     'lan_ports': [3, 4, 1, 2], // 2 lshifts
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'ARCHERC20V4': { 
+  'ARCHERC20V4': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'ARCHERC20V5': { 
+  'ARCHERC20V5': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'ARCHERC20V5PRESET': { 
+  'ARCHERC20V5PRESET': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ARCHERC50V3': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ARCHERC50V4': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'ARCHERC60V2': { 
-    'vlan_support': false, //even though it's in openwrt 19 it splits wan/lan into different interfaces
+  'ARCHERC60V2': {
+    'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'ARCHERC60V3': { 
-    'vlan_support': false, //even though it's in openwrt 19 it splits wan/lan into different interfaces
+  'ARCHERC60V3': {
+    'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'ARCHERC6V2US': {
     'vlan_support': true,
     'lan_ports': [2, 3, 4, 5],
     'wan_port': 1,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
   'ARCHERC7V5': {
     'vlan_support': true,
     'lan_ports': [2, 3, 4, 5],
     'wan_port': 1,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
   'COVR-C1200A1': {
     'vlan_support': true,
     'lan_ports': [2],
     'wan_port': 1,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
-  'DIR-819A1': { 
+  'DIR-819A1': {
     'vlan_support': true,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':15,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 15,
   },
   'DIR-815D1': {
     'vlan_support': false,
     'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'DWR-116A1': { 
+  'DWR-116A1': {
     'vlan_support': false,
-    'lan_ports': [0, 1, 2, 3], 
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'DWR-116A2': { 
+  'DWR-116A2': {
     'vlan_support': false,
-    'lan_ports': [0, 1, 2, 3], 
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'DWR-116A3': { 
+  'DWR-116A3': {
     'vlan_support': false,
-    'lan_ports': [0, 1, 2, 3], 
+    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'EMG1702-T10AA1': { 
+  'EMG1702-T10AA1': {
     'vlan_support': true,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':15,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 15,
   },
   'EC220-G5V2': {
     'vlan_support': true,
     'lan_ports': [2, 1, 0], // inverted
     'wan_port': 3,
     'cpu_port': 5,
-    'soc':'ramips',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ramips',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
-  'GWR1200ACV1': { 
+  'GWR1200ACV1': {
     'vlan_support': false,
    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'GWR1200ACV2': { 
+  'GWR1200ACV2': {
     'vlan_support': false,
    'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'GWR300NV1': { 
+  'GWR300NV1': {
     'vlan_support': false,
    'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'GF1200V1': { 
+  'GF1200V1': {
     'vlan_support': false,
    'lan_ports': [3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'MAXLINKAC1200GV1': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'NCLOUD': { 
+  'NCLOUD': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': '',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'RE708V1': {
     'vlan_support': false,
     'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'RE172V1': {
     'vlan_support': false,
     'lan_ports': [0, 1, 2, 3],
     'wan_port': 4,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-MR3020V1': { 
-    'vlan_support': false, //even though it's in openwrt 19 it doesn't have lan ports
+  'TL-MR3020V1': {
+    'vlan_support': false, // even though it's in openwrt 19 it doesn't have lan ports
     'lan_ports': [],
     'wan_port': 0,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WDR3500V1': { 
+  'TL-WDR3500V1': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WDR3600V1': { 
+  'TL-WDR3600V1': {
     'vlan_support': true,
     'lan_ports': [2, 3, 4, 5],
     'wan_port': 1,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
-  'TL-WDR4300V1': { 
+  'TL-WDR4300V1': {
     'vlan_support': true,
     'lan_ports': [2, 3, 4, 5],
     'wan_port': 1,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':4094,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 4094,
   },
-  'TL-WR2543N/NDV1': { 
+  'TL-WR2543N/NDV1': {
     'vlan_support': true,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 9,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':31,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 31,
   },
-  'TL-WR740N/NDV4': { 
+  'TL-WR740N/NDV4': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR740NDV4': { 
+  'TL-WR740NDV4': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR740N/NDV5': { 
+  'TL-WR740N/NDV5': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR740NDV5': { 
+  'TL-WR740NDV5': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR740N/NDV6': { 
+  'TL-WR740N/NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR740NDV6': { 
+  'TL-WR740NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR741N/NDV4': { 
+  'TL-WR741N/NDV4': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1],
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR741NDV4': { 
+  'TL-WR741NDV4': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR741N/NDV5': { 
+  'TL-WR741N/NDV5': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1],
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR741NDV5': { 
+  'TL-WR741NDV5': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1],
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV4': { 
+  'TL-WR840NV4': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV5': { 
+  'TL-WR840NV5': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV6': { 
+  'TL-WR840NV6': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV62': { 
+  'TL-WR840NV62': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV5PRESET': { 
+  'TL-WR840NV5PRESET': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR840NV6PRESET': { 
+  'TL-WR840NV6PRESET': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR841N/NDV7': { 
+  'TL-WR841N/NDV7': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 1,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR841NDV7': { 
+  'TL-WR841NDV7': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR841N/NDV8': { 
+  'TL-WR841N/NDV8': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR841NDV8': { 
+  'TL-WR841NDV8': {
     'vlan_support': false,
     'lan_ports': [2, 3, 4, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR842N/NDV3': { 
-    'vlan_support': false, //even though it's in openwrt 19 it splits lan/wan into different interfaces
+  'TL-WR842N/NDV3': {
+    'vlan_support': false, // even though it's in openwrt 19 it splits lan/wan into different interfaces
     'lan_ports': [4, 3, 2, 1], // lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR842NDV3': { 
-    'vlan_support': false, //even though it's in openwrt 19 it splits lan/wan into different interfaces
+  'TL-WR842NDV3': {
+    'vlan_support': false, // even though it's in openwrt 19 it splits lan/wan into different interfaces
     'lan_ports': [4, 3, 2, 1], // 1 lshift
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ath79',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ath79',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR849NV4': { 
+  'TL-WR849NV4': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR849NV5': { 
+  'TL-WR849NV5': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR849NV6': { 
+  'TL-WR849NV6': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR849NV62': { 
+  'TL-WR849NV62': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR940NV4': { 
+  'TL-WR940NV4': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR940NV5': { 
+  'TL-WR940NV5': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR940NV6': { 
+  'TL-WR940NV6': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR949NV6': { 
+  'TL-WR949NV6': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 5,
     'cpu_port': 0,
-    'soc':'ar71xx',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ar71xx',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
-  'TL-WR845NV3': { 
+  'TL-WR845NV3': {
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'TL-WR845NV4': { //
     'vlan_support': false,
     'lan_ports': [4, 3, 2, 1], // inverted
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'ramips',
-    'network_chip':'mt7628',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'ramips',
+    'network_chip': 'mt7628',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
   'W5-1200FV1': {
     'vlan_support': false,
     'lan_ports': [1, 2, 3],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'realtek',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': 'realtek',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   },
 };
 
@@ -909,12 +950,22 @@ const grantResetDevices = function(version) {
   }
 };
 
-const grantPortForward = function(version) {
-  if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.10.0') >= 0);
-  } else {
-    // Development version, enable everything by default
+const grantPortForward = function(version, model) {
+  if (portForwardTr069CompatibleModels.includes(model) &&
+    portForwardTr069CompatibleVersions[version] !== undefined) {
+    // Compatible TR-069 CPE
     return true;
+  } else {
+    if (version.match(versionRegex)) {
+      // Oficial Flashbox firmware
+      return (versionCompare(version, '0.10.0') >= 0);
+    } else if (version.match(devVersionRegex)) {
+      // Development version, enable everything by default
+      return true;
+    } else {
+      // Unknown device and or version
+      return false;
+    }
   }
 };
 
@@ -1065,29 +1116,27 @@ const grantOpmode = function(version) {
 };
 
 const grantVlanSupport = function(version, model) {
-  var ret = { // default return value
+  let ret = { // default return value
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': '',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   };
 
-  if(dictDevices[model] !== undefined) {
+  if (dictDevices[model] !== undefined) {
     ret = dictDevices[model];
   }
   if (version.match(versionRegex)) {
-    if(versionCompare(version, '0.31.0') >= 0) {
+    if (versionCompare(version, '0.31.0') >= 0) {
       return ret['vlan_support'];
-    }
-    else {
+    } else {
       return false;
     }
-  }
-  else {
+  } else {
     // Development version, enable everything by default
     return ret['vlan_support'];
   }
@@ -1099,6 +1148,15 @@ const grantWanBytesSupport = function(version) {
   } else {
     // Development version, enable everything by default
     return true;
+  }
+};
+
+const grantPonSignalSupport = function(version, model) {
+  if (ponSignalTr069CompatibleModels.includes(model)) {
+    // Compatible TR-069 ONU
+    return true;
+  } else {
+    return false;
   }
 };
 
@@ -1141,7 +1199,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version);
   result.grantResetDevices = grantResetDevices(version);
-  result.grantPortForward = grantPortForward(version);
+  result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
@@ -1160,6 +1218,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantOpmode = grantOpmode(version);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version);
+  result.grantPonSignalSupport = grantPonSignalSupport(version, model);
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
   result.grantWpsFunction = grantWpsFunction(version, model);
@@ -1169,27 +1228,27 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
 
 DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
-  ret = 4;
+  let ret = 4;
   // The default quantity of ports is 4, as checked
-  if(model in lanPorts) {
+  if (model in lanPorts) {
     ret = lanPorts[model];
   }
   return ret;
 };
 
 DeviceVersion.getDeviceInfo = function(model) {
-  var ret = { // default return value
+  let ret = { // default return value
     'vlan_support': false,
     'lan_ports': [1, 2, 3, 4],
     'wan_port': 0,
     'cpu_port': 6,
-    'soc':'',
-    'network_chip':'',
-    'wifi_chip':'',
-    'max_vid':0,
+    'soc': '',
+    'network_chip': '',
+    'wifi_chip': '',
+    'max_vid': 0,
   };
 
-  if(dictDevices[model] !== undefined) {
+  if (dictDevices[model] !== undefined) {
     ret = dictDevices[model];
   }
 
@@ -1200,6 +1259,10 @@ DeviceVersion.getVlanCompatible = function() {
   let vlanCompatible = Object.fromEntries(
     Object.entries(dictDevices).filter(([k, device]) => device.vlan_support));
   return Object.keys(vlanCompatible);
+};
+
+DeviceVersion.getPortForwardTr069Compatibility = function(version) {
+  return portForwardTr069CompatibleVersions[version];
 };
 
 module.exports = DeviceVersion;

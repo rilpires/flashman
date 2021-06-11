@@ -91,17 +91,23 @@ const fetchCertification = function(id, name, timestamp) {
       if (cert.isOnu) {
         $('#router-data').hide();
         $('#onu-data').show();
+        $('#diagnostic-header-onu').show();
         $('#onu-serial').html('&nbsp;'+cert.mac);
         $('#onu-model').html('&nbsp;'+cert.routerModel);
         $('#onu-hardware').html('&nbsp;'+cert.routerVersion);
         $('#onu-firmware').html('&nbsp;'+cert.routerRelease);
+        $('#diagnostic-none-router').hide();
+        $('#diagnostic-header-router').hide();
       } else {
         $('#onu-data').hide();
         $('#router-data').show();
+        $('#diagnostic-header-router').show();
         $('#router-mac').html('&nbsp;'+cert.mac);
         $('#router-model').html('&nbsp;'+cert.routerModel);
         $('#router-version').html('&nbsp;'+cert.routerVersion);
         $('#router-release').html('&nbsp;'+cert.routerRelease);
+        $('#diagnostic-none-onu').hide();
+        $('#diagnostic-header-onu').hide();
       }
       // Change wan info
       if (cert.didConfigureWan && cert.routerConnType) {
@@ -174,12 +180,32 @@ const fetchCertification = function(id, name, timestamp) {
         let diagFlashman = (cert.diagnostic.flashman) ? 'OK' : 'Erro';
         if (cert.isOnu) {
           let diagTR069 = (cert.diagnostic.tr069) ? 'OK' : 'Erro';
+          let diagPon = cert.diagnostic.pon;
+          let diagRxPower = cert.diagnostic.rxpower;
           $('#diagnostic-onu-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-onu-tr069').html('&nbsp;'+diagTR069);
           $('#diagnostic-onu-anlix').html('&nbsp;'+diagAnlix);
           $('#diagnostic-onu-flashman').html('&nbsp;'+diagFlashman);
+          if (diagPon >= 0) {
+            diagPon = (diagPon > 0) ? 'Erro': 'OK';
+            if (diagPon == 4) {
+              // Could not measure RX power
+              diagRxPower = 'Não medido';
+            } else {
+              diagRxPower = diagRxPower.toString() + ' dBm';
+            }
+            $('#diagnostic-onu-pon').html('&nbsp;'+diagPon);
+            $('#diagnostic-onu-rx').html('&nbsp;'+diagRxPower);
+            $('#diagnostic-pon-element').show();
+            $('#diagnostic-rx-element').show();
+          } else {
+            $('#diagnostic-pon-element').hide();
+            $('#diagnostic-rx-element').hide();
+          }
           $('#diagnostic-router').hide();
           $('#diagnostic-onu').show();
+          $('#diagnostic-none-onu').hide();
+          $('#diagnostic-done-onu').show();
         } else {
           let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
           let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
@@ -192,12 +218,17 @@ const fetchCertification = function(id, name, timestamp) {
           $('#diagnostic-router-flashman').html('&nbsp;'+diagFlashman);
           $('#diagnostic-onu').hide();
           $('#diagnostic-router').show();
+          $('#diagnostic-none-router').hide();
+          $('#diagnostic-done-router').show();
         }
-        $('#diagnostic-none').hide();
-        $('#diagnostic-done').show();
       } else {
-        $('#diagnostic-done').hide();
-        $('#diagnostic-none').show();
+        if (cert.isOnu) {
+          $('#diagnostic-done-onu').hide();
+          $('#diagnostic-none-onu').show();
+        } else {
+          $('#diagnostic-done-router').hide();
+          $('#diagnostic-none-router').show();
+        }
       }
       // Change mesh info
       if (cert.didConfigureMesh && cert.mesh && cert.mesh.mode) {

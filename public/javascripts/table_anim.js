@@ -1087,6 +1087,7 @@ $(document).ready(function() {
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
 
           let rowAttr = buildRowData(device, index);
@@ -1133,6 +1134,8 @@ $(document).ready(function() {
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-serialid="'+device.serial_tr069+'"';
+          formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
+          formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
           formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
@@ -1173,6 +1176,11 @@ $(document).ready(function() {
 
           let portForwardAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-open-ports-modal')
+          .replace('$REPLACE_ICON', 'fa-lock-open')
+          .replace('$REPLACE_TEXT', 'Abertura de portas');
+
+          let portForwardTr069Action = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-tr069-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
           .replace('$REPLACE_TEXT', 'Abertura de portas');
 
@@ -1238,6 +1246,10 @@ $(document).ready(function() {
             sideMenu[idxMenu] += portForwardAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
+          if (isTR069 && !device.bridge_mode_enabled && grantPortForward) {
+            sideMenu[idxMenu] += portForwardTr069Action;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
           if (!isTR069 && grantPingTest) {
             sideMenu[idxMenu] += pingTestAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
@@ -1266,7 +1278,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += dataCollectingAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (isTR069 && (isSuperuser || grantWanBytes) && grantWanBytesSupport) {
+          if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }

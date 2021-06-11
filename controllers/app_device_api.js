@@ -692,7 +692,14 @@ appDeviceAPIController.appSetConfig = function(req, res) {
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
-    if (err) {
+    let config;
+    try {
+      config = await Config.findOne({is_default: true}).lean();
+      if (!config) throw new Error('Config not found');
+    } catch (error) {
+      console.log(error);
+    }
+    if (err || !config) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
@@ -717,6 +724,17 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return res.status(403).json({
         message: 'Senha errada',
         password: true,
+      });
+    }
+    if (req.body.content.personalizationHash &&
+      config.personalizationHash &&
+      config.personalizationHash !==
+      req.body.content.personalizationHash) {
+      return res.status(403).json({
+        message: 'Erro na hash de personalização',
+        personalizationHash: true,
+        androidLink: config.androidLink,
+        iosLink: config.iosLink,
       });
     }
 
@@ -763,14 +781,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantUpnp = false;
     } else {
       permissions.grantBlockDevices = true;
-    }
-
-    let config;
-    try {
-      config = await Config.findOne({is_default: true}).lean();
-      if (!config) throw new Error('Config not found');
-    } catch (err) {
-      console.log(err);
     }
 
     let speedtestInfo = {};

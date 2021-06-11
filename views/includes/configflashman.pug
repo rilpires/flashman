@@ -113,11 +113,50 @@
                 )
                 .invalid-feedback Insira uma quantidade válida
                 br
+                .input-entry
+                label Valor de alerta amarelo do sinal óptico (dBm)
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold",
+                  id="pon-signal-threshold",
+                  min=-100,
+                  max=100,
+                  value=-18,
+                  placeholder="-18"
+                )
+                .invalid-feedback Insira um número em dBm válido
+                br
+                .input-entry
+                label Valor de alerta vermelho do sinal óptico (dBm)
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold-critical",
+                  id="pon-signal-threshold-critical",
+                  min=-100,
+                  max=100,
+                  value=-23,
+                  placeholder="-23"
+                )
+                .invalid-feedback Insira um número em dBm válido
+                br
+                .input-entry
+                label Valor de alerta vermelho do sinal óptico elevado (dBm)
+                input.form-control(
+                  type="number",
+                  name="pon-signal-threshold-critical-high",
+                  id="pon-signal-threshold-critical-high",
+                  min=-100,
+                  max=100,
+                  value=3,
+                  placeholder="3"
+                )
+                .invalid-feedback Insira um número em dBm válido
+                br
                 table
                   tr
                     td(style='vertical-align: top;')
                       .input-entry
-                      label Quantidade de informes TR-069 não recebidos para considerar roteador instável
+                      label Quantidade de informes TR-069 não recebidos para considerar CPE instável
                       input.form-control(
                         type="number",
                         name="lost-informs-recovery-threshold",
@@ -131,7 +170,7 @@
                       .invalid-feedback#error-lost-informs-recovery-threshold Insira uma quantidade válida
                     td(style='vertical-align: top;')
                       .input-entry
-                      label Quantidade de informes TR-069 não recebidos para considerar roteador offline
+                      label Quantidade de informes TR-069 não recebidos para considerar CPE offline
                       input.form-control(
                         type="number",
                         name="lost-informs-offline-threshold",

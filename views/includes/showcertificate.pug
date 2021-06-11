@@ -82,10 +82,13 @@
             h4 Configuração da WAN
             #wan-config-list
           hr
-          #diagnostic-none
+          #diagnostic-none-router
             h4 O diagnóstico do roteador não foi feito
+          #diagnostic-none-onu
+            h4 O diagnóstico da CPE não foi feito
           #diagnostic-done
-            h4 Diagnóstico do Roteador
+            h4#diagnostic-header-router Diagnóstico do Roteador
+            h4#diagnostic-header-onu Diagnóstico da CPE
             ul#diagnostic-router.list-inline
               li
                 strong Acesso WAN:
@@ -106,6 +109,12 @@
                 strong Comunicação com Flashman:
                 span#diagnostic-router-flashman
             ul#diagnostic-onu.list-inline
+              li#diagnostic-pon-element
+                strong Acesso PON:
+                span#diagnostic-onu-pon
+              li#diagnostic-rx-element
+                strong Sinal Óptico recebido:
+                span#diagnostic-onu-rx
               li
                 strong Acesso WAN:
                 span#diagnostic-onu-wan
