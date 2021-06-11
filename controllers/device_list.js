@@ -98,7 +98,7 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
     // a selector for flashbox devices.
     queries[i].$or[0].use_tr069 = {$ne: true};
     queries[i].$or[1].use_tr069 = true; // a selector for tr069 devices.
-  };
+  }
 
   // issue the count for each status and the mesh count in parallel.
   let counts = await Promise.all([
@@ -603,13 +603,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     sortKeys['external_reference.data'] = sortTypeOrder;
   } else if (queryContents.includes('/sort-sys-uptime')) {
     queryContents = queryContents.filter(
-      (query) => query !== '/sort-sys-uptime'
-    );
+      (query) => query !== '/sort-sys-uptime');
     sortKeys.sys_up_time = sortTypeOrder;
   } else if (queryContents.includes('/sort-wan-uptime')) {
     queryContents = queryContents.filter(
-      (query) => query !== '/sort-wan-uptime'
-    );
+      (query) => query !== '/sort-wan-uptime');
     sortKeys.wan_up_time = sortTypeOrder;
   } else {
     sortKeys._id = sortTypeOrder;
@@ -645,7 +643,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   }
 
   const userRole = await Role.findOne({
-    name: util.returnObjOrEmptyStr(req.user.role)
+    name: util.returnObjOrEmptyStr(req.user.role),
   });
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
@@ -721,7 +719,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         );
 
         // amount ports a device have
-        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model); 
+        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model);
 
         // Fill default value if wi-fi state does not exist
         if (device.wifi_state === undefined) {
@@ -823,7 +821,7 @@ const downloadStockFirmware = async function(model) {
         // Mismatch, download new zip file
         console.log('UPDATE: Downloading factory reset fware for '+model+'...');
         fs.writeFileSync(localMd5Path, targetMd5);
-        let responseStream = request({ url: remoteFileUrl, method: 'GET' })
+        let responseStream = request({url: remoteFileUrl, method: 'GET'})
         .on('error', (err)=>{
           console.log(err);
           return resolve(false);
@@ -1195,7 +1193,7 @@ deviceListController.getDeviceReg = function(req, res) {
       } else if (matchedDevice.last_contact >= offlineTime) {
       // if we are inside second threshold.
         deviceColor = 'red';
-      };
+      }
       // if we are out of these thresholds, we keep the default gray value.
     } else { // default matchedDevice, flashbox controlled.
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1689,7 +1687,8 @@ deviceListController.setDeviceReg = function(req, res) {
               return res.status(403).json({
                 success: false,
                 type: 'danger',
-                message: 'Permissão insuficiente para alterar campos requisitados',
+                message: 'Permissão insuficiente para alterar ' +
+                         'campos requisitados',
               });
             }
             if (updateParameters) {
@@ -2035,8 +2034,11 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     }
     if (!isPortsOnRange) {
       ret.success = false;
-      ret.message = ''+rules[i].ip+
-        ': As portas devem estar na faixa entre 1 - 65535 (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)';
+      ret.message = '' + rules[i].ip +
+        ': As portas devem estar na faixa entre 1 - 65535 ' +
+        '(Por particularidades de aplicações do dispositivo TR-069 ' +
+        'as seguintes portas também não são permitidas : ' +
+        '22, 23, 80, 443, 7547 e 58000)';
       return ret;
     }
     if (!isPortsNotEmpty) {
@@ -2319,7 +2321,8 @@ deviceListController.getPortForward = function(req, res) {
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -2700,11 +2703,11 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     if (!matchedDevice) {
       return res.status(404).json({success: false,
-                                   message: "ONU não encontrada"});
+                                   message: 'ONU não encontrada'});
     }
     if (!matchedDevice.use_tr069) {
       return res.status(404).json({success: false,
-                                   message: "ONU não encontrada"});
+                                   message: 'ONU não encontrada'});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
@@ -2728,7 +2731,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       }
     });
   });
-}
+};
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

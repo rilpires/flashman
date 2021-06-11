@@ -553,11 +553,13 @@ updateController.setAutoConfig = async function(req, res) {
     if (isNaN(ponSignalThreshold)) {
       ponSignalThreshold = config.tr069.pon_signal_threshold;
     }
-    if (ponSignalThreshold && (ponSignalThreshold < -100 || ponSignalThreshold > 100)) {
+    if (ponSignalThreshold &&
+        (ponSignalThreshold < -100 || ponSignalThreshold > 100)
+    ) {
       return res.status(500).json({
         type: 'danger',
         message: 'Erro validando os campos',
-      })
+      });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
 
@@ -565,11 +567,13 @@ updateController.setAutoConfig = async function(req, res) {
     if (isNaN(ponSignalThresholdCritical)) {
       ponSignalThresholdCritical = config.tr069.pon_signal_threshold_critical;
     }
-    if (ponSignalThresholdCritical && (ponSignalThresholdCritical < -100 || ponSignalThresholdCritical > 100)) {
+    if (ponSignalThresholdCritical &&
+        (ponSignalThresholdCritical < -100 || ponSignalThresholdCritical > 100)
+    ) {
       return res.status(500).json({
         type: 'danger',
         message: 'Erro validando os campos',
-      })
+      });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
@@ -577,11 +581,14 @@ updateController.setAutoConfig = async function(req, res) {
     if (isNaN(ponSignalThresholdCriticalHigh)) {
       ponSignalThresholdCriticalHigh = config.tr069.pon_signal_threshold;
     }
-    if (ponSignalThresholdCriticalHigh && (ponSignalThresholdCriticalHigh < -100 || ponSignalThresholdCriticalHigh > 100)) {
+    if (ponSignalThresholdCriticalHigh &&
+        (ponSignalThresholdCriticalHigh < -100 ||
+         ponSignalThresholdCriticalHigh > 100)
+    ) {
       return res.status(500).json({
         type: 'danger',
         message: 'Erro validando os campos',
-      })
+      });
     }
     config.tr069.pon_signal_threshold_critical_high = ponSignalThresholdCriticalHigh;
     let message = 'Salvo com sucesso!';
@@ -617,7 +624,7 @@ updateController.setAutoConfig = async function(req, res) {
       // if received inform interval, in seconds, is different than saved
       // inform interval in milliseconds,
       if (tr069InformInterval*1000 !== config.tr069.inform_interval
-       && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS. 
+       && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS.
         // setting inform interval in genie for all devices and in preset.
         await updatePeriodicInformInGenieAcs(tr069InformInterval);
       }

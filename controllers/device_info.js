@@ -687,30 +687,32 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           mqtt.anlixMessageRouterReset(matchedDevice._id);
         }
 
-        let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
+        let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices)
+        .filter(
           function(lanDevice) {
             if (lanDevice.is_blocked) {
               return true;
             } else {
               return false;
             }
-          }
+          },
         );
-        let namedDevices = util.deepCopyObject(matchedDevice.lan_devices).filter(
+        let namedDevices = util.deepCopyObject(matchedDevice.lan_devices)
+        .filter(
           function(lanDevice) {
             if ('name' in lanDevice && lanDevice.name != '') {
               return true;
             } else {
               return false;
             }
-          }
+          },
         );
 
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
-          let data_collecting = { // nothing happens in device with these parameters.
+          let dataCollecting = { // nothing happens in device with these parameters.
             is_active: false,
             has_latency: false,
             ping_fqdn: '',
@@ -720,20 +722,22 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // for each data_collecting parameter, in config, we copy its value.
           // This also makes the code compatible with a data base with no data
           // collecting parameters.
+          // eslint-disable-next-line guard-for-in
           for (let key in matchedConfig.data_collecting) {
-            data_collecting[key] = matchedConfig.data_collecting[key];
+            dataCollecting[key] = matchedConfig.data_collecting[key];
           }
           // combining 'Device' and 'Config' if data_collecting exists in Config.
           if (matchedDevice.data_collecting !== undefined) {
             let d = matchedDevice.data_collecting; // parameters from device model.
-            let p = data_collecting; // the final parameters.
+            let p = dataCollecting; // the final parameters.
             // for on/off buttons, device value && config value if it exists in device.
             d.is_active !== undefined && (p.is_active = p.is_active && d.is_active);
             d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
             // preference for device value if it exists.
             d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
-          } else { // if data collecting doesn't exist, device won't collect anything.
-            data_collecting.is_active = false;
+          } else {
+            // if data collecting doesn't exist, device won't collect anything.
+            dataCollecting.is_active = false;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -775,11 +779,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'data_collecting_is_active': data_collecting.is_active,
-            'data_collecting_has_latency': data_collecting.has_latency,
-            'data_collecting_alarm_fqdn': data_collecting.alarm_fqdn,
-            'data_collecting_ping_fqdn': data_collecting.ping_fqdn,
-            'data_collecting_ping_packets': data_collecting.ping_packets,
+            'data_collecting_is_active': dataCollecting.is_active,
+            'data_collecting_has_latency': dataCollecting.has_latency,
+            'data_collecting_alarm_fqdn': dataCollecting.alarm_fqdn,
+            'data_collecting_ping_fqdn': dataCollecting.ping_fqdn,
+            'data_collecting_ping_packets': dataCollecting.ping_packets,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -896,8 +900,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
             updateScheduler.failedDownload(
-              matchedDevice.mesh_master, req.body.id
-            );
+              matchedDevice.mesh_master, req.body.id);
           } else {
             updateScheduler.failedDownload(req.body.id);
           }
@@ -908,8 +911,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
             updateScheduler.failedDownload(
-              matchedDevice.mesh_master, req.body.id
-            );
+              matchedDevice.mesh_master, req.body.id);
           } else {
             updateScheduler.failedDownload(req.body.id);
           }

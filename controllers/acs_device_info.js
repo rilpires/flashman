@@ -142,7 +142,7 @@ const appendPonSignal = function(original, rxPower, txPower) {
   }
   dbms[now] = [rxPower, txPower];
   return dbms;
-}
+};
 
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
@@ -718,13 +718,12 @@ const fetchDevicesFromGenie = function(mac, acsID) {
     resp.on('end', async ()=>{
       data = JSON.parse(data)[0];
       let success = true;
-      let hostCount = 0;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
       // Make sure we have a host count and assodicated devices fields
       if (checkForNestedKey(data, hostCountField) &&
           checkForNestedKey(data, assocField)) {
-        hostCount = getFromNestedKey(data, hostCountField);
+        getFromNestedKey(data, hostCountField);
         // Host indexes might not respect order because of expired leases, so
         // we just use whatever keys show up
         let hostBaseField = fields.devices.hosts_template;
@@ -905,7 +904,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
 acsDeviceInfoController.updateInfo = function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -972,7 +971,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let i;
   let ret;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1120,7 +1119,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
 
 acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1145,7 +1144,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
     replace('*', '1').replace('*', '1');
     let projection2 = fields.port_mapping.template.
     replace('*', '1').replace('*', '2');
-    let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection1+','+projection2;
+    let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
+               projection1 + ',' + projection2;
     let options = {
       method: 'GET',
       hostname: 'localhost',
