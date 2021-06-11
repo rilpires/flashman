@@ -1658,6 +1658,18 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_MESH_MODE', '');
           }
 
+          let haveSsidPrefixPrepend =
+            '<input class="form-control" type="text" id="edit_wifi_ssid-'+index+'" ';
+          if (!!res.config.personalizationHash &&
+            res.config.isSsidPrefixEnabled) {
+            haveSsidPrefixPrepend = '<div class="input-group-prepend">'+
+              '<span class="input-group-text px-0 text-primary" style="background:inherit;border:none;">'+
+                res.config.ssidPrefix+
+              '</span>'+
+            '</div>'+
+            '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+          }
+
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
@@ -1689,9 +1701,9 @@ $(document).ready(function() {
                     '</div>'+
                   '</div>'+
                 '</div>'+
-                '<div class="md-form input-entry">'+
+                '<div class="md-form input-group input-entry">'+
                   '<label class="active">SSID do Wi-Fi</label>'+
-                  '<input class="form-control" type="text" id="edit_wifi_ssid-'+index+'" '+
+                  haveSsidPrefixPrepend+
                   'maxlength="32" value="'+device.wifi_ssid+'" $REPLACE_WIFI_EN></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
