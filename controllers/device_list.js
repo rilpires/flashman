@@ -734,6 +734,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
           device.wifi_hidden = 0;
           device.wifi_hidden_5ghz = 0;
         }
+        if (device.isSsidPrefixEnabled === undefined) {
+          device.isSsidPrefixEnabled = false;
+        }
         if (device.ipv6_enabled === undefined) {
           device.ipv6_enabled = 0;
         }
@@ -1262,6 +1265,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
+      let isSsidPrefixEnabled = parseInt(util.returnObjOrNum(content.isSsidPrefixEnabled, 0));
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
@@ -1573,6 +1577,16 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiHidden5ghz !== matchedDevice.wifi_hidden_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('isSsidPrefixEnabled') &&
+                isSsidPrefixEnabled !== matchedDevice.isSsidPrefixEnabled) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.isSsidPrefixEnabled = (isSsidPrefixEnabled == 0) ?
+                 false : true;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
