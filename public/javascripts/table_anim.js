@@ -1691,6 +1691,22 @@ $(document).ready(function() {
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
+            } else {
+              haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  res.config.ssidPrefix+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+
+              haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  res.config.ssidPrefix+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
             }
           }
 
@@ -2660,5 +2676,31 @@ $(document).ready(function() {
     }
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
+  });
+
+  $(document).on('change', '[id^=edit_is_ssid_prefix_enabled-]',
+  function(input) {
+    let cssClass1;
+    let cssClass2;
+    cssClass1 = input.target.parentNode.parentNode.
+      childNodes[2].childNodes[0].childNodes[0].
+      childNodes[1].childNodes[1].classList;
+    if (!input.target.parentNode.parentNode.
+      childNodes[2].childNodes[1] == false) {
+      cssClass2 = input.target.parentNode.parentNode.
+        childNodes[2].childNodes[1].childNodes[0].
+        childNodes[1].childNodes[1].classList;
+    }
+    if (input.target.checked) {
+      cssClass1.remove('d-none');
+      if (!cssClass2 == false) {
+        cssClass2.remove('d-none');
+      }
+    } else {
+      cssClass1.add('d-none');
+      if (!cssClass2 == false) {
+        cssClass2.add('d-none');
+      }
+    }
   });
 });
