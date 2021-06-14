@@ -104,8 +104,10 @@ $(document).ready(function() {
               .attr('method', 'post')
               .attr('action', '/user/role/edit/' + roleObj._id)
               .append(
-                $('<div></div>').addClass('row')
-                .attr('style', 'margin: 0px;')
+                $('<h5>').addClass('text-muted mb-0 mt-3')
+                         .text('Permissões do cadastro e ações nas CPEs'),
+                $('<hr>').addClass('my-1'),
+                $('<div></div>').addClass('row mb-3')
                 .append(
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -157,20 +159,6 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Controle de Atualização de Firmware'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-upgrade').append(
-                          $('<option></option>').val(0).text('Bloquear'),
-                          $('<option></option>').val(1).text('Permitir'),
-                          $('<option></option>').val(2).text('Permitir em massa'),
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
                         .text('Controle da rede LAN'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -205,62 +193,6 @@ $(document).ready(function() {
                         .attr('name', 'grant-opmode-edit').append(
                           $('<option></option>').val(false).text('Visualizar'),
                           $('<option></option>').val(true).text('Visualizar e editar')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Acesso a gráficos de tráfego na WAN'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-bytes').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Busca de roteadores'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-search-level').append(
-                          $('<option></option>').val(0)
-                          .text('Não permitir busca e visualização'),
-                          $('<option></option>').val(1)
-                          .text('Busca simples'),
-                          $('<option></option>').val(2)
-                          .text('Busca completa com filtros especiais')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Atualização de Firmware Restrita'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-restricted-upgrade').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Atualização de Firmware Beta'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-beta-upgrade').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
                         )
                       )
                     ),
@@ -352,75 +284,15 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Informações Sobre Medição de Velocidade'),
+                        .text('Acesso a gráficos de tráfego na WAN'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-measure-devices').append(
-                          $('<option></option>').val(0)
-                          .text('Não visualizar'),
-                          $('<option></option>').val(1)
-                          .text('Visualizar'),
-                          $('<option></option>').val(2)
-                          .text('Visualizar e realizar ações')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle do Tipo de Conexão'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-type').append(
+                        .attr('name', 'grant-wan-bytes').append(
                           $('<option></option>').val(false).text('Bloquear'),
                           $('<option></option>').val(true).text('Permitir')
                         )
                       )
                     ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Acesso ao App do Técnico'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-diag-app-access').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Acesso às Certificações de Roteadores'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-certification-access').append(
-                          $('<option></option>').val(0)
-                          .text('Não visualizar'),
-                          $('<option></option>').val(1)
-                          .text('Visualizar'),
-                          $('<option></option>').val(2)
-                          .text('Visualizar e editar')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Total sobre status de roteadores'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-search-summary').append(
-                          $('<option></option>').val(false).text('Não visualizar'),
-                          $('<option></option>').val(true).text('Visualizar')
-                        )
-                      )
-                    )
                   ),
                   $('<div></div>').addClass('col-12 col-lg-4').append(
                     $('<div></div>').addClass('md-form').append(
@@ -467,84 +339,6 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
-                        .text('Configuração de parâmetros do TR-069'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-monitor-manage').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Gerência de Firmwares'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-manage').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Gerência de Usuários'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-user-manage').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Controle de Configurações do Flashman'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-flashman-manage').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Permitir Acesso a API REST'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-api-access').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
-                        .text('Exportação de cadastros por CSV'),
-                        $('<select></select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-csv-export').append(
-                          $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
-                    ),
-                    $('<div></div>').addClass('md-form').append(
-                      $('<div></div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label></label>')
                         .text('Informações de VLANs'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
@@ -559,14 +353,246 @@ $(document).ready(function() {
                       $('<div></div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label></label>')
+                        .text('Informações Sobre Medição de Velocidade'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-measure-devices').append(
+                          $('<option></option>').val(0)
+                          .text('Não visualizar'),
+                          $('<option></option>').val(1)
+                          .text('Visualizar'),
+                          $('<option></option>').val(2)
+                          .text('Visualizar e realizar ações')
+                        )
+                      )
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle do Tipo de Conexão'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-type').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir')
+                        )
+                      )
+                    ),
+                  ),
+                ),
+                $('<h5>').addClass('text-muted mb-0 mt-3')
+                         .text('Permissões de atualização de firmware'),
+                $('<hr>').addClass('my-1'),
+                $('<div>').addClass('row mb-3')
+                .append(
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-upgrade').append(
+                          $('<option></option>').val(0).text('Bloquear'),
+                          $('<option></option>').val(1).text('Permitir'),
+                          $('<option></option>').val(2).text('Permitir em massa'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware Restrita'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-restricted-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Gerência de Firmwares'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Atualização de Firmware Beta'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-firmware-beta-upgrade').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                $('<h5>').addClass('text-muted mb-0 mt-3')
+                         .text('Permissões gerais do Flashman'),
+                $('<hr>').addClass('my-1'),
+                $('<div>').addClass('row mb-3')
+                .append(
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Total sobre status de roteadores'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-search-summary').append(
+                          $('<option></option>').val(false).text('Não visualizar'),
+                          $('<option></option>').val(true).text('Visualizar'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Permitir Acesso a API REST'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-api-access').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Configurações do Flashman'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-flashman-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Controle de Gerência de Usuários'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-user-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Configuração de parâmetros do TR-069'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-monitor-manage').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Acesso às Certificações de Roteadores'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-certification-access').append(
+                          $('<option></option>').val(0)
+                          .text('Não visualizar'),
+                          $('<option></option>').val(1)
+                          .text('Visualizar'),
+                          $('<option></option>').val(2)
+                          .text('Visualizar e editar'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Busca de roteadores'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-search-level').append(
+                          $('<option></option>').val(0)
+                          .text('Não permitir busca e visualização'),
+                          $('<option></option>').val(1)
+                          .text('Busca simples'),
+                          $('<option></option>').val(2)
+                          .text('Busca completa com filtros especiais'),
+                        ),
+                      ),
+                    ),
+                  ),
+                  $('<div>').addClass('col-12 col-lg-4').append(
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Exportação de cadastros por CSV'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-csv-export').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
                         .text('Adição/Edição/Remoção de Perfis de VLANs'),
                         $('<select></select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-vlan-profile-edit').append(
                           $('<option></option>').val(false).text('Bloquear'),
-                          $('<option></option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
+                    $('<div></div>').addClass('md-form').append(
+                      $('<div></div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label></label>')
+                        .text('Acesso ao App do Técnico'),
+                        $('<select></select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-diag-app-access').append(
+                          $('<option></option>').val(false).text('Bloquear'),
+                          $('<option></option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                   ),
                 ),
