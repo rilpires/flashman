@@ -387,3 +387,11 @@ input:checked + .slider:before {
   border: none;
 }
 
+.wifi-tab-content {
+  > .tab-pane {
+    display: none;
+  }
+  > .active {
+    display: flex;
+  }
+}
