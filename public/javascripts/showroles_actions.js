@@ -69,7 +69,8 @@ $(document).ready(function() {
     }
     $(this).addClass('was-validated');
     return false;
-  };
+  }
+
   $(document).on('submit', '.edit-role-form', handleFormSubmit);
   $('#new-role-form').submit(handleFormSubmit);
 
@@ -86,13 +87,13 @@ $(document).ready(function() {
               $('<input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', roleObj._id)
-              .attr('data-name', roleObj.name)
+              .attr('data-name', roleObj.name),
             ),
             $('<td>').addClass('text-center').html(roleObj.name),
             $('<td>').addClass('text-center col-xs-1 colapse')
               .attr('style', 'cursor: pointer;').append(
-                $('<div>').addClass('fas fa-chevron-down fa-lg colapse')
-            )
+                $('<div>').addClass('fas fa-chevron-down fa-lg colapse'),
+            ),
           ),
           // form row
           rowObj = $('<tr>').attr('style', 'display: none;').append(
@@ -122,9 +123,9 @@ $(document).ready(function() {
                           $('<option>').val(1)
                           .text('Visualizar'),
                           $('<option>').val(2)
-                          .text('Visualizar e editar')
-                        )
-                      )
+                          .text('Visualizar e editar'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -138,9 +139,9 @@ $(document).ready(function() {
                           $('<option>').val(1)
                           .text('Visualizar'),
                           $('<option>').val(2)
-                          .text('Visualizar e editar')
-                        )
-                      )
+                          .text('Visualizar e editar'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -151,9 +152,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-pass-show').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -166,9 +167,9 @@ $(document).ready(function() {
                           $('<option>').val(false)
                           .text('Visualizar'),
                           $('<option>').val(true)
-                          .text('Visualizar e editar')
-                        )
-                      )
+                          .text('Visualizar e editar'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -179,9 +180,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-lan-devices-block').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -192,9 +193,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-opmode-edit').append(
                           $('<option>').val(false).text('Visualizar'),
-                          $('<option>').val(true).text('Visualizar e editar')
-                        )
-                      )
+                          $('<option>').val(true).text('Visualizar e editar'),
+                        ),
+                      ),
                     ),
                   ),
                   $('<div>').addClass('col-12 col-lg-4').append(
@@ -207,9 +208,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-id').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -220,9 +221,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-actions').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -233,9 +234,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-log-access').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -246,9 +247,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-notification-popups').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -263,9 +264,9 @@ $(document).ready(function() {
                           $('<option>').val(1)
                           .text('Visualizar'),
                           $('<option>').val(2)
-                          .text('Visualizar e realizar ações')
-                        )
-                      )
+                          .text('Visualizar e realizar ações'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -276,9 +277,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-site-survey').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -289,9 +290,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-wan-bytes').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                   ),
                   $('<div>').addClass('col-12 col-lg-4').append(
@@ -304,9 +305,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-factory-reset').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -319,8 +320,8 @@ $(document).ready(function() {
                           $('<option>').val(0).text('Bloquear'),
                           $('<option>').val(1).text('Permitir'),
                           $('<option>').val(2).text('Permitir em massa'),
-                        )
-                      )
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -331,9 +332,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-add').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -345,9 +346,9 @@ $(document).ready(function() {
                         .attr('name', 'grant-vlan').append(
                           $('<option>').val(0).text('Não Visualizar'),
                           $('<option>').val(1).text('Visualizar'),
-                          $('<option>').val(2).text('Visualizar e Editar')
-                        )
-                      )
+                          $('<option>').val(2).text('Visualizar e Editar'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -362,9 +363,9 @@ $(document).ready(function() {
                           $('<option>').val(1)
                           .text('Visualizar'),
                           $('<option>').val(2)
-                          .text('Visualizar e realizar ações')
-                        )
-                      )
+                          .text('Visualizar e realizar ações'),
+                        ),
+                      ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
@@ -375,9 +376,9 @@ $(document).ready(function() {
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-wan-type').append(
                           $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir')
-                        )
-                      )
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -410,7 +411,8 @@ $(document).ready(function() {
                         .text('Controle de Atualização de Firmware Restrita'),
                         $('<select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-firmware-restricted-upgrade').append(
+                        .attr('name', 'grant-firmware-restricted-upgrade')
+                        .append(
                           $('<option>').val(false).text('Bloquear'),
                           $('<option>').val(true).text('Permitir'),
                         ),
@@ -605,14 +607,14 @@ $(document).ready(function() {
                       .attr('type', 'submit')
                       .append(
                         $('<div>').addClass('fas fa-check'),
-                        $('<span>').html('&nbsp Editar')
-                      )
-                    )
-                  )
-                )
-              )
-            )
-          )
+                        $('<span>').html('&nbsp Editar'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         );
         // Mark selected options
         $(rowObj).find('[name=grant-wifi-info] option[value=' +
@@ -727,7 +729,7 @@ $(document).ready(function() {
         $(rowObj).find('[name=grant-firmware-beta-upgrade] option[value=' +
           roleObj.grantFirmwareBetaUpgrade + ']')
         .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value=' +
+        $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value='+
           roleObj.grantFirmwareRestrictedUpgrade + ']')
         .attr('selected', 'selected');
       });
