@@ -543,7 +543,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -574,7 +574,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -608,7 +608,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -703,7 +703,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -853,7 +853,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -880,7 +880,7 @@ appDeviceAPIController.appGetDevices = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -908,7 +908,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -945,7 +945,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -994,7 +994,7 @@ appDeviceAPIController.appGetWpsState = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -1056,7 +1056,7 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.find(function(app) {
       return app.id === req.body.app_id;

@@ -303,8 +303,8 @@ deviceListController.changeUpdate = function(req, res) {
     if (matchedDevice.mesh_master && doUpdate) {
       return res.status(500).json({
         success: false,
-        message: 'Este roteador é um slave de uma rede mesh, sua atualização '+
-                 'deve ser feita a partir do mestre de sua rede',
+        message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
+                 'deve ser feita a partir do CPE principal dessa rede',
       });
     }
     matchedDevice.do_update = doUpdate;
@@ -865,7 +865,7 @@ deviceListController.factoryResetDevice = function(req, res) {
     if (err || !device) {
       return res.status(500).json({
         success: false,
-        message: 'Roteador não encontrado na base de dados',
+        message: 'CPE não encontrado na base de dados',
       });
     }
     const model = device.model.replace('N/', '');
@@ -902,7 +902,7 @@ deviceListController.sendMqttMsg = function(req, res) {
     }
     if (device == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(device.version,
                                                   device.wifi_is_5ghz_capable);
@@ -919,7 +919,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         if (!permissions.grantResetDevices) {
           return res.status(200).json({
             success: false,
-            message: 'Roteador não possui essa função!',
+            message: 'CPE não possui essa função!',
           });
         } else if (device) {
           device.lan_devices = device.lan_devices.map((lanDevice) => {
@@ -972,7 +972,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         });
         if (device && !device.use_tr069 && !isDevOn) {
           return res.status(200).json({success: false,
-                                     message: 'Roteador não esta online!'});
+                                     message: 'CPE não esta online!'});
         }
         if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
@@ -1110,7 +1110,7 @@ deviceListController.getFirstBootLog = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     if (matchedDevice.firstboot_log) {
@@ -1120,7 +1120,7 @@ deviceListController.getFirstBootLog = function(req, res) {
       return res.status(200);
     } else {
       return res.status(200).json({success: false,
-                                   message: 'Não existe log deste roteador'});
+                                   message: 'Não existe log deste CPE'});
     }
   });
 };
@@ -1134,7 +1134,7 @@ deviceListController.getLastBootLog = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     if (matchedDevice.lastboot_log) {
@@ -1144,7 +1144,7 @@ deviceListController.getLastBootLog = function(req, res) {
       return res.status(200);
     } else {
       return res.status(200).json({success: false,
-                                   message: 'Não existe log deste roteador'});
+                                   message: 'Não existe log deste CPE'});
     }
   });
 };
@@ -1158,7 +1158,7 @@ deviceListController.getDeviceReg = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(404).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     // hide secret from api
@@ -1232,7 +1232,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (matchedDevice == null) {
       return res.status(404).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
         errors: [],
       });
     }
@@ -2129,7 +2129,7 @@ deviceListController.setPortForward = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2138,13 +2138,13 @@ deviceListController.setPortForward = function(req, res) {
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não possui essa função',
+        message: 'CPE não possui essa função',
       });
     }
     if (matchedDevice.bridge_mode_enabled) {
       return res.status(200).json({
         success: false,
-        message: 'Este roteador está em modo bridge, e portanto não pode '+
+        message: 'Este CPE está em modo bridge, e portanto não pode '+
                  'liberar acesso a portas',
       });
     }
@@ -2194,7 +2194,7 @@ deviceListController.setPortForward = function(req, res) {
             if (!permissions.grantPortForwardAsym) {
               return res.status(200).json({
                 success: false,
-                message: 'Roteador não aceita portas assimétricas',
+                message: 'CPE não aceita portas assimétricas',
               });
             }
 
@@ -2332,7 +2332,7 @@ deviceListController.getPortForward = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2341,7 +2341,7 @@ deviceListController.getPortForward = function(req, res) {
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não possui essa função',
+        message: 'CPE não possui essa função',
       });
     }
 
@@ -2406,7 +2406,7 @@ deviceListController.getPingHostsList = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     return res.status(200).json({
@@ -2428,7 +2428,7 @@ deviceListController.setPingHostsList = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
@@ -2476,7 +2476,7 @@ deviceListController.getLanDevices = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2509,7 +2509,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2541,7 +2541,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       return res.status(404).json({
         success: false,
         type: 'danger',
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2574,13 +2574,13 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!matchedDevice) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     if (!isDevOn) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não está online!',
+        message: 'CPE não está online!',
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2591,7 +2591,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não suporta este comando',
+        message: 'CPE não suporta este comando',
       });
     }
     Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -2654,7 +2654,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar roteador'});
+                                   message: 'Erro ao encontrar CPE'});
     }
     let devFound = false;
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
@@ -2688,7 +2688,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     let matchedDevice = await DeviceModel.findById(req.body.id);
     if (!matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar roteador'});
+                                   message: 'Erro ao encontrar CPE'});
     }
     let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
     if (retObj.success) {
@@ -2805,7 +2805,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
               value: 'wan_negociated_duplex'},
       {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
       {label: 'ID do cliente', value: 'external_reference.data'},
-      {label: 'Modelo do roteador', value: 'model'},
+      {label: 'Modelo do CPE', value: 'model'},
       {label: 'Versão do firmware', value: 'version'},
       {label: 'Release', value: 'installed_release'},
       {label: 'Atualizar firmware', value: 'do_update'},

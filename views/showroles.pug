@@ -20,7 +20,7 @@ block content
             action='/user/role/new',
             novalidate
           )
-            .row
+            .row.mb-3
               .col
                 .md-form.input-entry
                   label Nome da classe
@@ -28,7 +28,9 @@ block content
                                      name="name",
                                      required)
                   .invalid-feedback Por favor, preencha este campo
-            .row
+            h5.text-muted.m-0 Permissões do cadastro e ações nas CPEs
+            hr.my-1
+            .row.mb-4
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -52,26 +54,19 @@ block content
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware
-                    select.browser-default.md-select(name="grant-firmware-upgrade")
-                      option(value=0) Bloquear
-                      option(value=1) Permitir
-                      option(value=2) Permitir em massa
-                .md-form
-                  .md-selectfield.form-control.my-0
                     label Controle do Tipo de Conexão
                     select.browser-default.md-select(name="grant-wan-type")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Identificação do Roteador
+                    label Controle de Identificação do CPE
                     select.browser-default.md-select(name="grant-device-id")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Ações no Roteador
+                    label Controle de Ações no CPE
                     select.browser-default.md-select(name="grant-device-actions")
                       option(value="false") Bloquear
                       option(value="true") Permitir
@@ -83,7 +78,7 @@ block content
                       option(value="true") Visualizar e editar
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de bloqueio de Internet nos dispositivos
+                    label Bloqueio de Internet nos dispositivos
                     select.browser-default.md-select(name="grant-lan-devices-block")
                       option(value="false") Bloquear
                       option(value="true") Permitir
@@ -93,98 +88,29 @@ block content
                     select.browser-default.md-select(name="grant-opmode-edit")
                       option(value="false") Visualizar
                       option(value="true") Visualizar e editar
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Acesso ao App do Técnico
-                    select.browser-default.md-select(name="grant-diag-app-access")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Acesso às Certificações de Roteadores
-                    select.browser-default.md-select(name="grant-certification-access")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e editar
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Busca de roteadores
-                    select.browser-default.md-select(name="grant-search-level")
-                      option(value=0) Não permitir busca e visualização
-                      option(value=1) Busca simples
-                      option(value=2) Busca completa com filtros especiais
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware Beta
-                    select.browser-default.md-select(name="grant-firmware-beta-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware Restrita
-                    select.browser-default.md-select(name="grant-firmware-restricted-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Informações de VLANs
-                    select.browser-default.md-select(name="grant-vlan")
-                      option(value=0) Não Visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e Editar
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Acesso aos Logs dos Roteadores
+                    label Acesso aos Logs dos CPEs
                     select.browser-default.md-select(name="grant-log-access")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Remoção de Registro de Roteador
+                    label Remoção de Registro de CPEs
                     select.browser-default.md-select(name="grant-device-removal")
                       option(value=0) Bloquear
                       option(value=1) Permitir
                       option(value=2) Permitir em massa
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Adição de Registro de Roteador
+                    label Adição de Registro de CPEs
                     select.browser-default.md-select(name="grant-device-add")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Configuração de parâmetros do TR-069
-                    select.browser-default.md-select(name="grant-monitor-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Gerência de Firmwares
-                    select.browser-default.md-select(name="grant-firmware-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Gerência de Usuários
-                    select.browser-default.md-select(name="grant-user-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Controle de Configurações do Flashman
-                    select.browser-default.md-select(name="grant-flashman-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Permitir Acesso a API REST
-                    select.browser-default.md-select(name="grant-api-access")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label Mostrar Alertas em Roteadores
+                    label Mostrar Alertas em CPEs
                     select.browser-default.md-select(name="grant-notification-popups")
                       option(value="true") Permitir
                       option(value="false") Bloquear
@@ -210,22 +136,108 @@ block content
                       option(value=2) Visualizar e realizar ações
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Exportação de cadastros por CSV
-                    select.browser-default.md-select(name="grant-csv-export")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-                .md-form
-                  .md-selectfield.form-control.my-0
                     label Acesso a gráficos de tráfego na WAN
                     select.browser-default.md-select(name="grant-wan-bytes")
                       option(value="false") Bloquear
                       option(value="true") Permitir
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Total sobre status de roteadores
+                    label Informações de VLANs
+                    select.browser-default.md-select(name="grant-vlan")
+                      option(value=0) Não Visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e Editar
+            h5.text-muted.m-0 Permissões de atualização de firmware
+            hr.my-1
+            .row.mb-4
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Gerência de Firmwares
+                    select.browser-default.md-select(name="grant-firmware-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware
+                    select.browser-default.md-select(name="grant-firmware-upgrade")
+                      option(value=0) Bloquear
+                      option(value=1) Permitir
+                      option(value=2) Permitir em massa
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware Beta
+                    select.browser-default.md-select(name="grant-firmware-beta-upgrade")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Atualização de Firmware Restrita
+                    select.browser-default.md-select(name="grant-firmware-restricted-upgrade")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+            h5.text-muted.m-0 Permissões gerais do Flashman
+            hr.my-1
+            .row.mb-4
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Configuração de parâmetros do TR-069
+                    select.browser-default.md-select(name="grant-monitor-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Permitir Acesso a API REST
+                    select.browser-default.md-select(name="grant-api-access")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Gerência de Usuários
+                    select.browser-default.md-select(name="grant-user-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Acesso ao App do Técnico
+                    select.browser-default.md-select(name="grant-diag-app-access")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Total sobre status de CPEs
                     select.browser-default.md-select(name="grant-search-summary")
                       option(value="false") Não visualizar
                       option(value="true") Visualizar
+              .col-12.col-lg-6
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Busca de CPEs
+                    select.browser-default.md-select(name="grant-search-level")
+                      option(value=0) Não permitir busca e visualização
+                      option(value=1) Busca simples
+                      option(value=2) Busca completa com filtros especiais
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Exportação de cadastros por CSV
+                    select.browser-default.md-select(name="grant-csv-export")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Controle de Configurações do Flashman
+                    select.browser-default.md-select(name="grant-flashman-manage")
+                      option(value="false") Bloquear
+                      option(value="true") Permitir
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Acesso às Certificações de CPEs
+                    select.browser-default.md-select(name="grant-certification-access")
+                      option(value=0) Não visualizar
+                      option(value=1) Visualizar
+                      option(value=2) Visualizar e editar
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Adição/Edição/Remoção de Perfis de VLANs

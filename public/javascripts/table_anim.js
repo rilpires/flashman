@@ -348,7 +348,7 @@ $(document).ready(function() {
     let filterList = $('#devices-search-input').val();
     let exportURL = '/devicelist/export?filter=' +
                     encodeURIComponent(filterList);
-    downloadCSV(exportURL, 'lista-de-roteadores-flashbox.csv');
+    downloadCSV(exportURL, 'lista-de-cpes-flashbox.csv');
   });
 
   $(document).on('click', '.tab-switch-btn', function(event) {
@@ -396,12 +396,12 @@ $(document).ready(function() {
         if (status == 0 || status == 10) {
           upgradeStatus.find('.status-waiting').removeClass('d-none');
           let slaveCount = row.data('slave-count');
-          let tooltip = 'Atualizando roteador...';
+          let tooltip = 'Atualizando CPE...';
           if (remain === slaveCount+1) {
-            tooltip = 'Atualizando roteador mestre...';
+            tooltip = 'Atualizando CPE principal...';
           } else if (remain > 0) {
             let current = slaveCount - remain + 1;
-            tooltip = 'Atualizando roteador slave '+
+            tooltip = 'Atualizando CPE secundário '+
               current+' de '+slaveCount+'...';
           }
           upgradeStatus.find('.status-waiting').attr('title', tooltip);
@@ -619,7 +619,7 @@ $(document).ready(function() {
     let slaveCount = slaves.length;
     let currentSlave = device._id;
     let currentSlaveNum = 0;
-    let tooltipMsg = 'Atualizando roteador...';
+    let tooltipMsg = 'Atualizando CPE...';
     if (slaveCount > 0) {
       slaves.forEach((slave)=>{
         if (inProgress) return;
@@ -628,10 +628,10 @@ $(document).ready(function() {
         currentSlave = slave._id;
       });
       if (meshCount === slaveCount+1) {
-        tooltipMsg = 'Atualizando roteador mestre...';
+        tooltipMsg = 'Atualizando CPE principal...';
       } else {
         currentSlaveNum = slaveCount - meshCount + 1;
-        tooltipMsg = 'Atualizando roteador slave '+currentSlaveNum+' de '+slaveCount+'...';
+        tooltipMsg = 'Atualizando CPE secundário '+currentSlaveNum+' de '+slaveCount+'...';
       }
     }
     if (inProgress) {
@@ -757,7 +757,7 @@ $(document).ready(function() {
         {hour: '2-digit', minute: '2-digit'});
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
-      '<label class="active">Último reset no roteador realizado em</label>'+
+      '<label class="active">Último reset no CPE realizado em</label>'+
       '<input class="form-control" type="text" '+
       'disabled value="'+resetDateStr+'">'+
       '<div class="invalid-feedback"></div>'+
@@ -765,7 +765,7 @@ $(document).ready(function() {
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Registro do roteador criado em</label>'+
+          '<label class="active">Registro do CPE criado em</label>'+
           '<input class="form-control" type="text" '+
           'disabled value="'+createdDateStr+'">'+
           '<div class="invalid-feedback"></div>'+
@@ -1002,7 +1002,7 @@ $(document).ready(function() {
         if (res.devices.length == 0) {
           deviceTableContent.html(
             '<tr><td class="grey lighten-5 text-center" colspan="12">'+
-              '<h5>Nenhum roteador encontrado</h5>'+
+              '<h5>Nenhum CPE encontrado</h5>'+
             '</td></tr>',
           );
           // Attach elements back to DOM after manipulation
@@ -1178,7 +1178,7 @@ $(document).ready(function() {
           let logAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
           .replace('$REPLACE_ICON', 'fa-file-alt')
-          .replace('$REPLACE_TEXT', 'Logs do roteador');
+          .replace('$REPLACE_TEXT', 'Logs do CPE');
 
           let unblockAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-reset-blocked')
@@ -1242,7 +1242,7 @@ $(document).ready(function() {
 
           let idxMenu = 0;
           let sideMenu = [];
-          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span></a>';
+          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar CPE</span></a>';
           sideMenu[1] = '<div><a class="dropdown-item btn-reset-app"><i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span></a>';
 
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
@@ -1366,7 +1366,7 @@ $(document).ready(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este roteador está em modo bridge! Para alterar os dados da WAN, retire o roteador do modo bridge primeiro.'+
+                    'Este CPE está em modo bridge! Para alterar os dados da WAN, retire o CPE do modo bridge primeiro.'+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1383,7 +1383,7 @@ $(document).ready(function() {
                       '</select>'+
                     '</div>'+
                     '<h7 class="orange-text d-none" id="edit_connect_type_warning-'+index+'">'+
-                      'Cuidado! Isso pode deixar o roteador inacessível '+
+                      'Cuidado! Isso pode deixar o CPE inacessível '+
                       'dependendo das configurações de rede do seu provedor'+
                     '</h7>'+
                   '</div>'+
@@ -1466,7 +1466,7 @@ $(document).ready(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este roteador está em modo bridge! Para alterar os dados da LAN, retire o roteador do modo bridge primeiro.'+
+                    'Este CPE está em modo bridge! Para alterar os dados da LAN, retire o CPE do modo bridge primeiro.'+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1475,7 +1475,7 @@ $(document).ready(function() {
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">'+
-                    (grantLanGwEdit ? 'IP do Roteador' : 'IP da Rede')+
+                    (grantLanGwEdit ? 'IP do CPE' : 'IP da Rede')+
                   '</label>'+
                   '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
@@ -1484,7 +1484,7 @@ $(document).ready(function() {
                 (grantLanGwEdit ?
                   '<div class="alert alert-info">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
-                    '<span>IP da rede será calculado a partir do IP do roteador e Máscara escolhidos</span>'+
+                    '<span>IP da rede será calculado a partir do IP do CPE e Máscara escolhidos</span>'+
                   '</div>' :
                   ''
                 )+
@@ -1555,14 +1555,14 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Habilitar portas de rede LAN do roteador'+ // Changed to Enable instead Disable
+                      'Habilitar portas de rede LAN do CPE'+ // Changed to Enable instead Disable
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox"  id="edit_opmode_fixip_en-'+index+'" '+
                     'name="edit_opmode_fixip_en-'+index+'" $REPLACE_SELECTED_OPMODE_IP_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_fixip_en-'+index+'">'+
-                      'Fixar o IP do roteador em bridge'+
+                      'Fixar o IP do CPE em bridge'+
                     '</label>'+
                   '</div>'+
                   '<div class="alert alert-info mt-3">'+
@@ -1578,7 +1578,7 @@ $(document).ready(function() {
                 '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP fixo do roteador em bridge'+
+                      'IP fixo do CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_IP_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1586,7 +1586,7 @@ $(document).ready(function() {
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do gateway para o roteador em bridge'+
+                      'IP do gateway para o CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_gateway-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_GATEWAY_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1594,7 +1594,7 @@ $(document).ready(function() {
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do DNS para o roteador em bridge'+
+                      'IP do DNS para o CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_dns-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_DNS_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1604,7 +1604,7 @@ $(document).ready(function() {
                     '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                     '<span>'+
                       'Cuidado! Garanta que sua rede está configurada para entregar o IP fixo escolhido, '+
-                      'senão o roteador pode ficar inacessível!'+
+                      'senão o CPE pode ficar inacessível!'+
                     '</span>'+
                   '</div>'+
                 '</div>'+
@@ -2548,7 +2548,7 @@ $(document).ready(function() {
     swal({
       type: 'warning',
       title: 'Atenção!',
-      text: 'Este roteador perderá todas as configurações. Esta ação só poderá '+
+      text: 'Este CPE perderá todas as configurações. Esta ação só poderá '+
       'ser desfeita com uma nova instalação através do Assistente Flashbox.',
       confirmButtonText: 'OK',
       confirmButtonColor: '#4db6ac',
@@ -2583,7 +2583,7 @@ $(document).ready(function() {
             swal({
               type: 'success',
               title: 'Processo iniciado com sucesso',
-              text: 'Aguarde o roteador reiniciar, e então segure o botão de '+
+              text: 'Aguarde o CPE reiniciar, e então segure o botão de '+
                     'reset por 15 segundos.',
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
@@ -2594,7 +2594,7 @@ $(document).ready(function() {
             swal({
               type: 'error',
               title: 'Um erro ocorreu',
-              text: 'Não foi possível restaurar o roteador para o firmware de '+
+              text: 'Não foi possível restaurar o CPE para o firmware de '+
                     'fábrica. Por favor tente novamente.',
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
