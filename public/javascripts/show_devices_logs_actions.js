@@ -12,7 +12,7 @@ socket.on('LIVELOG', function(macaddr, data) {
     $('.btn-log-live').prop('disabled', false);
     if (id == macaddr) {
       let textarea = $('#logArea');
-      if (textarea.text() == 'Aguardando resposta do roteador...') {
+      if (textarea.text() == 'Aguardando resposta do CPE...') {
         let usrtypes = ['user', 'daemon', 'kern', 'local1', 'authpriv'];
         let logContent = ungzip(data, {to: 'string'});
         // Store log to be downloadable
@@ -140,11 +140,10 @@ $(document).ready(function() {
       $('#mesh-change-div').hide();
     }
 
+    $('#logRouterid_title').html('&nbsp; Logs do CPE &nbsp;');
     if (isTR069) {
-      $('#logRouterid_title').html('&nbsp; Logs da Onu &nbsp;');
       $('#logRouterid_visual').html(serialid);
     } else {
-      $('#logRouterid_title').html('&nbsp; Logs do Roteador &nbsp;');
       $('#logRouterid_visual').html(id);
     }
     $('#logRouterid_label').html(id);
@@ -174,7 +173,7 @@ $(document).ready(function() {
         $('#logs-placeholder').hide('fast', function() {
           $('#logArea').show('fast');
           if (res.success) {
-            textarea.html('Aguardando resposta do roteador...');
+            textarea.html('Aguardando resposta do CPE...');
           } else {
             textarea.html(res.message);
           }

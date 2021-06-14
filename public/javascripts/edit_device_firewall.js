@@ -324,7 +324,7 @@ $(document).ready(function() {
       if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
         swal({
           title: 'Falha na inclusão da regra',
-          text: 'Roteador não aceita portas assimétricas! Atualize o Roteador.',
+          text: 'CPE não aceita portas assimétricas! Atualize o firmware.',
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });

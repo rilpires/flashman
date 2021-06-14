@@ -120,7 +120,7 @@ $(document).ready(function() {
         success: function(res) {
           if (res.success) {
             $('#speed-test-strong-text').empty();
-            $('#speed-test-shown-text').html('Aguardando resposta do roteador...');
+            $('#speed-test-shown-text').html('Aguardando resposta do CPE...');
             $('#speed-test-shown-icon')
             .removeClass((i, c)=>c.match(/fa\-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');

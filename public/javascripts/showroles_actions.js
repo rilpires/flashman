@@ -203,7 +203,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Identificação do Roteador'),
+                        .text('Controle de Identificação do CPE'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-id').append(
@@ -216,7 +216,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Ações no Roteador'),
+                        .text('Controle de Ações no CPE'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-actions').append(
@@ -229,7 +229,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso aos Logs dos Roteadores'),
+                        .text('Acesso aos Logs dos CPEs'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-log-access').append(
@@ -242,7 +242,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Mostrar Alertas em Roteadores'),
+                        .text('Mostrar Alertas em CPEs'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-notification-popups').append(
@@ -300,7 +300,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Voltar Roteador para a Firmware de Fábrica'),
+                        .text('Voltar CPE para a Firmware de Fábrica'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-factory-reset').append(
@@ -313,7 +313,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Remoção de Registro de Roteador'),
+                        .text('Remoção de Registro de CPE'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-removal').append(
@@ -327,7 +327,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Adição de Registro de Roteador'),
+                        .text('Adição de Registro de CPE'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-add').append(
@@ -458,7 +458,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Total sobre status de roteadores'),
+                        .text('Total sobre status de CPEs'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-search-summary').append(
@@ -525,7 +525,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso às Certificações de Roteadores'),
+                        .text('Acesso às Certificações de CPEs'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-certification-access').append(
@@ -542,7 +542,7 @@ $(document).ready(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Busca de roteadores'),
+                        .text('Busca de CPEs'),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-search-level').append(
