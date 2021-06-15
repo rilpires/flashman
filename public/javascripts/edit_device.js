@@ -69,7 +69,14 @@ let validateEditDevice = function(event) {
   let power5ghz = $('#edit_wifi5_power-' + index.toString()).val();
   let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
   let wifiHidden5ghz = ($('#edit_wifi5_hidden-' + index.toString()).is(':checked') ? 1 : 0);
-  let isSsidPrefixEnabled = ($('#edit_is_ssid_prefix_enabled-' + index.toString()).is(':checked') ? 1 : 0);
+  let isDeviceSsidPrefixEnabled = ($('#edit_is_ssid_prefix_enabled-' +
+    index.toString()).is(':checked') ? 1 : 0);
+  let ssidPrefix = '';
+  if (sessionStorage.getItem('hasPersonalizationHash') == 'true' &&
+      sessionStorage.getItem('isSsidPrefixEnabled') == 'true' &&
+      isDeviceSsidPrefixEnabled == 1) {
+    ssidPrefix = sessionStorage.getItem('ssidPrefix');
+  }
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
@@ -148,7 +155,8 @@ let validateEditDevice = function(event) {
     }
   }
   if (validateWifi) {
-    genericValidate(ssid, validator.validateSSID, errors.ssid);
+    genericValidate(ssidPrefix+ssid,
+      validator.validateSSID, errors.ssid);
     genericValidate(password, validator.validateWifiPassword, errors.password);
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
@@ -160,7 +168,7 @@ let validateEditDevice = function(event) {
     genericValidate(power, validator.validatePower, errors.power);
   }
   if (validateWifi5ghz) {
-    genericValidate(ssid5ghz,
+    genericValidate(ssidPrefix+ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
     genericValidate(password5ghz,
                     validator.validateWifiPassword, errors.password5ghz);
@@ -248,7 +256,7 @@ let validateEditDevice = function(event) {
     data.content.wifi_state_5ghz = wifiState5ghz;
     data.content.wifi_hidden = wifiHidden;
     data.content.wifi_hidden_5ghz = wifiHidden5ghz;
-    data.content.isSsidPrefixEnabled = isSsidPrefixEnabled;
+    data.content.isSsidPrefixEnabled = isDeviceSsidPrefixEnabled;
 
     $.ajax({
       type: 'POST',

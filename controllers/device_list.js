@@ -15,6 +15,7 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const updateController = require('./update_flashman.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 
@@ -1173,6 +1174,9 @@ deviceListController.getDeviceReg = function(req, res) {
     if (matchedDevice.lastboot_log) {
       matchedDevice.lastboot_log = null;
     }
+    if (matchedDevice.isSsidPrefixEnabled === undefined) {
+      matchedDevice.isSsidPrefixEnabled = false;
+    }
 
     let deviceColor = 'grey';
     matchedDevice.online_status = false;
@@ -1321,7 +1325,9 @@ deviceListController.setDeviceReg = function(req, res) {
           }
         }
         if (content.hasOwnProperty('wifi_ssid')) {
-          genericValidate(ssid, validator.validateSSID, 'ssid');
+          genericValidate(updateController.
+            getSsidPrefix(isSsidPrefixEnabled)+ssid,
+            validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
           genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1339,7 +1345,9 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(power, validator.validatePower, 'power');
         }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
-          genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+          genericValidate(updateController.
+            getSsidPrefix(isSsidPrefixEnabled)+ssid5ghz,
+            validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
           genericValidate(password5ghz,
@@ -1804,7 +1812,8 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      genericValidate(ssid, validator.validateSSID, 'ssid');
+      genericValidate(updateController.getSsidPrefix(true)+ssid,
+        validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
@@ -1838,6 +1847,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
+              'isSsidPrefixEnabled': true, // for new devices, default is true
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;

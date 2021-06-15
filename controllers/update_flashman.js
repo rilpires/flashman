@@ -691,4 +691,23 @@ updateController.updateAppPersonalization = async function(app) {
   }
 };
 
+
+updateController.getSsidPrefix = function(isDeviceSsidPrefixEnabled) {
+  let ret;
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+        if (!!matchedConfig.personalizationHash &&
+            matchedConfig.isSsidPrefixEnabled == true &&
+            isDeviceSsidPrefixEnabled == true) {
+          ret = matchedConfig.ssidPrefix;
+        } else {
+          ret = '';
+        }
+    } else {
+      ret = '';
+    }
+  });
+  return ret;
+};
+
 module.exports = updateController;
