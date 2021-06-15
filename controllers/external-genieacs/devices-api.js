@@ -193,6 +193,8 @@ const getZTEFields = function(model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      fields.wan.name = 'InternetGatewayDevice.X_ZTE-COM_Telnet.UserName';
+      fields.wan.password = 'InternetGatewayDevice.X_ZTE_Telnet.Password';
       break;
     case 'F670L': // Multilaser ZTE F670L
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
@@ -201,6 +203,8 @@ const getZTEFields = function(model) {
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
+      fields.wan.name = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
+      fields.wan.password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       break;
   }
   fields.wan.name = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
@@ -216,6 +220,8 @@ const getNokiaFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+  fields.wan.name = 'InternetGatewayDevice.X_Authentication.Account.UserName';
+  fields.wan.name = 'InternetGatewayDevice.X_Authentication.Account.Password';
   return fields;
 };
 
@@ -225,6 +231,8 @@ const getStavixFields = function() {
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+  fields.wan.name = 'InternetGatewayDevice.UserInterface.X_RTK_ServiceManage.TelnetUserName';
+  fields.wan.password = 'InternetGatewayDevice.UserInterface.X_RTK_ServiceManage.TelnetPassword';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');
