@@ -194,7 +194,7 @@ const getZTEFields = function(model) {
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.wan.name = 'InternetGatewayDevice.X_ZTE-COM_Telnet.UserName';
-      fields.wan.password = 'InternetGatewayDevice.X_ZTE_Telnet.Password';
+      fields.wan.password = 'InternetGatewayDevice.X_ZTE-COM_Telnet.Password';
       break;
     case 'F670L': // Multilaser ZTE F670L
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
