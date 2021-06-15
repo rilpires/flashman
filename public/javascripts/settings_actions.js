@@ -1,4 +1,5 @@
 import {displayAlertMsg} from './common_actions.js';
+import Validator from './device_validator.js';
 
 // assigning tr069 elements.
 let recoveryInput =
@@ -11,6 +12,8 @@ let offlineErrorElement =
   document.getElementById('error-lost-informs-offline-threshold');
 let recoveryOfflineErrorElement =
   document.getElementById('error-recovery-offline-thresholds');
+let ssidPrefixInput = document.getElementById('ssid-prefix');
+let ssidPrefixErrorElement = document.getElementById('error-ssid-prefix');
 
 // resets errors and message styles for tr069 recovery and offline iputs.
 const resetRecoveryOfflineInputDependencyError = function() {
@@ -46,10 +49,24 @@ const checkrecoveryOfflineInputDependency = function() {
   }
 };
 
+
+const setSsidPrefixError = function() {
+  ssidPrefixInput.setCustomValidity('Este campo não pode ter '+
+    'mais de 16 caracteres e Somente são aceitos: caracteres'+
+    ' alfanuméricos, espaços, ponto, - e _');
+  ssidPrefixErrorElement.style.display = 'block';
+};
+
+const resetSsidPrefixError = function() {
+  ssidPrefixInput.setCustomValidity('');
+  ssidPrefixErrorElement.style.display = 'none';
+};
+
 // called after save button is pressed.
 let configFlashman = function(event) {
   resetRecoveryOfflineInputDependencyError(); // reseting errors and message
   // styles for recovery and offline inputs to default values.
+  resetSsidPrefixError();
 
   // executing browser validation on all fields.
   let allValid = $(this)[0].checkValidity();
@@ -61,6 +78,14 @@ let configFlashman = function(event) {
    && Number(recoveryInput.value) >= Number(offlineInput.value)) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
+  }
+  // check ssid prefix value
+  if (ssidPrefixInput.validity.valid &&
+    ssidPrefixInput.value && (
+    ssidPrefixInput.value.length > 16 ||
+    !ssidPrefixInput.value.match(/^[a-zA-Z0-9\.\-\_\#\s]*$/))) {
+    setSsidPrefixError();
+    allValid = false;
   }
   // take action after validation is ready.
   if (allValid) {

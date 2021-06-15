@@ -135,7 +135,9 @@ block content
                 type="text",
                 name="ssid-prefix"
               )
-              .invalid-feedback Insira um prefixo válido
+              #error-ssid-prefix.invalid-feedback Este campo não pode ter
+                | mais de 16 caracteres e Somente são aceitos: caracteres
+                | alfanuméricos, espaços, ponto, - e _
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
