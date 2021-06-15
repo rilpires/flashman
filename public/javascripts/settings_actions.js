@@ -49,6 +49,17 @@ const checkrecoveryOfflineInputDependency = function() {
   }
 };
 
+window.checkSsidPrefixValidity = function() {
+  // check ssid prefix value
+  if (ssidPrefixInput.value && (
+    ssidPrefixInput.value.length > 16 ||
+    !ssidPrefixInput.value.match(/^[a-zA-Z0-9\.\-\_\#\s]*$/))) {
+    setSsidPrefixError();
+  } else {
+    resetSsidPrefixError();
+  }
+};
+
 
 const setSsidPrefixError = function() {
   ssidPrefixInput.setCustomValidity('Este campo não pode ter '+

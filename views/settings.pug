@@ -134,9 +134,10 @@ block content
               input#ssid-prefix.form-control(
                 type="text",
                 name="ssid-prefix"
+                oninput="checkSsidPrefixValidity()"
               )
               #error-ssid-prefix.invalid-feedback Este campo não pode ter
-                | mais de 16 caracteres e Somente são aceitos: caracteres
+                |  mais de 16 caracteres e são aceitos: caracteres
                 | alfanuméricos, espaços, ponto, - e _
 
           if (superuser || (role && role.grantMonitorManage))
