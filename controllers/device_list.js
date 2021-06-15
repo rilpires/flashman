@@ -2072,7 +2072,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   }
   // check compatibility in mode of port mapping
   if (deviceListController.checkIncompatibility(rules, DeviceVersion.
-  getPortForwardTr069Compatibility(device.version))) {
+  getPortForwardTr069Compatibility(device.model, device.version))) {
     ret.success = false;
     ret.message = 'Possui regra não compatível';
     return ret;
@@ -2335,7 +2335,8 @@ deviceListController.getPortForward = function(req, res) {
         success: true,
         content: matchedDevice.port_mapping,
         compatibility: DeviceVersion.
-        getPortForwardTr069Compatibility(matchedDevice.version),
+        getPortForwardTr069Compatibility(matchedDevice.model,
+                                         matchedDevice.version),
       });
     }
 
