@@ -207,8 +207,6 @@ const getZTEFields = function(model) {
       fields.wan.password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       break;
   }
-  fields.wan.name = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
-  fields.wan.password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   return fields;
