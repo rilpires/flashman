@@ -901,7 +901,8 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(device.version,
-                                                  device.wifi_is_5ghz_capable);
+                                                  device.wifi_is_5ghz_capable,
+                                                  device.model);
 
     switch (msgtype) {
       case 'rstapp':
