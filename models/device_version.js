@@ -1114,7 +1114,7 @@ const grantResetDevices = function(version) {
 };
 
 const grantPortForward = function(version, model) {
-  if (tr069Devices.keys().includes(model) &&
+  if (Object.keys(tr069Devices).includes(model) &&
       tr069Devices[model].port_forward_support &&
       tr069Devices[model].port_forward_opts[version] !== undefined) {
     // Compatible TR-069 CPE
@@ -1252,7 +1252,7 @@ const grantUpnp = function(version) {
 
 const grantSpeedTest = function(version, model) {
   if (version.match(versionRegex)) {
-    if (!model || !flashboxFirmwareDevices.keys().includes(model)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
       return false;
     }
@@ -1325,7 +1325,7 @@ const grantWanBytesSupport = function(version) {
 };
 
 const grantPonSignalSupport = function(version, model) {
-  if (tr069Devices.keys().includes(model) &&
+  if (Object.keys(tr069Devices).includes(model) &&
       tr069Devices[model].pon_signal_support
   ) {
     // Compatible TR-069 ONU
@@ -1337,7 +1337,7 @@ const grantPonSignalSupport = function(version, model) {
 
 const grantMeshMode = function(version, model) {
   if (version.match(versionRegex)) {
-    if (!model || !flashboxFirmwareDevices.keys().includes(model)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
       return false;
     }
@@ -1363,7 +1363,7 @@ const grantUpdateAck = function(version) {
 
 const grantWpsFunction = function(version, model) {
   if (version.match(versionRegex)) {
-    if (!model || !flashboxFirmwareDevices.keys().includes(model)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
       return false;
     }
@@ -1413,7 +1413,7 @@ DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
   let ret = 4;
   // The default quantity of ports is 4, as checked
-  if (flashboxFirmwareDevices.keys().includes(model)) {
+  if (Object.keys(flashboxFirmwareDevices).includes(model)) {
     ret = flashboxFirmwareDevices[model].num_usable_lan_ports;
   }
   return ret;
