@@ -41,12 +41,12 @@ let setFieldInvalidLabel = (target) => {
   target.nextElementSibling.style.display = 'block';
   target.setCustomValidity('Insira um endereço válido');
 }
-let checkFqdn = (e) =>
+window.checkFqdn = (e) =>
   isFqdnValid(e.target.value) ? setFieldValidLabel(e.target) : setFieldInvalidLabel(e.target);
-let datalistFqdn = (e) => e.target.value === "Apagar" || e.target.value === "Não alterar" ||
-  e.target.value === '' ? setFieldValidLabel(e.target) : checkFqdn(e);
-let checkDeviceFqdn = (e) =>
-  e.target.value === '' ? setFieldValidLabel(e.target) : checkFqdn(e);
+window.datalistFqdn = (e) => e.target.value === "Apagar" || e.target.value === "Não alterar" ||
+  e.target.value === '' ? setFieldValidLabel(e.target) : window.checkFqdn(e);
+window.checkDeviceFqdn = (e) =>
+  e.target.value === '' ? setFieldValidLabel(e.target) : window.checkFqdn(e);
 
 let hideModalShowAllert = function (modalJQueryElement, message, type, shouldReload=false) {
   modalJQueryElement.modal('hide').on('hidden.bs.modal', function() {
