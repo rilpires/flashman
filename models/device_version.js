@@ -1273,7 +1273,8 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
-  if (grantSpeedTest(version, model)) {
+  if (grantSpeedTest(version, model) &&
+      Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
   }
   return 0;
