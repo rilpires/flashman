@@ -85,7 +85,7 @@ let showIncompatibilityMessage = function(compatibility) {
   }
 };
 
-let checkAdvancedOptions = function() {
+window.checkAdvancedOptions = function() {
   let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
   let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0];
@@ -714,7 +714,7 @@ $(document).ready(function() {
           fillSessionStorage(res.content);
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
-          checkAdvancedOptions();
+          window.checkAdvancedOptions();
           $('#port-forward-tr069-main-label').text(sessionStorage
                                              .getItem('serialId'));
           $('#port-forward-tr069-modal').modal('show');
