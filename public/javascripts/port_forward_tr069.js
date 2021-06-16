@@ -1,3 +1,4 @@
+import Validator from './device_validator.js';
 
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
@@ -200,7 +201,10 @@ let checkPortsValues = function(portsValues) {
     }
   }
   if (!isPortsOnRange) {
-    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)');
+    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! ' +
+                    '(Por particularidades de aplicações do dispositivo ' +
+                    'TR-069 as seguintes portas também não são permitidas : ' +
+                    '22, 23, 80, 443, 7547 e 58000)');
   }
   if (!isPortsNotEmpty) {
     triggerRedAlert('Os campos devem ser preenchidos!');
@@ -215,7 +219,7 @@ let checkPortsValues = function(portsValues) {
     isPortsNotEmpty && isRangeOfSameSize && isRangeNegative);
 };
 
-let removeOnePortMapping = function(input) {
+window.removeOnePortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMapping = input.dataset['portMapping'];
 
@@ -226,7 +230,7 @@ let removeOnePortMapping = function(input) {
   let isRangeOfPorts = portMapping.includes('-');
 
   if (portsBadges.length == 1) {
-    removeSetOfPortMapping(input);
+    window.removeSetOfPortMapping(input);
   } else {
     /* remove the one port mapping */
     portsBadges = portsBadges.filter((p) => {
@@ -269,7 +273,7 @@ let removeOnePortMapping = function(input) {
   }
 };
 
-let removeSetOfPortMapping = function(input) {
+window.removeSetOfPortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMappingTable = $('#port-forward-tr069-table');
   let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
@@ -282,7 +286,7 @@ let removeSetOfPortMapping = function(input) {
   portMappingTable.find('[data-ip="' + ip + '"]').remove();
 };
 
-let removeAllPortMapping = function() {
+window.removeAllPortMapping = function() {
   let portMappingTable = $('#port-forward-tr069-table');
   // get needful variables
   let deviceId = sessionStorage.getItem('deviceId');
@@ -304,10 +308,10 @@ let removeAllPortMapping = function() {
   sessionStorage.setItem('lanSubmask', lanSubmask);
   sessionStorage.setItem('compatibility',
             JSON.stringify(compatibility));
-
 };
 
-let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) {
+let checkOverlappingPorts = function(ip, listOfMappings,
+                                     ports, isRangeOfPorts) {
   let ret = false;
   let i;
   for (i = 0; i < listOfMappings.length; i++) {
@@ -388,7 +392,8 @@ let putPortMapping = function(ip, ports) {
   if (listOfMappings == null) {
     listOfMappings = [];
   }
-  isOverlapping = checkOverlappingPorts(ip, listOfMappings, ports, isRangeOfPorts);
+  isOverlapping = checkOverlappingPorts(ip, listOfMappings,
+                                        ports, isRangeOfPorts);
   if (isOverlapping) {
     triggerRedAlert('Porta estão sobrepostas!');
     return;
@@ -525,7 +530,7 @@ let putPortMapping = function(ip, ports) {
   }
 };
 
-let checkPortMappingInputs = function() {
+window.checkPortMappingInputs = function() {
   let i;
   let deviceIp = sessionStorage.getItem('lanSubnet');
   let maskBits = sessionStorage.getItem('lanSubmask');
@@ -555,7 +560,6 @@ let checkPortMappingInputs = function() {
       putPortMapping(ipAddressGiven, portsValues);
     }
   }
-
 };
 
 let fillSessionStorage = function(rules) {
@@ -711,22 +715,21 @@ $(document).ready(function() {
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
           checkAdvancedOptions();
-          $('#port-forward-tr069-main-label').text(sessionStorage.getItem('serialId'));
+          $('#port-forward-tr069-main-label').text(sessionStorage
+                                             .getItem('serialId'));
           $('#port-forward-tr069-modal').modal('show');
           showIncompatibilityMessage(res.compatibility);
+        } else {
+          let badge = $(event.target).closest('.actions-opts')
+                                     .find('.badge-warning');
+          if (res.message) {
+            badge.text(status + ': ' + res.message);
+            badge.show();
+            setTimeout(function() {
+              badge.hide();
+            }, 1500);
+          }
         }
-      },
-      error: function(xhr, status, error) {
-        badge = $(event.target).
-          closest('.actions-opts').
-          find('.badge-warning');
-        if (res.message) {
-          badge.text(status + ': ' + error);
-        }
-        badge.show();
-        setTimeout(function() {
-          badge.hide();
-        }, 1500);
       },
     });
   });
