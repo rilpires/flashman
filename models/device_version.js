@@ -1251,19 +1251,24 @@ const grantUpnp = function(version) {
 };
 
 const grantSpeedTest = function(version, model) {
-  if (version.match(versionRegex)) {
-    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-      // Unspecified model
-      return false;
-    }
-    if (!flashboxFirmwareDevices[model].speedtest_support) {
-      // Model is not compatible with feature
-      return false;
-    }
-    return (versionCompare(version, '0.24.0') >= 0);
+  if (Object.keys(tr069Devices).includes(model)) {
+    // TR-069 does not have speed test at the moment
+    return false;
   } else {
-    // Development version, enable everything by default
-    return true;
+    if (version.match(versionRegex)) {
+      if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+        // Unspecified model
+        return false;
+      }
+      if (!flashboxFirmwareDevices[model].speedtest_support) {
+        // Model is not compatible with feature
+        return false;
+      }
+      return (versionCompare(version, '0.24.0') >= 0);
+    } else {
+      // Development version, enable everything by default
+      return true;
+    }
   }
 };
 
