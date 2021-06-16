@@ -135,7 +135,8 @@ const createRegistry = async function(req, res) {
     genericValidate(channel, validator.validateChannel,
                     'channel', null, errors);
 
-    let permissions = DeviceVersion.findByVersion(version, is5ghzCapable);
+    let permissions = DeviceVersion.findByVersion(version, is5ghzCapable,
+                                                  model);
     if (permissions.grantWifiBand) {
       genericValidate(band, validator.validateBand,
                       'band', null, errors);
@@ -459,9 +460,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
           let permissionsSentVersion = DeviceVersion.findByVersion(
-            sentVersion, is5ghzCapable);
+            sentVersion, is5ghzCapable, (bodyModel + bodyModelVer));
           let permissionsCurrVersion = DeviceVersion.findByVersion(
-            matchedDevice.version, is5ghzCapable);
+            matchedDevice.version, is5ghzCapable, matchedDevice.model);
           let errors = [];
           const validator = new Validator();
           if ( permissionsSentVersion.grantWifiBand &&
