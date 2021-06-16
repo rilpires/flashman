@@ -469,16 +469,12 @@ let putPortMapping = function(ip, ports) {
       triggerRedAlert('Um erro inesperado aconteceu');
       return;
     }
-    let listOfBadges = $('<td>').
-          addClass('d-flex').
-          addClass('flex-row').
-          addClass('align-items-center').
-          addClass('justify-content-center').
-          addClass('flex-wrap');
+    let listOfBadges = $('<td>').addClass('align-items-center')
+                                .addClass('justify-content-center');
     for (i = 0; i < portsBadges.length; i++) {
       listOfBadges.append(
             $('<div>').
-              addClass('badge badge-primary badge-pill mr-2').
+              addClass('badge badge-primary badge-pill mr-2 mb-1').
               append(
                 $('<label>').
                 css('margin-top', '0.4rem').
@@ -516,7 +512,7 @@ let putPortMapping = function(ip, ports) {
               $('<div>').
               addClass('fas fa-times fa-lg'),
             ).
-            addClass('btn btn-sm btn-danger my-0')
+            addClass('btn btn-sm btn-danger my-0 mr-0')
             .attr('type', 'button')
             .attr('onclick', 'removeSetOfPortMapping(this)')
             .attr('data-ip', ip),
@@ -628,16 +624,12 @@ let fillSessionStorage = function(rules) {
 let buildMappingTable = function(ip) {
   let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
   let portMappingTable = $('#port-forward-tr069-table');
-  let listOfBadges = $('<td>').
-          addClass('d-flex').
-          addClass('flex-row').
-          addClass('align-items-center').
-          addClass('justify-content-center').
-          addClass('flex-wrap');
+  let listOfBadges = $('<td>').addClass('align-items-center')
+                              .addClass('justify-content-center');
   for (let i = 0; i < portsBadges.length; i++) {
     listOfBadges.append(
           $('<div>').
-            addClass('badge badge-primary badge-pill mr-2').
+            addClass('badge badge-primary badge-pill mr-2 mb-1').
             append(
               $('<label>').
               css('margin-top', '0.4rem').
@@ -675,7 +667,7 @@ let buildMappingTable = function(ip) {
             $('<div>').
             addClass('fas fa-times fa-lg'),
           ).
-          addClass('btn btn-sm btn-danger my-0')
+          addClass('btn btn-sm btn-danger my-0 mr-0')
           .attr('type', 'button')
           .attr('onclick', 'removeSetOfPortMapping(this)')
           .attr('data-ip', ip),
