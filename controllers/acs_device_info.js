@@ -5,6 +5,7 @@ const DeviceModel = require('../models/device');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
+const updateController = require('./update_flashman.js');
 
 const pako = require('pako');
 const http = require('http');
@@ -947,6 +948,21 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
           ]);
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
+        }
+      }
+      /*
+        Verify if is to append prefix right before
+        of send changes to genie;
+        Because device_list, app_diagnostic_api
+        and here call updateInfo, and is more clean
+        to check on the edge;
+      */
+      if (key === 'ssid') {
+        let ssidPrefix = updateController.
+          getSsidPrefix(device.
+            isSsidPrefixEnabled);
+        if (ssidPrefix != '') {
+          changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
       }
       let convertedValue = DevicesAPI.convertField(
