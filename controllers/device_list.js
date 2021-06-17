@@ -1325,9 +1325,10 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
+        let ssidPrefix = updateController.
+          getSsidPrefix(isSsidPrefixEnabled);
         if (content.hasOwnProperty('wifi_ssid')) {
-          genericValidate(updateController.
-            getSsidPrefix(isSsidPrefixEnabled)+ssid,
+          genericValidate(ssidPrefix+ssid,
             validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
@@ -1346,8 +1347,7 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(power, validator.validatePower, 'power');
         }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
-          genericValidate(updateController.
-            getSsidPrefix(isSsidPrefixEnabled)+ssid5ghz,
+          genericValidate(ssidPrefix+ssid5ghz,
             validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
