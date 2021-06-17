@@ -1172,6 +1172,7 @@ $(document).ready(function() {
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
+          formAttr += ' data-has-extended-channels="'+grantWifiExtendedChannels+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';

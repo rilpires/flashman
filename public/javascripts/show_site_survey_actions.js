@@ -3,7 +3,7 @@ import {displayAlertMsg, socket} from './common_actions.js';
 $(document).ready(function() {
   let siteSurveyGlobalTimer;
 
-  const refreshSiteSurvey = function(deviceId, isBridge) {
+  const refreshSiteSurvey = function(deviceId, isBridge, hasExtendedChannels) {
     $('#site-survey-hlabel').text(deviceId);
     $('#site-survey').modal();
     $('.btn-sync-ssurvey').prop('disabled', true);
@@ -24,7 +24,7 @@ $(document).ready(function() {
           $('#5-ghz-aps').empty();
           $('#site-survey-placeholder').show();
           $('#site-survey-placeholder-none').hide();
-          fetchSiteSurvey(deviceId, isBridge);
+          fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
         }
       },
       error: function(xhr, status, error) {
@@ -34,12 +34,12 @@ $(document).ready(function() {
         $('#5-ghz-aps').empty();
         $('#site-survey-placeholder').show();
         $('#site-survey-placeholder-none').hide();
-        fetchSiteSurvey(deviceId, isBridge);
+        fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
       },
     });
   };
 
-  const fetchSiteSurvey = function(deviceId, isBridge) {
+  const fetchSiteSurvey = function(deviceId, isBridge, hasExtendedChannels) {
     $.ajax({
       type: 'GET',
       url: '/devicelist/sitesurvey/' + deviceId,
@@ -71,7 +71,8 @@ $(document).ready(function() {
                                    JSON.stringify(apDevices));
           }
 
-          renderSiteSurvey(apDevices, isBridge, res.wifi_last_channel, res.wifi_last_channel_5ghz);
+          renderSiteSurvey(apDevices, isBridge, res.wifi_last_channel,
+                           res.wifi_last_channel_5ghz, hasExtendedChannels);
         } else {
           displayAlertMsg(res);
         }
@@ -109,7 +110,9 @@ $(document).ready(function() {
     return finalChannel;
   };
 
-  const renderSiteSurvey = function(apDevices, isBridge, wifi2GhzChannel, wifi5GhzChannel) {
+  const renderSiteSurvey = function(apDevices, isBridge, wifi2GhzChannel,
+                                    wifi5GhzChannel, hasExtendedChannels,
+  ) {
     $('#site-survey-placeholder').hide();
     let apDevs2GhzRow = $('#2-ghz-aps');
     let apDevs5GhzRow = $('#5-ghz-aps');
@@ -129,13 +132,19 @@ $(document).ready(function() {
     let worst5GhzChannel = 0;
     let best5GhzChannel = 0;
     let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
-                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
+                           9: 0, 10: 0, 11: 0};
     let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
     let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
-                           9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
+                           9: 0, 10: 0, 11: 0};
     let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    if (hasExtendedChannels) {
+      ap2GhzCountDict[12] = 0;
+      ap2GhzCountDict[13] = 0;
+      ap2GhzScoreDict[12] = 0;
+      ap2GhzScoreDict[13] = 0;
+    }
     let channels2Ghz = Object.keys(ap2GhzCountDict);
     let channels5Ghz = Object.keys(ap5GhzCountDict);
     let channels5GhzLower = [];
@@ -162,10 +171,10 @@ $(document).ready(function() {
           ap2GhzCountDict[apChannel] += 1;
         }
         if (parseInt(device.signal) >= maxSignal2Ghz) {
-          maxSignal2Ghz = parseInt(device.signal)
+          maxSignal2Ghz = parseInt(device.signal);
         }
         if (parseInt(device.signal) <= minSignal2Ghz) {
-          minSignal2Ghz = parseInt(device.signal)
+          minSignal2Ghz = parseInt(device.signal);
         }
       } else { // 5.0 GHz
         apSelectedDevsRow = apDevs5GhzRow;
@@ -174,10 +183,10 @@ $(document).ready(function() {
           ap5GhzCountDict[apChannel] += 1;
         }
         if (parseInt(device.signal) >= maxSignal5Ghz) {
-          maxSignal5Ghz = parseInt(device.signal)
+          maxSignal5Ghz = parseInt(device.signal);
         }
         if (parseInt(device.signal) <= minSignal5Ghz) {
-          minSignal5Ghz = parseInt(device.signal)
+          minSignal5Ghz = parseInt(device.signal);
         }
       }
       apSelectedDevsRow.append(
@@ -224,7 +233,8 @@ $(document).ready(function() {
       let range = 2;
       let signalValue = 0;
       if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
-        signalValue = 1 - (device.signal - maxSignal2Ghz)/(minSignal2Ghz - maxSignal2Ghz);
+        signalValue = 1 - (device.signal - maxSignal2Ghz) /
+                      (minSignal2Ghz - maxSignal2Ghz);
         if (apWidth == 40) range = 4;
         let index = channels2Ghz.indexOf(apChannel);
         for (let i=index-range; i<=index+range; i++) {
@@ -234,7 +244,8 @@ $(document).ready(function() {
           }
         }
       } else { // 5.0 GHz
-        signalValue = 1 - (device.signal - maxSignal5Ghz)/(minSignal5Ghz - maxSignal5Ghz);
+        signalValue = 1 - (device.signal - maxSignal5Ghz) /
+                      (minSignal5Ghz - maxSignal5Ghz);
         if (apWidth == 40) {
           range = 4;
         } else if (apWidth == 80) {
@@ -259,6 +270,7 @@ $(document).ready(function() {
         }
       }
     });
+    // eslint-disable-next-line guard-for-in
     for (let channel in ap2GhzScoreDict) {
       if (ap2GhzScoreDict[channel] >= maxScore2Ghz) {
         maxScore2Ghz = ap2GhzScoreDict[channel];
@@ -336,6 +348,7 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     apDevs2GhzRow.prepend(summary2Ghz);
     // 5GHz
+    // eslint-disable-next-line guard-for-in
     for (let channel in ap5GhzScoreDict) {
       if (ap5GhzScoreDict[channel] >= maxScore5Ghz) {
         maxScore5Ghz = ap5GhzScoreDict[channel];
@@ -425,9 +438,11 @@ $(document).ready(function() {
     let id = row.data('deviceid');
     let isBridge = row.data('bridge-enabled') === 'Sim';
     let has5ghz = row.data('has-5ghz');
+    let hasExtendedChannels = row.data('has-extended-channels');
     if (!has5ghz) {
       $('.btn-show-5-ghz-aps').addClass('disabled').prop('disabled', true);
     }
+    $('#site-survey').attr('data-has-extended-channels', hasExtendedChannels);
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#site-survey-placeholder-none').hide();
@@ -437,15 +452,16 @@ $(document).ready(function() {
     $('#5-ghz-aps').hide();
 
     // Refresh devices status
-    refreshSiteSurvey(id, isBridge);
+    refreshSiteSurvey(id, isBridge, hasExtendedChannels);
   });
 
   $(document).on('click', '.btn-sync-ssurvey', function(event) {
     let id = $('#site-survey-hlabel').text();
     let isBridge = $('#isBridgeDiv').html() === 'Sim';
+    let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
 
     clearTimeout(siteSurveyGlobalTimer);
-    refreshSiteSurvey(id, isBridge);
+    refreshSiteSurvey(id, isBridge, hasExtendedChannels);
   });
 
   $(document).on('click', '.btn-show-2-ghz-aps', function(event) {
@@ -482,9 +498,10 @@ $(document).ready(function() {
       }
       let id = $('#site-survey-hlabel').text();
       let isBridge = $('#isBridgeDiv').html() === 'Sim';
+      let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
       if (id == macaddr) {
         clearTimeout(siteSurveyGlobalTimer);
-        fetchSiteSurvey(macaddr, isBridge);
+        fetchSiteSurvey(macaddr, isBridge, hasExtendedChannels);
       }
     }
   });
