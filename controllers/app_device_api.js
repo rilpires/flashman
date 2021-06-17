@@ -866,7 +866,9 @@ appDeviceAPIController.appGetVersion = function(req, res) {
     }
 
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model,
     );
     return res.status(200).json({
       permissions: permissions,

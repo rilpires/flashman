@@ -38,11 +38,10 @@ const setRecoveryOfflineInputDependencyError = function() {
 };
 
 // will be called in every input after the first time save button is pressed.
-const checkrecoveryOfflineInputDependency = function() {
+window.checkrecoveryOfflineInputDependency = function() {
   // if inputs are valid, as defined by html input, check if recovery value is
   // bigger, or equal, to offline value.
-  if (recoveryInput.validity.valid && offlineInput.validity.valid
-   && Number(recoveryInput.value) >= Number(offlineInput.value)) {
+  if (Number(recoveryInput.value) >= Number(offlineInput.value)) {
     setRecoveryOfflineInputDependencyError(); // set error message.
   } else { // if fields have valid values. we reset errors and message styles.
     resetRecoveryOfflineInputDependencyError(); // reset error message.
