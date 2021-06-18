@@ -12,6 +12,7 @@ const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+const updateController = require('./update_flashman');
 
 let deviceInfoController = {};
 
@@ -103,6 +104,8 @@ const createRegistry = async function(req, res) {
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
   let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
   let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+  let ssidPrefix = updateController.
+          getSsidPrefix(true);
 
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
@@ -128,7 +131,7 @@ const createRegistry = async function(req, res) {
       genericValidate(pppoePassword, validator.validatePassword,
                       'pppoe_password', matchedConfig.pppoePassLength, errors);
     }
-    genericValidate(ssid, validator.validateSSID,
+    genericValidate(ssidPrefix+ssid, validator.validateSSID,
                     'ssid', null, errors);
     genericValidate(password, validator.validateWifiPassword,
                     'password', null, errors);
@@ -148,7 +151,7 @@ const createRegistry = async function(req, res) {
                       'power', null, errors);
     }
     if (permissions.grantWifi5ghz) {
-      genericValidate(ssid5ghz, validator.validateSSID,
+      genericValidate(ssidPrefix+ssid5ghz, validator.validateSSID,
                       'ssid5ghz', null, errors);
       genericValidate(password5ghz, validator.validateWifiPassword,
                       'password5ghz', null, errors);
@@ -238,6 +241,7 @@ const createRegistry = async function(req, res) {
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
+        'isSsidPrefixEnabled': true, // for new devices, default is true
       };
       if (vlanParsed !== undefined) {
         deviceObj.vlan = vlanParsed;
@@ -357,6 +361,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
       } else {
         let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        let ssidPrefix = updateController.
+          getSsidPrefix(matchedDevice.
+            isSsidPrefixEnabled);
 
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
@@ -501,7 +508,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             let mode5ghz =
               util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
 
-            genericValidate(ssid5ghz, validator.validateSSID,
+            genericValidate(ssidPrefix+ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
@@ -763,7 +770,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'pppoe_password': util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
             'lan_netmask': util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
-            'wifi_ssid': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid),
+            'wifi_ssid': ssidPrefix+util.
+              returnObjOrEmptyStr(matchedDevice.
+                wifi_ssid),
             'wifi_password': util.returnObjOrEmptyStr(matchedDevice.wifi_password),
             'wifi_channel': util.returnObjOrEmptyStr(matchedDevice.wifi_channel),
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
@@ -771,7 +780,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state': matchedDevice.wifi_state,
             'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
             'wifi_hidden': matchedDevice.wifi_hidden,
-            'wifi_ssid_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
+            'wifi_ssid_5ghz': ssidPrefix+util.
+              returnObjOrEmptyStr(matchedDevice.
+                wifi_ssid_5ghz),
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
