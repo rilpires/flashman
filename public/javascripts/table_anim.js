@@ -996,11 +996,6 @@ $(document).ready(function() {
           displayAlertMsg(res);
           return;
         }
-        sessionStorage.setItem('hasPersonalizationHash',
-          !!res.config.personalizationHash);
-        sessionStorage.setItem('isSsidPrefixEnabled',
-          res.config.isSsidPrefixEnabled);
-        sessionStorage.setItem('ssidPrefix', res.config.ssidPrefix);
         // Stop loading animation
         deviceTableContent.empty();
         // Just fill not found message if there are no devices found
@@ -1671,12 +1666,11 @@ $(document).ready(function() {
             '<input class="form-control" type="text" id="edit_wifi5_ssid-'+
               index+'" ';
           let ssidPrefixEnabledCheckbox = '';
-          if (sessionStorage.getItem('hasPersonalizationHash') == 'true' &&
-              sessionStorage.getItem('isSsidPrefixEnabled') == 'true') {
+          if (device.isToShowSsidPrefixCheckbox) {
             ssidPrefixEnabledCheckbox = '<div class="custom-control custom-checkbox">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
-                '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+
+                '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
                 'Habilitar prefixo SSID'+
                 '</label>'+
               '</div>';
@@ -1684,7 +1678,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  sessionStorage.getItem('ssidPrefix')+
+                  device.ssidPrefix+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1692,7 +1686,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  sessionStorage.getItem('ssidPrefix')+
+                  device.ssidPrefix+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
@@ -1700,7 +1694,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  sessionStorage.getItem('ssidPrefix')+
+                  device.ssidPrefix+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1708,7 +1702,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  sessionStorage.getItem('ssidPrefix')+
+                  device.ssidPrefix+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
