@@ -295,7 +295,7 @@ $(document).ready(function() {
     for (let channel in ap2GhzCountDict) {
       if (channel == best2GhzChannel) {
         summary2Ghz = summary2Ghz.add($('<div>')
-        .addClass('col-md-auto m-1 green lighten-3').append(
+        .addClass('col-auto m-1 green lighten-3').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
@@ -307,7 +307,7 @@ $(document).ready(function() {
         ));
       } else if (channel == worst2GhzChannel) {
         summary2Ghz = summary2Ghz.add($('<div>')
-        .addClass('col-md m-1 red lighten-3').append(
+        .addClass('col-auto m-1 red lighten-3').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
@@ -319,7 +319,7 @@ $(document).ready(function() {
         ));
       } else {
         summary2Ghz = summary2Ghz.add($('<div>')
-        .addClass('col-lg m-1 grey lighten-3').append(
+        .addClass('col-auto m-1 grey lighten-3').append(
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
@@ -330,14 +330,8 @@ $(document).ready(function() {
           ),
         ));
       }
-      if (channel % 4 == 0) {
-        summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
-      }
     }
     // Division between each AP found
-    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
-    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
-    summary2Ghz = summary2Ghz.add($('<div>').addClass('col m-1'));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0 pt-3').append(
