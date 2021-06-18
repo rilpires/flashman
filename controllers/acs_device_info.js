@@ -431,7 +431,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       let acceptLocalChanges = false;
       if (!acceptLocalChanges) {
         if (hasChanges) {
-          acsDeviceInfoController.updateInfo(device, changes);
+          await acsDeviceInfoController.updateInfo(device, changes);
         }
       }
     }
@@ -907,7 +907,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   });
 };
 
-acsDeviceInfoController.updateInfo = function(device, changes) {
+acsDeviceInfoController.updateInfo = async function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
@@ -918,8 +918,11 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
+  let ssidPrefix = await updateController.
+    getSsidPrefix(device.
+      isSsidPrefixEnabled);
   Object.keys(changes).forEach((masterKey)=>{
-    Object.keys(changes[masterKey]).forEach(async (key)=>{
+    Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
       if (key === 'channel') {
         // Special case since channel relates to 2 fields
@@ -963,9 +966,6 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
         to check on the edge;
       */
       if (key === 'ssid') {
-        let ssidPrefix = await updateController.
-          getSsidPrefix(device.
-            isSsidPrefixEnabled);
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }

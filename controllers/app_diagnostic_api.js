@@ -229,7 +229,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       await device.save();
       if (device.use_tr069) {
         // tr-069 device, call acs
-        acsDeviceInfo.updateInfo(device, changes);
+        await acsDeviceInfo.updateInfo(device, changes);
       } else {
         // flashbox device, call mqtt
         meshHandlers.syncSlaves(device);

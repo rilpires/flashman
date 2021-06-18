@@ -1732,7 +1732,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
-                acsDeviceInfo.updateInfo(matchedDevice, changes);
+                await acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
 
                 matchedDevice.success = true;
