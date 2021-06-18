@@ -311,10 +311,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       hasChanges = true;
     }
   }
-
+  
+  let ssidPrefix = await updateController.
+          getSsidPrefix(device.
+            isSsidPrefixEnabled);
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
-  } else if (device.wifi_ssid.trim() !== data.wifi2.ssid.trim()) {
+  } else if (ssidPrefix+device.wifi_ssid.trim()
+    !== data.wifi2.ssid.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
@@ -341,7 +345,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
-  } else if (device.wifi_ssid_5ghz.trim() !== data.wifi5.ssid.trim()) {
+  } else if (ssidPrefix+device.wifi_ssid_5ghz.trim()
+    !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
   }
