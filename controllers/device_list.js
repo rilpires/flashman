@@ -758,6 +758,18 @@ deviceListController.searchDeviceReg = async function(req, res) {
               deviceListController.getReleases(userRole,
                                                req.user.is_superuser, true)
               .then(function(singleReleases) {
+                /* validate if is to show ssid prefix checkbox
+                    for each device */
+                allDevices.forEach(function(device) {
+                  device.isToShowSsidPrefixCheckbox =
+                    ((!!matchedConfig.personalizationHash == true &&
+                    matchedConfig.isSsidPrefixEnabled == true) ||
+                    device.isSsidPrefixEnabled == true);
+                  if (device.isToShowSsidPrefixCheckbox) {
+                    device.ssidPrefix = matchedConfig.ssidPrefix;
+                  }
+                });
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -1817,7 +1829,8 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      let ssidPrefix = await updateController.getSsidPrefix(true);
+      let ssidPrefix = await updateController.
+        getSsidPrefix(matchedConfig.isSsidPrefixEnabled);
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
