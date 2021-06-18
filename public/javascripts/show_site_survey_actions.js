@@ -135,8 +135,8 @@ $(document).ready(function() {
                            9: 0, 10: 0, 11: 0, 12: 0, 13: 0};
     let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
                            64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
-    let channels2Ghz = Object.keys(ap2GhzCountDict);
-    let channels5Ghz = Object.keys(ap5GhzCountDict);
+    let channels2Ghz = Object.keys(ap2GhzCountDict).map(Number);
+    let channels5Ghz = Object.keys(ap5GhzCountDict).map(Number);
     let channels5GhzLower = [];
     let channels5GhzUpper = [];
     let dividingChannel = 64;
@@ -258,7 +258,7 @@ $(document).ready(function() {
         }
       }
     });
-    for (let channel in ap2GhzScoreDict) {
+    for (let channel of channels2Ghz) {
       if (ap2GhzScoreDict[channel] >= maxScore2Ghz) {
         maxScore2Ghz = ap2GhzScoreDict[channel];
         worst2GhzChannel = channel;
@@ -278,8 +278,7 @@ $(document).ready(function() {
         $('<hr>').addClass('mt-1'),
     ));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
-    // eslint-disable-next-line guard-for-in
-    for (let channel in ap2GhzCountDict) {
+    for (let channel of channels2Ghz) {
       if (channel == best2GhzChannel) {
         summary2Ghz = summary2Ghz.add($('<div>')
         .addClass('col-md-auto m-1 green lighten-3').append(
@@ -335,7 +334,7 @@ $(document).ready(function() {
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
     apDevs2GhzRow.prepend(summary2Ghz);
     // 5GHz
-    for (let channel in ap5GhzScoreDict) {
+    for (let channel of channels5Ghz) {
       if (ap5GhzScoreDict[channel] >= maxScore5Ghz) {
         maxScore5Ghz = ap5GhzScoreDict[channel];
         worst5GhzChannel = channel;
@@ -354,8 +353,7 @@ $(document).ready(function() {
         $('<hr>').addClass('mt-1'),
     ));
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
-    // eslint-disable-next-line guard-for-in
-    for (let channel in ap5GhzCountDict) {
+    for (let channel of channels5Ghz) {
       if (channel == best5GhzChannel) {
         summary5Ghz = summary5Ghz.add($('<div>')
         .addClass('col-lg m-1 green lighten-3').append(
