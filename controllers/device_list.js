@@ -1387,7 +1387,7 @@ deviceListController.setDeviceReg = function(req, res) {
 
         if (errors.length < 1) {
           Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
-          function(err, role) {
+          async function(err, role) {
             if (err) {
               console.log(err);
             }
@@ -1398,6 +1398,8 @@ deviceListController.setDeviceReg = function(req, res) {
               superuserGrant = true;
             }
             let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+            let ssidPrefix = await updateController.
+              getSsidPrefix(isSsidPrefixEnabled);
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
@@ -1444,7 +1446,8 @@ deviceListController.setDeviceReg = function(req, res) {
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
-                ssid !== '' && ssid !== matchedDevice.wifi_ssid) {
+                ssidPrefix+ssid !== '' &&
+                ssidPrefix+ssid !== ssidPrefix+matchedDevice.wifi_ssid) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.ssid = ssid;
                 matchedDevice.wifi_ssid = ssid;
@@ -1522,7 +1525,8 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
-                ssid5ghz !== '' && ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
+                ssidPrefix+ssid5ghz !== '' &&
+                ssidPrefix+ssid5ghz !== ssidPrefix+matchedDevice.wifi_ssid_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.ssid = ssid5ghz;
                 matchedDevice.wifi_ssid_5ghz = ssid5ghz;
