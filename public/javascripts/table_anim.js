@@ -738,7 +738,8 @@ $(document).ready(function() {
     '</div>';
   };
 
-  const buildAboutTab = function(device, index, isTR069, mesh=-1) {
+  const buildAboutTab = function(device, index, isTR069,
+                                 hasExtendedChannels, mesh=-1) {
     let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
@@ -825,6 +826,11 @@ $(document).ready(function() {
                   '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
                   '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
                   '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
+                  (hasExtendedChannels ?
+                    '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>12</option>'+
+                    '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>13</option>':
+                    ''
+                  )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1083,6 +1089,8 @@ $(document).ready(function() {
           let grantWifiPowerHiddenIpv6Box =
             (device.use_tr069) ? false :
             device.permissions.grantWifiPowerHiddenIpv6Box;
+          let grantWifiExtendedChannels =
+            device.permissions.grantWifiExtendedChannels;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
@@ -1164,6 +1172,7 @@ $(document).ready(function() {
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
+          formAttr += ' data-has-extended-channels="'+grantWifiExtendedChannels+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
@@ -1313,7 +1322,7 @@ $(document).ready(function() {
           devActions = devActions.replace('$REPLACE_RIGHT_MENU', sideMenu[1]);
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
-            buildAboutTab(device, index, isTR069)+
+            buildAboutTab(device, index, isTR069, grantWifiExtendedChannels)+
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -2253,7 +2262,8 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, false, slaveIdx)+
+                buildAboutTab(slaveDev, index, false,
+                              grantWifiExtendedChannels, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');

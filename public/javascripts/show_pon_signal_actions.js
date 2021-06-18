@@ -1,4 +1,4 @@
-import 'apexcharts';
+import ApexCharts from 'apexcharts';
 import {socket} from './common_actions.js';
 
 $(document).ready(function() {
