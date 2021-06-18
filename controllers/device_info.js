@@ -104,20 +104,20 @@ const createRegistry = async function(req, res) {
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
   let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
   let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
-  let ssidPrefix = await updateController.
-          getSsidPrefix(true);
-
+  
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
   if (flmUpdater == '0') {
     return res.status(400).end();
   }
 
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  Config.findOne({is_default: true}, async function(err, matchedConfig) {
     if (err || !matchedConfig) {
       console.log('Error creating entry: ' + err);
       return res.status(500).end();
     }
+    let ssidPrefix = await updateController.
+      getSsidPrefix(matchedConfig.isSsidPrefixEnabled);
 
     // Validate fields
     genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
@@ -241,7 +241,7 @@ const createRegistry = async function(req, res) {
         'mesh_id': newMeshId,
         'mesh_key': newMeshKey,
         'wps_is_active': wpsState,
-        'isSsidPrefixEnabled': true, // for new devices, default is true
+        'isSsidPrefixEnabled': matchedConfig.isSsidPrefixEnabled,
       };
       if (vlanParsed !== undefined) {
         deviceObj.vlan = vlanParsed;
@@ -472,6 +472,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             matchedDevice.version, is5ghzCapable, matchedDevice.model);
           let errors = [];
           const validator = new Validator();
+
+          genericValidate(ssidPrefix+util.
+            returnObjOrEmptyStr(matchedDevice.
+              wifi_ssid), validator.validateSSID,
+                          'ssid', null, errors);
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
             let band =
