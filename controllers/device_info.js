@@ -104,7 +104,7 @@ const createRegistry = async function(req, res) {
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
   let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
   let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
-  let ssidPrefix = updateController.
+  let ssidPrefix = await updateController.
           getSsidPrefix(true);
 
   // The syn came from flashbox keepalive procedure
@@ -351,7 +351,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
   }
 
   let devId = req.body.id.toUpperCase();
-  DeviceModel.findById(devId).lean().exec(function(err, matchedDevice) {
+  DeviceModel.findById(devId).lean().exec(async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device ' + devId + ': ' + err);
       return res.status(500).end();
@@ -361,7 +361,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
       } else {
         let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        let ssidPrefix = updateController.
+        let ssidPrefix = await updateController.
           getSsidPrefix(matchedDevice.
             isSsidPrefixEnabled);
 

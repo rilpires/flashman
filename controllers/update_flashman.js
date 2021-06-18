@@ -692,17 +692,16 @@ updateController.updateAppPersonalization = async function(app) {
 };
 
 
-updateController.getSsidPrefix = function(isDeviceSsidPrefixEnabled) {
+updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
   let ret = '';
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
-    if (!err && matchedConfig) {
-      if (!!matchedConfig.personalizationHash &&
-          matchedConfig.isSsidPrefixEnabled == true &&
-          isDeviceSsidPrefixEnabled == true) {
-        ret = matchedConfig.ssidPrefix;
-      }
+  let matchedConfig = await Config.findOne({is_default: true});
+  if (matchedConfig) {
+    if (!!matchedConfig.personalizationHash &&
+        matchedConfig.isSsidPrefixEnabled == true &&
+        isDeviceSsidPrefixEnabled == true) {
+      ret = matchedConfig.ssidPrefix;
     }
-  });
+  }
   return ret;
 };
 

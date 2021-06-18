@@ -1270,7 +1270,8 @@ deviceListController.setDeviceReg = function(req, res) {
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
-      let isSsidPrefixEnabled = parseInt(util.returnObjOrNum(content.isSsidPrefixEnabled, 0));
+      let isSsidPrefixEnabled = parseInt(util.
+        returnObjOrNum(content.isSsidPrefixEnabled, 0)) == 0 ? false : true;
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
@@ -1298,7 +1299,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
+      Config.findOne({is_default: true}, async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
           return res.status(500).json({
@@ -1325,7 +1326,7 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
-        let ssidPrefix = updateController.
+        let ssidPrefix = await updateController.
           getSsidPrefix(isSsidPrefixEnabled);
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(ssidPrefix+ssid,
@@ -1594,8 +1595,7 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('isSsidPrefixEnabled') &&
                 isSsidPrefixEnabled !== matchedDevice.isSsidPrefixEnabled) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                matchedDevice.isSsidPrefixEnabled = (isSsidPrefixEnabled == 0) ?
-                 false : true;
+                matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -1787,7 +1787,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
         return res.status(500).json({
@@ -1813,7 +1813,8 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      genericValidate(updateController.getSsidPrefix(true)+ssid,
+      let ssidPrefix = await updateController.getSsidPrefix(true);
+      genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');

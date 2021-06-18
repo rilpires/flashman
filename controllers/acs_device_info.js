@@ -914,7 +914,7 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   Object.keys(changes).forEach((masterKey)=>{
-    Object.keys(changes[masterKey]).forEach((key)=>{
+    Object.keys(changes[masterKey]).forEach(async (key)=>{
       if (!fields[masterKey][key]) return;
       if (key === 'channel') {
         // Special case since channel relates to 2 fields
@@ -958,7 +958,7 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
         to check on the edge;
       */
       if (key === 'ssid') {
-        let ssidPrefix = updateController.
+        let ssidPrefix = await updateController.
           getSsidPrefix(device.
             isSsidPrefixEnabled);
         if (ssidPrefix != '') {
