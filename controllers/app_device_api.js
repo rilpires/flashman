@@ -8,6 +8,22 @@ const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
 
+const checkFeature = (model, feature) {
+  switch (model) {
+    case 'F670L':
+      switch (feature) {
+        case 'wps':
+          return true;
+        case 'speedTest':
+          return false;
+        default:
+          return false;
+      }
+    default:
+      return false;
+  }
+}
+
 let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
   return new Promise((resolve, reject)=>{
     DeviceModel.findById(id, (err, matchedDevice)=>{
@@ -781,6 +797,26 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantUpnp = false;
     } else {
       permissions.grantBlockDevices = true;
+    }
+
+    if (matchedDevice.use_tr069) {
+      permissions.grantSpeedTest = checkFeature(
+        matchedDevice.model,
+        'speedTest'
+      );
+      permissions.grantSpeedTestLimit = checkFeature(
+        matchedDevice.model,
+        'speedTestLimit'
+      );
+      permissions.grantUpnp = checkFeature(
+        matchedDevice.model,
+        'upnp'
+      );
+      permissions.grantWpsFunction = checkFeature(matchedDevice.model, 'wps');
+      permissions.grantBlockDevices = checkFeature(
+        matchedDevice.model,
+        'blockDevices'
+      );
     }
 
     let speedtestInfo = {};
