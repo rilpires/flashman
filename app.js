@@ -202,6 +202,24 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
     }
   });
+
+  // put default values in old config
+  Config.findOne({is_default: true}, function(err, config) {
+    let saveConfig = false;
+    if (!err && config) {
+      if (typeof config.isSsidPrefixEnabled === 'undefined') {
+        config.isSsidPrefixEnabled = false;
+        saveConfig = true;
+      }
+      if (typeof config.ssidPrefix === 'undefined') {
+        config.ssidPrefix = '';
+        saveConfig = true;
+      }
+    }
+    if (saveConfig) {
+      config.save();
+    }
+  });
 }
 
 // Check md5 file hashes on firmware directory
