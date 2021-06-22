@@ -8,19 +8,29 @@ const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
 
-const checkFeature = (model, feature) => {
-  switch (model) {
-    case 'F670L':
-      switch (feature) {
-        case 'wps':
-          return true;
-        case 'speedTest':
-          return false;
-        default:
-          return false;
-      }
-    default:
-      return false;
+const checkFeature = (model, feature, isTr069) => {
+  if (isTr069) {
+    switch (model) {
+      case 'F670L':
+        switch (feature) {
+          case 'wps':
+            return true;
+          case 'upnp':
+            return false;
+          case 'speedTest':
+            return false;
+          case 'speedTestLimit':
+            return false;
+          case 'blockDevices':
+            return false;
+          default:
+            return false;
+        }
+      default:
+        return false;
+    }
+  } else {
+    return true;
   }
 }
 
@@ -192,6 +202,9 @@ let processPassword = function(content, device, rollback) {
 
 let processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+    return false;
+  }
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
       content.blacklist_device.hasOwnProperty('mac') &&
@@ -266,6 +279,9 @@ let processBlacklist = function(content, device, rollback) {
 
 let processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+    return false;
+  }
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
       content.whitelist_device.hasOwnProperty('mac') &&
@@ -356,6 +372,9 @@ let processDeviceInfo = function(content, device, rollback) {
 
 let processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!checkFeature(device.model, 'upnp', device.use_tr069)) {
+    return false;
+  }
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('upnp_allow') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -635,6 +654,9 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     if (appObj[0].secret != req.body.app_secret) {
       return res.status(403).json({message: 'App não autorizado'});
     }
+    if (!checkFeature(matchedDevice.model, 'speedTest')) {
+      return res.status(500).json({message: 'Feature not implemented'});
+    }
 
     // Send reply first, then send mqtt message
     let lastMeasureID;
@@ -789,6 +811,34 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       matchedDevice.model,
     );
 
+    if (matchedDevice.use_tr069) {
+      permissions.grantSpeedTest = checkFeature(
+        matchedDevice.model,
+        'speedTest',
+        matchedDevice.use_tr069,
+      );
+      permissions.grantSpeedTestLimit = checkFeature(
+        matchedDevice.model,
+        'speedTestLimit',
+        matchedDevice.use_tr069,
+      );
+      permissions.grantUpnp = checkFeature(
+        matchedDevice.model,
+        'upnp',
+        matchedDevice.use_tr069,
+      );
+      permissions.grantWpsFunction = checkFeature(
+        matchedDevice.model,
+        'wps',
+        matchedDevice.use_tr069,
+      );
+      permissions.grantBlockDevices = checkFeature(
+        matchedDevice.model,
+        'blockDevices',
+        matchedDevice.use_tr069,
+      );
+    }
+
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
       permissions.grantPortForward = false;
@@ -797,26 +847,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantUpnp = false;
     } else {
       permissions.grantBlockDevices = true;
-    }
-
-    if (matchedDevice.use_tr069) {
-      permissions.grantSpeedTest = checkFeature(
-        matchedDevice.model,
-        'speedTest'
-      );
-      permissions.grantSpeedTestLimit = checkFeature(
-        matchedDevice.model,
-        'speedTestLimit'
-      );
-      permissions.grantUpnp = checkFeature(
-        matchedDevice.model,
-        'upnp'
-      );
-      permissions.grantWpsFunction = checkFeature(matchedDevice.model, 'wps');
-      permissions.grantBlockDevices = checkFeature(
-        matchedDevice.model,
-        'blockDevices'
-      );
     }
 
     let speedtestInfo = {};
