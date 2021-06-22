@@ -2483,8 +2483,8 @@ deviceListController.getLanDevices = async function(req, res) {
         // If there is recent comm assume there is a cabled connection
         if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
           meshEntry.mac = matchedMaster._id;
-          meshEntry.rx_bit = matchedMaster.conn_speed;
-          meshEntry.tx_bit = matchedMaster.conn_speed;
+          meshEntry.rx_bit = matchedMaster.wan_negociated_speed;
+          meshEntry.tx_bit = matchedMaster.wan_negociated_speed;
           enrichedMeshRouters.push(meshEntry);
         }
       } else if (matchedDevice.mesh_slaves) { // Master router
@@ -2498,8 +2498,8 @@ deviceListController.getLanDevices = async function(req, res) {
           // If there is recent comm assume there is a cabled connection
           if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
             meshEntry.mac = matchedSlave._id;
-            meshEntry.rx_bit = matchedSlave.conn_speed;
-            meshEntry.tx_bit = matchedSlave.conn_speed;
+            meshEntry.rx_bit = matchedSlave.wan_negociated_speed;
+            meshEntry.tx_bit = matchedSlave.wan_negociated_speed;
             enrichedMeshRouters.push(meshEntry);
           }
         }
