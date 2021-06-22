@@ -109,7 +109,8 @@ $(document).ready(function() {
   };
 
   const fetchLanDevices = function(deviceId, upnpSupport,
-                                   isBridge, hasSlaves=false) {
+                                   isBridge, hasSlaves=false,
+  ) {
     let totalRouters = parseInt($('#lan-devices').data('slaves-count')) + 1;
     let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
@@ -196,7 +197,8 @@ $(document).ready(function() {
   };
 
   const renderDevices = function(lanDevices, lanRouters, upnpSupport,
-                                 isBridge, hasSlaves=false) {
+                                 isBridge, hasSlaves=false,
+  ) {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
@@ -381,6 +383,10 @@ $(document).ready(function() {
     for (let routerMacKey in lanRouters) {
       // Do not show if empty
       if (!lanRouters[routerMacKey] || lanRouters[routerMacKey].length == 0) {
+        continue;
+      }
+      // Skip if information is too old
+      if (lanRouters[routerMacKey].is_old) {
         continue;
       }
 

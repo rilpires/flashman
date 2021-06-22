@@ -2453,10 +2453,16 @@ deviceListController.getLanDevices = function(req, res) {
       return lanDevice;
     });
 
+    let enrichedMeshRouters = util.deepCopyObject(matchedDevice.mesh_routers)
+    .map((meshRouter) => {
+      meshRouter.is_old = deviceHandlers.isTooOld(meshRouter.last_seen);
+      return meshRouter;
+    });
+
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
-      mesh_routers: matchedDevice.mesh_routers,
+      mesh_routers: enrichedMeshRouters,
     });
   });
 };
