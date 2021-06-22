@@ -151,7 +151,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   Device.find({$or: [{installed_release: {$exists: false}},
                      {mesh_key: {$exists: false}},
                      {bridge_mode_enabled: true, connection_type: 'pppoe'},
-                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}}
+                     {isSsidPrefixEnabled: {$exists: false}},
+                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
   ]}, function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
@@ -185,6 +186,14 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         ) {
           devices[idx].pppoe_user = '';
           devices[idx].pppoe_password = '';
+          saveDevice = true;
+        }
+        /*
+          Check isSsidPrefixEnabled existence and
+          set it to default (false for old devices regs)
+        */
+        if (typeof devices[idx].isSsidPrefixEnabled === 'undefined') {
+          devices[idx].isSsidPrefixEnabled = false;
           saveDevice = true;
         }
         if (saveDevice) {
