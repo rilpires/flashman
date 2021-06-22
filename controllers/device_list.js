@@ -2428,15 +2428,9 @@ deviceListController.setPingHostsList = function(req, res) {
   });
 };
 
-deviceListController.getLanDevices = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
-    if (err) {
-      return res.status(200).json({
-        success: false,
-        message: 'Erro interno do servidor',
-      });
-    }
+deviceListController.getLanDevices = async function(req, res) {
+  try {
+    let matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
@@ -2446,25 +2440,84 @@ deviceListController.getLanDevices = function(req, res) {
 
     let enrichedLanDevs = util.deepCopyObject(matchedDevice.lan_devices)
     .map((lanDevice) => {
-      lanDevice.is_old = deviceHandlers.isTooOld(lanDevice.last_seen);
+      lanDevice.is_old = deviceHandlers.isDeviceTooOld(lanDevice.last_seen);
       lanDevice.is_online = deviceHandlers.isOnline(lanDevice.last_seen);
       // Ease up gateway reference when in Mesh mode
       lanDevice.gateway_mac = matchedDevice._id;
       return lanDevice;
     });
 
+    let onlyOldMeshRoutersEntries = true;
     let enrichedMeshRouters = util.deepCopyObject(matchedDevice.mesh_routers)
     .map((meshRouter) => {
-      meshRouter.is_old = deviceHandlers.isTooOld(meshRouter.last_seen);
+      meshRouter.is_old = deviceHandlers.isApTooOld(meshRouter.last_seen);
+      // There is at least one updated entry
+      if (!meshRouter.is_old) {
+        onlyOldMeshRoutersEntries = false;
+      }
       return meshRouter;
     });
+    // If mesh routers list is empty or old and there are routers in mesh then
+    // let's check if it's possible to populate mesh routers list by cabled
+    // connections
+    if (onlyOldMeshRoutersEntries) {
+      let meshEntry = {
+        mac: '',
+        last_seen: Date.now(),
+        conn_time: 0,
+        rx_bytes: 0,
+        tx_bytes: 0,
+        signal: 0,
+        rx_bit: 0,
+        tx_bit: 0,
+        latency: 0,
+        iface: 1,
+      };
+      if (matchedDevice.mesh_master) { // Slave router
+        let masterId = matchedDevice.mesh_master.toUpperCase();
+        let matchedMaster = await DeviceModel.findById(masterId,
+                                                      {last_contact: true,
+                                                       _id: true,
+                                                       conn_speed: true,
+                                                      }).lean();
+        // If there is recent comm assume there is a cabled connection
+        if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
+          meshEntry.mac = matchedMaster._id;
+          meshEntry.rx_bit = matchedMaster.conn_speed;
+          meshEntry.tx_bit = matchedMaster.conn_speed;
+          enrichedMeshRouters.push(meshEntry);
+        }
+      } else if (matchedDevice.mesh_slaves) { // Master router
+        for (let slaveMac of matchedDevice.mesh_slaves) {
+          let slaveId = slaveMac.toUpperCase();
+          let matchedSlave = await DeviceModel.findById(slaveId,
+                                                       {last_contact: true,
+                                                        _id: true,
+                                                        conn_speed: true,
+                                                       }).lean();
+          // If there is recent comm assume there is a cabled connection
+          if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
+            meshEntry.mac = matchedSlave._id;
+            meshEntry.rx_bit = matchedSlave.conn_speed;
+            meshEntry.tx_bit = matchedSlave.conn_speed;
+            enrichedMeshRouters.push(meshEntry);
+          }
+        }
+      }
+    }
 
     return res.status(200).json({
       success: true,
       lan_devices: enrichedLanDevs,
       mesh_routers: enrichedMeshRouters,
     });
-  });
+  } catch (err) {
+    console.error(err);
+    return res.status(200).json({
+      success: false,
+      message: 'Erro interno do servidor',
+    });
+  }
 };
 
 deviceListController.getSiteSurvey = function(req, res) {
@@ -2485,7 +2538,7 @@ deviceListController.getSiteSurvey = function(req, res) {
 
     let enrichedSiteSurvey = util.deepCopyObject(matchedDevice.ap_survey)
     .map((apDevice) => {
-      apDevice.is_old = deviceHandlers.isTooOld(apDevice.last_seen);
+      apDevice.is_old = deviceHandlers.isApTooOld(apDevice.last_seen);
       return apDevice;
     });
 
