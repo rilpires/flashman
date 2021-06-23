@@ -8,7 +8,7 @@ const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
 
-const checkFeature = (model, feature, isTr069) => {
+appDeviceAPIController.checkFeature = (model, feature, isTr069) => {
   if (isTr069) {
     switch (model) {
       case 'F670L':
@@ -61,7 +61,7 @@ let doRollback = function(device, values) {
   }
 };
 
-let appSet = function(req, res, processFunction) {
+appDeviceAPIController.appSet = function(req, res, processFunction) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({is_set: 0});
