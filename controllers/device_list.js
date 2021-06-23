@@ -2475,11 +2475,12 @@ deviceListController.getLanDevices = async function(req, res) {
       };
       if (matchedDevice.mesh_master) { // Slave router
         let masterId = matchedDevice.mesh_master.toUpperCase();
-        let matchedMaster = await DeviceModel.findById(masterId,
-                                                      {last_contact: true,
-                                                       _id: true,
-                                                       conn_speed: true,
-                                                      }).lean();
+        let matchedMaster = await DeviceModel.findById(
+          masterId,
+          {last_contact: true,
+           _id: true,
+           wan_negociated_speed: true,
+          }).lean();
         // If there is recent comm assume there is a cabled connection
         if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
           meshEntry.mac = matchedMaster._id;
@@ -2490,11 +2491,12 @@ deviceListController.getLanDevices = async function(req, res) {
       } else if (matchedDevice.mesh_slaves) { // Master router
         for (let slaveMac of matchedDevice.mesh_slaves) {
           let slaveId = slaveMac.toUpperCase();
-          let matchedSlave = await DeviceModel.findById(slaveId,
-                                                       {last_contact: true,
-                                                        _id: true,
-                                                        conn_speed: true,
-                                                       }).lean();
+          let matchedSlave = await DeviceModel.findById(
+            slaveId,
+            {last_contact: true,
+             _id: true,
+             wan_negociated_speed: true,
+            }).lean();
           // If there is recent comm assume there is a cabled connection
           if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
             meshEntry.mac = matchedSlave._id;
