@@ -2144,11 +2144,7 @@ $(document).ready(function() {
           let wifiEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'wifi')
           .replace('$REPLACE_TAB_NAME', 'Wi-Fi');
-          /*
-          let wifi5ghzEdit = baseEdit
-          .replace('$REPLACE_TAB_TYPE', 'wifi5')
-          .replace('$REPLACE_TAB_NAME', 'Wi-Fi 5.0GHz');
-          */
+
           let removeDevice = '<div class="col-2 text-right">'+
             buildRemoveDevice()+
           '</div>';
@@ -2170,7 +2166,6 @@ $(document).ready(function() {
                       '</label>'+
                       '$REPLACE_LAN_EDIT'+
                       '$REPLACE_WIFI_EDIT'+
-                      // '$REPLACE_WIFI5GHZ_EDIT'+
                       '$REPLACE_ACTIONS'+
                     '</div>'+
                     '<br>'+
@@ -2187,7 +2182,6 @@ $(document).ready(function() {
                     wanTab+
                     lanTab+
                     wifiTab+
-                    // wifi5Tab+
                   '</div>'+
                 '</div>'+
                 '$REPLACE_EDIT_BUTTON'+
@@ -2207,16 +2201,8 @@ $(document).ready(function() {
           }
           if (isSuperuser || grantWifiInfo >= 1) {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', wifiEdit);
-            /*
-            if (grantWifi5ghz) {
-              formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', wifi5ghzEdit);
-            } else {
-              formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', '');
-            }
-            */
           } else {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', '');
-            // formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', '');
           }
           if (isSuperuser || grantDeviceActions) {
             formRow = formRow.replace('$REPLACE_ACTIONS', devActions);

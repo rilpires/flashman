@@ -433,7 +433,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       let acceptLocalChanges = false;
       if (!acceptLocalChanges) {
         if (hasChanges) {
-          await acsDeviceInfoController.updateInfo(device, changes);
+          acsDeviceInfoController.updateInfo(device, changes);
         }
       }
     }

@@ -696,7 +696,8 @@ updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
   let ret = '';
   let matchedConfig = await Config.findOne({is_default: true});
   if (matchedConfig) {
-    if (isDeviceSsidPrefixEnabled == true) {
+    if ((typeof isDeviceSsidPrefixEnabled)
+      === 'boolean' && isDeviceSsidPrefixEnabled == true) {
       ret = matchedConfig.ssidPrefix;
     }
   }

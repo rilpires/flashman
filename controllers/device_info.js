@@ -104,7 +104,6 @@ const createRegistry = async function(req, res) {
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
   let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
   let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
-  
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
   if (flmUpdater == '0') {
@@ -361,9 +360,15 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
       } else {
         let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        // validate 2.4GHz because feature of ssid prefix
         let ssidPrefix = await updateController.
           getSsidPrefix(matchedDevice.
             isSsidPrefixEnabled);
+        const validator = new Validator();
+        genericValidate(ssidPrefix+util.
+          returnObjOrEmptyStr(matchedDevice.
+            wifi_ssid), validator.validateSSID,
+                        'ssid', null, errors);
 
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
@@ -471,12 +476,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           let permissionsCurrVersion = DeviceVersion.findByVersion(
             matchedDevice.version, is5ghzCapable, matchedDevice.model);
           let errors = [];
-          const validator = new Validator();
 
-          genericValidate(ssidPrefix+util.
-            returnObjOrEmptyStr(matchedDevice.
-              wifi_ssid), validator.validateSSID,
-                          'ssid', null, errors);
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
             let band =

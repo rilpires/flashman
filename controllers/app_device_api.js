@@ -835,9 +835,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 
     let prefixObj = {};
     prefixObj.name = await updateController.
-    getSsidPrefix(matchedDevice.
-      isSsidPrefixEnabled);
-    prefixObj.grant = prefixObj.name == '' ? false : true;
+    prefixObj.grant = matchedDevice.isSsidPrefixEnabled;
 
     return res.status(200).json({
       permissions: permissions,

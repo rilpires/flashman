@@ -781,7 +781,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
-                  config: matchedConfig,
                 });
               });
             }, (error) => {
@@ -1748,7 +1747,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
-                await acsDeviceInfo.updateInfo(matchedDevice, changes);
+                acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
 
                 matchedDevice.success = true;
@@ -1866,7 +1865,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
-              'isSsidPrefixEnabled': true, // for new devices, default is true
+              'isSsidPrefixEnabled': matchedConfig.isSsidPrefixEnabled,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
