@@ -2449,6 +2449,14 @@ deviceListController.getLanDevices = async function(req, res) {
 
     let onlyOldMeshRoutersEntries = true;
     let enrichedMeshRouters = util.deepCopyObject(matchedDevice.mesh_routers)
+    .filter((meshRouter) => {
+      // Remove entries related to wireless connection if cabled mesh only mode
+      if (matchedDevice.mesh_mode === 1 && meshRouter.iface !== 1) {
+        return false;
+      } else {
+        return true;
+      }
+    })
     .map((meshRouter) => {
       meshRouter.is_old = deviceHandlers.isApTooOld(meshRouter.last_seen);
       // There is at least one updated entry
@@ -2460,7 +2468,7 @@ deviceListController.getLanDevices = async function(req, res) {
     // If mesh routers list is empty or old and there are routers in mesh then
     // let's check if it's possible to populate mesh routers list by cabled
     // connections
-    if (onlyOldMeshRoutersEntries) {
+    if (onlyOldMeshRoutersEntries || (matchedDevice.mesh_mode === 1)) {
       let meshEntry = {
         mac: '',
         last_seen: Date.now(),

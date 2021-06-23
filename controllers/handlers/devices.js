@@ -59,7 +59,7 @@ deviceHandlers.isDeviceTooOld = function(dateLastSeen) {
 };
 
 deviceHandlers.isApTooOld = function(dateLastSeen) {
-  return isTooOld(dateLastSeen, 120);
+  return isTooOld(dateLastSeen, 60);
 };
 
 const syncUpdateScheduler = async function(mac) {
