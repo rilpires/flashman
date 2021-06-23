@@ -125,6 +125,12 @@ const portForwardTr069CompatibleModels = [
 ];
 
 const portForwardTr069CompatibleVersions = {
+ 'V1.1.20P1T18': {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: false,
+  rangeAsymmetric: false,
+ },
  'V1.1.20P1T4': {
   simpleSymmetric: true,
   simpleAsymmetric: true,
