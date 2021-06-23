@@ -397,7 +397,7 @@ let processAll = function(content, device, rollback) {
 let formatDevices = function(device) {
   let allRules = [];
   let lanDevices = device.lan_devices.filter((device)=>{
-    return !deviceHandlers.isTooOld(device.last_seen);
+    return !deviceHandlers.isDeviceTooOld(device.last_seen);
   }).map((lanDevice)=>{
     let name = lanDevice.mac;
     if (lanDevice.name) {
