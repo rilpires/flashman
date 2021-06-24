@@ -61,7 +61,7 @@ let doRollback = function(device, values) {
   }
 };
 
-appDeviceAPIController.appSet = function(req, res, processFunction) {
+let appSet = function(req, res, processFunction) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({is_set: 0});
