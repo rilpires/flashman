@@ -209,7 +209,9 @@ const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN H199A':
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
@@ -268,8 +270,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getHuaweiFields();
       break;
+    case 'ZXHN H199A': // Multilaser ZTE RE914
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
       message = '';
       fields = getZTEFields(model);
@@ -302,8 +306,10 @@ const getModelFields = function(oui, model) {
 const getProtocolByModel = function(model) {
   let ret = '';
   switch (model) {
+    case 'ZXHN H199A':
     case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
+    case 'ZXHN%20H199A': // URI encoded
       ret = 'BOTH';
       break;
     case 'HG8245Q2':

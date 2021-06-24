@@ -48,6 +48,19 @@ const tr069Devices = {
     pon_signal_support: false,
     wifi2_extended_channels_support: true,
   },
+  'ZXHN H199A': {
+    port_forward_support: true,
+    port_forward_opts: {
+      'V9.1.0P1_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+    },
+    pon_signal_support: false,
+    wifi2_extended_channels_support: true,
+  },
   'GONUAC001': {
     port_forward_support: false,
     pon_signal_support: true,
