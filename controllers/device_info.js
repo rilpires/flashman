@@ -764,6 +764,16 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             fetchedVlans = containerVlans.vlans;
             vlanHash = containerVlans.hash;
           }
+          let wifi_ssid_5ghz = util.
+              returnObjOrEmptyStr(matchedDevice.
+                wifi_ssid_5ghz);
+          /*
+            to not return appended ssidPrefix
+            in case device not support 5GHz
+          */
+          if (matchedDevice.wifi_is_5ghz_capable) {
+            wifi_ssid_5ghz = ssidPrefix + wifi_ssid_5ghz;
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,
@@ -785,9 +795,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state': matchedDevice.wifi_state,
             'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
             'wifi_hidden': matchedDevice.wifi_hidden,
-            'wifi_ssid_5ghz': ssidPrefix+util.
-              returnObjOrEmptyStr(matchedDevice.
-                wifi_ssid_5ghz),
+            'wifi_ssid_5ghz': wifi_ssid_5ghz,
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
