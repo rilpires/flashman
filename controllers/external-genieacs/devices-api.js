@@ -279,6 +279,7 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'MP_G421R':
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
       fields = getStavixFields();
