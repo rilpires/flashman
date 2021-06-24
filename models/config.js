@@ -26,6 +26,13 @@ let configSchema = new mongoose.Schema({
     pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
   },
+  certification: {
+    wan_step_required: {type: Boolean, required: true, default: true},
+    ipv4_step_required: {type: Boolean, required: true, default: true},
+    ipv6_step_required: {type: Boolean, required: true, default: false},
+    dns_step_required: {type: Boolean, required: true, default: true},
+    flashman_step_required: {type: Boolean, required: true, default: true},
+  },
   data_collecting: {
     is_active: Boolean,
     has_latency: Boolean,
@@ -84,7 +91,10 @@ let configSchema = new mongoose.Schema({
   vlans_profiles: [{
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095},
-    profile_name: {type: String, required: true, match: /[A-Za-z0-9_-]/, maxLength: 32},
+    profile_name: {type: String,
+                   required: true,
+                   match: /[A-Za-z0-9_-]/,
+                   maxLength: 32},
   }],
 });
 
