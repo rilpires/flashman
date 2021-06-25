@@ -27,13 +27,12 @@ describe('App API', () => {
 
   test('check feature not tr069', () => {
     let device = new DeviceModel({ model: 'NOTTR069'});
-    console.log(deviceVersion);
     expect(appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069));
   });
 
   test('check feature wps F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
-    expect(appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069));
+    expect(appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069)).toBe(true);
   });
 
   test('check feature upnp F670L', () => {
@@ -97,5 +96,25 @@ describe('App API', () => {
     expect(
       appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069),
     ).toBe(false);
+  });
+
+  test('without model', () => {
+    let device = new DeviceModel({use_tr069: true});
+    expect(
+      appDeviceAPIController.checkFeature('', 'wps', device.use_tr069),
+    ).toBe(false);
+  });
+
+  test('false tr069 variable', () => {
+    let device = new DeviceModel();
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'wps', false),
+    ).toBe(true);
+  });
+
+  test('empty feature variable', () => {
+    let device = new DeviceModel();
+    expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
+    expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
   });
 });
