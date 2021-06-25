@@ -360,6 +360,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
       } else {
         let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        let errors = [];
         // validate 2.4GHz because feature of ssid prefix
         let ssidPrefix = await updateController.
           getSsidPrefix(matchedDevice.
@@ -475,7 +476,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             sentVersion, is5ghzCapable, (bodyModel + bodyModelVer));
           let permissionsCurrVersion = DeviceVersion.findByVersion(
             matchedDevice.version, is5ghzCapable, matchedDevice.model);
-          let errors = [];
 
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
