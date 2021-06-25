@@ -117,4 +117,25 @@ describe('App API', () => {
     expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
     expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
   });
+
+  test('try to processUpnpInfo on tr069', () => {
+    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
+    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
+    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
+    expect(appDeviceAPIController.processUpnpInfo(content, device, rollback)).toBe(false);
+  });
+
+  test('try to processBlacklist on tr069', () => {
+    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
+    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
+    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
+    expect(appDeviceAPIController.processBlacklist(content, device, rollback)).toBe(false);
+  });
+
+  test('try to processWhitelist on tr069', () => {
+    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
+    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
+    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
+    expect(appDeviceAPIController.processWhitelist(content, device, rollback)).toBe(false);
+  });
 });
