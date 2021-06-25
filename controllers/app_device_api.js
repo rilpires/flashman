@@ -20,7 +20,7 @@ appDeviceAPIController.checkFeature = (model, feature, isTr069) => {
           case 'speedTest':
             return false;
           case 'speedTestLimit':
-            return false;
+            return 0;
           case 'blockDevices':
             return false;
           default:
@@ -845,7 +845,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantPortForwardAsym = false;
       permissions.grantBlockDevices = false;
       permissions.grantUpnp = false;
-    } else {
+    } else if (!matchedDevice.use_tr069) {
       permissions.grantBlockDevices = true;
     }
 
