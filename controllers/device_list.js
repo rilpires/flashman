@@ -761,6 +761,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
                 /* validate if is to show ssid prefix checkbox
                     for each device */
                 allDevices.forEach(function(device) {
+                  /*
+                    Define if is to show ssid prefix
+                    checkbox by checking the existence of
+                    personalization hash and if ssid prefix
+                    is enabled for all flashman.
+                    Or else, case ssid prefix is enabled
+                    for that device, is enough to be able
+                    to show.
+                  */
                   device.isToShowSsidPrefixCheckbox =
                     ((!!matchedConfig.personalizationHash == true &&
                     matchedConfig.isSsidPrefixEnabled == true) ||
