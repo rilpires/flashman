@@ -64,4 +64,38 @@ describe('App API', () => {
     ).toBe(false);
   });
 
+  test('check feature wps other model', () => {
+    let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069),
+    ).toBe(false);
+  });
+
+  test('check feature upnp other model', () => {
+    let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'upnp', device.use_tr069),
+    ).toBe(false);
+  });
+
+  test('check feature speedTest other model', () => {
+    let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'speedTest', device.use_tr069),
+    ).toBe(false);
+  });
+
+  test('check feature speedTestLimit other model', () => {
+    let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'speedTestLimit', device.use_tr069),
+    ).toBe(false);
+  });
+
+  test('check feature blockDevices other model', () => {
+    let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
+    expect(
+      appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069),
+    ).toBe(false);
+  });
 });
