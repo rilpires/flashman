@@ -126,7 +126,7 @@ let appSet = function(req, res, processFunction) {
   });
 };
 
-let processWifi = function(content, device, rollback) {
+appDeviceAPIController.processWifi = function(content, device, rollback) {
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
@@ -191,7 +191,7 @@ let processWifi = function(content, device, rollback) {
   return updateParameters;
 };
 
-let processPassword = function(content, device, rollback) {
+appDeviceAPIController.processPassword = function(content, device, rollback) {
   if (content.hasOwnProperty('app_password')) {
     rollback.app_password = device.app_password;
     device.app_password = content.app_password;
@@ -200,9 +200,9 @@ let processPassword = function(content, device, rollback) {
   return false;
 };
 
-let processBlacklist = function(content, device, rollback) {
+appDeviceAPIController.processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
     return false;
   }
   // Legacy checks
@@ -277,9 +277,9 @@ let processBlacklist = function(content, device, rollback) {
   return false;
 };
 
-let processWhitelist = function(content, device, rollback) {
+appDeviceAPIController.processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
     return false;
   }
   // Legacy checks
@@ -326,7 +326,7 @@ let processWhitelist = function(content, device, rollback) {
   return false;
 };
 
-let processDeviceInfo = function(content, device, rollback) {
+appDeviceAPIController.processDeviceInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -370,9 +370,9 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
-let processUpnpInfo = function(content, device, rollback) {
+appDeviceAPIController.processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!checkFeature(device.model, 'upnp', device.use_tr069)) {
+  if (!appDeviceAPIController.checkFeature(device.model, 'upnp', device.use_tr069)) {
     return false;
   }
   if (content.hasOwnProperty('device_configs') &&
@@ -420,13 +420,13 @@ let processUpnpInfo = function(content, device, rollback) {
   return false;
 };
 
-let processAll = function(content, device, rollback) {
-  processWifi(content, device, rollback);
-  processPassword(content, device, rollback);
-  processBlacklist(content, device, rollback);
-  processWhitelist(content, device, rollback);
-  processDeviceInfo(content, device, rollback);
-  processUpnpInfo(content, device, rollback);
+appDeviceAPIController.processAll = function(content, device, rollback) {
+  appDeviceAPIController.processWifi(content, device, rollback);
+  appDeviceAPIController.processPassword(content, device, rollback);
+  appDeviceAPIController.processBlacklist(content, device, rollback);
+  appDeviceAPIController.processWhitelist(content, device, rollback);
+  appDeviceAPIController.processDeviceInfo(content, device, rollback);
+  appDeviceAPIController.processUpnpInfo(content, device, rollback);
 };
 
 let formatDevices = function(device) {
@@ -654,7 +654,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     if (appObj[0].secret != req.body.app_secret) {
       return res.status(403).json({message: 'App não autorizado'});
     }
-    if (!checkFeature(matchedDevice.model, 'speedTest')) {
+    if (!appDeviceAPIController.checkFeature(matchedDevice.model, 'speedTest')) {
       return res.status(500).json({message: 'Feature not implemented'});
     }
 
@@ -705,27 +705,27 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
 };
 
 appDeviceAPIController.appSetWifi = function(req, res) {
-  appSet(req, res, processWifi);
+  appSet(req, res, appDeviceAPIController.processWifi);
 };
 
 appDeviceAPIController.appSetPassword = function(req, res) {
-  appSet(req, res, processPassword);
+  appSet(req, res, appDeviceAPIController.processPassword);
 };
 
 appDeviceAPIController.appSetBlacklist = function(req, res) {
-  appSet(req, res, processBlacklist);
+  appSet(req, res, appDeviceAPIController.processBlacklist);
 };
 
 appDeviceAPIController.appSetWhitelist = function(req, res) {
-  appSet(req, res, processWhitelist);
+  appSet(req, res, appDeviceAPIController.processWhitelist);
 };
 
 appDeviceAPIController.appSetDeviceInfo = function(req, res) {
-  appSet(req, res, processDeviceInfo);
+  appSet(req, res, appDeviceAPIController.processDeviceInfo);
 };
 
 appDeviceAPIController.appSetConfig = function(req, res) {
-  appSet(req, res, processAll);
+  appSet(req, res, appDeviceAPIController.processAll);
 };
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
@@ -812,27 +812,27 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     );
 
     if (matchedDevice.use_tr069) {
-      permissions.grantSpeedTest = checkFeature(
+      permissions.grantSpeedTest = appDeviceAPIController.checkFeature(
         matchedDevice.model,
         'speedTest',
         matchedDevice.use_tr069,
       );
-      permissions.grantSpeedTestLimit = checkFeature(
+      permissions.grantSpeedTestLimit = appDeviceAPIController.checkFeature(
         matchedDevice.model,
         'speedTestLimit',
         matchedDevice.use_tr069,
       );
-      permissions.grantUpnp = checkFeature(
+      permissions.grantUpnp = appDeviceAPIController.checkFeature(
         matchedDevice.model,
         'upnp',
         matchedDevice.use_tr069,
       );
-      permissions.grantWpsFunction = checkFeature(
+      permissions.grantWpsFunction = appDeviceAPIController.checkFeature(
         matchedDevice.model,
         'wps',
         matchedDevice.use_tr069,
       );
-      permissions.grantBlockDevices = checkFeature(
+      permissions.grantBlockDevices = appDeviceAPIController.checkFeature(
         matchedDevice.model,
         'blockDevices',
         matchedDevice.use_tr069,
