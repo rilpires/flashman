@@ -14,7 +14,7 @@ appDeviceAPIController.checkFeature = (model, feature, isTr069) => {
       case 'F670L':
         switch (feature) {
           case 'wps':
-            return true;
+            return false;
           case 'upnp':
             return false;
           case 'speedTest':
