@@ -50,9 +50,12 @@ window.checkrecoveryOfflineInputDependency = function() {
 
 window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
-  if (ssidPrefixInput.value && (
-    ssidPrefixInput.value.length > 16 ||
-    !ssidPrefixInput.value.match(/^[a-zA-Z0-9\.\-\_\#\s]*$/))) {
+  let validator = new Validator();
+
+  let validField = validator.
+    validateSSIDPrefix(ssidPrefixInput.value);
+
+  if (!validField.valid) {
     setSsidPrefixError();
   } else {
     resetSsidPrefixError();
@@ -74,6 +77,8 @@ const resetSsidPrefixError = function() {
 
 // called after save button is pressed.
 let configFlashman = function(event) {
+  let validator = new Validator();
+
   resetRecoveryOfflineInputDependencyError(); // reseting errors and message
   // styles for recovery and offline inputs to default values.
   resetSsidPrefixError();
@@ -89,11 +94,10 @@ let configFlashman = function(event) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
   }
+  let validField = validator.
+    validateSSIDPrefix(ssidPrefixInput.value);
   // check ssid prefix value
-  if (ssidPrefixInput.validity.valid &&
-    ssidPrefixInput.value && (
-    ssidPrefixInput.value.length > 16 ||
-    !ssidPrefixInput.value.match(/^[a-zA-Z0-9\.\-\_\#\s]*$/))) {
+  if (ssidPrefixInput.validity.valid && !validField.valid) {
     setSsidPrefixError();
     allValid = false;
   }

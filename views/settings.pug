@@ -137,8 +137,8 @@ block content
                 oninput="checkSsidPrefixValidity()"
               )
               #error-ssid-prefix.invalid-feedback Este campo não pode ter
-                |  mais de 16 caracteres e são aceitos: caracteres
-                | alfanuméricos, espaços, ponto, - e _
+                |  mais de 16 caracteres, são aceitos caracteres alfanuméricos e
+                | deve ter pelo menos um ponto, -, _ ou # como separador no final
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
