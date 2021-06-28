@@ -7,6 +7,12 @@ const tr069Devices = {
   'F670L': {
     port_forward_support: true,
     port_forward_opts: {
+      'V1.1.20P1T18': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
       'V1.1.20P1T4': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
