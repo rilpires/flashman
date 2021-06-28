@@ -27,95 +27,94 @@ describe('App API', () => {
 
   test('check feature not tr069', () => {
     let device = new DeviceModel({ model: 'NOTTR069'});
-    expect(appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069));
+    expect(DeviceVersion.checkFeature(device.model, 'wps', device.use_tr069));
   });
 
   test('check feature wps F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
-    expect(appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069)).toBe(true);
+    expect(DeviceVersion.checkFeature(device.model, 'wps', device.use_tr069)).toBe(false);
   });
 
   test('check feature upnp F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'upnp', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'upnp', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature speedTest F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'speedTest', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'speedTest', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature speedTestLimit F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'speedTestLimit', device.use_tr069),
-    ).toBe(false);
+      DeviceVersion.checkFeature(device.model, 'speedTestLimit', device.use_tr069),
+    ).toBe(0);
   });
 
   test('check feature blockDevices F670L', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'F670L'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature wps other model', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'wps', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'wps', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature upnp other model', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'upnp', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'upnp', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature speedTest other model', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'speedTest', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'speedTest', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature speedTestLimit other model', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'speedTestLimit', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'speedTestLimit', device.use_tr069),
     ).toBe(false);
   });
 
   test('check feature blockDevices other model', () => {
     let device = new DeviceModel({ use_tr069: true, model: 'H198A'});
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069),
+      DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069),
     ).toBe(false);
   });
 
   test('without model', () => {
     let device = new DeviceModel({use_tr069: true});
     expect(
-      appDeviceAPIController.checkFeature('', 'wps', device.use_tr069),
+      DeviceVersion.checkFeature('', 'wps', device.use_tr069),
     ).toBe(false);
   });
 
   test('false tr069 variable', () => {
     let device = new DeviceModel();
     expect(
-      appDeviceAPIController.checkFeature(device.model, 'wps', false),
+      DeviceVersion.checkFeature(device.model, 'wps', false),
     ).toBe(true);
   });
 
   test('empty feature variable', () => {
     let device = new DeviceModel();
-    expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
-    expect(appDeviceAPIController.checkFeature(device.model, '', false)).toBe(true);
+    expect(DeviceVersion.checkFeature(device.model, '', false)).toBe(true);
   });
 
   test('try to processUpnpInfo on tr069', () => {
