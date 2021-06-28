@@ -1466,7 +1466,7 @@ deviceListController.setDeviceReg = function(req, res) {
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
-                ssidPrefix+ssid !== '' &&
+                ssid !== '' &&
                 ssidPrefix+ssid !== ssidPrefix+matchedDevice.wifi_ssid) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.ssid = ssid;
@@ -1545,7 +1545,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
-                ssidPrefix+ssid5ghz !== '' &&
+                ssid5ghz !== '' &&
                 ssidPrefix+ssid5ghz !== ssidPrefix+matchedDevice.wifi_ssid_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.ssid = ssid5ghz;
