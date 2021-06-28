@@ -760,6 +760,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
               .then(function(singleReleases) {
                 /* validate if is to show ssid prefix checkbox
                     for each device */
+                let ssidPrefix = '';
                 allDevices.forEach(function(device) {
                   /*
                     Define if is to show ssid prefix
@@ -774,10 +775,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     ((!!matchedConfig.personalizationHash == true &&
                     matchedConfig.isSsidPrefixEnabled == true) ||
                     device.isSsidPrefixEnabled == true);
-                  if (device.isToShowSsidPrefixCheckbox) {
-                    device.ssidPrefix = matchedConfig.ssidPrefix;
-                  }
                 });
+                if (!!matchedConfig.personalizationHash == true &&
+                    matchedConfig.isSsidPrefixEnabled == true) {
+                  ssidPrefix = matchedConfig.ssidPrefix;
+                }
 
                 return res.json({
                 success: true,
@@ -790,6 +792,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
+                  ssidPrefix: ssidPrefix,
                 });
               });
             }, (error) => {

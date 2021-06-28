@@ -36,11 +36,7 @@ let validateNewDevice = function() {
   let mode = $('#new_wifi_mode').val();
   let externalReferenceType = $('#new_ext_ref_type_selected').html();
   let externalReferenceData = $('#new_external_reference').val();
-  let ssidPrefix = '';
-  if (sessionStorage.getItem('hasPersonalizationHash') == 'true' &&
-      sessionStorage.getItem('isSsidPrefixEnabled') == 'true') {
-    ssidPrefix = sessionStorage.getItem('ssidPrefix');
-  }
+  let ssidPrefix = $('#ssid_prefix').html();
 
   // Initialize error structure
   let errors = {

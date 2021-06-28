@@ -72,10 +72,8 @@ let validateEditDevice = function(event) {
   let isDeviceSsidPrefixEnabled = ($('#edit_is_ssid_prefix_enabled-' +
     index.toString()).is(':checked') ? 1 : 0);
   let ssidPrefix = '';
-  if (sessionStorage.getItem('hasPersonalizationHash') == 'true' &&
-      sessionStorage.getItem('isSsidPrefixEnabled') == 'true' &&
-      isDeviceSsidPrefixEnabled == 1) {
-    ssidPrefix = sessionStorage.getItem('ssidPrefix');
+  if (isDeviceSsidPrefixEnabled == 1) {
+    ssidPrefix = $('#ssid_prefix').html();
   }
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
