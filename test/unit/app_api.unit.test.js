@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const appDeviceAPIController = require('../../controllers/app_device_api');
 const DeviceModel = require('../../models/device');
-const DeviceVersionModel = require('../../models/device_version')
+const DeviceVersion = require('../../models/device_version')
 
 describe('App API', () => {
   let modelZteF670L = 'F670L';
