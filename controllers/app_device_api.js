@@ -8,32 +8,6 @@ const util = require('./handlers/util');
 
 let appDeviceAPIController = {};
 
-appDeviceAPIController.checkFeature = (model, feature, isTr069) => {
-  if (isTr069) {
-    switch (model) {
-      case 'F670L':
-        switch (feature) {
-          case 'wps':
-            return false;
-          case 'upnp':
-            return false;
-          case 'speedTest':
-            return false;
-          case 'speedTestLimit':
-            return 0;
-          case 'blockDevices':
-            return false;
-          default:
-            return false;
-        }
-      default:
-        return false;
-    }
-  } else {
-    return true;
-  }
-}
-
 let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
   return new Promise((resolve, reject)=>{
     DeviceModel.findById(id, (err, matchedDevice)=>{
@@ -202,7 +176,7 @@ appDeviceAPIController.processPassword = function(content, device, rollback) {
 
 appDeviceAPIController.processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
     return false;
   }
   // Legacy checks
@@ -279,7 +253,7 @@ appDeviceAPIController.processBlacklist = function(content, device, rollback) {
 
 appDeviceAPIController.processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!appDeviceAPIController.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
     return false;
   }
   // Legacy checks
@@ -372,7 +346,7 @@ appDeviceAPIController.processDeviceInfo = function(content, device, rollback) {
 
 appDeviceAPIController.processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!appDeviceAPIController.checkFeature(device.model, 'upnp', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'upnp', device.use_tr069)) {
     return false;
   }
   if (content.hasOwnProperty('device_configs') &&
@@ -654,7 +628,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     if (appObj[0].secret != req.body.app_secret) {
       return res.status(403).json({message: 'App não autorizado'});
     }
-    if (!appDeviceAPIController.checkFeature(matchedDevice.model, 'speedTest')) {
+    if (!DeviceVersion.checkFeature(matchedDevice.model, 'speedTest')) {
       return res.status(500).json({message: 'Feature not implemented'});
     }
 
@@ -812,27 +786,27 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     );
 
     if (matchedDevice.use_tr069) {
-      permissions.grantSpeedTest = appDeviceAPIController.checkFeature(
+      permissions.grantSpeedTest = DeviceVersion.checkFeature(
         matchedDevice.model,
         'speedTest',
         matchedDevice.use_tr069,
       );
-      permissions.grantSpeedTestLimit = appDeviceAPIController.checkFeature(
+      permissions.grantSpeedTestLimit = DeviceVersion.checkFeature(
         matchedDevice.model,
         'speedTestLimit',
         matchedDevice.use_tr069,
       );
-      permissions.grantUpnp = appDeviceAPIController.checkFeature(
+      permissions.grantUpnp = DeviceVersion.checkFeature(
         matchedDevice.model,
         'upnp',
         matchedDevice.use_tr069,
       );
-      permissions.grantWpsFunction = appDeviceAPIController.checkFeature(
+      permissions.grantWpsFunction = DeviceVersion.checkFeature(
         matchedDevice.model,
         'wps',
         matchedDevice.use_tr069,
       );
-      permissions.grantBlockDevices = appDeviceAPIController.checkFeature(
+      permissions.grantBlockDevices = DeviceVersion.checkFeature(
         matchedDevice.model,
         'blockDevices',
         matchedDevice.use_tr069,

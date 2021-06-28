@@ -1460,4 +1460,30 @@ DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
 };
 
+DeviceVersion.checkFeature = (model, feature, isTr069) => {
+  if (isTr069) {
+    switch (model) {
+      case 'F670L':
+        switch (feature) {
+          case 'wps':
+            return false;
+          case 'upnp':
+            return false;
+          case 'speedTest':
+            return false;
+          case 'speedTestLimit':
+            return 0;
+          case 'blockDevices':
+            return false;
+          default:
+            return false;
+        }
+      default:
+        return false;
+    }
+  } else {
+    return true;
+  }
+}
+
 module.exports = DeviceVersion;
