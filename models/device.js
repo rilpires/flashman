@@ -218,7 +218,7 @@ let deviceSchema = new Schema({
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
-  isSsidPrefixEnabled: {type: Boolean, default: false},
+  isSsidPrefixEnabled: {type: Boolean},
 });
 
 deviceSchema.set('autoIndex', false);
