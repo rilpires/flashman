@@ -761,6 +761,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
                 /* validate if is to show ssid prefix checkbox
                     for each device */
                 let ssidPrefix = '';
+                let enabledForAllFlashman = false;
+                if (!!matchedConfig.personalizationHash == true &&
+                    matchedConfig.isSsidPrefixEnabled == true) {
+                  enabledForAllFlashman = true;
+                  ssidPrefix = matchedConfig.ssidPrefix;
+                }
                 allDevices.forEach(function(device) {
                   /*
                     Define if is to show ssid prefix
@@ -772,14 +778,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     to show.
                   */
                   device.isToShowSsidPrefixCheckbox =
-                    ((!!matchedConfig.personalizationHash == true &&
-                    matchedConfig.isSsidPrefixEnabled == true) ||
+                    (enabledForAllFlashman == true ||
                     device.isSsidPrefixEnabled == true);
                 });
-                if (!!matchedConfig.personalizationHash == true &&
-                    matchedConfig.isSsidPrefixEnabled == true) {
-                  ssidPrefix = matchedConfig.ssidPrefix;
-                }
 
                 return res.json({
                 success: true,
