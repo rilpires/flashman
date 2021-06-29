@@ -462,9 +462,9 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       // check vlan_id to pass the right vid in case device is realtek or not
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
 
-      if (aux_idx == '1' || aux_idx == '9') {
+      if (aux_idx == vlan_of_lan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+' ';
-      } else {
+      } else if (aux_idx != vlan_of_wan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+'t ';
 
         vlan_ports += lan_ports[vlanObj[i].port-1].toString()+' ';
@@ -482,14 +482,29 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
 
   // put the tagged ports
   for (let key in digestedVlans) {
-    if (key == 1 || key == 9) {
-      digestedVlans[key] += cpu_port.toString()+'t';
-    } else {
+    if (key == parseInt(vlan_of_lan)) {
+      digestedVlans[key] += cpu_port.toString();
+      if (deviceInfo['soc'] != 'realtek' ||
+        (deviceInfo['network_chip'] != '8367r' &&
+        deviceInfo['network_chip'] != '83xx')) {
+        digestedVlans[key] += 't';
+      }
+    } else if (key != parseInt(vlan_of_wan)) {
       digestedVlans[key] += wan_port.toString()+'t';
+      if (deviceInfo['soc'] == 'realtek' &&
+        (deviceInfo['network_chip'] == '8367r' ||
+        deviceInfo['network_chip'] == '83xx')) {
+        digestedVlans[key] += ' ' + cpu_port.toString()+'t';
+      }
     }
   }
   digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' +
-                               vlan_ports + cpu_port.toString() + 't';
+                               vlan_ports + cpu_port.toString();
+  if (deviceInfo['soc'] != 'realtek' ||
+        (deviceInfo['network_chip'] != '8367r' &&
+        deviceInfo['network_chip'] != '83xx')) {
+    digestedVlans[vlan_of_wan] += 't';
+  }
 
   return digestedVlans;
 };
