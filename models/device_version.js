@@ -20,6 +20,13 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
+    feature_support: {
+      upnp: false,
+      wps: false,
+      speedTest: false,
+      speedTestLimit: false,
+      blockDevices: false,
+    },
     pon_signal_support: true,
   },
   'ZXHN H198A V3.0': {
@@ -38,19 +45,47 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
+    feature_support: {
+      upnp: false,
+      wps: false,
+      speedTest: false,
+      speedTestLimit: false,
+      blockDevices: false,
+    },
     pon_signal_support: false,
   },
   'GONUAC001': {
     port_forward_support: false,
     pon_signal_support: true,
+    feature_support: {
+      upnp: false,
+      wps: false,
+      speedTest: false,
+      speedTestLimit: false,
+      blockDevices: false,
+    },
   },
   'G-140W-C': {
     port_forward_support: false,
     pon_signal_support: true,
+    feature_support: {
+      upnp: false,
+      wps: false,
+      speedTest: false,
+      speedTestLimit: false,
+      blockDevices: false,
+    },
   },
   'HG8245Q2': {
     port_forward_support: false,
     pon_signal_support: true,
+    feature_support: {
+      upnp: false,
+      wps: false,
+      speedTest: false,
+      speedTestLimit: false,
+      blockDevices: false,
+    },
   },
 };
 
@@ -1460,27 +1495,9 @@ DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
 };
 
-DeviceVersion.checkFeature = (model, feature, isTr069) => {
-  if (isTr069) {
-    switch (model) {
-      case 'F670L':
-        switch (feature) {
-          case 'wps':
-            return false;
-          case 'upnp':
-            return false;
-          case 'speedTest':
-            return false;
-          case 'speedTestLimit':
-            return 0;
-          case 'blockDevices':
-            return false;
-          default:
-            return false;
-        }
-      default:
-        return false;
-    }
+DeviceVersion.checkFeature = (model, feature) => {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support[feature];
   } else {
     return true;
   }

@@ -176,7 +176,7 @@ appDeviceAPIController.processPassword = function(content, device, rollback) {
 
 appDeviceAPIController.processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
   }
   // Legacy checks
@@ -253,7 +253,7 @@ appDeviceAPIController.processBlacklist = function(content, device, rollback) {
 
 appDeviceAPIController.processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!DeviceVersion.checkFeature(device.model, 'blockDevices', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
   }
   // Legacy checks
@@ -346,7 +346,7 @@ appDeviceAPIController.processDeviceInfo = function(content, device, rollback) {
 
 appDeviceAPIController.processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-  if (!DeviceVersion.checkFeature(device.model, 'upnp', device.use_tr069)) {
+  if (!DeviceVersion.checkFeature(device.model, 'upnp')) {
     return false;
   }
   if (content.hasOwnProperty('device_configs') &&
@@ -789,27 +789,22 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantSpeedTest = DeviceVersion.checkFeature(
         matchedDevice.model,
         'speedTest',
-        matchedDevice.use_tr069,
       );
       permissions.grantSpeedTestLimit = DeviceVersion.checkFeature(
         matchedDevice.model,
         'speedTestLimit',
-        matchedDevice.use_tr069,
       );
       permissions.grantUpnp = DeviceVersion.checkFeature(
         matchedDevice.model,
         'upnp',
-        matchedDevice.use_tr069,
       );
       permissions.grantWpsFunction = DeviceVersion.checkFeature(
         matchedDevice.model,
         'wps',
-        matchedDevice.use_tr069,
       );
       permissions.grantBlockDevices = DeviceVersion.checkFeature(
         matchedDevice.model,
         'blockDevices',
-        matchedDevice.use_tr069,
       );
     }
 
