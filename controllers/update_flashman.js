@@ -704,15 +704,15 @@ updateController.updateAppPersonalization = async function(app) {
 
 
 updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
-  let ret = '';
-  let matchedConfig = await Config.findOne({is_default: true});
-  if (matchedConfig) {
-    if ((typeof isDeviceSsidPrefixEnabled)
-      === 'boolean' && isDeviceSsidPrefixEnabled == true) {
-      ret = matchedConfig.ssidPrefix;
-    }
+  if (!isDeviceSsidPrefixEnabled) {
+    return '';
   }
-  return ret;
+  let matchedConfig = await Config.findOne({is_default: true});
+  if (!matchedConfig) {
+    return '';
+  } else {
+    return matchedConfig.ssidPrefix;
+  }
 };
 
 module.exports = updateController;
