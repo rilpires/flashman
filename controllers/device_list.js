@@ -735,9 +735,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
           device.wifi_hidden = 0;
           device.wifi_hidden_5ghz = 0;
         }
-        if (device.isSsidPrefixEnabled === undefined) {
-          device.isSsidPrefixEnabled = false;
-        }
         if (device.ipv6_enabled === undefined) {
           device.ipv6_enabled = 0;
         }
@@ -1198,9 +1195,6 @@ deviceListController.getDeviceReg = function(req, res) {
     }
     if (matchedDevice.lastboot_log) {
       matchedDevice.lastboot_log = null;
-    }
-    if (matchedDevice.isSsidPrefixEnabled === undefined) {
-      matchedDevice.isSsidPrefixEnabled = false;
     }
 
     let deviceColor = 'grey';
