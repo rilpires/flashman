@@ -1497,7 +1497,7 @@ DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
 
 DeviceVersion.checkFeature = (model, feature) => {
   if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support[feature];
+    return false;
   } else {
     return true;
   }
