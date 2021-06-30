@@ -23,9 +23,9 @@ const tr069Devices = {
     feature_support: {
       upnp: false,
       wps: false,
-      speedTest: false,
-      speedTestLimit: false,
-      blockDevices: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
     },
     pon_signal_support: true,
   },
@@ -48,9 +48,9 @@ const tr069Devices = {
     feature_support: {
       upnp: false,
       wps: false,
-      speedTest: false,
-      speedTestLimit: false,
-      blockDevices: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
     },
     pon_signal_support: false,
   },
@@ -60,9 +60,9 @@ const tr069Devices = {
     feature_support: {
       upnp: false,
       wps: false,
-      speedTest: false,
-      speedTestLimit: false,
-      blockDevices: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
     },
   },
   'G-140W-C': {
@@ -71,9 +71,9 @@ const tr069Devices = {
     feature_support: {
       upnp: false,
       wps: false,
-      speedTest: false,
-      speedTestLimit: false,
-      blockDevices: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
     },
   },
   'HG8245Q2': {
@@ -82,9 +82,9 @@ const tr069Devices = {
     feature_support: {
       upnp: false,
       wps: false,
-      speedTest: false,
-      speedTestLimit: false,
-      blockDevices: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
     },
   },
 };
@@ -1276,7 +1276,10 @@ const grantSiteSurvey = function(version) {
   }
 };
 
-const grantUpnp = function(version) {
+const grantUpnp = function(version, model) {
+  if (!DeviceVersion.checkFeature(model, 'upnp')) {
+    return false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
   } else {
@@ -1286,6 +1289,9 @@ const grantUpnp = function(version) {
 };
 
 const grantSpeedTest = function(version, model) {
+  if (DeviceVersion.checkFeature(model, 'speed_test')) {
+    return false;
+  }
   if (Object.keys(tr069Devices).includes(model)) {
     // TR-069 does not have speed test at the moment
     return false;
@@ -1308,6 +1314,9 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
+  if (!DeviceVersion.checkFeature(mode, 'speed_test_limit')) {
+    return 0;
+  }
   if (grantSpeedTest(version, model) &&
       Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
@@ -1403,6 +1412,9 @@ const grantUpdateAck = function(version) {
 };
 
 const grantWpsFunction = function(version, model) {
+  if (!DeviceVersion.checkFeature(model, 'wps')) {
+    return false;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
