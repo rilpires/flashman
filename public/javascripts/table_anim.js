@@ -1843,7 +1843,7 @@ $(document).ready(function() {
                 ssidPrefixEnabledCheckbox+
                 '<nav>'+
                   '<div class="nav nav-tabs" id="nav-tab" role="tablist">'+
-                    '<a class="btn-primary text-white nav-link active" id="wifi-pane-tab-'+index+
+                    '<a class="btn-primary text-white nav-link active mr-1" id="wifi-pane-tab-'+index+
                       '" data-toggle="tab" href="#wifi-pane-'+index+
                       '" role="tab" aria-controls="#wifi-pane-'+index+
                       '" aria-selected="true">2.4GHz</a>'+
@@ -2167,7 +2167,7 @@ $(document).ready(function() {
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
                     '<div class="btn-group btn-group-toggle" data-toggle="buttons">'+
-                      '<label class="btn btn-primary tab-switch-btn active" '+
+                      '<label class="btn btn-primary tab-switch-btn active ml-0" '+
                       'data-tab-id="#tab_about-'+index+'">'+
                         'Sobre<input type="radio"></input>'+
                       '</label>'+
