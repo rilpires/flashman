@@ -1003,11 +1003,12 @@ $(document).ready(function() {
           return;
         }
         // show or not ssid prefix in new device form
-        if (res.ssidPrefix !== '') {
+        $('#ssid_prefix').text(res.ssidPrefix);
+        $('#ssid_prefix').data('isenabled', res.isSsidPrefixEnabled);
+        if (res.isSsidPrefixEnabled) {
           $('#ssid_prefix_div').removeClass('d-none');
           $('#ssid_prefix_div').addClass('d-block');
           $('#ssid_label').addClass('active');
-          $('#ssid_prefix').text(res.ssidPrefix);
         }
         // Stop loading animation
         deviceTableContent.empty();
