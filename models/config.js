@@ -27,10 +27,16 @@ let configSchema = new mongoose.Schema({
     pon_signal_threshold_critical_high: {type: Number, default: 3},
   },
   certification: {
+    // WAN steps required here are:
+    // - Response of a ping to gateway must succeed
     wan_step_required: {type: Boolean, required: true, default: true},
     ipv4_step_required: {type: Boolean, required: true, default: true},
     ipv6_step_required: {type: Boolean, required: true, default: false},
     dns_step_required: {type: Boolean, required: true, default: true},
+    // Flashman steps required here are:
+    // - CPE must have a registry created successfully at Flashman DB
+    // - CPE must be present at MQTT list of connected devices if it is a
+    //   CPE using Flashbox firmware
     flashman_step_required: {type: Boolean, required: true, default: true},
   },
   data_collecting: {
