@@ -3,7 +3,7 @@ const appDeviceAPIController = require('../../controllers/app_device_api');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version')
 
-describe('App API', () => {
+describe('DeviceVersion API', () => {
   let modelZteF670L = 'F670L';
 
   beforeAll(async () => {
@@ -110,6 +110,7 @@ describe('App API', () => {
     expect(DeviceVersion.checkFeature(device.model, '')).toBe(true);
   });
 
+  /*
   test('try to processUpnpInfo on tr069', () => {
     let content = new DeviceModel({ model: 'F670L', use_tr069: true});
     let device = new DeviceModel({ model: 'F670L', use_tr069: true });
@@ -130,4 +131,5 @@ describe('App API', () => {
     let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
     expect(appDeviceAPIController.processWhitelist(content, device, rollback)).toBe(false);
   });
+  */
 });
