@@ -91,54 +91,97 @@ block content
                 span.card-title Configurações para App do Técnico
 
           #technicianapp.card-body.collapse.out
-            .md-form.input-entry
-              label Valor de alerta amarelo do sinal óptico (dBm)
-              input#pon-signal-threshold.form-control(
-                type="number",
-                name="pon-signal-threshold",
-                min=-100,
-                max=100,
-                value=-18
-              )
-              .invalid-feedback Insira um número em dBm válido
-            .md-form.input-entry
-              label Valor de alerta vermelho do sinal óptico (dBm)
-              input#pon-signal-threshold-critical.form-control(
-                type="number",
-                name="pon-signal-threshold-critical",
-                min=-100,
-                max=100,
-                value=-23
-              )
-              .invalid-feedback Insira um número em dBm válido
-            .md-form.input-entry
-              label Valor de alerta vermelho do sinal óptico elevado (dBm)
-              input#pon-signal-threshold-critical-high.form-control(
-                type="number",
-                name="pon-signal-threshold-critical-high",
-                min=-100,
-                max=100,
-                value=3
-              )
-              .invalid-feedback Insira um número em dBm válido
-            .custom-control.custom-checkbox.d-none#is-ssid-prefix-enabled-div
-              input#is-ssid-prefix-enabled.custom-control-input(
-                name="is-ssid-prefix-enabled",
-                type="checkbox"
-              )
-              label.custom-control-label.text-muted(for="is-ssid-prefix-enabled")
-                | Habilitar prefixo SSID no Wi-Fi dos CPEs
-              .invalid-feedback
-            .md-form.input-entry.d-none#ssid-prefix-div
-              label Prefixo SSID
-              input#ssid-prefix.form-control(
-                type="text",
-                name="ssid-prefix"
-                oninput="checkSsidPrefixValidity()"
-              )
-              #error-ssid-prefix.invalid-feedback Este campo não pode ter
-                |  mais de 16 caracteres, são aceitos caracteres alfanuméricos e
-                | deve ter pelo menos um ponto, -, _ ou # como separador no final
+            .row
+              .col-md-6.col-12.pl-0.pr-md-4.pr-0
+                .md-form.input-entry
+                  label Alerta amarelo do sinal óptico (dBm)
+                  input#pon-signal-threshold.form-control(
+                    type="number",
+                    name="pon-signal-threshold",
+                    min=-100,
+                    max=100,
+                    value=-18
+                  )
+                  .invalid-feedback Insira um número em dBm válido
+                .md-form.input-entry
+                  label Alerta vermelho do sinal óptico (dBm)
+                  input#pon-signal-threshold-critical.form-control(
+                    type="number",
+                    name="pon-signal-threshold-critical",
+                    min=-100,
+                    max=100,
+                    value=-23
+                  )
+                  .invalid-feedback Insira um número em dBm válido
+                .md-form.input-entry
+                  label Alerta vermelho do sinal óptico elevado (dBm)
+                  input#pon-signal-threshold-critical-high.form-control(
+                    type="number",
+                    name="pon-signal-threshold-critical-high",
+                    min=-100,
+                    max=100,
+                    value=3
+                  )
+                  .invalid-feedback Insira um número em dBm válido
+                .custom-control.custom-checkbox.d-none#is-ssid-prefix-enabled-div
+                  input#is-ssid-prefix-enabled.custom-control-input(
+                    name="is-ssid-prefix-enabled",
+                    type="checkbox"
+                  )
+                  label.custom-control-label.text-muted(for="is-ssid-prefix-enabled")
+                    | Habilitar prefixo SSID no Wi-Fi dos CPEs
+                  .invalid-feedback
+                .md-form.input-entry.d-none#ssid-prefix-div
+                  label Prefixo SSID
+                  input#ssid-prefix.form-control(
+                    type="text",
+                    name="ssid-prefix"
+                    oninput="checkSsidPrefixValidity()"
+                  )
+                  #error-ssid-prefix.invalid-feedback Este campo não pode ter
+                    |  mais de 16 caracteres, são aceitos caracteres alfanuméricos e
+                    | deve ter pelo menos um ponto, -, _ ou # como separador no final
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Verificação da WAN obrigatória
+                    select.browser-default.md-select(name="wan-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
+                .alert.alert-info
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; A etapa a ser desabilitada na WAN será o teste 
+                    | de ping feito para o gateway do CPE
+              .col-md-6.col-12.pl-0.pr-0
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Verificação de IPv4 obrigatória
+                    select.browser-default.md-select(name="ipv4-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Verificação de IPv6 obrigatória
+                    select.browser-default.md-select(name="ipv6-step-required")
+                      option(value="false") Desabilitado
+                      option(value="true") Habilitado
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Verificação de DNS obrigatória
+                    select.browser-default.md-select(name="dns-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Verificação de registro no Flashman obrigatória
+                    select.browser-default.md-select(name="flashman-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
+                .alert.alert-info
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; As etapas a serem desabilitadas no registro do 
+                    | Flashman abrangem o teste de registro existente na base 
+                    | de dados e a existência de uma conexão MQTTS ativa para
+                    | CPEs que utilizem o firmware Flashbox
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
@@ -153,7 +196,7 @@ block content
                   span.card-title Configurações de TR-069
             #tr.card-body.collapse.out
               .row
-                .col-6
+                .col-md-6.col-12.pl-0.pr-md-4.pr-0
                   .md-form.input-entry
                     label FQDN do servidor TR-069 do Flashman
                     input#tr069-server-url.form-control(
@@ -162,7 +205,7 @@ block content
                     )
                     .invalid-feedback Insira um FQDN válido
                   .md-form.input-entry
-                    label Intervalo entre informes do TR-069 (em segundos, mínimo 60)
+                    label Intervalo entre informes do TR-069 (s)
                     input#inform-interval.form-control(
                       type="number",
                       name="inform-interval",
@@ -171,9 +214,9 @@ block content
                       value=600,
                       placeholder="600"
                     )
-                    .invalid-feedback Insira uma quantidade válida
+                    .invalid-feedback Valor inválido. Valor mínimo de 60 segundos
                   .md-form.input-entry
-                    label Número de informes TR-069 não recebidos para CPE instável
+                    label Informes não recebidos para CPE instável
                     input#lost-informs-recovery-threshold.form-control(
                       type="number",
                       name="lost-informs-recovery-threshold",
@@ -184,7 +227,7 @@ block content
                     )
                     #error-lost-informs-recovery-threshold.invalid-feedback Insira uma quantidade válida
                   .md-form.input-entry
-                    label Número de informes TR-069 não recebidos para CPE offline
+                    label Informes não recebidos para CPE offline
                     input#lost-informs-offline-threshold.form-control(
                       type="number",
                       name="lost-informs-offline-threshold",
@@ -196,7 +239,7 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
-                .col-6
+                .col-md-6.col-12.pl-0.pr-0
                   .md-form.input-entry
                     label Login para a interface web das CPEs
                     input#onu-web-login.form-control(
