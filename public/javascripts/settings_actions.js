@@ -72,7 +72,7 @@ let configFlashman = function(event) {
             setTimeout(function() {
               window.location.reload();
             }, 1000);
-          }
+          },
         );
       })
       .fail(function(jqXHR, textStatus, errorThrown) {
@@ -80,7 +80,7 @@ let configFlashman = function(event) {
           function() {
             displayAlertMsg(JSON.parse(jqXHR.responseText));
             $('#config-flashman-form');
-          }
+          },
         );
       });
   } else {
@@ -126,6 +126,31 @@ $(document).ready(function() {
         $('#pon-signal-threshold-critical-high')
           .val(resp.pon_signal_threshold_critical_high)
           .siblings('label').addClass('active');
+      }
+      if (typeof resp.wanStepRequired !== 'undefined') {
+        $('select[name=wan-step-required] option[value=' +
+          resp.wanStepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.ipv4StepRequired !== 'undefined') {
+        $('select[name=ipv4-step-required] option[value=' +
+          resp.ipv4StepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.ipv6StepRequired !== 'undefined') {
+        $('select[name=ipv6-step-required] option[value=' +
+          resp.ipv6StepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.dnsStepRequired !== 'undefined') {
+        $('select[name=dns-step-required] option[value=' +
+          resp.dnsStepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.flashStepRequired !== 'undefined') {
+        $('select[name=flashman-step-required] option[value=' +
+          resp.flashStepRequired + ']')
+        .attr('selected', 'selected');
       }
       if (resp.tr069ServerURL) {
         $('#tr069-server-url').val(resp.tr069ServerURL)
