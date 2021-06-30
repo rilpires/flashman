@@ -788,7 +788,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     if (matchedDevice.use_tr069) {
       permissions.grantBlockDevices = DeviceVersion.checkFeature(
         matchedDevice.model,
-        'blockDevices',
+        'block_devices',
       );
     }
 
