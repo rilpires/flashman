@@ -259,12 +259,16 @@ const createRegistry = async function(req, res) {
                           'release_id:': installedRelease,
                           'mesh_mode': meshMode,
                           'mesh_id': newMeshId,
-                          'mesh_key': newMeshKey};
+                          'mesh_key': newMeshKey,
+                          'wifi_ssid': ssidPrefix+ssid};
           if (vlanDidChange) {
             let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
             let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
             response.vlan = vlanToDevice;
             response.vlan_index = vlanHash;
+          }
+          if (permissions.grantWifi5ghz) {
+            response.wifi_ssid_5ghz = ssidPrefix+ssid5ghz;
           }
           return res.status(200).json(response);
         }
