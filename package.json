@@ -3,7 +3,7 @@
   "version": "2.6.1",
   "private": true,
   "scripts": {
-    "dev": "webpack --config webpack.dev.js",
+    "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest",
     "build": "webpack --config webpack.prod.js"
   },
