@@ -786,22 +786,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     );
 
     if (matchedDevice.use_tr069) {
-      permissions.grantSpeedTest = DeviceVersion.checkFeature(
-        matchedDevice.model,
-        'speedTest',
-      );
-      permissions.grantSpeedTestLimit = DeviceVersion.checkFeature(
-        matchedDevice.model,
-        'speedTestLimit',
-      );
-      permissions.grantUpnp = DeviceVersion.checkFeature(
-        matchedDevice.model,
-        'upnp',
-      );
-      permissions.grantWpsFunction = DeviceVersion.checkFeature(
-        matchedDevice.model,
-        'wps',
-      );
       permissions.grantBlockDevices = DeviceVersion.checkFeature(
         matchedDevice.model,
         'blockDevices',
