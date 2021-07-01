@@ -1324,6 +1324,13 @@ const grantSpeedTestLimit = function(version, model) {
   return 0;
 };
 
+const grantBlockDevices = function(model) {
+  if (!DeviceVersion.checkFeature(model, 'block_devices')) {
+    return false;
+  }
+  return true;
+}
+
 const grantOpmode = function(version) {
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.25.0') >= 0);
