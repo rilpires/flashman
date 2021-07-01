@@ -1451,6 +1451,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
+  result.grantBlockDevices = grantBlockDevices(model);
   result.grantOpmode = grantOpmode(version);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version);
