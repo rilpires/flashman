@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const appDeviceAPIController = require('../../controllers/app_device_api');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version')
 
@@ -109,27 +108,4 @@ describe('DeviceVersion API', () => {
     let device = new DeviceModel();
     expect(DeviceVersion.checkFeature(device.model, '')).toBe(true);
   });
-
-  /*
-  test('try to processUpnpInfo on tr069', () => {
-    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
-    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
-    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
-    expect(appDeviceAPIController.processUpnpInfo(content, device, rollback)).toBe(false);
-  });
-
-  test('try to processBlacklist on tr069', () => {
-    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
-    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
-    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
-    expect(appDeviceAPIController.processBlacklist(content, device, rollback)).toBe(false);
-  });
-
-  test('try to processWhitelist on tr069', () => {
-    let content = new DeviceModel({ model: 'F670L', use_tr069: true});
-    let device = new DeviceModel({ model: 'F670L', use_tr069: true });
-    let rollback = new DeviceModel({ model: 'F670L', use_tr069: true });
-    expect(appDeviceAPIController.processWhitelist(content, device, rollback)).toBe(false);
-  });
-  */
 });
