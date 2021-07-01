@@ -5,7 +5,6 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
-    port_forward_support: true,
     port_forward_opts: {
       'V1.1.20P1T4': {
        simpleSymmetric: true,
@@ -21,16 +20,16 @@ const tr069Devices = {
       },
     },
     feature_support: {
+      port_forward: true,
       upnp: false,
       wps: false,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      pon_signal: true,
     },
-    pon_signal_support: true,
   },
   'ZXHN H198A V3.0': {
-    port_forward_support: true,
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -46,18 +45,19 @@ const tr069Devices = {
       },
     },
     feature_support: {
+      port_forward: true,
       upnp: false,
       wps: false,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      pon_signal: false,
     },
-    pon_signal_support: false,
   },
   'GONUAC001': {
-    port_forward_support: false,
-    pon_signal_support: true,
     feature_support: {
+      port_forward: false,
+      pon_signal: true,
       upnp: false,
       wps: false,
       speed_test: false,
@@ -66,9 +66,9 @@ const tr069Devices = {
     },
   },
   'G-140W-C': {
-    port_forward_support: false,
-    pon_signal_support: true,
     feature_support: {
+      port_forward: false,
+      pon_signal: true,
       upnp: false,
       wps: false,
       speed_test: false,
@@ -77,9 +77,9 @@ const tr069Devices = {
     },
   },
   'HG8245Q2': {
-    port_forward_support: false,
-    pon_signal_support: true,
     feature_support: {
+      port_forward: false,
+      pon_signal: true,
       upnp: false,
       wps: false,
       speed_test: false,
@@ -1150,7 +1150,7 @@ const grantResetDevices = function(version) {
 
 const grantPortForward = function(version, model) {
   if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].port_forward_support &&
+      tr069Devices[model].feature_support.port_forward &&
       tr069Devices[model].port_forward_opts[version] !== undefined) {
     // Compatible TR-069 CPE
     return true;
@@ -1376,7 +1376,7 @@ const grantWanBytesSupport = function(version) {
 
 const grantPonSignalSupport = function(version, model) {
   if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].pon_signal_support
+      tr069Devices[model].feature_support.pon_signal
   ) {
     // Compatible TR-069 ONU
     return true;
@@ -1448,7 +1448,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
   result.grantSiteSurvey = grantSiteSurvey(version);
-  result.grantUpnp = grantUpnp(version);
+  result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantOpmode = grantOpmode(version);
