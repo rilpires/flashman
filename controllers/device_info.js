@@ -115,8 +115,11 @@ const createRegistry = async function(req, res) {
       console.log('Error creating entry: ' + err);
       return res.status(500).end();
     }
+    let enabledForAllFlashman = (
+      !!matchedConfig.personalizationHash &&
+        matchedConfig.isSsidPrefixEnabled);
     let ssidPrefix = await updateController.
-      getSsidPrefix(matchedConfig.isSsidPrefixEnabled);
+      getSsidPrefix(enabledForAllFlashman);
 
     // Validate fields
     genericValidate(macAddr, validator.validateMac, 'mac', null, errors);

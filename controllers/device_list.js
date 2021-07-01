@@ -1832,8 +1832,11 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
+      let enabledForAllFlashman = (
+        !!matchedConfig.personalizationHash &&
+          matchedConfig.isSsidPrefixEnabled);
       let ssidPrefix = await updateController.
-        getSsidPrefix(matchedConfig.isSsidPrefixEnabled);
+        getSsidPrefix(enabledForAllFlashman);
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1869,7 +1872,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
-              'isSsidPrefixEnabled': matchedConfig.isSsidPrefixEnabled,
+              'isSsidPrefixEnabled': enabledForAllFlashman,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
