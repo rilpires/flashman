@@ -100,7 +100,7 @@ let appSet = function(req, res, processFunction) {
   });
 };
 
-appDeviceAPIController.processWifi = function(content, device, rollback) {
+let processWifi = function(content, device, rollback) {
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
@@ -165,7 +165,7 @@ appDeviceAPIController.processWifi = function(content, device, rollback) {
   return updateParameters;
 };
 
-appDeviceAPIController.processPassword = function(content, device, rollback) {
+let processPassword = function(content, device, rollback) {
   if (content.hasOwnProperty('app_password')) {
     rollback.app_password = device.app_password;
     device.app_password = content.app_password;
@@ -174,7 +174,7 @@ appDeviceAPIController.processPassword = function(content, device, rollback) {
   return false;
 };
 
-appDeviceAPIController.processBlacklist = function(content, device, rollback) {
+let processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
@@ -251,7 +251,7 @@ appDeviceAPIController.processBlacklist = function(content, device, rollback) {
   return false;
 };
 
-appDeviceAPIController.processWhitelist = function(content, device, rollback) {
+let processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
@@ -300,7 +300,7 @@ appDeviceAPIController.processWhitelist = function(content, device, rollback) {
   return false;
 };
 
-appDeviceAPIController.processDeviceInfo = function(content, device, rollback) {
+let processDeviceInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -344,7 +344,7 @@ appDeviceAPIController.processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
-appDeviceAPIController.processUpnpInfo = function(content, device, rollback) {
+let processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'upnp')) {
     return false;
@@ -394,13 +394,13 @@ appDeviceAPIController.processUpnpInfo = function(content, device, rollback) {
   return false;
 };
 
-appDeviceAPIController.processAll = function(content, device, rollback) {
-  appDeviceAPIController.processWifi(content, device, rollback);
-  appDeviceAPIController.processPassword(content, device, rollback);
-  appDeviceAPIController.processBlacklist(content, device, rollback);
-  appDeviceAPIController.processWhitelist(content, device, rollback);
-  appDeviceAPIController.processDeviceInfo(content, device, rollback);
-  appDeviceAPIController.processUpnpInfo(content, device, rollback);
+let processAll = function(content, device, rollback) {
+  processWifi(content, device, rollback);
+  processPassword(content, device, rollback);
+  processBlacklist(content, device, rollback);
+  processWhitelist(content, device, rollback);
+  processDeviceInfo(content, device, rollback);
+  processUpnpInfo(content, device, rollback);
 };
 
 let formatDevices = function(device) {
@@ -679,27 +679,27 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
 };
 
 appDeviceAPIController.appSetWifi = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processWifi);
+  appSet(req, res, processWifi);
 };
 
 appDeviceAPIController.appSetPassword = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processPassword);
+  appSet(req, res, processPassword);
 };
 
 appDeviceAPIController.appSetBlacklist = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processBlacklist);
+  appSet(req, res, processBlacklist);
 };
 
 appDeviceAPIController.appSetWhitelist = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processWhitelist);
+  appSet(req, res, processWhitelist);
 };
 
 appDeviceAPIController.appSetDeviceInfo = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processDeviceInfo);
+  appSet(req, res, processDeviceInfo);
 };
 
 appDeviceAPIController.appSetConfig = function(req, res) {
-  appSet(req, res, appDeviceAPIController.processAll);
+  appSet(req, res, processAll);
 };
 
 appDeviceAPIController.appGetLoginInfo = function(req, res) {
