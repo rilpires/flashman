@@ -1314,7 +1314,7 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
-  if (!DeviceVersion.checkFeature(mode, 'speed_test_limit')) {
+  if (!DeviceVersion.checkFeature(model, 'speed_test_limit')) {
     return 0;
   }
   if (grantSpeedTest(version, model) &&
