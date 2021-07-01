@@ -1684,7 +1684,8 @@ $(document).ready(function() {
               index+'" ';
           let ssidPrefixEnabledCheckbox = '';
           if (device.isToShowSsidPrefixCheckbox) {
-            ssidPrefixEnabledCheckbox = '<div class="custom-control custom-checkbox">'+
+            ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
+                '" class="custom-control custom-checkbox">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
@@ -1725,7 +1726,8 @@ $(document).ready(function() {
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
             }
           } else {
-            ssidPrefixEnabledCheckbox = '<div class="custom-control custom-checkbox d-none">'+
+            ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
+                '" class="custom-control custom-checkbox d-none">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+

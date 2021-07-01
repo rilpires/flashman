@@ -265,6 +265,16 @@ let validateEditDevice = function(event) {
       success: function(resp) {
         editFormObj.removeClass('was-validated');
         displayAlertMsg({type: 'success', message: 'Editado com sucesso'});
+        // remove checkbox on request success
+        // if is to disable ssid prefix on device
+        // (case is not enable anymore in all flashman)
+        if (isDeviceSsidPrefixEnabled == 0 &&
+            !$('#ssid_prefix').data('isenabled')) {
+          $('#ssid_prefix_checkbox-' + index.toString()).
+            removeClass('d-block');
+          $('#ssid_prefix_checkbox-' + index.toString()).
+            addClass('d-none');
+        }
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
