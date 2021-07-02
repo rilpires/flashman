@@ -785,13 +785,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       matchedDevice.model,
     );
 
-    if (matchedDevice.use_tr069) {
-      permissions.grantBlockDevices = DeviceVersion.checkFeature(
-        matchedDevice.model,
-        'block_devices',
-      );
-    }
-
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
       permissions.grantPortForward = false;
