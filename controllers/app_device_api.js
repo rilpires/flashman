@@ -793,6 +793,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantUpnp = false;
     } else if (!matchedDevice.use_tr069) {
       permissions.grantBlockDevices = true;
+      permissions.portFowardOpts =
+        DeviceVersion.getPortForwardTr069Compatibility(
+          matchedDevice.model,
+          matchedDevice.version,
+        );
     }
 
     let speedtestInfo = {};
