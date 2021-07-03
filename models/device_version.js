@@ -6,6 +6,12 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 const tr069Devices = {
   'F670L': {
     port_forward_opts: {
+      'V1.1.20P1T18': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
       'V1.1.20P1T4': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
@@ -28,6 +34,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
     },
+    wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
     port_forward_opts: {
@@ -86,6 +93,43 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
     },
+    wifi2_extended_channels_support: true,
+  },
+  'GONUAC001': {
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
+    wifi2_extended_channels_support: false,
+  },
+  'G-140W-C': {
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'HG8245Q2': {
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
+    wifi2_extended_channels_support: true,
   },
 };
 
@@ -104,6 +148,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ACTIONRF1200V1': {
     'vlan_support': false,
@@ -119,6 +164,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ACTIONRG1200V1': {
     'vlan_support': false,
@@ -134,6 +180,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC2V1': {
     'vlan_support': true,
@@ -149,6 +196,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC5V4': {
     'vlan_support': true,
@@ -164,6 +212,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V1': {
     'vlan_support': false,
@@ -179,6 +228,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V4': {
     'vlan_support': false,
@@ -194,6 +244,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V5': {
     'vlan_support': false,
@@ -209,6 +260,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V5PRESET': {
     'vlan_support': false,
@@ -224,6 +276,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC50V3': {
     'vlan_support': false,
@@ -239,6 +292,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC50V4': {
     'vlan_support': false,
@@ -254,6 +308,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC60V2': {
     'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan
@@ -270,6 +325,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC60V3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
@@ -286,6 +342,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC6V2US': {
     'vlan_support': true,
@@ -301,6 +358,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'ARCHERC7V5': {
     'vlan_support': true,
@@ -316,6 +374,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
+    'wifi2_extended_channels_support': false,
   },
   'COVR-C1200A1': {
     'vlan_support': true,
@@ -331,6 +390,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'DIR-819A1': {
     'vlan_support': true,
@@ -346,6 +406,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'DIR-815D1': {
     'vlan_support': false,
@@ -361,6 +422,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'DWR-116A1': {
     'vlan_support': false,
@@ -376,6 +438,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'DWR-116A2': {
     'vlan_support': false,
@@ -391,6 +454,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'DWR-116A3': {
     'vlan_support': false,
@@ -406,6 +470,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'EMG1702-T10AA1': {
     'vlan_support': true,
@@ -421,6 +486,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'EC220-G5V2': {
     'vlan_support': true,
@@ -436,6 +502,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
+    'wifi2_extended_channels_support': false,
   },
   'GWR1200ACV1': {
     'vlan_support': false,
@@ -451,6 +518,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'GWR1200ACV2': {
     'vlan_support': false,
@@ -466,6 +534,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'GWR300NV1': {
     'vlan_support': false,
@@ -481,6 +550,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': false,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'GF1200V1': {
     'vlan_support': false,
@@ -496,6 +566,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'MAXLINKAC1200GV1': {
     'vlan_support': false,
@@ -511,6 +582,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'NCLOUD': {
     'vlan_support': false,
@@ -526,6 +598,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'RE708V1': {
     'vlan_support': false,
@@ -541,6 +614,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
+    'wifi2_extended_channels_support': false,
   },
   'RE172V1': {
     'vlan_support': false,
@@ -556,6 +630,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': false,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-MR3020V1': {
     'vlan_support': false, // even though it's in openwrt 19
@@ -572,6 +647,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WDR3500V1': {
     'vlan_support': false,
@@ -587,6 +663,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WDR3600V1': {
     'vlan_support': true,
@@ -602,6 +679,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 150,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WDR4300V1': {
     'vlan_support': true,
@@ -617,6 +695,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 150,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR2543N/NDV1': {
     'vlan_support': true,
@@ -632,6 +711,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 120,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV4': {
     'vlan_support': false,
@@ -647,6 +727,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV4': {
     'vlan_support': false,
@@ -662,6 +743,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV5': {
     'vlan_support': false,
@@ -677,6 +759,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV5': {
     'vlan_support': false,
@@ -692,6 +775,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
@@ -708,6 +792,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
@@ -724,6 +809,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR741N/NDV4': {
     'vlan_support': false,
@@ -739,6 +825,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR741NDV4': {
     'vlan_support': false,
@@ -754,6 +841,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR741N/NDV5': {
     'vlan_support': false,
@@ -769,6 +857,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR741NDV5': {
     'vlan_support': false,
@@ -784,6 +873,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV4': {
     'vlan_support': false,
@@ -799,6 +889,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV5': {
     'vlan_support': false,
@@ -814,6 +905,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV6': {
     'vlan_support': false,
@@ -829,6 +921,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV62': {
     'vlan_support': false,
@@ -844,6 +937,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV5PRESET': {
     'vlan_support': false,
@@ -859,6 +953,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV6PRESET': {
     'vlan_support': false,
@@ -874,6 +969,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR841N/NDV7': {
     'vlan_support': false,
@@ -889,6 +985,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR841NDV7': {
     'vlan_support': false,
@@ -904,6 +1001,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR841N/NDV8': {
     'vlan_support': false,
@@ -919,6 +1017,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR841NDV8': {
     'vlan_support': false,
@@ -934,6 +1033,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR842N/NDV3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
@@ -950,6 +1050,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR842NDV3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
@@ -966,6 +1067,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV4': {
     'vlan_support': false,
@@ -981,6 +1083,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV5': {
     'vlan_support': false,
@@ -996,6 +1099,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV6': {
     'vlan_support': false,
@@ -1011,6 +1115,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV62': {
     'vlan_support': false,
@@ -1026,6 +1131,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV4': {
     'vlan_support': false,
@@ -1041,6 +1147,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV5': {
     'vlan_support': false,
@@ -1056,6 +1163,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV6': {
     'vlan_support': false,
@@ -1071,6 +1179,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR949NV6': {
     'vlan_support': false,
@@ -1086,6 +1195,7 @@ const flashboxFirmwareDevices = {
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR845NV3': {
     'vlan_support': false,
@@ -1101,6 +1211,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
   'TL-WR845NV4': { //
     'vlan_support': false,
@@ -1116,6 +1227,7 @@ const flashboxFirmwareDevices = {
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
+    'wifi2_extended_channels_support': false,
   },
 };
 
@@ -1228,6 +1340,20 @@ const grantWifiState = function(version) {
   } else {
     // Development version, enable everything by default
     return true;
+  }
+};
+
+const grantWifiExtendedChannels = function(version, model) {
+  if (Object.keys(flashboxFirmwareDevices).includes(model) &&
+      flashboxFirmwareDevices[model].wifi2_extended_channels_support
+  ) {
+    return true;
+  } else if (Object.keys(tr069Devices).includes(model) &&
+             tr069Devices[model].wifi2_extended_channels_support
+  ) {
+    return true;
+  } else {
+    return false;
   }
 };
 
@@ -1450,6 +1576,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWifiBandAuto = grantWifiBandAuto(version);
   result.grantWifiState = grantWifiState(version);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
+  result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
   result.grantPingTest = grantPingTest(version);
   result.grantLanEdit = grantLanEdit(version);
   result.grantLanGwEdit = grantLanGwEdit(version);

@@ -32,9 +32,9 @@
     Validator.prototype.validateChannel = function(channel) {
       return {
         valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                '36', '40', '44', '48', '52', '56', '60', '64',
+                '12', '13', '36', '40', '44', '48', '52', '56', '60', '64',
                 '149', '153', '157', '161', '165', 'auto'].includes(channel),
-        err: ['Somente são aceitos os valores 1 a 11 e auto'],
+        err: ['Canal selecionado inválido'],
       };
     };
 

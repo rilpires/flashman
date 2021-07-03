@@ -41,16 +41,25 @@ deviceHandlers.isOnline = function(dateLastSeen) {
   return isOnline;
 };
 
-deviceHandlers.isTooOld = function(dateLastSeen) {
+const isTooOld = function(dateLastSeen, thresholdInMinutes) {
   let isOld = false;
+  let secondsThreshold = thresholdInMinutes * 60;
 
   const diffInSeconds = deviceHandlers.diffDateUntilNowInSeconds(dateLastSeen);
 
-  // 24 hours
-  if (diffInSeconds >= 86400) {
+  if (diffInSeconds >= secondsThreshold) {
     isOld = true;
   }
   return isOld;
+};
+
+deviceHandlers.isDeviceTooOld = function(dateLastSeen) {
+  // 24 hours
+  return isTooOld(dateLastSeen, 1440);
+};
+
+deviceHandlers.isApTooOld = function(dateLastSeen) {
+  return isTooOld(dateLastSeen, 60);
 };
 
 const syncUpdateScheduler = async function(mac) {
