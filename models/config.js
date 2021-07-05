@@ -102,6 +102,8 @@ let configSchema = new mongoose.Schema({
                    match: /[A-Za-z0-9_-]/,
                    maxLength: 32},
   }],
+  isSsidPrefixEnabled: {type: Boolean},
+  ssidPrefix: {type: String},
 });
 
 let config = mongoose.model('config', configSchema);

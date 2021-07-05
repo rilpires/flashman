@@ -5,6 +5,7 @@ const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const updateController = require('./update_flashman');
 
 let appDeviceAPIController = {};
 
@@ -832,12 +833,18 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return map[req.body.id.toUpperCase()];
     });
 
+    let prefixObj = {};
+    prefixObj.name = await updateController.
+      getSsidPrefix(matchedDevice.isSsidPrefixEnabled);
+    prefixObj.grant = matchedDevice.isSsidPrefixEnabled;
+
     return res.status(200).json({
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
       speedtest: speedtestInfo,
       notifications: notifications,
+      prefix: prefixObj,
       model: matchedDevice.model,
       version: matchedDevice.version,
       release: matchedDevice.installed_release,

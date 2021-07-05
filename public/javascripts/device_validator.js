@@ -95,6 +95,20 @@
       return ret;
     };
 
+    Validator.prototype.validateSSIDPrefix = function(ssid) {
+      const messages = [
+        'Este campo é obrigatório',
+        'Este campo não pode ter mais de 16 caracteres',
+        'São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #',
+        'Deve ter pelo menos um ponto, -, _ ou # como separador no final',
+      ];
+      let ret = validateRegex(ssid, 1, 16,
+        /^[a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#)$/);
+
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
     Validator.prototype.validateWifiPassword = function(pass) {
       const messages = [
         'Este campo deve ter no mínimo 8 caracteres',

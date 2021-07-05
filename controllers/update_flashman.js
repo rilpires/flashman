@@ -5,6 +5,7 @@ const requestLegacy = require('request');
 const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
+const Validator = require('../public/javascripts/device_validator');
 let Config = require('../models/config');
 let updateController = {};
 
@@ -472,6 +473,9 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
+        isClientPayingPersonalizationApp: !!matchedConfig.personalizationHash,
+        isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
+        ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
@@ -529,6 +533,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
 updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
+    let validator = new Validator();
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
@@ -585,8 +590,21 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
+    config.isSsidPrefixEnabled = (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+
+    let validField = validator.
+      validateSSIDPrefix(req.body['ssid-prefix']);
+    if (!validField.valid) {
+      return res.status(500).json({
+        type: 'danger',
+        message: 'Erro validando os campos',
+      });
+    }
+    config.ssidPrefix = req.body['ssid-prefix'];
+
     let ponSignalThresholdCriticalHigh = parseInt(
       req.body['pon-signal-threshold-critical-high']);
+
     if (isNaN(ponSignalThresholdCriticalHigh)) {
       ponSignalThresholdCriticalHigh = config.tr069.pon_signal_threshold;
     }
@@ -712,6 +730,19 @@ updateController.updateAppPersonalization = async function(app) {
     });
   } else {
     console.log('Error at contact control');
+  }
+};
+
+
+updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
+  if (!isDeviceSsidPrefixEnabled) {
+    return '';
+  }
+  let matchedConfig = await Config.findOne({is_default: true});
+  if (!matchedConfig) {
+    return '';
+  } else {
+    return matchedConfig.ssidPrefix;
   }
 };
 
