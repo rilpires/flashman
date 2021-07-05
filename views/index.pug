@@ -175,6 +175,8 @@ block content
                       a#sort-wan-uptime Tempo Conectado
                     if (superuser || role.grantFirmwareUpgrade)
                       th.text-left Atualizar Firmware
+                    th.text-center
+                      a#sort-pon-signal Sinal Óptico Recebido
                 tbody#devices-table-content(
                   data-role=role,
                   data-superuser=superuser ? "true" : "false",
