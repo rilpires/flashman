@@ -1023,7 +1023,7 @@ $(document).ready(function() {
         updateSearchResultsScheduler(res);
         let finalHtml = '';
         // Fill status row
-        let allUpgrade = '<td>'+
+        let allUpgrade = '<td></td><td>'+
           '<div class="btn-group">'+
             '<div class="btn-group" id="all-devices">'+
               '<button class="btn btn-primary btn-sm px-3 py-2 teal darken-5" id="btn-upgrade-scheduler">'+
@@ -1056,7 +1056,7 @@ $(document).ready(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || grantShowSearchSummary) {
