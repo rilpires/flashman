@@ -310,11 +310,7 @@ vlanController.checkDevicesBeforeUpdate = async function(req, res) {
         for (let j = 0; j < device.vlan.length; j++) {
           if (vlanId == device.vlan[j].vlan_id) {
             let deviceInfo = DeviceVersion.getDeviceInfo(device.model);
-            if (deviceInfo['soc'] === 'realtek') {
-              vlans[j].vlan_id = 9;
-            } else {
-              vlans[j].vlan_id = 1;
-            }
+            vlans[j].vlan_id = 1;
             doUpdate = true;
           }
         }
@@ -441,10 +437,6 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let cpu_port = deviceInfo['cpu_port'];
   let vlan_of_lan = '1';
   let vlan_of_wan = '2';
-  if (deviceInfo['soc'] === 'realtek') {
-    vlan_of_lan = '9';
-    vlan_of_wan = '8';
-  }
 
   // on well behavior object of vlan that needs to treat others vlans
   let vlan_ports = '';
@@ -529,15 +521,8 @@ vlanController.retrieveVlansToDevice = function(device) {
 };
 
 vlanController.getValidVlan = async function(model, convertedVlan) {
-  let deviceInfo = DeviceVersion.getDeviceInfo(model);
-  let soc = deviceInfo.soc;
-  let lanVlan;
+  let lanVlan = 1;
   let filteredVlan = [];
-  if (soc === 'realtek') {
-    lanVlan = 9;
-  } else {
-    lanVlan = 1;
-  }
   let didChange = false;
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
     return {success: false, type: 'danger', message: rej.message};
@@ -573,16 +558,10 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
   let lanPorts = deviceInfo.lan_ports;
   let wanPort = deviceInfo.wan_port;
   let cpuPort = deviceInfo.cpu_port;
-  let soc = deviceInfo.soc;
   let lanVlan;
   let wanVlan;
-  if (soc === 'realtek') {
-    lanVlan = 9;
-    wanVlan = 8;
-  } else {
-    lanVlan = 1;
-    wanVlan = 2;
-  }
+  lanVlan = 1;
+  wanVlan = 2;
   let vids = Object.keys(receivedVlan);
   let idxLan = vids.indexOf(lanVlan.toString());
   vids.splice(idxLan, 1);
