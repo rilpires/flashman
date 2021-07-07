@@ -1144,6 +1144,7 @@ $(document).ready(function() {
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+          infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           if (isSuperuser || grantNotificationPopups) {
             infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
           } else {
