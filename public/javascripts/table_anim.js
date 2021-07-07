@@ -727,7 +727,9 @@ $(document).ready(function() {
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
       '$REPLACE_UPGRADE'+
+      '<td>'
       '$REPLACE_PONSIGNAL'+
+      '</td>'
     '</tr>';
     return infoRow;
   };
@@ -1068,7 +1070,7 @@ $(document).ready(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || grantShowSearchSummary) {
