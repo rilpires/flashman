@@ -571,6 +571,17 @@ $(document).ready(function() {
     '</a>';
   };
 
+  const buildPonSignalColumn = function(device, isTR069 = false) {
+    let ponSignalStatusColumn = (isTR069) ? '<td></td>':
+      `<td>
+        <div class="ml-3">
+          Ola
+        </div>
+      </td>
+      `;
+    return ponSignalStatusColumn;
+  }
+
   const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
@@ -716,6 +727,7 @@ $(document).ready(function() {
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
       '$REPLACE_UPGRADE'+
+      '$REPLACE_PONSIGNAL'+
     '</tr>';
     return infoRow;
   };
@@ -1124,6 +1136,7 @@ $(document).ready(function() {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let ponSignalCol = buildPonSignalColumn(device, isTR069);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
@@ -1142,6 +1155,9 @@ $(document).ready(function() {
           if (isTR069) {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            if (isSuperuser || grantPonSignalSupport) {
+              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
+            }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
