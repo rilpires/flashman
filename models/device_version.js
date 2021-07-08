@@ -5,7 +5,13 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
+    oui: 'zxhn',
     port_forward_support: true,
+    versions: [
+      'V1.1.20P1T18',
+      'V1.1.20P1T4',
+      'V1.1.20P3N3',
+    ],
     port_forward_opts: {
       'V1.1.20P1T18': {
        simpleSymmetric: true,
@@ -30,7 +36,12 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
+    oui: 'zxhn',
     port_forward_support: true,
+    versions: [
+      'V3.0.0C5_MUL',
+      'V3.0.0C6_MUL',
+    ],
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -49,17 +60,29 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'GONUAC001': {
+    oui: 'stavix',
     port_forward_support: false,
+    versions: [
+      'V1.2.3',
+    ],
     pon_signal_support: true,
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
+    oui: 'nokia',
     port_forward_support: false,
+    versions: [
+      '3FE46343AFIA89',
+    ],
     pon_signal_support: true,
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
+    oui: 'huawei',
     port_forward_support: false,
+    versions: [
+      'V3R017C10S100',
+    ],
     pon_signal_support: true,
     wifi2_extended_channels_support: true,
   },
@@ -1552,6 +1575,30 @@ DeviceVersion.getVlanCompatible = function() {
 
 DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
+};
+
+DeviceVersion.getTr069ProductClassList = function() {
+  let ret = [];
+  for (let [model, obj] of Object.entries(tr069Devices)) {
+    ret.push(model);
+  }
+  return ret;
+};
+
+DeviceVersion.getTr069VersionByModel = function(model) {
+  let ret = [];
+  if (tr069Devices.hasOwnProperty(model)) {
+    ret = tr069Devices[model].versions;
+  }
+  return ret;
+};
+
+DeviceVersion.getTr069OuiByModel = function(model) {
+  if (tr069Devices.hasOwnProperty(model)) {
+    return tr069Devices[model];
+  } else {
+    return '';
+  }
 };
 
 module.exports = DeviceVersion;
