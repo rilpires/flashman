@@ -35,10 +35,49 @@ const fetchLocalFirmwares = function(firmwaresTable) {
   }, 'json');
 };
 
+const fetchtr069Infos = function() {
+  $.get('/firmware/tr069productclass', function(res) {
+    if (res.success) {
+      for (let pc of res.productclass) {
+        $('#select-productclass').
+          append(
+            $('<option>')
+              .attr('value', pc)
+              .text(pc),
+          );
+      }
+    } else {
+      displayAlertMsg(res);
+    }
+  }, 'json');
+};
+
+window.fetchVersion = function(input) {
+  $.get('/firmware/tr069versions/'+(
+    input.value === '' ? 'a' : input.value), function(res) {
+    if (res.success) {
+      $('#select-version option').remove();
+      for (let v of res.versions) {
+        $('#select-version').
+          append(
+            $('<option>')
+              .attr('value', v)
+              .text(v),
+          );
+      }
+    } else {
+      displayAlertMsg(res);
+    }
+  }, 'json');
+};
+
 $(document).ready(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];
+
+  // get oui and product class from device_version
+  fetchtr069Infos();
 
   let firmwaresTable = $('#firmware-table').DataTable({
     'paging': true,
@@ -216,8 +255,8 @@ $(document).ready(function() {
     }
   });
 
-  $('form[name=firmwareform]').submit(function() {
-    if ($('input[name=firmwarefile]').val().trim()) {
+  $('form[name=firmwareflashboxform]').submit(function() {
+    if ($('input[name=firmwareflashboxfile]').val().trim()) {
       $('#btn-submit-upload').prop('disabled', true);
       $('#btn-submit-icon')
         .removeClass('fa-upload')
@@ -239,6 +278,17 @@ $(document).ready(function() {
           displayAlertMsg(res);
           fetchLocalFirmwares(firmwaresTable);
         },
+        error: function(res) {
+          $('#btn-submit-upload').prop('disabled', false);
+          $('#btn-submit-icon')
+            .addClass('fa-upload')
+            .removeClass('fa-spinner fa-pulse');
+          console.log(res);
+          displayAlertMsg({
+            type: 'danger',
+            message: 'Nenhum arquivo foi selecionado',
+          });
+        },
       });
     } else {
       displayAlertMsg({
@@ -247,6 +297,50 @@ $(document).ready(function() {
       });
     }
 
+    return false;
+  });
+
+  $('form[name=firmwaretr069form]').submit(function(event) {
+    if ($(this)[0].checkValidity()) {
+      $('#btn-submit-upload').prop('disabled', true);
+      $('#btn-submit-icon')
+        .removeClass('fa-upload')
+        .addClass('fa-spinner fa-pulse');
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: $(this).attr('action'),
+        data: new FormData($(this)[0]),
+        processData: false,
+        contentType: false,
+        cache: false,
+        timeout: 600000,
+        success: function(res) {
+          $('#btn-submit-upload').prop('disabled', false);
+          $('#btn-submit-icon')
+            .addClass('fa-upload')
+            .removeClass('fa-spinner fa-pulse');
+          displayAlertMsg(res);
+          fetchLocalFirmwares(firmwaresTable);
+        },
+        error: function(res) {
+          $('#btn-submit-upload').prop('disabled', false);
+          $('#btn-submit-icon')
+            .addClass('fa-upload')
+            .removeClass('fa-spinner fa-pulse');
+          console.log(res);
+          displayAlertMsg({
+            type: 'danger',
+            message: 'Nenhum arquivo foi selecionado',
+          });
+        },
+      });
+    } else {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    $(this).addClass('was-validated');
     return false;
   });
 
