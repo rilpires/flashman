@@ -215,6 +215,15 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         config.ssidPrefix = '';
         saveConfig = true;
       }
+      let vlans = [];
+      for (let i = 0; i < config.vlans_profiles.length; i++) {
+        vlans.push(config.vlans_profiles[i].vlan_id);
+      }
+      // 1 is the mandatory lan vlan id
+      if (! vlans.includes(1)) {
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'Internet'});
+        saveConfig = true;
+      }
     }
     if (saveConfig) {
       config.save();
