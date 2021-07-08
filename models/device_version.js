@@ -1403,11 +1403,10 @@ const grantSiteSurvey = function(version) {
 };
 
 const grantUpnp = function(version, model) {
-  if (!DeviceVersion.checkFeature(model, 'upnp')) {
-    return false;
-  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
+  } else if (!DeviceVersion.checkFeature(model, 'upnp')) {
+    return false;
   } else {
     // Development version, enable everything by default
     return true;
@@ -1415,9 +1414,6 @@ const grantUpnp = function(version, model) {
 };
 
 const grantSpeedTest = function(version, model) {
-  if (DeviceVersion.checkFeature(model, 'speed_test')) {
-    return false;
-  }
   if (Object.keys(tr069Devices).includes(model)) {
     // TR-069 does not have speed test at the moment
     return false;
@@ -1440,21 +1436,22 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
-  if (!DeviceVersion.checkFeature(model, 'speed_test_limit')) {
-    return 0;
-  }
   if (grantSpeedTest(version, model) &&
       Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
-  }
+  } else if (!DeviceVersion.checkFeature(model, 'speed_test_limit')) {
+    return 0;
+  };
+
   return 0;
 };
 
 const grantBlockDevices = function(model) {
   if (!DeviceVersion.checkFeature(model, 'block_devices')) {
     return false;
+  } else {
+    return true;
   }
-  return true;
 }
 
 const grantOpmode = function(version) {
@@ -1544,10 +1541,7 @@ const grantUpdateAck = function(version) {
   }
 };
 
-const grantWpsFunction = function(version, model) {
-  if (!DeviceVersion.checkFeature(model, 'wps')) {
-    return false;
-  }
+const grantWpsFunction = function(version, model) { 
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1558,6 +1552,8 @@ const grantWpsFunction = function(version, model) {
       return false;
     }
     return (versionCompare(version, '0.28.0') >= 0);
+  } else if (!DeviceVersion.checkFeature(model, 'wps')) {
+    return false;
   } else {
     // Development version, no way to know version so disable by default
     return true;
