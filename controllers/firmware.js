@@ -3,6 +3,7 @@ let Config = require('../models/config');
 let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 const controlApi = require('./external-api/control');
+const DeviceVersion = require('../models/device_version');
 
 const fs = require('fs');
 const unzipper = require('unzipper');
@@ -27,7 +28,9 @@ let parseFilename = function(filename) {
   let firmwareFields = {release: firmwareRelease,
                         vendor: fnameSubStrings[0],
                         model: fnameSubStrings[1],
-                        version: fnameSubStrings[2]};
+                        version: fnameSubStrings[2],
+                        oui: '',
+                        cpe_type: 'flashbox'};
   return firmwareFields;
 };
 
@@ -49,6 +52,29 @@ let removeFirmware = function(firmware) {
       });
     });
   });
+};
+
+let getVendorByModel = function(model) {
+  let ret = '';
+  switch (model) {
+    case 'HG8245Q2':
+      ret = 'Huawei';
+      break;
+    case 'G-140W-C':
+      ret = 'Nokia';
+      break;
+    case 'GONUAC001':
+      ret = 'Greatek';
+      break;
+    case 'HG6245D':
+      ret = 'Fiberhome';
+      break;
+    case 'ZXHN H198A V3.0':
+    case 'F670L':
+      ret = 'Multilaser';
+      break;
+  }
+  return ret;
 };
 
 firmwareController.index = function(req, res) {
@@ -101,6 +127,23 @@ firmwareController.fetchFirmwares = function(req, res) {
     }
     return res.json({success: true, type: 'success', firmwares: firmwares});
   });
+};
+
+firmwareController.fetchTr069ProductClassList = function(req, res) {
+  let ret = DeviceVersion.getTr069ProductClassList();
+  if (!ret) {
+    return res.json({success: true, type: 'danger',
+      message: 'Não foi possível recuperar os modelos dos dispositivos'});
+  } else {
+    return res.json({success: true, type: 'success',
+      productclass: ret});
+  }
+};
+
+firmwareController.fetchTr069VersionList = function(req, res) {
+  let ret = DeviceVersion.getTr069VersionByModel(req.params.model);
+  return res.json({success: true, type: 'success',
+      versions: ret});
 };
 
 firmwareController.getReleases = async function(filenames, role,
@@ -192,14 +235,33 @@ firmwareController.delFirmware = function(req, res) {
 };
 
 firmwareController.uploadFirmware = function(req, res) {
+  console.log('firmware upload ->', req.body);
+
   if (!req.files) {
     return res.json({type: 'danger',
                      message: 'Nenhum arquivo foi selecionado'});
   }
 
-  let firmwarefile = req.files.firmwarefile;
+  let firmwarefile;
+  let isFlashbox = req.files.hasOwnProperty('firmwareflashboxfile');
+  let isTR069 = req.files.hasOwnProperty('firmwaretr069file');
+  if (isFlashbox) {
+    firmwarefile = req.files.firmwareflashboxfile;
+  } else if (isTR069) {
+    firmwarefile = req.files.firmwaretr069file;
+    /*
+      check req.body.oui
+      check req.body.productclass
+      check req.body.version
+    */
+  } else {
+    return res.json({type: 'danger',
+                     message: 'Nenhum arquivo foi selecionado'});
+  }
 
-  if (!isValidFilename(firmwarefile.name)) {
+  console.log(isFlashbox);
+  console.log(isTR069);
+  if (!isValidFilename(firmwarefile.name) && isFlashbox) {
     return res.json({type: 'danger',
                      message: 'Formato inválido de arquivo. Nomes de arquivo ' +
                      'válidos: *FABRICANTE*_*MODELO*_*VERSÃO*_*RELEASE*.bin'});
@@ -227,8 +289,17 @@ firmwareController.uploadFirmware = function(req, res) {
               },
             );
           }
-
-          let fnameFields = parseFilename(firmwarefile.name);
+          let fnameFields;
+          if (isFlashbox) {
+            fnameFields = parseFilename(firmwarefile.name);
+          } else if (isTR069) {
+            fnameFields = {};
+            fnameFields.vendor = getVendorByModel(req.body.productclass);
+            fnameFields.model = req.body.productclass;
+            fnameFields.release = req.body.version;
+            fnameFields.oui = req.body.oui;
+            fnameFields.cpe_type = 'tr069';
+          }
 
           Firmware.findOne({
             vendor: fnameFields.vendor,
@@ -236,6 +307,8 @@ firmwareController.uploadFirmware = function(req, res) {
             version: fnameFields.version,
             release: fnameFields.release,
             filename: firmwarefile.name,
+            oui: fnameFields.oui,
+            cpe_type: fnameFields.cpe_type,
           }, function(err, firmware) {
             if (err) {
               // Remove downloaded files
@@ -259,6 +332,8 @@ firmwareController.uploadFirmware = function(req, res) {
                 version: fnameFields.version,
                 release: fnameFields.release,
                 filename: firmwarefile.name,
+                oui: fnameFields.oui,
+                cpe_type: fnameFields.cpe_type,
               });
             } else {
               firmware.vendor = fnameFields.vendor;
@@ -266,6 +341,8 @@ firmwareController.uploadFirmware = function(req, res) {
               firmware.version = fnameFields.version;
               firmware.release = fnameFields.release;
               firmware.filename = firmwarefile.name;
+              firmware.oui = fnameFields.oui;
+              firmware.cpe_type = fnameFields.cpe_type;
             }
 
             firmware.save(function(err) {
