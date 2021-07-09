@@ -571,14 +571,12 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildPonSignalColumn = function(device, isTR069) {
-    let ponSignalStatusColumn = (isTR069) ? '<td></td>':
+  const buildPonSignalColumn = function(device, isTR069 = false) {
+    let ponSignalStatusColumn = (isTR069) ?
       `<td>
-        <div class="ml-3">
-          Ola
-        </div>
-      </td>
-      `;
+        <h1>Olá</h1>
+      </td>`:
+      '<td></td>';
     return ponSignalStatusColumn;
   }
 
