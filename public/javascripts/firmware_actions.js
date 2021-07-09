@@ -283,7 +283,6 @@ $(document).ready(function() {
           $('#btn-submit-icon')
             .addClass('fa-upload')
             .removeClass('fa-spinner fa-pulse');
-          console.log(res);
           displayAlertMsg({
             type: 'danger',
             message: 'Nenhum arquivo foi selecionado',
@@ -328,7 +327,6 @@ $(document).ready(function() {
           $('#btn-submit-icon')
             .addClass('fa-upload')
             .removeClass('fa-spinner fa-pulse');
-          console.log(res);
           displayAlertMsg({
             type: 'danger',
             message: 'Nenhum arquivo foi selecionado',
