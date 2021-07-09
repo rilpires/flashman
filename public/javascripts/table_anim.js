@@ -571,7 +571,7 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
+  const buildUpgradeCol = function(device, slaves=[]) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -589,8 +589,7 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = (isTR069) ? '<td></td>':
-    '<td>'+
+    let upgradeCol = '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2'+
         ' btn-cancel-update btn-danger" $NO_UPDATE>'+
@@ -1131,7 +1130,7 @@ $(document).ready(function() {
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
-          let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let upgradeCol = buildUpgradeCol(device, slaves);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
