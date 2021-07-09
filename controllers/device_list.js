@@ -332,7 +332,11 @@ deviceListController.changeUpdate = function(req, res) {
                                      message: 'Erro ao registrar atualização'});
       }
 
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      if (matchedDevice.use_tr069) {
+        acsDeviceInfo.upgradeFirmware(matchedDevice);
+      } else {
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      }
       res.status(200).json({'success': true});
 
       // Start ack timeout
