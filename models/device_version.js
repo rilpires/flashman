@@ -83,7 +83,7 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ACTIONRF1200V1': {
-    'vlan_support': true, // test
+    'vlan_support': true,
     'lan_ports': [4, 3, 2, 1], // inverted
     'num_usable_lan_ports': 3,
     'wan_port': 0,
@@ -453,7 +453,7 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'GWR1200ACV2': {
-    'vlan_support': true, // test
+    'vlan_support': true,
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
