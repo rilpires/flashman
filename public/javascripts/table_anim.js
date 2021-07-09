@@ -1068,11 +1068,9 @@ $(document).ready(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
-          '$REPLACE_PONSIGNAL'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
-        let ponSignalCol = buildPonSignalColumn(device, isTR069);
         if (isSuperuser || grantShowSearchSummary) {
           statusRow = statusRow.replace('$REPLACE_SEARCHSUMMARY',
                                         searchSummary);
@@ -1084,9 +1082,6 @@ $(document).ready(function() {
           statusRow = statusRow.replace('$REPLACE_ALLUPDATE', allUpgrade);
         } else {
           statusRow = statusRow.replace('$REPLACE_ALLUPDATE', '');
-        }
-        if (isSuperuser || grantPonSignalSupport) {
-          statusRow = statusRow.replace('$REPLACE_PONSIGNAL', ponSignalCol)
         }
         finalHtml += statusRow;
         let index = 0;
