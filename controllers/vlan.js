@@ -297,7 +297,8 @@ vlanController.checkDevicesBeforeUpdate = async function(req, res) {
       }
     });
 
-    DeviceModel.find({vlan: {$exists: true, $not: {$size: 0}}}, {vlan: true},
+    DeviceModel.find({vlan: {$exists: true, $not: {$size: 0}}}, {_id: true,
+                                                                 vlan: true},
     function(err, matchedDevices) {
       if (err) {
         return res.json({success: false, type: 'danger',
@@ -315,7 +316,7 @@ vlanController.checkDevicesBeforeUpdate = async function(req, res) {
         }
         if (doUpdate) {
           let updateDeviceObj = {
-            deviceId: device.id,
+            deviceId: device._id,
             vlans: JSON.stringify(vlans),
           };
           updateDevices.push(JSON.stringify(updateDeviceObj));
