@@ -6,6 +6,7 @@ const controlApi = require('./external-api/control');
 const DeviceVersion = require('../models/device_version');
 
 const fs = require('fs');
+const fsPromises = fs.promises;
 const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
@@ -234,9 +235,7 @@ firmwareController.delFirmware = function(req, res) {
   });
 };
 
-firmwareController.uploadFirmware = function(req, res) {
-  console.log('firmware upload ->', req.body);
-
+firmwareController.uploadFirmware = async function(req, res) {
   if (!req.files) {
     return res.json({type: 'danger',
                      message: 'Nenhum arquivo foi selecionado'});
@@ -259,119 +258,94 @@ firmwareController.uploadFirmware = function(req, res) {
                      message: 'Nenhum arquivo foi selecionado'});
   }
 
-  console.log(isFlashbox);
-  console.log(isTR069);
   if (!isValidFilename(firmwarefile.name) && isFlashbox) {
     return res.json({type: 'danger',
                      message: 'Formato inválido de arquivo. Nomes de arquivo ' +
                      'válidos: *FABRICANTE*_*MODELO*_*VERSÃO*_*RELEASE*.bin'});
   }
+  try {
+    await firmwarefile.mv(imageReleasesDir + firmwarefile.name);
+  } catch (err) {
+    return res.json({type: 'danger', message: 'Erro ao mover arquivo'});
+  }
+  // Generate MD5 checksum
+  const md5Checksum = md5File.sync(path.join(imageReleasesDir,
+                                             firmwarefile.name));
+  const md5fname = '.' + firmwarefile.name.replace('.bin', '.md5');
+  try {
+    fsPromises.writeFile(path.join(imageReleasesDir, md5fname), md5Checksum);
+  } catch (err) {
+    await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
+    return res.json({
+      type: 'danger',
+      message: 'Erro ao gerar hash de integridade do arquivo',
+    });
+  }
+  let fnameFields;
+  let firmware;
+  if (isFlashbox) {
+    fnameFields = parseFilename(firmwarefile.name);
+  } else if (isTR069) {
+    fnameFields = {};
+    fnameFields.vendor = getVendorByModel(req.body.productclass);
+    fnameFields.model = req.body.productclass;
+    fnameFields.version = req.body.version;
+    fnameFields.release = req.body.version;
+    fnameFields.oui = req.body.oui;
+    fnameFields.cpe_type = 'tr069';
+  }
 
-  firmwarefile.mv(imageReleasesDir + firmwarefile.name,
-    function(err) {
-      if (err) {
-        return res.json({type: 'danger', message: 'Erro ao mover arquivo'});
-      }
+  try {
+    firmware = await Firmware.findOne({
+      vendor: fnameFields.vendor,
+      model: fnameFields.model,
+      version: fnameFields.version,
+      release: fnameFields.release,
+      filename: firmwarefile.name,
+      oui: fnameFields.oui,
+      cpe_type: fnameFields.cpe_type,
+    });
+  } catch (err) {
+    // Remove downloaded files
+    await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
+    await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
+    return res.json({type: 'danger', message: 'Erro buscar na base de dados'});
+  }
+  if (!firmware) {
+    firmware = new Firmware({
+      vendor: fnameFields.vendor,
+      model: fnameFields.model,
+      version: fnameFields.version,
+      release: fnameFields.release,
+      filename: firmwarefile.name,
+      oui: fnameFields.oui,
+      cpe_type: fnameFields.cpe_type,
+    });
+  } else {
+    firmware.vendor = fnameFields.vendor;
+    firmware.model = fnameFields.model;
+    firmware.version = fnameFields.version;
+    firmware.release = fnameFields.release;
+    firmware.filename = firmwarefile.name;
+    firmware.oui = fnameFields.oui;
+    firmware.cpe_type = fnameFields.cpe_type;
+  }
 
-      // Generate MD5 checksum
-      const md5Checksum = md5File.sync(path.join(imageReleasesDir,
-                                                 firmwarefile.name));
-      const md5fname = '.' + firmwarefile.name.replace('.bin', '.md5');
-      fs.writeFile(path.join(imageReleasesDir, md5fname), md5Checksum,
-        function(err) {
-          if (err) {
-            fs.unlink(path.join(imageReleasesDir, firmwarefile.name),
-              function(err) {
-                return res.json({
-                  type: 'danger',
-                  message: 'Erro ao gerar hash de integridade do arquivo',
-                });
-              },
-            );
-          }
-          let fnameFields;
-          if (isFlashbox) {
-            fnameFields = parseFilename(firmwarefile.name);
-          } else if (isTR069) {
-            fnameFields = {};
-            fnameFields.vendor = getVendorByModel(req.body.productclass);
-            fnameFields.model = req.body.productclass;
-            fnameFields.release = req.body.version;
-            fnameFields.oui = req.body.oui;
-            fnameFields.cpe_type = 'tr069';
-          }
-
-          Firmware.findOne({
-            vendor: fnameFields.vendor,
-            model: fnameFields.model,
-            version: fnameFields.version,
-            release: fnameFields.release,
-            filename: firmwarefile.name,
-            oui: fnameFields.oui,
-            cpe_type: fnameFields.cpe_type,
-          }, function(err, firmware) {
-            if (err) {
-              // Remove downloaded files
-              fs.unlink(path.join(imageReleasesDir, firmwarefile.name),
-                function(err) {
-                  fs.unlink(path.join(imageReleasesDir, md5fname),
-                    function(err) {
-                      return res.json({
-                        type: 'danger',
-                        message: 'Erro buscar na base de dados',
-                      });
-                    },
-                  );
-                },
-              );
-            }
-            if (!firmware) {
-              firmware = new Firmware({
-                vendor: fnameFields.vendor,
-                model: fnameFields.model,
-                version: fnameFields.version,
-                release: fnameFields.release,
-                filename: firmwarefile.name,
-                oui: fnameFields.oui,
-                cpe_type: fnameFields.cpe_type,
-              });
-            } else {
-              firmware.vendor = fnameFields.vendor;
-              firmware.model = fnameFields.model;
-              firmware.version = fnameFields.version;
-              firmware.release = fnameFields.release;
-              firmware.filename = firmwarefile.name;
-              firmware.oui = fnameFields.oui;
-              firmware.cpe_type = fnameFields.cpe_type;
-            }
-
-            firmware.save(function(err) {
-              if (err) {
-                let msg = '';
-                for (let field = 0; field < err.errors.length; field++) {
-                  msg += err.errors[field].message + ' ';
-                }
-                // Remove downloaded files
-                fs.unlink(path.join(imageReleasesDir, firmwarefile.name),
-                  function(err) {
-                    fs.unlink(path.join(imageReleasesDir, md5fname),
-                      function(err) {
-                        return res.json({type: 'danger', message: msg});
-                      },
-                    );
-                  },
-                );
-              }
-              return res.json({
-                type: 'success',
-                message: 'Upload de firmware feito com sucesso!',
-              });
-            });
-          });
-        },
-      );
-    },
-  );
+  try {
+    await firmware.save();
+    return res.json({
+      type: 'success',
+      message: 'Upload de firmware feito com sucesso!',
+    });
+  } catch (err) {
+    let msg = '';
+    msg += err._message + ' ';
+    // Remove downloaded files
+    await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
+    await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
+    // return error message
+    return res.json({type: 'danger', message: msg});
+  }
 };
 
 firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
