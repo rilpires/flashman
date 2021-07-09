@@ -182,7 +182,12 @@ firmwareController.getReleases = async function(filenames, role,
   }
   firmwares.forEach(function(firmware) {
     let releaseId = firmware.release;
-    let releaseModel = firmware.model.concat(firmware.version);
+    let releaseModel;
+    if (firmware.cpe_type == 'tr069') {
+      releaseModel = firmware.model;
+    } else {
+      releaseModel = firmware.model.concat(firmware.version);
+    }
     if (modelAsArray) {
       if (releaseIds.includes(releaseId)) {
         for (let i = 0; i < releases.length; i++) {
