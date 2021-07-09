@@ -727,9 +727,7 @@ $(document).ready(function() {
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
       '$REPLACE_UPGRADE'+
-      '<td>'
       '$REPLACE_PONSIGNAL'+
-      '</td>'
     '</tr>';
     return infoRow;
   };
