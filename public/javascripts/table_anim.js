@@ -571,7 +571,7 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildPonSignalColumn = function(device, isTR069 = false) {
+  const buildPonSignalColumn = function(device, isTR069) {
     let ponSignalStatusColumn = (isTR069) ? '<td></td>':
       `<td>
         <div class="ml-3">
