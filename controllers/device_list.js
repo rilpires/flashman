@@ -535,7 +535,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.pon_rxpower = {$gte: -18};
       } else if (tag.includes('perigoso')) {
         query.pon_rxpower = {$lte: -23};
-      }
+      }     
+    } else if (/^sem sinal$/.test(tag)) {
+      query.use_tr069 = true; // only for ONUs
+      query.pon_rxpower = undefined
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // ONU routers.
