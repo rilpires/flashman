@@ -452,6 +452,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact.
+  let matchedConfig = await Config.findOne({is_default: true},
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
@@ -529,13 +530,29 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } 
     } else if (/^(sinal) (?:ruim|bom|perigoso)$/.test(tag)) { 
       query.use_tr069 = true; // only for ONUs
-      if (tag.includes('ruim')) {
-        query.pon_rxpower = {$gte: 3};
-      } else if (tag.includes('bom')) {
-        query.pon_rxpower = {$gte: -18};
-      } else if (tag.includes('perigoso')) {
-        query.pon_rxpower = {$lte: -23};
-      }     
+      if (matchedConfig.pon_signal_threshold === undefined &&
+          matchedConfig.pon_signal_threshold_critical === undefined &&
+          matchedConfig.pon_signal_threshold_critical_high === undefined) {
+        if (tag.includes('ruim')) {
+          query.pon_rxpower = {$gte: 3};
+        } else if (tag.includes('bom')) {
+          query.pon_rxpower = {$gte: -18};
+        } else if (tag.includes('perigoso')) {
+          query.pon_rxpower = {$lte: -23};
+        }
+      } else { 
+        if (tag.includes('ruim')) {
+          query.pon_rxpower = {
+            $gte: matchedConfig.pon_signal_threshold_critical_high
+          };
+        } else if (tag.includes('bom')) {
+          query.pon_rxpower = {$gte: matchedConfig.pon_signal_threshold};
+        } else if (tag.includes('perigoso')) {
+          query.pon_rxpower = {
+            $lte: matchedConfig.pon_signal_threshold_critical
+          };
+        }
+      }
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = undefined
