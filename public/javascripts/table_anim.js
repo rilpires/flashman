@@ -724,8 +724,8 @@ $(document).ready(function() {
         (device.wan_up_time && device.status_color !== 'grey-text' ?
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
-      '$REPLACE_UPGRADE'+
       '$REPLACE_PONSIGNAL'+
+      '$REPLACE_UPGRADE'+
     '</tr>';
     return infoRow;
   };
