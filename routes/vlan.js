@@ -41,7 +41,7 @@ router.route('/profile/del').delete(
 router.route('/profile/check/:profileid').get(
   authController.ensureLogin(),
   authController.ensurePermission(permissionProfile),
-  vlanController.checkDevicesBeforeUpdate);
+  vlanController.checkDevicesAffected);
 
 router.route('/fetch/:deviceid').get(
   authController.ensureLogin(),
