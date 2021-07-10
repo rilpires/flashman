@@ -573,18 +573,22 @@ $(document).ready(function() {
 
   const buildPonSignalColumn = function(device, isTR069 = false) {
     let ponSignalStatus;
-    if (device.pon_rxpower >= -18) {
-      ponSignalStatus = '<div class="badge green">Sinal Bom</div>'
+    let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
+    if (device.pon_rxpower === undefined) { 
+      ponSignalStatus = '<div class="badge gray">Sem Sinal</div>';
+      ponSignalRxPower = '';
+    } else if (device.pon_rxpower >= -18) {
+      ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
     } else if (device.pon_rxpower <= -23) {
-      ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>'
+      ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
     } else if (device.pon_rxpower >= 3){
-      ponSignalStatus = '<div class="badge red">Sinal Alto</div>'
+      ponSignalStatus = '<div class="badge red">Sinal Alto</div>';
     }
     let ponSignalStatusColumn = (isTR069) ? `
       <td>
-        <div>
-          ${ponSignalStatus}
-          <span class="text-center">${device.pon_rxpower}</span>
+        <div class="text-center">
+          ${ponSignalRxPower}
+          ${ponSignalStatus} 
         </div>
       </td>
     ` : '<td></td>';
