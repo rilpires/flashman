@@ -575,7 +575,7 @@ $(document).ready(function() {
     let ponSignalStatus;
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
-      ponSignalStatus = '<div class="badge gray">Sem Sinal</div>';
+      ponSignalStatus = '<div class="badge badge-secondary">Sem Sinal</div>';
       ponSignalRxPower = '';
     } else if (device.pon_rxpower >= -18) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
