@@ -573,11 +573,11 @@ $(document).ready(function() {
 
   const buildPonSignalColumn = function(device, isTR069 = false) {
     let ponSignalStatus;
-    if (device.pon_rxpower < -18) {
+    if (device.pon_rxpower >= -18) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>'
-    } else if (device.pon_rxpower < -23) {
+    } else if (device.pon_rxpower <= -23) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>'
-    } else {
+    } else if (device.pon_rxpower >= 3){
       ponSignalStatus = '<div class="badge red">Sinal Alto</div>'
     }
     let ponSignalStatusColumn = (isTR069) ? `
