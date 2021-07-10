@@ -526,11 +526,20 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.do_update = {$eq: true};
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
+      } 
+    } else if (/^(sinal) (?:ruim|bom|perigoso)$/.test(tag)) { 
+      query.use_tr069 = true; // only for ONUs
+      if (tag.includes('ruim')) {
+        query.pon_rxpower = {$gte: 3};
+      } else if (tag.includes('bom')) {
+        query.pon_rxpower = {$gte: -18};
+      } else if (tag.includes('perigoso')) {
+        query.pon_rxpower = {$lte: -23};
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // ONU routers.
-      query.use_tr069 = true;
+      query.use_tr069 = true;     
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
       let contentCondition = '$or';
