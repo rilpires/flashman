@@ -582,7 +582,7 @@ $(document).ready(function() {
     } else if (device.pon_rxpower <= -23) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
     } else if (device.pon_rxpower >= 3){
-      ponSignalStatus = '<div class="badge red">Sinal Alto</div>';
+      ponSignalStatus = '<div class="badge red">Sinal Perigoso</div>';
     }
     let ponSignalStatusColumn = (isTR069) ? `
       <td>
