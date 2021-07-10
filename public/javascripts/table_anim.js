@@ -572,11 +572,13 @@ $(document).ready(function() {
   };
 
   const buildPonSignalColumn = function(device, isTR069 = false) {
-    let ponSignalStatusColumn = (isTR069) ?
-      `<td>
-        <h1>Olá</h1>
-      </td>`:
-      '<td></td>';
+    let ponSignalStatusColumn = (isTR069) ? `
+      <td>
+        <div>
+          <span>Olá</span>
+        </div>
+      </td>
+    ` : '<td></td>';
     return ponSignalStatusColumn;
   }
 
