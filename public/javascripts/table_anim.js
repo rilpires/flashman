@@ -586,7 +586,7 @@ $(document).ready(function() {
     }
     let ponSignalStatusColumn = (isTR069) ? `
       <td>
-        <div class="text-center">
+        <div class="text-center align-items-center">
           ${ponSignalRxPower}
           ${ponSignalStatus} 
         </div>
