@@ -33,8 +33,8 @@ let packageJson = require('./package.json');
 
 let app = express();
 
-// Express OpenAPI Docs Generator
-expressOasGenerator.init(app, {});
+// Express OpenAPI docs generator handling responses first
+expressOasGenerator.handleResponses(app, {});
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
@@ -383,6 +383,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
   if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
+  expressOasGenerator.handleRequests();
   app.listen(parseInt(schedulePort), function() {
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
