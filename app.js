@@ -10,6 +10,7 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
+const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -31,6 +32,9 @@ let index = require('./routes/index');
 let packageJson = require('./package.json');
 
 let app = express();
+
+// Express OpenAPI Docs Generator
+expressOasGenerator.init(app, {});
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
