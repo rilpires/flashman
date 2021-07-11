@@ -361,6 +361,9 @@ app.use(function(err, req, res, next) {
   }
 });
 
+// Express OpenAPI Generator
+expressOasGenerator.init(app, {});
+
 // Check device update schedule, if active must re-initialize
 if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   Config.findOne({is_default: true}, function(err, matchedConfig) {
