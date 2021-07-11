@@ -383,6 +383,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
   if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
+  expressOasGenerator.handleRequests();
   app.listen(parseInt(schedulePort), function() {
     expressOasGenerator.handleRequests();
     let late8pmRule = new schedule.RecurrenceRule();
