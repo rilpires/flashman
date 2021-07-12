@@ -70,7 +70,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
           $('<td>').append(
             $('<button>').append(
               $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span>').html('&nbsp Editar'),
+              $('<span>').html('&nbsp Editar nome'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
