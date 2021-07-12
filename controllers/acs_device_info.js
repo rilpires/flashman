@@ -6,6 +6,9 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const updateController = require('./update_flashman.js');
+const fs = require('fs');
+const path = require('path');
+const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const pako = require('pako');
 const http = require('http');
@@ -1363,6 +1366,118 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     console.error('Error in license report: ' + err);
     return {success: false, message: 'Erro na requisição'};
   }
+};
+
+acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
+  return new Promise(function(resolve, reject) {
+    let readStream = fs.createReadStream(path.join(imageReleasesDir,
+                                             firmware.filename));
+    let chunks = [];
+    readStream.on('data', (chunk) => chunks.push(chunk));
+    readStream.on('end', () => {
+      let binaryData = Buffer.concat(chunks);
+      let path = '/files/'+firmware.filename;
+      let options = {
+        method: 'PUT',
+        hostname: 'localhost',
+        // hostname: '207.246.65.243',
+        port: 7557,
+        path: encodeURI(path),
+        headers: {
+          // 'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/octet-stream',
+          'Content-Length': Buffer.byteLength(binaryData),
+          'fileType': '1 Firmware Upgrade Image',
+          'oui': firmware.oui,
+          'productClass': firmware.model,
+          'version': firmware.version,
+        },
+      };
+      let req = http.request(options, (res) => {
+        if (res.statusCode != 201) {
+          reject({success: false,
+            message: 'Erro ao adicionar firmware no genie. '+
+            'http status code = '+res.statusCode});
+        } else {
+          resolve({success: true,
+            message: 'Firmware adicionado do genie com sucesso'});
+        }
+      });
+      req.write(binaryData);
+      req.on('error', function(err) {
+        reject(err);
+      });
+      req.end();
+    });
+  });
+};
+
+acsDeviceInfoController.delFirmwareInGenie = function(filename) {
+  return new Promise(function(resolve, reject) {
+    let path = '/files/'+filename;
+    let options = {
+      method: 'DELETE',
+      hostname: 'localhost',
+      // hostname: '207.246.65.243',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let req = http.request(options, (res) => {
+      if (res.statusCode != 200) {
+        reject({success: false,
+          message: 'Erro ao deletar firmware do genie. '+
+          'http status code = '+res.statusCode});
+      } else {
+        resolve({success: true,
+          message: 'Firmware deletado do genie com sucesso'});
+      }
+    });
+    req.on('error', function(err) {
+      reject(err);
+    });
+    req.end();
+  });
+};
+
+acsDeviceInfoController.getFirmwaresFromGenie = function() {
+  return new Promise(function(resolve, reject) {
+    let path = '/files/';
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      // hostname: '207.246.65.243',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let req = http.request(options, (res) => {
+      if (res.statusCode != 200) {
+        return reject(new Error('http status code = '+
+          res.statusCode));
+      }
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk)=>data+=chunk);
+      res.on('end', async () => {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          reject(e);
+        }
+        resolve(data);
+      });
+    });
+    req.on('error', function(err) {
+      reject(err);
+    });
+    req.end();
+  });
+};
+
+acsDeviceInfoController.upgradeFirmware = async function(device) {
+  console.log('Upgrading tr069 firmware...');
+  // verify existence in nbi through 7557/files/
+  // if not exists add
+  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
 };
 
 module.exports = acsDeviceInfoController;
