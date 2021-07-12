@@ -184,7 +184,7 @@ $(document).ready(function() {
       let updatesFailed = false;
       for (let i = 0; i < selectedItens.length; i++) {
         let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
-        if (!res.sucess) {
+        if (!res.success) {
           updatesFailed = true;
           break;
         }
@@ -194,7 +194,7 @@ $(document).ready(function() {
         swal({
           type: 'error',
           title: 'Erro ao excluir perfis de VLAN',
-          text: 'Exclusão de perfis não foi possível pois dispositivo pois ' +
+          text: 'Exclusão de perfis não foi possível pois ' +
                 'alguns CPEs não atualizaram a configuração de VLAN.',
           confirmButtonColor: '#4db6ac',
         });
