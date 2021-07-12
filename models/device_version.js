@@ -1556,6 +1556,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
+    result.grantPortForwardOpts =
+      DeviceVersion.getPortForwardTr069Compatibility(model, version);
+  }
   return result;
 };
 
