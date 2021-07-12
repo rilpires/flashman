@@ -5,7 +5,6 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
-    port_forward_support: true,
     port_forward_opts: {
       'V1.1.20P1T18': {
        simpleSymmetric: true,
@@ -26,11 +25,18 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
-    pon_signal_support: true,
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+    },
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
-    port_forward_support: true,
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -45,22 +51,50 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
-    pon_signal_support: false,
-    wifi2_extended_channels_support: true,
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+    },
   },
   'GONUAC001': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
     wifi2_extended_channels_support: true,
   },
 };
@@ -1193,22 +1227,22 @@ const grantResetDevices = function(version) {
 };
 
 const grantPortForward = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].port_forward_support &&
-      tr069Devices[model].port_forward_opts[version] !== undefined) {
-    // Compatible TR-069 CPE
+  if (Object.keys(tr069Devices).includes(model)) {
+    if (tr069Devices[model].feature_support.port_forward &&
+        tr069Devices[model].port_forward_opts[version] !== undefined) {
+      return true;
+    }
+    return false;
+  }
+  if (version.match(versionRegex)) {
+    // Oficial Flashbox firmware
+    return (versionCompare(version, '0.10.0') >= 0);
+  } else if (version.match(devVersionRegex)) {
+    // Development version, enable everything by default
     return true;
   } else {
-    if (version.match(versionRegex)) {
-      // Oficial Flashbox firmware
-      return (versionCompare(version, '0.10.0') >= 0);
-    } else if (version.match(devVersionRegex)) {
-      // Development version, enable everything by default
-      return true;
-    } else {
-      // Unknown device and or version
-      return false;
-    }
+    // Unknown device and or version
+    return false;
   }
 };
 
@@ -1334,7 +1368,10 @@ const grantSiteSurvey = function(version) {
   }
 };
 
-const grantUpnp = function(version) {
+const grantUpnp = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.upnp;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
   } else {
@@ -1345,32 +1382,42 @@ const grantUpnp = function(version) {
 
 const grantSpeedTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    // TR-069 does not have speed test at the moment
-    return false;
-  } else {
-    if (version.match(versionRegex)) {
-      if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-        // Unspecified model
-        return false;
-      }
-      if (!flashboxFirmwareDevices[model].speedtest_support) {
-        // Model is not compatible with feature
-        return false;
-      }
-      return (versionCompare(version, '0.24.0') >= 0);
-    } else {
-      // Development version, enable everything by default
-      return true;
+    return tr069Devices[model].feature_support.speed_test;
+  }
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
     }
+    if (!flashboxFirmwareDevices[model].speedtest_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.24.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
   }
 };
 
 const grantSpeedTestLimit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.speed_test_limit;
+  }
   if (grantSpeedTest(version, model) &&
       Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
   }
+
   return 0;
+};
+
+const grantBlockDevices = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_devices;
+  }
+  // Enabled for all Flashbox firmwares
+  return true;
 };
 
 const grantOpmode = function(version) {
@@ -1425,7 +1472,7 @@ const grantWanBytesSupport = function(version) {
 
 const grantPonSignalSupport = function(version, model) {
   if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].pon_signal_support
+      tr069Devices[model].feature_support.pon_signal
   ) {
     // Compatible TR-069 ONU
     return true;
@@ -1461,6 +1508,9 @@ const grantUpdateAck = function(version) {
 };
 
 const grantWpsFunction = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wps;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1495,9 +1545,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
   result.grantSiteSurvey = grantSiteSurvey(version);
-  result.grantUpnp = grantUpnp(version);
+  result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
+  result.grantBlockDevices = grantBlockDevices(model);
   result.grantOpmode = grantOpmode(version);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version);
@@ -1505,6 +1556,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
+    result.grantPortForwardOpts =
+      DeviceVersion.getPortForwardTr069Compatibility(model, version);
+  }
   return result;
 };
 

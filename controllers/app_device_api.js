@@ -177,6 +177,9 @@ let processPassword = function(content, device, rollback) {
 
 let processBlacklist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
+    return false;
+  }
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
       content.blacklist_device.hasOwnProperty('mac') &&
@@ -251,6 +254,9 @@ let processBlacklist = function(content, device, rollback) {
 
 let processWhitelist = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
+    return false;
+  }
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
       content.whitelist_device.hasOwnProperty('mac') &&
@@ -341,6 +347,9 @@ let processDeviceInfo = function(content, device, rollback) {
 
 let processUpnpInfo = function(content, device, rollback) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+  if (!DeviceVersion.checkFeature(device.model, 'upnp')) {
+    return false;
+  }
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('upnp_allow') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -620,6 +629,9 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     if (appObj[0].secret != req.body.app_secret) {
       return res.status(403).json({message: 'App não autorizado'});
     }
+    if (!DeviceVersion.checkFeature(matchedDevice.model, 'speedTest')) {
+      return res.status(500).json({message: 'Feature not implemented'});
+    }
 
     // Send reply first, then send mqtt message
     let lastMeasureID;
@@ -780,8 +792,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantPortForwardAsym = false;
       permissions.grantBlockDevices = false;
       permissions.grantUpnp = false;
-    } else {
-      permissions.grantBlockDevices = true;
     }
 
     let speedtestInfo = {};
