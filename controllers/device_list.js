@@ -452,7 +452,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact.
-  let matchedConfig = await Config.findOne({is_default: true},
+  let matchedConfig = await Config.findOne({is_default: true});
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
