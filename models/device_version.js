@@ -1227,22 +1227,22 @@ const grantResetDevices = function(version) {
 };
 
 const grantPortForward = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].feature_support.port_forward &&
-      tr069Devices[model].port_forward_opts[version] !== undefined) {
-    // Compatible TR-069 CPE
+  if (Object.keys(tr069Devices).includes(model)) {
+    if (tr069Devices[model].feature_support.port_forward &&
+        tr069Devices[model].port_forward_opts[version] !== undefined) {
+      return true;
+    }
+    return false;
+  }
+  if (version.match(versionRegex)) {
+    // Oficial Flashbox firmware
+    return (versionCompare(version, '0.10.0') >= 0);
+  } else if (version.match(devVersionRegex)) {
+    // Development version, enable everything by default
     return true;
   } else {
-    if (version.match(versionRegex)) {
-      // Oficial Flashbox firmware
-      return (versionCompare(version, '0.10.0') >= 0);
-    } else if (version.match(devVersionRegex)) {
-      // Development version, enable everything by default
-      return true;
-    } else {
-      // Unknown device and or version
-      return false;
-    }
+    // Unknown device and or version
+    return false;
   }
 };
 
@@ -1369,10 +1369,11 @@ const grantSiteSurvey = function(version) {
 };
 
 const grantUpnp = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.upnp;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
-  } else if (!DeviceVersion.checkFeature(model, 'upnp')) {
-    return false;
   } else {
     // Development version, enable everything by default
     return true;
@@ -1381,44 +1382,43 @@ const grantUpnp = function(version, model) {
 
 const grantSpeedTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    // TR-069 does not have speed test at the moment
-    return false;
-  } else {
-    if (version.match(versionRegex)) {
-      if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-        // Unspecified model
-        return false;
-      }
-      if (!flashboxFirmwareDevices[model].speedtest_support) {
-        // Model is not compatible with feature
-        return false;
-      }
-      return (versionCompare(version, '0.24.0') >= 0);
-    } else {
-      // Development version, enable everything by default
-      return true;
+    return tr069Devices[model].feature_support.speed_test;
+  }
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
     }
+    if (!flashboxFirmwareDevices[model].speedtest_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.24.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
   }
 };
 
 const grantSpeedTestLimit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.speed_test_limit;
+  }
   if (grantSpeedTest(version, model) &&
       Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
-  } else if (!DeviceVersion.checkFeature(model, 'speed_test_limit')) {
-    return 0;
-  };
+  }
 
   return 0;
 };
 
 const grantBlockDevices = function(model) {
-  if (!DeviceVersion.checkFeature(model, 'block_devices')) {
-    return false;
-  } else {
-    return true;
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_devices;
   }
-}
+  // Enabled for all Flashbox firmwares
+  return true;
+};
 
 const grantOpmode = function(version) {
   if (version.match(versionRegex)) {
@@ -1507,7 +1507,10 @@ const grantUpdateAck = function(version) {
   }
 };
 
-const grantWpsFunction = function(version, model) { 
+const grantWpsFunction = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wps;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1518,8 +1521,6 @@ const grantWpsFunction = function(version, model) {
       return false;
     }
     return (versionCompare(version, '0.28.0') >= 0);
-  } else if (!DeviceVersion.checkFeature(model, 'wps')) {
-    return false;
   } else {
     // Development version, no way to know version so disable by default
     return true;
