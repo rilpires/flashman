@@ -387,3 +387,17 @@ input:checked + .slider:before {
   border: none;
 }
 
+/* Wi-Fi tabs */
+
+.nav-tabs .nav-link {
+  border-radius: 0;
+}
+
+.wifi-tab-content {
+  > .tab-pane {
+    display: none;
+  }
+  > .active {
+    display: flex;
+  }
+}

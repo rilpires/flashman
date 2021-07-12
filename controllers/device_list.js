@@ -15,6 +15,7 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const updateController = require('./update_flashman.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 
@@ -754,6 +755,27 @@ deviceListController.searchDeviceReg = async function(req, res) {
               deviceListController.getReleases(userRole,
                                                req.user.is_superuser, true)
               .then(function(singleReleases) {
+                /* validate if is to show ssid prefix checkbox
+                    for each device */
+                let ssidPrefix = matchedConfig.ssidPrefix;
+                let enabledForAllFlashman = (
+                  !!matchedConfig.personalizationHash &&
+                    matchedConfig.isSsidPrefixEnabled);
+                allDevices.forEach(function(device) {
+                  /*
+                    Define if is to show ssid prefix
+                    checkbox by checking the existence of
+                    personalization hash and if ssid prefix
+                    is enabled for all flashman.
+                    Or else, case ssid prefix is enabled
+                    for that device, is enough to be able
+                    to show.
+                  */
+                  device.isToShowSsidPrefixCheckbox =
+                    (enabledForAllFlashman == true ||
+                    device.isSsidPrefixEnabled == true);
+                });
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -765,6 +787,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
+                  ssidPrefix: ssidPrefix,
+                  isSsidPrefixEnabled: enabledForAllFlashman,
                 });
               });
             }, (error) => {
@@ -1262,6 +1286,8 @@ deviceListController.setDeviceReg = function(req, res) {
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
+      let isSsidPrefixEnabled = parseInt(util.
+        returnObjOrNum(content.isSsidPrefixEnabled, 0)) == 0 ? false : true;
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
@@ -1289,7 +1315,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
+      Config.findOne({is_default: true}, async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
           return res.status(500).json({
@@ -1316,8 +1342,11 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
+        let ssidPrefix = await updateController.
+          getSsidPrefix(isSsidPrefixEnabled);
         if (content.hasOwnProperty('wifi_ssid')) {
-          genericValidate(ssid, validator.validateSSID, 'ssid');
+          genericValidate(ssidPrefix+ssid,
+            validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
           genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1335,7 +1364,8 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(power, validator.validatePower, 'power');
         }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
-          genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+          genericValidate(ssidPrefix+ssid5ghz,
+            validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
           genericValidate(password5ghz,
@@ -1373,7 +1403,7 @@ deviceListController.setDeviceReg = function(req, res) {
 
         if (errors.length < 1) {
           Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
-          function(err, role) {
+          async function(err, role) {
             if (err) {
               console.log(err);
             }
@@ -1384,6 +1414,7 @@ deviceListController.setDeviceReg = function(req, res) {
               superuserGrant = true;
             }
             let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
@@ -1430,7 +1461,8 @@ deviceListController.setDeviceReg = function(req, res) {
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
-                ssid !== '' && ssid !== matchedDevice.wifi_ssid) {
+                ssid !== '' &&
+                ssid !== matchedDevice.wifi_ssid) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.ssid = ssid;
                 matchedDevice.wifi_ssid = ssid;
@@ -1508,7 +1540,8 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
-                ssid5ghz !== '' && ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
+                ssid5ghz !== '' &&
+                ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.ssid = ssid5ghz;
                 matchedDevice.wifi_ssid_5ghz = ssid5ghz;
@@ -1573,6 +1606,15 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiHidden5ghz !== matchedDevice.wifi_hidden_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('isSsidPrefixEnabled') &&
+                isSsidPrefixEnabled !== matchedDevice.isSsidPrefixEnabled) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -1764,7 +1806,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
         return res.status(500).json({
@@ -1790,7 +1832,13 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      genericValidate(ssid, validator.validateSSID, 'ssid');
+      let enabledForAllFlashman = (
+        !!matchedConfig.personalizationHash &&
+          matchedConfig.isSsidPrefixEnabled);
+      let ssidPrefix = await updateController.
+        getSsidPrefix(enabledForAllFlashman);
+      genericValidate(ssidPrefix+ssid,
+        validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
@@ -1824,6 +1872,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
+              'isSsidPrefixEnabled': enabledForAllFlashman,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;

@@ -5,6 +5,7 @@ const DeviceModel = require('../models/device');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
+const updateController = require('./update_flashman.js');
 
 const pako = require('pako');
 const http = require('http');
@@ -310,10 +311,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       hasChanges = true;
     }
   }
-
+  
+  let ssidPrefix = await updateController.
+          getSsidPrefix(device.
+            isSsidPrefixEnabled);
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
-  } else if (device.wifi_ssid.trim() !== data.wifi2.ssid.trim()) {
+  }
+  if (ssidPrefix+device.wifi_ssid.trim()
+    !== data.wifi2.ssid.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
@@ -340,7 +346,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
-  } else if (device.wifi_ssid_5ghz.trim() !== data.wifi5.ssid.trim()) {
+  }
+  if (ssidPrefix+device.wifi_ssid_5ghz.trim()
+    !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
   }
@@ -901,7 +909,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   });
 };
 
-acsDeviceInfoController.updateInfo = function(device, changes) {
+acsDeviceInfoController.updateInfo = async function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
@@ -912,6 +920,9 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
+  let ssidPrefix = await updateController.
+    getSsidPrefix(device.
+      isSsidPrefixEnabled);
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -947,6 +958,18 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
           ]);
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
+        }
+      }
+      /*
+        Verify if is to append prefix right before
+        of send changes to genie;
+        Because device_list, app_diagnostic_api
+        and here call updateInfo, and is more clean
+        to check on the edge;
+      */
+      if (key === 'ssid') {
+        if (ssidPrefix != '') {
+          changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
       }
       let convertedValue = DevicesAPI.convertField(

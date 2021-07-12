@@ -26,6 +26,7 @@ meshHandlers.syncSlaveWifi = function(master, slave) {
   slave.wifi_mode = master.wifi_mode;
   slave.wifi_state = master.wifi_state;
   slave.wifi_hidden = master.wifi_hidden;
+  slave.isSsidPrefixEnabled = master.isSsidPrefixEnabled;
   if (master.mesh_mode !== 1) { // For cable mode see Custom Config
     slave.wifi_channel = master.wifi_channel;
   }
