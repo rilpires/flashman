@@ -71,40 +71,6 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
     },
-  },
-  'G-140W-C': {
-    feature_support: {
-      port_forward: false,
-      pon_signal: true,
-      upnp: false,
-      wps: false,
-      speed_test: false,
-      speed_test_limit: 0,
-      block_devices: false,
-    },
-  },
-  'HG8245Q2': {
-    feature_support: {
-      port_forward: false,
-      pon_signal: true,
-      upnp: false,
-      wps: false,
-      speed_test: false,
-      speed_test_limit: 0,
-      block_devices: false,
-    },
-    wifi2_extended_channels_support: true,
-  },
-  'GONUAC001': {
-    feature_support: {
-      port_forward: false,
-      pon_signal: true,
-      upnp: false,
-      wps: false,
-      speed_test: false,
-      speed_test_limit: 0,
-      block_devices: false,
-    },
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
