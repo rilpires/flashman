@@ -1,3 +1,6 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
+
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
   $.get('/firmware/fetch', function(res) {
@@ -111,7 +114,7 @@ $(document).ready(function() {
     let fws = [];
 
     selectedItensAdd.forEach(function(firmware) {
-      var firmwareAttrs = {encoded: firmware.encoded,
+      let firmwareAttrs = {encoded: firmware.encoded,
                             company: firmware.company,
                             firmwarefile: firmware.firmwarefile,
                             wanproto: firmware.wanproto,
@@ -170,7 +173,7 @@ $(document).ready(function() {
     } else {
       let itemAction = $(this).data('action');
       if (itemAction == 'add') {
-        var firmwareAttrs = {encoded: $('#avail-firmware-table')
+        let firmwareAttrs = {encoded: $('#avail-firmware-table')
                               .data('encoded'),
                               company: $(this).data('company'),
                               firmwarefile: $(this).data('firmwarefile'),
@@ -292,6 +295,7 @@ $(document).ready(function() {
         });
         $('#avail-firmware-table').attr('data-encoded', res.encoded);
 
+        // eslint-disable-next-line new-cap
         $('#avail-firmware-table').DataTable({
           'destroy': true,
           'paging': true,

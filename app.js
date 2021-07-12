@@ -151,7 +151,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   Device.find({$or: [{installed_release: {$exists: false}},
                      {mesh_key: {$exists: false}},
                      {bridge_mode_enabled: true, connection_type: 'pppoe'},
-                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}}
+                     {isSsidPrefixEnabled: {$exists: false}},
+                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
   ]}, function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
@@ -187,10 +188,45 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
           devices[idx].pppoe_password = '';
           saveDevice = true;
         }
+        /*
+          Check isSsidPrefixEnabled existence and
+          set it to default (false for old devices regs)
+        */
+        if (typeof devices[idx].isSsidPrefixEnabled === 'undefined') {
+          devices[idx].isSsidPrefixEnabled = false;
+          saveDevice = true;
+        }
         if (saveDevice) {
           devices[idx].save();
         }
       }
+    }
+  });
+
+  // put default values in old config
+  Config.findOne({is_default: true}, function(err, config) {
+    let saveConfig = false;
+    if (!err && config) {
+      if (typeof config.isSsidPrefixEnabled === 'undefined') {
+        config.isSsidPrefixEnabled = false;
+        saveConfig = true;
+      }
+      if (typeof config.ssidPrefix === 'undefined') {
+        config.ssidPrefix = '';
+        saveConfig = true;
+      }
+      let vlans = [];
+      for (let i = 0; i < config.vlans_profiles.length; i++) {
+        vlans.push(config.vlans_profiles[i].vlan_id);
+      }
+      // 1 is the mandatory lan vlan id
+      if (! vlans.includes(1)) {
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'Internet'});
+        saveConfig = true;
+      }
+    }
+    if (saveConfig) {
+      config.save();
     }
   });
 }
@@ -239,13 +275,8 @@ app.use(logger('combined', {
   },
 }));
 app.use(cookieParser());
-app.use('/stylesheets',
-  serveStatic(path.join(__dirname, 'public/stylesheets'), {
-    dotfiles: 'ignore',
-    maxAge: false,
-}));
-app.use('/javascripts',
-  serveStatic(path.join(__dirname, 'public/javascripts'), {
+app.use('/dist',
+  serveStatic(path.join(__dirname, 'public/dist'), {
     dotfiles: 'ignore',
     maxAge: false,
 }));
@@ -290,71 +321,6 @@ let sessParam = session({
 
 app.use(sessParam);
 sio.anlixBindSession(sessParam);
-
-// create static routes for public libraries
-app.use('/scripts/jquery',
-  express.static(path.join(__dirname, 'node_modules/jquery/dist'))
-);
-app.use('/scripts/jquery-mask',
-  express.static(path.join(__dirname, 'node_modules/jquery-mask-plugin/dist'))
-);
-app.use('/scripts/jquery-highlight',
-  express.static(path.join(__dirname, 'node_modules/jquery-highlight'))
-);
-app.use('/scripts/pako',
-  express.static(path.join(__dirname, 'node_modules/pako/dist'))
-);
-app.use('/scripts/popper',
-  express.static(path.join(__dirname, 'node_modules/popper.js/dist'))
-);
-app.use('/scripts/moment',
-  express.static(path.join(__dirname, 'node_modules/moment/min'))
-);
-app.use('/scripts/bootstrap',
-  express.static(path.join(__dirname, 'node_modules/bootstrap/dist'))
-);
-app.use('/scripts/mdbootstrap',
-  express.static(path.join(__dirname, 'node_modules/mdbootstrap'))
-);
-app.use('/scripts/bs-stepper',
-  express.static(path.join(__dirname, 'node_modules/bs-stepper/dist'))
-);
-app.use('/scripts/tempusdominus',
-  express.static(path.join(__dirname, 'node_modules/tempusdominus-bootstrap-4/build'))
-);
-app.use('/scripts/selectize',
-  express.static(path.join(__dirname, 'node_modules/selectize/dist'))
-);
-app.use('/scripts/selectize-bootstrap',
-  express.static(path.join(__dirname,
-                           'node_modules/selectize-bootstrap4-theme/dist'))
-);
-app.use('/scripts/sweetalert2',
-  express.static(path.join(__dirname, 'node_modules/sweetalert2/dist'))
-);
-app.use('/scripts/tags-input',
-  express.static(path.join(__dirname, 'node_modules/tags-input'))
-);
-app.use('/scripts/datatables.net',
-  express.static(path.join(__dirname, 'node_modules/datatables.net'))
-);
-app.use('/scripts/datatables.net-bs4',
-  express.static(path.join(__dirname, 'node_modules/datatables.net-bs4'))
-);
-app.use('/scripts/apexcharts',
-  express.static(path.join(__dirname, 'node_modules/apexcharts/dist'))
-);
-app.use('/scripts/fontawesome/css',
-  express.static(path.join(
-    __dirname,
-    'node_modules/@fortawesome/fontawesome-free/css'))
-);
-app.use('/scripts/fontawesome/webfonts',
-  express.static(path.join(
-    __dirname,
-    'node_modules/@fortawesome/fontawesome-free/webfonts'))
-);
-
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(fileUpload());

@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-lock-open.fa-lg
-          strong &nbsp; Abertura de portas no roteador &nbsp;
+          strong &nbsp; Abertura de portas no CPE &nbsp;
             label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -17,7 +17,7 @@
                 span Dispositivo &nbsp;
                 a.fas.fa-question-circle(
                   data-toggle="tooltip",
-                  title="Peça para o cliente conectar o dispositivo ao roteador. " +
+                  title="Peça para o cliente conectar o dispositivo ao CPE. " +
                         "É possível também digitar o endereço MAC do dispositivo"
                 )
               .col-3
@@ -26,7 +26,7 @@
                   data-toggle="tooltip",
                   title="As portas abertas terão um mapeamento um para um. " +
                         "Ou seja, a porta X aberta no dispositivo será " +
-                        "mapeada na mesma porta X do roteador. Para portas assimetricas, " +
+                        "mapeada na mesma porta X do CPE. Para portas assimetricas, " +
                         "separe as portas com ':'. Ex: 80:8080" 
                 )
               .col-1.px-0
@@ -69,7 +69,7 @@
                       a.fas.fa-question-circle(
                         data-toggle="tooltip",
                         title="Caso não veja as portas listadas, " +
-                              "atualize o firmware do roteador",
+                              "atualize o firmware do CPE",
                       )
                     th.text-center DMZ
                     th &nbsp;

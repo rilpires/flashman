@@ -32,9 +32,9 @@
     Validator.prototype.validateChannel = function(channel) {
       return {
         valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                '36', '40', '44', '48', '52', '56', '60', '64',
+                '12', '13', '36', '40', '44', '48', '52', '56', '60', '64',
                 '149', '153', '157', '161', '165', 'auto'].includes(channel),
-        err: ['Somente são aceitos os valores 1 a 11 e auto'],
+        err: ['Canal selecionado inválido'],
       };
     };
 
@@ -95,6 +95,20 @@
       return ret;
     };
 
+    Validator.prototype.validateSSIDPrefix = function(ssid) {
+      const messages = [
+        'Este campo é obrigatório',
+        'Este campo não pode ter mais de 16 caracteres',
+        'São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #',
+        'Deve ter pelo menos um ponto, -, _ ou # como separador no final',
+      ];
+      let ret = validateRegex(ssid, 1, 16,
+        /^[a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#)$/);
+
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
     Validator.prototype.validateWifiPassword = function(pass) {
       const messages = [
         'Este campo deve ter no mínimo 8 caracteres',
@@ -137,6 +151,72 @@
         valid: ['0', '1', '2', 0, 1, 2].includes(ipv6Enabled),
         err: ['Valor inválido para ativar ou desativar IPv6'],
       };
+    };
+
+    Validator.prototype.checkAddressSubnetRange = function(deviceIp,
+      ipAddressGiven, maskBits) {
+      let i;
+      let aux;
+      let numberRegex = /[0-9]+/;
+      let lanSubmask = [];
+      let lanSubnet = [];
+      let subnetRange = [];
+      let maxRange = [];
+      let isOnRange = true;
+      let isIpFormatCorrect = true;
+
+      deviceIp = deviceIp.split('.');
+      ipAddressGiven = ipAddressGiven.split('.');
+
+      if (ipAddressGiven.length != 4 || deviceIp.length != 4) {
+        isIpFormatCorrect = false;
+      } else {
+        for (i = 0; i < ipAddressGiven.length; i++) {
+          if (!numberRegex.test(ipAddressGiven[i]) ||
+              !numberRegex.test(deviceIp[i])) {
+            isIpFormatCorrect = false;
+          }
+        }
+      }
+      if (isIpFormatCorrect) {
+        // build the mask address from the number of bits that mask have
+        for (i = 0; i < 4; i++) {
+          if (maskBits > 7) {
+            lanSubmask.push((2**8)-1);
+          } else if (maskBits >= 0) {
+            // based on (sum of (2^(8-k)) from 0 to j)  - 256
+            // to generate the sequence :
+            // 0, 128, 192, 224, 240, 248, 252, 254
+            lanSubmask.push(256-2**(8-maskBits));
+          } else {
+            lanSubmask.push(0);
+          }
+          subnetRange.push(255 - lanSubmask[i]);
+          maskBits -= 8;
+        }
+        for (i = 0; i < lanSubmask.length; i++) {
+          // apply the mask to get the start of the subnet
+          aux = lanSubmask[i] & deviceIp[i];
+          lanSubnet.push(aux);
+          // get the range of ip's that is allowed in that subnet
+          maxRange.push(aux + subnetRange[i]);
+        }
+        // check if the given ip address for port mapping is in the range
+        for (i = 0; i < ipAddressGiven.length; i ++) {
+          if (!(ipAddressGiven[i] >= lanSubnet[i] &&
+                ipAddressGiven[i] <= maxRange[i])) {
+            // whenever block is out of range, put to false
+            isOnRange = false;
+          }
+        }
+        // check if is broadcast or subnet id
+        if (ipAddressGiven.every(function(e, idx) {
+          return (e == lanSubnet[idx] || e == maxRange[idx]);
+        })) {
+          isOnRange = false;
+        }
+      }
+      return isOnRange && isIpFormatCorrect;
     };
 
     return Validator;

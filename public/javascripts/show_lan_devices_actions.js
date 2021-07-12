@@ -1,3 +1,4 @@
+import {displayAlertMsg, socket} from './common_actions.js';
 
 $(document).ready(function() {
   let lanDevicesGlobalTimer;
@@ -109,7 +110,8 @@ $(document).ready(function() {
   };
 
   const fetchLanDevices = function(deviceId, upnpSupport,
-                                   isBridge, hasSlaves=false) {
+                                   isBridge, hasSlaves=false,
+  ) {
     let totalRouters = parseInt($('#lan-devices').data('slaves-count')) + 1;
     let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
@@ -196,7 +198,8 @@ $(document).ready(function() {
   };
 
   const renderDevices = function(lanDevices, lanRouters, upnpSupport,
-                                 isBridge, hasSlaves=false) {
+                                 isBridge, hasSlaves=false,
+  ) {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
@@ -279,7 +282,7 @@ $(document).ready(function() {
           (hasSlaves ?
             $('<div>').addClass('row pt-2').append(
               $('<div>').addClass('col').append(
-                $('<div>').addClass('badge primary-color').html('Conectado no roteador ' + device.gateway_mac),
+                $('<div>').addClass('badge primary-color').html('Conectado no CPE ' + device.gateway_mac),
               ),
           ) : ''),
           $('<div>').addClass('row pt-2').append(
@@ -383,6 +386,10 @@ $(document).ready(function() {
       if (!lanRouters[routerMacKey] || lanRouters[routerMacKey].length == 0) {
         continue;
       }
+      // Skip if information is too old
+      if (lanRouters[routerMacKey].is_old) {
+        continue;
+      }
 
       let lanRouterCard = $('<div>')
       .addClass('col-lg m-1 pb-2 grey lighten-4').append(
@@ -403,10 +410,22 @@ $(document).ready(function() {
           ),
           $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
             $('<div>').addClass('col').append(
-              $('<h6>').text('Tempo conectado: ' + secondsTimeSpanToHMS(router.conn_time)),
-              $('<h6>').text('Bytes recebidos: ' + router.rx_bytes),
-              $('<h6>').text('Bytes enviados: ' + router.tx_bytes),
-              $('<h6>').text('Sinal: ' + router.signal +' dBm'),
+              $('<h6>').text('Tempo conectado: ' +
+                ((router.iface == 1) ?
+                  'N/D' :
+                  secondsTimeSpanToHMS(router.conn_time))),
+              $('<h6>').text('Bytes recebidos: ' +
+                ((router.iface == 1) ?
+                  'N/D' :
+                  router.rx_bytes)),
+              $('<h6>').text('Bytes enviados: ' +
+                ((router.iface == 1) ?
+                  'N/D' :
+                  router.tx_bytes)),
+              $('<h6>').text('Sinal: ' +
+                ((router.iface == 1) ?
+                  'N/D' :
+                  (router.signal +' dBm'))),
             ),
             $('<div>').addClass('col').append(
               $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' Mbps'),

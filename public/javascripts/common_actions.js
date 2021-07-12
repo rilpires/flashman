@@ -1,3 +1,7 @@
+import 'bootstrap/js/src/modal';
+import {io} from 'socket.io-client';
+
+const socket = io();
 
 const displayAlertMsg = function(res) {
   $('#frame-modal-alert .modal-dialog').removeClass(
@@ -91,3 +95,5 @@ $(document).on('click', '.btn-notif-action', function(event) {
     fetchNotifications();
   });
 });
+
+export {displayAlertMsg, secondsTimeSpanToHMS, socket};

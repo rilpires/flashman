@@ -224,7 +224,7 @@ firmwareController.uploadFirmware = function(req, res) {
                   type: 'danger',
                   message: 'Erro ao gerar hash de integridade do arquivo',
                 });
-              }
+              },
             );
           }
 
@@ -247,9 +247,9 @@ firmwareController.uploadFirmware = function(req, res) {
                         type: 'danger',
                         message: 'Erro buscar na base de dados',
                       });
-                    }
+                    },
                   );
-                }
+                },
               );
             }
             if (!firmware) {
@@ -280,9 +280,9 @@ firmwareController.uploadFirmware = function(req, res) {
                     fs.unlink(path.join(imageReleasesDir, md5fname),
                       function(err) {
                         return res.json({type: 'danger', message: msg});
-                      }
+                      },
                     );
-                  }
+                  },
                 );
               }
               return res.json({
@@ -291,9 +291,9 @@ firmwareController.uploadFirmware = function(req, res) {
               });
             });
           });
-        }
+        },
       );
-    }
+    },
   );
 };
 
@@ -429,8 +429,9 @@ let addFirmwareFile = function(fw) {
                 if (err) {
                   fs.unlink(path.join(imageReleasesDir, firmwarefname),
                     function(err) {
-                      return reject('Erro ao gerar hash de integridade do arquivo');
-                    }
+                      return reject(
+                        'Erro ao gerar hash de integridade do arquivo');
+                    },
                   );
                 }
                 // Hash generated and saved. Register entry on db
@@ -448,9 +449,9 @@ let addFirmwareFile = function(fw) {
                         fs.unlink(path.join(imageReleasesDir, md5fname),
                           function(err) {
                             return reject('Erro buscar na base de dados');
-                          }
+                          },
                         );
-                      }
+                      },
                     );
                   }
                   if (!firmware) {
@@ -489,15 +490,15 @@ let addFirmwareFile = function(fw) {
                           fs.unlink(path.join(imageReleasesDir, md5fname),
                             function(err) {
                               return reject(msg);
-                            }
+                            },
                           );
-                        }
+                        },
                       );
                     }
                     return resolve();
                   });
                 });
-              }
+              },
             );
           });
         } else {
@@ -505,7 +506,7 @@ let addFirmwareFile = function(fw) {
         }
       });
   });
-}
+};
 
 firmwareController.addRemoteFirmwareFile = function(req, res) {
   let firmwares = JSON.parse(req.body.firmwares);

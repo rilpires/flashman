@@ -46,7 +46,7 @@
                   strong Contrato:
                   span#user-contract
             #router-data.col-md-6
-              h4 Dados do Roteador
+              h4 Dados do CPE
               ul.list-inline
                 li
                   strong MAC:
@@ -82,10 +82,13 @@
             h4 Configuração da WAN
             #wan-config-list
           hr
-          #diagnostic-none
-            h4 O diagnóstico do roteador não foi feito
+          #diagnostic-none-router
+            h4 O diagnóstico do CPE não foi feito
+          #diagnostic-none-onu
+            h4 O diagnóstico da CPE não foi feito
           #diagnostic-done
-            h4 Diagnóstico do Roteador
+            h4#diagnostic-header-router Diagnóstico do CPE
+            h4#diagnostic-header-onu Diagnóstico do CPE
             ul#diagnostic-router.list-inline
               li
                 strong Acesso WAN:
@@ -106,6 +109,12 @@
                 strong Comunicação com Flashman:
                 span#diagnostic-router-flashman
             ul#diagnostic-onu.list-inline
+              li#diagnostic-pon-element
+                strong Acesso PON:
+                span#diagnostic-onu-pon
+              li#diagnostic-rx-element
+                strong Sinal Óptico recebido:
+                span#diagnostic-onu-rx
               li
                 strong Acesso WAN:
                 span#diagnostic-onu-wan
@@ -128,10 +137,10 @@
                 strong Modo Mesh:
                 span#mesh-mode
               li
-                strong#mesh-slave-head Roteadores secundários:
+                strong#mesh-slave-head CPEs secundários:
                 ul.list-inline#mesh-slave-list
               li
-                strong#mesh-remove-head Roteadores removidos:
+                strong#mesh-remove-head CPEs removidos:
                 ul.list-inline#mesh-remove-list
           hr
           #wifi-config-none

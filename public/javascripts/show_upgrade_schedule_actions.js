@@ -1,3 +1,6 @@
+import Stepper from 'bs-stepper';
+import 'tempusdominus-bootstrap-4';
+
 let updateSearchResultsScheduler = function(result) {
   $('#allDevicesLabel').html(' ' + result.status.totalnum);
   let pageCount = $('#input-elements-pp option:selected').text();
@@ -473,9 +476,9 @@ $(document).ready(function() {
         p = swal({
           type: 'warning',
           title: 'Atenção!',
-          text: 'Alguns roteadores já iniciaram o processo de atualização, e ' +
+          text: 'Alguns CPEs já iniciaram o processo de atualização, e ' +
             'não serão interrompidos ao abortar o agendamento. Exporte o CSV ' +
-            'com os resultados para saber quais roteadores ainda estavam ' +
+            'com os resultados para saber quais CPEs ainda estavam ' +
             'atualizando.',
           confirmButtonText: 'Prosseguir',
           confirmButtonColor: '#4db6ac',
@@ -617,3 +620,5 @@ $(document).ready(function() {
 
   $('#prev-config-panel').hide();
 });
+
+export {updateSearchResultsScheduler};

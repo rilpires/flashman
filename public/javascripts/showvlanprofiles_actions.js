@@ -1,5 +1,8 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
+import 'regenerator-runtime/runtime';
 
-let checkVlanId = function(input) {
+window.checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol
   // vlan 2 is restricted to wan
   if (input.value != 1 && (input.value < 3 || input.value > 4094)) {
@@ -21,7 +24,7 @@ let checkVlanId = function(input) {
   }
 };
 
-let checkVlanName = function(input) {
+window.checkVlanName = function(input) {
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(input.value) == false) {
     input.setCustomValidity('O nome do Perfil de VLAN'+
       ' deve começar com um caractere do alfabeto,'+
@@ -152,7 +155,9 @@ $(document).ready(function() {
     ),
   );
   // Load table content
-  fetchVlanProfiles(vlanProfilesTable);
+  if (window.location.href.indexOf('/vlan/profile') !== -1) {
+    fetchVlanProfiles(vlanProfilesTable);
+  }
 
   $(document).on('click', '#card-header', function() {
     let plus = $(this).find('.fa-plus');

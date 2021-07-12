@@ -17,6 +17,8 @@ const convertDiagnostic = function(diagnostic) {
   return {
     wan: (diagnostic && diagnostic.wan === 0),
     tr069: (diagnostic && diagnostic.tr069 === 0),
+    pon: (diagnostic && 'pon' in diagnostic) ? diagnostic.pon : -1,
+    rxpower: (diagnostic && diagnostic.rxpower) ? diagnostic.rxpower : 0,
     ipv4: (diagnostic && diagnostic.ipv4 === 0),
     ipv6: (diagnostic && diagnostic.ipv6 === 0),
     dns: (diagnostic && diagnostic.dns === 0),
@@ -252,7 +254,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       if (!device) {
         return res.status(404).json({'error': 'MAC not found'});
       }
-      let content = req.body;
       let targetMode = parseInt(req.body.mesh_mode);
       if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
         if (targetMode === 0 && device.mesh_slaves.length > 0) {
@@ -385,19 +386,33 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
-        if (devices.length > 0) {
-          device = devices[0];
-        }
+        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      let tr069Info = {'url': '', 'interval': 0};
-      let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-        .exec().catch((err) => err));
+      let tr069Info = {url: '', interval: 0};
+      let config = await(ConfigModel.findOne(
+        {is_default: true},
+        {tr069: true,
+         certification: true}).exec().catch((err) => err));
       if (config.tr069) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
+      }
+      let certification = { // Structure with camel case format
+        requiredWan: true,
+        requiredIpv4: true,
+        requiredIpv6: false,
+        requiredDns: true,
+        requiredFlashman: true,
+      };
+      if (config.certification) {
+        certification.requiredWan = config.certification.wan_step_required;
+        certification.requiredIpv4 = config.certification.ipv4_step_required;
+        certification.requiredIpv6 = config.certification.ipv6_step_required;
+        certification.requiredDns = config.certification.dns_step_required;
+        certification.requiredFlashman =
+          config.certification.flashman_step_required;
       }
       if (!device) {
         return res.status(200).json({
@@ -405,6 +420,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'isRegister': false,
           'isOnline': false,
           'tr069Info': tr069Info,
+          'certification': certification,
         });
       } else if (req.body.isOnu) {
         // Save passwords sent from app
@@ -429,6 +445,9 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           onuConfig.onuUserPassword = (config.tr069.web_password_user) ?
                                       config.tr069.web_password_user : '';
           onuConfig.onuRemote = config.tr069.remote_access;
+          onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
+          onuConfig.onuPonThresholdCritical = config.tr069.pon_signal_threshold_critical;
+          onuConfig.onuPonThresholdCriticalHigh = config.tr069.pon_signal_threshold_critical_high;
         }
         return res.status(200).json({
           'success': true,
@@ -440,6 +459,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           },
           'tr069Info': tr069Info,
           'onuConfig': onuConfig,
+          'certification': certification,
         });
       }
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -460,6 +480,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'mesh_master': device.mesh_master,
           'mesh_slaves': device.mesh_slaves,
         },
+        'certification': certification,
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
@@ -486,7 +507,7 @@ diagAppAPIController.getTR069Config = async function(req, res) {
 };
 
 diagAppAPIController.configureWanOnu = async function(req, res) {
-    try {
+  try {
     // Make sure we have a mac/id to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
@@ -514,6 +535,41 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       // Apply changes to database and reply
       await device.save();
       return res.status(200).json({'success': true});
+    } else {
+      return res.status(403).json({'error': 'Did not specify MAC'});
+    }
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({'error': 'Internal error'});
+  }
+};
+
+diagAppAPIController.fetchOnuConfig = async function(req, res) {
+  try {
+    // Make sure we have a mac/id to verify in database
+    if (req.body.mac) {
+      // Fetch device from database - query depends on if it's ONU or not
+      let device;
+      if (req.body.isOnu && req.body.onuMac) {
+        device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu) {
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
+        if (devices.length > 0) {
+          device = devices[0];
+        }
+      } else {
+        device = await DeviceModel.findById(req.body.mac);
+      }
+      if (!device) {
+        return res.status(404).json({'error': 'MAC not found'});
+      }
+      return res.status(200).json({
+        'success': true,
+        'pppoeUser': device.pppoe_user,
+        'pppoePass': device.pppoe_password,
+        'wifiPass': device.wifi_password,
+        'wifiPass5ghz': device.wifi_password_5ghz,
+      });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
     }

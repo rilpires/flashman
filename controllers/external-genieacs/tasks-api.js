@@ -63,16 +63,16 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    let errorMsg = "";
+    let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
     } else if (doc.provision !== undefined) {
-      errorMsg += doc.message + ": provision " + doc.provision;
+      errorMsg += doc.message + ': provision ' + doc.provision;
     } else {
       errorMsg += JSON.stringify(doc);
     }
     await createNotificationForDevice(errorMsg, doc.device);
-    console.log('WARNING: genieacs created a fault'+(doc.device ? 
+    console.log('WARNING: genieacs created a fault'+(doc.device ?
       ' for device id '+doc.device : '')+'.');
   });
 };
@@ -98,14 +98,14 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   await notification.save(); // saving notification.
 };
 
-// removes entries in Genie's 'faults' and 'cache' collections related to 
+// removes entries in Genie's 'faults' and 'cache' collections related to
 // a given device id.
 genie.deleteCacheAndFaultsForDevice = async function(genieDeviceId) {
   // match anything that contains the given device id.
   let re = new RegExp('^'+genieDeviceId);
   await genieDB.collection('cache').deleteMany({_id: re});
   await genieDB.collection('faults').deleteMany({_id: re});
-}
+};
 
 // if allSettled is not defined in Promise, we define it here.
 if (Promise.allSettled === undefined) {
@@ -120,8 +120,8 @@ if (Promise.allSettled === undefined) {
 
 /* promisifying a nodejs http request. 'options' are the http.request option as
  defined by nodejs api. 'body' is the content of the request (should be a
- string) and it up to the caller to set the correct header in case body is used.
- */
+ string) and it is up to the caller to set the correct header in case body is
+ used. */
 const request = (options, body) => {
   return new Promise((resolve, reject) => {
     let req = http.request(options, (res) => {
@@ -240,6 +240,7 @@ let taskParameterIdFromType = {
   setParameterValues: 'parameterValues',
   refreshObject: 'objectName',
   addObject: 'objectName',
+  deleteObject: 'objectName',
   download: 'file',
   reboot: null,
 };
@@ -632,7 +633,7 @@ genie.addTask = async function(deviceid, task, shouldRequestConnection,
     throw new Error('device id not valid. Received:', deviceid);
   }
   // checking task format and data types.
-  if (!checkTask(task)) throw new Error('task not valid.');
+  if (!checkTask(task)) throw new Error('task not valid: '+JSON.stringify(task));
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.

@@ -37,7 +37,7 @@
                 strong Quando Atualizar
             .bs-stepper-content.mt-4
               #which-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="which-part-trigger")
-                h4.text-center Vamos selecionar quais roteadores serão atualizados?
+                h4.text-center Vamos selecionar quais CPEs serão atualizados?
                 hr
                 .teal.lighten-2.mt-4
                   ul#who-part-type.nav.nav-pills.nav-justified
@@ -75,7 +75,7 @@
                         input.form-control(type="text", readonly)
                         .input-group-append(
                           data-toggle="tooltip",
-                          title="Os arquivos CSV devem ter o MAC de cada roteador na primeira coluna, usando a vírgula (,) como separador."
+                          title="Os arquivos CSV devem ter o MAC de cada CPE na primeira coluna, usando a vírgula (,) como separador."
                         )
                           span.input-group-text.md-addon
                             .fas.fa-question-circle.fa-lg
@@ -90,7 +90,7 @@
                       #csv-result.text-center.mt-4
                         h6 Foram encontrados
                           span#csv-result-count
-                          span  roteadores a partir do arquivo.
+                          span  CPEs a partir do arquivo.
                           span#csv-result-error  Verifique se os dados fornecidos estão corretos.
                 .row.mt-4
                   .col-md-8.red-text.text-left.align-self-center
@@ -116,13 +116,13 @@
                       span#warning-newTotal
                       span  dos
                       span#warning-prevTotal
-                      span  roteadores selecionados serão atualizados!
+                      span  CPEs selecionados serão atualizados!
                   #list-onus
                     h6.mt-4 Dentre os selecionados, 
                       span#onu-count
                       span são ONUs e por isso não serão atualizadas.
                   #list-missing-models
-                    h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os roteadores!
+                    h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os CPEs!
                     ul#warning-missing-models
                 .text-right.mt-4
                   button#how-btn-prev.btn.btn-primary(type="button")
@@ -130,7 +130,7 @@
                   button#how-btn-next.btn.btn-primary(type="button")
                     strong Próximo
               #when-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="when-part-trigger")
-                h4.text-center Vamos selecionar quando os roteadores serão atualizados?
+                h4.text-center Vamos selecionar quando os CPEs serão atualizados?
                 hr
                 .mt-4.text-center.pb-2
                   .custom-control.custom-checkbox.custom-control-inline
@@ -214,7 +214,7 @@
                     span  Nenhum filtro utilizado
               else
                 li
-                  strong Foi utilizado um arquivo CSV para filtrar os roteadores
+                  strong Foi utilizado um arquivo CSV para filtrar os CPEs
               li
                 strong Release escolhida:
                   span  #{update_schedule.release}

@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+import Validator from './device_validator.js';
 
 let renderEditErrors = function(errors) {
   for (let key in errors) {
@@ -67,6 +69,12 @@ let validateEditDevice = function(event) {
   let power5ghz = $('#edit_wifi5_power-' + index.toString()).val();
   let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
   let wifiHidden5ghz = ($('#edit_wifi5_hidden-' + index.toString()).is(':checked') ? 1 : 0);
+  let isDeviceSsidPrefixEnabled = ($('#edit_is_ssid_prefix_enabled-' +
+    index.toString()).is(':checked') ? 1 : 0);
+  let ssidPrefix = '';
+  if (isDeviceSsidPrefixEnabled == 1) {
+    ssidPrefix = $('#ssid_prefix').html();
+  }
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
@@ -145,7 +153,8 @@ let validateEditDevice = function(event) {
     }
   }
   if (validateWifi) {
-    genericValidate(ssid, validator.validateSSID, errors.ssid);
+    genericValidate(ssidPrefix+ssid,
+      validator.validateSSID, errors.ssid);
     genericValidate(password, validator.validateWifiPassword, errors.password);
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
@@ -157,7 +166,7 @@ let validateEditDevice = function(event) {
     genericValidate(power, validator.validatePower, errors.power);
   }
   if (validateWifi5ghz) {
-    genericValidate(ssid5ghz,
+    genericValidate(ssidPrefix+ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
     genericValidate(password5ghz,
                     validator.validateWifiPassword, errors.password5ghz);
@@ -245,6 +254,7 @@ let validateEditDevice = function(event) {
     data.content.wifi_state_5ghz = wifiState5ghz;
     data.content.wifi_hidden = wifiHidden;
     data.content.wifi_hidden_5ghz = wifiHidden5ghz;
+    data.content.isSsidPrefixEnabled = isDeviceSsidPrefixEnabled;
 
     $.ajax({
       type: 'POST',
@@ -255,6 +265,16 @@ let validateEditDevice = function(event) {
       success: function(resp) {
         editFormObj.removeClass('was-validated');
         displayAlertMsg({type: 'success', message: 'Editado com sucesso'});
+        // remove checkbox on request success
+        // if is to disable ssid prefix on device
+        // (case is not enable anymore in all flashman)
+        if (isDeviceSsidPrefixEnabled == 0 &&
+            !$('#ssid_prefix').data('isenabled')) {
+          $('#ssid_prefix_checkbox-' + index.toString()).
+            removeClass('d-block');
+          $('#ssid_prefix_checkbox-' + index.toString()).
+            addClass('d-none');
+        }
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
