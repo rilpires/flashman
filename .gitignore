@@ -75,6 +75,9 @@ typings/
 # Deployment configuration file
 config/configs.js
 
+# Webpack dev files
+public/dist/*.map
+
 ### Vim ###
 # swap
 [._]*.s[a-v][a-z]
