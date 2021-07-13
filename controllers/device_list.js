@@ -333,7 +333,12 @@ deviceListController.changeUpdate = function(req, res) {
       }
 
       if (matchedDevice.use_tr069 && doUpdate) {
-        acsDeviceInfo.upgradeFirmware(matchedDevice);
+        try {
+          acsDeviceInfo.upgradeFirmware(matchedDevice);
+        } catch (e) {
+          res.status(500).json({success: false,
+            message: e});
+        }
       } else {
         mqtt.anlixMessageRouterUpdate(matchedDevice._id);
       }
