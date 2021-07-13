@@ -153,7 +153,13 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
                      {bridge_mode_enabled: true, connection_type: 'pppoe'},
                      {isSsidPrefixEnabled: {$exists: false}},
                      {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
-  ]}, function(err, devices) {
+  ]},
+  {installed_release: true, do_update: true,
+   do_update_status: true, release: true,
+   mesh_key: true, mesh_id: true,
+   bridge_mode_enabled: true, connection_type: true,
+   pppoe_user: true, pppoe_password: true, isSsidPrefixEnabled: true},
+  function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
         let saveDevice = false;
