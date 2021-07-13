@@ -473,7 +473,8 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
-        isClientPayingPersonalizationApp: !!matchedConfig.personalizationHash,
+        isClientPayingPersonalizationApp: (
+          matchedConfig.personalizationHash !== '' ? true : false),
         isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
@@ -590,17 +591,18 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
-    config.isSsidPrefixEnabled = (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-
-    let validField = validator.
-      validateSSIDPrefix(req.body['ssid-prefix']);
-    if (!validField.valid) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro validando os campos',
-      });
+    if (config.personalizationHash !== '') {
+      config.isSsidPrefixEnabled =
+        (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
+      if (!validField.valid) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Erro validando os campos',
+        });
+      }
+      config.ssidPrefix = req.body['ssid-prefix'];
     }
-    config.ssidPrefix = req.body['ssid-prefix'];
 
     let ponSignalThresholdCriticalHigh = parseInt(
       req.body['pon-signal-threshold-critical-high']);
