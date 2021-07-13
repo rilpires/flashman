@@ -571,7 +571,7 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildPonSignalColumn = function(device, isTR069 = false) {
+  const buildPonSignalColumn = function(device, grantPonSignalSupport = false) {
     let ponSignalStatus;
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
@@ -1148,7 +1148,7 @@ $(document).ready(function() {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
-          let ponSignalCol = buildPonSignalColumn(device, isTR069);
+          let ponSignalCol = buildPonSignalColumn(device, grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
