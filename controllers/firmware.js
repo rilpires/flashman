@@ -4,6 +4,7 @@ let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const DeviceVersion = require('../models/device_version');
+const acsDeviceInfo = require('./acs_device_info.js');
 
 const fs = require('fs');
 const fsPromises = fs.promises;
@@ -35,24 +36,34 @@ let parseFilename = function(filename) {
   return firmwareFields;
 };
 
-let removeFirmware = function(firmware) {
-  return new Promise((resolve, reject)=> {
-    fs.unlink(imageReleasesDir + firmware.filename, function(err) {
-      if (err) {
-        return reject('Arquivo não encontrado');
-      }
+let removeFirmware = async function(firmware) {
+  try {
+    await fsPromises.unlink(imageReleasesDir + firmware.filename);
+  } catch (e) {
+    throw new 'Arquivo bin não encontrado';
+  }
 
-      let md5fname = '.' + firmware.filename.replace('.bin', '.md5');
-      fs.unlink(path.join(imageReleasesDir, md5fname), function(err) {
-        firmware.remove(function(error) {
-          if (error) {
-            return reject('Registro não encontrado');
-          }
-          return resolve();
-        });
-      });
-    });
-  });
+  if (firmware.cpe_type == 'tr069') {
+    try {
+      await acsDeviceInfo.delFirmwareInGenie(firmware.filename);
+    } catch (Err) {
+      throw new Err;
+    }
+  }
+
+  let md5fname = '.' + firmware.filename.replace('.bin', '.md5');
+
+  try {
+    await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
+  } catch (e) {
+    throw new 'Arquivo md5 não encontrado';
+  }
+  try {
+    await firmware.remove();
+  } catch (e) {
+    throw new 'Registro não encontrado';
+  }
+  return;
 };
 
 let getVendorByModel = function(model) {
@@ -338,6 +349,13 @@ firmwareController.uploadFirmware = async function(req, res) {
 
   try {
     await firmware.save();
+    if (isTR069) {
+      try {
+        await acsDeviceInfo.addFirmwareInGenie(firmware);
+      } catch (e) {
+        res.json({type: 'danger', message: e});
+      }
+    }
     return res.json({
       type: 'success',
       message: 'Upload de firmware feito com sucesso!',
