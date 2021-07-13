@@ -312,15 +312,22 @@ firmwareController.uploadFirmware = async function(req, res) {
   }
 
   try {
-    firmware = await Firmware.findOne({
-      vendor: fnameFields.vendor,
-      model: fnameFields.model,
-      version: fnameFields.version,
-      release: fnameFields.release,
-      filename: firmwarefile.name,
-      oui: fnameFields.oui,
-      cpe_type: fnameFields.cpe_type,
-    });
+    if (isTR069) {
+      firmware = await Firmware.findOne({
+        model: fnameFields.model,
+        version: fnameFields.version,
+      });
+    } else {
+      firmware = await Firmware.findOne({
+        vendor: fnameFields.vendor,
+        model: fnameFields.model,
+        version: fnameFields.version,
+        release: fnameFields.release,
+        filename: firmwarefile.name,
+        oui: fnameFields.oui,
+        cpe_type: fnameFields.cpe_type,
+      });
+    }
   } catch (err) {
     // Remove downloaded files
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
@@ -338,6 +345,13 @@ firmwareController.uploadFirmware = async function(req, res) {
       cpe_type: fnameFields.cpe_type,
     });
   } else {
+    if (isTR069) {
+      return res.json({
+        type: 'danger',
+        message: 'Não é possível cadastrar mais de'+
+        ' um firmware para um determinado modelo/versão',
+      });
+    }
     firmware.vendor = fnameFields.vendor;
     firmware.model = fnameFields.model;
     firmware.version = fnameFields.version;
