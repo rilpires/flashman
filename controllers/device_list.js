@@ -332,7 +332,7 @@ deviceListController.changeUpdate = function(req, res) {
                                      message: 'Erro ao registrar atualização'});
       }
 
-      if (matchedDevice.use_tr069) {
+      if (matchedDevice.use_tr069 && doUpdate) {
         acsDeviceInfo.upgradeFirmware(matchedDevice);
       } else {
         mqtt.anlixMessageRouterUpdate(matchedDevice._id);
