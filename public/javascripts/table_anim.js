@@ -577,13 +577,12 @@ $(document).ready(function() {
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
       ponSignalRxPower = '';
+    } else if (device.pon_rxpower >= 3){
+      ponSignalStatus = '<div class="badge red">Erro Sinal Alto</div>';
     } else if (device.pon_rxpower >= -18) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
     } else if (device.pon_rxpower <= -23) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
-    } else if (device.pon_rxpower >= 3){
-      ponSignalStatus = '<div class="badge red">Sinal Perigoso</div>';
-    }
     let ponSignalStatusColumn = (isTR069) ? `
       <td>
         <div class="text-center align-items-center">

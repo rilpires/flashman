@@ -528,16 +528,16 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
       } 
-    } else if (/^(sinal) (?:ruim|bom|perigoso)$/.test(tag)) { 
+    } else if (/^(sinal) (?:erro|bom|ruim)$/.test(tag)) { 
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig.pon_signal_threshold === undefined &&
           matchedConfig.pon_signal_threshold_critical === undefined &&
           matchedConfig.pon_signal_threshold_critical_high === undefined) {
-        if (tag.includes('ruim')) {
+        if (tag.includes('erro')) {
           query.pon_rxpower = {$gte: 3};
         } else if (tag.includes('bom')) {
           query.pon_rxpower = {$gte: -18};
-        } else if (tag.includes('perigoso')) {
+        } else if (tag.includes('ruim')) {
           query.pon_rxpower = {$lte: -23};
         }
       } else { 
@@ -546,8 +546,8 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
             $gte: matchedConfig.pon_signal_threshold_critical_high
           };
         } else if (tag.includes('bom')) {
-          query.pon_rxpower = {$gte: matchedConfig.pon_signal_threshold};
-        } else if (tag.includes('perigoso')) {
+          query.pon_rxpower = {$lte: matchedConfig.pon_signal_threshold};
+        } else if (tag.includes('ruim')) {
           query.pon_rxpower = {
             $lte: matchedConfig.pon_signal_threshold_critical
           };
@@ -555,7 +555,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
-      query.pon_rxpower = undefined
+      query.pon_rxpower = {$exists: false}
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // ONU routers.
