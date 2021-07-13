@@ -2,6 +2,7 @@ const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const FirmwareModel = require('../models/firmware');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
@@ -1435,43 +1436,103 @@ acsDeviceInfoController.delFirmwareInGenie = async function(filename) {
   req.end();
 };
 
-acsDeviceInfoController.getFirmwaresFromGenie = async function() {
-  let path = '/files/';
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (res) => {
-    if (res.statusCode != 200) {
-      throw new 'http status code = '+
-        res.statusCode;
-    }
-    let data = '';
-    res.setEncoding('utf8');
-    res.on('data', (chunk)=>data+=chunk);
-    res.on('end', async () => {
-      try {
-        data = JSON.parse(data);
-      } catch (Err) {
-        throw new Err;
+acsDeviceInfoController.getFirmwaresFromGenie = function() {
+  return new Promise(function(resolve, reject) {
+    let path = '/files/';
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      // hostname: '207.246.65.243',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let req = http.request(options, (res) => {
+      if (res.statusCode != 200) {
+        reject('http status code = '+
+          res.statusCode);
       }
-      return data;
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk)=>data+=chunk);
+      res.on('end', async () => {
+        try {
+          data = JSON.parse(data);
+        } catch (Err) {
+          reject(Err);
+        }
+        resolve(data);
+      });
     });
+    req.on('error', function(Err) {
+      throw new Err;
+    });
+    req.end();
   });
-  req.on('error', function(Err) {
-    throw new Err;
-  });
-  req.end();
 };
 
 acsDeviceInfoController.upgradeFirmware = async function(device) {
   console.log('Upgrading tr069 firmware...');
-  // verify existence in nbi through 7557/files/
+  let firmwares;
+  try {
+    // verify existence in nbi through 7557/files/
+    firmwares = await acsDeviceInfoController.
+      getFirmwaresFromGenie();
+  } catch (e) {
+    console.log(e);
+  }
+  let firmware = firmwares.find((f) => f.metadata.version == device.release);
   // if not exists add
+  if (!firmware) {
+    firmware = await FirmwareModel.findOne({
+      model: device.model,
+      version: device.release,
+      release: device.release,
+      cpe_type: 'tr069',
+    });
+    if (!firmware) {
+      throw new 'Não existe firmware com essa versão';
+    } else {
+      acsDeviceInfoController.addFirmwareInGenie(firmware);
+    }
+  }
   // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  return new Promise(function(resolve, reject) {
+    let postData = JSON.stringify({
+      name: 'download',
+      instance: '1',
+      fileType: '1 Firmware Upgrade Image',
+      fileName: firmware.filename,
+    });
+    let path = '/devices/'+device.acs_id+
+      '/tasks?timeout=3000&connection_request';
+    let options = {
+      method: 'POST',
+      hostname: 'localhost',
+      // hostname: '207.246.65.243',
+      port: 7557,
+      path: encodeURI(path),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(postData),
+      },
+    };
+    let req = http.request(options, (res) => {
+      if (res.statusCode != 200) {
+        reject('http status code = '+
+          res.statusCode);
+      } else {
+        console.log('Atualização de Firmware no '+
+          device.acs_id+' submetida com sucesso');
+        resolve('Atualização de Firmware no '+
+          device.acs_id+' submetida com sucesso');
+      }
+    });
+    req.on('error', function(Err) {
+      throw new Err;
+    });
+    req.write(postData);
+    req.end();
+  });
 };
 
 module.exports = acsDeviceInfoController;
