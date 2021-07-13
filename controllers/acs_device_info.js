@@ -411,6 +411,17 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
+    if (device.installed_release === device.release) {
+      device.do_update = false;
+      device.do_update_status = 1;
+      /*
+      else
+        device.do_update_status = 2; // img download failed
+        device.do_update_status = 3; // img check failed
+        device.do_update_status = 4; // ??
+        device.do_update_status = 5; // ack not received
+      */
+    }
   }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
@@ -1471,7 +1482,6 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
 };
 
 acsDeviceInfoController.upgradeFirmware = async function(device) {
-  console.log('Upgrading tr069 firmware...');
   let firmwares;
   try {
     // verify existence in nbi through 7557/files/
@@ -1521,8 +1531,6 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
         reject('http status code = '+
           res.statusCode);
       } else {
-        console.log('Atualização de Firmware no '+
-          device.acs_id+' submetida com sucesso');
         resolve('Atualização de Firmware no '+
           device.acs_id+' submetida com sucesso');
       }
