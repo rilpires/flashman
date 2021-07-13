@@ -1368,109 +1368,103 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   }
 };
 
-acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
-  return new Promise(function(resolve, reject) {
-    let readStream = fs.createReadStream(path.join(imageReleasesDir,
-                                             firmware.filename));
-    let chunks = [];
-    readStream.on('data', (chunk) => chunks.push(chunk));
-    readStream.on('end', () => {
-      let binaryData = Buffer.concat(chunks);
-      let path = '/files/'+firmware.filename;
-      let options = {
-        method: 'PUT',
-        hostname: 'localhost',
-        // hostname: '207.246.65.243',
-        port: 7557,
-        path: encodeURI(path),
-        headers: {
-          // 'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Type': 'application/octet-stream',
-          'Content-Length': Buffer.byteLength(binaryData),
-          'fileType': '1 Firmware Upgrade Image',
-          'oui': firmware.oui,
-          'productClass': firmware.model,
-          'version': firmware.version,
-        },
-      };
-      let req = http.request(options, (res) => {
-        if (res.statusCode != 201) {
-          reject({success: false,
-            message: 'Erro ao adicionar firmware no genie. '+
-            'http status code = '+res.statusCode});
-        } else {
-          resolve({success: true,
-            message: 'Firmware adicionado do genie com sucesso'});
-        }
-      });
-      req.write(binaryData);
-      req.on('error', function(err) {
-        reject(err);
-      });
-      req.end();
-    });
-  });
-};
-
-acsDeviceInfoController.delFirmwareInGenie = function(filename) {
-  return new Promise(function(resolve, reject) {
-    let path = '/files/'+filename;
+acsDeviceInfoController.addFirmwareInGenie = async function(firmware) {
+  let readStream = fs.createReadStream(path.join(imageReleasesDir,
+                                           firmware.filename));
+  let chunks = [];
+  readStream.on('data', (chunk) => chunks.push(chunk));
+  readStream.on('end', () => {
+    let binaryData = Buffer.concat(chunks);
+    let path = '/files/'+firmware.filename;
     let options = {
-      method: 'DELETE',
+      method: 'PUT',
       hostname: 'localhost',
       // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
+      headers: {
+        'fileType': '1 Firmware Upgrade Image',
+        'oui': firmware.oui,
+        'productClass': firmware.model,
+        'version': firmware.version,
+        // 'Content-Type': 'application/octet-stream',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(binaryData),
+        'Expect': '100-continue',
+      },
     };
     let req = http.request(options, (res) => {
-      if (res.statusCode != 200) {
-        reject({success: false,
-          message: 'Erro ao deletar firmware do genie. '+
-          'http status code = '+res.statusCode});
+      if (res.statusCode != 201 && res.statusCode != 100) {
+        throw new 'Erro ao adicionar firmware no genie. '+
+          'http status code = '+res.statusCode;
       } else {
-        resolve({success: true,
-          message: 'Firmware deletado do genie com sucesso'});
+        return 'Firmware adicionado no genie com sucesso';
       }
     });
-    req.on('error', function(err) {
-      reject(err);
+    req.write(binaryData);
+    req.on('timeout', function() {
+      console.log('!!! Timeout on '+firmware.filename+' http put');
+    });
+    req.on('error', function(Err) {
+      throw new Err;
     });
     req.end();
   });
 };
 
-acsDeviceInfoController.getFirmwaresFromGenie = function() {
-  return new Promise(function(resolve, reject) {
-    let path = '/files/';
-    let options = {
-      method: 'GET',
-      hostname: 'localhost',
-      // hostname: '207.246.65.243',
-      port: 7557,
-      path: encodeURI(path),
-    };
-    let req = http.request(options, (res) => {
-      if (res.statusCode != 200) {
-        return reject(new Error('http status code = '+
-          res.statusCode));
-      }
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (chunk)=>data+=chunk);
-      res.on('end', async () => {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          reject(e);
-        }
-        resolve(data);
-      });
-    });
-    req.on('error', function(err) {
-      reject(err);
-    });
-    req.end();
+acsDeviceInfoController.delFirmwareInGenie = async function(filename) {
+  let path = '/files/'+filename;
+  let options = {
+    method: 'DELETE',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (res) => {
+    if (res.statusCode != 200) {
+      throw new 'Erro ao deletar firmware do genie. '+
+        'http status code = '+res.statusCode;
+    } else {
+      return 'Firmware deletado do genie com sucesso';
+    }
   });
+  req.on('error', function(Err) {
+    throw new Err;
+  });
+  req.end();
+};
+
+acsDeviceInfoController.getFirmwaresFromGenie = async function() {
+  let path = '/files/';
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (res) => {
+    if (res.statusCode != 200) {
+      throw new 'http status code = '+
+        res.statusCode;
+    }
+    let data = '';
+    res.setEncoding('utf8');
+    res.on('data', (chunk)=>data+=chunk);
+    res.on('end', async () => {
+      try {
+        data = JSON.parse(data);
+      } catch (Err) {
+        throw new Err;
+      }
+      return data;
+    });
+  });
+  req.on('error', function(Err) {
+    throw new Err;
+  });
+  req.end();
 };
 
 acsDeviceInfoController.upgradeFirmware = async function(device) {
