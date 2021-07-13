@@ -1,5 +1,7 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
 
-let check = function(input) {
+const check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {
     input.setCustomValidity('As senhas estão diferentes');
   } else {
@@ -145,9 +147,9 @@ const fetchCertification = function(id, name, timestamp) {
               $('<span></span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
-        } else if (cert.routerConnType === "Bridge (IP Fixo)") {
+        } else if (cert.routerConnType === 'Bridge (IP Fixo)') {
           wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP Fixo do Roteador:'),
+            $('<strong></strong>').html('IP Fixo do CPE:'),
             $('<span></span>').html('&nbsp;'+cert.bridgeIP),
           ));
           wanList.append($('<li></li>').append(
@@ -256,12 +258,12 @@ const fetchCertification = function(id, name, timestamp) {
         $('#mesh-slave-list').html('');
         $('#mesh-remove-list').html('');
         if (cert.mesh.updatedSlaves && cert.mesh.updatedSlaves.length > 0) {
-          $('#mesh-slave-head').html('Roteadores secundários:');
+          $('#mesh-slave-head').html('CPEs secundários:');
           cert.mesh.updatedSlaves.forEach((slave)=>{
             $('#mesh-slave-list').append('<li>'+slave+'</li>');
           });
         } else {
-          $('#mesh-slave-head').html('A rede Mesh não possui roteadores secundários');
+          $('#mesh-slave-head').html('A rede Mesh não possui CPEs secundários');
         }
         if (cert.mesh.originalSlaves && cert.mesh.originalSlaves.length > 0) {
           let removedRouters = cert.mesh.originalSlaves;
@@ -271,15 +273,15 @@ const fetchCertification = function(id, name, timestamp) {
             });
           }
           if (removedRouters.length > 0) {
-            $('#mesh-remove-head').html('Roteadores secundários removidos:');
+            $('#mesh-remove-head').html('CPEs secundários removidos:');
             removedRouters.forEach((slave)=>{
               $('#mesh-remove-list').append('<li>'+slave+'</li>');
             });
           } else {
-            $('#mesh-remove-head').html('Nenhum roteador secundário foi removido');
+            $('#mesh-remove-head').html('Nenhum CPE secundário foi removido');
           }
         } else {
-          $('#mesh-remove-head').html('Nenhum roteador secundário foi removido');
+          $('#mesh-remove-head').html('Nenhum CPE secundário foi removido');
         }
         $('#mesh-config-none').hide();
         $('#mesh-config-done').show();

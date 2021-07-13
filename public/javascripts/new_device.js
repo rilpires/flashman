@@ -1,3 +1,5 @@
+import 'jquery-mask-plugin';
+import Validator from './device_validator.js';
 
 let renderDeviceErrors = function(errors) {
   for (let key in errors) {
@@ -34,6 +36,11 @@ let validateNewDevice = function() {
   let mode = $('#new_wifi_mode').val();
   let externalReferenceType = $('#new_ext_ref_type_selected').html();
   let externalReferenceData = $('#new_external_reference').val();
+  let ssidPrefix = '';
+  let isSsidPrefixEnabled = $('#ssid_prefix').data('isenabled');
+  if (isSsidPrefixEnabled) {
+    ssidPrefix = $('#ssid_prefix').html();
+  }
 
   // Initialize error structure
   let errors = {
@@ -66,7 +73,7 @@ let validateNewDevice = function() {
     genericValidate(pppoePassword, validator.validatePassword,
                     errors.pppoe_password, pppoePassLength);
   }
-  genericValidate(ssid, validator.validateSSID, errors.ssid);
+  genericValidate(ssidPrefix+ssid, validator.validateSSID, errors.ssid);
   genericValidate(password, validator.validateWifiPassword, errors.password);
   genericValidate(channel, validator.validateChannel, errors.channel);
   genericValidate(band, validator.validateBand, errors.band);

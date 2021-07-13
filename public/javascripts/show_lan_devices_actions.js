@@ -1,3 +1,4 @@
+import {displayAlertMsg, socket} from './common_actions.js';
 
 $(document).ready(function() {
   let lanDevicesGlobalTimer;
@@ -281,7 +282,7 @@ $(document).ready(function() {
           (hasSlaves ?
             $('<div>').addClass('row pt-2').append(
               $('<div>').addClass('col').append(
-                $('<div>').addClass('badge primary-color').html('Conectado no roteador ' + device.gateway_mac),
+                $('<div>').addClass('badge primary-color').html('Conectado no CPE ' + device.gateway_mac),
               ),
           ) : ''),
           $('<div>').addClass('row pt-2').append(

@@ -1,8 +1,5 @@
 extends layout
 
-block stylesheets
-  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
-
 block content
   .row.justify-content-center
     .col-12.col-lg-8.mt-5
@@ -19,7 +16,7 @@ block content
         .card-body.collapse.out(id="new-vlan-profile-card")
           .alert.alert-info
             .fas.fa-info-circle.fa-lg
-            span &nbsp; Importante! Os modelos de roteadores possuem diferentes valores máximos de VLAN ID
+            span &nbsp; Importante! Os modelos de CPEs possuem diferentes valores máximos de VLAN ID
             table.table.table-sm.table-borderless.text-center
               thead
                 tr
@@ -71,6 +68,4 @@ block content
               th.text-center
 
 block scripts
-  script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
-  script(src='/scripts/datatables.net-bs4/js/dataTables.bootstrap4.min.js')
-  script(src='/javascripts/showvlanprofiles_actions.js')
+  script(src='/dist/showvlanprofiles.bundle.js')

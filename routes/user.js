@@ -47,6 +47,11 @@ router.route('/edit/:id').post(
   authController.ensureLogin(),
   userController.editUser)
 
+router.route('/settings').get(
+  authController.ensureLogin(),
+  userController.settings
+)
+
 // ** DEPRECATED **
                          .put(
   authController.ensureAPIAccess,

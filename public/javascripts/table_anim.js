@@ -1,4 +1,10 @@
-/* eslint-disable max-len */
+import 'jquery-mask-plugin';
+import {tagsInput} from 'tags-input';
+import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
+import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
+import {displayAlertMsg,
+        secondsTimeSpanToHMS,
+        socket} from './common_actions.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -158,7 +164,7 @@ $(document).ready(function() {
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets
   // all classes after loading
-  $('.tags-input').addClass('form-control');
+  $('.tags-input').addClass('form-control').css('padding', '0');
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
@@ -342,7 +348,7 @@ $(document).ready(function() {
     let filterList = $('#devices-search-input').val();
     let exportURL = '/devicelist/export?filter=' +
                     encodeURIComponent(filterList);
-    downloadCSV(exportURL, 'lista-de-roteadores-flashbox.csv');
+    downloadCSV(exportURL, 'lista-de-cpes-flashbox.csv');
   });
 
   $(document).on('click', '.tab-switch-btn', function(event) {
@@ -390,12 +396,12 @@ $(document).ready(function() {
         if (status == 0 || status == 10) {
           upgradeStatus.find('.status-waiting').removeClass('d-none');
           let slaveCount = row.data('slave-count');
-          let tooltip = 'Atualizando roteador...';
+          let tooltip = 'Atualizando CPE...';
           if (remain === slaveCount+1) {
-            tooltip = 'Atualizando roteador mestre...';
+            tooltip = 'Atualizando CPE principal...';
           } else if (remain > 0) {
             let current = slaveCount - remain + 1;
-            tooltip = 'Atualizando roteador slave '+
+            tooltip = 'Atualizando CPE secundário '+
               current+' de '+slaveCount+'...';
           }
           upgradeStatus.find('.status-waiting').attr('title', tooltip);
@@ -448,6 +454,11 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
+    let isTR069 = row.data('isTr069');
+    let upstatusCmd = 'upstatus';
+    if (isTR069) {
+      upstatusCmd += 'tr069';
+    }
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
@@ -460,7 +471,7 @@ $(document).ready(function() {
     if (!sysUptime.hasClass('pending-update') &&
         !wanUptime.hasClass('pending-update')) {
       $.ajax({
-        url: '/devicelist/command/' + deviceId + '/upstatus',
+        url: '/devicelist/command/' + deviceId + '/' + upstatusCmd,
         type: 'post',
         dataType: 'json',
         success: function(res) {
@@ -608,7 +619,7 @@ $(document).ready(function() {
     let slaveCount = slaves.length;
     let currentSlave = device._id;
     let currentSlaveNum = 0;
-    let tooltipMsg = 'Atualizando roteador...';
+    let tooltipMsg = 'Atualizando CPE...';
     if (slaveCount > 0) {
       slaves.forEach((slave)=>{
         if (inProgress) return;
@@ -617,10 +628,10 @@ $(document).ready(function() {
         currentSlave = slave._id;
       });
       if (meshCount === slaveCount+1) {
-        tooltipMsg = 'Atualizando roteador mestre...';
+        tooltipMsg = 'Atualizando CPE principal...';
       } else {
         currentSlaveNum = slaveCount - meshCount + 1;
-        tooltipMsg = 'Atualizando roteador slave '+currentSlaveNum+' de '+slaveCount+'...';
+        tooltipMsg = 'Atualizando CPE secundário '+currentSlaveNum+' de '+slaveCount+'...';
       }
     }
     if (inProgress) {
@@ -671,7 +682,7 @@ $(document).ready(function() {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
     let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
-    let refreshIcon = (meshSlave || isTR069) ? '' :
+    let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
@@ -727,7 +738,8 @@ $(document).ready(function() {
     '</div>';
   };
 
-  const buildAboutTab = function(device, index, isTR069, mesh=-1) {
+  const buildAboutTab = function(device, index, isTR069,
+                                 hasExtendedChannels, mesh=-1) {
     let idIndex = ((mesh > -1) ? index + '_' + mesh : index); // Keep _ !
     let createdDateStr = '';
     let resetDateStr = '';
@@ -746,7 +758,7 @@ $(document).ready(function() {
         {hour: '2-digit', minute: '2-digit'});
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
-      '<label class="active">Último reset no roteador realizado em</label>'+
+      '<label class="active">Último reset no CPE realizado em</label>'+
       '<input class="form-control" type="text" '+
       'disabled value="'+resetDateStr+'">'+
       '<div class="invalid-feedback"></div>'+
@@ -754,7 +766,7 @@ $(document).ready(function() {
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Registro do roteador criado em</label>'+
+          '<label class="active">Registro do CPE criado em</label>'+
           '<input class="form-control" type="text" '+
           'disabled value="'+createdDateStr+'">'+
           '<div class="invalid-feedback"></div>'+
@@ -814,6 +826,11 @@ $(document).ready(function() {
                   '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
                   '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
                   '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
+                  (hasExtendedChannels ?
+                    '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>12</option>'+
+                    '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>13</option>':
+                    ''
+                  )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -823,7 +840,7 @@ $(document).ready(function() {
               '<div class="md-selectfield form-control my-0">'+
                 '<label class="text-primary active">Canal do Wi-Fi 5.0GHz</label>'+
                 '<select class="browser-default md-select" id="edit_wifi5_channel-'+idIndex+'" '+
-                '$REPLACE_WIFI_EN>'+
+                '$REPLACE_WIFI5_EN>'+
                   '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
                   '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
                   '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
@@ -985,13 +1002,21 @@ $(document).ready(function() {
           displayAlertMsg(res);
           return;
         }
+        // show or not ssid prefix in new device form
+        $('#ssid_prefix').text(res.ssidPrefix);
+        $('#ssid_prefix').data('isenabled', res.isSsidPrefixEnabled);
+        if (res.isSsidPrefixEnabled) {
+          $('#ssid_prefix_div').removeClass('d-none');
+          $('#ssid_prefix_div').addClass('d-block');
+          $('#ssid_label').addClass('active');
+        }
         // Stop loading animation
         deviceTableContent.empty();
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
             '<tr><td class="grey lighten-5 text-center" colspan="12">'+
-              '<h5>Nenhum roteador encontrado</h5>'+
+              '<h5>Nenhum CPE encontrado</h5>'+
             '</td></tr>',
           );
           // Attach elements back to DOM after manipulation
@@ -1072,6 +1097,8 @@ $(document).ready(function() {
           let grantWifiPowerHiddenIpv6Box =
             (device.use_tr069) ? false :
             device.permissions.grantWifiPowerHiddenIpv6Box;
+          let grantWifiExtendedChannels =
+            device.permissions.grantWifiExtendedChannels;
           let grantLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
@@ -1153,6 +1180,7 @@ $(document).ready(function() {
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
           formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
+          formAttr += ' data-has-extended-channels="'+grantWifiExtendedChannels+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
@@ -1167,7 +1195,7 @@ $(document).ready(function() {
           let logAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
           .replace('$REPLACE_ICON', 'fa-file-alt')
-          .replace('$REPLACE_TEXT', 'Logs do roteador');
+          .replace('$REPLACE_TEXT', 'Logs do CPE');
 
           let unblockAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-reset-blocked')
@@ -1231,7 +1259,7 @@ $(document).ready(function() {
 
           let idxMenu = 0;
           let sideMenu = [];
-          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar roteador</span></a>';
+          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar CPE</span></a>';
           sideMenu[1] = '<div><a class="dropdown-item btn-reset-app"><i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span></a>';
 
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
@@ -1302,7 +1330,7 @@ $(document).ready(function() {
           devActions = devActions.replace('$REPLACE_RIGHT_MENU', sideMenu[1]);
 
           let aboutTab = '<div class="edit-tab" id="tab_about-'+index+'">'+
-            buildAboutTab(device, index, isTR069)+
+            buildAboutTab(device, index, isTR069, grantWifiExtendedChannels)+
           '</div>';
           if (!isSuperuser && !grantDeviceId) {
             aboutTab = aboutTab.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -1355,7 +1383,7 @@ $(document).ready(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este roteador está em modo bridge! Para alterar os dados da WAN, retire o roteador do modo bridge primeiro.'+
+                    'Este CPE está em modo bridge! Para alterar os dados da WAN, retire o CPE do modo bridge primeiro.'+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1372,7 +1400,7 @@ $(document).ready(function() {
                       '</select>'+
                     '</div>'+
                     '<h7 class="orange-text d-none" id="edit_connect_type_warning-'+index+'">'+
-                      'Cuidado! Isso pode deixar o roteador inacessível '+
+                      'Cuidado! Isso pode deixar o CPE inacessível '+
                       'dependendo das configurações de rede do seu provedor'+
                     '</h7>'+
                   '</div>'+
@@ -1455,7 +1483,7 @@ $(document).ready(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este roteador está em modo bridge! Para alterar os dados da LAN, retire o roteador do modo bridge primeiro.'+
+                    'Este CPE está em modo bridge! Para alterar os dados da LAN, retire o CPE do modo bridge primeiro.'+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1464,7 +1492,7 @@ $(document).ready(function() {
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">'+
-                    (grantLanGwEdit ? 'IP do Roteador' : 'IP da Rede')+
+                    (grantLanGwEdit ? 'IP do CPE' : 'IP da Rede')+
                   '</label>'+
                   '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
                   'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
@@ -1473,7 +1501,7 @@ $(document).ready(function() {
                 (grantLanGwEdit ?
                   '<div class="alert alert-info">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
-                    '<span>IP da rede será calculado a partir do IP do roteador e Máscara escolhidos</span>'+
+                    '<span>IP da rede será calculado a partir do IP do CPE e Máscara escolhidos</span>'+
                   '</div>' :
                   ''
                 )+
@@ -1544,14 +1572,14 @@ $(document).ready(function() {
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
                     'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Habilitar portas de rede LAN do roteador'+ // Changed to Enable instead Disable
+                      'Habilitar portas de rede LAN do CPE'+ // Changed to Enable instead Disable
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox"  id="edit_opmode_fixip_en-'+index+'" '+
                     'name="edit_opmode_fixip_en-'+index+'" $REPLACE_SELECTED_OPMODE_IP_STATE $REPLACE_OPMODE_EN></input>'+
                     '<label class="custom-control-label" for="edit_opmode_fixip_en-'+index+'">'+
-                      'Fixar o IP do roteador em bridge'+
+                      'Fixar o IP do CPE em bridge'+
                     '</label>'+
                   '</div>'+
                   '<div class="alert alert-info mt-3">'+
@@ -1567,7 +1595,7 @@ $(document).ready(function() {
                 '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP fixo do roteador em bridge'+
+                      'IP fixo do CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_IP_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1575,7 +1603,7 @@ $(document).ready(function() {
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do gateway para o roteador em bridge'+
+                      'IP do gateway para o CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_gateway-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_GATEWAY_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1583,7 +1611,7 @@ $(document).ready(function() {
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do DNS para o roteador em bridge'+
+                      'IP do DNS para o CPE em bridge'+
                     '</label>'+
                     '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_dns-'+index+'" '+
                     'maxlength="15" value="$REPLACE_OPMODE_DNS_VAL" $REPLACE_OPMODE_EN></input>'+
@@ -1593,7 +1621,7 @@ $(document).ready(function() {
                     '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                     '<span>'+
                       'Cuidado! Garanta que sua rede está configurada para entregar o IP fixo escolhido, '+
-                      'senão o roteador pode ficar inacessível!'+
+                      'senão o CPE pode ficar inacessível!'+
                     '</span>'+
                   '</div>'+
                 '</div>'+
@@ -1648,102 +1676,287 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_MESH_MODE', '');
           }
 
+          let haveSsidPrefixPrepend =
+            '<input class="form-control" type="text" id="edit_wifi_ssid-'+
+              index+'" ';
+          let haveSsidPrefixPrepend5G =
+            '<input class="form-control" type="text" id="edit_wifi5_ssid-'+
+              index+'" ';
+          let ssidPrefixEnabledCheckbox = '';
+          if (device.isToShowSsidPrefixCheckbox) {
+            ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
+                '" class="custom-control custom-checkbox pl-2">'+
+                '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
+                '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
+                '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
+                'Habilitar prefixo SSID'+
+                '</label>'+
+              '</div>';
+            if (device.isSsidPrefixEnabled) {
+              haveSsidPrefixPrepend = '<div class="input-group-prepend">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  $('#ssid_prefix').html()+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+
+              haveSsidPrefixPrepend5G = '<div class="input-group-prepend">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  $('#ssid_prefix').html()+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
+            } else {
+              haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  $('#ssid_prefix').html()+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+
+              haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
+                '<span class="input-group-text px-0 text-primary"'+
+                ' style="background:inherit;border:none;">'+
+                  $('#ssid_prefix').html()+
+                '</span>'+
+              '</div>'+
+              '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
+            }
+          } else {
+            ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
+                '" class="custom-control custom-checkbox pl-2 d-none">'+
+                '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
+                '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
+                '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+
+                'Habilitar prefixo SSID'+
+                '</label>'+
+              '</div>';
+          }
+
+          let wifi5Pane = '';
+          let wifi5PaneNav = '';
+          if (grantWifi5ghz) {
+            wifi5Pane = '<div class="row tab-pane fade" id="wifi5-pane-'+index+'" role="tabpanel" aria-labelledby="wifi5-pane-tab-'+index+'">'+
+                  '<div class="col-6">'+
+                    '<div class="md-form">'+
+                      '<div class="input-group">'+
+                        '<div class="md-selectfield form-control my-0">'+
+                          '<label class="active">Canal do Wi-Fi</label>'+
+                          '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
+                          '$REPLACE_WIFI5_EN>'+
+                            '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
+                            '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
+                            '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
+                            '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
+                            '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
+                            '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
+                            '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
+                            '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
+                            '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
+                            '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
+                            '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
+                            '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
+                            '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>161</option>'+
+                            '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>165</option>'+
+                          '</select>'+
+                          '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY5$>'+
+                          (device.wifi_last_channel_5ghz ?
+                            'Canal escolhido em auto: ' + device.wifi_last_channel_5ghz :
+                            ''
+                          )+
+                          '</small>'+
+                        '</div>'+
+                      '</div>'+
+                    '</div>'+
+                    '<div class="md-form input-group input-entry">'+
+                      '<label class="active">SSID do Wi-Fi</label>'+
+                      haveSsidPrefixPrepend5G+
+                      'maxlength="32" value="'+device.wifi_ssid_5ghz+'" $REPLACE_WIFI5_EN></input>'+
+                      '<div class="invalid-feedback"></div>'+
+                    '</div>'+
+                    '<div class="md-form input-entry">'+
+                      '<div class="input-group">'+
+                        '<label class="active">Senha do Wi-Fi</label>'+
+                        '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
+                        'maxlength="64" value="'+
+                        ((device.wifi_password_5ghz) ? device.wifi_password_5ghz : '')+ // treat undefined case
+                        '" $REPLACE_WIFI5_EN></input>'+
+                        '$REPLACE_WIFI5_PASS'+
+                        '<div class="invalid-feedback"></div>'+
+                      '</div>'+
+                    '</div>'+
+                    '<div class="custom-control custom-checkbox">'+
+                      '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
+                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN></input>'+
+                      '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
+                      'Ativar Wi-Fi 5.0GHz'+
+                      '</label>'+
+                    '</div>'+
+                    '$REPLACE_WIFI5_HIDDEN'+
+                  '</div>'+
+                  '<div class="col-6">'+
+                    '<div class="md-form">'+
+                      '<div class="input-group">'+
+                        '<div class="md-selectfield form-control my-0">'+
+                          '<label class="active">Largura de banda</label>'+
+                          '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
+                          '$REPLACE_WIFI5_EN>'+
+                            (grantWifiBandAuto ?
+                              '<option value="auto" $REPLACE_SELECTED_BAND5_auto$>auto</option>' :
+                              ''
+                            )+
+                            '<option value="VHT80" $REPLACE_SELECTED_BAND5_VHT80$>80 MHz</option>'+
+                            '<option value="VHT40" $REPLACE_SELECTED_BAND5_VHT40$>40 MHz</option>'+
+                            '<option value="VHT20" $REPLACE_SELECTED_BAND5_VHT20$>20 MHz</option>'+
+                          '</select>'+
+                          '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY5$>'+
+                          (device.wifi_last_band_5ghz ?
+                            'Banda escolhida em auto: ' + device.wifi_last_band_5ghz :
+                            ''
+                          )+
+                          '</small>'+
+                        '</div>'+
+                      '</div>'+
+                    '</div>'+
+                    '<div class="md-form">'+
+                      '<div class="input-group">'+
+                        '<div class="md-selectfield form-control my-0">'+
+                          '<label class="active">Modo de operação</label>'+
+                          '<select class="browser-default md-select" id="edit_wifi5_mode-'+index+'" '+
+                          '$REPLACE_WIFI5_BAND_EN>'+
+                            '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>AC</option>'+
+                            '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>N</option>'+
+                          '</select>'+
+                        '</div>'+
+                      '</div>'+
+                    '</div>'+
+                    '$REPLACE_WIFI5_POWER'+
+                  '</div>'+
+                '</div>';
+            wifi5PaneNav = '<a class="btn-primary text-white nav-link" id="wifi5-pane-tab-'+index+
+              '" data-toggle="tab" href="#wifi5-pane-'+index+
+              '" role="tab" aria-controls="#wifi5-pane-'+index+
+              '" aria-selected="false">5.0GHz</a>';
+          }
+
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
-            '<div class="row">'+
-              '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Canal do Wi-Fi</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi_channel-'+index+'" '+
-                      '$REPLACE_WIFI_EN>'+
-                        '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
-                        '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
-                        '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
-                        '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
-                        '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
-                        '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
-                        '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
-                        '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
-                        '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
-                        '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
-                        '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
-                        '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
-                      '</select>'+
-                      '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
-                      (device.wifi_last_channel ?
-                        'Canal escolhido em auto: ' + device.wifi_last_channel :
-                        ''
-                      )+
-                      '</small>'+
+                ssidPrefixEnabledCheckbox+
+                '<nav>'+
+                  '<div class="nav nav-tabs" id="nav-tab" role="tablist">'+
+                    '<a class="btn-primary text-white nav-link active mr-1" id="wifi-pane-tab-'+index+
+                      '" data-toggle="tab" href="#wifi-pane-'+index+
+                      '" role="tab" aria-controls="#wifi-pane-'+index+
+                      '" aria-selected="true">2.4GHz</a>'+
+                    wifi5PaneNav+
+                  '</div>'+
+                '</nav>'+
+                '<div class="wifi-tab-content">'+
+                  '<div class="row tab-pane fade show active" id="wifi-pane-'+index+'" role="tabpanel" aria-labelledby="wifi-pane-tab-'+index+'">'+
+                    '<div class="col-6">'+
+                      '<div class="md-form">'+
+                        '<div class="input-group">'+
+                          '<div class="md-selectfield form-control my-0">'+
+                            '<label class="active">Canal do Wi-Fi</label>'+
+                            '<select class="browser-default md-select" id="edit_wifi_channel-'+index+'" '+
+                            '$REPLACE_WIFI_EN>'+
+                              '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
+                              '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
+                              '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
+                              '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
+                              '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
+                              '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
+                              '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
+                              '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
+                              '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
+                              '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
+                              '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
+                              '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
+                              (grantWifiExtendedChannels ?
+                                '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>12</option>'+
+                                '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>13</option>':
+                                ''
+                              )+
+                            '</select>'+
+                            '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
+                            (device.wifi_last_channel ?
+                              'Canal escolhido em auto: ' + device.wifi_last_channel :
+                              ''
+                            )+
+                            '</small>'+
+                          '</div>'+
+                        '</div>'+
+                      '</div>'+
+                      '<div class="md-form input-group input-entry">'+
+                        '<label class="active">SSID do Wi-Fi</label>'+
+                        haveSsidPrefixPrepend+
+                        'maxlength="32" value="'+device.wifi_ssid+'" $REPLACE_WIFI_EN></input>'+
+                        '<div class="invalid-feedback"></div>'+
+                      '</div>'+
+                      '<div class="md-form input-entry">'+
+                        '<div class="input-group">'+
+                          '<label class="active">Senha do Wi-Fi</label>'+
+                          '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
+                          'maxlength="64" value="'+
+                          ((device.wifi_password) ? device.wifi_password : '')+ // treat undefined case
+                          '" $REPLACE_WIFI_EN></input>'+
+                          '$REPLACE_WIFI_PASS'+
+                          '<div class="invalid-feedback"></div>'+
+                        '</div>'+
+                      '</div>'+
+                      '<div class="custom-control custom-checkbox">'+
+                        '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
+                        '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                        '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
+                        'Ativar Wi-Fi 2.4GHz'+
+                        '</label>'+
+                      '</div>'+
+                      '$REPLACE_WIFI2_HIDDEN'+
+                    '</div>'+
+                    '<div class="col-6">'+
+                      '<div class="md-form">'+
+                        '<div class="input-group">'+
+                          '<div class="md-selectfield form-control my-0">'+
+                            '<label class="active">Largura de banda</label>'+
+                            '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
+                            '$REPLACE_WIFI_EN>'+
+                              (grantWifiBandAuto ?
+                                '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>':
+                                ''
+                              )+
+                              '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
+                              '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
+                            '</select>'+
+                            '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
+                            (device.wifi_last_band ?
+                              'Banda escolhida em auto: ' + device.wifi_last_band :
+                              ''
+                            )+
+                            '</small>'+
+                          '</div>'+
+                        '</div>'+
+                      '</div>'+
+                      '<div class="md-form">'+
+                        '<div class="input-group">'+
+                          '<div class="md-selectfield form-control my-0">'+
+                            '<label class="active">Modo de operação</label>'+
+                            '<select class="browser-default md-select" id="edit_wifi_mode-'+index+'" '+
+                            '$REPLACE_WIFI_BAND_EN>'+
+                              '<option value="11n" $REPLACE_SELECTED_MODE_11n$>BGN</option>'+
+                              '<option value="11g" $REPLACE_SELECTED_MODE_11g$>G</option>'+
+                            '</select>'+
+                          '</div>'+
+                        '</div>'+
+                      '</div>'+
+                      '$REPLACE_WIFI2_POWER'+
                     '</div>'+
                   '</div>'+
+                  wifi5Pane+
                 '</div>'+
-                '<div class="md-form input-entry">'+
-                  '<label class="active">SSID do Wi-Fi</label>'+
-                  '<input class="form-control" type="text" id="edit_wifi_ssid-'+index+'" '+
-                  'maxlength="32" value="'+device.wifi_ssid+'" $REPLACE_WIFI_EN></input>'+
-                  '<div class="invalid-feedback"></div>'+
-                '</div>'+
-                '<div class="md-form input-entry">'+
-                  '<div class="input-group">'+
-                    '<label class="active">Senha do Wi-Fi</label>'+
-                    '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
-                    'maxlength="64" value="'+
-                    ((device.wifi_password) ? device.wifi_password : '')+ // treat undefined case
-                    '" $REPLACE_WIFI_EN></input>'+
-                    '$REPLACE_WIFI_PASS'+
-                    '<div class="invalid-feedback"></div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
-                  'Ativar Wi-Fi 2.4GHz'+
-                  '</label>'+
-                '</div>'+
-                '$REPLACE_WIFI2_HIDDEN'+
               '</div>'+
-              '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Largura de banda</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
-                      '$REPLACE_WIFI_EN>'+
-                        (grantWifiBandAuto ?
-                          '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>':
-                          ''
-                        )+
-                        '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
-                        '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
-                      '</select>'+
-                      '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
-                      (device.wifi_last_band ?
-                        'Banda escolhida em auto: ' + device.wifi_last_band :
-                        ''
-                      )+
-                      '</small>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Modo de operação</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi_mode-'+index+'" '+
-                      '$REPLACE_WIFI_BAND_EN>'+
-                        '<option value="11n" $REPLACE_SELECTED_MODE_11n$>BGN</option>'+
-                        '<option value="11g" $REPLACE_SELECTED_MODE_11g$>G</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
-                '$REPLACE_WIFI2_POWER'+
-              '</div>'+
-            '</div>'+
-          '</div>';
+            '</ul>';
           let wifi2Hidden = '<div class="custom-control custom-checkbox">'+
             '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
             '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
@@ -1765,33 +1978,68 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>';
+          let wifi5Hidden = '<div class="custom-control custom-checkbox">'+
+            '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
+            '$REPLACE_SELECTED_WIFI5_HIDDEN $REPLACE_WIFI5_HIDDEN_EN></input>'+
+            '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
+            'Ocultar SSID 5.0GHz'+
+            '</label>'+
+          '</div>';
+          let wifi5Power = '<div class="md-form">'+
+            '<div class="input-group">'+
+              '<div class="md-selectfield form-control my-0">'+
+                '<label class="active">Potência do sinal</label>'+
+                '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
+                '$REPLACE_WIFI5_POWER_EN>'+
+                  '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
+                  '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
+                  '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
+                  '<option value="25"  $REPLACE_SELECTED_POWER5_25$>25%</option>'+
+                '</select>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
           if (!isTR069) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', wifi2Hidden);
             wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', wifi2Power);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN', wifi5Hidden);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER', wifi5Power);
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI2_HIDDEN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI2_POWER', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER', '');
           }
           if (!isSuperuser && grantWifiInfo <= 1) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
           } else {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
           }
           if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN', '');
           }
           if (!grantWifiPowerHiddenIpv6Box ||
              (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN_EN', '');
           }
           if (!grantWifiPowerHiddenIpv6Box ||
              (!isSuperuser && grantWifiInfo <= 1)) {
@@ -1799,10 +2047,19 @@ $(document).ready(function() {
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_POWER_EN', '');
           }
+          if (!grantWifiPowerHiddenIpv6Box ||
+             (!isSuperuser && grantWifiInfo <= 1) ||
+             (device.wifi_channel_5ghz == 'auto')) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER_EN', '');
+          }
           if (isSuperuser || grantPassShow) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', passwordToggle);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_PASS', passwordToggle);
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_PASS', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_PASS', '');
           }
 
           selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel;
@@ -1843,206 +2100,48 @@ $(document).ready(function() {
           let currWifiHidden = (parseInt(device.wifi_hidden) == 1 ? 'checked' : '');
           wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden);
 
-          let wifi5Tab = '<div class="edit-tab d-none" id="tab_wifi5-'+index+'">'+
-            '<div class="row">'+
-              '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Canal do Wi-Fi</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
-                      '$REPLACE_WIFI_EN>'+
-                        '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
-                        '<option value="36" $REPLACE_SELECTED_CHANNEL_36$>36</option>'+
-                        '<option value="40" $REPLACE_SELECTED_CHANNEL_40$>40</option>'+
-                        '<option value="44" $REPLACE_SELECTED_CHANNEL_44$>44</option>'+
-                        '<option value="48" $REPLACE_SELECTED_CHANNEL_48$>48</option>'+
-                        '<option value="52" $REPLACE_SELECTED_CHANNEL_52$>52</option>'+
-                        '<option value="56" $REPLACE_SELECTED_CHANNEL_56$>56</option>'+
-                        '<option value="60" $REPLACE_SELECTED_CHANNEL_60$>60</option>'+
-                        '<option value="64" $REPLACE_SELECTED_CHANNEL_64$>64</option>'+
-                        '<option value="149" $REPLACE_SELECTED_CHANNEL_149$>149</option>'+
-                        '<option value="153" $REPLACE_SELECTED_CHANNEL_153$>153</option>'+
-                        '<option value="157" $REPLACE_SELECTED_CHANNEL_157$>157</option>'+
-                        '<option value="161" $REPLACE_SELECTED_CHANNEL_161$>161</option>'+
-                        '<option value="165" $REPLACE_SELECTED_CHANNEL_165$>165</option>'+
-                      '</select>'+
-                      '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
-                      (device.wifi_last_channel_5ghz ?
-                        'Canal escolhido em auto: ' + device.wifi_last_channel_5ghz :
-                        ''
-                      )+
-                      '</small>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="md-form input-entry">'+
-                  '<label class="active">SSID do Wi-Fi</label>'+
-                  '<input class="form-control" type="text" id="edit_wifi5_ssid-'+index+'" '+
-                  'maxlength="32" value="'+device.wifi_ssid_5ghz+'" $REPLACE_WIFI_EN></input>'+
-                  '<div class="invalid-feedback"></div>'+
-                '</div>'+
-                '<div class="md-form input-entry">'+
-                  '<div class="input-group">'+
-                    '<label class="active">Senha do Wi-Fi</label>'+
-                    '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
-                    'maxlength="64" value="'+
-                    ((device.wifi_password_5ghz) ? device.wifi_password_5ghz : '')+ // treat undefined case
-                    '" $REPLACE_WIFI_EN></input>'+
-                    '$REPLACE_WIFI_PASS'+
-                    '<div class="invalid-feedback"></div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="custom-control custom-checkbox">'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                  '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                  '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
-                  'Ativar Wi-Fi 5.0GHz'+
-                  '</label>'+
-                '</div>'+
-                '$REPLACE_WIFI5_HIDDEN'+
-              '</div>'+
-              '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Largura de banda</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
-                      '$REPLACE_WIFI_EN>'+
-                        (grantWifiBandAuto ?
-                          '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>' :
-                          ''
-                        )+
-                        '<option value="VHT80" $REPLACE_SELECTED_BAND_VHT80$>80 MHz</option>'+
-                        '<option value="VHT40" $REPLACE_SELECTED_BAND_VHT40$>40 MHz</option>'+
-                        '<option value="VHT20" $REPLACE_SELECTED_BAND_VHT20$>20 MHz</option>'+
-                      '</select>'+
-                      '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
-                      (device.wifi_last_band_5ghz ?
-                        'Banda escolhida em auto: ' + device.wifi_last_band_5ghz :
-                        ''
-                      )+
-                      '</small>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Modo de operação</label>'+
-                      '<select class="browser-default md-select" id="edit_wifi5_mode-'+index+'" '+
-                      '$REPLACE_WIFI_BAND_EN>'+
-                        '<option value="11ac" $REPLACE_SELECTED_MODE_11ac$>AC</option>'+
-                        '<option value="11na" $REPLACE_SELECTED_MODE_11na$>N</option>'+
-                      '</select>'+
-                    '</div>'+
-                  '</div>'+
-                '</div>'+
-                '$REPLACE_WIFI5_POWER'+
-              '</div>'+
-            '</div>'+
-          '</div>';
-          let wifi5Hidden = '<div class="custom-control custom-checkbox">'+
-            '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
-            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-            '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
-            'Ocultar SSID 5.0GHz'+
-            '</label>'+
-          '</div>';
-          let wifi5Power = '<div class="md-form">'+
-            '<div class="input-group">'+
-              '<div class="md-selectfield form-control my-0">'+
-                '<label class="active">Potência do sinal</label>'+
-                '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
-                '$REPLACE_WIFI_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
-                '</select>'+
-              '</div>'+
-            '</div>'+
-          '</div>';
-          if (!isTR069) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', wifi5Hidden);
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', wifi5Power);
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_HIDDEN', '');
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI5_POWER', '');
-          }
-          if (!isSuperuser && grantWifiInfo <= 1) {
-            wifi5Tab = wifi5Tab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
-          } else {
-            wifi5Tab = wifi5Tab.replace(/\$REPLACE_WIFI_EN/g, '');
-          }
-          if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_BAND_EN', '');
-          }
-          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_STATE_EN', '');
-          }
-          if (!grantWifiPowerHiddenIpv6Box ||
-             (!isSuperuser && grantWifiInfo <= 1)) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', 'disabled');
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_HIDDEN_EN', '');
-          }
-          if (!grantWifiPowerHiddenIpv6Box ||
-             (!isSuperuser && grantWifiInfo <= 1) ||
-             (device.wifi_channel_5ghz == 'auto')) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', 'disabled');
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_POWER_EN', '');
-          }
-          if (isSuperuser || grantPassShow) {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', passwordToggle);
-          } else {
-            wifi5Tab = wifi5Tab.replace('$REPLACE_WIFI_PASS', '');
-          }
-
-          selectTarget = '$REPLACE_SELECTED_CHANNEL_' + device.wifi_channel_5ghz;
-          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
-          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_CHANNEL_.*?\$/g, '');
+          selectTarget = '$REPLACE_SELECTED_CHANNEL5_' + device.wifi_channel_5ghz;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL5_.*?\$/g, '');
           // Show text about selected channel if in auto mode
           if (device.wifi_channel_5ghz === 'auto') {
-            wifi5Tab = wifi5Tab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY5',
                                         '');
           } else {
-            wifi5Tab = wifi5Tab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_CHANNEL_SELECTED_VISIBILITY5',
                                         'style="display:none;"');
           }
 
           let band = (device.wifi_band_5ghz === 'HT20' || device.wifi_band_5ghz === 'HT40')
                       ? ('V'+device.wifi_band_5ghz) : device.wifi_band_5ghz;
-          selectTarget = '$REPLACE_SELECTED_BAND_' + band;
-          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
-          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_BAND_.*?\$/g, '');
+          selectTarget = '$REPLACE_SELECTED_BAND5_' + band;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_BAND5_.*?\$/g, '');
           // Show text about selected channel if in auto mode
           if (device.wifi_band_5ghz === 'auto') {
-            wifi5Tab = wifi5Tab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY5',
                                         '');
           } else {
-            wifi5Tab = wifi5Tab.replace('$AUTO_BAND_SELECTED_VISIBILITY',
+            wifiTab = wifiTab.replace('$AUTO_BAND_SELECTED_VISIBILITY5',
                                         'style="display:none;"');
           }
 
-          selectTarget = '$REPLACE_SELECTED_MODE_' + device.wifi_mode_5ghz;
-          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
-          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_MODE_.*?\$/g, '');
+          selectTarget = '$REPLACE_SELECTED_MODE5_' + device.wifi_mode_5ghz;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE5_.*?\$/g, '');
 
-          selectTarget = '$REPLACE_SELECTED_POWER_' + device.wifi_power_5ghz;
-          wifi5Tab = wifi5Tab.replace(selectTarget, 'selected="selected"');
-          wifi5Tab = wifi5Tab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
+          selectTarget = '$REPLACE_SELECTED_POWER5_' + device.wifi_power_5ghz;
+          wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
+          wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_POWER5_.*?\$/g, '');
 
           let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
-          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState5ghz);
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_STATE', currWifiState5ghz);
 
           let currWifiHidden5ghz = (parseInt(device.wifi_hidden_5ghz) == 1 ? 'checked' : '');
-          wifi5Tab = wifi5Tab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden5ghz);
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_HIDDEN', currWifiHidden5ghz);
+
+          let currSsidPrefixEnabled = (device.isSsidPrefixEnabled) ? 'checked': '';
+          wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED', currSsidPrefixEnabled);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+
@@ -2061,10 +2160,6 @@ $(document).ready(function() {
           .replace('$REPLACE_TAB_TYPE', 'wifi')
           .replace('$REPLACE_TAB_NAME', 'Wi-Fi');
 
-          let wifi5ghzEdit = baseEdit
-          .replace('$REPLACE_TAB_TYPE', 'wifi5')
-          .replace('$REPLACE_TAB_NAME', 'Wi-Fi 5.0GHz');
-
           let removeDevice = '<div class="col-2 text-right">'+
             buildRemoveDevice()+
           '</div>';
@@ -2075,7 +2170,7 @@ $(document).ready(function() {
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
                     '<div class="btn-group btn-group-toggle" data-toggle="buttons">'+
-                      '<label class="btn btn-primary tab-switch-btn active" '+
+                      '<label class="btn btn-primary tab-switch-btn active ml-0" '+
                       'data-tab-id="#tab_about-'+index+'">'+
                         'Sobre<input type="radio"></input>'+
                       '</label>'+
@@ -2086,7 +2181,6 @@ $(document).ready(function() {
                       '</label>'+
                       '$REPLACE_LAN_EDIT'+
                       '$REPLACE_WIFI_EDIT'+
-                      '$REPLACE_WIFI5GHZ_EDIT'+
                       '$REPLACE_ACTIONS'+
                     '</div>'+
                     '<br>'+
@@ -2103,7 +2197,6 @@ $(document).ready(function() {
                     wanTab+
                     lanTab+
                     wifiTab+
-                    wifi5Tab+
                   '</div>'+
                 '</div>'+
                 '$REPLACE_EDIT_BUTTON'+
@@ -2123,14 +2216,8 @@ $(document).ready(function() {
           }
           if (isSuperuser || grantWifiInfo >= 1) {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', wifiEdit);
-            if (grantWifi5ghz) {
-              formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', wifi5ghzEdit);
-            } else {
-              formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', '');
-            }
           } else {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', '');
-            formRow = formRow.replace('$REPLACE_WIFI5GHZ_EDIT', '');
           }
           if (isSuperuser || grantDeviceActions) {
             formRow = formRow.replace('$REPLACE_ACTIONS', devActions);
@@ -2176,7 +2263,8 @@ $(document).ready(function() {
               finalHtml += infoRow;
 
               let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
-                buildAboutTab(slaveDev, index, false, slaveIdx)+
+                buildAboutTab(slaveDev, index, false,
+                              grantWifiExtendedChannels, slaveIdx)+
               '</td></tr>';
               if (!isSuperuser && !grantDeviceId) {
                 formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
@@ -2361,11 +2449,31 @@ $(document).ready(function() {
             );
           }
         });
+        // Important: include and initialize socket.io first using socket var
+        socket.on('UPSTATUSTR069', function(macaddr, data) {
+          let row = $('[id="' + macaddr + '"]');
+          if (data.sysuptime) {
+            row.find('.device-sys-up-time')
+            .removeClass('grey-text pending-update')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.sysuptime)),
+            );
+          }
+          if (data.wanuptime) {
+            row.find('.device-wan-up-time')
+            .removeClass('grey-text pending-update')
+            .html(
+              secondsTimeSpanToHMS(parseInt(data.wanuptime)),
+            );
+          }
+        });
       },
     });
   };
   // Initial table
-  loadDevicesTable();
+  if (window.location.href.indexOf('devicelist') !== -1) {
+    loadDevicesTable();
+  }
 
   $(document).on('submit', '#devices-search-form', function(event) {
     let filterList = $('#devices-search-input').val();
@@ -2474,7 +2582,7 @@ $(document).ready(function() {
     swal({
       type: 'warning',
       title: 'Atenção!',
-      text: 'Este roteador perderá todas as configurações. Esta ação só poderá '+
+      text: 'Este CPE perderá todas as configurações. Esta ação só poderá '+
       'ser desfeita com uma nova instalação através do Assistente Flashbox.',
       confirmButtonText: 'OK',
       confirmButtonColor: '#4db6ac',
@@ -2509,7 +2617,7 @@ $(document).ready(function() {
             swal({
               type: 'success',
               title: 'Processo iniciado com sucesso',
-              text: 'Aguarde o roteador reiniciar, e então segure o botão de '+
+              text: 'Aguarde o CPE reiniciar, e então segure o botão de '+
                     'reset por 15 segundos.',
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
@@ -2520,7 +2628,7 @@ $(document).ready(function() {
             swal({
               type: 'error',
               title: 'Um erro ocorreu',
-              text: 'Não foi possível restaurar o roteador para o firmware de '+
+              text: 'Não foi possível restaurar o CPE para o firmware de '+
                     'fábrica. Por favor tente novamente.',
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
@@ -2586,5 +2694,31 @@ $(document).ready(function() {
     }
     filterList += ',' + columnToSort + ',' + columnSortType;
     loadDevicesTable(pageNum, filterList);
+  });
+
+  $(document).on('change', '[id^=edit_is_ssid_prefix_enabled-]',
+  function(input) {
+    let cssClass1;
+    let cssClass2;
+    cssClass1 = input.target.parentNode.parentNode.
+      childNodes[2].childNodes[0].childNodes[0].
+      childNodes[1].childNodes[1].classList;
+    if (!input.target.parentNode.parentNode.
+      childNodes[2].childNodes[1] == false) {
+      cssClass2 = input.target.parentNode.parentNode.
+        childNodes[2].childNodes[1].childNodes[0].
+        childNodes[1].childNodes[1].classList;
+    }
+    if (input.target.checked) {
+      cssClass1.remove('d-none');
+      if (!cssClass2 == false) {
+        cssClass2.remove('d-none');
+      }
+    } else {
+      cssClass1.add('d-none');
+      if (!cssClass2 == false) {
+        cssClass2.add('d-none');
+      }
+    }
   });
 });

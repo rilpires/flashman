@@ -5,6 +5,7 @@ const DeviceModel = require('../models/device');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
+const updateController = require('./update_flashman.js');
 
 const pako = require('pako');
 const http = require('http');
@@ -142,7 +143,7 @@ const appendPonSignal = function(original, rxPower, txPower) {
   }
   dbms[now] = [rxPower, txPower];
   return dbms;
-}
+};
 
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
@@ -310,10 +311,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       hasChanges = true;
     }
   }
-
+  
+  let ssidPrefix = await updateController.
+          getSsidPrefix(device.
+            isSsidPrefixEnabled);
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
-  } else if (device.wifi_ssid.trim() !== data.wifi2.ssid.trim()) {
+  }
+  if (ssidPrefix+device.wifi_ssid.trim()
+    !== data.wifi2.ssid.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
@@ -340,7 +346,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
-  } else if (device.wifi_ssid_5ghz.trim() !== data.wifi5.ssid.trim()) {
+  }
+  if (ssidPrefix+device.wifi_ssid_5ghz.trim()
+    !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
   }
@@ -566,6 +574,78 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
+const fetchUpStatusFromGenie = function(mac, acsID) {
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let upTimeField = fields.wan.uptime.replace('*', 1);
+  let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
+  let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+  let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
+  let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let query = {_id: acsID};
+  let projection = fields.common.uptime +
+      ',' + upTimeField +
+      ',' + upTimePPPField1 +
+      ',' + upTimePPPField2 +
+      ',' + PPPoEUser1 +
+      ',' + PPPoEUser2;
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    // hostname: '207.246.65.243',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let sysUpTime = 0;
+    let wanUpTime = 0;
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      let successSys = false;
+      let successWan = false;
+      if (checkForNestedKey(data, fields.common.uptime+'._value')) {
+        successSys = true;
+        sysUpTime = getFromNestedKey(data, fields.common.uptime+'._value');
+      }
+      if (checkForNestedKey(data, PPPoEUser1+'._value')) {
+        successWan = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser1+'._value');
+        if (hasPPPoE && checkForNestedKey(data, upTimePPPField1+'._value')) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField1+'._value');
+        }
+      } else if (checkForNestedKey(data, PPPoEUser2+'._value')) {
+        successWan = true;
+        let hasPPPoE = getFromNestedKey(data, PPPoEUser2+'._value');
+        if (hasPPPoE && checkForNestedKey(data, upTimePPPField2+'._value')) {
+          wanUpTime = getFromNestedKey(data, upTimePPPField2+'._value');
+        }
+      } else {
+          successWan = true;
+          if (checkForNestedKey(data, upTimeField+'._value')) {
+            wanUpTime = getFromNestedKey(data, upTimeField+'._value');
+          }
+      }
+      if (successSys || successWan) {
+        let deviceEdit = await DeviceModel.findById(mac);
+        deviceEdit.last_contact = Date.now();
+        deviceEdit.sys_up_time = sysUpTime;
+        deviceEdit.wan_up_time = wanUpTime;
+        await deviceEdit.save();
+      }
+      sio.anlixSendUpStatusTr069Notification(mac, {
+        sysuptime: sysUpTime,
+        wanuptime: wanUpTime,
+      });
+    });
+  });
+  req.end();
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -646,13 +726,12 @@ const fetchDevicesFromGenie = function(mac, acsID) {
     resp.on('end', async ()=>{
       data = JSON.parse(data)[0];
       let success = true;
-      let hostCount = 0;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
       // Make sure we have a host count and assodicated devices fields
       if (checkForNestedKey(data, hostCountField) &&
           checkForNestedKey(data, assocField)) {
-        hostCount = getFromNestedKey(data, hostCountField);
+        getFromNestedKey(data, hostCountField);
         // Host indexes might not respect order because of expired leases, so
         // we just use whatever keys show up
         let hostBaseField = fields.devices.hosts_template;
@@ -771,11 +850,38 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   let sentField = fields.wan.sent_bytes;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [recvField, sentField],
+    parameterNames: [
+      recvField,
+      sentField,
+    ],
   };
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchWanBytesFromGenie(mac, acsID);
+  });
+};
+
+
+acsDeviceInfoController.requestUpStatus = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [
+      fields.common.uptime,
+      fields.wan.uptime,
+      fields.wan.uptime_ppp,
+      fields.wan.pppoe_user,
+    ],
+  };
+  TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
+    if (result.task.name !== 'getParameterValues') return;
+    if (result.finished) fetchUpStatusFromGenie(mac, acsID);
   });
 };
 
@@ -803,10 +909,10 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   });
 };
 
-acsDeviceInfoController.updateInfo = function(device, changes) {
+acsDeviceInfoController.updateInfo = async function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -814,6 +920,9 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
+  let ssidPrefix = await updateController.
+    getSsidPrefix(device.
+      isSsidPrefixEnabled);
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -851,6 +960,18 @@ acsDeviceInfoController.updateInfo = function(device, changes) {
           hasChanges = true;
         }
       }
+      /*
+        Verify if is to append prefix right before
+        of send changes to genie;
+        Because device_list, app_diagnostic_api
+        and here call updateInfo, and is more clean
+        to check on the edge;
+      */
+      if (key === 'ssid') {
+        if (ssidPrefix != '') {
+          changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
+        }
+      }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
       );
@@ -873,7 +994,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let i;
   let ret;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1021,7 +1142,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
 
 acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
+  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1046,7 +1167,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
     replace('*', '1').replace('*', '1');
     let projection2 = fields.port_mapping.template.
     replace('*', '1').replace('*', '2');
-    let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection1+','+projection2;
+    let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
+               projection1 + ',' + projection2;
     let options = {
       method: 'GET',
       hostname: 'localhost',

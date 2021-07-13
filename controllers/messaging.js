@@ -1,4 +1,3 @@
-const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const request = require('request-promise-native');
 
@@ -45,7 +44,7 @@ const sendMessage = async function(device, funcName, strName, data, retry=0) {
       secret: messageSecret,
       token: tokens,
       data: data,
-    }
+    },
   }).then( (resp) => {
     console.log('Sent ' + strName + ' message to device ID ' + device._id);
   }, async (err) => {

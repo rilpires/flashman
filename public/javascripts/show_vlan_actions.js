@@ -1,3 +1,5 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'regenerator-runtime/runtime';
 
 $(document).ready(function() {
   $(document).on('click', '.btn-vlan-modal', async function(event) {

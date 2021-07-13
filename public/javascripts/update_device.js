@@ -6,13 +6,13 @@ let updateDevice = function(event) {
   let slaveCount = row.data('slave-count');
 
   let warningText = 'A atualização de firmware dura aproximadamente 3 ' +
-      'minutos. O roteador não deverá ser desligado durante esse procedimento. ' +
+      'minutos. O CPE não deverá ser desligado durante esse procedimento. ' +
       'Comunique seu usuário antes de prosseguir.';
   if (slaveCount > 0) {
     warningText = 'A atualização de firmware dura aproximadamente 3 minutos ' +
-    'para cada roteador. Esta atualização afetará todos os '+(slaveCount+1)+
+    'para cada CPE. Esta atualização afetará todos os '+(slaveCount+1)+
     ' roteadores da rede mesh, e durará cerca de '+(slaveCount+1)*3+
-    ' minutos no total. Nenhum roteador deverá ser desligado durante esse '+
+    ' minutos no total. Nenhum CPE deverá ser desligado durante esse '+
     'procedimento. Comunique seu usuário antes de prosseguir.';
   }
 
@@ -49,12 +49,10 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             if (slaveCount > 0) {
               upgradeStatus.find('.status-waiting').attr('title',
-                'Atualizando roteador mestre...'
-              );
+                'Atualizando CPE principal...');
             } else {
               upgradeStatus.find('.status-waiting').attr('title',
-                'Atualizando roteador...'
-              );
+                'Atualizando CPE...');
             }
             // Activate cancel button
             selBtnGroup.siblings('.btn-cancel-update').attr('disabled', false);
@@ -99,7 +97,7 @@ let cancelDeviceUpdate = function(event) {
             type: 'warning',
             title: 'Atenção!',
             text: 'O processo de atualização da rede mesh foi interrompido. '+
-              'Não recomendamos deixar os roteadores mesh da mesma rede em '+
+              'Não recomendamos deixar os CPEs mesh da mesma rede em '+
               'versões diferentes, portanto certifique-se que esta '+
               'atualização seja retomada em breve.',
             confirmButtonText: 'OK',
@@ -143,7 +141,7 @@ $(function() {
         type: 'error',
         title: 'Erro',
         text: 'Houve um erro ao realizar a transferência do firmware do '+
-          'roteador '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
+          'CPE '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
           'novamente ou cancele o procedimento.',
         confirmButtonText: 'Tentar novamente',
         confirmButtonColor: '#4db6ac',

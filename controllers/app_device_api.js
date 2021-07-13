@@ -5,6 +5,7 @@ const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
+const updateController = require('./update_flashman');
 
 let appDeviceAPIController = {};
 
@@ -543,7 +544,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -574,7 +575,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -608,7 +609,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -703,7 +704,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -832,12 +833,18 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return map[req.body.id.toUpperCase()];
     });
 
+    let prefixObj = {};
+    prefixObj.name = await updateController.
+      getSsidPrefix(matchedDevice.isSsidPrefixEnabled);
+    prefixObj.grant = matchedDevice.isSsidPrefixEnabled;
+
     return res.status(200).json({
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
       speedtest: speedtestInfo,
       notifications: notifications,
+      prefix: prefixObj,
       model: matchedDevice.model,
       version: matchedDevice.version,
       release: matchedDevice.installed_release,
@@ -853,7 +860,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -866,7 +873,9 @@ appDeviceAPIController.appGetVersion = function(req, res) {
     }
 
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model,
     );
     return res.status(200).json({
       permissions: permissions,
@@ -880,7 +889,7 @@ appDeviceAPIController.appGetDevices = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -908,7 +917,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -945,7 +954,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -994,7 +1003,7 @@ appDeviceAPIController.appGetWpsState = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
@@ -1056,7 +1065,7 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
       return res.status(500).json({message: 'Erro interno'});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'Roteador não encontrado'});
+      return res.status(404).json({message: 'CPE não encontrado'});
     }
     let appObj = matchedDevice.apps.find(function(app) {
       return app.id === req.body.app_id;

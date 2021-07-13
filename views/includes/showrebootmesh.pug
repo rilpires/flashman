@@ -4,17 +4,17 @@
       .modal-header
         p.heading.lead
           span.fas.fa-sync-alt.fa-lg
-          strong &nbsp;&nbsp; Reiniciar roteadores em rede mesh&nbsp;
+          strong &nbsp;&nbsp; Reiniciar CPEs em rede mesh&nbsp;
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
         #reboot-select.text-center
           .row
             .col
-              h4 Selecione quais roteadores da rede devem ser reiniciados
+              h4 Selecione quais CPEs da rede devem ser reiniciados
           .my-3.custom-control.custom-checkbox
             input#select-reboot-all.custom-control-input(type="checkbox")
-            label.custom-control-label(for="select-reboot-all") Todos os roteadores
+            label.custom-control-label(for="select-reboot-all") Todos os CPEs
           .custom-control.custom-checkbox
             input#select-reboot-master.mesh-router.custom-control-input(type="checkbox")
             label#reboot-master-label.custom-control-label(for="select-reboot-master")
@@ -24,7 +24,7 @@
             i.fas.fa-spinner.fa-pulse.fa-2x
             br
             br
-            span Enviando comando para os roteadores...
+            span Enviando comando para os CPEs...
         #reboot-error.text-center
           h3.text-center.grey-text.mb-3
             i.fas.fa-times.fa-2x

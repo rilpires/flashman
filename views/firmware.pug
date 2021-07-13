@@ -1,8 +1,5 @@
 extends layout
 
-block stylesheets
-  link(rel='stylesheet', href='/scripts/datatables.net-bs4/css/dataTables.bootstrap4.min.css')
-
 block content
   .card.mt-5
     h4.card-header.teal.lighten-2.white-text
@@ -98,6 +95,4 @@ block content
               th.text-center Firmware Restrita
 
 block scripts
-  script(src='/scripts/datatables.net/js/jquery.dataTables.min.js')
-  script(src='/scripts/datatables.net-bs4/js/dataTables.bootstrap4.min.js')
-  script(src='/javascripts/firmware_actions.js')
+  script(src='/dist/firmware.bundle.js')

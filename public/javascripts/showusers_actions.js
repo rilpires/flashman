@@ -1,5 +1,7 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
 
-let check = function(input) {
+window.check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {
     input.setCustomValidity('As senhas estão diferentes');
   } else {
@@ -18,14 +20,17 @@ const fetchUsers = function(usersTable) {
         let userRow = $('<tr></tr>').append(
           (userObj.is_superuser ?
             $('<td></td>') :
-            $('<td></td>').addClass('col-xs-1').append(
+            $('<td></td>').append(
               $('<input></input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', userObj._id)
             )
           ),
           $('<td></td>').html(userObj.name),
-          $('<td></td>').html(userObj.role),
+          (userObj.role ?
+            $('<td></td>').html(userObj.role) :
+            $('<td></td>')
+          ),
           $('<td></td>').html(new Date(userObj.createdAt).toLocaleString()),
           (userObj.lastLogin ?
             $('<td></td>').html(new Date(userObj.lastLogin).toLocaleString()) :

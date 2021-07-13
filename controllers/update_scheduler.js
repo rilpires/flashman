@@ -189,7 +189,7 @@ scheduleController.recoverFromOffline = async function(config) {
     {'device_update_schedule.rule.in_progress_devices': {
       'mac': {'$in': pullArray},
     }},
-    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}}
+    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
   );
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
   setTimeout(async function() {
@@ -269,7 +269,7 @@ const markNextForUpdate = async function() {
           'slave_count': nextDevice.slave_count,
           'slave_updates_remaining': nextDevice.slave_count,
         },
-      }
+      },
     );
     mutexRelease();
     console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
@@ -406,7 +406,7 @@ scheduleController.successUpdate = async function(mac) {
             'slave_count': device.slave_count,
             'slave_updates_remaining': 0,
           },
-        }
+        },
       );
     }
   } catch (err) {
@@ -442,7 +442,7 @@ scheduleController.failedDownloadAck = async function(mac) {
           'slave_count': device.slave_count,
           'slave_updates_remaining': device.slave_updates_remaining,
         },
-      }
+      },
     );
   } catch (err) {
     console.log(err);
@@ -592,7 +592,7 @@ scheduleController.abortSchedule = async function(req, res) {
     await configQuery(
       setQuery,
       null,
-      {'device_update_schedule.rule.done_devices': {'$each': pushArray}}
+      {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
     // Remove do_update from in_progress devices
     rule.in_progress_devices.forEach(async (d) => {
@@ -879,7 +879,7 @@ scheduleController.startSchedule = async function(req, res) {
       if (matchedDevices.length === 0) {
         return res.status(500).json({
           success: false,
-          message: 'Erro ao processar os parâmetros: nenhum roteador encontrado',
+          message: 'Erro ao processar os parâmetros: nenhum CPE encontrado',
         });
       }
       let slaveCount = {};
@@ -1010,17 +1010,17 @@ scheduleController.updateScheduleStatus = async function(req, res) {
 const translateState = function(state) {
   if (state === 'update') return 'Aguardando atualização';
   if (state === 'retry') return 'Aguardando atualização';
-  if (state === 'offline') return 'Roteador offline';
+  if (state === 'offline') return 'CPE offline';
   if (state === 'downloading') return 'Baixando firmware';
   if (state === 'updating') return 'Atualizando firmware';
-  if (state === 'slave') return 'Atualizando roteador slave';
+  if (state === 'slave') return 'Atualizando CPE secundário';
   if (state === 'ok') return 'Atualizado com sucesso';
   if (state === 'error') return 'Ocorreu um erro na atualização';
   if (state === 'aborted') return 'Atualização abortada';
-  if (state === 'aborted_off') return 'Atualização abortada - roteador estava offline';
-  if (state === 'aborted_down') return 'Atualização abortada - roteador estava baixando firmware';
-  if (state === 'aborted_update') return 'Atualização abortada - roteador estava instalando firmware';
-  if (state === 'aborted_slave') return 'Atualização abortada - atualizando roteador slave';
+  if (state === 'aborted_off') return 'Atualização abortada - CPE estava offline';
+  if (state === 'aborted_down') return 'Atualização abortada - CPE estava baixando firmware';
+  if (state === 'aborted_update') return 'Atualização abortada - CPE estava instalando firmware';
+  if (state === 'aborted_slave') return 'Atualização abortada - atualizando CPE secundário';
   return 'Status desconhecido';
 };
 
@@ -1049,7 +1049,7 @@ scheduleController.scheduleResult = async function(req, res) {
     if (d.slave_count > 0) {
       let current = d.slave_count - d.slave_updates_remaining + 1;
       if (d.state === 'error') {
-        state += ' do roteador slave ' + current + ' de ' + d.slave_count;
+        state += ' do CPE secundário ' + current + ' de ' + d.slave_count;
       } else if (d.state === 'aborted_slave') {
         state += ' ' + current + ' de ' + d.slave_count;
       }

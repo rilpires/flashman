@@ -2,33 +2,17 @@
 // Override bootstrap related variables
 @import 'variables';
 
-@import '../node_modules/bootstrap/scss/bootstrap';
-@import '../node_modules/mdbootstrap/scss/mdb';
-@import '../node_modules/selectize-bootstrap4-theme/scss/selectize.bootstrap4';
-
-// Preloader
-#preloader {
-  background-color: $white;
-  bottom: 0;
-  left: 0;
-  position: fixed;
-  right: 0;
-  top: 0;
-  z-index: 99;
-}
-
-// Preloader
-#status {
-  background-image: url('../images/preloading.gif');
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 200px;
-  left: 50%;
-  margin: -100px 0 0 -100px;
-  position: absolute;
-  top: 50%;
-  width: 200px;
-}
+@import '../../node_modules/bootstrap/scss/bootstrap';
+@import '../../node_modules/mdbootstrap/scss/mdb';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/brands';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/regular';
+@import '../../node_modules/@fortawesome/fontawesome-free/scss/solid';
+@import '../../node_modules/selectize-bootstrap4-theme/scss/selectize.bootstrap4';
+@import '../../node_modules/tempusdominus-bootstrap-4/src/sass/tempusdominus-bootstrap-4';
+@import '../../node_modules/tags-input/tags-input.css';
+@import '../../node_modules/bs-stepper/dist/css/bs-stepper.css';
+@import '../../node_modules/datatables.net-bs4/css/dataTables.bootstrap4.css';
 
 // Extend selectize bootstrap theme
 .selectize-control {
@@ -223,4 +207,197 @@
 
 .md-select.md-select-vlan {
   padding : 0.6rem 1.2rem 0.4rem 0rem;
+}
+
+@media (max-width: 992px) {
+  .container {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+.flash {
+  margin-top: 20px;
+}
+
+.version-label {
+  font-size: 10px;
+}
+
+.md-addon {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+/* Rounded sliders */
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #4db6ac;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #4db6ac;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* File input */
+
+.btn-file {
+  position: relative;
+  overflow: hidden;
+}
+.btn-file input[type=file] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 100%;
+  min-height: 100%;
+  font-size: 100px;
+  text-align: right;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  outline: none;
+  background: white;
+  cursor: inherit;
+  display: block;
+}
+
+.flashbox-color {
+  background-color: #4db6ac!important;
+}
+
+/* tags search input */
+
+.tags-input {
+  border: none;
+  border-bottom: 1px solid #ced4da;
+  box-shadow: none;
+}
+
+/* nav pills custom colors */
+
+.nav-pills .nav-link:not(.active) {
+  background-color: #4db6ac;
+  color: white;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: #4db6ac;
+  color: #2c6b65; 
+}
+
+.nav-pills .nav-link:focus {
+  background-color: #3f968e;
+  color: white;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #3f968e;
+  color: white;
+}
+
+/* pagination used by dataTables plugin */
+.pagination .page-item.active .page-link,
+.pagination .page-item.active .page-link:hover {
+  background-color: #4db6ac;
+  color: white;
+}
+
+/* modal dialog customization */
+.modal-dialog.modal-notify.modal-teal .modal-header {
+  background-color: #4db6ac;
+}
+
+.fa-chevron-down::before,
+.fa-chevron-up::before {
+  cursor: pointer;
+}
+
+/* Stepper color override */
+.bs-stepper .step-trigger:focus {
+  color: #3f968e;
+  outline: none;
+}
+
+.active .bs-stepper-circle {
+  background-color: #4db6ac;
+}
+
+.bs-stepper .step-trigger {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+/* Time picker color override */
+.table-condensed a > .fa {
+  color: #4db6ac;
+}
+
+.input-group-text.remove-border {
+  border: none;
+}
+
+/* Wi-Fi tabs */
+
+.nav-tabs .nav-link {
+  border-radius: 0;
+}
+
+.wifi-tab-content {
+  > .tab-pane {
+    display: none;
+  }
+  > .active {
+    display: flex;
+  }
 }

@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-lock-open.fa-lg
-          strong &nbsp; Abertura de portas na ONU &nbsp;
+          strong &nbsp; Abertura de portas na CPE &nbsp;
             label(name="port-forward-tr069-main-label" id="port-forward-tr069-main-label")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -32,7 +32,7 @@
             .md-form.input-entry
               label#port-forward-tr069-ip-address-label Endereço IP
               input.form-control.ip-mask-field#port-forward-tr069-ip-address-input(type="text")
-              .invalid-feedback O IP precisa estar na mesma faixa de subrede do roteador
+              .invalid-feedback O IP precisa estar na mesma faixa de subrede do CPE
           .col-md-2.col-4.port-forward-tr069-port
             .md-form.input-entry
               label.port-forward-tr069-port-label Porta
@@ -50,7 +50,7 @@
               label.port-forward-tr069-port-label Porta4
               input.form-control.port-forward-tr069-port-input(type="number", min="0", max="65535")
           div
-            button.input-group-text.btn-primary.waves-effect.waves-light#port-forward-tr069-add-port-mapping-button(type="button", onclick='checkPortMappingInputs()')
+            button.btn.btn-sm.btn-primary.waves-effect.waves-light.m-0#port-forward-tr069-add-port-mapping-button(type="button", onclick='checkPortMappingInputs()')
               .fas.fa-plus.fa-lg
         .row
           .col
@@ -85,9 +85,9 @@
               table.table
                 thead
                   tr
-                    th.text-left.col-2 Dispositivos
-                    th.text-center.col-6 Portas
-                    th.text-center.col-2
+                    th.text-left Dispositivos
+                    th.text-center Portas
+                    th.text-right
                       a.fas.fa-question-circle.mr-4(
                         data-toggle="tooltip",
                         title="Remove todos os mapeamentos de portas desse dispositivo",

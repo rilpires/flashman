@@ -1,3 +1,4 @@
+import Validator from './device_validator.js';
 
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
@@ -84,7 +85,7 @@ let showIncompatibilityMessage = function(compatibility) {
   }
 };
 
-let checkAdvancedOptions = function() {
+window.checkAdvancedOptions = function() {
   let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
   let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0];
@@ -200,7 +201,10 @@ let checkPortsValues = function(portsValues) {
     }
   }
   if (!isPortsOnRange) {
-    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)');
+    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! ' +
+                    '(Por particularidades de aplicações do dispositivo ' +
+                    'TR-069 as seguintes portas também não são permitidas : ' +
+                    '22, 23, 80, 443, 7547 e 58000)');
   }
   if (!isPortsNotEmpty) {
     triggerRedAlert('Os campos devem ser preenchidos!');
@@ -215,7 +219,7 @@ let checkPortsValues = function(portsValues) {
     isPortsNotEmpty && isRangeOfSameSize && isRangeNegative);
 };
 
-let removeOnePortMapping = function(input) {
+window.removeOnePortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMapping = input.dataset['portMapping'];
 
@@ -226,7 +230,7 @@ let removeOnePortMapping = function(input) {
   let isRangeOfPorts = portMapping.includes('-');
 
   if (portsBadges.length == 1) {
-    removeSetOfPortMapping(input);
+    window.removeSetOfPortMapping(input);
   } else {
     /* remove the one port mapping */
     portsBadges = portsBadges.filter((p) => {
@@ -269,7 +273,7 @@ let removeOnePortMapping = function(input) {
   }
 };
 
-let removeSetOfPortMapping = function(input) {
+window.removeSetOfPortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMappingTable = $('#port-forward-tr069-table');
   let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
@@ -282,7 +286,7 @@ let removeSetOfPortMapping = function(input) {
   portMappingTable.find('[data-ip="' + ip + '"]').remove();
 };
 
-let removeAllPortMapping = function() {
+window.removeAllPortMapping = function() {
   let portMappingTable = $('#port-forward-tr069-table');
   // get needful variables
   let deviceId = sessionStorage.getItem('deviceId');
@@ -304,10 +308,10 @@ let removeAllPortMapping = function() {
   sessionStorage.setItem('lanSubmask', lanSubmask);
   sessionStorage.setItem('compatibility',
             JSON.stringify(compatibility));
-
 };
 
-let checkOverlappingPorts = function(ip, listOfMappings, ports, isRangeOfPorts) {
+let checkOverlappingPorts = function(ip, listOfMappings,
+                                     ports, isRangeOfPorts) {
   let ret = false;
   let i;
   for (i = 0; i < listOfMappings.length; i++) {
@@ -388,7 +392,8 @@ let putPortMapping = function(ip, ports) {
   if (listOfMappings == null) {
     listOfMappings = [];
   }
-  isOverlapping = checkOverlappingPorts(ip, listOfMappings, ports, isRangeOfPorts);
+  isOverlapping = checkOverlappingPorts(ip, listOfMappings,
+                                        ports, isRangeOfPorts);
   if (isOverlapping) {
     triggerRedAlert('Porta estão sobrepostas!');
     return;
@@ -464,16 +469,12 @@ let putPortMapping = function(ip, ports) {
       triggerRedAlert('Um erro inesperado aconteceu');
       return;
     }
-    let listOfBadges = $('<td>').
-          addClass('d-flex').
-          addClass('flex-row').
-          addClass('align-items-center').
-          addClass('justify-content-center').
-          addClass('flex-wrap');
+    let listOfBadges = $('<td>').addClass('align-items-center')
+                                .addClass('justify-content-center');
     for (i = 0; i < portsBadges.length; i++) {
       listOfBadges.append(
             $('<div>').
-              addClass('badge badge-primary badge-pill mr-2').
+              addClass('badge badge-primary badge-pill mr-2 mb-1').
               append(
                 $('<label>').
                 css('margin-top', '0.4rem').
@@ -511,7 +512,7 @@ let putPortMapping = function(ip, ports) {
               $('<div>').
               addClass('fas fa-times fa-lg'),
             ).
-            addClass('btn btn-sm btn-danger my-0')
+            addClass('btn btn-sm btn-danger my-0 mr-0')
             .attr('type', 'button')
             .attr('onclick', 'removeSetOfPortMapping(this)')
             .attr('data-ip', ip),
@@ -525,7 +526,7 @@ let putPortMapping = function(ip, ports) {
   }
 };
 
-let checkPortMappingInputs = function() {
+window.checkPortMappingInputs = function() {
   let i;
   let deviceIp = sessionStorage.getItem('lanSubnet');
   let maskBits = sessionStorage.getItem('lanSubmask');
@@ -555,7 +556,6 @@ let checkPortMappingInputs = function() {
       putPortMapping(ipAddressGiven, portsValues);
     }
   }
-
 };
 
 let fillSessionStorage = function(rules) {
@@ -624,16 +624,12 @@ let fillSessionStorage = function(rules) {
 let buildMappingTable = function(ip) {
   let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
   let portMappingTable = $('#port-forward-tr069-table');
-  let listOfBadges = $('<td>').
-          addClass('d-flex').
-          addClass('flex-row').
-          addClass('align-items-center').
-          addClass('justify-content-center').
-          addClass('flex-wrap');
+  let listOfBadges = $('<td>').addClass('align-items-center')
+                              .addClass('justify-content-center');
   for (let i = 0; i < portsBadges.length; i++) {
     listOfBadges.append(
           $('<div>').
-            addClass('badge badge-primary badge-pill mr-2').
+            addClass('badge badge-primary badge-pill mr-2 mb-1').
             append(
               $('<label>').
               css('margin-top', '0.4rem').
@@ -671,7 +667,7 @@ let buildMappingTable = function(ip) {
             $('<div>').
             addClass('fas fa-times fa-lg'),
           ).
-          addClass('btn btn-sm btn-danger my-0')
+          addClass('btn btn-sm btn-danger my-0 mr-0')
           .attr('type', 'button')
           .attr('onclick', 'removeSetOfPortMapping(this)')
           .attr('data-ip', ip),
@@ -710,23 +706,22 @@ $(document).ready(function() {
           fillSessionStorage(res.content);
           sessionStorage.setItem('compatibility',
             JSON.stringify(res.compatibility));
-          checkAdvancedOptions();
-          $('#port-forward-tr069-main-label').text(sessionStorage.getItem('serialId'));
+          window.checkAdvancedOptions();
+          $('#port-forward-tr069-main-label').text(sessionStorage
+                                             .getItem('serialId'));
           $('#port-forward-tr069-modal').modal('show');
           showIncompatibilityMessage(res.compatibility);
+        } else {
+          let badge = $(event.target).closest('.actions-opts')
+                                     .find('.badge-warning');
+          if (res.message) {
+            badge.text(status + ': ' + res.message);
+            badge.show();
+            setTimeout(function() {
+              badge.hide();
+            }, 1500);
+          }
         }
-      },
-      error: function(xhr, status, error) {
-        badge = $(event.target).
-          closest('.actions-opts').
-          find('.badge-warning');
-        if (res.message) {
-          badge.text(status + ': ' + error);
-        }
-        badge.show();
-        setTimeout(function() {
-          badge.hide();
-        }, 1500);
       },
     });
   });

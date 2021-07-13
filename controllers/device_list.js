@@ -15,6 +15,7 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const updateController = require('./update_flashman.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 
@@ -98,7 +99,7 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
     // a selector for flashbox devices.
     queries[i].$or[0].use_tr069 = {$ne: true};
     queries[i].$or[1].use_tr069 = true; // a selector for tr069 devices.
-  };
+  }
 
   // issue the count for each status and the mesh count in parallel.
   let counts = await Promise.all([
@@ -303,8 +304,8 @@ deviceListController.changeUpdate = function(req, res) {
     if (matchedDevice.mesh_master && doUpdate) {
       return res.status(500).json({
         success: false,
-        message: 'Este roteador é um slave de uma rede mesh, sua atualização '+
-                 'deve ser feita a partir do mestre de sua rede',
+        message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
+                 'deve ser feita a partir do CPE principal dessa rede',
       });
     }
     matchedDevice.do_update = doUpdate;
@@ -603,13 +604,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     sortKeys['external_reference.data'] = sortTypeOrder;
   } else if (queryContents.includes('/sort-sys-uptime')) {
     queryContents = queryContents.filter(
-      (query) => query !== '/sort-sys-uptime'
-    );
+      (query) => query !== '/sort-sys-uptime');
     sortKeys.sys_up_time = sortTypeOrder;
   } else if (queryContents.includes('/sort-wan-uptime')) {
     queryContents = queryContents.filter(
-      (query) => query !== '/sort-wan-uptime'
-    );
+      (query) => query !== '/sort-wan-uptime');
     sortKeys.wan_up_time = sortTypeOrder;
   } else {
     sortKeys._id = sortTypeOrder;
@@ -645,7 +644,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   }
 
   const userRole = await Role.findOne({
-    name: util.returnObjOrEmptyStr(req.user.role)
+    name: util.returnObjOrEmptyStr(req.user.role),
   });
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
@@ -721,7 +720,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         );
 
         // amount ports a device have
-        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model); 
+        device.qtdPorts = DeviceVersion.getPortsQuantity(device.model);
 
         // Fill default value if wi-fi state does not exist
         if (device.wifi_state === undefined) {
@@ -756,6 +755,27 @@ deviceListController.searchDeviceReg = async function(req, res) {
               deviceListController.getReleases(userRole,
                                                req.user.is_superuser, true)
               .then(function(singleReleases) {
+                /* validate if is to show ssid prefix checkbox
+                    for each device */
+                let ssidPrefix = matchedConfig.ssidPrefix;
+                let enabledForAllFlashman = (
+                  !!matchedConfig.personalizationHash &&
+                    matchedConfig.isSsidPrefixEnabled);
+                allDevices.forEach(function(device) {
+                  /*
+                    Define if is to show ssid prefix
+                    checkbox by checking the existence of
+                    personalization hash and if ssid prefix
+                    is enabled for all flashman.
+                    Or else, case ssid prefix is enabled
+                    for that device, is enough to be able
+                    to show.
+                  */
+                  device.isToShowSsidPrefixCheckbox =
+                    (enabledForAllFlashman == true ||
+                    device.isSsidPrefixEnabled == true);
+                });
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -767,6 +787,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   single_releases: singleReleases,
                   filter_list: req.body.filter_list,
                   devices: allDevices,
+                  ssidPrefix: ssidPrefix,
+                  isSsidPrefixEnabled: enabledForAllFlashman,
                 });
               });
             }, (error) => {
@@ -823,7 +845,7 @@ const downloadStockFirmware = async function(model) {
         // Mismatch, download new zip file
         console.log('UPDATE: Downloading factory reset fware for '+model+'...');
         fs.writeFileSync(localMd5Path, targetMd5);
-        let responseStream = request({ url: remoteFileUrl, method: 'GET' })
+        let responseStream = request({url: remoteFileUrl, method: 'GET'})
         .on('error', (err)=>{
           console.log(err);
           return resolve(false);
@@ -863,7 +885,7 @@ deviceListController.factoryResetDevice = function(req, res) {
     if (err || !device) {
       return res.status(500).json({
         success: false,
-        message: 'Roteador não encontrado na base de dados',
+        message: 'CPE não encontrado na base de dados',
       });
     }
     const model = device.model.replace('N/', '');
@@ -900,10 +922,11 @@ deviceListController.sendMqttMsg = function(req, res) {
     }
     if (device == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(device.version,
-                                                  device.wifi_is_5ghz_capable);
+                                                  device.wifi_is_5ghz_capable,
+                                                  device.model);
 
     switch (msgtype) {
       case 'rstapp':
@@ -917,7 +940,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         if (!permissions.grantResetDevices) {
           return res.status(200).json({
             success: false,
-            message: 'Roteador não possui essa função!',
+            message: 'CPE não possui essa função!',
           });
         } else if (device) {
           device.lan_devices = device.lan_devices.map((lanDevice) => {
@@ -961,6 +984,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
+      case 'upstatustr069':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -969,7 +993,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         });
         if (device && !device.use_tr069 && !isDevOn) {
           return res.status(200).json({success: false,
-                                     message: 'Roteador não esta online!'});
+                                     message: 'CPE não esta online!'});
         }
         if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
@@ -1036,6 +1060,23 @@ deviceListController.sendMqttMsg = function(req, res) {
               mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
             });
           }
+        } else if (msgtype === 'upstatustr069') {
+          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForUpStatusTr069Notification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+            slaves.forEach((slave)=>{
+              sio.anlixWaitForUpStatusTr069Notification(
+                req.sessionID,
+                slave.toUpperCase(),
+              );
+            });
+          }
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestUpStatus(device);
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
@@ -1090,7 +1131,7 @@ deviceListController.getFirstBootLog = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     if (matchedDevice.firstboot_log) {
@@ -1100,7 +1141,7 @@ deviceListController.getFirstBootLog = function(req, res) {
       return res.status(200);
     } else {
       return res.status(200).json({success: false,
-                                   message: 'Não existe log deste roteador'});
+                                   message: 'Não existe log deste CPE'});
     }
   });
 };
@@ -1114,7 +1155,7 @@ deviceListController.getLastBootLog = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(200).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     if (matchedDevice.lastboot_log) {
@@ -1124,7 +1165,7 @@ deviceListController.getLastBootLog = function(req, res) {
       return res.status(200);
     } else {
       return res.status(200).json({success: false,
-                                   message: 'Não existe log deste roteador'});
+                                   message: 'Não existe log deste CPE'});
     }
   });
 };
@@ -1138,7 +1179,7 @@ deviceListController.getDeviceReg = function(req, res) {
     }
     if (matchedDevice == null) {
       return res.status(404).json({success: false,
-                                   message: 'Roteador não encontrado'});
+                                   message: 'CPE não encontrado'});
     }
 
     // hide secret from api
@@ -1177,7 +1218,7 @@ deviceListController.getDeviceReg = function(req, res) {
       } else if (matchedDevice.last_contact >= offlineTime) {
       // if we are inside second threshold.
         deviceColor = 'red';
-      };
+      }
       // if we are out of these thresholds, we keep the default gray value.
     } else { // default matchedDevice, flashbox controlled.
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1212,7 +1253,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (matchedDevice == null) {
       return res.status(404).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
         errors: [],
       });
     }
@@ -1245,6 +1286,8 @@ deviceListController.setDeviceReg = function(req, res) {
       let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
       let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
       let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
+      let isSsidPrefixEnabled = parseInt(util.
+        returnObjOrNum(content.isSsidPrefixEnabled, 0)) == 0 ? false : true;
       let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
       let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
       let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
@@ -1272,7 +1315,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true}, function(err, matchedConfig) {
+      Config.findOne({is_default: true}, async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
           return res.status(500).json({
@@ -1299,8 +1342,11 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
+        let ssidPrefix = await updateController.
+          getSsidPrefix(isSsidPrefixEnabled);
         if (content.hasOwnProperty('wifi_ssid')) {
-          genericValidate(ssid, validator.validateSSID, 'ssid');
+          genericValidate(ssidPrefix+ssid,
+            validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
           genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1318,7 +1364,8 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(power, validator.validatePower, 'power');
         }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
-          genericValidate(ssid5ghz, validator.validateSSID, 'ssid5ghz');
+          genericValidate(ssidPrefix+ssid5ghz,
+            validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
           genericValidate(password5ghz,
@@ -1356,7 +1403,7 @@ deviceListController.setDeviceReg = function(req, res) {
 
         if (errors.length < 1) {
           Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
-          function(err, role) {
+          async function(err, role) {
             if (err) {
               console.log(err);
             }
@@ -1367,6 +1414,7 @@ deviceListController.setDeviceReg = function(req, res) {
               superuserGrant = true;
             }
             let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
@@ -1413,7 +1461,8 @@ deviceListController.setDeviceReg = function(req, res) {
               updateParameters = true;
             }
             if (content.hasOwnProperty('wifi_ssid') &&
-                ssid !== '' && ssid !== matchedDevice.wifi_ssid) {
+                ssid !== '' &&
+                ssid !== matchedDevice.wifi_ssid) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.ssid = ssid;
                 matchedDevice.wifi_ssid = ssid;
@@ -1491,7 +1540,8 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_ssid_5ghz') &&
-                ssid5ghz !== '' && ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
+                ssid5ghz !== '' &&
+                ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.ssid = ssid5ghz;
                 matchedDevice.wifi_ssid_5ghz = ssid5ghz;
@@ -1556,6 +1606,15 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiHidden5ghz !== matchedDevice.wifi_hidden_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('isSsidPrefixEnabled') &&
+                isSsidPrefixEnabled !== matchedDevice.isSsidPrefixEnabled) {
+              if (superuserGrant || role.grantWifiInfo > 1) {
+                matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -1671,7 +1730,8 @@ deviceListController.setDeviceReg = function(req, res) {
               return res.status(403).json({
                 success: false,
                 type: 'danger',
-                message: 'Permissão insuficiente para alterar campos requisitados',
+                message: 'Permissão insuficiente para alterar ' +
+                         'campos requisitados',
               });
             }
             if (updateParameters) {
@@ -1746,7 +1806,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
         return res.status(500).json({
@@ -1772,7 +1832,13 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      genericValidate(ssid, validator.validateSSID, 'ssid');
+      let enabledForAllFlashman = (
+        !!matchedConfig.personalizationHash &&
+          matchedConfig.isSsidPrefixEnabled);
+      let ssidPrefix = await updateController.
+        getSsidPrefix(enabledForAllFlashman);
+      genericValidate(ssidPrefix+ssid,
+        validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
@@ -1806,6 +1872,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
+              'isSsidPrefixEnabled': enabledForAllFlashman,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
@@ -2017,8 +2084,11 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     }
     if (!isPortsOnRange) {
       ret.success = false;
-      ret.message = ''+rules[i].ip+
-        ': As portas devem estar na faixa entre 1 - 65535 (Por particularidades de aplicações do dispositivo TR-069 as seguintes portas também não são permitidas : 22, 23, 80, 443, 7547 e 58000)';
+      ret.message = '' + rules[i].ip +
+        ': As portas devem estar na faixa entre 1 - 65535 ' +
+        '(Por particularidades de aplicações do dispositivo TR-069 ' +
+        'as seguintes portas também não são permitidas : ' +
+        '22, 23, 80, 443, 7547 e 58000)';
       return ret;
     }
     if (!isPortsNotEmpty) {
@@ -2052,7 +2122,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   }
   // check compatibility in mode of port mapping
   if (deviceListController.checkIncompatibility(rules, DeviceVersion.
-  getPortForwardTr069Compatibility(device.version))) {
+  getPortForwardTr069Compatibility(device.model, device.version))) {
     ret.success = false;
     ret.message = 'Possui regra não compatível';
     return ret;
@@ -2094,7 +2164,7 @@ deviceListController.setPortForward = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2103,13 +2173,13 @@ deviceListController.setPortForward = function(req, res) {
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não possui essa função',
+        message: 'CPE não possui essa função',
       });
     }
     if (matchedDevice.bridge_mode_enabled) {
       return res.status(200).json({
         success: false,
-        message: 'Este roteador está em modo bridge, e portanto não pode '+
+        message: 'Este CPE está em modo bridge, e portanto não pode '+
                  'liberar acesso a portas',
       });
     }
@@ -2159,7 +2229,7 @@ deviceListController.setPortForward = function(req, res) {
             if (!permissions.grantPortForwardAsym) {
               return res.status(200).json({
                 success: false,
-                message: 'Roteador não aceita portas assimétricas',
+                message: 'CPE não aceita portas assimétricas',
               });
             }
 
@@ -2297,15 +2367,16 @@ deviceListController.getPortForward = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable, matchedDevice.model);
+      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não possui essa função',
+        message: 'CPE não possui essa função',
       });
     }
 
@@ -2314,7 +2385,8 @@ deviceListController.getPortForward = function(req, res) {
         success: true,
         content: matchedDevice.port_mapping,
         compatibility: DeviceVersion.
-        getPortForwardTr069Compatibility(matchedDevice.version),
+        getPortForwardTr069Compatibility(matchedDevice.model,
+                                         matchedDevice.version),
       });
     }
 
@@ -2370,7 +2442,7 @@ deviceListController.getPingHostsList = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     return res.status(200).json({
@@ -2392,7 +2464,7 @@ deviceListController.setPingHostsList = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
@@ -2434,7 +2506,7 @@ deviceListController.getLanDevices = async function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2542,7 +2614,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2574,7 +2646,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       return res.status(404).json({
         success: false,
         type: 'danger',
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
 
@@ -2607,13 +2679,13 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!matchedDevice) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não encontrado',
+        message: 'CPE não encontrado',
       });
     }
     if (!isDevOn) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não está online!',
+        message: 'CPE não está online!',
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2624,7 +2696,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
-        message: 'Roteador não suporta este comando',
+        message: 'CPE não suporta este comando',
       });
     }
     Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -2687,7 +2759,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar roteador'});
+                                   message: 'Erro ao encontrar CPE'});
     }
     let devFound = false;
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
@@ -2721,7 +2793,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     let matchedDevice = await DeviceModel.findById(req.body.id);
     if (!matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar roteador'});
+                                   message: 'Erro ao encontrar CPE'});
     }
     let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
     if (retObj.success) {
@@ -2751,11 +2823,11 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     if (!matchedDevice) {
       return res.status(404).json({success: false,
-                                   message: "ONU não encontrada"});
+                                   message: 'ONU não encontrada'});
     }
     if (!matchedDevice.use_tr069) {
       return res.status(404).json({success: false,
-                                   message: "ONU não encontrada"});
+                                   message: 'ONU não encontrada'});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
@@ -2779,7 +2851,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
       }
     });
   });
-}
+};
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');
@@ -2838,7 +2910,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
               value: 'wan_negociated_duplex'},
       {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
       {label: 'ID do cliente', value: 'external_reference.data'},
-      {label: 'Modelo do roteador', value: 'model'},
+      {label: 'Modelo do CPE', value: 'model'},
       {label: 'Versão do firmware', value: 'version'},
       {label: 'Release', value: 'installed_release'},
       {label: 'Atualizar firmware', value: 'do_update'},

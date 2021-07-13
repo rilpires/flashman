@@ -386,19 +386,33 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
-        if (devices.length > 0) {
-          device = devices[0];
-        }
+        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      let tr069Info = {'url': '', 'interval': 0};
-      let config = await(ConfigModel.findOne({is_default: true}, 'tr069')
-        .exec().catch((err) => err));
+      let tr069Info = {url: '', interval: 0};
+      let config = await(ConfigModel.findOne(
+        {is_default: true},
+        {tr069: true,
+         certification: true}).exec().catch((err) => err));
       if (config.tr069) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
+      }
+      let certification = { // Structure with camel case format
+        requiredWan: true,
+        requiredIpv4: true,
+        requiredIpv6: false,
+        requiredDns: true,
+        requiredFlashman: true,
+      };
+      if (config.certification) {
+        certification.requiredWan = config.certification.wan_step_required;
+        certification.requiredIpv4 = config.certification.ipv4_step_required;
+        certification.requiredIpv6 = config.certification.ipv6_step_required;
+        certification.requiredDns = config.certification.dns_step_required;
+        certification.requiredFlashman =
+          config.certification.flashman_step_required;
       }
       if (!device) {
         return res.status(200).json({
@@ -406,6 +420,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'isRegister': false,
           'isOnline': false,
           'tr069Info': tr069Info,
+          'certification': certification,
         });
       } else if (req.body.isOnu) {
         // Save passwords sent from app
@@ -444,6 +459,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           },
           'tr069Info': tr069Info,
           'onuConfig': onuConfig,
+          'certification': certification,
         });
       }
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -464,6 +480,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'mesh_master': device.mesh_master,
           'mesh_slaves': device.mesh_slaves,
         },
+        'certification': certification,
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});

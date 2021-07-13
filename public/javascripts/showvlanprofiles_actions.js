@@ -1,5 +1,8 @@
+import {displayAlertMsg} from './common_actions.js';
+import 'datatables.net-bs4';
+import 'regenerator-runtime/runtime';
 
-let checkVlanId = function(input) {
+window.checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol
   // vlan 2 is restricted to wan
   if (input.value != 1 && (input.value < 3 || input.value > 4094)) {
@@ -21,7 +24,7 @@ let checkVlanId = function(input) {
   }
 };
 
-let checkVlanName = function(input) {
+window.checkVlanName = function(input) {
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(input.value) == false) {
     input.setCustomValidity('O nome do Perfil de VLAN'+
       ' deve começar com um caractere do alfabeto,'+
@@ -67,7 +70,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
           $('<td>').append(
             $('<button>').append(
               $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span>').html('&nbsp Editar'),
+              $('<span>').html('&nbsp Editar nome'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
@@ -152,7 +155,9 @@ $(document).ready(function() {
     ),
   );
   // Load table content
-  fetchVlanProfiles(vlanProfilesTable);
+  if (window.location.href.indexOf('/vlan/profile') !== -1) {
+    fetchVlanProfiles(vlanProfilesTable);
+  }
 
   $(document).on('click', '#card-header', function() {
     let plus = $(this).find('.fa-plus');
@@ -177,40 +182,10 @@ $(document).ready(function() {
     }).then(async function(result) {
       if (!result.value) return;
       let updatesFailed = false;
-      let deviceFailed;
       for (let i = 0; i < selectedItens.length; i++) {
         let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
-        if (res.type == 'success') {
-          res.updateDevices.every((updateObj) => {
-            updateObj = JSON.parse(updateObj);
-            $.ajax({
-              type: 'POST',
-              url: '/vlan/update/'+updateObj.deviceId,
-              traditional: true,
-              data: {
-                vlans: updateObj.vlans,
-              },
-              success: function(res) {
-                return true;
-              },
-              error: function(res) {
-                updatesFailed = true;
-                deviceFailed = updateObj.deviceId;
-                return false;
-              },
-            });
-          });
-        } else {
-          swal.close();
-          swal({
-            type: 'error',
-            title: 'Erro ao excluir perfis de VLAN',
-            text: 'Perfis de VLAN nao encontrados. ' +
-            'Por favor tente novamente',
-            confirmButtonColor: '#4db6ac',
-          });
-        }
-        if (updatesFailed === true) {
+        if (!res.success) {
+          updatesFailed = true;
           break;
         }
       }
@@ -219,8 +194,8 @@ $(document).ready(function() {
         swal({
           type: 'error',
           title: 'Erro ao excluir perfis de VLAN',
-          text: 'Exclusão de perfis não foi possível pois dispositivo ' +
-          deviceFailed +' não atualizou sua configuração de VLAN.',
+          text: 'Exclusão de perfis não foi possível pois ' +
+                'alguns CPEs não atualizaram a configuração de VLAN.',
           confirmButtonColor: '#4db6ac',
         });
       } else {

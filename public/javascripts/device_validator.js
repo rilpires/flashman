@@ -32,9 +32,9 @@
     Validator.prototype.validateChannel = function(channel) {
       return {
         valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                '36', '40', '44', '48', '52', '56', '60', '64',
+                '12', '13', '36', '40', '44', '48', '52', '56', '60', '64',
                 '149', '153', '157', '161', '165', 'auto'].includes(channel),
-        err: ['Somente são aceitos os valores 1 a 11 e auto'],
+        err: ['Canal selecionado inválido'],
       };
     };
 
@@ -91,6 +91,20 @@
         'Somente são aceitos: caracteres alfanuméricos, espaços, ponto, - e _',
       ];
       let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9\.\-\_\#\s]+$/);
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
+    Validator.prototype.validateSSIDPrefix = function(ssid) {
+      const messages = [
+        'Este campo é obrigatório',
+        'Este campo não pode ter mais de 16 caracteres',
+        'São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #',
+        'Deve ter pelo menos um ponto, -, _ ou # como separador no final',
+      ];
+      let ret = validateRegex(ssid, 1, 16,
+        /^[a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#)$/);
+
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };

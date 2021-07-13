@@ -1,3 +1,5 @@
+import {displayAlertMsg, socket} from './common_actions.js';
+import 'selectize';
 
 let isPingHostListInitialized = false;
 
@@ -133,7 +135,7 @@ $(document).ready(function() {
                 $('<i></i>').addClass('fas fa-spinner fa-pulse fa-4x'),
                 $('</br>'),
                 $('</br>'),
-                $('<span></span>').html('Aguardando resposta do roteador...')
+                $('<span></span>').html('Aguardando resposta do CPE...')
               )
             );
           } else {
