@@ -4,19 +4,9 @@ const mockingoose = require('mockingoose');
 const diagAppAPIController = require('../../controllers/app_diagnostic_api');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
+const utils = require('../utils');
 
 describe('Technician App API', () => {
-  const mockRequest = (bodyData) => {
-    return {
-      body: bodyData,
-    };
-  };
-  const mockResponse = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-  };
 
   test('Must fail if request has invalid body', async () => {
     // Request
@@ -24,10 +14,10 @@ describe('Technician App API', () => {
     const bodyNoMac = {
       notamac: 'AA:AA:AA:AA:AA:AA',
     };
-    const req = mockRequest(bodyEmpty);
-    const req2 = mockRequest(bodyNoMac);
-    const res = mockResponse();
-    const res2 = mockResponse();
+    const req = utils.mockRequest(bodyEmpty);
+    const req2 = utils.mockRequest(bodyNoMac);
+    const res = utils.mockResponse();
+    const res2 = utils.mockResponse();
     // Test
     await diagAppAPIController.verifyFlashman(req, res);
     expect(res.status).toHaveBeenCalledWith(403);
@@ -63,8 +53,8 @@ describe('Technician App API', () => {
     const body = {
       mac: 'AB:AB:AB:AB:AB:AB',
     };
-    const req = mockRequest(body);
-    const res = mockResponse();
+    const req = utils.mockRequest(body);
+    const res = utils.mockResponse();
     // Test
     await diagAppAPIController.verifyFlashman(req, res);
     expect(res.json).toHaveBeenCalledWith(
@@ -100,8 +90,8 @@ describe('Technician App API', () => {
       mac: 'AB:AB:AB:AB:AB:AB',
       isOnu: false,
     };
-    const req = mockRequest(body);
-    const res = mockResponse();
+    const req = utils.mockRequest(body);
+    const res = utils.mockResponse();
     // Test
     await diagAppAPIController.verifyFlashman(req, res);
     expect(res.json).toHaveBeenCalledWith(
@@ -142,10 +132,10 @@ describe('Technician App API', () => {
       onuMac: 'serialid',
       isOnu: true,
     };
-    const req = mockRequest(body);
-    const req2 = mockRequest(body2);
-    const res = mockResponse();
-    const res2 = mockResponse();
+    const req = utils.mockRequest(body);
+    const req2 = utils.mockRequest(body2);
+    const res = utils.mockResponse();
+    const res2 = utils.mockResponse();
     // Test
     await diagAppAPIController.verifyFlashman(req, res);
     expect(res.json).toHaveBeenCalledWith(

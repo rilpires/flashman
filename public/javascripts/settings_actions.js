@@ -168,11 +168,9 @@ $(document).ready(function() {
           .siblings('label').addClass('active');
       }
       if (resp.isClientPayingPersonalizationApp) {
-        $('#is-ssid-prefix-enabled-div').
-          removeClass('d-none').
-          addClass('d-block');
-        $('#is-ssid-prefix-enabled').
-          prop('checked', resp.isSsidPrefixEnabled).change();
+        $('#is-ssid-prefix-enabled-col').removeClass('d-none');
+        $('#is-ssid-prefix-enabled')
+          .prop('checked', resp.isSsidPrefixEnabled).change();
         $('#ssid-prefix').val(resp.ssidPrefix)
           .siblings('label').addClass('active');
       }

@@ -96,7 +96,7 @@ let configSchema = new mongoose.Schema({
   personalizationHash: {type: String, default: ''},
   vlans_profiles: [{
     // restricted to this range of value by the definition of 802.1q protocol
-    vlan_id: {type: Number, required: true, min: 1, max: 4095},
+    vlan_id: {type: Number, required: true, min: 1, max: 4094},
     profile_name: {type: String,
                    required: true,
                    match: /[A-Za-z0-9_-]/,
