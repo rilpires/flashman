@@ -110,8 +110,6 @@ let showIncompatibilityMessage = function(compatibility) {
 };
 
 window.checkAdvancedOptions = function() {
-  // TODO Check for crash
-  console.log(getPortForwardStorage('compatibility'));
   let compatibility = getPortForwardStorage('compatibility');
   let isRangeOfPorts = $('#port-forward-tr069-range-of-ports-checkbox')[0];
   let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0];
@@ -247,10 +245,6 @@ let checkPortsValues = function(portsValues) {
 window.removeOnePortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMapping = input.dataset['portMapping'];
-
-  // TODO Check
-  console.log(getPortForwardStorage('listOfMappings'));
-  console.log(getPortForwardStorage('portsBadges-' + ip));
   let listOfMappings = getPortForwardStorage('listOfMappings');
   let portsBadges = getPortForwardStorage('portsBadges-' + ip);
 
@@ -322,7 +316,7 @@ window.removeAllPortMapping = function() {
   let version = getPortForwardStorage('version');
   let lanSubnet = getPortForwardStorage('lanSubnet');
   let lanSubmask = getPortForwardStorage('lanSubmask');
-  let compatibility = getPortForwardStorage('compatibility'));
+  let compatibility = getPortForwardStorage('compatibility');
   // clean dom table and session storage
   portMappingTable.empty();
   deletePortForwardStorage();
@@ -758,7 +752,8 @@ $(document).ready(function() {
       dataType: 'json',
       data: JSON.stringify({
         'content': (getPortForwardStorage('listOfMappings') == null ?
-                    '[]' : getPortForwardStorage('listOfMappings')),
+                    '[]' :
+                    JSON.stringify(getPortForwardStorage('listOfMappings'))),
       }),
       contentType: 'application/json',
       success: function(res) {
