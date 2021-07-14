@@ -1,30 +1,7 @@
 import Validator from './device_validator.js';
-
-const setPortForwardStorage = function(key, val) {
-  let portForwardObj = sessionStorage.getItem('portForwardTr069');
-  if (!portForwardObj) {
-    portForwardObj = {};
-  } else {
-    portForwardObj = JSON.parse(portForwardObj);
-  }
-  portForwardObj[key] = val;
-  portForwardObj = JSON.stringify(portForwardObj);
-  sessionStorage.setItem('portForwardTr069', portForwardObj);
-};
-
-const getPortForwardStorage = function(key) {
-  let portForwardObj = sessionStorage.getItem('portForwardTr069');
-  if (!portForwardObj) {
-    return null;
-  } else {
-    portForwardObj = JSON.parse(portForwardObj);
-  }
-  return portForwardObj[key];
-};
-
-const deletePortForwardStorage = function() {
-  sessionStorage.removeItem('portForwardTr069');
-}
+import {setPortForwardStorage,
+        getPortForwardStorage,
+        deletePortForwardStorage} from './session_storage.js';
 
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
