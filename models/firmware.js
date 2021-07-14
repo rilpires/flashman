@@ -19,8 +19,7 @@ let firmwareSchema = new Schema({
     type: String,
     enum: ['flashbox', 'tr069'],
     default: 'flashbox',
-  }, // needs migration
-  oui: {type: String},
+  },
 });
 
 firmwareSchema.plugin(mongoosePaginate);

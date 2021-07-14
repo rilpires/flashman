@@ -31,7 +31,6 @@ let parseFilename = function(filename) {
                         vendor: fnameSubStrings[0],
                         model: fnameSubStrings[1],
                         version: fnameSubStrings[2],
-                        oui: '',
                         cpe_type: 'flashbox'};
   return firmwareFields;
 };
@@ -264,11 +263,6 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmwarefile = req.files.firmwareflashboxfile;
   } else if (isTR069) {
     firmwarefile = req.files.firmwaretr069file;
-    /*
-      check req.body.oui
-      check req.body.productclass
-      check req.body.version
-    */
   } else {
     return res.json({type: 'danger',
                      message: 'Nenhum arquivo foi selecionado'});
@@ -307,7 +301,6 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields.model = req.body.productclass;
     fnameFields.version = req.body.version;
     fnameFields.release = req.body.version;
-    fnameFields.oui = req.body.oui;
     fnameFields.cpe_type = 'tr069';
   }
 
@@ -324,7 +317,6 @@ firmwareController.uploadFirmware = async function(req, res) {
         version: fnameFields.version,
         release: fnameFields.release,
         filename: firmwarefile.name,
-        oui: fnameFields.oui,
         cpe_type: fnameFields.cpe_type,
       });
     }
@@ -341,7 +333,6 @@ firmwareController.uploadFirmware = async function(req, res) {
       version: fnameFields.version,
       release: fnameFields.release,
       filename: firmwarefile.name,
-      oui: fnameFields.oui,
       cpe_type: fnameFields.cpe_type,
     });
   } else {
@@ -357,7 +348,6 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmware.version = fnameFields.version;
     firmware.release = fnameFields.release;
     firmware.filename = firmwarefile.name;
-    firmware.oui = fnameFields.oui;
     firmware.cpe_type = fnameFields.cpe_type;
   }
 
