@@ -1,5 +1,31 @@
 import Validator from './device_validator.js';
 
+const setPortForwardStorage = function(key, val) {
+  let portForwardObj = sessionStorage.getItem('portForwardTr069');
+  if (!portForwardObj) {
+    portForwardObj = {};
+  } else {
+    portForwardObj = JSON.parse(portForwardObj);
+  }
+  portForwardObj[key] = val;
+  portForwardObj = JSON.stringify(portForwardObj);
+  sessionStorage.setItem('portForwardTr069', portForwardObj);
+};
+
+const getPortForwardStorage = function(key) {
+  let portForwardObj = sessionStorage.getItem('portForwardTr069');
+  if (!portForwardObj) {
+    return null;
+  } else {
+    portForwardObj = JSON.parse(portForwardObj);
+  }
+  return portForwardObj[key];
+};
+
+const deletePortForwardStorage = function() {
+  sessionStorage.removeItem('portForwardTr069');
+}
+
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
     $('#port-forward-tr069-modal-alert').
@@ -34,11 +60,9 @@ let showIncompatibilityMessage = function(compatibility) {
   let compatInfoDiv = $('#port-forward-tr069-modal-compat-info');
   let compatInfoMessage = $('#port-forward-tr069-modal-compat-info-message');
   let compatInfoList = $('#port-forward-tr069-modal-compat-info-list');
-  let message = 'O modelo '+
-  sessionStorage.getItem('model')
-  +' versão '+
-  sessionStorage.getItem('version')
-  +' não suporta as seguintes formas de a abertura de portas: ';
+  let message = 'O modelo ' + getPortForwardStorage('model') +
+                ' versão ' + getPortForwardStorage('version') +
+                ' não suporta as seguintes formas de a abertura de portas: ';
   let show = false;
   compatInfoList.html('');
   if (!compatibility.simpleSymmetric) {
@@ -86,9 +110,10 @@ let showIncompatibilityMessage = function(compatibility) {
 };
 
 window.checkAdvancedOptions = function() {
-  let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
-  let isRangeOfPorts = $('#port-forward-tr069-'+
-    'range-of-ports-checkbox')[0];
+  // TODO Check for crash
+  console.log(getPortForwardStorage('compatibility'));
+  let compatibility = getPortForwardStorage('compatibility');
+  let isRangeOfPorts = $('#port-forward-tr069-range-of-ports-checkbox')[0];
   let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0];
   let advOptionsLabel = $('#port-forward-tr069-advanced-options-labels')[0];
   let portBox = $('.port-forward-tr069-port');
@@ -223,8 +248,11 @@ window.removeOnePortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMapping = input.dataset['portMapping'];
 
-  let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
-  let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
+  // TODO Check
+  console.log(getPortForwardStorage('listOfMappings'));
+  console.log(getPortForwardStorage('portsBadges-' + ip));
+  let listOfMappings = getPortForwardStorage('listOfMappings');
+  let portsBadges = getPortForwardStorage('portsBadges-' + ip);
 
   let ports = portMapping.split(/-|:/).map((p) => parseInt(p));
   let isRangeOfPorts = portMapping.includes('-');
@@ -267,8 +295,8 @@ window.removeOnePortMapping = function(input) {
       triggerRedAlert('Um erro inesperado aconteceu');
     }
     /* *** */
-    sessionStorage.setItem('listOfMappings', JSON.stringify(listOfMappings));
-    sessionStorage.setItem('portsBadges-'+ip, JSON.stringify(portsBadges));
+    setPortForwardStorage('listOfMappings', listOfMappings);
+    setPortForwardStorage('portsBadges-' + ip, portsBadges);
     $(input.parentElement).remove();
   }
 };
@@ -276,38 +304,36 @@ window.removeOnePortMapping = function(input) {
 window.removeSetOfPortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMappingTable = $('#port-forward-tr069-table');
-  let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
+  let listOfMappings = getPortForwardStorage('listOfMappings');
   listOfMappings = listOfMappings.filter((lm) => {
     return ip != lm.ip;
   });
-  sessionStorage.setItem('listOfMappings', JSON.stringify(listOfMappings));
-  sessionStorage.setItem('portsBadges-'+ip, null);
-
+  setPortForwardStorage('listOfMappings', listOfMappings);
+  setPortForwardStorage('portsBadges-' + ip, null);
   portMappingTable.find('[data-ip="' + ip + '"]').remove();
 };
 
 window.removeAllPortMapping = function() {
   let portMappingTable = $('#port-forward-tr069-table');
   // get needful variables
-  let deviceId = sessionStorage.getItem('deviceId');
-  let serialId = sessionStorage.getItem('serialId');
-  let model = sessionStorage.getItem('model');
-  let version = sessionStorage.getItem('version');
-  let lanSubnet = sessionStorage.getItem('lanSubnet');
-  let lanSubmask = sessionStorage.getItem('lanSubmask');
-  let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
+  let deviceId = getPortForwardStorage('deviceId');
+  let serialId = getPortForwardStorage('serialId');
+  let model = getPortForwardStorage('model');
+  let version = getPortForwardStorage('version');
+  let lanSubnet = getPortForwardStorage('lanSubnet');
+  let lanSubmask = getPortForwardStorage('lanSubmask');
+  let compatibility = getPortForwardStorage('compatibility'));
   // clean dom table and session storage
   portMappingTable.empty();
-  sessionStorage.clear();
+  deletePortForwardStorage();
   // return needful variables to session storage
-  sessionStorage.setItem('deviceId', deviceId);
-  sessionStorage.setItem('serialId', serialId);
-  sessionStorage.setItem('model', model);
-  sessionStorage.setItem('version', version);
-  sessionStorage.setItem('lanSubnet', lanSubnet);
-  sessionStorage.setItem('lanSubmask', lanSubmask);
-  sessionStorage.setItem('compatibility',
-            JSON.stringify(compatibility));
+  setPortForwardStorage('deviceId', deviceId);
+  setPortForwardStorage('serialId', serialId);
+  setPortForwardStorage('model', model);
+  setPortForwardStorage('version', version);
+  setPortForwardStorage('lanSubnet', lanSubnet);
+  setPortForwardStorage('lanSubmask', lanSubmask);
+  setPortForwardStorage('compatibility', compatibility);
 };
 
 let checkOverlappingPorts = function(ip, listOfMappings,
@@ -382,9 +408,9 @@ let putPortMapping = function(ip, ports) {
   let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0].checked;
 
-  let compatibility = JSON.parse(sessionStorage.getItem('compatibility'));
-  let listOfMappings = JSON.parse(sessionStorage.getItem('listOfMappings'));
-  let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
+  let compatibility = getPortForwardStorage('compatibility');
+  let listOfMappings = getPortForwardStorage('listOfMappings');
+  let portsBadges = getPortForwardStorage('portsBadges-' + ip);
 
   if (portsBadges == null) {
     portsBadges = [];
@@ -521,15 +547,15 @@ let putPortMapping = function(ip, ports) {
       .attr('data-ip', ip),
     );
 
-    sessionStorage.setItem('listOfMappings', JSON.stringify(listOfMappings));
-    sessionStorage.setItem('portsBadges-'+ip, JSON.stringify(portsBadges));
+    setPortForwardStorage('listOfMappings', listOfMappings);
+    setPortForwardStorage('portsBadges-' + ip, portsBadges);
   }
 };
 
 window.checkPortMappingInputs = function() {
   let i;
-  let deviceIp = sessionStorage.getItem('lanSubnet');
-  let maskBits = sessionStorage.getItem('lanSubmask');
+  let deviceIp = getPortForwardStorage('lanSubnet');
+  let maskBits = getPortForwardStorage('lanSubmask');
   let ipAddressGiven = $('#port-forward-tr069-ip-address-input')[0].value;
   let portsInputs = $('.port-forward-tr069-port-input');
   let isAddressValid;
@@ -613,16 +639,15 @@ let fillSessionStorage = function(rules) {
       );
     }
     for (let li of listOfIps) {
-      sessionStorage.setItem('listOfMappings', JSON.stringify(rules));
-      sessionStorage.setItem('portsBadges-'+li,
-        JSON.stringify(portsBadges[li]));
+      setPortForwardStorage('listOfMappings', rules);
+      setPortForwardStorage('portsBadges-' + li, portsBadges[li]);
       buildMappingTable(li);
     }
   }
 };
 
 let buildMappingTable = function(ip) {
-  let portsBadges = JSON.parse(sessionStorage.getItem('portsBadges-'+ip));
+  let portsBadges = getPortForwardStorage('portsBadges-' + ip);
   let portMappingTable = $('#port-forward-tr069-table');
   let listOfBadges = $('<td>').addClass('align-items-center')
                               .addClass('justify-content-center');
@@ -690,25 +715,24 @@ $(document).ready(function() {
     $('#port-forward-tr069-asym-opening-checkbox')[0].checked = false;
     $('#port-forward-tr069-ip-address-input')[0].value = '';
     portMappingTable.empty();
-    sessionStorage.clear();
-    sessionStorage.setItem('deviceId', row.data('deviceid'));
-    sessionStorage.setItem('serialId', row.data('serialid'));
-    sessionStorage.setItem('model', row.data('deviceModel'));
-    sessionStorage.setItem('version', row.data('deviceVersion'));
-    sessionStorage.setItem('lanSubnet', row.data('lanSubnet'));
-    sessionStorage.setItem('lanSubmask', row.data('lanSubmask'));
+    deletePortForwardStorage();
+    setPortForwardStorage('deviceId', row.data('deviceid'));
+    setPortForwardStorage('serialId', row.data('serialid'));
+    setPortForwardStorage('model', row.data('deviceModel'));
+    setPortForwardStorage('version', row.data('deviceVersion'));
+    setPortForwardStorage('lanSubnet', row.data('lanSubnet'));
+    setPortForwardStorage('lanSubmask', row.data('lanSubmask'));
     $.ajax({
       type: 'GET',
-      url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
+      url: '/devicelist/uiportforward/' + getPortForwardStorage('deviceId'),
       dataType: 'json',
       success: function(res) {
         if (res.success) {
           fillSessionStorage(res.content);
-          sessionStorage.setItem('compatibility',
-            JSON.stringify(res.compatibility));
+          setPortForwardStorage('compatibility', res.compatibility);
           window.checkAdvancedOptions();
-          $('#port-forward-tr069-main-label').text(sessionStorage
-                                             .getItem('serialId'));
+          $('#port-forward-tr069-main-label').text(
+            getPortForwardStorage('serialId'));
           $('#port-forward-tr069-modal').modal('show');
           showIncompatibilityMessage(res.compatibility);
         } else {
@@ -730,11 +754,11 @@ $(document).ready(function() {
     function(event) {
     $.ajax({
       type: 'POST',
-      url: '/devicelist/uiportforward/' + sessionStorage.getItem('deviceId'),
+      url: '/devicelist/uiportforward/' + getPortForwardStorage('deviceId'),
       dataType: 'json',
       data: JSON.stringify({
-        'content': sessionStorage.getItem('listOfMappings') == null ?
-        '[]':sessionStorage.getItem('listOfMappings'),
+        'content': (getPortForwardStorage('listOfMappings') == null ?
+                    '[]' : getPortForwardStorage('listOfMappings')),
       }),
       contentType: 'application/json',
       success: function(res) {
