@@ -314,7 +314,6 @@ vlanController.checkDevicesAffected = async function(req, res) {
           doUpdate = true;
         }
       }
-      // TODO Test vlan final array
       if (doUpdate) {
         await device.save().catch((err) => {
           return res.json({success: false, type: 'danger',
