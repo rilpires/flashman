@@ -240,7 +240,7 @@ const getNokiaFields = function() {
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
   fields.wan.name = 'InternetGatewayDevice.X_Authentication.Account.UserName';
-  fields.wan.name = 'InternetGatewayDevice.X_Authentication.Account.Password';
+  fields.wan.password = 'InternetGatewayDevice.X_Authentication.Account.Password';
   return fields;
 };
 
