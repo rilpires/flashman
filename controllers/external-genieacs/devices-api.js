@@ -202,6 +202,8 @@ const getHuaweiFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
   fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
   fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+  fields.wan.name = 'InternetGatewayDevice.X_HW_WebUserInfo.1.UserName';
+  fields.wan.password = 'InternetGatewayDevice.X_HW_WebUserInfo.1.Password';
   return fields;
 };
 
