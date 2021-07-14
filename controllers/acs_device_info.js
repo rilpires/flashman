@@ -411,17 +411,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
-    if (device.installed_release === device.release) {
-      device.do_update = false;
-      device.do_update_status = 1;
-      /*
-      else
-        device.do_update_status = 2; // img download failed
-        device.do_update_status = 3; // img check failed
-        device.do_update_status = 4; // ??
-        device.do_update_status = 5; // ack not received
-      */
-    }
+  }
+  if (device.installed_release === device.release) {
+    device.do_update = false;
+    device.do_update_status = 1;
   }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
@@ -1396,7 +1389,7 @@ acsDeviceInfoController.addFirmwareInGenie = async function(firmware) {
       path: encodeURI(path),
       headers: {
         'fileType': '1 Firmware Upgrade Image',
-        'oui': firmware.oui,
+        'oui': '',
         'productClass': firmware.model,
         'version': firmware.version,
         // 'Content-Type': 'application/octet-stream',
