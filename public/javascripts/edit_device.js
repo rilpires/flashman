@@ -1,5 +1,6 @@
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
+import {getConfigStorage} from './session_storage.js';
 
 let renderEditErrors = function(errors) {
   for (let key in errors) {
@@ -73,7 +74,7 @@ let validateEditDevice = function(event) {
     index.toString()).is(':checked') ? 1 : 0);
   let ssidPrefix = '';
   if (isDeviceSsidPrefixEnabled == 1) {
-    ssidPrefix = $('#ssid_prefix').html();
+    ssidPrefix = getConfigStorage('ssidPrefix');
   }
   let externalReferenceType = $('#edit_ext_ref_type_selected-' +
                                 index.toString()).html();
@@ -269,7 +270,7 @@ let validateEditDevice = function(event) {
         // if is to disable ssid prefix on device
         // (case is not enable anymore in all flashman)
         if (isDeviceSsidPrefixEnabled == 0 &&
-            !$('#ssid_prefix').data('isenabled')) {
+            !getConfigStorage('isSsidPrefixEnabled')) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             removeClass('d-block');
           $('#ssid_prefix_checkbox-' + index.toString()).
