@@ -9,6 +9,7 @@
         "node": true,
         "es6": true,
         "jquery": true,
-        "jest": true
+        "jest": true,
+        "swal": true
     }
 }
