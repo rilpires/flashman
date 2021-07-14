@@ -1714,7 +1714,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                getConfigStorage('ssidPrefix')
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1722,7 +1722,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                getConfigStorage('ssidPrefix')
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
