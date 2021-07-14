@@ -9,6 +9,7 @@ const tr069Devices = {
       'V1.1.20P1T18',
       'V1.1.20P1T4',
       'V1.1.20P3N3',
+      'V1.1.20P3N4D',
     ],
     port_forward_opts: {
       'V1.1.20P1T18': {
@@ -24,6 +25,12 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
       'V1.1.20P3N3': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
+      'V1.1.20P3N4D': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
        rangeSymmetric: false,
@@ -1641,14 +1648,6 @@ DeviceVersion.getTr069VersionByModel = function(model) {
     ret = tr069Devices[model].versions;
   }
   return ret;
-};
-
-DeviceVersion.getTr069OuiByModel = function(model) {
-  if (tr069Devices.hasOwnProperty(model)) {
-    return tr069Devices[model];
-  } else {
-    return '';
-  }
 };
 
 module.exports = DeviceVersion;
