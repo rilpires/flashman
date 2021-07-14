@@ -71,6 +71,24 @@ window.fetchVersion = function(input) {
   }, 'json');
 };
 
+window.changeCpeForm = function(input) {
+  if (input.value === 'tr069') {
+    // display tr069 form
+    $('#tr069-form').removeClass('d-none');
+    $('#tr069-form').addClass('d-block');
+    // hide flashbox form
+    $('#flashbox-form').removeClass('d-block');
+    $('#flashbox-form').addClass('d-none');
+  } else {
+    // display flashbox form
+    $('#flashbox-form').removeClass('d-none');
+    $('#flashbox-form').addClass('d-block');
+    // hide tr069 form
+    $('#tr069-form').removeClass('d-block');
+    $('#tr069-form').addClass('d-none');
+  }
+};
+
 $(document).ready(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
