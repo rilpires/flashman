@@ -20,13 +20,14 @@ block content
     .card-body
       .tab-content
         .tab-pane.fade(id="panel1", role="tabpanel")
-          .col-2.md-form.md-selectfield.form-control
-            label
-              | Tipo
-            select#select-cpe-type.form-control.browser-defaut.md-select(
-              name="cpe_type", onchange="changeCpeForm(this)", required)
-              option(value='flashbox' selected) Flashbox
-              option(value='tr069') TR-069
+          .col-2.md-form
+            .md-selectfield.form-control
+              label
+                | Tipo
+              select#select-cpe-type.browser-defaut.md-select(
+                name="cpe_type", onchange="changeCpeForm(this)", required)
+                option(value='flashbox' selected) Flashbox
+                option(value='tr069') TR-069
           form#flashbox-form(method="post", action="/firmware/upload",
             name="firmwareflashboxform")
             .col
@@ -49,19 +50,19 @@ block content
           form#tr069-form.needs-validation.d-none(method="post", action="/firmware/upload",
             name="firmwaretr069form", novalidate)
             .row
-              .col-3
-                .md-form.md-selectfield.form-control
+              .col-3.md-form
+                .md-selectfield.form-control
                   label
                     | Modelo
-                  select#select-productclass.form-control.browser-defaut.md-select(
+                  select#select-productclass.browser-defaut.md-select(
                     name="productclass", onchange="fetchVersion(this)", required)
                     option(value='')
                   .invalid-feedback Selecione algum modelo
-              .col-3
-                .md-form.md-selectfield.form-control
+              .col-3.md-form
+                .md-selectfield.form-control
                   label
                     | Versão
-                  select#select-version.form-control.browser-defaut.md-select(
+                  select#select-version.browser-defaut.md-select(
                     name="version", required)
                     option(value='')
                   .invalid-feedback Selecione alguma versão
