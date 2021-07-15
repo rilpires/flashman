@@ -214,8 +214,8 @@ const getZTEFields = function(model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
-      fields.wan.name = 'InternetGatewayDevice.X_ZTE-COM_Telnet.UserName';
-      fields.wan.password = 'InternetGatewayDevice.X_ZTE-COM_Telnet.Password';
+      fields.wan.name = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Username';
+      fields.wan.password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
