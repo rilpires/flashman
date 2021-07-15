@@ -323,7 +323,7 @@ deviceListController.changeUpdate = function(req, res) {
       matchedDevice.do_update_status = 1; // success
       meshHandlers.syncUpdateCancel(matchedDevice);
     }
-    matchedDevice.save(function(err) {
+    matchedDevice.save(async function(err) {
       if (err) {
         let indexContent = {};
         indexContent.type = 'danger';
@@ -334,10 +334,10 @@ deviceListController.changeUpdate = function(req, res) {
 
       if (matchedDevice.use_tr069 && doUpdate) {
         try {
-          acsDeviceInfo.upgradeFirmware(matchedDevice);
+          await acsDeviceInfo.upgradeFirmware(matchedDevice);
         } catch (e) {
-          res.status(500).json({success: false,
-            message: e});
+          return res.status(500).json({success: false,
+            message: e.message});
         }
       } else {
         mqtt.anlixMessageRouterUpdate(matchedDevice._id);

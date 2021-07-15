@@ -39,14 +39,14 @@ let removeFirmware = async function(firmware) {
   try {
     await fsPromises.unlink(imageReleasesDir + firmware.filename);
   } catch (e) {
-    throw new 'Arquivo bin não encontrado';
+    throw new Error('Arquivo bin não encontrado');
   }
 
   if (firmware.cpe_type == 'tr069') {
     try {
       await acsDeviceInfo.delFirmwareInGenie(firmware.filename);
-    } catch (Err) {
-      throw new Err;
+    } catch (e) {
+      throw e;
     }
   }
 
@@ -55,12 +55,12 @@ let removeFirmware = async function(firmware) {
   try {
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
   } catch (e) {
-    throw new 'Arquivo md5 não encontrado';
+    throw new Error('Arquivo md5 não encontrado');
   }
   try {
     await firmware.remove();
   } catch (e) {
-    throw new 'Registro não encontrado';
+    throw new Error('Registro não encontrado');
   }
   return;
 };
@@ -235,18 +235,20 @@ firmwareController.delFirmware = function(req, res) {
     firmwares.forEach((firmware) => {
       promises.push(removeFirmware(firmware));
     });
-    Promise.all(promises).then(
+    Promise.all(promises).
+      then(
       function() {
         return res.json({
           type: 'success',
           message: 'Firmware(s) deletado(s) com sucesso!',
         });
-      }, function(errMessage) {
+      }).
+      catch(function(err) {
         return res.json({
           type: 'danger',
-          message: errMessage,
+          message: err.message,
         });
-    });
+      });
   });
 };
 
@@ -357,7 +359,12 @@ firmwareController.uploadFirmware = async function(req, res) {
       try {
         await acsDeviceInfo.addFirmwareInGenie(firmware);
       } catch (e) {
-        res.json({type: 'danger', message: e});
+        // Remove downloaded files
+        await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
+        await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
+        // Remove firmware entry
+        firmware.remove();
+        return res.json({type: 'danger', message: e.message});
       }
     }
     return res.json({
@@ -370,6 +377,8 @@ firmwareController.uploadFirmware = async function(req, res) {
     // Remove downloaded files
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
+    // Remove firmware entry
+    firmware.remove();
     // return error message
     return res.json({type: 'danger', message: msg});
   }

@@ -1373,71 +1373,73 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   }
 };
 
-acsDeviceInfoController.addFirmwareInGenie = async function(firmware) {
-  let readStream = fs.createReadStream(path.join(imageReleasesDir,
-                                           firmware.filename));
-  let chunks = [];
-  readStream.on('data', (chunk) => chunks.push(chunk));
-  readStream.on('end', () => {
-    let binaryData = Buffer.concat(chunks);
-    let path = '/files/'+firmware.filename;
+acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
+  return new Promise(function(resolve, reject) {
+    let readStream = fs.createReadStream(path.join(imageReleasesDir,
+                                             firmware.filename));
+    let chunks = [];
+    readStream.on('data', (chunk) => chunks.push(chunk));
+    readStream.on('end', () => {
+      let binaryData = Buffer.concat(chunks);
+      let path = '/files/'+firmware.filename;
+      let options = {
+        method: 'PUT',
+        hostname: 'localhost',
+        // hostname: '207.246.65.243',
+        port: 7557,
+        path: encodeURI(path),
+        headers: {
+          'fileType': '1 Firmware Upgrade Image',
+          'oui': '',
+          'productClass': firmware.model,
+          'version': firmware.version,
+          // 'Content-Type': 'application/octet-stream',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(binaryData),
+          'Expect': '100-continue',
+        },
+      };
+      let req = http.request(options, (res) => {
+        if (res.statusCode != 201 && res.statusCode != 100) {
+          reject(new Error('Erro ao adicionar firmware no genie');
+        } else {
+          resolve('Firmware adicionado no genie com sucesso');
+        }
+      });
+      req.write(binaryData);
+      req.on('timeout', function() {
+        reject(new Error('Timeout on '+firmware.filename+' http put'));
+      });
+      req.on('error', function(e) {
+        reject(e);
+      });
+      req.end();
+    });
+  });
+};
+
+acsDeviceInfoController.delFirmwareInGenie = function(filename) {
+  return new Promise(function(resolve, reject) {
+    let path = '/files/'+filename;
     let options = {
-      method: 'PUT',
+      method: 'DELETE',
       hostname: 'localhost',
       // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
-      headers: {
-        'fileType': '1 Firmware Upgrade Image',
-        'oui': '',
-        'productClass': firmware.model,
-        'version': firmware.version,
-        // 'Content-Type': 'application/octet-stream',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(binaryData),
-        'Expect': '100-continue',
-      },
     };
     let req = http.request(options, (res) => {
-      if (res.statusCode != 201 && res.statusCode != 100) {
-        throw new 'Erro ao adicionar firmware no genie. '+
-          'http status code = '+res.statusCode;
+      if (res.statusCode != 200) {
+        reject(new Error('Erro ao deletar firmware no genie');
       } else {
-        return 'Firmware adicionado no genie com sucesso';
+        resolve('Firmware deletado do genie com sucesso');
       }
     });
-    req.write(binaryData);
-    req.on('timeout', function() {
-      console.log('!!! Timeout on '+firmware.filename+' http put');
-    });
-    req.on('error', function(Err) {
-      throw new Err;
+    req.on('error', function(e) {
+      reject(e);
     });
     req.end();
   });
-};
-
-acsDeviceInfoController.delFirmwareInGenie = async function(filename) {
-  let path = '/files/'+filename;
-  let options = {
-    method: 'DELETE',
-    hostname: 'localhost',
-    // hostname: '207.246.65.243',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (res) => {
-    if (res.statusCode != 200) {
-      throw new 'Erro ao deletar firmware do genie. '+
-        'http status code = '+res.statusCode;
-    } else {
-      return 'Firmware deletado do genie com sucesso';
-    }
-  });
-  req.on('error', function(Err) {
-    throw new Err;
-  });
-  req.end();
 };
 
 acsDeviceInfoController.getFirmwaresFromGenie = function() {
@@ -1452,8 +1454,7 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
     };
     let req = http.request(options, (res) => {
       if (res.statusCode != 200) {
-        reject('http status code = '+
-          res.statusCode);
+        reject(new Error('Erro ao buscar firmwares no genie'));
       }
       let data = '';
       res.setEncoding('utf8');
@@ -1461,14 +1462,14 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
       res.on('end', async () => {
         try {
           data = JSON.parse(data);
-        } catch (Err) {
-          reject(Err);
+        } catch (e) {
+          reject(e);
         }
         resolve(data);
       });
     });
-    req.on('error', function(Err) {
-      throw new Err;
+    req.on('error', function(e) {
+      reject(e);
     });
     req.end();
   });
@@ -1481,7 +1482,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     firmwares = await acsDeviceInfoController.
       getFirmwaresFromGenie();
   } catch (e) {
-    console.log(e);
+    throw e;
   }
   let firmware = firmwares.find((f) => f.metadata.version == device.release);
   // if not exists add
@@ -1493,9 +1494,13 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       cpe_type: 'tr069',
     });
     if (!firmware) {
-      throw new 'Não existe firmware com essa versão';
+      throw new Error('Não existe firmware com essa versão');
     } else {
-      acsDeviceInfoController.addFirmwareInGenie(firmware);
+      try {
+        await acsDeviceInfoController.addFirmwareInGenie(firmware);
+      } catch(e) {
+        throw e;
+      }
     }
   }
   // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
@@ -1521,15 +1526,15 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     };
     let req = http.request(options, (res) => {
       if (res.statusCode != 200) {
-        reject('http status code = '+
-          res.statusCode);
+        reject(new Error('Erro ao atualizar firmware no '+
+          device.acs_id);
       } else {
         resolve('Atualização de Firmware no '+
           device.acs_id+' submetida com sucesso');
       }
     });
-    req.on('error', function(Err) {
-      throw new Err;
+    req.on('error', function(e) {
+      reject(e);
     });
     req.write(postData);
     req.end();
