@@ -572,7 +572,7 @@ $(document).ready(function() {
   };
 
   const buildPonSignalColumn = function(device, grantPonSignalSupport = false) {
-    let ponSignalStatus;
+    let ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
@@ -581,8 +581,10 @@ $(document).ready(function() {
       ponSignalStatus = '<div class="badge red">Erro Sinal Alto</div>';
     } else if (device.pon_rxpower >= device.ponSignalThreshold) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
-    } else if (device.pon_rxpower <= device.ponSignalThresholdCritical) {
+    } else if (device.pon_rxpower >= device.ponSignalThresholdCritical) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
+    } else {
+      ponSignalStatus = '<div class="badge red">Sinal Muito Baixo</div>';
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
