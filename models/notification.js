@@ -15,6 +15,7 @@ let notificationSchema = new mongoose.Schema({
       2, // User account blocked
       3, // Few licenses left
       4, // No licenses left
+      5, // SSID Prefix
     ],
     required: false,
   },
