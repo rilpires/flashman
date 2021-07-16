@@ -583,6 +583,7 @@ $(document).ready(function() {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
     } else if (device.pon_rxpower <= -23) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
+    }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
         <div class="text-center align-items-center">
