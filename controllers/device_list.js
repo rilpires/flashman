@@ -538,8 +538,8 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         };
       } else if (tag.includes('bom')) {
         query.pon_rxpower = {
-          $lte: matchedConfig.tr069.pon_signal_threshold,
-          $gte: matchedConfig.tr069.pon_signal_threshold_critical,
+          $gte: matchedConfig.tr069.pon_signal_threshold,
+          $lte: matchedConfig.tr069.pon_signal_threshold_critical_high,
         };
       } else if (tag.includes('erro')) {
         query.pon_rxpower = {
