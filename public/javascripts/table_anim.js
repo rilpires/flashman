@@ -577,11 +577,11 @@ $(document).ready(function() {
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
       ponSignalRxPower = '';
-    } else if (device.pon_rxpower >= 3){
+    } else if (device.pon_rxpower >= device.ponSignalThresholdCriticalHigh){
       ponSignalStatus = '<div class="badge red">Erro Sinal Alto</div>';
-    } else if (device.pon_rxpower >= -18) {
+    } else if (device.pon_rxpower >= device.ponSignalThreshold) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
-    } else if (device.pon_rxpower <= -23) {
+    } else if (device.pon_rxpower <= device.ponSignalThresholdCritical) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
