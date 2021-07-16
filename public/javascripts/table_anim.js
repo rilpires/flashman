@@ -583,7 +583,7 @@ $(document).ready(function() {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
     } else if (device.pon_rxpower <= -23) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
-    let ponSignalStatusColumn = (isTR069) ? `
+    let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
         <div class="text-center align-items-center">
           ${ponSignalRxPower}
@@ -1167,12 +1167,12 @@ $(document).ready(function() {
           if (isTR069) {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
-            if (isSuperuser || grantPonSignalSupport) {
-              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
-            }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+          }
+          if (isTR069 && grantPonSignalSupport) {
+            infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           }
 
           finalHtml += infoRow;
