@@ -572,7 +572,6 @@ $(document).ready(function() {
   };
 
   const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
-    let ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
@@ -1165,6 +1164,7 @@ $(document).ready(function() {
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+          infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           if (isSuperuser || grantNotificationPopups) {
             infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
           } else {
@@ -1181,9 +1181,6 @@ $(document).ready(function() {
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
-          }
-          if (isTR069 && grantPonSignalSupport) {
-            infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           }
 
           finalHtml += infoRow;
