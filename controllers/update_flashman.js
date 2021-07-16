@@ -280,7 +280,7 @@ updateController.rebootGenie = function(instances) {
     }
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
-    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    // issues with CPEs connections since exceptions lead to buggy exp. backoff
     exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';

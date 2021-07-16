@@ -1350,7 +1350,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
     {is_default: true}, 'tr069',
   ).exec().catch((err) => err);
   if (matchedConfig.constructor === Error) {
-    console.log('Error getting user config in database to ping offline ONUs');
+    console.log('Error getting user config in database to ping offline CPEs');
     return;
   }
   // Compute offline threshold from options
@@ -1358,7 +1358,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   let interval = matchedConfig.tr069.inform_interval;
   let threshold = matchedConfig.tr069.offline_threshold;
   let offlineThreshold = new Date(currentTime - (interval*threshold));
-  // Query database for offline ONU devices
+  // Query database for offline TR-069 CPE devices
   let offlineDevices = await DeviceModel.find({
     use_tr069: true,
     last_contact: {$lt: offlineThreshold},
@@ -1410,8 +1410,9 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
           'target': 'general'});
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'Sua conta está sem licenças para ONUs sobrando. ' +
-                       'Entre em contato com seu representante comercial',
+            'message': 'Sua conta está sem licenças para CPEs TR-069 ' +
+                       'sobrando. Entre em contato com seu representante ' +
+                       'comercial',
             'message_code': 4,
             'severity': 'danger',
             'type': 'communication',
@@ -1427,7 +1428,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
             'message': 'Sua conta está com apenas ' + response.licensesNum +
-                       ' licenças ONU sobrando. ' +
+                       ' licenças CPE TR-069 sobrando. ' +
                        'Entre em contato com seu representante comercial',
             'message_code': 3,
             'severity': 'alert',
