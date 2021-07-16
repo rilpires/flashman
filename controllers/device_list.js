@@ -530,28 +530,27 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } 
     } else if (/^(sinal) (?:erro|bom|ruim)$/.test(tag)) { 
       query.use_tr069 = true; // only for ONUs
-      if (matchedConfig.pon_signal_threshold === undefined &&
-          matchedConfig.pon_signal_threshold_critical === undefined &&
-          matchedConfig.pon_signal_threshold_critical_high === undefined) {
-        if (tag.includes('erro')) {
-          query.pon_rxpower = {$gte: 3};
-        } else if (tag.includes('bom')) {
-          query.pon_rxpower = {$gte: -18};
-        } else if (tag.includes('ruim')) {
-          query.pon_rxpower = {$lte: -23};
-        }
-      } else { 
-        if (tag.includes('ruim')) {
-          query.pon_rxpower = {
-            $gte: matchedConfig.pon_signal_threshold_critical_high
-          };
-        } else if (tag.includes('bom')) {
-          query.pon_rxpower = {$lte: matchedConfig.pon_signal_threshold};
-        } else if (tag.includes('ruim')) {
-          query.pon_rxpower = {
-            $lte: matchedConfig.pon_signal_threshold_critical
-          };
-        }
+      if (tag.includes('ruim')) {
+        query.pon_rxpower = {
+          $and: [
+            {$lte: matchedConfig.pon_signal_threshold_critical},
+            {$gte: matchedConfig.pon_signal_threshold},
+          ]
+        };
+      } else if (tag.includes('bom')) {
+        query.pon_rxpower = {
+          $or: [
+            {$lte: matchedConfig.pon_signal_threshold},
+            {$gte: matchedConfig.pon_signal_threshold_critical},
+          ]
+        };
+      } else if (tag.includes('erro')) {
+        query.pon_rxpower = {
+          $or: [
+            {$lte: matchedConfig.pon_signal_threshold_critical},
+            {$gte: matchedConfig.pon_signal_threshold_critical_high},
+          ],
+        };
       }
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
