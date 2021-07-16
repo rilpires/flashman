@@ -34,6 +34,8 @@ let deviceSchema = new Schema({
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
+  wan_username: String,
+  wan_password: String,
   wifi_ssid: String,
   wifi_password: String,
   wifi_channel: String,
@@ -218,6 +220,7 @@ let deviceSchema = new Schema({
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
+  isSsidPrefixEnabled: {type: Boolean},
 });
 
 deviceSchema.set('autoIndex', false);
