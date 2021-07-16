@@ -272,11 +272,11 @@ const createRegistry = async function(req) {
     let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
     let hasChanges = false;
     if ((ssid2ghzPrefix + ssid) !== ssid) {
-      changes.wifi2.ssid = ssid2ghzPrefix + ssid;
+      changes.wifi2.ssid = ssid;
       hasChanges = true;
     }
     if ((ssid5ghzPrefix + ssid5ghz) !== ssid5ghz) {
-      changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
+      changes.wifi5.ssid = ssid5ghz;
       hasChanges = true;
     }
     // Increment sync task loops

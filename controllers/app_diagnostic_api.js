@@ -209,8 +209,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
         }
         device.wifi_ssid = ssid2ghz;
         device.wifi_ssid_5ghz = ssid5ghz;
-        changes.wifi2.ssid = ssid2ghzPrefix + ssid2ghz;
-        changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
+        changes.wifi2.ssid = ssid2ghz;
+        changes.wifi5.ssid = ssid5ghz;
         device.isSsidPrefixEnabled = isSsidPrefixEnabled;
         updateParameters = true;
       } else {
