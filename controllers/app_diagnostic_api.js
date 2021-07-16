@@ -157,10 +157,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
-        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
-        if (devices.length > 0) {
-          device = devices[0];
-        }
+        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
@@ -172,12 +169,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let changes = {wifi2: {}, wifi5: {}};
 
       // Get SSID prefix data
-      let matchedConfig = await ConfigModel.findOne({is_default: true}).catch(
-        function(err) {
-          console.error('Error finding config: ' + err);
-          return res.status(500).json({'error': 'Internal error'});
-        }
-      );
+      let matchedConfig = await ConfigModel.findOne({is_default: true});
       if (!matchedConfig) {
         console.error('No config exists');
         return res.status(500).json({'error': 'Internal error'});
@@ -189,43 +181,36 @@ diagAppAPIController.configureWifi = async function(req, res) {
       ) {
         let ssid2ghzPrefix = '';
         let ssid5ghzPrefix = '';
-        let check2ghz = undefined;
-        let check5ghz = undefined;
+        let check2ghz;
+        let check5ghz;
         let ssid2ghz = device.wifi_ssid;
         let ssid5ghz = device.wifi_ssid_5ghz;
         let isSsidPrefixEnabled = false;
 
         if (content.wifi_ssid) {
           ssid2ghz = content.wifi_ssid.trim();
-          const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-            matchedConfig.ssidPrefix, ssid2ghz);
         }
         if (content.wifi_ssid_5ghz) {
           ssid5ghz = content.wifi_ssid_5ghz.trim();
-          const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-            matchedConfig.ssidPrefix, ssid5ghz);
         }
-        if ((typeof check2ghz !== undefined) && !check2ghz.enablePrefix) {
-          createPrefixErrNotification = true;
-          isSsidPrefixEnabled = false;
-        } else if ((typeof check5ghz !== undefined) && !check5ghz.enablePrefix) {
+        check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+          matchedConfig.ssidPrefix, ssid2ghz);
+        check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+          matchedConfig.ssidPrefix, ssid5ghz);
+        if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
           createPrefixErrNotification = true;
           isSsidPrefixEnabled = false;
         } else {
           isSsidPrefixEnabled = true;
-          if (typeof check2ghz !== undefined) {
-            ssid2ghzPrefix = check2ghz.ssidPrefix;
-            ssid2ghz = check2ghz.ssid;
-          }
-          if (typeof check5ghz !== undefined) {
-            ssid5ghzPrefix = check5ghz.ssidPrefix;
-            ssid5ghz = check5ghz.ssid;
-          }
-          device.wifi_ssid = ssid2ghz;
-          device.wifi_ssid_5ghz = ssid5ghz;
-          changes.wifi2.ssid = ssid2ghzPrefix + ssid2ghz;
-          changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
+          ssid2ghzPrefix = check2ghz.ssidPrefix;
+          ssid2ghz = check2ghz.ssid;
+          ssid5ghzPrefix = check5ghz.ssidPrefix;
+          ssid5ghz = check5ghz.ssid;
         }
+        device.wifi_ssid = ssid2ghz;
+        device.wifi_ssid_5ghz = ssid5ghz;
+        changes.wifi2.ssid = ssid2ghzPrefix + ssid2ghz;
+        changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
         device.isSsidPrefixEnabled = isSsidPrefixEnabled;
         updateParameters = true;
       } else {
@@ -311,7 +296,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
             'message_code': 5,
             'severity': 'alert',
             'type': 'communication',
-            'action_title': 'Falha no prefixo SSID',
+            'action_title': 'Ok',
             'allow_duplicate': false,
             'target': device._id,
           });

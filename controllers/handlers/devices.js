@@ -166,7 +166,7 @@ deviceHandlers.checkSsidPrefixNewRegistry = function(prefix, ssid) {
     // Remove prefix from incoming SSID
     const toRemove = new RegExp('^' + util.escapeRegExp(prefix), 'i');
     const finalSsid = ssid.replace(toRemove, '');
-    return {enablePrefix: true, ssidPrefix: '', ssid: finalSsid};
+    return {enablePrefix: true, ssidPrefix: prefix, ssid: finalSsid};
   } else {
     const combinedSsid = prefix + ssid;
     if (combinedSsid.length > 32) {

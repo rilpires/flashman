@@ -303,7 +303,7 @@ const createRegistry = async function(req) {
         'message_code': 5,
         'severity': 'alert',
         'type': 'communication',
-        'action_title': 'Falha no prefixo SSID',
+        'action_title': 'Ok',
         'allow_duplicate': false,
         'target': newDevice._id,
       });

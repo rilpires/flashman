@@ -294,7 +294,7 @@ const createRegistry = async function(req, res) {
           'message_code': 5,
           'severity': 'alert',
           'type': 'communication',
-          'action_title': 'Falha no prefixo SSID',
+          'action_title': 'Ok',
           'allow_duplicate': false,
           'target': deviceObj._id,
         });
