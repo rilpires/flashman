@@ -533,8 +533,8 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       query.use_tr069 = true; // only for ONUs
       if (tag.includes('ruim')) {
         query.pon_rxpower = {
-          $gte: matchedConfig.tr069.pon_signal_threshold_critical
-          $lte: matchedConfig.tr069.pon_signal_threshold
+          $gte: matchedConfig.tr069.pon_signal_threshold_critical,
+          $lte: matchedConfig.tr069.pon_signal_threshold,
         };
       } else if (tag.includes('bom')) {
         query.pon_rxpower = {
@@ -810,6 +810,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
+                  ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
+                  ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high
                 });
               });
             }, (error) => {
