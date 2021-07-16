@@ -534,22 +534,22 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       if (tag.includes('ruim')) {
         query.pon_rxpower = {
           $and: [
-            {$lte: matchedConfig.pon_signal_threshold_critical},
-            {$gte: matchedConfig.pon_signal_threshold},
+            {$lte: matchedConfig.tr069.pon_signal_threshold_critical},
+            {$gte: matchedConfig.tr069.pon_signal_threshold},
           ]
         };
       } else if (tag.includes('bom')) {
         query.pon_rxpower = {
           $or: [
-            {$lte: matchedConfig.pon_signal_threshold},
-            {$gte: matchedConfig.pon_signal_threshold_critical},
+            {$lte: matchedConfig.tr069.pon_signal_threshold},
+            {$gte: matchedConfig.tr069.pon_signal_threshold_critical},
           ]
         };
       } else if (tag.includes('erro')) {
         query.pon_rxpower = {
           $or: [
-            {$lte: matchedConfig.pon_signal_threshold_critical},
-            {$gte: matchedConfig.pon_signal_threshold_critical_high},
+            {$lte: matchedConfig.tr069.pon_signal_threshold_critical},
+            {$gte: matchedConfig.tr069.pon_signal_threshold_critical_high},
           ],
         };
       }
