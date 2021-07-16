@@ -571,17 +571,17 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildPonSignalColumn = function(device, grantPonSignalSupport = false) {
+  const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
     let ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
       ponSignalRxPower = '';
-    } else if (device.pon_rxpower >= device.ponSignalThresholdCriticalHigh){
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh){
       ponSignalStatus = '<div class="badge red">Erro Sinal Alto</div>';
-    } else if (device.pon_rxpower >= device.ponSignalThreshold) {
+    } else if (device.pon_rxpower >= config.ponSignalThreshold) {
       ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
-    } else if (device.pon_rxpower >= device.ponSignalThresholdCritical) {
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCritical) {
       ponSignalStatus = '<div class="badge yellow">Sinal Baixo</div>';
     } else {
       ponSignalStatus = '<div class="badge red">Sinal Muito Baixo</div>';
@@ -1159,7 +1159,7 @@ $(document).ready(function() {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
-          let ponSignalCol = buildPonSignalColumn(device, grantPonSignalSupport);
+          let ponSignalCol = buildPonSignalColumn(device, res.ponConfig, grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);

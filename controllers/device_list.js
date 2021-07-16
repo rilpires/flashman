@@ -810,9 +810,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
-                  ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
-                  ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
-                  ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high
+                  ponConfig: {
+                    ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
+                    ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
+                    ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high,
+                  },
                 });
               });
             }, (error) => {
