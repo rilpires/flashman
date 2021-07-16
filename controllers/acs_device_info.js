@@ -101,7 +101,6 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
@@ -191,6 +190,41 @@ const createRegistry = async function(req) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let splitID = req.body.acs_id.split('-');
+  
+  let matchedConfig = await Config.findOne({is_default: true}).catch(
+    function(err) {
+      console.error('Error creating entry: ' + err);
+      return false;
+    }
+  );
+  if (!matchedConfig) {
+    console.error('Error creating entry. Config does not exists.');
+    return false;
+  }
+  let ssid = data.wifi2.ssid.trim();
+  let ssid5ghz = data.wifi5.ssid.trim();
+  let ssid2ghzPrefix = '';
+  let ssid5ghzPrefix = '';
+  let isSsidPrefixEnabled = false;
+  let createPrefixErrNotification = false;
+  if (matchedConfig.personalizationHash !== '' &&
+      matchedConfig.isSsidPrefixEnabled) {
+    const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+      matchedConfig.ssidPrefix, ssid);
+    const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+      matchedConfig.ssidPrefix, ssid5ghz);
+    if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
+      createPrefixErrNotification = true;
+      isSsidPrefixEnabled = false;
+    } else {
+      isSsidPrefixEnabled = true;
+      ssid2ghzPrefix = check2ghz.ssidPrefix;
+      ssid5ghzPrefix = check5ghz.ssidPrefix;
+      ssid = check2ghz.ssid;
+      ssid5ghz = check5ghz.ssid;
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
@@ -203,13 +237,13 @@ const createRegistry = async function(req) {
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
-    wifi_ssid: data.wifi2.ssid,
+    wifi_ssid: ssid,
     wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
     wifi_mode: convertWifiMode(data.wifi2.mode, false),
     wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
     wifi_state: (data.wifi2.enable) ? 1 : 0,
     wifi_is_5ghz_capable: true,
-    wifi_ssid_5ghz: data.wifi5.ssid,
+    wifi_ssid_5ghz: ssid5ghz,
     wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
     wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
     wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
@@ -223,13 +257,61 @@ const createRegistry = async function(req) {
     wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp : data.wan.uptime,
     created_at: Date.now(),
     last_contact: Date.now(),
+    isSsidPrefixEnabled: isSsidPrefixEnabled,
   });
   try {
     await newDevice.save();
     await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return false;
+  }
+  // Update SSID prefix on CPE if enabled
+  if (isSsidPrefixEnabled) {
+    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+    let hasChanges = false;
+    if ((ssid2ghzPrefix + ssid) !== ssid) {
+      changes.wifi2.ssid = ssid2ghzPrefix + ssid;
+      hasChanges = true;
+    }
+    if ((ssid5ghzPrefix + ssid5ghz) !== ssid5ghz) {
+      changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
+      hasChanges = true;
+    }
+    // Increment sync task loops
+    newDevice.acs_sync_loops += 1;  
+    // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+    let acceptLocalChanges = false;
+    if (!acceptLocalChanges) {
+      if (hasChanges) {
+        acsDeviceInfoController.updateInfo(newDevice, changes);
+      }
+    }
+  }
+  if (createPrefixErrNotification) {
+    // Notify if ssid prefix was impossible to be assigned
+    let matchedNotif = await Notification
+    .findOne({'message_code': 5, 'target': newDevice._id})
+    .catch(function(err) {
+      console.error('Error fetching database: ' + err);
+    });
+    if (!matchedNotif || matchedNotif.allow_duplicate) {
+      let notification = new Notification({
+        'message': 'Não foi possível habilitar o prefixo SSID ' +
+                   'pois o tamanho máximo de 32 caracteres foi excedido.',
+        'message_code': 5,
+        'severity': 'alert',
+        'type': 'communication',
+        'action_title': 'Falha no prefixo SSID',
+        'allow_duplicate': false,
+        'target': newDevice._id,
+      });
+      await notification.save().catch(
+        function(err) {
+          console.error('Error creating notification: ' + err);
+        }
+      );
+    }
   }
   return true;
 };
@@ -318,7 +400,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
   }
-  if (ssidPrefix+device.wifi_ssid.trim()
+  if (ssidPrefix + device.wifi_ssid.trim()
     !== data.wifi2.ssid.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
@@ -347,7 +429,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
   }
-  if (ssidPrefix+device.wifi_ssid_5ghz.trim()
+  if (ssidPrefix + device.wifi_ssid_5ghz.trim()
     !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
@@ -861,7 +943,6 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   });
 };
 
-
 acsDeviceInfoController.requestUpStatus = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -1138,7 +1219,6 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   TasksAPI.addTask(acsID, updateTasks,
       true, 3000, [5000, 10000]);
 };
-
 
 acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
