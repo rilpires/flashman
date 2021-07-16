@@ -546,8 +546,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           $lte: matchedConfig.tr069.pon_signal_threshold_critical,
         };
       }
-    } else if () {
-
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = {$exists: false}
