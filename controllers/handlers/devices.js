@@ -1,6 +1,7 @@
 const Config = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const util = require('./util');
 
 let deviceHandlers = {};
 
@@ -152,6 +153,28 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
           ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
+  }
+};
+
+// Test if prefix is possible on a new registry and if ssid
+// already contains it
+deviceHandlers.checkSsidPrefixNewRegistry = function(prefix, ssid) {
+  const escapedSsidPrefix = util.escapeRegExp(prefix);
+  const rePrefix = new RegExp('^' + escapedSsidPrefix + '.*$', 'g');
+  // Test if incoming SSID already have the prefix
+  if (rePrefix.test(ssid)) {
+    // Remove prefix from incoming SSID
+    const toRemove = new RegExp('^' + util.escapeRegExp(prefix), 'i');
+    const finalSsid = ssid.replace(toRemove, '');
+    return {enablePrefix: true, ssidPrefix: prefix, ssid: finalSsid};
+  } else {
+    const combinedSsid = prefix + ssid;
+    if (combinedSsid.length > 32) {
+      return {enablePrefix: false, ssidPrefix: '', ssid: ssid};
+    } else {
+      // Enable prefix on registry
+      return {enablePrefix: true, ssidPrefix: prefix, ssid: ssid};
+    }
   }
 };
 

@@ -292,7 +292,7 @@ vlanController.checkDevicesAffected = async function(req, res) {
   if (config) {
     let vlanProfile = config.vlans_profiles.find(
       (vlanProfile) => vlanProfile._id == req.params.profileid);
-    if (typeof vlanProfile === undefined) {
+    if (typeof vlanProfile === 'undefined') {
       return res.json({success: false, type: 'danger',
                        message: 'Perfil de VLAN não encontrado'});
     }
@@ -423,7 +423,7 @@ vlanController.updateVlans = async function(req, res) {
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
 
-  if (typeof vlanObj === undefined) {
+  if (typeof vlanObj === 'undefined') {
     vlanObj = '';
   } else {
     try {
@@ -444,7 +444,7 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   // on well behavior object of vlan that needs to treat others vlans
   let vlan_ports = '';
   let aux_idx; // auxiliar index to toggle vid 1 or 9
-  if ((typeof vlanObj !== undefined) && (vlanObj.length > 0)) {
+  if ((typeof vlanObj !== 'undefined') && (vlanObj.length > 0)) {
     // initialize keys values with empty string
     for (let i = 0; i < vlanObj.length; i++) {
       // check vlan_id to pass the right vid in case device is realtek or not
