@@ -572,6 +572,7 @@ $(document).ready(function() {
   };
 
   const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
+    let ponSignalStatus;
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
     if (device.pon_rxpower === undefined) { 
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
