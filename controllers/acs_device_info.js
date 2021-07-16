@@ -6,6 +6,7 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const updateController = require('./update_flashman.js');
+const deviceHandlers = require('./handlers/devices');
 
 const pako = require('pako');
 const http = require('http');

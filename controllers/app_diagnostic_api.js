@@ -1,6 +1,7 @@
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
+const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
 const keyHandlers = require('./handlers/keys');
@@ -169,17 +170,78 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let content = req.body;
       let updateParameters = false;
       let changes = {wifi2: {}, wifi5: {}};
-      // Replace relevant wifi fields with new values
-      if (content.wifi_ssid) {
-        device.wifi_ssid = content.wifi_ssid.trim();
-        changes.wifi2.ssid = content.wifi_ssid.trim();
-        updateParameters = true;
+
+      // Get SSID prefix data
+      let matchedConfig = await ConfigModel.findOne({is_default: true}).catch(
+        function(err) {
+          console.error('Error finding config: ' + err);
+          return res.status(500).json({'error': 'Internal error'});
+        }
+      );
+      if (!matchedConfig) {
+        console.error('No config exists');
+        return res.status(500).json({'error': 'Internal error'});
       }
-      if (content.wifi_ssid_5ghz) {
-        device.wifi_ssid_5ghz = content.wifi_ssid_5ghz.trim();
-        changes.wifi5.ssid = content.wifi_ssid_5ghz.trim();
+      let createPrefixErrNotification = false;
+      if (matchedConfig.personalizationHash !== '' &&
+          matchedConfig.isSsidPrefixEnabled &&
+          (content.wifi_ssid || content.wifi_ssid_5ghz)
+      ) {
+        let ssid2ghzPrefix = '';
+        let ssid5ghzPrefix = '';
+        let check2ghz = undefined;
+        let check5ghz = undefined;
+        let ssid2ghz = device.wifi_ssid;
+        let ssid5ghz = device.wifi_ssid_5ghz;
+        let isSsidPrefixEnabled = false;
+
+        if (content.wifi_ssid) {
+          ssid2ghz = content.wifi_ssid.trim();
+          const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+            matchedConfig.ssidPrefix, ssid2ghz);
+        }
+        if (content.wifi_ssid_5ghz) {
+          ssid5ghz = content.wifi_ssid_5ghz.trim();
+          const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+            matchedConfig.ssidPrefix, ssid5ghz);
+        }
+        if ((typeof check2ghz !== undefined) && !check2ghz.enablePrefix) {
+          createPrefixErrNotification = true;
+          isSsidPrefixEnabled = false;
+        } else if ((typeof check5ghz !== undefined) && !check5ghz.enablePrefix) {
+          createPrefixErrNotification = true;
+          isSsidPrefixEnabled = false;
+        } else {
+          isSsidPrefixEnabled = true;
+          if (typeof check2ghz !== undefined) {
+            ssid2ghzPrefix = check2ghz.ssidPrefix;
+            ssid2ghz = check2ghz.ssid;
+          }
+          if (typeof check5ghz !== undefined) {
+            ssid5ghzPrefix = check5ghz.ssidPrefix;
+            ssid5ghz = check5ghz.ssid;
+          }
+          device.wifi_ssid = ssid2ghz;
+          device.wifi_ssid_5ghz = ssid5ghz;
+          changes.wifi2.ssid = ssid2ghzPrefix + ssid2ghz;
+          changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
+        }
+        device.isSsidPrefixEnabled = isSsidPrefixEnabled;
         updateParameters = true;
+      } else {
+        // Replace relevant wifi fields with new values
+        if (content.wifi_ssid) {
+          device.wifi_ssid = content.wifi_ssid.trim();
+          changes.wifi2.ssid = content.wifi_ssid.trim();
+          updateParameters = true;
+        }
+        if (content.wifi_ssid_5ghz) {
+          device.wifi_ssid_5ghz = content.wifi_ssid_5ghz.trim();
+          changes.wifi5.ssid = content.wifi_ssid_5ghz.trim();
+          updateParameters = true;
+        }
       }
+
       if (content.wifi_password) {
         device.wifi_password = content.wifi_password.trim();
         changes.wifi2.password = content.wifi_password.trim();
@@ -234,6 +296,31 @@ diagAppAPIController.configureWifi = async function(req, res) {
         // flashbox device, call mqtt
         meshHandlers.syncSlaves(device);
         mqtt.anlixMessageRouterUpdate(device._id);
+      }
+      if (createPrefixErrNotification) {
+        // Notify if ssid prefix was impossible to be assigned
+        let matchedNotif = await Notification
+        .findOne({'message_code': 5, 'target': device._id})
+        .catch(function(err) {
+          console.error('Error fetching database: ' + err);
+        });
+        if (!matchedNotif || matchedNotif.allow_duplicate) {
+          let notification = new Notification({
+            'message': 'Não foi possível habilitar o prefixo SSID ' +
+                       'pois o tamanho máximo de 32 caracteres foi excedido.',
+            'message_code': 5,
+            'severity': 'alert',
+            'type': 'communication',
+            'action_title': 'Falha no prefixo SSID',
+            'allow_duplicate': false,
+            'target': device._id,
+          });
+          await notification.save().catch(
+            function(err) {
+              console.error('Error creating notification: ' + err);
+            }
+          );
+        }
       }
       return res.status(200).json({'success': true});
     } else {
