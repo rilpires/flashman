@@ -1401,7 +1401,7 @@ acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
       };
       let req = http.request(options, (res) => {
         if (res.statusCode != 201 && res.statusCode != 100) {
-          reject(new Error('Erro ao adicionar firmware no genie');
+          reject(new Error('Erro ao adicionar firmware no genie'));
         } else {
           resolve('Firmware adicionado no genie com sucesso');
         }
@@ -1430,7 +1430,7 @@ acsDeviceInfoController.delFirmwareInGenie = function(filename) {
     };
     let req = http.request(options, (res) => {
       if (res.statusCode != 200) {
-        reject(new Error('Erro ao deletar firmware no genie');
+        reject(new Error('Erro ao deletar firmware no genie'));
       } else {
         resolve('Firmware deletado do genie com sucesso');
       }
@@ -1527,7 +1527,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     let req = http.request(options, (res) => {
       if (res.statusCode != 200) {
         reject(new Error('Erro ao atualizar firmware no '+
-          device.acs_id);
+          device.acs_id));
       } else {
         resolve('Atualização de Firmware no '+
           device.acs_id+' submetida com sucesso');
