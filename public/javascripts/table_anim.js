@@ -589,7 +589,7 @@ $(document).ready(function() {
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
         <div class="text-center align-items-center">
-          ${ponSignalRxPower}
+          ${ponSignalRxPower}<br>
           ${ponSignalStatus} 
         </div>
       </td>
