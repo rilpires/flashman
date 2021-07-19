@@ -204,8 +204,6 @@ const createRegistry = async function(req) {
   }
   let ssid = data.wifi2.ssid.trim();
   let ssid5ghz = data.wifi5.ssid.trim();
-  let ssid2ghzPrefix = '';
-  let ssid5ghzPrefix = '';
   let isSsidPrefixEnabled = false;
   let createPrefixErrNotification = false;
   if (matchedConfig.personalizationHash !== '' &&
@@ -219,8 +217,6 @@ const createRegistry = async function(req) {
       isSsidPrefixEnabled = false;
     } else {
       isSsidPrefixEnabled = true;
-      ssid2ghzPrefix = check2ghz.ssidPrefix;
-      ssid5ghzPrefix = check5ghz.ssidPrefix;
       ssid = check2ghz.ssid;
       ssid5ghz = check5ghz.ssid;
     }
@@ -270,23 +266,14 @@ const createRegistry = async function(req) {
   // Update SSID prefix on CPE if enabled
   if (isSsidPrefixEnabled) {
     let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
-    let hasChanges = false;
-    if ((ssid2ghzPrefix + ssid) !== ssid) {
-      changes.wifi2.ssid = ssid2ghzPrefix + ssid;
-      hasChanges = true;
-    }
-    if ((ssid5ghzPrefix + ssid5ghz) !== ssid5ghz) {
-      changes.wifi5.ssid = ssid5ghzPrefix + ssid5ghz;
-      hasChanges = true;
-    }
+    changes.wifi2.ssid = ssid;
+    changes.wifi5.ssid = ssid5ghz;
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;  
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
-      if (hasChanges) {
-        acsDeviceInfoController.updateInfo(newDevice, changes);
-      }
+      acsDeviceInfoController.updateInfo(newDevice, changes);
     }
   }
   if (createPrefixErrNotification) {
