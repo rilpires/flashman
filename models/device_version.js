@@ -5,12 +5,12 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
-    versions: [
-      'V1.1.20P1T18',
-      'V1.1.20P1T4',
-      'V1.1.20P3N3',
-      'V1.1.20P3N4D',
-    ],
+    versions_upgrade: {
+      'V1.1.20P1T18': ['V1.1.20P1T4'],
+      'V1.1.20P1T4': ['V1.1.20P3N3'],
+      'V1.1.20P3N3': [],
+      'V1.1.20P3N4D': [],
+    },
     port_forward_opts: {
       'V1.1.20P1T18': {
        simpleSymmetric: true,
@@ -45,14 +45,15 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: true,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
-    versions: [
-      'V3.0.0C5_MUL',
-      'V3.0.0C6_MUL',
-    ],
+    versions_upgrade: {
+      'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
+      'V3.0.0C6_MUL': ['V3.0.0C5_MUL'],
+    },
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -75,12 +76,13 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: false,
+      firmware_upgrade: true,
     },
   },
   'GONUAC001': {
-    versions: [
-      'V1.2.3',
-    ],
+    versions_upgrade: {
+      'V1.2.3': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -89,13 +91,14 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
-    versions: [
-      '3FE46343AFIA89',
-    ],
+    versions_upgrade: {
+      '3FE46343AFIA89': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -104,13 +107,14 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
-    versions: [
-      'V3R017C10S100',
-    ],
+    versions_upgrade: {
+      'V3R017C10S100': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -119,6 +123,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
