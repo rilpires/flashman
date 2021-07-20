@@ -8,8 +8,9 @@ const Config = require('../models/config');
 const sio = require('../sio');
 const updateController = require('./update_flashman.js');
 const fs = require('fs');
-const path = require('path');
+const pathModule = require('path');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
+const deviceHandlers = require('./handlers/devices');
 
 const pako = require('pako');
 const http = require('http');
@@ -105,7 +106,6 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
@@ -195,6 +195,37 @@ const createRegistry = async function(req) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let splitID = req.body.acs_id.split('-');
+  
+  let matchedConfig = await Config.findOne({is_default: true}).catch(
+    function(err) {
+      console.error('Error creating entry: ' + err);
+      return false;
+    }
+  );
+  if (!matchedConfig) {
+    console.error('Error creating entry. Config does not exists.');
+    return false;
+  }
+  let ssid = data.wifi2.ssid.trim();
+  let ssid5ghz = data.wifi5.ssid.trim();
+  let isSsidPrefixEnabled = false;
+  let createPrefixErrNotification = false;
+  if (matchedConfig.personalizationHash !== '' &&
+      matchedConfig.isSsidPrefixEnabled) {
+    const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+      matchedConfig.ssidPrefix, ssid);
+    const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
+      matchedConfig.ssidPrefix, ssid5ghz);
+    if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
+      createPrefixErrNotification = true;
+      isSsidPrefixEnabled = false;
+    } else {
+      isSsidPrefixEnabled = true;
+      ssid = check2ghz.ssid;
+      ssid5ghz = check5ghz.ssid;
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
@@ -207,13 +238,13 @@ const createRegistry = async function(req) {
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
-    wifi_ssid: data.wifi2.ssid,
+    wifi_ssid: ssid,
     wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
     wifi_mode: convertWifiMode(data.wifi2.mode, false),
     wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
     wifi_state: (data.wifi2.enable) ? 1 : 0,
     wifi_is_5ghz_capable: true,
-    wifi_ssid_5ghz: data.wifi5.ssid,
+    wifi_ssid_5ghz: ssid5ghz,
     wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
     wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
     wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
@@ -227,13 +258,52 @@ const createRegistry = async function(req) {
     wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp : data.wan.uptime,
     created_at: Date.now(),
     last_contact: Date.now(),
+    isSsidPrefixEnabled: isSsidPrefixEnabled,
   });
   try {
     await newDevice.save();
     await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return false;
+  }
+  // Update SSID prefix on CPE if enabled
+  if (isSsidPrefixEnabled) {
+    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+    changes.wifi2.ssid = ssid;
+    changes.wifi5.ssid = ssid5ghz;
+    // Increment sync task loops
+    newDevice.acs_sync_loops += 1;  
+    // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+    let acceptLocalChanges = false;
+    if (!acceptLocalChanges) {
+      acsDeviceInfoController.updateInfo(newDevice, changes);
+    }
+  }
+  if (createPrefixErrNotification) {
+    // Notify if ssid prefix was impossible to be assigned
+    let matchedNotif = await Notification
+    .findOne({'message_code': 5, 'target': newDevice._id})
+    .catch(function(err) {
+      console.error('Error fetching database: ' + err);
+    });
+    if (!matchedNotif || matchedNotif.allow_duplicate) {
+      let notification = new Notification({
+        'message': 'Não foi possível habilitar o prefixo SSID ' +
+                   'pois o tamanho máximo de 32 caracteres foi excedido.',
+        'message_code': 5,
+        'severity': 'alert',
+        'type': 'communication',
+        'action_title': 'Ok',
+        'allow_duplicate': false,
+        'target': newDevice._id,
+      });
+      await notification.save().catch(
+        function(err) {
+          console.error('Error creating notification: ' + err);
+        }
+      );
+    }
   }
   return true;
 };
@@ -322,7 +392,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
   }
-  if (ssidPrefix+device.wifi_ssid.trim()
+  if (ssidPrefix + device.wifi_ssid.trim()
     !== data.wifi2.ssid.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
@@ -351,7 +421,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
     device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
   }
-  if (ssidPrefix+device.wifi_ssid_5ghz.trim()
+  if (ssidPrefix + device.wifi_ssid_5ghz.trim()
     !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
@@ -869,7 +939,6 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   });
 };
 
-
 acsDeviceInfoController.requestUpStatus = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -1147,7 +1216,6 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       true, 3000, [5000, 10000]);
 };
 
-
 acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
@@ -1278,7 +1346,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
     {is_default: true}, 'tr069',
   ).exec().catch((err) => err);
   if (matchedConfig.constructor === Error) {
-    console.log('Error getting user config in database to ping offline ONUs');
+    console.log('Error getting user config in database to ping offline CPEs');
     return;
   }
   // Compute offline threshold from options
@@ -1286,7 +1354,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   let interval = matchedConfig.tr069.inform_interval;
   let threshold = matchedConfig.tr069.offline_threshold;
   let offlineThreshold = new Date(currentTime - (interval*threshold));
-  // Query database for offline ONU devices
+  // Query database for offline TR-069 CPE devices
   let offlineDevices = await DeviceModel.find({
     use_tr069: true,
     last_contact: {$lt: offlineThreshold},
@@ -1338,8 +1406,9 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
           'target': 'general'});
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'Sua conta está sem licenças para ONUs sobrando. ' +
-                       'Entre em contato com seu representante comercial',
+            'message': 'Sua conta está sem licenças para CPEs TR-069 ' +
+                       'sobrando. Entre em contato com seu representante ' +
+                       'comercial',
             'message_code': 4,
             'severity': 'danger',
             'type': 'communication',
@@ -1355,7 +1424,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
             'message': 'Sua conta está com apenas ' + response.licensesNum +
-                       ' licenças ONU sobrando. ' +
+                       ' licenças CPE TR-069 sobrando. ' +
                        'Entre em contato com seu representante comercial',
             'message_code': 3,
             'severity': 'alert',
@@ -1375,7 +1444,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
 
 acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
   return new Promise(function(resolve, reject) {
-    let readStream = fs.createReadStream(path.join(imageReleasesDir,
+    let readStream = fs.createReadStream(pathModule.join(imageReleasesDir,
                                              firmware.filename));
     let chunks = [];
     readStream.on('data', (chunk) => chunks.push(chunk));

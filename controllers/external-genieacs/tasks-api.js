@@ -88,7 +88,7 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
     message_error: errorMsg};
   if (genieDeviceId !== undefined) { // if error has an associated device.
-    params.message = 'Erro na ONU '+genieDeviceId+'. Chamar supporte.';
+    params.message = 'Erro na CPE '+genieDeviceId+'. Chamar supporte.';
     params.target = device._id;
     params.genieDeviceId = genieDeviceId;
   } else { // if error has no associated device.
@@ -520,7 +520,7 @@ itself and will be removed and re added.*/
  array in which the first position is an error message if there were any or
  null otherwise and the second position is an array of tasks there were not
  processed in less than 'timeout' millisecond. 'shouldRequestConnection' is a
- boolean that tells GenieACS to initiate a connection to the CPE/ONU and
+ boolean that tells GenieACS to initiate a connection to the CPE and
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
 const sendTasks = async function(deviceid, tasks, timeout,
@@ -614,7 +614,7 @@ Arguments:
 'timeout' is a number in milliseconds that will be used as request timeout when
  communicating with GenieACS.
 'shouldRequestConnection' is a boolean that tells GenieACS to initiate a
- connection to the CPE/ONU and execute the task. When it's false, genie will
+ connection to the CPE and execute the task. When it's false, genie will
  always return as fast as possible saying task was scheduled for later.
 'watchTimes' is an array of numbers that are the milliseconds used for waiting
  for scheduled tasks to disappear from GenieACS database, used only if the

@@ -27,7 +27,7 @@ block content
 
           #general.card-body.collapse.out
             .row
-              .col.pl-0.pr-md-4.pr-0
+              .col-md.col-12.pl-0.pr-md-4.pr-0
                 .md-form.input-entry
                   label Número mínimo de caracteres da senha PPPoE
                   input#minlength-pass-pppoe.form-control(
@@ -38,7 +38,7 @@ block content
                     required
                   )
                   .invalid-feedback Insira um número entre 0 e 64
-                .custom-control.custom-checkbox
+                .custom-control.custom-checkbox.mb-2
                   input#autoupdate.custom-control-input(
                     name="autoupdate",
                     type="checkbox"
@@ -46,7 +46,12 @@ block content
                   label.custom-control-label.text-muted(for="autoupdate")
                     | Deixar que o Flashman se atualize automaticamente
                   .invalid-feedback
-              .col.pl-0.pr-0.d-none#is-ssid-prefix-enabled-col
+              .col-md.col-12.pl-0.pr-0.d-none#is-ssid-prefix-enabled-col
+                .alert.alert-info
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; Dica! Utilize o mesmo prefixo SSID configurado no
+                    |  preset das firmwares Flashbox. Lembre dos caracteres
+                    |  maiúsculos e minúsculos
                 .md-form.input-entry
                   label Prefixo SSID
                   input#ssid-prefix.form-control(

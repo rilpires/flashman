@@ -539,7 +539,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
-    } else if (tag === 'tr069') { // ONU routers.
+    } else if (tag === 'tr069') { // CPE TR-069 routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
