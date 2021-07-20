@@ -590,7 +590,8 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = '<td>'+
+    let upgradeCol = (!device.isUpgradeEnabled) ? '<td></td>':
+    '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2'+
         ' btn-cancel-update btn-danger" $NO_UPDATE>'+
