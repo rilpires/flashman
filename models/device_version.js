@@ -6,9 +6,9 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 const tr069Devices = {
   'F670L': {
     versions_upgrade: {
-      'V1.1.20P1T18': ['V1.1.20P1T4'],
-      'V1.1.20P1T4': ['V1.1.20P3N3'],
-      'V1.1.20P3N3': [],
+      'V1.1.20P1T18': ['V1.1.20P1T4', 'V1.1.20P3N3', 'V1.1.20P3N4D'],
+      'V1.1.20P1T4': ['V1.1.20P3N3', 'V1.1.20P3N4D'],
+      'V1.1.20P3N3': ['V1.1.20P3N4D'],
       'V1.1.20P3N4D': [],
     },
     port_forward_opts: {
@@ -45,7 +45,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: true,
-      firmware_upgrade: false,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: true,
   },
@@ -1650,9 +1650,16 @@ DeviceVersion.getTr069ProductClassList = function() {
 DeviceVersion.getTr069VersionByModel = function(model) {
   let ret = [];
   if (tr069Devices.hasOwnProperty(model)) {
-    ret = tr069Devices[model].versions;
+    for (let [ver, obj] of
+     Object.entries(tr069Devices[model].versions_upgrade)) {
+      ret.push(ver);
+    }
   }
   return ret;
+};
+
+DeviceVersion.getAlltr069Devices = function() {
+  return tr069Devices;
 };
 
 module.exports = DeviceVersion;
