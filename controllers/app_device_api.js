@@ -874,9 +874,14 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     });
     let localMac = localDevice ? localDevice.mac : '';
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
+    let isDevOn;
+    if (matchedDevice.use_tr069) {
+      isDevOn = true;
+    } else {
+      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.body.id.toUpperCase()];
+      });
+    }
 
     let prefixObj = {};
     prefixObj.name = await updateController.
