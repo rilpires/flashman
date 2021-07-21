@@ -181,6 +181,7 @@ let deviceSchema = new Schema({
   lastboot_log: Buffer, // used as simply last requested live log for TR-069
   lastboot_date: Date, // used as simply last requested live log for TR-069
   apps: [{id: String, secret: String}],
+  pending_app_secret: String, // used as tr069 secret authentication
   // For port forward
   forward_index: String,
   // For blocked devices

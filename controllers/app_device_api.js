@@ -6,6 +6,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const updateController = require('./update_flashman');
+const crypt = require('crypto');
 
 let appDeviceAPIController = {};
 
@@ -1102,6 +1103,147 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
     return res.status(200).json({
       success: isDevOn,
     });
+  });
+};
+
+appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  // Get global config tr069 cpe login credentials
+  let config = await Config.findOne({is_default: true}).lean().catch((err)=>{
+    console.err('Error fetching config: ' + err);
+  });
+  let configUser;
+  let configPassword;
+  if (config) {
+    configUser = config.tr069.web_login;
+    configPassword = config.tr069.web_password;
+  } else {
+    configUser = '';
+    configPassword = '';
+  }
+  // Query database for devices with matching SSID/BSSID
+  let targetSSID = req.body.content.ssid;
+  let targetBSSID = req.body.content.bssid.toUpperCase();
+  let query = {
+    use_tr069: true,
+    '$or': [
+      {wifi_ssid: targetSSID},
+      {wifi_ssid_5ghz: targetSSID},
+      {wifi_bssid: targetBSSID},
+      {wifi_bssid_5ghz: targetBSSID},
+    ],
+  };
+  let projection = {_id: 1, model: 1, version: 1, pending_app_secret:1};
+  DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
+    if (err) {
+      return res.status(500).json({'message': 'Erro interno'});
+    }
+    // Generate a new secret for app
+    let newSecret = crypt.randomBytes(20).toString('base64');
+    let foundDevices = matchedDevices.map((device) => {
+      // Save secret as a pending secret for devices
+      device.pending_app_secret = newSecret;
+      device.save();
+      // Format data for app
+      let result = {
+        mac: device._id,
+        model: device.model,
+        firmwareVer: device.version,
+      };
+      if (configUser) {
+        result.customLogin = configUser;
+      }
+      if (configPassword) {
+        result.customPassword = configPassword;
+      }
+      return result;
+    });
+    return res.status(200).json({
+      'secret': newSecret,
+      'foundDevices': foundDevices,
+    });
+  });
+};
+
+appDeviceAPIController.validateDeviceSerial = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.content.mac;
+  let projection = {
+    _id: 1, pending_app_secret:1, serial_tr069: 1, apps: 1, app_password: 1
+  };
+  DeviceModel.findById(query, projection, function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({'message': 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({'message': 'CPE não encontrado'});
+    }
+    if (matchedDevice.pending_app_secret === '' ||
+        matchedDevice.pending_app_secret !== req.body.content.secret) {
+      return res.status(403).json({'message': 'Secret inválido'});
+    }
+    if (matchedDevice.serial_tr069 !== req.body.content.serial) {
+      return res.status(403).json({'message': 'Serial inválido'});
+    }
+    let appObj = matchedDevice.apps.filter((app) => app.id === req.body.app_id);
+    let newEntry = {
+      id: req.body.app_id,
+      secret: req.body.content.secret,
+    };
+    if (appObj.length == 0) {
+      matchedDevice.apps.push(newEntry);
+    } else {
+      matchedDevice.apps = matchedDevice.apps.map((app) => {
+        // Change old entry to new entry if ids match
+        if (app.id === req.body.app_id) {
+          return newEntry;
+        }
+        // Return old entry otherwise
+        return app;
+      });
+    }
+    // Clear pending secret and save data
+    matchedDevice.pending_app_secret = '';
+    matchedDevice.save();
+    return res.status(200).json({
+      serialOk: true,
+      hasPassword: (matchedDevice.app_password) ? true : false, // cast to bool
+    });
+  });
+};
+
+appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.id;
+  let projection = {_id: 1, app_password: 1};
+  DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+    let appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    if (typeof appObj === 'undefined') {
+      return res.status(403).json({message: 'App não encontrado'});
+    }
+    if (appObj.secret !== req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+    let content = req.body.content;
+    let newPassword = (content.password) ? content.password : '';
+    if (newPassword === '') {
+      return res.status(200).json({registerOK: false});
+    }
+    matchedDevice.app_password = newPassword;
+    matchedDevice.save();
+    return res.status(200).json({registerOK: true});
   });
 };
 
