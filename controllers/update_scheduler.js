@@ -856,7 +856,7 @@ scheduleController.startSchedule = async function(req, res) {
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
       matchedDevices = matchedDevices.concat(extraDevices);
       matchedDevices = matchedDevices.filter((device)=>{
-        if (device.use_tr069) return false; // Discard ONU devices
+        if (device.use_tr069) return false; // Discard TR-069 devices
         if (device.mesh_master) return false; // Discard mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
           // Discard master if any slave has incompatible model

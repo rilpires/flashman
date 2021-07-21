@@ -280,7 +280,7 @@ updateController.rebootGenie = function(instances) {
     }
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
-    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    // issues with CPEs connections since exceptions lead to buggy exp. backoff
     exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
@@ -473,7 +473,8 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
-        isClientPayingPersonalizationApp: !!matchedConfig.personalizationHash,
+        isClientPayingPersonalizationApp: (
+          matchedConfig.personalizationHash !== '' ? true : false),
         isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
@@ -590,17 +591,18 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
-    config.isSsidPrefixEnabled = (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-
-    let validField = validator.
-      validateSSIDPrefix(req.body['ssid-prefix']);
-    if (!validField.valid) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro validando os campos',
-      });
+    if (config.personalizationHash !== '') {
+      config.isSsidPrefixEnabled =
+        (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
+      if (!validField.valid) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Erro validando os campos',
+        });
+      }
+      config.ssidPrefix = req.body['ssid-prefix'];
     }
-    config.ssidPrefix = req.body['ssid-prefix'];
 
     let ponSignalThresholdCriticalHigh = parseInt(
       req.body['pon-signal-threshold-critical-high']);

@@ -5,6 +5,7 @@ import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
 import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
+import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -1029,10 +1030,11 @@ $(document).ready(function() {
           displayAlertMsg(res);
           return;
         }
-        // show or not ssid prefix in new device form
-        $('#ssid_prefix').text(res.ssidPrefix);
-        $('#ssid_prefix').data('isenabled', res.isSsidPrefixEnabled);
+        setConfigStorage('ssidPrefix', res.ssidPrefix);
+        setConfigStorage('isSsidPrefixEnabled', res.isSsidPrefixEnabled);
+        // ssid prefix in new device form
         if (res.isSsidPrefixEnabled) {
+          $('#ssid_prefix').text(res.ssidPrefix);
           $('#ssid_prefix_div').removeClass('d-none');
           $('#ssid_prefix_div').addClass('d-block');
           $('#ssid_label').addClass('active');
@@ -1714,7 +1716,7 @@ $(document).ready(function() {
           let ssidPrefixEnabledCheckbox = '';
           if (device.isToShowSsidPrefixCheckbox) {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
-                '" class="custom-control custom-checkbox">'+
+                '" class="custom-control custom-checkbox pl-2">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
@@ -1725,7 +1727,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1733,7 +1735,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
@@ -1741,7 +1743,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1749,14 +1751,14 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
             }
           } else {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
-                '" class="custom-control custom-checkbox d-none">'+
+                '" class="custom-control custom-checkbox pl-2 d-none">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+
