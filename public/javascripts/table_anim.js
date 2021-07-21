@@ -579,13 +579,13 @@ $(document).ready(function() {
       ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
       ponSignalRxPower = '';
     } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh){
-      ponSignalStatus = '<div class="badge red">Sinal Muito Alto</div>';
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Alto</div>';
     } else if (device.pon_rxpower >= config.ponSignalThreshold) {
-      ponSignalStatus = '<div class="badge green">Sinal Bom</div>';
+      ponSignalStatus = '<div class="badge bg-success">Sinal Bom</div>';
     } else if (device.pon_rxpower >= config.ponSignalThresholdCritical) {
-      ponSignalStatus = '<div class="badge yellow">Sinal Fraco</div>';
+      ponSignalStatus = '<div class="badge bg-warning">Sinal Fraco</div>';
     } else {
-      ponSignalStatus = '<div class="badge red">Sinal Muito Fraco</div>';
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Fraco</div>';
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
