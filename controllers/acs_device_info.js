@@ -549,6 +549,7 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
   let task = {name: 'reboot'};
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'reboot') return;
+    if (!res) return; // Prevent crash in case res is not defined
     if (result.finished) res.status(200).json({success: true});
     else {
       res.status(200).json({
