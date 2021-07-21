@@ -235,12 +235,15 @@ const createRegistry = async function(req) {
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
     wifi_ssid: ssid,
+    wifi_bssid: (data.wifi2.bssid) ? data.wifi2.bssid.toUpperCase() : undefined,
     wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
     wifi_mode: convertWifiMode(data.wifi2.mode, false),
     wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
     wifi_state: (data.wifi2.enable) ? 1 : 0,
     wifi_is_5ghz_capable: true,
     wifi_ssid_5ghz: ssid5ghz,
+    wifi_bssid_5ghz:
+        (data.wifi5.bssid) ? data.wifi5.bssid.toUpperCase() : undefined,
     wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
     wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
     wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
@@ -393,6 +396,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
+  let bssid2 = data.wifi2.bssid;
+  if ((bssid2 && !device.wifi_bssid) ||
+      (device.wifi_bssid !== bssid2.toUpperCase())) {
+    device.wifi_bssid = bssid2.toUpperCase();
+  }
   let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
   if (channel2 && !device.wifi_channel) {
     device.wifi_channel = channel2;
@@ -421,6 +429,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
+  }
+  let bssid5 = data.wifi5.bssid;
+  if ((bssid5 && !device.wifi_bssid_5ghz) ||
+      (device.wifi_bssid_5ghz !== bssid5.toUpperCase())) {
+    device.wifi_bssid_5ghz = bssid5.toUpperCase();
   }
   let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
   if (channel5 && !device.wifi_channel_5ghz) {
