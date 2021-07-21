@@ -438,17 +438,28 @@ let formatDevices = function(device) {
     } else if (lanDevice.dhcp_name && lanDevice.dhcp_name !== '!') {
       name = lanDevice.dhcp_name;
     }
-    let numRules = lanDevice.port.length;
-    let rules = [];
-    for (let i = 0; i < numRules; i++) {
-      rules.push({
-        in: lanDevice.port[i],
-        out: lanDevice.router_port[i],
-      });
-      allRules.push({
-        in: lanDevice.port[i],
-        out: lanDevice.router_port[i],
-      });
+    if (device.use_tr069) {
+      // Use port mapping structure instead of lan_devices, since rules can be
+      // bound to an ip that is not registered
+      let rules = device.port_mapping.find((r)=>r.ip === lanDevice.ip);
+      if (typeof rules === 'undefined') {
+        rules = [];
+      }
+      allRules.concat(rules);
+    } else {
+      // Use legacy lan_devices structure
+      let numRules = lanDevice.port.length;
+      let rules = [];
+      for (let i = 0; i < numRules; i++) {
+        rules.push({
+          in: lanDevice.port[i],
+          out: lanDevice.router_port[i],
+        });
+        allRules.push({
+          in: lanDevice.port[i],
+          out: lanDevice.router_port[i],
+        });
+      }
     }
     let upnpPermission = lanDevice.upnp_permission === 'accept';
     let signal = 'none';
@@ -472,6 +483,15 @@ let formatDevices = function(device) {
       upnp_allow: upnpPermission,
     };
   });
+  // Add port forward rules not bound to a device to allRules structure
+  if (device.use_tr069) {
+    device.port_mapping.forEach((rule)=>{
+      // Check if rule ip has a matching device
+      if (lanDevices.find((d)=>d.ip === rule.ip)) return;
+      // No matchign device, add rule
+      allRules.push(rule);
+    });
+  }
   return {
     devices: lanDevices,
     rules: allRules,
