@@ -86,6 +86,8 @@ let appSet = function(req, res, processFunction) {
 
       if (matchedDevice.use_tr069) {
         // Simply call ACS function, dont check for parameters done
+        acsController.updateInfo(matchedDevice, tr069Changes);
+        return res.status(200).json({is_set: 1});
       } else {
         mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
