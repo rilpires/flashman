@@ -255,6 +255,8 @@ const createRegistry = async function(req) {
     created_at: Date.now(),
     last_contact: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
+    web_admin_username: data.common.web_admin_username,
+    web_admin_password: data.common.web_admin_password,
   });
   try {
     await newDevice.save();
@@ -474,6 +476,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.pon_rxpower,
       device.pon_txpower,
     );
+  }
+  if (data.common.web_admin_username) {
+    device.web_admin_username = data.common.web_admin_username;
+  }
+  if (data.common.web_admin_password) {
+    device.web_admin_password = data.common.web_admin_password;
   }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
