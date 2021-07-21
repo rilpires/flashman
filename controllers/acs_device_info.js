@@ -119,6 +119,24 @@ const convertWifiBand = function(band, mode) {
   }
 };
 
+const extractGreatekCredentials = function(config) {
+  let usernameRegex = /SUSER_NAME(.+?)\//g;
+  let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
+  let usernameMatches = config.match(usernameRegex);
+  let passwordMatches = config.match(passwordRegex);
+  let username;
+  let password;
+  if (usernameMatches.length > 0) {
+    username = usernameMatches[0].split('=')[1];
+    username = username.substring(1, username.length - 2);
+  }
+  if (passwordMatches.length > 0) {
+    password = passwordMatches[0].split('=')[1];
+    password = password.substring(1, password.length - 2);
+  }
+  return {username: username, password: password};
+};
+
 const appendBytesMeasure = function(original, recv, sent) {
   let now = Math.floor(Date.now()/1000);
   if (!original) original = {};
@@ -222,6 +240,14 @@ const createRegistry = async function(req) {
     }
   }
 
+  // Greatek does not expose these fields normally, only under this config file,
+  // a XML with proprietary format. We parse it using regex to get what we want
+  if (data.common.greatek_config) {
+    let webCredentials = extractGreatekCredentials(data.common.greatek_config);
+    data.common.web_admin_username = webCredentials.username;
+    data.common.web_admin_password = webCredentials.password;
+  }
+
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
@@ -255,6 +281,8 @@ const createRegistry = async function(req) {
     created_at: Date.now(),
     last_contact: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
+    web_admin_username: data.common.web_admin_username,
+    web_admin_password: data.common.web_admin_password,
   });
   try {
     await newDevice.save();
@@ -338,6 +366,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   device.serial_tr069 = splitID[splitID.length - 1];
+
+  // Greatek does not expose these fields normally, only under this config file,
+  // a XML with proprietary format. We parse it using regex to get what we want
+  if (data.common.greatek_config) {
+    let webCredentials = extractGreatekCredentials(data.common.greatek_config);
+    data.common.web_admin_username = webCredentials.username;
+    data.common.web_admin_password = webCredentials.password;
+  }
+
   if (data.common.model) device.model = data.common.model.trim();
   if (data.common.version) device.version = data.common.version.trim();
   if (hasPPPoE) {
@@ -474,6 +511,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.pon_rxpower,
       device.pon_txpower,
     );
+  }
+  if (data.common.web_admin_username) {
+    device.web_admin_username = data.common.web_admin_username;
+  }
+  if (data.common.web_admin_password) {
+    device.web_admin_password = data.common.web_admin_password;
   }
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
