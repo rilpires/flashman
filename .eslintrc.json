@@ -9,10 +9,13 @@
         "node": true,
         "es6": true,
         "jquery": true,
-        "jest": true,
-	"swal": true
+        "jest": true
     },
     "plugins": [
         "jest"
-    ]
+    ],
+    "rules": {
+       "no-undef": "off",
+       "no-invalid-this": "off"
+    }
 }
