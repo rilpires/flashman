@@ -625,14 +625,20 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    // Send mqtt message to update devices on flashman db
+    let isDevOn;
     if (req.body.content.do_device_update) {
-      mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+      if (matchedDevice.use_tr069) {
+        acsController.requestConnectedDevices(matchedDevice);
+        isDevOn = true;
+      } else {
+        // Send mqtt message to update devices on flashman db
+        mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+        isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+          return map[req.body.id.toUpperCase()];
+        });
+      }
     }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
 
     return res.status(200).json({
       has_access: isDevOn,
