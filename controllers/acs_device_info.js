@@ -182,6 +182,7 @@ const saveDeviceData = async function(mac, landevices) {
       });
     }
   });
+  device.last_devices_refresh = Date.now();
   await device.save();
 };
 
