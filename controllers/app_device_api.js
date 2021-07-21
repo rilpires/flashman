@@ -6,6 +6,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const updateController = require('./update_flashman');
+const acsController = require('./acs_device_info');
 const crypt = require('crypto');
 
 let appDeviceAPIController = {};
@@ -58,6 +59,7 @@ let appSet = function(req, res, processFunction) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
+      let tr069Changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
 
       // Update location data if present
       if (content.latitude && content.longitude) {
@@ -65,7 +67,9 @@ let appSet = function(req, res, processFunction) {
         matchedDevice.longitude = content.longitude;
       }
 
-      if (processFunction(content, matchedDevice, rollbackValues)) {
+      if (
+        processFunction(content, matchedDevice, rollbackValues, tr069Changes)
+      ) {
         matchedDevice.do_update_parameters = true;
       }
 
@@ -80,94 +84,110 @@ let appSet = function(req, res, processFunction) {
 
       matchedDevice.save();
 
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
+      if (matchedDevice.use_tr069) {
+        // Simply call ACS function, dont check for parameters done
+      } else {
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
-      checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
-      .then((done)=>{
-        if (done) {
-          meshHandlers.syncSlaves(matchedDevice);
-          return res.status(200).json({is_set: 1});
-        }
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      }, (rejectedVal)=>{
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      });
+        checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
+        .then((done)=>{
+          if (done) {
+            meshHandlers.syncSlaves(matchedDevice);
+            return res.status(200).json({is_set: 1});
+          }
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({is_set: 0});
+        }, (rejectedVal)=>{
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({is_set: 0});
+        });
+      }
     } else {
       return res.status(500).json({is_set: 0});
     }
   });
 };
 
-let processWifi = function(content, device, rollback) {
+let processWifi = function(content, device, rollback, tr069Changes) {
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
     device.pppoe_user = content.pppoe_user;
+    tr069Changes.wan.pppoe_user = content.pppoe_user;
     updateParameters = true;
   }
   if (content.pppoe_password) {
     rollback.pppoe_password = device.pppoe_password;
     device.pppoe_password = content.pppoe_password;
+    tr069Changes.wan.pppoe_pass = content.pppoe_password;
     updateParameters = true;
   }
   if (content.wifi_ssid) {
     rollback.wifi_ssid = device.wifi_ssid;
     device.wifi_ssid = content.wifi_ssid;
+    tr069Changes.wifi2.ssid = content.wifi_ssid;
     updateParameters = true;
   }
   if (content.wifi_ssid_5ghz) {
     rollback.wifi_ssid_5ghz = device.wifi_ssid_5ghz;
     device.wifi_ssid_5ghz = content.wifi_ssid_5ghz;
+    tr069Changes.wifi5.ssid = content.wifi_ssid_5ghz;
     updateParameters = true;
   }
   if (content.wifi_password) {
     rollback.wifi_password = device.wifi_password;
     device.wifi_password = content.wifi_password;
+    tr069Changes.wifi2.password = content.wifi_password;
     updateParameters = true;
   }
   if (content.wifi_password_5ghz) {
     rollback.wifi_password_5ghz = device.wifi_password_5ghz;
     device.wifi_password_5ghz = content.wifi_password_5ghz;
+    tr069Changes.wifi5.password = content.wifi_password_5ghz;
     updateParameters = true;
   }
   if (content.wifi_channel) {
     rollback.wifi_channel = device.wifi_channel;
     device.wifi_channel = content.wifi_channel;
+    tr069Changes.wifi2.channel = content.wifi_channel;
     updateParameters = true;
   }
   if (content.wifi_band) {
     rollback.wifi_band = device.wifi_band;
     device.wifi_band = content.wifi_band;
+    tr069Changes.wifi2.band = content.wifi_band;
     updateParameters = true;
   }
   if (content.wifi_mode) {
     rollback.wifi_mode = device.wifi_mode;
     device.wifi_mode = content.wifi_mode;
+    tr069Changes.wifi2.mode = content.wifi_mode;
     updateParameters = true;
   }
   if (content.wifi_channel_5ghz) {
     rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
     device.wifi_channel_5ghz = content.wifi_channel_5ghz;
+    tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
     updateParameters = true;
   }
   if (content.wifi_band_5ghz) {
     rollback.wifi_band_5ghz = device.wifi_band_5ghz;
     device.wifi_band_5ghz = content.wifi_band_5ghz;
+    tr069Changes.wifi5.band = content.wifi_band_5ghz;
     updateParameters = true;
   }
   if (content.wifi_mode_5ghz) {
     rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
     device.wifi_mode_5ghz = content.wifi_mode_5ghz;
+    tr069Changes.wifi5.mode = content.wifi_mode_5ghz;
     updateParameters = true;
   }
   return updateParameters;
 };
 
-let processPassword = function(content, device, rollback) {
+let processPassword = function(content, device, rollback, tr069Changes) {
   if (content.hasOwnProperty('app_password')) {
     rollback.app_password = device.app_password;
     device.app_password = content.app_password;
@@ -176,7 +196,7 @@ let processPassword = function(content, device, rollback) {
   return false;
 };
 
-let processBlacklist = function(content, device, rollback) {
+let processBlacklist = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
@@ -253,7 +273,7 @@ let processBlacklist = function(content, device, rollback) {
   return false;
 };
 
-let processWhitelist = function(content, device, rollback) {
+let processWhitelist = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'blockDevices')) {
     return false;
@@ -302,7 +322,7 @@ let processWhitelist = function(content, device, rollback) {
   return false;
 };
 
-let processDeviceInfo = function(content, device, rollback) {
+let processDeviceInfo = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -346,7 +366,7 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
-let processUpnpInfo = function(content, device, rollback) {
+let processUpnpInfo = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (!DeviceVersion.checkFeature(device.model, 'upnp')) {
     return false;
@@ -396,7 +416,7 @@ let processUpnpInfo = function(content, device, rollback) {
   return false;
 };
 
-let processAll = function(content, device, rollback) {
+let processAll = function(content, device, rollback, tr069Changes) {
   processWifi(content, device, rollback);
   processPassword(content, device, rollback);
   processBlacklist(content, device, rollback);
