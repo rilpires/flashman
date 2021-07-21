@@ -588,12 +588,18 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    // Send mqtt message to reboot router
-    mqtt.anlixMessageRouterReboot(req.body.id);
+    let isDevOn;
+    if (matchedDevice.use_tr069) {
+      acsController.rebootDevice(matchedDevice);
+      isDevOn = true; // We would need to query database to check if online
+    } else {
+      // Send mqtt message to reboot router
+      mqtt.anlixMessageRouterReboot(req.body.id);
+      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.body.id.toUpperCase()];
+      });
+    }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
 
     return res.status(200).json({
       success: isDevOn,
