@@ -123,7 +123,7 @@ const extractGreatekCredentials = function(config) {
   let usernameRegex = /SUSER_NAME(.+?)\//g;
   let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
   let usernameMatches = config.match(usernameRegex);
-  let passwordMatches = config.match(usernameRegex);
+  let passwordMatches = config.match(passwordRegex);
   let username;
   let password;
   if (usernameMatches.length > 0) {
@@ -366,6 +366,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   device.serial_tr069 = splitID[splitID.length - 1];
+
+  // Greatek does not expose these fields normally, only under this config file,
+  // a XML with proprietary format. We parse it using regex to get what we want
+  if (data.common.greatek_config) {
+    let webCredentials = extractGreatekCredentials(data.common.greatek_config);
+    data.common.web_admin_username = webCredentials.username;
+    data.common.web_admin_password = webCredentials.password;
+  }
+
   if (data.common.model) device.model = data.common.model.trim();
   if (data.common.version) device.version = data.common.version.trim();
   if (hasPPPoE) {
