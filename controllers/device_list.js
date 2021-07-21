@@ -529,9 +529,9 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
       } 
-    } else if (/^(sinal) (?:erro|bom|ruim)$/.test(tag)) { 
+    } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
-      if (tag.includes('ruim')) {
+      if (tag.includes('fraco')) {
         query.pon_rxpower = {
           $gte: matchedConfig.tr069.pon_signal_threshold_critical,
           $lte: matchedConfig.tr069.pon_signal_threshold,
@@ -541,7 +541,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           $gte: matchedConfig.tr069.pon_signal_threshold,
           $lte: matchedConfig.tr069.pon_signal_threshold_critical_high,
         };
-      } else if (tag.includes('erro')) {
+      } else if (tag.includes('ruim')) {
         query.pon_rxpower = {
           $lte: matchedConfig.tr069.pon_signal_threshold_critical,
         };
