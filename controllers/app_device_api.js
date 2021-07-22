@@ -806,8 +806,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       });
     }
 
-    // Send mqtt message to update devices on flashman db
-    mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    if (matchedDevice.use_tr069) {
+      acsController.requestConnectedDevices(matchedDevice);
+    } else {
+      // Send mqtt message to update devices on flashman db
+      mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    }
 
     // Check if FCM ID has changed or if location info provided, update if so
     let appid = req.body.app_id;
