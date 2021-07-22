@@ -273,40 +273,44 @@ $(document).ready(function() {
     }
   });
 
+  let uploadFirmware = function() {
+    $('#btn-submit-upload').prop('disabled', true);
+    $('#btn-submit-icon')
+      .removeClass('fa-upload')
+      .addClass('fa-spinner fa-pulse');
+    $.ajax({
+      type: 'POST',
+      enctype: 'multipart/form-data',
+      url: $(this).attr('action'),
+      data: new FormData($(this)[0]),
+      processData: false,
+      contentType: false,
+      cache: false,
+      timeout: 600000,
+      success: function(res) {
+        $('#btn-submit-upload').prop('disabled', false);
+        $('#btn-submit-icon')
+          .addClass('fa-upload')
+          .removeClass('fa-spinner fa-pulse');
+        displayAlertMsg(res);
+        fetchLocalFirmwares(firmwaresTable);
+      },
+      error: function(res) {
+        $('#btn-submit-upload').prop('disabled', false);
+        $('#btn-submit-icon')
+          .addClass('fa-upload')
+          .removeClass('fa-spinner fa-pulse');
+        displayAlertMsg({
+          type: 'danger',
+          message: 'Nenhum arquivo foi selecionado',
+        });
+      },
+    });
+  };
+
   $('form[name=firmwareflashboxform]').submit(function() {
     if ($('input[name=firmwareflashboxfile]').val().trim()) {
-      $('#btn-submit-upload').prop('disabled', true);
-      $('#btn-submit-icon')
-        .removeClass('fa-upload')
-        .addClass('fa-spinner fa-pulse');
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: $(this).attr('action'),
-        data: new FormData($(this)[0]),
-        processData: false,
-        contentType: false,
-        cache: false,
-        timeout: 600000,
-        success: function(res) {
-          $('#btn-submit-upload').prop('disabled', false);
-          $('#btn-submit-icon')
-            .addClass('fa-upload')
-            .removeClass('fa-spinner fa-pulse');
-          displayAlertMsg(res);
-          fetchLocalFirmwares(firmwaresTable);
-        },
-        error: function(res) {
-          $('#btn-submit-upload').prop('disabled', false);
-          $('#btn-submit-icon')
-            .addClass('fa-upload')
-            .removeClass('fa-spinner fa-pulse');
-          displayAlertMsg({
-            type: 'danger',
-            message: 'Nenhum arquivo foi selecionado',
-          });
-        },
-      });
+      uploadFirmware();
     } else {
       displayAlertMsg({
         type: 'danger',
@@ -319,38 +323,7 @@ $(document).ready(function() {
 
   $('form[name=firmwaretr069form]').submit(function(event) {
     if ($(this)[0].checkValidity()) {
-      $('#btn-submit-upload').prop('disabled', true);
-      $('#btn-submit-icon')
-        .removeClass('fa-upload')
-        .addClass('fa-spinner fa-pulse');
-      $.ajax({
-        type: 'POST',
-        enctype: 'multipart/form-data',
-        url: $(this).attr('action'),
-        data: new FormData($(this)[0]),
-        processData: false,
-        contentType: false,
-        cache: false,
-        timeout: 600000,
-        success: function(res) {
-          $('#btn-submit-upload').prop('disabled', false);
-          $('#btn-submit-icon')
-            .addClass('fa-upload')
-            .removeClass('fa-spinner fa-pulse');
-          displayAlertMsg(res);
-          fetchLocalFirmwares(firmwaresTable);
-        },
-        error: function(res) {
-          $('#btn-submit-upload').prop('disabled', false);
-          $('#btn-submit-icon')
-            .addClass('fa-upload')
-            .removeClass('fa-spinner fa-pulse');
-          displayAlertMsg({
-            type: 'danger',
-            message: 'Nenhum arquivo foi selecionado',
-          });
-        },
-      });
+      uploadFirmware();
     } else {
       event.preventDefault();
       event.stopPropagation();

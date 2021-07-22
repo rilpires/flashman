@@ -5,6 +5,7 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
+    vendor: 'Multilaser',
     versions_upgrade: {
       'V1.1.20P1T18': ['V1.1.20P1T4', 'V1.1.20P3N3', 'V1.1.20P3N4D'],
       'V1.1.20P1T4': ['V1.1.20P3N3', 'V1.1.20P3N4D'],
@@ -50,6 +51,7 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
+    vendor: 'Multilaser',
     versions_upgrade: {
       'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
       'V3.0.0C6_MUL': ['V3.0.0C5_MUL'],
@@ -80,6 +82,7 @@ const tr069Devices = {
     },
   },
   'GONUAC001': {
+    vendor: 'Greatek',
     versions_upgrade: {
       'V1.2.3': [],
     },
@@ -96,6 +99,7 @@ const tr069Devices = {
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
+    vendor: 'Nokia',
     versions_upgrade: {
       '3FE46343AFIA89': [],
     },
@@ -112,6 +116,7 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
+    vendor: 'Huawei',
     versions_upgrade: {
       'V3R017C10S100': [],
     },
@@ -1654,6 +1659,14 @@ DeviceVersion.getTr069VersionByModel = function(model) {
      Object.entries(tr069Devices[model].versions_upgrade)) {
       ret.push(ver);
     }
+  }
+  return ret;
+};
+
+DeviceVersion.getVendorByModel = function(model) {
+  let ret = '';
+  if (tr069Devices[model]) {
+    ret = tr069Devices[model].vendor;
   }
   return ret;
 };

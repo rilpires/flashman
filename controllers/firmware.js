@@ -46,6 +46,7 @@ let removeFirmware = async function(firmware) {
     try {
       await acsDeviceInfo.delFirmwareInGenie(firmware.filename);
     } catch (e) {
+      console.error(e.message);
       throw e;
     }
   }
@@ -55,7 +56,7 @@ let removeFirmware = async function(firmware) {
   try {
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
   } catch (e) {
-    throw new Error('Arquivo md5 não encontrado');
+    console.error(e.message);
   }
   try {
     await firmware.remove();
@@ -63,29 +64,6 @@ let removeFirmware = async function(firmware) {
     throw new Error('Registro não encontrado');
   }
   return;
-};
-
-let getVendorByModel = function(model) {
-  let ret = '';
-  switch (model) {
-    case 'HG8245Q2':
-      ret = 'Huawei';
-      break;
-    case 'G-140W-C':
-      ret = 'Nokia';
-      break;
-    case 'GONUAC001':
-      ret = 'Greatek';
-      break;
-    case 'HG6245D':
-      ret = 'Fiberhome';
-      break;
-    case 'ZXHN H198A V3.0':
-    case 'F670L':
-      ret = 'Multilaser';
-      break;
-  }
-  return ret;
 };
 
 firmwareController.index = function(req, res) {
@@ -143,7 +121,7 @@ firmwareController.fetchFirmwares = function(req, res) {
 firmwareController.fetchTr069ProductClassList = function(req, res) {
   let ret = DeviceVersion.getTr069ProductClassList();
   if (!ret) {
-    return res.json({success: true, type: 'danger',
+    return res.json({success: false, type: 'danger',
       message: 'Não foi possível recuperar os modelos dos dispositivos'});
   } else {
     return res.json({success: true, type: 'success',
@@ -235,15 +213,13 @@ firmwareController.delFirmware = function(req, res) {
     firmwares.forEach((firmware) => {
       promises.push(removeFirmware(firmware));
     });
-    Promise.all(promises).
-      then(
+    Promise.all(promises).then(
       function() {
         return res.json({
           type: 'success',
           message: 'Firmware(s) deletado(s) com sucesso!',
         });
-      }).
-      catch(function(err) {
+      }).catch(function(err) {
         return res.json({
           type: 'danger',
           message: err.message,
@@ -299,9 +275,9 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields = parseFilename(firmwarefile.name);
   } else if (isTR069) {
     fnameFields = {};
-    fnameFields.vendor = getVendorByModel(req.body.productclass);
+    fnameFields.vendor = DeviceVersion.getVendorByModel(req.body.productclass);
     fnameFields.model = req.body.productclass;
-    fnameFields.version = req.body.version;
+    fnameFields.version = '';
     fnameFields.release = req.body.version;
     fnameFields.cpe_type = 'tr069';
   }
@@ -310,7 +286,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     if (isTR069) {
       firmware = await Firmware.findOne({
         model: fnameFields.model,
-        version: fnameFields.version,
+        release: fnameFields.release,
       });
     } else {
       firmware = await Firmware.findOne({
@@ -326,7 +302,8 @@ firmwareController.uploadFirmware = async function(req, res) {
     // Remove downloaded files
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
-    return res.json({type: 'danger', message: 'Erro buscar na base de dados'});
+    return res.json({type: 'danger',
+      message: 'Erro na base de dados'});
   }
   if (!firmware) {
     firmware = new Firmware({

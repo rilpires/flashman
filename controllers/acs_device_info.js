@@ -614,7 +614,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -658,7 +657,6 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -715,7 +713,6 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -780,7 +777,6 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -836,7 +832,6 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -1291,7 +1286,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
     let options = {
       method: 'GET',
       hostname: 'localhost',
-      // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
     };
@@ -1497,7 +1491,6 @@ acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
       let options = {
         method: 'PUT',
         hostname: 'localhost',
-        // hostname: '207.246.65.243',
         port: 7557,
         path: encodeURI(path),
         headers: {
@@ -1520,10 +1513,13 @@ acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
       });
       req.write(binaryData);
       req.on('timeout', function() {
-        reject(new Error('Timeout on '+firmware.filename+' http put'));
+        reject(new Error('Tempo expirado ao adicionar firmware '+
+          firmware.filename));
       });
       req.on('error', function(e) {
-        reject(e);
+        console.error(e);
+        reject(new Error('Erro ao adicionar firmware '+
+          firmware.filename));
       });
       req.end();
     });
@@ -1536,7 +1532,6 @@ acsDeviceInfoController.delFirmwareInGenie = function(filename) {
     let options = {
       method: 'DELETE',
       hostname: 'localhost',
-      // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
     };
@@ -1548,7 +1543,8 @@ acsDeviceInfoController.delFirmwareInGenie = function(filename) {
       }
     });
     req.on('error', function(e) {
-      reject(e);
+      console.error(e);
+      eject(new Error('Erro ao deletar firmware no genie'));
     });
     req.end();
   });
@@ -1560,7 +1556,6 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
     let options = {
       method: 'GET',
       hostname: 'localhost',
-      // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
     };
@@ -1575,13 +1570,15 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
         try {
           data = JSON.parse(data);
         } catch (e) {
-          reject(e);
+          console.error(e);
+          reject(new Error('Erro ao buscar firmwares no genie'));
         }
         resolve(data);
       });
     });
     req.on('error', function(e) {
-      reject(e);
+      onsole.error(e);
+      eject(new Error('Erro ao buscar firmware no genie'));
     });
     req.end();
   });
@@ -1589,13 +1586,10 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
 
 acsDeviceInfoController.upgradeFirmware = async function(device) {
   let firmwares;
-  try {
-    // verify existence in nbi through 7557/files/
-    firmwares = await acsDeviceInfoController.
-      getFirmwaresFromGenie();
-  } catch (e) {
-    throw e;
-  }
+  // verify existence in nbi through 7557/files/
+  firmwares = await acsDeviceInfoController
+    .getFirmwaresFromGenie();
+
   let firmware = firmwares.find((f) => f.metadata.version == device.release);
   // if not exists add
   if (!firmware) {
@@ -1608,11 +1602,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     if (!firmware) {
       throw new Error('Não existe firmware com essa versão');
     } else {
-      try {
-        await acsDeviceInfoController.addFirmwareInGenie(firmware);
-      } catch(e) {
-        throw e;
-      }
+      await acsDeviceInfoController.addFirmwareInGenie(firmware);
     }
   }
   // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
@@ -1628,7 +1618,6 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     let options = {
       method: 'POST',
       hostname: 'localhost',
-      // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
       headers: {
@@ -1646,7 +1635,9 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       }
     });
     req.on('error', function(e) {
-      reject(e);
+      console.error(e);
+      reject(new Error('Erro ao atualizar firmware no '+
+          device.acs_id));
     });
     req.write(postData);
     req.end();

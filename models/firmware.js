@@ -8,6 +8,7 @@ let firmwareSchema = new Schema({
   vendor: {type: String, required: true},
   // productClass == model
   model: {type: String, required: true},
+  // hardware version of a cpe
   version: {type: String, required: true},
   release: {type: String, required: true},
   wan_proto: {type: String, default: ''},
