@@ -222,6 +222,8 @@ let deviceSchema = new Schema({
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
   isSsidPrefixEnabled: {type: Boolean},
+  web_admin_username: String,
+  web_admin_password: String,
 });
 
 deviceSchema.set('autoIndex', false);
