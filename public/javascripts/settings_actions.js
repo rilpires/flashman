@@ -1,5 +1,6 @@
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
+import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 // assigning tr069 elements.
 let recoveryInput =
@@ -94,12 +95,13 @@ let configFlashman = function(event) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
   }
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
-  // check ssid prefix value
-  if (ssidPrefixInput.validity.valid && !validField.valid) {
-    setSsidPrefixError();
-    allValid = false;
+  if (getConfigStorage('isClientPayingPersonalizationApp')) {
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
+    // check ssid prefix value
+    if (ssidPrefixInput.validity.valid && !validField.valid) {
+      setSsidPrefixError();
+      allValid = false;
+    }
   }
   // take action after validation is ready.
   if (allValid) {
@@ -132,6 +134,7 @@ let configFlashman = function(event) {
 };
 
 $(document).ready(function() {
+  setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
 
   // Load configuration options
@@ -168,6 +171,9 @@ $(document).ready(function() {
           .siblings('label').addClass('active');
       }
       if (resp.isClientPayingPersonalizationApp) {
+        setConfigStorage('isClientPayingPersonalizationApp',
+                         resp.isClientPayingPersonalizationApp);
+
         $('#is-ssid-prefix-enabled-col').removeClass('d-none');
         $('#is-ssid-prefix-enabled')
           .prop('checked', resp.isSsidPrefixEnabled).change();
