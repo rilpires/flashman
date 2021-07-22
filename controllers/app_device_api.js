@@ -438,10 +438,11 @@ let formatDevices = function(device) {
     } else if (lanDevice.dhcp_name && lanDevice.dhcp_name !== '!') {
       name = lanDevice.dhcp_name;
     }
+    let rules = [];
     if (device.use_tr069) {
       // Use port mapping structure instead of lan_devices, since rules can be
       // bound to an ip that is not registered
-      let rules = device.port_mapping.find((r)=>r.ip === lanDevice.ip);
+      rules = device.port_mapping.find((r)=>r.ip === lanDevice.ip);
       if (typeof rules === 'undefined') {
         rules = [];
       }
@@ -449,7 +450,6 @@ let formatDevices = function(device) {
     } else {
       // Use legacy lan_devices structure
       let numRules = lanDevice.port.length;
-      let rules = [];
       for (let i = 0; i < numRules; i++) {
         rules.push({
           in: lanDevice.port[i],
@@ -1282,7 +1282,7 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   let query = req.body.id;
-  let projection = {_id: 1, app_password: 1};
+  let projection = {_id: 1, app_password: 1, apps: 1};
   DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
@@ -1290,7 +1290,10 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
     }
-    let appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    let appObj;
+    if (matchedDevice.apps) {
+      appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    }
     if (typeof appObj === 'undefined') {
       return res.status(403).json({message: 'App não encontrado'});
     }
