@@ -340,11 +340,11 @@ deviceListController.changeUpdate = async function(req, res) {
   }
 
   if (matchedDevice.use_tr069 && doUpdate) {
-    try {
-      await acsDeviceInfo.upgradeFirmware(matchedDevice);
-    } catch (e) {
-      return res.status(500).json({success: false,
-        message: e.message});
+    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+    if (response.success) {
+      return res.status(200).json(response);
+    } else {
+      return res.status(500).json(response);
     }
   } else {
     mqtt.anlixMessageRouterUpdate(matchedDevice._id);

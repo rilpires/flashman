@@ -1561,7 +1561,7 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
     };
     let req = http.request(options, (res) => {
       if (res.statusCode != 200) {
-        reject(new Error('Erro ao buscar firmwares no genie'));
+        resolve([]);
       }
       let data = '';
       res.setEncoding('utf8');
@@ -1571,41 +1571,20 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
           data = JSON.parse(data);
         } catch (e) {
           console.error(e);
-          reject(new Error('Erro ao buscar firmwares no genie'));
+          resolve([]);
         }
         resolve(data);
       });
     });
     req.on('error', function(e) {
       onsole.error(e);
-      reject(new Error('Erro ao buscar firmware no genie'));
+      resolve([]);
     });
     req.end();
   });
 };
 
-acsDeviceInfoController.upgradeFirmware = async function(device) {
-  let firmwares;
-  // verify existence in nbi through 7557/files/
-  firmwares = await acsDeviceInfoController
-    .getFirmwaresFromGenie();
-
-  let firmware = firmwares.find((f) => f.metadata.version == device.release);
-  // if not exists add
-  if (!firmware) {
-    firmware = await FirmwareModel.findOne({
-      model: device.model,
-      version: device.release,
-      release: device.release,
-      cpe_type: 'tr069',
-    });
-    if (!firmware) {
-      throw new Error('Não existe firmware com essa versão');
-    } else {
-      await acsDeviceInfoController.addFirmwareInGenie(firmware);
-    }
-  }
-  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+let sendUpgradeFirmwareTask = function(firmware, device) {
   return new Promise(function(resolve, reject) {
     let postData = JSON.stringify({
       name: 'download',
@@ -1642,6 +1621,41 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     req.write(postData);
     req.end();
   });
+};
+
+acsDeviceInfoController.upgradeFirmware = async function(device) {
+  let firmwares;
+  // verify existence in nbi through 7557/files/
+  firmwares = await acsDeviceInfoController
+    .getFirmwaresFromGenie();
+
+  let firmware = firmwares.find((f) => f.metadata.version == device.release);
+  // if not exists, then add
+  if (!firmware) {
+    firmware = await FirmwareModel.findOne({
+      model: device.model,
+      version: device.release,
+      release: device.release,
+      cpe_type: 'tr069',
+    });
+    if (!firmware) {
+      return {success: false, message: 'Não existe firmware com essa versão'};
+    } else {
+      try {
+        await acsDeviceInfoController.addFirmwareInGenie(firmware);
+      } catch (e) {
+        return {success: false, message: e.message};
+      }
+    }
+  }
+  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  let response = '';
+  try {
+    response = await sendUpgradeFirmwareTask(firmware, device);
+  } catch (e) {
+    return {success: false, message: e.message};
+  }
+  return {success: true, message: response};
 };
 
 module.exports = acsDeviceInfoController;
