@@ -415,12 +415,12 @@ let processUpnpInfo = function(content, device, rollback, tr069Changes) {
 };
 
 let processAll = function(content, device, rollback, tr069Changes) {
-  processWifi(content, device, rollback);
-  processPassword(content, device, rollback);
-  processBlacklist(content, device, rollback);
-  processWhitelist(content, device, rollback);
-  processDeviceInfo(content, device, rollback);
-  processUpnpInfo(content, device, rollback);
+  processWifi(content, device, rollback, tr069Changes);
+  processPassword(content, device, rollback, tr069Changes);
+  processBlacklist(content, device, rollback, tr069Changes);
+  processWhitelist(content, device, rollback, tr069Changes);
+  processDeviceInfo(content, device, rollback, tr069Changes);
+  processUpnpInfo(content, device, rollback, tr069Changes);
 };
 
 let formatDevices = function(device) {
