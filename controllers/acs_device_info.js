@@ -1544,7 +1544,7 @@ acsDeviceInfoController.delFirmwareInGenie = function(filename) {
     });
     req.on('error', function(e) {
       console.error(e);
-      eject(new Error('Erro ao deletar firmware no genie'));
+      reject(new Error('Erro ao deletar firmware no genie'));
     });
     req.end();
   });
@@ -1578,7 +1578,7 @@ acsDeviceInfoController.getFirmwaresFromGenie = function() {
     });
     req.on('error', function(e) {
       onsole.error(e);
-      eject(new Error('Erro ao buscar firmware no genie'));
+      reject(new Error('Erro ao buscar firmware no genie'));
     });
     req.end();
   });
