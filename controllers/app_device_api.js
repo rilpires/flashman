@@ -329,7 +329,12 @@ let processDeviceInfo = function(content, device, rollback, tr069Changes) {
     }
     let newLanDevice = true;
     let configs = content.device_configs;
-    let macDevice = configs.mac.toLowerCase();
+    let macDevice = '';
+    if (device.use_tr069) {
+      macDevice = configs.mac.toUpperCase();
+    } else {
+      macDevice = configs.mac.toLowerCase();
+    }
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
         if (configs.name) {
