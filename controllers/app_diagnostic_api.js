@@ -174,16 +174,14 @@ diagAppAPIController.configureWifi = async function(req, res) {
         console.error('No config exists');
         return res.status(500).json({'error': 'Internal error'});
       }
+
       let createPrefixErrNotification = false;
-      if (matchedConfig.personalizationHash !== '' &&
-          matchedConfig.isSsidPrefixEnabled &&
-          (content.wifi_ssid || content.wifi_ssid_5ghz)
-      ) {
-        let check2ghz;
-        let check5ghz;
+      // What only matters in this case is the deviceEnabled flag
+      if (device.isSsidPrefixEnabled &&
+          (content.wifi_ssid || content.wifi_ssid_5ghz)) {
         let ssid2ghz = device.wifi_ssid;
         let ssid5ghz = device.wifi_ssid_5ghz;
-        let isSsidPrefixEnabled = false;
+        let isSsidPrefixEnabled;
 
         if (content.wifi_ssid) {
           ssid2ghz = content.wifi_ssid.trim();
@@ -191,18 +189,19 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (content.wifi_ssid_5ghz) {
           ssid5ghz = content.wifi_ssid_5ghz.trim();
         }
-        check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-          matchedConfig.ssidPrefix, ssid2ghz);
-        check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-          matchedConfig.ssidPrefix, ssid5ghz);
-        if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
-          createPrefixErrNotification = true;
-          isSsidPrefixEnabled = false;
-        } else {
-          isSsidPrefixEnabled = true;
-          ssid2ghz = check2ghz.ssid;
-          ssid5ghz = check5ghz.ssid;
-        }
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          '', // hash
+          false, // configEnabled
+          device.isSsidPrefixEnabled, // deviceEnabled
+          ssid2ghz, // ssid2ghz
+          ssid5ghz, // ssid5ghz
+          matchedConfig.ssidPrefix); // prefix
+        createPrefixErrNotification = !checkResponse.enablePrefix;
+        isSsidPrefixEnabled = checkResponse.enablePrefix;
+        ssid2ghz = checkResponse.ssid2;
+        ssid5ghz = checkResponse.ssid5;
+        // Replace relevant wifi fields with new values
         device.wifi_ssid = ssid2ghz;
         device.wifi_ssid_5ghz = ssid5ghz;
         changes.wifi2.ssid = ssid2ghz;
