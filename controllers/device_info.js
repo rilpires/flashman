@@ -430,7 +430,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         matchedDevice.wifi_ssid = checkResponse.ssid2;
         matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
         matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
-        let ssidPrefix = checkResponse.ssidPrefix;
+        let ssidPrefix = checkResponse.prefix;
         const validator = new Validator();
         genericValidate(ssidPrefix+util.
           returnObjOrEmptyStr(matchedDevice.
