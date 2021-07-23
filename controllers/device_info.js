@@ -13,7 +13,6 @@ const meshHandlers = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const crypto = require('crypto');
-const updateController = require('./update_flashman');
 
 let deviceInfoController = {};
 
@@ -121,26 +120,23 @@ const createRegistry = async function(req, res) {
     console.error('Error creating entry. Config does not exists.');
     return res.status(500).end();
   }
-  let ssid2ghzPrefix = '';
-  let ssid5ghzPrefix = '';
+  let ssidPrefix = '';
   let isSsidPrefixEnabled = false;
   let createPrefixErrNotification = false;
-  if (matchedConfig.personalizationHash !== '' &&
-      matchedConfig.isSsidPrefixEnabled) {
-    const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-      matchedConfig.ssidPrefix, ssid);
-    const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-      matchedConfig.ssidPrefix, ssid5ghz);
-    if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
-      createPrefixErrNotification = true;
-      isSsidPrefixEnabled = false;
-    } else {
-      isSsidPrefixEnabled = true;
-      ssid2ghzPrefix = check2ghz.ssidPrefix;
-      ssid5ghzPrefix = check5ghz.ssidPrefix;
-      ssid = check2ghz.ssid;
-      ssid5ghz = check5ghz.ssid;
-    }
+  // -> 'new registry' scenario
+  let checkResponse = deviceHandlers.checkSsidPrefix(
+    matchedConfig.personalizationHash, // hash
+    matchedConfig.isSsidPrefixEnabled, // configEnabled
+    false, // deviceEnabled
+    ssid, // ssid2ghz
+    ssid5ghz, // ssid5ghz
+    matchedConfig.ssidPrefix); // prefix
+  createPrefixErrNotification = !checkResponse.enablePrefix;
+  isSsidPrefixEnabled = checkResponse.enablePrefix;
+  if (checkResponse.enablePrefix) {
+    ssidPrefix = checkResponse.ssidPrefix;
+    ssid = checkResponse.ssid2;
+    ssid5ghz = checkResponse.ssid5;
   }
 
   // Validate fields
@@ -155,7 +151,7 @@ const createRegistry = async function(req, res) {
     genericValidate(pppoePassword, validator.validatePassword,
                     'pppoe_password', matchedConfig.pppoePassLength, errors);
   }
-  genericValidate(ssid2ghzPrefix + ssid, validator.validateSSID,
+  genericValidate(ssidPrefix + ssid, validator.validateSSID,
                   'ssid', null, errors);
   genericValidate(password, validator.validateWifiPassword,
                   'password', null, errors);
@@ -175,7 +171,7 @@ const createRegistry = async function(req, res) {
                     'power', null, errors);
   }
   if (permissions.grantWifi5ghz) {
-    genericValidate(ssid5ghzPrefix + ssid5ghz, validator.validateSSID,
+    genericValidate(ssidPrefix + ssid5ghz, validator.validateSSID,
                     'ssid5ghz', null, errors);
     genericValidate(password5ghz, validator.validateWifiPassword,
                     'password5ghz', null, errors);
@@ -311,7 +307,7 @@ const createRegistry = async function(req, res) {
                     'mesh_mode': meshMode,
                     'mesh_id': newMeshId,
                     'mesh_key': newMeshKey,
-                    'wifi_ssid': ssid2ghzPrefix + ssid};
+                    'wifi_ssid': ssidPrefix + ssid};
     if (vlanDidChange) {
       let vlanToDevice = vlanController.convertFlashmanVlan(
         model, JSON.stringify(vlanParsed));
@@ -321,7 +317,7 @@ const createRegistry = async function(req, res) {
       response.vlan_index = vlanHash;
     }
     if (permissions.grantWifi5ghz) {
-      response.wifi_ssid_5ghz = ssid5ghzPrefix + ssid5ghz;
+      response.wifi_ssid_5ghz = ssidPrefix + ssid5ghz;
     }
     return res.json(response);
   } else {
@@ -416,9 +412,25 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         let errors = [];
         // validate 2.4GHz because feature of ssid prefix
-        let ssidPrefix = await updateController.
-          getSsidPrefix(matchedDevice.
-            isSsidPrefixEnabled);
+        let config;
+        try {
+          config = await Config.findOne({is_default: true}).lean();
+          if (!config) throw new Error('Config not found');
+        } catch (error) {
+          console.log(error);
+        }
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          '', // hash
+          false, // configEnabled
+          matchedDevice.isSsidPrefixEnabled, // deviceEnabled
+          matchedDevice.wifi_ssid, // ssid2ghz
+          matchedDevice.wifi_ssid_5ghz, // ssid5ghz
+          config.ssidPrefix); // prefix
+        matchedDevice.wifi_ssid = checkResponse.ssid2;
+        matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
+        matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
+        let ssidPrefix = checkResponse.ssidPrefix;
         const validator = new Validator();
         genericValidate(ssidPrefix+util.
           returnObjOrEmptyStr(matchedDevice.
@@ -584,6 +596,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                             'mode5ghz', null, errors);
 
             if (errors.length < 1) {
+              /* !@# here is a flaw :
+                when the cleaned ssid_5ghz (matchedDevice.wifi_ssid_5ghz)
+                is odd to ssid5ghz (req.body.wifi_ssid_5ghz) that came
+                from the device, it save a possible wrong
+                ssid_5ghz in flashman */
               if (matchedDevice.wifi_ssid_5ghz !== ssid5ghz) {
                 deviceSetQuery.wifi_ssid_5ghz = ssid5ghz;
                 // Used in device response
