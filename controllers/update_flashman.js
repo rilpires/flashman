@@ -735,17 +735,4 @@ updateController.updateAppPersonalization = async function(app) {
   }
 };
 
-
-updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
-  if (!isDeviceSsidPrefixEnabled) {
-    return '';
-  }
-  let matchedConfig = await Config.findOne({is_default: true});
-  if (!matchedConfig) {
-    return '';
-  } else {
-    return matchedConfig.ssidPrefix;
-  }
-};
-
 module.exports = updateController;
