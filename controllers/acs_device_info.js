@@ -5,7 +5,6 @@ const DeviceModel = require('../models/device');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
-const updateController = require('./update_flashman.js');
 const deviceHandlers = require('./handlers/devices');
 
 const pako = require('pako');
@@ -191,12 +190,12 @@ const createRegistry = async function(req) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let splitID = req.body.acs_id.split('-');
-  
+
   let matchedConfig = await Config.findOne({is_default: true}).catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return false;
-    }
+    },
   );
   if (!matchedConfig) {
     console.error('Error creating entry. Config does not exists.');
@@ -206,21 +205,23 @@ const createRegistry = async function(req) {
   let ssid5ghz = data.wifi5.ssid.trim();
   let isSsidPrefixEnabled = false;
   let createPrefixErrNotification = false;
-  if (matchedConfig.personalizationHash !== '' &&
-      matchedConfig.isSsidPrefixEnabled) {
-    const check2ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-      matchedConfig.ssidPrefix, ssid);
-    const check5ghz = deviceHandlers.checkSsidPrefixNewRegistry(
-      matchedConfig.ssidPrefix, ssid5ghz);
-    if (!check2ghz.enablePrefix || !check5ghz.enablePrefix) {
-      createPrefixErrNotification = true;
-      isSsidPrefixEnabled = false;
-    } else {
-      isSsidPrefixEnabled = true;
-      ssid = check2ghz.ssid;
-      ssid5ghz = check5ghz.ssid;
-    }
-  }
+  // -> 'new registry' scenario
+  let checkResponse = deviceHandlers.checkSsidPrefix(
+    matchedConfig.personalizationHash, // hash
+    matchedConfig.isSsidPrefixEnabled, // configEnabled
+    false, // deviceEnabled
+    ssid, // ssid2ghz
+    ssid5ghz, // ssid5ghz
+    matchedConfig.ssidPrefix); // prefix
+  /* if in the check is not enabled but hash exists and is
+    enabled in config, so we have an error */
+  createPrefixErrNotification = !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled;
+  isSsidPrefixEnabled = checkResponse.enablePrefix;
+  // cleaned ssid
+  ssid = checkResponse.ssid2;
+  ssid5ghz = checkResponse.ssid5;
 
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
@@ -269,7 +270,7 @@ const createRegistry = async function(req) {
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
     // Increment sync task loops
-    newDevice.acs_sync_loops += 1;  
+    newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
@@ -381,10 +382,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       hasChanges = true;
     }
   }
-  
-  let ssidPrefix = await updateController.
-          getSsidPrefix(device.
-            isSsidPrefixEnabled);
+
+  let ssidPrefix = getSsidPrefix(device);
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
   }
@@ -978,6 +977,25 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   });
 };
 
+const getSsidPrefix = async function(device) {
+  let config;
+  try {
+    config = await Config.findOne({is_default: true}).lean();
+    if (!config) throw new Error('Config not found');
+  } catch (error) {
+    console.log(error);
+  }
+  // -> 'updating registry' scenario
+  let checkResponse = deviceHandlers.checkSsidPrefix(
+    '', // hash
+    false, // configEnabled
+    device.isSsidPrefixEnabled, // deviceEnabled
+    device.wifi_ssid, // ssid2ghz
+    device.wifi_ssid_5ghz, // ssid5ghz
+    config.ssidPrefix); // prefix
+  return checkResponse.prefix;
+};
+
 acsDeviceInfoController.updateInfo = async function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -989,9 +1007,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
-  let ssidPrefix = await updateController.
-    getSsidPrefix(device.
-      isSsidPrefixEnabled);
+  let ssidPrefix = getSsidPrefix(device);
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
