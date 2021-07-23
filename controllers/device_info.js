@@ -131,13 +131,16 @@ const createRegistry = async function(req, res) {
     ssid, // ssid2ghz
     ssid5ghz, // ssid5ghz
     matchedConfig.ssidPrefix); // prefix
-  createPrefixErrNotification = !checkResponse.enablePrefix;
+  /* if in the check is not enabled but hash exists and is
+    enabled in config, so we have an error */
+  createPrefixErrNotification = !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled;
   isSsidPrefixEnabled = checkResponse.enablePrefix;
-  if (checkResponse.enablePrefix) {
-    ssidPrefix = checkResponse.prefix;
-    ssid = checkResponse.ssid2;
-    ssid5ghz = checkResponse.ssid5;
-  }
+  ssidPrefix = checkResponse.prefix;
+  // clean ssid
+  ssid = checkResponse.ssid2;
+  ssid5ghz = checkResponse.ssid5;
 
   // Validate fields
   genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
