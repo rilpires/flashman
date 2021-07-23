@@ -1342,8 +1342,20 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
-        let ssidPrefix = await updateController.
-          getSsidPrefix(isSsidPrefixEnabled);
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          '', // hash
+          false, // configEnabled
+          isSsidPrefixEnabled, // deviceEnabled
+          ssid, // ssid2ghz
+          ssid5ghz, // ssid5ghz
+          matchedConfig.ssidPrefix); // prefix
+        isSsidPrefixEnabled = checkResponse.enablePrefix;
+        // cleaned ssid
+        ssid = checkResponse.ssid2;
+        ssid5ghz = checkResponse.ssid5;
+        let ssidPrefix = checkResponse.prefix;
+
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(ssidPrefix+ssid,
             validator.validateSSID, 'ssid');
@@ -1832,11 +1844,18 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      let enabledForAllFlashman = (
-        !!matchedConfig.personalizationHash &&
-          matchedConfig.isSsidPrefixEnabled);
-      let ssidPrefix = await updateController.
-        getSsidPrefix(enabledForAllFlashman);
+      let isSsidPrefixEnabled = false;
+      // -> 'new registry' scenario
+      let checkResponse = deviceHandlers.checkSsidPrefix(
+        matchedConfig.personalizationHash, // hash
+        matchedConfig.isSsidPrefixEnabled, // configEnabled
+        false, // deviceEnabled
+        ssid, // ssid2ghz
+        '', // ssid5ghz
+        matchedConfig.ssidPrefix); // prefix
+      isSsidPrefixEnabled = checkResponse.enablePrefix;
+      let ssidPrefix = checkResponse.prefix;
+
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1872,7 +1891,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
-              'isSsidPrefixEnabled': enabledForAllFlashman,
+              'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
