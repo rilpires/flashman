@@ -156,9 +156,11 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
   }
 };
 
-// Test if prefix is possible on a new registry and if ssid
-// already contains it
-deviceHandlers.checkSsidPrefixNewRegistry = function(prefix, ssid) {
+/*
+  Function to validate ssid and remove prefix
+  if it already in the start of ssid
+*/
+const cleanAndCheckSsid = function(prefix, ssid) {
   const escapedSsidPrefix = util.escapeRegExp(prefix);
   const rePrefix = new RegExp('^' + escapedSsidPrefix + '.*$', 'g');
   // Test if incoming SSID already have the prefix
@@ -166,16 +168,64 @@ deviceHandlers.checkSsidPrefixNewRegistry = function(prefix, ssid) {
     // Remove prefix from incoming SSID
     const toRemove = new RegExp('^' + util.escapeRegExp(prefix), 'i');
     const finalSsid = ssid.replace(toRemove, '');
-    return {enablePrefix: true, ssidPrefix: prefix, ssid: finalSsid};
+    return {enablePrefix: true, ssid: finalSsid};
   } else {
     const combinedSsid = prefix + ssid;
     if (combinedSsid.length > 32) {
-      return {enablePrefix: false, ssidPrefix: '', ssid: ssid};
+      return {enablePrefix: false, ssid: ssid};
     } else {
       // Enable prefix on registry
-      return {enablePrefix: true, ssidPrefix: prefix, ssid: ssid};
+      return {enablePrefix: true, ssid: ssid};
     }
   }
+};
+
+/*
+  Function to be called in all points of the system
+  where ssid of a device is verified to be sent to a
+  device or saved in the database
+
+  warning to the cases below:
+  -> new registry:
+    Enabled only when hash AND config is enabled.
+    If the client stop paying the personalization app
+    him new devices registry will be prefix free.
+    So in new registries is to be called with deviceEnabled as disabled;
+
+  -> updating registry:
+    In the scenario where the client disable the configEnabled flag
+    or stop paying the personalization the app, we want to avoid
+    mass disabling ssid prefix. First to avoid stressing the system,
+    second because will be odd if the system by itself remove prefix
+    of already set devices.
+    What only matters in this case is the deviceEnabled flag.
+    So in updating registries hash and configEnabled shall be disabled;
+
+*/
+deviceHandlers.checkSsidPrefix = function(hash, configEnabled,
+  deviceEnabled, ssid2ghz, ssid5ghz, prefix) {
+  // default configuration return
+  let prefixObj = {
+    enablePrefix: false,
+    ssid2: ssid2ghz,
+    ssid5: ssid5ghz,
+    prefix: '',
+  };
+  // clean and check the ssid regardless the flags
+  let valObj2 = cleanAndCheckSsid(ssid2ghz);
+  let valObj5 = cleanAndCheckSsid(ssid5ghz);
+  // set the cleaned ssid to be returned
+  prefixObj.ssid2 = valObj2.ssid;
+  prefixObj.ssid5 = valObj5.ssid;
+  // try to enable prefix
+  if ((hash !== '' && configEnabled) || deviceEnabled) {
+    /* only enable if is the clean and check for both ssid
+      (2ghz and 5ghz) is alright */
+    prefixObj.enablePrefix = valObj2.enablePrefix && valObj5.enablePrefix;
+    // return a empty prefix case something goes wrong
+    prefixObj.prefix = prefixObj.enablePrefix ? '': prefix;
+  }
+  return prefixObj;
 };
 
 module.exports = deviceHandlers;
