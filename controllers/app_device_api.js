@@ -5,7 +5,6 @@ const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
-const updateController = require('./update_flashman');
 
 let appDeviceAPIController = {};
 
@@ -843,10 +842,17 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       return map[req.body.id.toUpperCase()];
     });
 
+    // -> 'updating registry' scenario
+    let checkResponse = deviceHandlers.checkSsidPrefix(
+      '', // hash
+      false, // configEnabled
+      matchedDevice.isSsidPrefixEnabled, // deviceEnabled
+      matchedDevice.wifi_ssid, // ssid2ghz
+      matchedDevice.wifi_ssid_5ghz, // ssid5ghz
+      config.ssidPrefix); // prefix
     let prefixObj = {};
-    prefixObj.name = await updateController.
-      getSsidPrefix(matchedDevice.isSsidPrefixEnabled);
-    prefixObj.grant = matchedDevice.isSsidPrefixEnabled;
+    prefixObj.name = checkResponse.prefix;
+    prefixObj.grant = checkResponse.enablePrefix;
 
     return res.status(200).json({
       permissions: permissions,
