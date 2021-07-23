@@ -134,7 +134,7 @@ const createRegistry = async function(req, res) {
   createPrefixErrNotification = !checkResponse.enablePrefix;
   isSsidPrefixEnabled = checkResponse.enablePrefix;
   if (checkResponse.enablePrefix) {
-    ssidPrefix = checkResponse.ssidPrefix;
+    ssidPrefix = checkResponse.prefix;
     ssid = checkResponse.ssid2;
     ssid5ghz = checkResponse.ssid5;
   }
