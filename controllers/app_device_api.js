@@ -917,6 +917,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
+      use_tr069: matchedDevice.use_tr069,
     });
   });
 };
