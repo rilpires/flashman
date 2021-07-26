@@ -38,14 +38,13 @@ const fetchLocalFirmwares = function(firmwaresTable) {
 const fetchtr069Infos = function() {
   $.get('/firmware/tr069productclass', function(res) {
     if (res.success) {
-      for (let pc of res.productclass) {
-        $('#select-productclass').
-          append(
-            $('<option>')
-              .attr('value', pc)
-              .text(pc),
-          );
-      }
+      res.productclass.forEach((pc) => {
+        $('#select-productclass').append(
+          $('<option>')
+            .attr('value', pc)
+            .text(pc),
+        );
+      });
     } else {
       displayAlertMsg(res);
     }
@@ -57,14 +56,13 @@ window.fetchVersion = function(input) {
     input.value === '' ? 'a' : input.value), function(res) {
     if (res.success) {
       $('#select-version option').remove();
-      for (let v of res.versions) {
-        $('#select-version').
-          append(
-            $('<option>')
-              .attr('value', v)
-              .text(v),
-          );
-      }
+      res.versions.forEach((v) => {
+        $('#select-version').append(
+          $('<option>')
+            .attr('value', v)
+            .text(v),
+        );
+      });
     } else {
       displayAlertMsg(res);
     }
