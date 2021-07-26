@@ -7,10 +7,9 @@ const tr069Devices = {
   'F670L': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V1.1.20P1T18': ['V1.1.20P1T4', 'V1.1.20P3N3', 'V1.1.20P3N4D'],
-      'V1.1.20P1T4': ['V1.1.20P3N3', 'V1.1.20P3N4D'],
-      'V1.1.20P3N3': ['V1.1.20P3N4D'],
-      'V1.1.20P3N4D': [],
+      'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
+      'V1.1.20P1T18': ['V1.1.20P3N3'],
+      'V1.1.20P3N3': [],
     },
     port_forward_opts: {
       'V1.1.20P1T18': {
@@ -26,12 +25,6 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
       'V1.1.20P3N3': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
-      'V1.1.20P3N4D': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
        rangeSymmetric: false,
@@ -54,7 +47,7 @@ const tr069Devices = {
     vendor: 'Multilaser',
     versions_upgrade: {
       'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
-      'V3.0.0C6_MUL': ['V3.0.0C5_MUL'],
+      'V3.0.0C6_MUL': [],
     },
     port_forward_opts: {
       'V3.0.0C5_MUL': {
@@ -94,7 +87,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
-      firmware_upgrade: true,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: false,
   },
@@ -1645,22 +1638,16 @@ DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
 };
 
 DeviceVersion.getTr069ProductClassList = function() {
-  let ret = [];
-  for (let [model, obj] of Object.entries(tr069Devices)) {
-    ret.push(model);
-  }
-  return ret;
+  // only send models that support firmware upgrade
+  return Object.entries(tr069Devices)
+    .filter((dev) => dev[1].feature_support.firmware_upgrade)
+    .map((dev) => dev[0]);
 };
 
 DeviceVersion.getTr069VersionByModel = function(model) {
-  let ret = [];
-  if (tr069Devices.hasOwnProperty(model)) {
-    for (let [ver, obj] of
-     Object.entries(tr069Devices[model].versions_upgrade)) {
-      ret.push(ver);
-    }
-  }
-  return ret;
+  let ret = Object.keys(tr069Devices[model].versions_upgrade);
+  // return empty string when undefined
+  return (!ret) ? [] : ret;
 };
 
 DeviceVersion.getVendorByModel = function(model) {
