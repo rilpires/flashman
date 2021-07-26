@@ -1308,4 +1308,41 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
   });
 };
 
+appDeviceAPIController.appSetPortForward = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.id;
+  let projection = {_id: 1, app_password: 1, apps: 1};
+  DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+    let appObj;
+    if (matchedDevice.apps) {
+      appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    }
+    if (typeof appObj === 'undefined') {
+      return res.status(403).json({message: 'App não encontrado'});
+    }
+    if (appObj.secret !== req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+    let content = req.body.content;
+    if (content.rules && content.rules.constructor === Array) {
+      let oldLength = matchedDevice.port_mapping.length;
+      let newLength = content.rules.length;
+      let diff = newLength - oldLength;
+      matchedDevice.port_mapping = content.rules;
+      matchedDevice.save();
+      acsController.changePortForwardRules(matchedDevice, diff);
+      return res.status(200).json({'success': true});
+    }
+    return res.status(500).json({message: 'Dados de regras inválidos'});
+  });
+};
+
 module.exports = appDeviceAPIController;

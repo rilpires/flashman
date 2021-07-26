@@ -29,6 +29,7 @@ router.route('/set/passwordbyapp').post(appAPIController.appSetPasswordFromApp);
 router.route('/set/blacklist').post(appAPIController.appSetBlacklist);
 router.route('/set/whitelist').post(appAPIController.appSetWhitelist);
 router.route('/set/editdevice').post(appAPIController.appSetDeviceInfo);
+router.route('/set/portforward').post(appAPIController.appSetPortForward);
 
 router.route('/diagnostic/login').post(
   authController.ensureAPIAccess,
