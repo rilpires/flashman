@@ -1314,8 +1314,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   let query = req.body.id;
-  let projection = {_id: 1, app_password: 1, apps: 1};
-  DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
+  DeviceModel.findById(query).exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
     }
