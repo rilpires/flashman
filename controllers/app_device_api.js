@@ -1322,6 +1322,9 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
     }
+    if (!matchedDevice.use_tr069) {
+      return res.status(403).json({message: 'CPE não autorizado'});
+    }
     let appObj;
     if (matchedDevice.apps) {
       appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
