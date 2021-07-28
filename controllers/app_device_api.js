@@ -1121,7 +1121,7 @@ appDeviceAPIController.resetPassword = function(req, res) {
 
     device.app_password = undefined;
     await device.save();
-    if (!matchedDevice.use_tr069) {
+    if (!device.use_tr069) {
       mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
     }
 
