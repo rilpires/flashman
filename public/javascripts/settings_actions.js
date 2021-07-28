@@ -126,6 +126,10 @@ let configFlashman = function(event) {
         );
       });
   } else {
+    displayAlertMsg({
+      type: 'danger',
+      message: 'Há erros em um ou mais campos de configuração',
+    });
     event.preventDefault();
     event.stopPropagation();
   }
