@@ -332,25 +332,18 @@ firmwareController.uploadFirmware = async function(req, res) {
 
   try {
     await firmware.save();
-    if (isTR069) {
-      try {
-        await acsDeviceInfo.addFirmwareInGenie(firmware);
-      } catch (e) {
-        // Remove downloaded files
-        await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
-        await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
-        // Remove firmware entry
-        firmware.remove();
-        return res.json({type: 'danger', message: e.message});
-      }
-    }
+    if (isTR069) await acsDeviceInfo.addFirmwareInGenie(firmware);
     return res.json({
       type: 'success',
       message: 'Upload de firmware feito com sucesso!',
     });
   } catch (err) {
     let msg = '';
-    msg += err._message + ' ';
+    if (err.hasOwnProperty('_message')) {
+      msg += err._message + ' ';
+    } else if (err.hasOwnProperty('message')) {
+      msg += err.message + ' ';
+    }
     // Remove downloaded files
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
