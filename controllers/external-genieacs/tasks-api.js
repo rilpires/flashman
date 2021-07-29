@@ -89,6 +89,12 @@ const watchGenieFaults = async function() {
 const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  if (!device) return;
+  // check if a notification already exists for this device, dont add a new one
+  let hasNotification = await NotificationModel.findOne(
+    {target: device._id, type: 'genieacs'},
+  ).exec();
+  if (hasNotification) return;
   // notification values.
   let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
     message_error: errorMsg};
