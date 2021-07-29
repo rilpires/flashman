@@ -63,6 +63,11 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
+    if (['session_terminated', 'timeout'].includes(doc.code)) {
+      // Ignore session timeout and session terminated errors - no benefit
+      // reporting them and clutter flashman
+      return;
+    }
     let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
