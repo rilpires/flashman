@@ -912,13 +912,16 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Find out how many devices are associated in this interface
           let totalField = fields.devices.assoc_total.replace('*', iface);
           let assocCount = getFromNestedKey(data, totalField+'._value');
-          for (let i = 1; i < assocCount+1; i++) {
+          // Get active indexes, filter metadata fields
+          let assocIndexes = getFromNestedKey(data, assocField);
+          assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
+          assocIndexes.forEach((index)=>{
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', iface).replace('*', i);
+            macKey = macKey.replace('*', iface).replace('*', index);
             let macVal = getFromNestedKey(data, macKey+'._value').toUpperCase();
             let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
-            if (!device) continue;
+            if (!device) return;
             // Mark device as a wifi device
             device.wifi = true;
             if (iface == iface2) {
@@ -929,16 +932,16 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', iface).replace('*', i);
+              rssiKey = rssiKey.replace('*', iface).replace('*', index);
               device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', iface).replace('*', i);
+              snrKey = snrKey.replace('*', iface).replace('*', index);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
-          }
+          });
         });
         await saveDeviceData(mac, devices);
       }
