@@ -1,5 +1,6 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const FirmwaresAPI = require('./external-genieacs/firmwares-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
 const FirmwareModel = require('../models/firmware');
@@ -7,9 +8,6 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const updateController = require('./update_flashman.js');
-const fs = require('fs');
-const pathModule = require('path');
-const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 const deviceHandlers = require('./handlers/devices');
 
 const pako = require('pako');
@@ -1479,155 +1477,19 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   }
 };
 
-acsDeviceInfoController.addFirmwareInGenie = function(firmware) {
-  return new Promise(function(resolve, reject) {
-    let readStream = fs.createReadStream(pathModule.join(imageReleasesDir,
-                                             firmware.filename));
-    let chunks = [];
-    readStream.on('data', (chunk) => chunks.push(chunk));
-    readStream.on('end', () => {
-      let binaryData = Buffer.concat(chunks);
-      let path = '/files/'+firmware.filename;
-      let options = {
-        method: 'PUT',
-        hostname: 'localhost',
-        port: 7557,
-        path: encodeURI(path),
-        headers: {
-          'fileType': '1 Firmware Upgrade Image',
-          'oui': '',
-          'productClass': firmware.model,
-          'version': firmware.version,
-          // 'Content-Type': 'application/octet-stream',
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': Buffer.byteLength(binaryData),
-          'Expect': '100-continue',
-        },
-      };
-      let req = http.request(options, (res) => {
-        if (res.statusCode != 201 && res.statusCode != 100) {
-          reject(new Error('Erro ao adicionar firmware no genie'));
-        } else {
-          resolve('Firmware adicionado no genie com sucesso');
-        }
-      });
-      req.write(binaryData);
-      req.on('timeout', function() {
-        reject(new Error('Tempo expirado ao adicionar firmware '+
-          firmware.filename));
-      });
-      req.on('error', function(e) {
-        console.error(e);
-        reject(new Error('Erro ao adicionar firmware '+
-          firmware.filename));
-      });
-      req.end();
-    });
-  });
+acsDeviceInfoController.addFirmwareInACS = async function(firmware) {
+  let binData = await FirmwaresAPI.receiveFile(firmware.filename);
+  await FirmwaresAPI.uploadToGenie(binData, firmware);
 };
 
-acsDeviceInfoController.delFirmwareInGenie = function(filename) {
-  return new Promise(function(resolve, reject) {
-    let path = '/files/'+filename;
-    let options = {
-      method: 'DELETE',
-      hostname: 'localhost',
-      port: 7557,
-      path: encodeURI(path),
-    };
-    let req = http.request(options, (res) => {
-      if (res.statusCode != 200) {
-        reject(new Error('Erro ao deletar firmware no genie'));
-      } else {
-        resolve('Firmware deletado do genie com sucesso');
-      }
-    });
-    req.on('error', function(e) {
-      console.error(e);
-      reject(new Error('Erro ao deletar firmware no genie'));
-    });
-    req.end();
-  });
-};
-
-acsDeviceInfoController.getFirmwaresFromGenie = function() {
-  return new Promise(function(resolve, reject) {
-    let path = '/files/';
-    let options = {
-      method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
-      path: encodeURI(path),
-    };
-    let req = http.request(options, (res) => {
-      if (res.statusCode != 200) {
-        resolve([]);
-      }
-      let data = '';
-      res.setEncoding('utf8');
-      res.on('data', (chunk)=>data+=chunk);
-      res.on('end', async () => {
-        try {
-          data = JSON.parse(data);
-        } catch (e) {
-          console.error(e);
-          resolve([]);
-        }
-        resolve(data);
-      });
-    });
-    req.on('error', function(e) {
-      onsole.error(e);
-      resolve([]);
-    });
-    req.end();
-  });
-};
-
-let sendUpgradeFirmwareTask = function(firmware, device) {
-  return new Promise(function(resolve, reject) {
-    let postData = JSON.stringify({
-      name: 'download',
-      instance: '1',
-      fileType: '1 Firmware Upgrade Image',
-      fileName: firmware.filename,
-    });
-    let path = '/devices/'+device.acs_id+
-      '/tasks?timeout=3000&connection_request';
-    let options = {
-      method: 'POST',
-      hostname: 'localhost',
-      port: 7557,
-      path: encodeURI(path),
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData),
-      },
-    };
-    let req = http.request(options, (res) => {
-      if (res.statusCode != 200) {
-        reject(new Error('Erro ao atualizar firmware no '+
-          device.acs_id));
-      } else {
-        resolve('Atualização de Firmware no '+
-          device.acs_id+' submetida com sucesso');
-      }
-    });
-    req.on('error', function(e) {
-      console.error(e);
-      reject(new Error('Erro ao atualizar firmware no '+
-          device.acs_id));
-    });
-    req.write(postData);
-    req.end();
-  });
+acsDeviceInfoController.delFirmwareInACS = async function(filename) {
+  await FirmwaresAPI.delFirmwareInGenie(filename);
 };
 
 acsDeviceInfoController.upgradeFirmware = async function(device) {
   let firmwares;
   // verify existence in nbi through 7557/files/
-  firmwares = await acsDeviceInfoController
-    .getFirmwaresFromGenie();
+  firmwares = await FirmwaresAPI.getFirmwaresFromGenie();
 
   let firmware = firmwares.find((f) => f.metadata.version == device.release);
   // if not exists, then add
@@ -1642,7 +1504,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       return {success: false, message: 'Não existe firmware com essa versão'};
     } else {
       try {
-        await acsDeviceInfoController.addFirmwareInGenie(firmware);
+        await acsDeviceInfoController.addFirmwareInACS(firmware);
       } catch (e) {
         return {success: false, message: e.message};
       }
@@ -1651,7 +1513,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
   // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
   let response = '';
   try {
-    response = await sendUpgradeFirmwareTask(firmware, device);
+    response = await FirmwaresAPI.sendUpgradeFirmware(firmware, device);
   } catch (e) {
     return {success: false, message: e.message};
   }
