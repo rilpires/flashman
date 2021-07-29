@@ -173,7 +173,7 @@ const processHostFromURL = function(url) {
 };
 
 const saveDeviceData = async function(mac, landevices) {
-  if (!mac || !landevices || !landevices.length) return;
+  if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
   landevices.forEach((lanDev)=>{
     let lanMac = lanDev.mac.toUpperCase();
