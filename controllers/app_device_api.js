@@ -438,11 +438,11 @@ let formatDevices = function(device) {
     if (device.use_tr069) {
       // Use port mapping structure instead of lan_devices, since rules can be
       // bound to an ip that is not registered
-      rules = device.port_mapping.find((r)=>r.ip === lanDevice.ip);
+      rules = device.port_mapping.filter((r)=>r.ip === lanDevice.ip);
       if (typeof rules === 'undefined') {
         rules = [];
       }
-      allRules.concat(rules);
+      allRules = allRules.concat(rules);
     } else {
       // Use legacy lan_devices structure
       let numRules = lanDevice.port.length;
