@@ -1,4 +1,5 @@
 const localPackageJson = require('../package.json');
+const localEnvironmentJson = require('../environment.config.json');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
@@ -272,11 +273,23 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
 };
 
 updateController.rebootGenie = function(instances) {
-  // Treat bugged case where "max" parameter may set instance count to 0 upon
-  // reloading the service - use value from nproc instead of bugged 0
+  // Treat bugged case where pm2 may fail to provide the number of instances
+  // correctly - it may be 0 or undefined, and we must then rely on both the
+  // envitonment.config.json file and nproc to tell us how many flashman
+  // instances there are
   exec('nproc', (err, stdout, stderr)=>{
-    if (instances === 0 || instances === '0') {
-      instances = stdout.trim(); // remove trailing newline
+    instances = parseInt(instances);
+    if (isNaN(instances)) {
+      instances = parseInt(localEnvironmentJson.apps[0].instances);
+      if (isNaN(instances)) {
+        instances = parseInt(stdout.trim()); // remove trailing newline
+      }
+    }
+    // If somehow is still NaN, replace with 1 as a fallback
+    if (isNaN(instances)) {
+      instances = '1';
+    } else {
+      instances = instances.toString(); // Merely for type safety
     }
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
