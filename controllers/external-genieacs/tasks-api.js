@@ -63,6 +63,11 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
+    if (['session_terminated', 'timeout'].includes(doc.code)) {
+      // Ignore session timeout and session terminated errors - no benefit
+      // reporting them and clutter flashman
+      return;
+    }
     let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
@@ -84,6 +89,12 @@ const watchGenieFaults = async function() {
 const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  if (!device) return;
+  // check if a notification already exists for this device, dont add a new one
+  let hasNotification = await NotificationModel.findOne(
+    {target: device._id, type: 'genieacs'},
+  ).exec();
+  if (hasNotification) return;
   // notification values.
   let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
     message_error: errorMsg};

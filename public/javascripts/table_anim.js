@@ -1012,7 +1012,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '12')
+        $('<td>').attr('colspan', '13')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -1044,7 +1044,7 @@ $(document).ready(function() {
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
-            '<tr><td class="grey lighten-5 text-center" colspan="12">'+
+            '<tr><td class="grey lighten-5 text-center" colspan="13">'+
               '<h5>Nenhum CPE encontrado</h5>'+
             '</td></tr>',
           );
@@ -2196,7 +2196,7 @@ $(document).ready(function() {
           '</div>';
 
           let formRow = '<tr class="d-none" $REPLACE_ATTRIBUTES>'+
-            '<td class="grey lighten-5" colspan="12">'+
+            '<td class="grey lighten-5" colspan="13">'+
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
@@ -2283,6 +2283,7 @@ $(document).ready(function() {
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
               infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
@@ -2293,7 +2294,7 @@ $(document).ready(function() {
               }
               finalHtml += infoRow;
 
-              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
+              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
                 buildAboutTab(slaveDev, index, false,
                               grantWifiExtendedChannels, slaveIdx)+
               '</td></tr>';
@@ -2317,7 +2318,7 @@ $(document).ready(function() {
             let editButtonRow = buildFormSubmit(true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
-              '<td class="grey lighten-5" colspan="12">'+
+              '<td class="grey lighten-5" colspan="13">'+
                 editButtonRow+
               '</td>'+
             '</tr>';
