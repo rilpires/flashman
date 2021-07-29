@@ -1496,7 +1496,6 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
   if (!firmware) {
     firmware = await FirmwareModel.findOne({
       model: device.model,
-      version: device.release,
       release: device.release,
       cpe_type: 'tr069',
     });
