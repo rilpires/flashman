@@ -863,7 +863,10 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Host indexes might not respect order because of expired leases, so
         // we just use whatever keys show up
         let hostBaseField = fields.devices.hosts_template;
-        hostKeys = Object.keys(getFromNestedKey(data, hostBaseField));
+        let hostKeysRaw = getFromNestedKey(data, hostBaseField);
+        if (hostKeysRaw) {
+          hostKeys = Object.keys(hostKeysRaw);
+        }
         // Filter out meta fields from genieacs
         hostKeys = hostKeys.filter((k)=>k[0] && k[0]!=='_');
       } else {
@@ -878,12 +881,26 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = getFromNestedKey(data, macKey+'._value');
+          if (typeof device.mac === 'string') {
+            device.mac = device.mac.toUpperCase();
+          } else {
+            // MAC is a mandatory string
+            return;
+          }
           // Collect device hostname
           let nameKey = fields.devices.host_name.replace('*', i);
           device.name = getFromNestedKey(data, nameKey+'._value');
+          if (typeof device.name !== 'string' || device.name === '') {
+            // Needs a default name, use mac
+            device.name = device.mac;
+          }
           // Collect device ip
           let ipKey = fields.devices.host_ip.replace('*', i);
           device.ip = getFromNestedKey(data, ipKey+'._value');
+          if (typeof device.ip !== 'string') {
+            // IP is mandatory
+            return;
+          }
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = getFromNestedKey(data, ifaceKey+'._value');
@@ -909,17 +926,26 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           interfaces.push('5');
         }
         interfaces.forEach((iface)=>{
-          // Find out how many devices are associated in this interface
-          let totalField = fields.devices.assoc_total.replace('*', iface);
-          let assocCount = getFromNestedKey(data, totalField+'._value');
           // Get active indexes, filter metadata fields
+          assocField = fields.devices.associated.replace('*', iface);
           let assocIndexes = getFromNestedKey(data, assocField);
+          if (assocIndexes) {
+            assocIndexes = Object.keys(assocIndexes);
+          } else {
+            assocIndexes = [];
+          }
           assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
           assocIndexes.forEach((index)=>{
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
             macKey = macKey.replace('*', iface).replace('*', index);
-            let macVal = getFromNestedKey(data, macKey+'._value').toUpperCase();
+            let macVal = getFromNestedKey(data, macKey+'._value');
+            if (typeof macVal === 'string') {
+              macVal = macVal.toUpperCase();
+            } else {
+              // MAC is mandatory
+              return;
+            }
             let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
             if (!device) return;
             // Mark device as a wifi device
