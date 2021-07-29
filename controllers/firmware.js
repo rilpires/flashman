@@ -44,7 +44,7 @@ let removeFirmware = async function(firmware) {
 
   if (firmware.cpe_type == 'tr069') {
     try {
-      await acsDeviceInfo.delFirmwareInGenie(firmware.filename);
+      await acsDeviceInfo.delFirmwareInACS(firmware.filename);
     } catch (e) {
       console.error(e.message);
       throw e;
@@ -332,7 +332,7 @@ firmwareController.uploadFirmware = async function(req, res) {
 
   try {
     await firmware.save();
-    if (isTR069) await acsDeviceInfo.addFirmwareInGenie(firmware);
+    if (isTR069) await acsDeviceInfo.addFirmwareInACS(firmware);
     return res.json({
       type: 'success',
       message: 'Upload de firmware feito com sucesso!',
