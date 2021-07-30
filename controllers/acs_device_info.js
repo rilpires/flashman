@@ -415,7 +415,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
 
-  let ssidPrefix = await getSsidPrefix(device);
+  let checkResponse = await getSsidPrefixCheck(device);
+  let ssidPrefix = checkResponse.prefix;
+  // apply cleaned ssid
+  device.wifi_ssid = checkResponse.ssid2;
+  device.wifi_ssid_5ghz = checkResponse.ssid5;
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
   }
@@ -1015,7 +1019,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   });
 };
 
-const getSsidPrefix = async function(device) {
+const getSsidPrefixCheck = async function(device) {
   let config;
   try {
     config = await Config.findOne({is_default: true}).lean();
@@ -1024,10 +1028,9 @@ const getSsidPrefix = async function(device) {
     console.log(error);
   }
   // -> 'updating registry' scenario
-  let checkResponse = deviceHandlers.checkSsidPrefix(
+  return checkResponse = deviceHandlers.checkSsidPrefix(
     config, device.wifi_ssid, device.wifi_ssid_5ghz,
     device.isSsidPrefixEnabled);
-  return checkResponse.prefix;
 };
 
 acsDeviceInfoController.updateInfo = async function(device, changes) {
@@ -1041,7 +1044,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
-  let ssidPrefix = await getSsidPrefix(device);
+  let ssidPrefix = await getSsidPrefixCheck(device).prefix;
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
