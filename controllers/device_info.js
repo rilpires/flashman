@@ -590,11 +590,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                             'mode5ghz', null, errors);
 
             if (errors.length < 1) {
-              /* !@# here is a flaw :
-                when the cleaned ssid_5ghz (matchedDevice.wifi_ssid_5ghz)
-                is odd to ssid5ghz (req.body.wifi_ssid_5ghz) that came
-                from the device, it save a possible wrong
-                ssid_5ghz in flashman */
               if (matchedDevice.wifi_ssid_5ghz !== ssid5ghz) {
                 deviceSetQuery.wifi_ssid_5ghz = ssid5ghz;
                 // Used in device response
