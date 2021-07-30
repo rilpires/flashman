@@ -161,6 +161,7 @@ const getDefaultFields = function() {
     },
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BSSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel',
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
@@ -169,6 +170,7 @@ const getDefaultFields = function() {
     },
     wifi5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BSSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel',
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
@@ -255,6 +257,8 @@ const getStavixFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.bssid = fields.wifi5.bssid.replace(/5/g, '6');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '1');
   fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
   fields.wifi2.channel = fields.wifi5.channel.replace(/5/g, '6');

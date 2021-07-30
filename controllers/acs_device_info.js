@@ -172,7 +172,7 @@ const processHostFromURL = function(url) {
 };
 
 const saveDeviceData = async function(mac, landevices) {
-  if (!mac || !landevices || !landevices.length) return;
+  if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
   landevices.forEach((lanDev)=>{
     let lanMac = lanDev.mac.toUpperCase();
@@ -199,6 +199,7 @@ const saveDeviceData = async function(mac, landevices) {
       });
     }
   });
+  device.last_devices_refresh = Date.now();
   await device.save();
 };
 
@@ -257,12 +258,15 @@ const createRegistry = async function(req) {
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
     wifi_ssid: ssid,
+    wifi_bssid: (data.wifi2.bssid) ? data.wifi2.bssid.toUpperCase() : undefined,
     wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
     wifi_mode: convertWifiMode(data.wifi2.mode, false),
     wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
     wifi_state: (data.wifi2.enable) ? 1 : 0,
     wifi_is_5ghz_capable: true,
     wifi_ssid_5ghz: ssid5ghz,
+    wifi_bssid_5ghz:
+        (data.wifi5.bssid) ? data.wifi5.bssid.toUpperCase() : undefined,
     wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
     wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
     wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
@@ -428,6 +432,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
+  let bssid2 = data.wifi2.bssid;
+  if ((bssid2 && !device.wifi_bssid) ||
+      (device.wifi_bssid !== bssid2.toUpperCase())) {
+    device.wifi_bssid = bssid2.toUpperCase();
+  }
   let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
   if (channel2 && !device.wifi_channel) {
     device.wifi_channel = channel2;
@@ -456,6 +465,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     !== data.wifi5.ssid.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
+  }
+  let bssid5 = data.wifi5.bssid;
+  if ((bssid5 && !device.wifi_bssid_5ghz) ||
+      (device.wifi_bssid_5ghz !== bssid5.toUpperCase())) {
+    device.wifi_bssid_5ghz = bssid5.toUpperCase();
   }
   let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
   if (channel5 && !device.wifi_channel_5ghz) {
@@ -577,6 +591,7 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
   let task = {name: 'reboot'};
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'reboot') return;
+    if (!res) return; // Prevent crash in case res is not defined
     if (result.finished) res.status(200).json({success: true});
     else {
       res.status(200).json({
@@ -846,7 +861,10 @@ const fetchDevicesFromGenie = function(mac, acsID) {
         // Host indexes might not respect order because of expired leases, so
         // we just use whatever keys show up
         let hostBaseField = fields.devices.hosts_template;
-        hostKeys = Object.keys(getFromNestedKey(data, hostBaseField));
+        let hostKeysRaw = getFromNestedKey(data, hostBaseField);
+        if (hostKeysRaw) {
+          hostKeys = Object.keys(hostKeysRaw);
+        }
         // Filter out meta fields from genieacs
         hostKeys = hostKeys.filter((k)=>k[0] && k[0]!=='_');
       } else {
@@ -861,12 +879,26 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = getFromNestedKey(data, macKey+'._value');
+          if (typeof device.mac === 'string') {
+            device.mac = device.mac.toUpperCase();
+          } else {
+            // MAC is a mandatory string
+            return;
+          }
           // Collect device hostname
           let nameKey = fields.devices.host_name.replace('*', i);
           device.name = getFromNestedKey(data, nameKey+'._value');
+          if (typeof device.name !== 'string' || device.name === '') {
+            // Needs a default name, use mac
+            device.name = device.mac;
+          }
           // Collect device ip
           let ipKey = fields.devices.host_ip.replace('*', i);
           device.ip = getFromNestedKey(data, ipKey+'._value');
+          if (typeof device.ip !== 'string') {
+            // IP is mandatory
+            return;
+          }
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = getFromNestedKey(data, ifaceKey+'._value');
@@ -892,16 +924,28 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           interfaces.push('5');
         }
         interfaces.forEach((iface)=>{
-          // Find out how many devices are associated in this interface
-          let totalField = fields.devices.assoc_total.replace('*', iface);
-          let assocCount = getFromNestedKey(data, totalField+'._value');
-          for (let i = 1; i < assocCount+1; i++) {
+          // Get active indexes, filter metadata fields
+          assocField = fields.devices.associated.replace('*', iface);
+          let assocIndexes = getFromNestedKey(data, assocField);
+          if (assocIndexes) {
+            assocIndexes = Object.keys(assocIndexes);
+          } else {
+            assocIndexes = [];
+          }
+          assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
+          assocIndexes.forEach((index)=>{
             // Collect associated mac
             let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', iface).replace('*', i);
-            let macVal = getFromNestedKey(data, macKey+'._value').toUpperCase();
+            macKey = macKey.replace('*', iface).replace('*', index);
+            let macVal = getFromNestedKey(data, macKey+'._value');
+            if (typeof macVal === 'string') {
+              macVal = macVal.toUpperCase();
+            } else {
+              // MAC is mandatory
+              return;
+            }
             let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
-            if (!device) continue;
+            if (!device) return;
             // Mark device as a wifi device
             device.wifi = true;
             if (iface == iface2) {
@@ -912,16 +956,16 @@ const fetchDevicesFromGenie = function(mac, acsID) {
             // Collect rssi, if available
             if (fields.devices.host_rssi) {
               let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', iface).replace('*', i);
+              rssiKey = rssiKey.replace('*', iface).replace('*', index);
               device.rssi = getFromNestedKey(data, rssiKey+'._value');
             }
             // Collect snr, if available
             if (fields.devices.host_snr) {
               let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', iface).replace('*', i);
+              snrKey = snrKey.replace('*', iface).replace('*', index);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
-          }
+          });
         });
         await saveDeviceData(mac, devices);
       }
