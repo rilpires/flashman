@@ -420,7 +420,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
 
-  let ssidPrefix = getSsidPrefix(device);
+  let ssidPrefix = await getSsidPrefix(device);
   if (data.wifi2.ssid && !device.wifi_ssid) {
     device.wifi_ssid = data.wifi2.ssid.trim();
   }
@@ -1050,7 +1050,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
-  let ssidPrefix = getSsidPrefix(device);
+  let ssidPrefix = await getSsidPrefix(device);
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
