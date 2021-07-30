@@ -202,8 +202,9 @@ const cleanAndCheckSsid = function(prefix, ssid) {
     So in updating registries hash and configEnabled shall be disabled;
 
 */
-deviceHandlers.checkSsidPrefix = function(hash, configEnabled,
-  deviceEnabled, ssid2ghz, ssid5ghz, prefix) {
+
+deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
+  keepDevicePrefix, isNewRegistry=false) {
   // default configuration return
   let prefixObj = {
     enablePrefix: false,
@@ -217,13 +218,15 @@ deviceHandlers.checkSsidPrefix = function(hash, configEnabled,
   // set the cleaned ssid to be returned
   prefixObj.ssid2 = valObj2.ssid;
   prefixObj.ssid5 = valObj5.ssid;
+
   // try to enable prefix
-  if ((hash !== '' && configEnabled) || deviceEnabled) {
-    /* only enable if is the clean and check for both ssid
-      (2ghz and 5ghz) is alright */
+  if ((isNewRegistry && config.personalizationHash !== '' &&
+     config.isSsidPrefixEnabled) || keepDevicePrefix) {
+    // only enable if is the clean and check for both ssid
+    //  (2ghz and 5ghz) is alright
     prefixObj.enablePrefix = valObj2.enablePrefix && valObj5.enablePrefix;
     // return a empty prefix case something goes wrong
-    prefixObj.prefix = prefixObj.enablePrefix ? '': prefix;
+    prefixObj.prefix = prefixObj.enablePrefix ? config.ssidPrefix : '';
   }
   return prefixObj;
 };
