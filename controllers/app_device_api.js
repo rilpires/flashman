@@ -844,12 +844,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 
     // -> 'updating registry' scenario
     let checkResponse = deviceHandlers.checkSsidPrefix(
-      '', // hash
-      false, // configEnabled
-      matchedDevice.isSsidPrefixEnabled, // deviceEnabled
-      matchedDevice.wifi_ssid, // ssid2ghz
-      matchedDevice.wifi_ssid_5ghz, // ssid5ghz
-      config.ssidPrefix); // prefix
+      config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
+      matchedDevice.isSsidPrefixEnabled);
     let prefixObj = {};
     prefixObj.name = checkResponse.prefix;
     prefixObj.grant = checkResponse.enablePrefix;

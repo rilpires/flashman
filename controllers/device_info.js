@@ -125,12 +125,7 @@ const createRegistry = async function(req, res) {
   let createPrefixErrNotification = false;
   // -> 'new registry' scenario
   let checkResponse = deviceHandlers.checkSsidPrefix(
-    matchedConfig.personalizationHash, // hash
-    matchedConfig.isSsidPrefixEnabled, // configEnabled
-    false, // deviceEnabled
-    ssid, // ssid2ghz
-    ssid5ghz, // ssid5ghz
-    matchedConfig.ssidPrefix); // prefix
+    matchedConfig, ssid, ssid5ghz, false, true);
   /* if in the check is not enabled but hash exists and is
     enabled in config, so we have an error */
   createPrefixErrNotification = !checkResponse.enablePrefix &&
@@ -424,12 +419,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
-          '', // hash
-          false, // configEnabled
-          matchedDevice.isSsidPrefixEnabled, // deviceEnabled
-          matchedDevice.wifi_ssid, // ssid2ghz
-          matchedDevice.wifi_ssid_5ghz, // ssid5ghz
-          config.ssidPrefix); // prefix
+          config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
+          matchedDevice.isSsidPrefixEnabled);
         matchedDevice.wifi_ssid = checkResponse.ssid2;
         matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
         matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;

@@ -191,12 +191,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
-          '', // hash
-          false, // configEnabled
-          device.isSsidPrefixEnabled, // deviceEnabled
-          ssid2ghz, // ssid2ghz
-          ssid5ghz, // ssid5ghz
-          matchedConfig.ssidPrefix); // prefix
+          matchedConfig, ssid2ghz, ssid5ghz, device.isSsidPrefixEnabled);
         createPrefixErrNotification = !checkResponse.enablePrefix;
         isSsidPrefixEnabled = checkResponse.enablePrefix;
         ssid2ghz = checkResponse.ssid2;

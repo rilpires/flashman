@@ -1370,12 +1370,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
-          '', // hash
-          false, // configEnabled
-          isSsidPrefixEnabled, // deviceEnabled
-          ssid, // ssid2ghz
-          ssid5ghz, // ssid5ghz
-          matchedConfig.ssidPrefix); // prefix
+          matchedConfig, ssid, ssid5ghz, isSsidPrefixEnabled);
         isSsidPrefixEnabled = checkResponse.enablePrefix;
         // cleaned ssid
         ssid = checkResponse.ssid2;
@@ -1873,12 +1868,7 @@ deviceListController.createDeviceReg = function(req, res) {
       let isSsidPrefixEnabled = false;
       // -> 'new registry' scenario
       let checkResponse = deviceHandlers.checkSsidPrefix(
-        matchedConfig.personalizationHash, // hash
-        matchedConfig.isSsidPrefixEnabled, // configEnabled
-        false, // deviceEnabled
-        ssid, // ssid2ghz
-        '', // ssid5ghz
-        matchedConfig.ssidPrefix); // prefix
+        matchedConfig, ssid, '', false, true);
       isSsidPrefixEnabled = checkResponse.enablePrefix;
       let ssidPrefix = checkResponse.prefix;
 
