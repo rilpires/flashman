@@ -168,7 +168,13 @@ const cleanAndCheckSsid = function(prefix, ssid) {
     // Remove prefix from incoming SSID
     const toRemove = new RegExp('^' + util.escapeRegExp(prefix), 'i');
     const finalSsid = ssid.replace(toRemove, '');
-    return {enablePrefix: true, ssid: finalSsid};
+    const combinedSsid = prefix + finalSsid;
+    if (combinedSsid.length > 32) {
+      return {enablePrefix: false, ssid: finalSsid};
+    } else {
+      // Enable prefix on registry
+      return {enablePrefix: true, ssid: finalSsid};
+    }
   } else {
     const combinedSsid = prefix + ssid;
     if (combinedSsid.length > 32) {
