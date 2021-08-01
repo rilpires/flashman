@@ -166,7 +166,7 @@ firmwareController.getReleases = async function(filenames, role,
 
 firmwareController.delFirmware = function(req, res) {
   Firmware.find({'_id': {$in: req.body.ids}}, function(err, firmwares) {
-    if (err || firmwares.length == 0) {
+    if (err || firmwares.length === 0) {
       return res.json({
         type: 'danger',
         message: 'Registro não encontrado ou selecionado',
