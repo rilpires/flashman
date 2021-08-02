@@ -256,7 +256,7 @@ let taskParameterIdFromType = {
   refreshObject: 'objectName',
   addObject: 'objectName',
   deleteObject: 'objectName',
-  download: 'file',
+  download: 'fileName',
   reboot: null,
 };
 
