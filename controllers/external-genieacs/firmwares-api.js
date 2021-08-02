@@ -61,25 +61,19 @@ firmwaresAPI.getFirmwaresFromGenie = async function() {
 };
 
 firmwaresAPI.sendUpgradeFirmware = async function(firmware, device) {
-  let postData = JSON.stringify({
+  let upgradeFirmwareTask = JSON.stringify({
     name: 'download',
     instance: '1',
     fileType: '1 Firmware Upgrade Image',
     fileName: firmware.filename,
   });
-  let path = '/devices/'+device.acs_id+
-    '/tasks?timeout=3000&connection_request';
-  let options = {
-    method: 'POST',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Content-Length': Buffer.byteLength(postData),
-    },
-  };
-  return await TasksAPI.request(options, postData);
+  let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask,
+    true, 3000, [5000, 10000]);
+  if (result.finished == true && result.task.name === 'download') {
+    return 'Tarefa de atualizar firmware submetida com sucesso!';
+  } else {
+    return 'Tarefa de atualizar firmware não foi terminada';
+  }
 };
 
 module.exports = firmwaresAPI;
