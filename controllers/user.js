@@ -467,7 +467,7 @@ userController.deleteCertificates = async function(req, res) {
 
 userController.deleteUser = function(req, res) {
   User.find({'_id': {$in: req.body.ids}}, function(err, users) {
-    if (err || !users) {
+    if (err || users.length === 0) {
       console.log('User delete error: ' + err);
       return res.json({
         success: false,
@@ -491,7 +491,7 @@ userController.deleteRole = function(req, res) {
   User.countDocuments({'role': {$in: req.body.names}}, function(err, count) {
     if (count == 0) {
       Role.find({'_id': {$in: req.body.ids}}, function(err, roles) {
-        if (err || !roles) {
+        if (err || roles.length === 0) {
           console.log('Role delete error: ' + err);
           return res.json({
             success: false,

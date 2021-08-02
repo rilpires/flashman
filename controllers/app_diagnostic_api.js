@@ -392,7 +392,7 @@ diagAppAPIController.removeMeshSlave = async function(req, res) {
 diagAppAPIController.receiveCertification = async function(req, res) {
   try {
     let result = await UserModel.find({'name': req.body.user});
-    if (!result) {
+    if (result.length === 0) {
       return res.status(404).json({'error': 'User not found'});
     }
     let user = result[0]; // Should only match one since name is unique
