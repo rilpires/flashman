@@ -873,25 +873,38 @@ deviceListController.searchDeviceReg = async function(req, res) {
   });
 };
 
-deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
-    if (err || !devices) {
-      console.log('User delete error: ' + err);
+deviceListController.delDeviceReg = async function(req, res) {
+  try {
+    let removeList = [];
+    if (req.params.id) {
+      removeList = [req.params.id];
+    } else {
+      removeList = req.body.ids;
+    }
+    let devices = await DeviceModel.find({'_id': {$in: removeList}}).exec();
+    if (devices.length === 0) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro interno ao remover cadastro(s)',
+        message: 'Nenhum roteador encontrado',
       });
     }
-    devices.forEach((device) => {
+    for (let device of devices) {
       deviceHandlers.removeDeviceFromDatabase(device);
-    });
+    }
     return res.json({
       success: true,
       type: 'success',
       message: 'Cadastro(s) removido(s) com sucesso!',
     });
-  });
+  } catch (err) {
+    console.error('Erro na remoção: ' + err);
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao remover cadastro(s)',
+    });
+  }
 };
 
 const downloadStockFirmware = async function(model) {
@@ -1410,8 +1423,15 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
-        let ssidPrefix = await updateController.
-          getSsidPrefix(isSsidPrefixEnabled);
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          matchedConfig, ssid, ssid5ghz, isSsidPrefixEnabled);
+        isSsidPrefixEnabled = checkResponse.enablePrefix;
+        // cleaned ssid
+        ssid = checkResponse.ssid2;
+        ssid5ghz = checkResponse.ssid5;
+        let ssidPrefix = checkResponse.prefix;
+
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(ssidPrefix+ssid,
             validator.validateSSID, 'ssid');
@@ -1900,11 +1920,13 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      let enabledForAllFlashman = (
-        !!matchedConfig.personalizationHash &&
-          matchedConfig.isSsidPrefixEnabled);
-      let ssidPrefix = await updateController.
-        getSsidPrefix(enabledForAllFlashman);
+      let isSsidPrefixEnabled = false;
+      // -> 'new registry' scenario
+      let checkResponse = deviceHandlers.checkSsidPrefix(
+        matchedConfig, ssid, '', false, true);
+      isSsidPrefixEnabled = checkResponse.enablePrefix;
+      let ssidPrefix = checkResponse.prefix;
+
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1940,7 +1962,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
-              'isSsidPrefixEnabled': enabledForAllFlashman,
+              'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
