@@ -6,6 +6,8 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const updateController = require('./update_flashman');
+const acsController = require('./acs_device_info');
+const crypt = require('crypto');
 
 let appDeviceAPIController = {};
 
@@ -57,6 +59,7 @@ let appSet = function(req, res, processFunction) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
+      let tr069Changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
 
       // Update location data if present
       if (content.latitude && content.longitude) {
@@ -64,7 +67,9 @@ let appSet = function(req, res, processFunction) {
         matchedDevice.longitude = content.longitude;
       }
 
-      if (processFunction(content, matchedDevice, rollbackValues)) {
+      if (
+        processFunction(content, matchedDevice, rollbackValues, tr069Changes)
+      ) {
         matchedDevice.do_update_parameters = true;
       }
 
@@ -79,94 +84,112 @@ let appSet = function(req, res, processFunction) {
 
       matchedDevice.save();
 
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
+      if (matchedDevice.use_tr069) {
+        // Simply call ACS function, dont check for parameters done
+        acsController.updateInfo(matchedDevice, tr069Changes);
+        return res.status(200).json({is_set: 1});
+      } else {
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
 
-      checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
-      .then((done)=>{
-        if (done) {
-          meshHandlers.syncSlaves(matchedDevice);
-          return res.status(200).json({is_set: 1});
-        }
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      }, (rejectedVal)=>{
-        doRollback(matchedDevice, rollbackValues);
-        matchedDevice.save();
-        return res.status(500).json({is_set: 0});
-      });
+        checkUpdateParametersDone(matchedDevice._id, 0, commandTimeout)
+        .then((done)=>{
+          if (done) {
+            meshHandlers.syncSlaves(matchedDevice);
+            return res.status(200).json({is_set: 1});
+          }
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({is_set: 0});
+        }, (rejectedVal)=>{
+          doRollback(matchedDevice, rollbackValues);
+          matchedDevice.save();
+          return res.status(500).json({is_set: 0});
+        });
+      }
     } else {
       return res.status(500).json({is_set: 0});
     }
   });
 };
 
-let processWifi = function(content, device, rollback) {
+let processWifi = function(content, device, rollback, tr069Changes) {
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
     device.pppoe_user = content.pppoe_user;
+    tr069Changes.wan.pppoe_user = content.pppoe_user;
     updateParameters = true;
   }
   if (content.pppoe_password) {
     rollback.pppoe_password = device.pppoe_password;
     device.pppoe_password = content.pppoe_password;
+    tr069Changes.wan.pppoe_pass = content.pppoe_password;
     updateParameters = true;
   }
   if (content.wifi_ssid) {
     rollback.wifi_ssid = device.wifi_ssid;
     device.wifi_ssid = content.wifi_ssid;
+    tr069Changes.wifi2.ssid = content.wifi_ssid;
     updateParameters = true;
   }
   if (content.wifi_ssid_5ghz) {
     rollback.wifi_ssid_5ghz = device.wifi_ssid_5ghz;
     device.wifi_ssid_5ghz = content.wifi_ssid_5ghz;
+    tr069Changes.wifi5.ssid = content.wifi_ssid_5ghz;
     updateParameters = true;
   }
   if (content.wifi_password) {
     rollback.wifi_password = device.wifi_password;
     device.wifi_password = content.wifi_password;
+    tr069Changes.wifi2.password = content.wifi_password;
     updateParameters = true;
   }
   if (content.wifi_password_5ghz) {
     rollback.wifi_password_5ghz = device.wifi_password_5ghz;
     device.wifi_password_5ghz = content.wifi_password_5ghz;
+    tr069Changes.wifi5.password = content.wifi_password_5ghz;
     updateParameters = true;
   }
   if (content.wifi_channel) {
     rollback.wifi_channel = device.wifi_channel;
     device.wifi_channel = content.wifi_channel;
+    tr069Changes.wifi2.channel = content.wifi_channel;
     updateParameters = true;
   }
   if (content.wifi_band) {
     rollback.wifi_band = device.wifi_band;
     device.wifi_band = content.wifi_band;
+    tr069Changes.wifi2.band = content.wifi_band;
     updateParameters = true;
   }
   if (content.wifi_mode) {
     rollback.wifi_mode = device.wifi_mode;
     device.wifi_mode = content.wifi_mode;
+    tr069Changes.wifi2.mode = content.wifi_mode;
     updateParameters = true;
   }
   if (content.wifi_channel_5ghz) {
     rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
     device.wifi_channel_5ghz = content.wifi_channel_5ghz;
+    tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
     updateParameters = true;
   }
   if (content.wifi_band_5ghz) {
     rollback.wifi_band_5ghz = device.wifi_band_5ghz;
     device.wifi_band_5ghz = content.wifi_band_5ghz;
+    tr069Changes.wifi5.band = content.wifi_band_5ghz;
     updateParameters = true;
   }
   if (content.wifi_mode_5ghz) {
     rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
     device.wifi_mode_5ghz = content.wifi_mode_5ghz;
+    tr069Changes.wifi5.mode = content.wifi_mode_5ghz;
     updateParameters = true;
   }
   return updateParameters;
 };
 
-let processPassword = function(content, device, rollback) {
+let processPassword = function(content, device, rollback, tr069Changes) {
   if (content.hasOwnProperty('app_password')) {
     rollback.app_password = device.app_password;
     device.app_password = content.app_password;
@@ -175,7 +198,7 @@ let processPassword = function(content, device, rollback) {
   return false;
 };
 
-let processBlacklist = function(content, device, rollback) {
+let processBlacklist = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
@@ -249,7 +272,7 @@ let processBlacklist = function(content, device, rollback) {
   return false;
 };
 
-let processWhitelist = function(content, device, rollback) {
+let processWhitelist = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
@@ -295,7 +318,7 @@ let processWhitelist = function(content, device, rollback) {
   return false;
 };
 
-let processDeviceInfo = function(content, device, rollback) {
+let processDeviceInfo = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('mac') &&
@@ -306,7 +329,12 @@ let processDeviceInfo = function(content, device, rollback) {
     }
     let newLanDevice = true;
     let configs = content.device_configs;
-    let macDevice = configs.mac.toLowerCase();
+    let macDevice = '';
+    if (device.use_tr069) {
+      macDevice = configs.mac.toUpperCase();
+    } else {
+      macDevice = configs.mac.toLowerCase();
+    }
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
         if (configs.name) {
@@ -339,7 +367,7 @@ let processDeviceInfo = function(content, device, rollback) {
   return false;
 };
 
-let processUpnpInfo = function(content, device, rollback) {
+let processUpnpInfo = function(content, device, rollback, tr069Changes) {
   let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('upnp_allow') &&
@@ -386,13 +414,13 @@ let processUpnpInfo = function(content, device, rollback) {
   return false;
 };
 
-let processAll = function(content, device, rollback) {
-  processWifi(content, device, rollback);
-  processPassword(content, device, rollback);
-  processBlacklist(content, device, rollback);
-  processWhitelist(content, device, rollback);
-  processDeviceInfo(content, device, rollback);
-  processUpnpInfo(content, device, rollback);
+let processAll = function(content, device, rollback, tr069Changes) {
+  processWifi(content, device, rollback, tr069Changes);
+  processPassword(content, device, rollback, tr069Changes);
+  processBlacklist(content, device, rollback, tr069Changes);
+  processWhitelist(content, device, rollback, tr069Changes);
+  processDeviceInfo(content, device, rollback, tr069Changes);
+  processUpnpInfo(content, device, rollback, tr069Changes);
 };
 
 let formatDevices = function(device) {
@@ -406,17 +434,28 @@ let formatDevices = function(device) {
     } else if (lanDevice.dhcp_name && lanDevice.dhcp_name !== '!') {
       name = lanDevice.dhcp_name;
     }
-    let numRules = lanDevice.port.length;
     let rules = [];
-    for (let i = 0; i < numRules; i++) {
-      rules.push({
-        in: lanDevice.port[i],
-        out: lanDevice.router_port[i],
-      });
-      allRules.push({
-        in: lanDevice.port[i],
-        out: lanDevice.router_port[i],
-      });
+    if (device.use_tr069) {
+      // Use port mapping structure instead of lan_devices, since rules can be
+      // bound to an ip that is not registered
+      rules = device.port_mapping.filter((r)=>r.ip === lanDevice.ip);
+      if (typeof rules === 'undefined') {
+        rules = [];
+      }
+      allRules = allRules.concat(rules);
+    } else {
+      // Use legacy lan_devices structure
+      let numRules = lanDevice.port.length;
+      for (let i = 0; i < numRules; i++) {
+        rules.push({
+          in: lanDevice.port[i],
+          out: lanDevice.router_port[i],
+        });
+        allRules.push({
+          in: lanDevice.port[i],
+          out: lanDevice.router_port[i],
+        });
+      }
     }
     let upnpPermission = lanDevice.upnp_permission === 'accept';
     let signal = 'none';
@@ -440,6 +479,15 @@ let formatDevices = function(device) {
       upnp_allow: upnpPermission,
     };
   });
+  // Add port forward rules not bound to a device to allRules structure
+  if (device.use_tr069) {
+    device.port_mapping.forEach((rule)=>{
+      // Check if rule ip has a matching device
+      if (lanDevices.find((d)=>d.ip === rule.ip)) return;
+      // No matchign device, add rule
+      allRules.push(rule);
+    });
+  }
   return {
     devices: lanDevices,
     rules: allRules,
@@ -556,12 +604,18 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    // Send mqtt message to reboot router
-    mqtt.anlixMessageRouterReboot(req.body.id);
+    let isDevOn;
+    if (matchedDevice.use_tr069) {
+      acsController.rebootDevice(matchedDevice);
+      isDevOn = true; // We would need to query database to check if online
+    } else {
+      // Send mqtt message to reboot router
+      mqtt.anlixMessageRouterReboot(req.body.id);
+      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.body.id.toUpperCase()];
+      });
+    }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
 
     return res.status(200).json({
       success: isDevOn,
@@ -587,14 +641,20 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       return res.status(403).json({message: 'App não autorizado'});
     }
 
-    // Send mqtt message to update devices on flashman db
+    let isDevOn;
     if (req.body.content.do_device_update) {
-      mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+      if (matchedDevice.use_tr069) {
+        acsController.requestConnectedDevices(matchedDevice);
+        isDevOn = true;
+      } else {
+        // Send mqtt message to update devices on flashman db
+        mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+        isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+          return map[req.body.id.toUpperCase()];
+        });
+      }
     }
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
 
     return res.status(200).json({
       has_access: isDevOn,
@@ -739,8 +799,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       });
     }
 
-    // Send mqtt message to update devices on flashman db
-    mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    if (matchedDevice.use_tr069) {
+      acsController.requestConnectedDevices(matchedDevice);
+    } else {
+      // Send mqtt message to update devices on flashman db
+      mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
+    }
 
     // Check if FCM ID has changed or if location info provided, update if so
     let appid = req.body.app_id;
@@ -780,8 +844,6 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantPortForwardAsym = false;
       permissions.grantBlockDevices = false;
       permissions.grantUpnp = false;
-    } else {
-      permissions.grantBlockDevices = true;
     }
 
     let speedtestInfo = {};
@@ -829,9 +891,14 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     });
     let localMac = localDevice ? localDevice.mac : '';
 
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toUpperCase()];
-    });
+    let isDevOn;
+    if (matchedDevice.use_tr069) {
+      isDevOn = true;
+    } else {
+      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[req.body.id.toUpperCase()];
+      });
+    }
 
     let prefixObj = {};
     prefixObj.name = await updateController.
@@ -850,6 +917,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
+      use_tr069: matchedDevice.use_tr069,
     });
   });
 };
@@ -1053,7 +1121,9 @@ appDeviceAPIController.resetPassword = function(req, res) {
 
     device.app_password = undefined;
     await device.save();
-    mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
+    if (!device.use_tr069) {
+      mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
+    }
 
     return res.status(200).json({success: true});
   });
@@ -1092,6 +1162,189 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
     return res.status(200).json({
       success: isDevOn,
     });
+  });
+};
+
+appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  // Get global config tr069 cpe login credentials
+  let config = await Config.findOne({is_default: true}).lean().catch((err)=>{
+    console.err('Error fetching config: ' + err);
+  });
+  let configUser;
+  let configPassword;
+  if (config) {
+    configUser = config.tr069.web_login;
+    configPassword = config.tr069.web_password;
+  } else {
+    configUser = '';
+    configPassword = '';
+  }
+  // Query database for devices with matching SSID/BSSID
+  let targetSSID = req.body.content.ssid;
+  let targetBSSID = req.body.content.bssid.toUpperCase();
+  let query = {
+    use_tr069: true,
+    '$or': [
+      {wifi_ssid: targetSSID},
+      {wifi_ssid_5ghz: targetSSID},
+      {wifi_bssid: targetBSSID},
+      {wifi_bssid_5ghz: targetBSSID},
+    ],
+  };
+  let projection = {_id: 1, model: 1, version: 1, pending_app_secret:1};
+  DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
+    if (err) {
+      return res.status(500).json({'message': 'Erro interno'});
+    }
+    // Generate a new secret for app
+    let newSecret = crypt.randomBytes(20).toString('base64');
+    let foundDevices = matchedDevices.map((device) => {
+      // Save secret as a pending secret for devices
+      device.pending_app_secret = newSecret;
+      device.save();
+      // Format data for app
+      let result = {
+        mac: device._id,
+        model: device.model,
+        firmwareVer: device.version,
+      };
+      if (configUser) {
+        result.customLogin = configUser;
+      }
+      if (configPassword) {
+        result.customPassword = configPassword;
+      }
+      return result;
+    });
+    return res.status(200).json({
+      'secret': newSecret,
+      'foundDevices': foundDevices,
+    });
+  });
+};
+
+appDeviceAPIController.validateDeviceSerial = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.content.mac;
+  let projection = {
+    _id: 1, pending_app_secret:1, serial_tr069: 1, apps: 1, app_password: 1
+  };
+  DeviceModel.findById(query, projection, function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({'message': 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({'message': 'CPE não encontrado'});
+    }
+    if (matchedDevice.pending_app_secret === '' ||
+        matchedDevice.pending_app_secret !== req.body.content.secret) {
+      return res.status(403).json({'message': 'Secret inválido'});
+    }
+    if (matchedDevice.serial_tr069 !== req.body.content.serial) {
+      return res.status(403).json({'message': 'Serial inválido'});
+    }
+    let appObj = matchedDevice.apps.filter((app) => app.id === req.body.app_id);
+    let newEntry = {
+      id: req.body.app_id,
+      secret: req.body.content.secret,
+    };
+    if (appObj.length == 0) {
+      matchedDevice.apps.push(newEntry);
+    } else {
+      matchedDevice.apps = matchedDevice.apps.map((app) => {
+        // Change old entry to new entry if ids match
+        if (app.id === req.body.app_id) {
+          return newEntry;
+        }
+        // Return old entry otherwise
+        return app;
+      });
+    }
+    // Clear pending secret and save data
+    matchedDevice.pending_app_secret = '';
+    matchedDevice.save();
+    return res.status(200).json({
+      serialOk: true,
+      hasPassword: (matchedDevice.app_password) ? true : false, // cast to bool
+    });
+  });
+};
+
+appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.id;
+  let projection = {_id: 1, app_password: 1, apps: 1};
+  DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+    let appObj;
+    if (matchedDevice.apps) {
+      appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    }
+    if (typeof appObj === 'undefined') {
+      return res.status(403).json({message: 'App não encontrado'});
+    }
+    if (appObj.secret !== req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+    let content = req.body.content;
+    let newPassword = (content.password) ? content.password : '';
+    if (newPassword === '') {
+      return res.status(200).json({registerOK: false});
+    }
+    matchedDevice.app_password = newPassword;
+    matchedDevice.save();
+    return res.status(200).json({registerOK: true});
+  });
+};
+
+appDeviceAPIController.appSetPortForward = function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query = req.body.id;
+  DeviceModel.findById(query).exec(function(err, matchedDevice) {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+    if (!matchedDevice.use_tr069) {
+      return res.status(403).json({message: 'CPE não autorizado'});
+    }
+    let appObj;
+    if (matchedDevice.apps) {
+      appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
+    }
+    if (typeof appObj === 'undefined') {
+      return res.status(403).json({message: 'App não encontrado'});
+    }
+    if (appObj.secret !== req.body.app_secret) {
+      return res.status(403).json({message: 'App não autorizado'});
+    }
+    let content = req.body.content;
+    if (content.rules && content.rules.constructor === Array) {
+      let oldLength = matchedDevice.port_mapping.length;
+      let newLength = content.rules.length;
+      let diff = newLength - oldLength;
+      matchedDevice.port_mapping = content.rules;
+      matchedDevice.save();
+      acsController.changePortForwardRules(matchedDevice, diff);
+      return res.status(200).json({'success': true});
+    }
+    return res.status(500).json({message: 'Dados de regras inválidos'});
   });
 };
 

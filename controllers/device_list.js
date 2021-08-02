@@ -453,6 +453,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact.
+  let matchedConfig = await Config.findOne({is_default: true});
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
@@ -527,7 +528,27 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.do_update = {$eq: true};
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
+      } 
+    } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
+      query.use_tr069 = true; // only for ONUs
+      if (tag.includes('fraco')) {
+        query.pon_rxpower = {
+          $gte: matchedConfig.tr069.pon_signal_threshold_critical,
+          $lte: matchedConfig.tr069.pon_signal_threshold,
+        };
+      } else if (tag.includes('bom')) {
+        query.pon_rxpower = {
+          $gte: matchedConfig.tr069.pon_signal_threshold,
+          $lte: matchedConfig.tr069.pon_signal_threshold_critical_high,
+        };
+      } else if (tag.includes('ruim')) {
+        query.pon_rxpower = {
+          $lte: matchedConfig.tr069.pon_signal_threshold_critical,
+        };
       }
+    } else if (/^sem sinal$/.test(tag)) {
+      query.use_tr069 = true; // only for ONUs
+      query.pon_rxpower = {$exists: false}
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // CPE TR-069 routers.
@@ -789,6 +810,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  ponConfig: {
+                    ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
+                    ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
+                    ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high,
+                  },
                 });
               });
             }, (error) => {
@@ -805,25 +831,38 @@ deviceListController.searchDeviceReg = async function(req, res) {
   });
 };
 
-deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
-    if (err || !devices) {
-      console.log('User delete error: ' + err);
+deviceListController.delDeviceReg = async function(req, res) {
+  try {
+    let removeList = [];
+    if (req.params.id) {
+      removeList = [req.params.id];
+    } else {
+      removeList = req.body.ids;
+    }
+    let devices = await DeviceModel.find({'_id': {$in: removeList}}).exec();
+    if (devices.length === 0) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro interno ao remover cadastro(s)',
+        message: 'Nenhum roteador encontrado',
       });
     }
-    devices.forEach((device) => {
+    for (let device of devices) {
       deviceHandlers.removeDeviceFromDatabase(device);
-    });
+    }
     return res.json({
       success: true,
       type: 'success',
       message: 'Cadastro(s) removido(s) com sucesso!',
     });
-  });
+  } catch (err) {
+    console.error('Erro na remoção: ' + err);
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao remover cadastro(s)',
+    });
+  }
 };
 
 const downloadStockFirmware = async function(model) {

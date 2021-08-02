@@ -572,6 +572,32 @@ $(document).ready(function() {
     '</a>';
   };
 
+  const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
+    let ponSignalStatus;
+    let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
+    if (device.pon_rxpower === undefined) { 
+      ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+      ponSignalRxPower = '';
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh){
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Alto</div>';
+    } else if (device.pon_rxpower >= config.ponSignalThreshold) {
+      ponSignalStatus = '<div class="badge bg-success">Sinal Bom</div>';
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCritical) {
+      ponSignalStatus = '<div class="badge bg-warning">Sinal Fraco</div>';
+    } else {
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+    }
+    let ponSignalStatusColumn = (grantPonSignalSupport) ? `
+      <td>
+        <div class="text-center align-items-center">
+          ${ponSignalRxPower}<br>
+          ${ponSignalStatus} 
+        </div>
+      </td>
+    ` : '<td></td>';
+    return ponSignalStatusColumn;
+  }
+
   const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
@@ -716,6 +742,7 @@ $(document).ready(function() {
         (device.wan_up_time && device.status_color !== 'grey-text' ?
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
+      '$REPLACE_PONSIGNAL'+
       '$REPLACE_UPGRADE'+
     '</tr>';
     return infoRow;
@@ -985,7 +1012,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '12')
+        $('<td>').attr('colspan', '13')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -1017,7 +1044,7 @@ $(document).ready(function() {
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
-            '<tr><td class="grey lighten-5 text-center" colspan="12">'+
+            '<tr><td class="grey lighten-5 text-center" colspan="13">'+
               '<h5>Nenhum CPE encontrado</h5>'+
             '</td></tr>',
           );
@@ -1066,7 +1093,7 @@ $(document).ready(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || grantShowSearchSummary) {
@@ -1134,11 +1161,13 @@ $(document).ready(function() {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let ponSignalCol = buildPonSignalColumn(device, res.ponConfig, grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+          infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           if (isSuperuser || grantNotificationPopups) {
             infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
           } else {
@@ -2167,7 +2196,7 @@ $(document).ready(function() {
           '</div>';
 
           let formRow = '<tr class="d-none" $REPLACE_ATTRIBUTES>'+
-            '<td class="grey lighten-5" colspan="12">'+
+            '<td class="grey lighten-5" colspan="13">'+
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
@@ -2254,6 +2283,7 @@ $(document).ready(function() {
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
               infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
@@ -2264,7 +2294,7 @@ $(document).ready(function() {
               }
               finalHtml += infoRow;
 
-              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
+              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
                 buildAboutTab(slaveDev, index, false,
                               grantWifiExtendedChannels, slaveIdx)+
               '</td></tr>';
@@ -2288,7 +2318,7 @@ $(document).ready(function() {
             let editButtonRow = buildFormSubmit(true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
-              '<td class="grey lighten-5" colspan="12">'+
+              '<td class="grey lighten-5" colspan="13">'+
                 editButtonRow+
               '</td>'+
             '</tr>';

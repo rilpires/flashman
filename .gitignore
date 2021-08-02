@@ -92,4 +92,7 @@ Session.vim
 # auto-generated tag files
 tags
 
+# jest files
+globalConfig.json
+
 # End of https://www.gitignore.io/api/code,vim,node
