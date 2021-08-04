@@ -68,7 +68,7 @@ firmwaresAPI.sendUpgradeFirmware = async function(firmware, device) {
     fileName: firmware.filename,
   });
   let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask,
-    true, 3000, [5000, 10000]);
+    true, 8000, []);
   if (result.finished == true && result.task.name === 'download') {
     return 'Tarefa de atualizar firmware submetida com sucesso!';
   } else {
