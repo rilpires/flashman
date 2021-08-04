@@ -718,7 +718,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    let tr069Devices = DeviceVersion.getAlltr069Devices();
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
@@ -726,29 +725,20 @@ deviceListController.searchDeviceReg = async function(req, res) {
         let devReleases = releases.filter(
           (release) => release.model === model);
         if (device.use_tr069) {
-          // get info dict by model
-          let tr069Info = tr069Devices[model];
-          if (tr069Info) {
-            /* get allowed version of upgrade by
-              current device version  */
-            let allowedVersions = tr069Info.
-              versions_upgrade[device.installed_release];
-            /* filter by allowed version that
-              current version can jump to */
-            devReleases = devReleases.filter(
-              (release) => allowedVersions.includes(release.id));
-            /*
-              for tr069 devices enable "btn-group device-update"
-              if have firmwares and feature support for the model
-              is granted
-            */
-            device.isUpgradeEnabled = (devReleases.length > 0) &&
-              tr069Info.feature_support.firmware_upgrade;
-          } else {
-            /* is not defined in device version
-              so is disabled */
-            device.isUpgradeEnabled = false;
-          }
+          /* get allowed version of upgrade by
+            current device version  */
+          let allowedVersions = DeviceVersion
+            .getFirmwaresUpgradesByVersion(model,
+              device.installed_release);
+          /* filter by allowed version that
+            current version can jump to */
+          devReleases = devReleases.filter(
+            (release) => allowedVersions.includes(release.id));
+          /* for tr069 devices enable "btn-group device-update"
+            if have firmwares available and feature support
+            for the model is granted */
+          device.isUpgradeEnabled = (devReleases.length > 0) &&
+            tr069Info.feature_support.firmware_upgrade;
         } else {
           device.isUpgradeEnabled = true;
         }

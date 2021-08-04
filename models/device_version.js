@@ -1658,8 +1658,14 @@ DeviceVersion.getVendorByModel = function(model) {
   return ret;
 };
 
-DeviceVersion.getAlltr069Devices = function() {
-  return tr069Devices;
+DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
+  let versions = [];
+  if (tr069Devices[model]) {
+    if (Array.isArray(tr069Devices[model].versions_upgrade[version])) {
+      versions = tr069Devices[model].versions_upgrade[version];
+    }
+  }
+  return versions;
 };
 
 module.exports = DeviceVersion;
