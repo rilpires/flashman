@@ -332,7 +332,13 @@ firmwareController.uploadFirmware = async function(req, res) {
 
   try {
     await firmware.save();
-    if (isTR069) await acsDeviceInfo.addFirmwareInACS(firmware);
+    if (isTR069) {
+      let response = await acsDeviceInfo.addFirmwareInACS(firmware);
+      if (!response) {
+        res.json({type: 'danger',
+          message: 'Falhou na comunicação com o GenieACS'});
+      }
+    }
     return res.json({
       type: 'success',
       message: 'Upload de firmware feito com sucesso!',

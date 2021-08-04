@@ -1532,8 +1532,18 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
 };
 
 acsDeviceInfoController.addFirmwareInACS = async function(firmware) {
-  let binData = await FirmwaresAPI.receiveFile(firmware.filename);
-  await FirmwaresAPI.uploadToGenie(binData, firmware);
+  let binData;
+  try {
+    binData = await FirmwaresAPI.receiveFile(firmware.filename);
+  } catch (e) {
+    return false;
+  }
+  try {
+    await FirmwaresAPI.uploadToGenie(binData, firmware);
+  } catch (e) {
+    return false;
+  }
+  return true;
 };
 
 acsDeviceInfoController.delFirmwareInACS = async function(filename) {
@@ -1556,9 +1566,8 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     if (!firmware) {
       return {success: false, message: 'Não existe firmware com essa versão'};
     } else {
-      try {
-        await acsDeviceInfoController.addFirmwareInACS(firmware);
-      } catch (e) {
+      let response = await acsDeviceInfoController.addFirmwareInACS(firmware);
+      if (!response) {
         return {success: false, message: e.message};
       }
     }
