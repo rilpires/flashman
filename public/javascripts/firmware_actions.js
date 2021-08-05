@@ -1,4 +1,7 @@
 import {displayAlertMsg} from './common_actions.js';
+import {setFirmwareStorage,
+        getFirmwareStorage,
+        deleteFirmwareStorage} from './session_storage.js';
 import 'datatables.net-bs4';
 
 const fetchLocalFirmwares = function(firmwaresTable) {
@@ -29,16 +32,8 @@ const fetchLocalFirmwares = function(firmwaresTable) {
         );
         firmwaresTable.row.add(firmwareRow).draw();
       });
-    } else {
-      displayAlertMsg(res);
-    }
-  }, 'json');
-};
-
-const fetchtr069Infos = function() {
-  $.get('/firmware/tr069productclass', function(res) {
-    if (res.success) {
-      res.productclass.forEach((pc) => {
+      setFirmwareStorage('versions', res.tr069Infos.versions);
+      res.tr069Infos.models.forEach((pc) => {
         $('#select-productclass').append(
           $('<option>')
             .attr('value', pc)
@@ -51,22 +46,16 @@ const fetchtr069Infos = function() {
   }, 'json');
 };
 
-window.fetchVersion = function(input) {
-  $.get('/firmware/tr069versions/'+(
-    input.value === '' ? 'a' : input.value), function(res) {
-    if (res.success) {
-      $('#select-version option').remove();
-      res.versions.forEach((v) => {
-        $('#select-version').append(
-          $('<option>')
-            .attr('value', v)
-            .text(v),
-        );
-      });
-    } else {
-      displayAlertMsg(res);
-    }
-  }, 'json');
+window.updateVersions = function(input) {
+  let versionsByModel = getFirmwareStorage('versions');
+  $('#select-version option').remove();
+  versionsByModel[input.value].forEach((v) => {
+    $('#select-version').append(
+      $('<option>')
+        .attr('value', v)
+        .text(v),
+    );
+  });
 };
 
 window.changeCpeForm = function(input) {
@@ -91,9 +80,6 @@ $(document).ready(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];
-
-  // get oui and product class from device_version
-  fetchtr069Infos();
 
   let firmwaresTable = $('#firmware-table').DataTable({
     'paging': true,
@@ -416,4 +402,9 @@ $(document).ready(function() {
 
     return false;
   });
+});
+
+$(window).on('unload', function() {
+  // clean firmware session storage
+  deleteFirmwareStorage();
 });

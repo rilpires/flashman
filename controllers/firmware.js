@@ -114,25 +114,10 @@ firmwareController.fetchFirmwares = function(req, res) {
       return res.json({success: false, type: 'danger',
                        message: 'Erro ao buscar firmwares'});
     }
-    return res.json({success: true, type: 'success', firmwares: firmwares});
-  });
-};
-
-firmwareController.fetchTr069ProductClassList = function(req, res) {
-  let ret = DeviceVersion.getTr069ProductClassList();
-  if (!ret) {
-    return res.json({success: false, type: 'danger',
-      message: 'Não foi possível recuperar os modelos dos dispositivos'});
-  } else {
+    let tr069Infos = DeviceVersion.getTr069ModelsAndVersions();
     return res.json({success: true, type: 'success',
-      productclass: ret});
-  }
-};
-
-firmwareController.fetchTr069VersionList = function(req, res) {
-  let ret = DeviceVersion.getTr069VersionByModel(req.params.model);
-  return res.json({success: true, type: 'success',
-      versions: ret});
+      firmwares: firmwares, tr069Infos: tr069Infos});
+  });
 };
 
 firmwareController.getReleases = async function(filenames, role,

@@ -1637,17 +1637,17 @@ DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
 };
 
-DeviceVersion.getTr069ProductClassList = function() {
+DeviceVersion.getTr069ModelsAndVersions = function() {
+  let ret = {};
   // only send models that support firmware upgrade
-  return Object.entries(tr069Devices)
+  ret.models = Object.entries(tr069Devices)
     .filter((dev) => dev[1].feature_support.firmware_upgrade)
     .map((dev) => dev[0]);
-};
-
-DeviceVersion.getTr069VersionByModel = function(model) {
-  let ret = Object.keys(tr069Devices[model].versions_upgrade);
-  // return empty string when undefined
-  return (!ret) ? [] : ret;
+  ret.versions = {};
+  ret.models.forEach((m) => {
+    ret.versions[m] = Object.keys(tr069Devices[m].versions_upgrade);
+  });
+  return ret;
 };
 
 DeviceVersion.getVendorByModel = function(model) {

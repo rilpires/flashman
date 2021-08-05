@@ -55,7 +55,7 @@ block content
                   label
                     | Modelo
                   select#select-productclass.browser-defaut.md-select(
-                    name="productclass", onchange="fetchVersion(this)", required)
+                    name="productclass", onchange="updateVersions(this)", required)
                     option(value='')
                   .invalid-feedback Selecione algum modelo
               .col-3.md-form
