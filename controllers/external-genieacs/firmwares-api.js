@@ -61,12 +61,12 @@ firmwaresAPI.getFirmwaresFromGenie = async function() {
 };
 
 firmwaresAPI.sendUpgradeFirmware = async function(firmware, device) {
-  let upgradeFirmwareTask = JSON.stringify({
+  let upgradeFirmwareTask = {
     name: 'download',
     instance: '1',
     fileType: '1 Firmware Upgrade Image',
     fileName: firmware.filename,
-  });
+  };
   let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask,
     true, 8000, []);
   if (result.finished == true && result.task.name === 'download') {
