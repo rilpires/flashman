@@ -735,10 +735,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
           devReleases = devReleases.filter(
             (release) => allowedVersions.includes(release.id));
           /* for tr069 devices enable "btn-group device-update"
-            if have firmwares available and feature support
-            for the model is granted */
-          device.isUpgradeEnabled = (devReleases.length > 0) &&
-            tr069Info.feature_support.firmware_upgrade;
+            if have feature support for the model is granted */
+          device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
         } else {
           device.isUpgradeEnabled = true;
         }
