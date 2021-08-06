@@ -262,7 +262,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields = {};
     fnameFields.vendor = DeviceVersion.getVendorByModel(req.body.productclass);
     fnameFields.model = req.body.productclass;
-    fnameFields.version = '';
+    fnameFields.version = req.body.version;
     fnameFields.release = req.body.version;
     fnameFields.cpe_type = 'tr069';
   }
