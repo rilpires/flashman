@@ -161,14 +161,18 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
   if it already in the start of ssid
 */
 const cleanAndCheckSsid = function(prefix, ssid) {
-  const escapedSsidPrefix = util.escapeRegExp(prefix);
+  let strPrefix = '';
+  if (typeof prefix !== 'undefined') {
+    strPrefix = prefix;
+  }
+  const escapedSsidPrefix = util.escapeRegExp(strPrefix);
   const rePrefix = new RegExp('^' + escapedSsidPrefix + '.*$', 'g');
   // Test if incoming SSID already have the prefix
   if (rePrefix.test(ssid)) {
     // Remove prefix from incoming SSID
-    const toRemove = new RegExp('^' + util.escapeRegExp(prefix), 'i');
+    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix), 'i');
     const finalSsid = ssid.replace(toRemove, '');
-    const combinedSsid = prefix + finalSsid;
+    const combinedSsid = strPrefix + finalSsid;
     if (combinedSsid.length > 32) {
       return {enablePrefix: false, ssid: finalSsid};
     } else {
@@ -176,7 +180,7 @@ const cleanAndCheckSsid = function(prefix, ssid) {
       return {enablePrefix: true, ssid: finalSsid};
     }
   } else {
-    const combinedSsid = prefix + ssid;
+    const combinedSsid = strPrefix + ssid;
     if (combinedSsid.length > 32) {
       return {enablePrefix: false, ssid: ssid};
     } else {
@@ -219,8 +223,8 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
     prefix: '',
   };
   // clean and check the ssid regardless the flags
-  let valObj2 = cleanAndCheckSsid(ssid2ghz);
-  let valObj5 = cleanAndCheckSsid(ssid5ghz);
+  let valObj2 = cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
+  let valObj5 = cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
   // set the cleaned ssid to be returned
   prefixObj.ssid2 = valObj2.ssid;
   prefixObj.ssid5 = valObj5.ssid;
