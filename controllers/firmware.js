@@ -101,6 +101,7 @@ firmwareController.index = function(req, res) {
           return res.render('error', indexContent);
         }
         indexContent.role = role;
+        indexContent.tr069Infos = DeviceVersion.getTr069ModelsAndVersions();
         return res.render('firmware', indexContent);
       });
     });
@@ -114,9 +115,7 @@ firmwareController.fetchFirmwares = function(req, res) {
       return res.json({success: false, type: 'danger',
                        message: 'Erro ao buscar firmwares'});
     }
-    let tr069Infos = DeviceVersion.getTr069ModelsAndVersions();
-    return res.json({success: true, type: 'success',
-      firmwares: firmwares, tr069Infos: tr069Infos});
+    return res.json({success: true, type: 'success', firmwares: firmwares});
   });
 };
 

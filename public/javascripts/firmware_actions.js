@@ -32,28 +32,38 @@ const fetchLocalFirmwares = function(firmwaresTable) {
         );
         firmwaresTable.row.add(firmwareRow).draw();
       });
-      setFirmwareStorage('versions', res.tr069Infos.versions);
-      res.tr069Infos.models.forEach((pc) => {
-        $('#select-productclass').append(
-          $('<option>')
-            .attr('value', pc)
-            .text(pc),
-        );
-      });
     } else {
       displayAlertMsg(res);
     }
   }, 'json');
 };
 
+const fetchModels = function(tr069Infos) {
+  deleteFirmwareStorage();
+  setFirmwareStorage('versions', tr069Infos.versions);
+  $('#select-productclass option').remove();
+  $('#select-productclass').append(
+    $('<option>')
+      .attr('value', '')
+      .text(''),
+  );
+  tr069Infos.models.forEach((pc) => {
+    $('#select-productclass').append(
+      $('<option>')
+        .attr('value', pc)
+        .text(pc),
+    );
+  });
+};
+
 window.updateVersions = function(input) {
   let versionsByModel = getFirmwareStorage('versions');
   $('#select-version option').remove();
   $('#select-version').append(
-      $('<option>')
-        .attr('value', '')
-        .text(''),
-    );
+    $('<option>')
+      .attr('value', '')
+      .text(''),
+  );
   if (versionsByModel[input.value]) {
     versionsByModel[input.value].forEach((v) => {
       $('#select-version').append(
@@ -87,6 +97,7 @@ $(document).ready(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];
+  fetchModels($('#select-productclass').data('json'));
 
   let firmwaresTable = $('#firmware-table').DataTable({
     'paging': true,
@@ -284,7 +295,9 @@ $(document).ready(function() {
           .addClass('fa-upload')
           .removeClass('fa-spinner fa-pulse');
         displayAlertMsg(res.responseJSON);
-        if (res.type === 'success') fetchLocalFirmwares(firmwaresTable);
+        if (res.responseJSON.type === 'success') {
+          fetchLocalFirmwares(firmwaresTable);
+        }
       }
     });
   };
