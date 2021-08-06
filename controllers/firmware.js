@@ -46,8 +46,7 @@ let removeFirmware = async function(firmware) {
     try {
       await acsDeviceInfo.delFirmwareInACS(firmware.filename);
     } catch (e) {
-      console.error(e.message);
-      throw e;
+      throw new Error('Falha na comunicação com o GenieACS');
     }
   }
 
