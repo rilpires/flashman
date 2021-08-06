@@ -49,13 +49,20 @@ const fetchLocalFirmwares = function(firmwaresTable) {
 window.updateVersions = function(input) {
   let versionsByModel = getFirmwareStorage('versions');
   $('#select-version option').remove();
-  versionsByModel[input.value].forEach((v) => {
-    $('#select-version').append(
+  $('#select-version').append(
       $('<option>')
-        .attr('value', v)
-        .text(v),
+        .attr('value', '')
+        .text(''),
     );
-  });
+  if (versionsByModel[input.value]) {
+    versionsByModel[input.value].forEach((v) => {
+      $('#select-version').append(
+        $('<option>')
+          .attr('value', v)
+          .text(v),
+      );
+    });
+  }
 };
 
 window.changeCpeForm = function(input) {
@@ -257,7 +264,7 @@ $(document).ready(function() {
     }
   });
 
-  let uploadFirmware = function() {
+  let uploadFirmware = function(obj) {
     $('#btn-submit-upload').prop('disabled', true);
     $('#btn-submit-icon')
       .removeClass('fa-upload')
@@ -265,36 +272,26 @@ $(document).ready(function() {
     $.ajax({
       type: 'POST',
       enctype: 'multipart/form-data',
-      url: $(this).attr('action'),
-      data: new FormData($(this)[0]),
+      url: $(obj).attr('action'),
+      data: new FormData($(obj)[0]),
       processData: false,
       contentType: false,
       cache: false,
       timeout: 600000,
-      success: function(res) {
+      complete: function(res) {
         $('#btn-submit-upload').prop('disabled', false);
         $('#btn-submit-icon')
           .addClass('fa-upload')
           .removeClass('fa-spinner fa-pulse');
-        displayAlertMsg(res);
-        fetchLocalFirmwares(firmwaresTable);
-      },
-      error: function(res) {
-        $('#btn-submit-upload').prop('disabled', false);
-        $('#btn-submit-icon')
-          .addClass('fa-upload')
-          .removeClass('fa-spinner fa-pulse');
-        displayAlertMsg({
-          type: 'danger',
-          message: 'Nenhum arquivo foi selecionado',
-        });
-      },
+        displayAlertMsg(res.responseJSON);
+        if (res.type === 'success') fetchLocalFirmwares(firmwaresTable);
+      }
     });
   };
 
   $('form[name=firmwareflashboxform]').submit(function() {
     if ($('input[name=firmwareflashboxfile]').val().trim()) {
-      uploadFirmware();
+      uploadFirmware(this);
     } else {
       displayAlertMsg({
         type: 'danger',
@@ -307,7 +304,7 @@ $(document).ready(function() {
 
   $('form[name=firmwaretr069form]').submit(function(event) {
     if ($(this)[0].checkValidity()) {
-      uploadFirmware();
+      uploadFirmware(this);
     } else {
       event.preventDefault();
       event.stopPropagation();
