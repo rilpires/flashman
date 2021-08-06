@@ -36,18 +36,18 @@ let parseFilename = function(filename) {
 };
 
 let removeFirmware = async function(firmware) {
-  try {
-    await fsPromises.unlink(imageReleasesDir + firmware.filename);
-  } catch (e) {
-    throw new Error('Arquivo bin não encontrado');
-  }
-
   if (firmware.cpe_type == 'tr069') {
     try {
       await acsDeviceInfo.delFirmwareInACS(firmware.filename);
     } catch (e) {
       throw new Error('Falha na comunicação com o GenieACS');
     }
+  }
+
+  try {
+    await fsPromises.unlink(imageReleasesDir + firmware.filename);
+  } catch (e) {
+    throw new Error('Arquivo bin não encontrado');
   }
 
   let md5fname = '.' + firmware.filename.replace('.bin', '.md5');
@@ -319,7 +319,7 @@ firmwareController.uploadFirmware = async function(req, res) {
       let response = await acsDeviceInfo.addFirmwareInACS(firmware);
       if (!response) {
         res.json({type: 'danger',
-          message: 'Falhou na comunicação com o GenieACS'});
+          message: 'Falha na comunicação com o GenieACS'});
       }
     }
     return res.json({
