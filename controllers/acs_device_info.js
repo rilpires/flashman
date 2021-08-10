@@ -1072,7 +1072,7 @@ const getSsidPrefixCheck = async function(device) {
     console.log(error);
   }
   // -> 'updating registry' scenario
-  return checkResponse = deviceHandlers.checkSsidPrefix(
+  return deviceHandlers.checkSsidPrefix(
     config, device.wifi_ssid, device.wifi_ssid_5ghz,
     device.isSsidPrefixEnabled);
 };
@@ -1088,7 +1088,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let task = {name: 'setParameterValues', parameterValues: []};
-  let ssidPrefix = await getSsidPrefixCheck(device).prefix;
+  let ssidPrefixObj = await getSsidPrefixCheck(device);
+  let ssidPrefix = ssidPrefixObj.prefix;
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
