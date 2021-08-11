@@ -1669,7 +1669,11 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
 };
 
 DeviceVersion.isUpgradeSupport = function(model) {
-  return tr069Devices[model].feature_support.firmware_upgrade;
+  let upgradeAvailable = false;
+  if (tr069Devices[model]) {
+    upgradeAvailable = tr069Devices[model].feature_support.firmware_upgrade;
+  }
+  return upgradeAvailable;
 };
 
 module.exports = DeviceVersion;
