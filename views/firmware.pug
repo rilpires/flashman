@@ -25,7 +25,7 @@ block content
               .md-selectfield.form-control
                 label
                   | Tipo
-                select#select-cpe-type.browser-defaut.md-select(
+                select#select-cpe-type.browser-default.md-select(
                   name="cpe_type", onchange="changeCpeForm(this)", required)
                   option(value='flashbox' selected) Flashbox
                   option(value='tr069') TR-069
@@ -59,7 +59,7 @@ block content
                 .md-selectfield.form-control
                   label
                     | Modelo
-                  select#select-productclass.browser-defaut.md-select(
+                  select#select-productclass.custom-select.md-select(
                     name="productclass", onchange="updateVersions(this)",
                       data-json=tr069Infos, required)
                     option(value='')
@@ -68,7 +68,7 @@ block content
                 .md-selectfield.form-control
                   label
                     | Versão
-                  select#select-version.browser-defaut.md-select(
+                  select#select-version.custom-select.md-select(
                     name="version", required)
                     option(value='')
                   .invalid-feedback Selecione alguma versão
