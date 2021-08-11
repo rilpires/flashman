@@ -442,25 +442,20 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let vlan_of_wan = '2';
 
   // on well behavior object of vlan that needs to treat others vlans
-  let vlan_ports = '';
-  let aux_idx; // auxiliar index to toggle vid 1 or 9
+  let aux_idx;
   if ((typeof vlanObj !== 'undefined') && (vlanObj.length > 0)) {
     // initialize keys values with empty string
     for (let i = 0; i < vlanObj.length; i++) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
-
       digestedVlans[aux_idx] = '';
     }
     // put on every key an append to the value as the matching port
     for (let i = 0; i < vlanObj.length; i++) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
-
       if (aux_idx == vlan_of_lan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+' ';
       } else if (aux_idx != vlan_of_wan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+'t ';
-
-        vlan_ports += lan_ports[vlanObj[i].port-1].toString()+' ';
       }
     }
   } else {
@@ -481,8 +476,7 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       digestedVlans[key] += wan_port.toString()+'t';
     }
   }
-  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' +
-                               vlan_ports + cpu_port.toString() + 't';
+  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + cpu_port.toString() + 't';
 
   return digestedVlans;
 };
