@@ -276,8 +276,8 @@ $(document).ready(function() {
   });
 
   let uploadFirmware = function(obj) {
-    $('#btn-submit-upload').prop('disabled', true);
-    $('#btn-submit-icon')
+    $('.btn-submit-upload').prop('disabled', true);
+    $('.btn-submit-icon')
       .removeClass('fa-upload')
       .addClass('fa-spinner fa-pulse');
     $.ajax({
@@ -290,8 +290,8 @@ $(document).ready(function() {
       cache: false,
       timeout: 600000,
       complete: function(res) {
-        $('#btn-submit-upload').prop('disabled', false);
-        $('#btn-submit-icon')
+        $('.btn-submit-upload').prop('disabled', false);
+        $('.btn-submit-icon')
           .addClass('fa-upload')
           .removeClass('fa-spinner fa-pulse');
         displayAlertMsg(res.responseJSON);
