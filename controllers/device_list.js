@@ -295,9 +295,6 @@ deviceListController.changeUpdate = async function(req, res) {
     error = e;
   }
   if (error || !matchedDevice) {
-    let indexContent = {};
-    indexContent.type = 'danger';
-    indexContent.message = e.message;
     return res.status(500).json({success: false,
       message: 'Erro ao encontrar dispositivo'});
   }
@@ -332,9 +329,6 @@ deviceListController.changeUpdate = async function(req, res) {
   try {
     await matchedDevice.save();
   } catch (e) {
-    let indexContent = {};
-    indexContent.type = 'danger';
-    indexContent.message = e.message;
     return res.status(500).json({success: false,
       message: 'Erro ao registrar atualização'});
   }
