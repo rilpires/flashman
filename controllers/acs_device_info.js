@@ -207,7 +207,8 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user !== '');
+  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
+    && data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let splitID = req.body.acs_id.split('-');
@@ -360,7 +361,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user !== '');
+  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
+    && data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
@@ -379,12 +381,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 
   if (data.common.model) device.model = data.common.model.trim();
   if (data.common.version) device.version = data.common.version.trim();
+  device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
   if (hasPPPoE) {
-    if (device.connection_type !== 'pppoe') {
-      changes.wan.pppoe_user = data.wan.pppoe_user.trim();
-      changes.wan.pppoe_pass = data.wan.pppoe_pass.trim();
-      hasChanges = true;
-    }
     if (!device.pppoe_user) {
       device.pppoe_user = data.wan.pppoe_user.trim();
     } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.trim()) {
@@ -398,12 +396,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wan.pppoe_pass = device.pppoe_password.trim();
       hasChanges = true;
     }
+    if (data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
+    if (data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   } else {
-    if (device.connection_type !== 'dhcp') {
-      changes.wan.pppoe_user = device.pppoe_user.trim();
-      changes.wan.pppoe_pass = device.pppoe_password.trim();
-      hasChanges = true;
-    }
+    if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
+    if (data.wan.uptime) device.wan_up_time = data.wan.uptime;
   }
 
   if (typeof data.wifi2.enable !== 'undefined') {
@@ -542,10 +539,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
   if (data.common.uptime) device.sys_up_time = data.common.uptime;
-  if (hasPPPoE && data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
-  else if (!hasPPPoE && data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
-  if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
-  else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
 
   if (hasChanges) {
