@@ -724,7 +724,7 @@ $(document).ready(function() {
         '$REPLACE_NOTIFICATIONS'+
         '</div><div class="badge teal $REPLACE_COLOR_CLASS_PILL">$REPLACE_PILL_TEXT</div>'+
       '</td><td class="text-center device-pppoe-user">'+
-        device.pppoe_user+
+        (!device.pppoe_user) ? '' : device.pppoe_user +
       '</td><td class="text-center">'+
         ((device.use_tr069) ? device.serial_tr069 : device._id)+
       '</td><td class="text-center device-wan-ip">'+
