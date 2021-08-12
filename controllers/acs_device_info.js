@@ -575,9 +575,16 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
     // for every day fetch to device port forward entries
     device.last_contact_daily = Date.now();
-    acsDeviceInfoController.
-    checkPortForwardRules(device,
-      device.port_mapping.length - data.wan.port_mapping_entries);
+    let entriesDiff = 0;
+    if (device.connection_type === 'pppoe') {
+      entriesDiff = device.port_mapping.length -
+        data.wan.port_mapping_entries_ppp;
+    } else {
+      entriesDiff = device.port_mapping.length -
+        data.wan.port_mapping_entries;
+    }
+    acsDeviceInfoController
+    .checkPortForwardRules(device, entriesDiff);
   }
   await device.save();
   return res.status(200).json({success: true});
@@ -1163,6 +1170,12 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let specFields = fields.port_mapping;
+  let portMappingTemplate = '';
+  if (device.connection_type === 'pppoe') {
+    portMappingTemplate = specFields.template_ppp;
+  } else {
+    portMappingTemplate = specFields.template;
+  }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
   let query = {device: acsID}; // selecting all tasks for a given device id.
@@ -1191,7 +1204,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     for (i = (device.port_mapping.length + rulesDiffLength);
         i > device.port_mapping.length;
         i--) {
-      changeEntriesSizeTask.objectName = specFields.template + '.' + i;
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
           3000, [5000, 10000]);
@@ -1204,7 +1217,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
   } else if (rulesDiffLength > 0) {
-    changeEntriesSizeTask.objectName = specFields.template;
+    changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
@@ -1220,7 +1233,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   }
   // set entries values for respective array in the device
   for (i = 0; i < device.port_mapping.length; i++) {
-    const iterateTemplate = specFields.template + '.' + (i+1) + '.';
+    const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     updateTasks.parameterValues.push([
       iterateTemplate+specFields.enable,
       true,
@@ -1295,8 +1308,15 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [fields.port_mapping.template],
+    parameterNames: [],
   };
+  let portMappingTemplate = '';
+  if (device.connection_type === 'pppoe') {
+    portMappingTemplate = fields.port_mapping.template_ppp;
+  } else {
+    portMappingTemplate = fields.port_mapping.template;
+  }
+  task.parameterNames.push(portMappingTemplate);
   /*
     if entries sizes are not the same, no need to check
     entry by entry differences
@@ -1309,10 +1329,10 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (result.finished == true && result.task.name === 'getParameterValues') {
     let query = {_id: acsID};
-    let projection1 = fields.port_mapping.template.
-    replace('*', '1').replace('*', '1');
-    let projection2 = fields.port_mapping.template.
-    replace('*', '1').replace('*', '2');
+    let projection1 = portMappingTemplate
+    .replace('*', '1').replace('*', '1');
+    let projection2 = portMappingTemplate
+    .replace('*', '1').replace('*', '2');
     let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
                projection1 + ',' + projection2;
     let options = {
