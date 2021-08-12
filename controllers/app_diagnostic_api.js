@@ -476,6 +476,14 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         certification.requiredFlashman =
           config.certification.flashman_step_required;
       }
+
+      let checkResponse = deviceHandlers.checkSsidPrefix(
+        config, device.wifi_ssid, device.wifi_ssid_5ghz,
+        device.isSsidPrefixEnabled);
+      let prefixObj = {};
+      prefixObj.name = checkResponse.prefix;
+      prefixObj.grant = checkResponse.enablePrefix;
+
       if (!device) {
         return res.status(200).json({
           'success': true,
