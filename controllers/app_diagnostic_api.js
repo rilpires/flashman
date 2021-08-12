@@ -456,7 +456,10 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       let config = await(ConfigModel.findOne(
         {is_default: true},
         {tr069: true,
-         certification: true}).exec().catch((err) => err));
+         certification: true,
+				 ssidPrefix: true,
+				 isSsidPrefixEnabled: true,
+				 personalizationHash: true}).exec().catch((err) => err));
       if (config.tr069) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
@@ -480,6 +483,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       let checkResponse = deviceHandlers.checkSsidPrefix(
         config, device.wifi_ssid, device.wifi_ssid_5ghz,
         device.isSsidPrefixEnabled);
+
       let prefixObj = {
         name: checkResponse.prefix,
         grant: checkResponse.enablePrefix,
