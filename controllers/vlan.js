@@ -474,11 +474,6 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       digestedVlans[key] += cpu_port.toString() + 't';
     } else if (key != vlan_of_wan) {
       digestedVlans[key] += wan_port.toString()+'t';
-      if (deviceInfo['soc'] == 'realtek' &&
-        (deviceInfo['network_chip'] == '8367r' ||
-        deviceInfo['network_chip'] == '83xx')) {
-        digestedVlans[key] += ' ' + cpu_port.toString()+'t';
-      }
     }
   }
   digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + cpu_port.toString() + 't';
