@@ -596,9 +596,9 @@ $(document).ready(function() {
       </td>
     ` : '<td></td>';
     return ponSignalStatusColumn;
-  }
+  };
 
-  const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
+  const buildUpgradeCol = function(device, slaves=[]) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -616,7 +616,7 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = (isTR069) ? '<td></td>':
+    let upgradeCol = (!device.isUpgradeEnabled) ? '<td></td>':
     '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2'+
@@ -1160,7 +1160,7 @@ $(document).ready(function() {
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
-          let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let upgradeCol = buildUpgradeCol(device, slaves);
           let ponSignalCol = buildPonSignalColumn(device, res.ponConfig, grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);

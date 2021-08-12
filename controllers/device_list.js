@@ -286,59 +286,67 @@ deviceListController.index = function(req, res) {
   });
 };
 
-deviceListController.changeUpdate = function(req, res) {
-  DeviceModel.findById(req.params.id, function(err, matchedDevice) {
-    if (err || !matchedDevice) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar dispositivo'});
-    }
-    // Cast to boolean so that javascript works as intended
-    let doUpdate = req.body.do_update;
-    if (typeof req.body.do_update === 'string') {
-      doUpdate = (req.body.do_update === 'true');
-    }
-    // Reject update command to mesh slave, use command on mesh master instead
-    if (matchedDevice.mesh_master && doUpdate) {
-      return res.status(500).json({
-        success: false,
-        message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
-                 'deve ser feita a partir do CPE principal dessa rede',
-      });
-    }
-    matchedDevice.do_update = doUpdate;
-    if (doUpdate) {
-      matchedDevice.do_update_status = 0; // waiting
-      matchedDevice.release = req.params.release.trim();
-      messaging.sendUpdateMessage(matchedDevice);
-      // Set mesh master's remaining updates field to keep track of network
-      // update progress. This is only a helper value for the frontend.
-      if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
-        let slaveCount = matchedDevice.mesh_slaves.length;
-        matchedDevice.do_update_mesh_remaining = slaveCount + 1;
-      }
-    } else {
-      matchedDevice.do_update_status = 1; // success
-      meshHandlers.syncUpdateCancel(matchedDevice);
-    }
-    matchedDevice.save(function(err) {
-      if (err) {
-        let indexContent = {};
-        indexContent.type = 'danger';
-        indexContent.message = err.message;
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao registrar atualização'});
-      }
-
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-      res.status(200).json({'success': true});
-
-      // Start ack timeout
-      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
+deviceListController.changeUpdate = async function(req, res) {
+  let matchedDevice;
+  let error;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id);
+  } catch (e) {
+    error = e;
+  }
+  if (error || !matchedDevice) {
+    return res.status(500).json({success: false,
+      message: 'Erro ao encontrar dispositivo'});
+  }
+  // Cast to boolean so that javascript works as intended
+  let doUpdate = req.body.do_update;
+  if (typeof req.body.do_update === 'string') {
+    doUpdate = (req.body.do_update === 'true');
+  }
+  // Reject update command to mesh slave, use command on mesh master instead
+  if (matchedDevice.mesh_master && doUpdate) {
+    return res.status(500).json({
+      success: false,
+      message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
+               'deve ser feita a partir do CPE principal dessa rede',
     });
-  });
+  }
+  matchedDevice.do_update = doUpdate;
+  if (doUpdate) {
+    matchedDevice.do_update_status = 0; // waiting
+    matchedDevice.release = req.params.release.trim();
+    messaging.sendUpdateMessage(matchedDevice);
+    // Set mesh master's remaining updates field to keep track of network
+    // update progress. This is only a helper value for the frontend.
+    if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+      let slaveCount = matchedDevice.mesh_slaves.length;
+      matchedDevice.do_update_mesh_remaining = slaveCount + 1;
+    }
+  } else {
+    matchedDevice.do_update_status = 1; // success
+    meshHandlers.syncUpdateCancel(matchedDevice);
+  }
+  try {
+    await matchedDevice.save();
+  } catch (e) {
+    return res.status(500).json({success: false,
+      message: 'Erro ao registrar atualização'});
+  }
+
+  if (matchedDevice.use_tr069 && doUpdate) {
+    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+    if (response.success) {
+      return res.status(200).json(response);
+    } else {
+      return res.status(500).json(response);
+    }
+  } else {
+    mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+  }
+  res.status(200).json({'success': true});
+
+  // Start ack timeout
+  deviceHandlers.timeoutUpdateAck(matchedDevice._id);
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {
@@ -708,8 +716,24 @@ deviceListController.searchDeviceReg = async function(req, res) {
     .then(function(releases) {
       let enrichDevice = function(device) {
         const model = device.model.replace('N/', '');
-        const devReleases = releases.filter(
+        let devReleases = releases.filter(
           (release) => release.model === model);
+        if (device.use_tr069) {
+          /* get allowed version of upgrade by
+            current device version  */
+          let allowedVersions = DeviceVersion
+            .getFirmwaresUpgradesByVersion(model,
+              device.installed_release);
+          /* filter by allowed version that
+            current version can jump to */
+          devReleases = devReleases.filter(
+            (release) => allowedVersions.includes(release.id));
+          /* for tr069 devices enable "btn-group device-update"
+            if have feature support for the model is granted */
+          device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+        } else {
+          device.isUpgradeEnabled = true;
+        }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 
