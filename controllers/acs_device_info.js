@@ -1,7 +1,9 @@
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const FirmwaresAPI = require('./external-genieacs/firmwares-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const FirmwareModel = require('../models/firmware');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
@@ -533,6 +535,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.common.version && data.common.version !== device.installed_release) {
     device.installed_release = data.common.version;
   }
+  if (device.installed_release === device.release) {
+    device.do_update = false;
+    device.do_update_status = 1;
+  }
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
   if (data.common.uptime) device.sys_up_time = data.common.uptime;
@@ -619,7 +625,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -663,7 +668,6 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -720,7 +724,6 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -785,7 +788,6 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -841,7 +843,6 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let options = {
     method: 'GET',
     hostname: 'localhost',
-    // hostname: '207.246.65.243',
     port: 7557,
     path: encodeURI(path),
   };
@@ -1324,7 +1325,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
     let options = {
       method: 'GET',
       hostname: 'localhost',
-      // hostname: '207.246.65.243',
       port: 7557,
       path: encodeURI(path),
     };
@@ -1516,6 +1516,57 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     console.error('Error in license report: ' + err);
     return {success: false, message: 'Erro na requisição'};
   }
+};
+
+acsDeviceInfoController.addFirmwareInACS = async function(firmware) {
+  let binData;
+  try {
+    binData = await FirmwaresAPI.receiveFile(firmware.filename);
+  } catch (e) {
+    return false;
+  }
+  try {
+    await FirmwaresAPI.uploadToGenie(binData, firmware);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
+
+acsDeviceInfoController.delFirmwareInACS = async function(filename) {
+  await FirmwaresAPI.delFirmwareInGenie(filename);
+};
+
+acsDeviceInfoController.upgradeFirmware = async function(device) {
+  let firmwares;
+  // verify existence in nbi through 7557/files/
+  firmwares = await FirmwaresAPI.getFirmwaresFromGenie();
+
+  let firmware = firmwares.find((f) => f.metadata.version == device.release);
+  // if not exists, then add
+  if (!firmware) {
+    firmware = await FirmwareModel.findOne({
+      model: device.model,
+      release: device.release,
+      cpe_type: 'tr069',
+    });
+    if (!firmware) {
+      return {success: false, message: 'Não existe firmware com essa versão'};
+    } else {
+      let response = await acsDeviceInfoController.addFirmwareInACS(firmware);
+      if (!response) {
+        return {success: false, message: e.message};
+      }
+    }
+  }
+  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  let response = '';
+  try {
+    response = await FirmwaresAPI.sendUpgradeFirmware(firmware, device);
+  } catch (e) {
+    return {success: false, message: e.message};
+  }
+  return {success: true, message: response};
 };
 
 module.exports = acsDeviceInfoController;

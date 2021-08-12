@@ -133,7 +133,7 @@ if (Promise.allSettled === undefined) {
  defined by nodejs api. 'body' is the content of the request (should be a
  string) and it is up to the caller to set the correct header in case body is
  used. */
-const request = (options, body) => {
+genie.request = (options, body) => {
   return new Promise((resolve, reject) => {
     let req = http.request(options, (res) => {
       res.setEncoding('utf8');
@@ -142,7 +142,11 @@ const request = (options, body) => {
       res.on('end', () => resolve(res));
     });
     req.on('error', reject);
-    if (body !== undefined && body.constructor === String) req.write(body);
+    if (body !== undefined &&
+      (body.constructor === String ||
+       body.constructor === Buffer)) {
+      req.write(body);
+    }
     req.end();
   });
 };
@@ -170,7 +174,7 @@ genie.getFromCollection = async function(collection, query, projection) {
   let urlParameters = 'query='+encodeURIComponent(JSON.stringify(query));
   if (projection) urlParameters += '&projection='+projection;
 
-  let response = await request({
+  let response = await genie.request({
     method: 'GET', hostname: GENIEHOST, port: GENIEPORT,
     path: `/${collection}?${urlParameters}`,
   });
@@ -198,7 +202,7 @@ const checkPreset = function(preset) {
  genie json response parsed to javascript object. may throw unhandled errors */
 genie.putProvision = async function(script) {
   script = script.slice(0, -1); // Remove EOF
-  return request({
+  return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
     path: '/provisions/flashman',
     headers: {
@@ -214,7 +218,7 @@ genie.putPreset = async function(preset) {
   if (!checkPreset(preset)) throw new Error('preset is invalid.');
 
   let presetjson = JSON.stringify(preset);
-  return request({
+  return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
     path: `/presets/${encodeURIComponent(preset._id)}`,
     headers: {'Content-Type': 'application/json', 'Content-Length':
@@ -228,7 +232,7 @@ genie.putPreset = async function(preset) {
 const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   // console.log("Posting a task.")
-  return request({
+  return genie.request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
     path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
      (shouldRequestConnection ? '&connection_request' : ''),
@@ -240,7 +244,7 @@ const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
 /* simple request to delete a task, by its id, in GenieACS and get a promise
  the resolves to the request response or rejects to request error. */
 const deleteTask = function(taskid) {
-  return request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path:
+  return genie.request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path:
    '/tasks/'+taskid});
 };
 
@@ -252,7 +256,7 @@ let taskParameterIdFromType = {
   refreshObject: 'objectName',
   addObject: 'objectName',
   deleteObject: 'objectName',
-  download: 'file',
+  download: 'fileName',
   reboot: null,
 };
 
