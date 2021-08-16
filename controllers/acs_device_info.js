@@ -401,6 +401,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else {
     if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
     if (data.wan.uptime) device.wan_up_time = data.wan.uptime;
+    device.pppoe_user = '';
+    device.pppoe_password = '';
   }
 
   if (typeof data.wifi2.enable !== 'undefined') {
