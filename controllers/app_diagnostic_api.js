@@ -483,7 +483,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       let prefixObj;
       let checkResponse;
       if (typeof device === 'undefined') {
-        return;
+        return res.status(404).json({message: 'Dispositivo não encontrado'});
       } else {
         checkResponse = deviceHandlers.checkSsidPrefix(
           config, device.wifi_ssid, device.wifi_ssid_5ghz,
