@@ -96,6 +96,7 @@ const updateGenieRepo = function(ref) {
   let checkout = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
+  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
@@ -105,7 +106,10 @@ const updateGenieRepo = function(ref) {
           if (err) return reject();
           exec(build, (err, stdout, stderr) => {
             if (err) return reject();
-            return resolve();
+            exec(reload, (err, stdout, stderr) => {
+              if (err) return reject();
+              return resolve();
+            });
           });
         });
       });
