@@ -252,7 +252,12 @@ const getNokiaFields = function() {
 
 const getStavixFields = function() {
   let fields = getDefaultFields();
-  fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  /* Removed due to high json payload in cwmp request from provision.js.
+  This field make the json request in syncDeviceData to big,
+  around 97kB of payload in pppoe and 116kb of payload in ipoe/dhcp.
+  The default limit is 100KB. In the large scale perspective of CPE
+  administration, its easily could consume up to 100MB/min of bandwidth
+  fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile'; */
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
