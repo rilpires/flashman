@@ -125,6 +125,18 @@ const tr069Devices = {
     },
     wifi2_extended_channels_support: true,
   },
+  'WS5200-21': {
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
 };
 
 const flashboxFirmwareDevices = {
