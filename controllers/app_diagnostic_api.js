@@ -445,6 +445,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
+      let tr069Info = {url: '', interval: 0};
+      
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
@@ -452,7 +454,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-
+      
       if (!device) {
         return res.status(200).json({
           'success': true,
@@ -475,7 +477,6 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         ).catch((err) => err)
       );
 
-      let tr069Info = {url: '', interval: 0};
       if (config.tr069) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
@@ -554,7 +555,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'prefix': prefixObj,
         });
       }
-      
+
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
