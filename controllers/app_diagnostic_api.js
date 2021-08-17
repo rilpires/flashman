@@ -445,6 +445,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
+      let tr069Info = {url: '', interval: 0};
+      
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
@@ -452,16 +454,36 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      let tr069Info = {url: '', interval: 0};
-      let config = await(ConfigModel.findOne(
-        {is_default: true},
-        {tr069: true,
-         certification: true}).exec().catch((err) => err));
+      
+      if (!device) {
+        return res.status(200).json({
+          'success': true,
+          'isRegister': false,
+          'isOnline': false,
+          'tr069Info': tr069Info,
+          'certification': certification,
+        });
+      }
+
+      let config = await(
+        ConfigModel.findOne({is_default: true},
+          {
+            tr069: true,
+            certification: true,
+            ssidPrefix: true,
+            isSsidPrefixEnabled: true,
+            personalizationHash: true
+          }
+        ).catch((err) => err)
+      );
+
       if (config.tr069) {
         tr069Info.url = config.tr069.server_url;
         tr069Info.interval = parseInt(config.tr069.inform_interval/1000);
       }
-      let certification = { // Structure with camel case format
+
+      // Structure with camel case format
+      let certification = {
         requiredWan: true,
         requiredIpv4: true,
         requiredIpv6: false,
@@ -476,15 +498,25 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         certification.requiredFlashman =
           config.certification.flashman_step_required;
       }
-      if (!device) {
-        return res.status(200).json({
-          'success': true,
-          'isRegister': false,
-          'isOnline': false,
-          'tr069Info': tr069Info,
-          'certification': certification,
-        });
-      } else if (req.body.isOnu) {
+
+      let checkResponse = deviceHandlers.checkSsidPrefix(
+        config, device.wifi_ssid,
+        device.isSsidPrefixEnabled,
+        device.wifi_ssid_5ghz,
+      );
+
+      let prefixObj = {
+        name: checkResponse.prefix,
+        grant: checkResponse.enablePrefix,
+      };
+
+      let permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable,
+        device.model,
+      );
+
+      if (req.body.isOnu) {
         // Save passwords sent from app
         if (req.body.pppoePass) {
           device.pppoe_password = req.body.pppoePass;
@@ -498,18 +530,16 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         await device.save();
         let onuConfig = {};
         if (config.tr069) {
-          onuConfig.onuLogin = (config.tr069.web_login) ?
-                               config.tr069.web_login : '';
-          onuConfig.onuPassword = (config.tr069.web_password) ?
-                                  config.tr069.web_password : '';
-          onuConfig.onuUserLogin = (config.tr069.web_login_user) ?
-                                   config.tr069.web_login_user : '';
-          onuConfig.onuUserPassword = (config.tr069.web_password_user) ?
-                                      config.tr069.web_password_user : '';
+          onuConfig.onuLogin = config.tr069.web_login || '';
+          onuConfig.onuPassword = config.tr069.web_password || '';
+          onuConfig.onuUserLogin = config.tr069.web_login_user || '';
+          onuConfig.onuUserPassword = config.tr069.web_password_user || '';
           onuConfig.onuRemote = config.tr069.remote_access;
           onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
-          onuConfig.onuPonThresholdCritical = config.tr069.pon_signal_threshold_critical;
-          onuConfig.onuPonThresholdCriticalHigh = config.tr069.pon_signal_threshold_critical_high;
+          onuConfig.onuPonThresholdCritical =
+            config.tr069.pon_signal_threshold_critical;
+          onuConfig.onuPonThresholdCriticalHigh = 
+            config.tr069.pon_signal_threshold_critical_high;
         }
         return res.status(200).json({
           'success': true,
@@ -522,16 +552,13 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'tr069Info': tr069Info,
           'onuConfig': onuConfig,
           'certification': certification,
+          'prefix': prefixObj,
         });
       }
+
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
-      let permissions = DeviceVersion.findByVersion(
-        device.version,
-        device.wifi_is_5ghz_capable,
-        device.model,
-      );
       return res.status(200).json({
         'success': true,
         'isRegister': true,
@@ -543,6 +570,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'mesh_slaves': device.mesh_slaves,
         },
         'certification': certification,
+        'prefix': prefixObj,
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
