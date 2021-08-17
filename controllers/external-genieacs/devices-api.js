@@ -44,12 +44,14 @@ const convertWifiMode = function(mode, oui, model) {
       if (ouiModelStr === 'IGD') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
+      else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
       else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else if (ouiModelStr === 'GONUAC001') return 'bgn';
@@ -57,6 +59,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else if (ouiModelStr === 'GONUAC001') return 'an';
@@ -64,6 +67,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else if (ouiModelStr === 'GONUAC001') return 'anac';
