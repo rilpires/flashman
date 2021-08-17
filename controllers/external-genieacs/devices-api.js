@@ -210,6 +210,8 @@ const getHuaweiFields = function(model) {
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
       fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
       fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       break;
     case 'Huawei': // Huawei WS5200
       fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
@@ -221,10 +223,10 @@ const getHuaweiFields = function(model) {
       fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
       fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
       fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       break;
   }
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
   return fields;
 };
 
