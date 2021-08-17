@@ -501,8 +501,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
 
       let checkResponse = deviceHandlers.checkSsidPrefix(
         config, device.wifi_ssid,
-        device.isSsidPrefixEnabled,
         device.wifi_ssid_5ghz,
+        device.isSsidPrefixEnabled,
       );
 
       let prefixObj = {
