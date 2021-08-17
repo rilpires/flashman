@@ -126,6 +126,10 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'WS5200-21': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.9(C506)': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: false,
@@ -134,6 +138,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
