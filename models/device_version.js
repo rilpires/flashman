@@ -146,7 +146,7 @@ const flashboxFirmwareDevices = {
   },
   'ACTIONRF1200V1': {
     'vlan_support': true,
-    'lan_ports': [4, 3, 2, 1], 
+    'lan_ports': [3, 2, 1], 
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -215,7 +215,7 @@ const flashboxFirmwareDevices = {
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'ramips',
-    'network_chip': 'mt7628',
+    'network_chip': 'mt7620',
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': true,
@@ -500,7 +500,7 @@ const flashboxFirmwareDevices = {
   },
   'GWR1200ACV1': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -516,7 +516,7 @@ const flashboxFirmwareDevices = {
   },
   'GWR1200ACV2': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -564,7 +564,7 @@ const flashboxFirmwareDevices = {
   },
   'MAXLINKAC1200GV1': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
