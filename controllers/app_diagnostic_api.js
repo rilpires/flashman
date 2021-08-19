@@ -383,7 +383,7 @@ diagAppAPIController.removeMeshSlave = async function(req, res) {
   }
 };
 
-diagAppAPIController.receiveCertification = async function(req, res) {
+diagAppAPIController.receiveCertification = async (req, res) => {
   try {
     let result = await UserModel.find({'name': req.body.user});
     if (result.length === 0) {
