@@ -62,7 +62,7 @@ const convertMesh = function(mesh) {
   };
 };
 
-const pushCertification = function(arr, c, finished) {
+const pushCertification = (arr, c, finished) => {
   arr.push({
     finished: finished,
     mac: c.mac,
@@ -98,7 +98,7 @@ const pushCertification = function(arr, c, finished) {
   });
 };
 
-const generateSessionCredential = async function(user) {
+const generateSessionCredential = async (user) => {
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
