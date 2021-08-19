@@ -111,7 +111,11 @@ const generateSessionCredential = async (user) => {
   let buff = Buffer.from(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
   let encryptedB64Json = await keyHandlers.encryptMsg(b64Json);
-  let session = {credential: b64Json, sign: encryptedB64Json};
+  let session = {
+    credential: b64Json,
+    sign: encryptedB64Json,
+    pppoe: config.pppoePassLength,
+  };
   // Add onu config, if present
   let config = await ConfigModel.findOne({is_default: true}, 'tr069')
     .exec().catch((err) => err);
