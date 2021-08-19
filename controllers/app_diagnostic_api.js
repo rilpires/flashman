@@ -87,13 +87,7 @@ const pushCertification = function(arr, c, finished) {
     wifiConfig: convertWifi(c.wifiConfig),
     didConfigureMesh: (c.didMesh) ? c.didMesh : false,
     mesh: convertMesh(c.mesh),
-    didConfigureContract: (c.didContract) ? c.didContract : false,
-    didConfigureObservation: (c.didObservation) ? c.didObservation : false,
-    contract: (c.contract) ? c.contract : '',
-    observations: (c.observations) ? c.observations : '',
-    cancelReason: (c.reason) ? c.reason : '',
-    latitude: (c.latitude) ? c.latitude : 0,
-    longitude: (c.longitude) ? c.longitude : 0,
+    pppoe: config.pppoePassLength || '',
   });
 };
 
