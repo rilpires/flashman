@@ -100,8 +100,6 @@ const pushCertification = (arr, c, finished) => {
 
 const generateSessionCredential = async (user) => {
   let sessionExpirationDate = new Date().getTime();
-  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
   // This JSON format is dictated by auth inside firmware
@@ -116,8 +114,9 @@ const generateSessionCredential = async (user) => {
   let session = {
     credential: b64Json,
     sign: encryptedB64Json,
-    pppoe: config.pppoePassLength,
   };
+  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err);
   // Add onu config, if present
   if (config && config.tr069) {
     let trConf = config.tr069;
@@ -126,6 +125,7 @@ const generateSessionCredential = async (user) => {
     session.onuUserLogin = trConf.web_login_user || '';
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
+    session.pppoePass = config.pppoePassLength || '';
   }
   return session;
 };
