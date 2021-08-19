@@ -66,27 +66,34 @@ const pushCertification = function(arr, c, finished) {
   arr.push({
     finished: finished,
     mac: c.mac,
-    onuMac: (c.onuMac) ? c.onuMac : '',
-    isOnu: (c.isONU) ? c.isONU : false,
-    routerModel: (c.routerModel) ? c.routerModel : '',
-    routerVersion: (c.routerVersion) ? c.routerVersion : '',
-    routerRelease: (c.routerRelease) ? c.routerRelease : '',
-    localEpochTimestamp: (c.timestamp) ? c.timestamp : 0,
-    didDiagnose: (c.didDiagnose) ? c.didDiagnose : false,
+    onuMac: c.onuMac || '',
+    isOnu: c.isONU || false,
+    routerModel: c.routerModel || '',
+    routerVersion: c.routerVersion || '',
+    routerRelease: c.routerRelease || '',
+    localEpochTimestamp: c.timestamp || 0,
+    didDiagnose: c.didDiagnose || false,
     diagnostic: convertDiagnostic(c.diagnostic),
-    didConfigureWan: (c.didWan) ? c.didWan : false,
-    wanConfigOnu: (c.wanConfigOnu) ? c.wanConfigOnu : '',
-    didConfigureTR069: (c.didTR069) ? c.didTR069 : false,
-    routerConnType: (c.routerConnType) ? c.routerConnType : '',
-    pppoeUser: (c.pppoeUser) ? c.pppoeUser : '',
-    bridgeIP: (c.bridgeIP) ? c.bridgeIP : '',
-    bridgeGateway: (c.bridgeGateway) ? c.bridgeGateway : '',
-    bridgeDNS: (c.bridgeDNS) ? c.bridgeDNS : '',
-    bridgeSwitch: (c.bridgeSwitch) ? c.bridgeSwitch : true,
-    didConfigureWifi: (c.didWifi) ? c.didWifi : false,
+    didConfigureWan: c.didWan || false,
+    wanConfigOnu: c.wanConfigOnu || '',
+    didConfigureTR069: c.didTR069 || false,
+    routerConnType: c.routerConnType || '',
+    pppoeUser: c.pppoeUser || '',
+    bridgeIP: c.bridgeIP || '',
+    bridgeGateway: c.bridgeGateway || '',
+    bridgeDNS: c.bridgeDNS || '',
+    bridgeSwitch: c.bridgeSwitch || true,
+    didConfigureWifi: c.didWifi || false,
     wifiConfig: convertWifi(c.wifiConfig),
-    didConfigureMesh: (c.didMesh) ? c.didMesh : false,
+    didConfigureMesh: c.didMesh || false,
     mesh: convertMesh(c.mesh),
+    didConfigureContract: c.didContract || false,
+    didConfigureObservation: c.didObservation || false,
+    contract: c.contract || '',
+    observations: c.observations || '',
+    cancelReason: c.reason || '',
+    latitude: c.latitude || 0,
+    longitude: c.longitude || 0,
     pppoe: config.pppoePassLength || '',
   });
 };
@@ -110,11 +117,10 @@ const generateSessionCredential = async function(user) {
     .exec().catch((err) => err);
   if (config && config.tr069) {
     let trConf = config.tr069;
-    session.onuLogin = (trConf.web_login) ? trConf.web_login : '';
-    session.onuPassword = (trConf.web_password) ? trConf.web_password : '';
-    session.onuUserLogin = (trConf.web_login_user) ? trConf.web_login_user : '';
-    session.onuUserPassword = (trConf.web_password_user) ?
-                              trConf.web_password_user : '';
+    session.onuLogin = trConf.web_login || '';
+    session.onuPassword = trConf.web_password || '';
+    session.onuUserLogin = trConf.web_login_user || '';
+    session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
   }
   return session;
