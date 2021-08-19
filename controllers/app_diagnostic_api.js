@@ -120,20 +120,26 @@ const generateSessionCredential = async function(user) {
   return session;
 };
 
-diagAppAPIController.sessionLogin = function(req, res) {
-  UserModel.findOne({name: req.body.user}, function(err, user) {
+diagAppAPIController.sessionLogin = (req, res) => {
+  UserModel.findOne({name: req.body.user}, (err, user) => {
     if (err || !user) {
-      return res.status(404).json({success: false,
-                                   message: 'Usuário não encontrado'});
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
     }
-    Role.findOne({name: user.role}, async function(err, role) {
+    Role.findOne({name: user.role }, async (err, role) => {
       if (err || (!user.is_superuser && !role)) {
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao encontrar permissões'});
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao encontrar permissões'
+        });
       }
       if (!user.is_superuser && !role.grantDiagAppAccess) {
-        return res.status(403).json({success: false,
-                                     message: 'Permissão negada'});
+        return res.status(403).json({
+          success: false,
+          message: 'Permissão negada'
+        });
       }
       let session = await generateSessionCredential(user.name);
       session.success = true;
