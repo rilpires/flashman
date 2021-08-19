@@ -100,6 +100,8 @@ const pushCertification = (arr, c, finished) => {
 
 const generateSessionCredential = async (user) => {
   let sessionExpirationDate = new Date().getTime();
+  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
+    .exec().catch((err) => err);
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
   // This JSON format is dictated by auth inside firmware
@@ -117,8 +119,6 @@ const generateSessionCredential = async (user) => {
     pppoe: config.pppoePassLength,
   };
   // Add onu config, if present
-  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
   if (config && config.tr069) {
     let trConf = config.tr069;
     session.onuLogin = trConf.web_login || '';
