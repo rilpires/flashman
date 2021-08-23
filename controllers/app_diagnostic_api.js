@@ -98,7 +98,7 @@ const pushCertification = (arr, c, finished) => {
 };
 
 const generateSessionCredential = async (user) => {
-  let config = ConfigModel.findOne(
+  let config = await ConfigModel.findOne(
     {is_default: true},
     {tr069: 1, pppoePassLength: 1},
   ).catch((err) => err);
