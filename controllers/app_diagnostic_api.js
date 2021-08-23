@@ -63,6 +63,10 @@ const convertMesh = function(mesh) {
 };
 
 const pushCertification = (arr, c, finished) => {
+  let config = ConfigModel.findOne(
+    {is_default: true},
+    {tr069: 1, pppoePassLength: 1},
+  ).catch((err) => err);
   arr.push({
     finished: finished,
     mac: c.mac,
@@ -99,6 +103,10 @@ const pushCertification = (arr, c, finished) => {
 };
 
 const generateSessionCredential = async (user) => {
+  let config = ConfigModel.findOne(
+    {is_default: true},
+    {tr069: 1, pppoePassLength: 1},
+  ).catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -114,9 +122,8 @@ const generateSessionCredential = async (user) => {
   let session = {
     credential: b64Json,
     sign: encryptedB64Json,
+    pppoePass: config.pppoePassLength || '',
   };
-  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
   // Add onu config, if present
   if (config && config.tr069) {
     let trConf = config.tr069;
@@ -125,7 +132,6 @@ const generateSessionCredential = async (user) => {
     session.onuUserLogin = trConf.web_login_user || '';
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
-    session.pppoePass = config.pppoePassLength || '';
   }
   return session;
 };
