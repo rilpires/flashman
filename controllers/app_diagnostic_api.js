@@ -63,10 +63,6 @@ const convertMesh = function(mesh) {
 };
 
 const pushCertification = (arr, c, finished) => {
-  let config = ConfigModel.findOne(
-    {is_default: true},
-    {tr069: 1, pppoePassLength: 1},
-  ).catch((err) => err);
   arr.push({
     finished: finished,
     mac: c.mac,
@@ -98,7 +94,6 @@ const pushCertification = (arr, c, finished) => {
     cancelReason: c.reason || '',
     latitude: c.latitude || 0,
     longitude: c.longitude || 0,
-    pppoe: config.pppoePassLength || '',
   });
 };
 
