@@ -117,7 +117,7 @@ const generateSessionCredential = async (user) => {
   let session = {
     credential: b64Json,
     sign: encryptedB64Json,
-    pppoePass: config.pppoePassLength || '',
+    pppoePassLength: config.pppoePassLength || '',
   };
   // Add onu config, if present
   if (config && config.tr069) {
