@@ -15,7 +15,8 @@
         "jest"
     ],
     "rules": {
-       "no-undef": "off",
-       "no-invalid-this": "off"
+       "no-undef": 2,
+       "no-invalid-this": "off",
+       "dot-location": ["error", "property"]
     }
 }

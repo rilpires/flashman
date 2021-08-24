@@ -5,6 +5,12 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
+      'V1.1.20P1T18': ['V1.1.20P3N3'],
+      'V1.1.20P3N3': [],
+    },
     port_forward_opts: {
       'V1.1.20P1T18': {
        simpleSymmetric: true,
@@ -33,10 +39,16 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: true,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
+      'V3.0.0C6_MUL': [],
+    },
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -59,9 +71,14 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: false,
+      firmware_upgrade: true,
     },
   },
   'GONUAC001': {
+    vendor: 'Greatek',
+    versions_upgrade: {
+      'V1.2.3': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -70,10 +87,15 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE46343AFIA89': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -82,10 +104,15 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V3R017C10S100': [],
+    },
     feature_support: {
       port_forward: false,
       pon_signal: true,
@@ -94,6 +121,24 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'WS5200-21': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.9(C506)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
     },
     wifi2_extended_channels_support: true,
   },
@@ -1607,6 +1652,45 @@ DeviceVersion.getVlanCompatible = function() {
 
 DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
+};
+
+DeviceVersion.getTr069ModelsAndVersions = function() {
+  let ret = {};
+  // only send models that support firmware upgrade
+  ret.models = Object.entries(tr069Devices)
+    .filter((dev) => dev[1].feature_support.firmware_upgrade)
+    .map((dev) => dev[0]);
+  ret.versions = {};
+  ret.models.forEach((m) => {
+    ret.versions[m] = Object.keys(tr069Devices[m].versions_upgrade);
+  });
+  return ret;
+};
+
+DeviceVersion.getVendorByModel = function(model) {
+  let ret = '';
+  if (tr069Devices[model]) {
+    ret = tr069Devices[model].vendor;
+  }
+  return ret;
+};
+
+DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
+  let versions = [];
+  if (tr069Devices[model]) {
+    if (Array.isArray(tr069Devices[model].versions_upgrade[version])) {
+      versions = tr069Devices[model].versions_upgrade[version];
+    }
+  }
+  return versions;
+};
+
+DeviceVersion.isUpgradeSupport = function(model) {
+  let upgradeAvailable = false;
+  if (tr069Devices[model]) {
+    upgradeAvailable = tr069Devices[model].feature_support.firmware_upgrade;
+  }
+  return upgradeAvailable;
 };
 
 module.exports = DeviceVersion;
