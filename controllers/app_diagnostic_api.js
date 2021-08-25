@@ -450,14 +450,14 @@ diagAppAPIController.receiveCertification = async (req, res) => {
   }
 };
 
-diagAppAPIController.verifyFlashman = async function(req, res) {
+diagAppAPIController.verifyFlashman = async (req, res) => {
   try {
     // Make sure we have a mac to verify in database
     if (req.body.mac) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       let tr069Info = {url: '', interval: 0};
-      
+
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
@@ -465,7 +465,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      
+
       if (!device) {
         return res.status(200).json({
           'success': true,
@@ -483,8 +483,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
             certification: true,
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
-            personalizationHash: true
-          }
+            personalizationHash: true,
+          },
         ).catch((err) => err)
       );
 
@@ -549,7 +549,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
           onuConfig.onuPonThresholdCritical =
             config.tr069.pon_signal_threshold_critical;
-          onuConfig.onuPonThresholdCriticalHigh = 
+          onuConfig.onuPonThresholdCriticalHigh =
             config.tr069.pon_signal_threshold_critical_high;
         }
         return res.status(200).json({
