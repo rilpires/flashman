@@ -495,15 +495,15 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     if (Object.values(statusTags).some((r) => r.test(tag))) {
     // We need more than one query for each controller protocol.
 
-      // Some functions already had 'mqttClients' built in scope, so they pass it 
-      // as argument. For the functions that don't, they can keep that argument 
-      // undefined, in which case we built it here.
+      // Some functions already had 'mqttClients' built in scope, so they pass
+      // it as argument. For the functions that don't, they can keep that
+      // argument undefined, in which case we built it here.
       if (mqttClients === undefined) {
         mqttClients = mqtt.getConnectedClients();
       }
-      let currentTimestamp = currentTimestamp || Date.now();
+      currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      let tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
