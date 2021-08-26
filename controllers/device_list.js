@@ -171,8 +171,8 @@ const getOnlyTR069Configs = async function() {
 // device status (to give it a color). Will return an Error Object in case
 // of any error.
 const buildTr069Thresholds = async function (currentTimestamp) {
-  // in some places this function is called, the current time is not taken.
-  if (currentTimestamp === undefined) currentTimestamp = Date.now();
+  // in some places this function is called, the current time was not taken.
+  currentTimestamp = currentTimestamp || Date.now();
 
   // getting user configured tr069 parameters.
   let tr069Config = await getOnlyTR069Configs();
@@ -646,7 +646,7 @@ deviceListController.getDevices = async function (req, res) {
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
-     queryContents);
+      queryContents);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
@@ -726,7 +726,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
-     queryContents, mqttClientsArray, currentTimestamp, tr069Times);
+      queryContents, mqttClientsArray, currentTimestamp, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
