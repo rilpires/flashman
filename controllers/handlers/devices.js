@@ -165,6 +165,11 @@ const cleanAndCheckSsid = function(prefix, ssid) {
   if (typeof prefix !== 'undefined') {
     strPrefix = prefix;
   }
+  if (typeof ssid === 'undefined') {
+    // If no SSID provided it will not be this call
+    // that will decide prefix, so return true
+    return {enablePrefix: true, ssid: ''};
+  }
   const escapedSsidPrefix = util.escapeRegExp(strPrefix);
   const rePrefix = new RegExp('^' + escapedSsidPrefix + '.*$', 'g');
   // Test if incoming SSID already have the prefix
