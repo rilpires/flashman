@@ -15,7 +15,6 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
-const updateController = require('./update_flashman.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 
@@ -2806,23 +2805,30 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      matchedConfig.traps_callbacks.device_crud.url = req.body.url;
-      if ('user' in req.body && 'secret' in req.body) {
-        matchedConfig.traps_callbacks.device_crud.user = req.body.user;
-        matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
-      }
-      matchedConfig.save((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao gravar dados na base',
-          });
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.device_crud.user = req.body.user;
+          matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
         }
-        return res.status(200).json({
-          success: true,
-          message: 'Endereço salvo com sucesso',
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao gravar dados na base',
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: 'Endereço salvo com sucesso',
+          });
         });
-      });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Formato invalido',
+        });
+      }
     }
   });
 };
