@@ -622,6 +622,9 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       if (content.pppoe_password) {
         device.pppoe_password = content.pppoe_password.trim();
       }
+      if (content.connection_type) {
+        device.connection_type = content.connection_type;
+      }
       // Apply changes to database and reply
       await device.save();
       return res.status(200).json({'success': true});
