@@ -148,13 +148,15 @@ const getOnlineCountMesh = function(query, lastHour) {
 };
 
 // getting values for inform configurations for tr069 from Config.
-const getOnlyTR069Configs = async function(errormsg) {
+const getOnlyTR069Configs = async function() {
   let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err); // in case of error, return error in await.
+    .lean().exec()
+    .catch((err) => err); // in case of error, return error in await.
   // it's very unlikely that we will incur in any error but,
   if (configsWithTr069.constructor === Error) { // if we returned an error.
     // print error message.
-    console.log(errormsg, '\nUsing default values for tr069 config.');
+    console.log('Error when getting user config from database.'+
+      '\nUsing default values for tr069 config.');
     return { // build a default configuration.
       inform_interval: 10*60*1000,
       offline_threshold: 1,
@@ -164,6 +166,25 @@ const getOnlyTR069Configs = async function(errormsg) {
     return configsWithTr069.tr069; // get only tr069 config inside the document.
   }
 };
+
+// returns an object containing the tr069 time threshold used when defining
+// device status (to give it a color). Will return an Error Object in case
+// of any error.
+const buildTr069Thresholds = async function (currentTimestamp) {
+  // in some places this function is called, the current time is not taken.
+  if (currentTimestamp === undefined) currentTimestamp = Date.now();
+
+  // getting user configured tr069 parameters.
+  let tr069Config = await getOnlyTR069Configs();
+  return { // thresholds for tr069 status classification.
+    // time when devices are considered in recovery for tr069.
+    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.recovery_threshold)),
+    // time when devices are considered offline for tr069.
+    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.offline_threshold)),
+  };
+}
 
 // Main page
 deviceListController.index = function(req, res) {
@@ -440,7 +461,7 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
 };
 
 deviceListController.complexSearchDeviceQuery = async function(queryContents,
- mqttClients, lastHour, tr069Times) {
+ mqttClients, currentTimestamp, tr069Times) {
   let finalQuery = {};
   let finalQueryArray = [];
 
@@ -460,37 +481,29 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
-  // won't make an exact match, but the other tags need to be exact.
-  let matchedConfig = await Config.findOne({is_default: true});
+  // won't make an exact match, but the other tags need to be exact. This will
+  // help with "Array.some((r) => r.test(tag))".
+
+  let matchedConfig; // will be assigned a value if it reaches a place where
+  // it's being used.
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
 
+    // if tag affects both flashboxes and ONUs.
     if (Object.values(statusTags).some((r) => r.test(tag))) {
-    // if we need more than one query for each controller protocol.
+    // We need more than one query for each controller protocol.
 
-      /* if arguments are undefined, we define them only if we are going to use
- them. */
+      // Some functions already had 'mqttClients' built in scope, so they pass it 
+      // as argument. For the functions that don't, they can keep that argument 
+      // undefined, in which case we built it here.
       if (mqttClients === undefined) {
         mqttClients = mqtt.getConnectedClients();
       }
-      let currentTime = Date.now();
-      if (lastHour === undefined) {
-        lastHour = new Date(currentTime -3600000);
-      }
-      if (tr069Times === undefined) {
-        let tr069 = await getOnlyTR069Configs('Error when getting tr069 '
-        +'parameters in database to for \'complexSearchDeviceQuery\'.');
-        tr069Times = { // thresholds for tr069 status classification.
-          // time when devices are considered in recovery for tr069.
-          recovery: new Date(currentTime - (tr069.inform_interval*
-           tr069.recovery_threshold)),
-          // time when devices are considered offline for tr069.
-          offline: new Date(currentTime - (tr069.inform_interval*
-           tr069.offline_threshold)),
-        };
-      }
+      let currentTimestamp = currentTimestamp || Date.now();
+      let lastHour = new Date(currentTimestamp -3600000);
+      let tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -537,8 +550,18 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
       } 
+    } else if (/^coleta (?:on|off)$/.test(tag)) { // data collecting.
+      query.use_tr069 = {$ne: true}; // only for flashbox.
+      if (tag.includes('on')) {
+        query['data_collecting.is_active'] = true;
+      } else if (tag.includes('off')) {
+        query['data_collecting.is_active'] = {$ne: true}; // undefined & false.
+      } 
     } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
+      if (matchedConfig === undefined) {
+        matchedConfig = await Config.findOne({is_default: true});
+      }
       if (tag.includes('fraco')) {
         query.pon_rxpower = {
           $gte: matchedConfig.tr069.pon_signal_threshold_critical,
@@ -598,6 +621,45 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   else return {};
 };
 
+// returns an array with all searched devices.
+deviceListController.getDevices = async function (req, res) {
+  // reading body parameters.
+  let queryContents = []; // array that will hold the user's search filter.
+  let projectedFields = []; // array that will hold the fields to return.
+  if (req.body !== undefined) { // if request has a body.
+    let body = req.body // shortening variable name to decrease line length.
+    // if 'filter_list' key is present and its value is a string.
+    if (body.filter_list !== undefined && 
+    body.filter_list.constructor === String) {
+      queryContents = body.filter_list.split(',');
+    }
+    // if 'fields' key is present and its value is a string.
+    if (body.fields !== undefined && body.fields.constructor === String) {
+      projectedFields = body.fields.split(','); // split by commas.
+    }
+  }
+
+  // building search query.
+  const userRole = await Role.findOne({
+    name: util.returnObjOrEmptyStr(req.user.role),
+  });
+  let finalQuery;
+  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+     queryContents);
+  } else {
+    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+  }
+
+  // querying devices.
+  DeviceModel.find(finalQuery, projectedFields).lean().exec()
+  .then((devices) => res.json(devices)) // responding with array as json.
+  .catch((err) => res.status(500).json({ // in case of error, returns message.
+    success: false,
+    message: 'Error when loading devices.',
+  }));
+}
+
 deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
@@ -643,26 +705,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
     sortKeys._id = sortTypeOrder;
   }
 
-  let currentTime = Date.now();
-  let lastHour = new Date(currentTime -3600000);
-  // getting user configurations.
-  let matchedConfig = await Config.findOne({is_default: true},
-    'tr069 pppoePassLength').exec().catch((err) => err);
-  if (matchedConfig.constructor === Error) {
-    console.log('Error when getting user config in database to build '
-      +'device list.');
-    return;
-  }
-  let tr069Times = { // thresholds for tr069 status classification.
-    // time when devices are considered in recovery for tr069.
-    recovery: new Date(currentTime - (matchedConfig.tr069.inform_interval*
-      matchedConfig.tr069.recovery_threshold)),
-    // time when devices are considered offline for tr069.
-    offline: new Date(currentTime - (matchedConfig.tr069.inform_interval*
-      matchedConfig.tr069.offline_threshold)),
-  };
-
-
   // online devices.
   // will be passed to the functions that need an array of ids.
   let mqttClientsArray = mqtt.getConnectedClients();
@@ -672,13 +714,19 @@ deviceListController.searchDeviceReg = async function(req, res) {
     mqttClientsMap[mqttClientsArray[i]] = true;
   }
 
+  let currentTimestamp = Date.now()
+  let lastHour = new Date(currentTimestamp -3600000);
+
+  // time threshold for tr069 status (status color).
+  let tr069Times = await buildTr069Thresholds(currentTimestamp);
+
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
   });
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
-     queryContents, mqttClientsArray, lastHour, tr069Times);
+     queryContents, mqttClientsArray, currentTimestamp, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
@@ -1261,24 +1309,14 @@ deviceListController.getDeviceReg = function(req, res) {
     let deviceColor = 'grey';
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
-      // getting tr069 inform parameters.
-      let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
-        +'parameters in database to set tr069 status color in device list '
-        +'line item.');
-      let currentTime = Date.now();
-      // // thresholds for tr069 status classification.
-      // time when devices are considered in recovery for tr069.
-      let recoveryTime = new Date(currentTime - (tr069Configs.inform_interval*
-        tr069Configs.recovery_threshold));
-      // time when devices are considered offline for tr069.
-      let offlineTime = new Date(currentTime - (tr069Configs.inform_interval*
-        tr069Configs.offline_threshold));
+      // tr069 time thresholds for device status.
+      let tr069Times = await buildTr069Thresholds();
       // // classifying device status.
-      if (matchedDevice.last_contact >= recoveryTime) {
+      if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
         deviceColor = 'green';
         matchedDevice.online_status = true;
-      } else if (matchedDevice.last_contact >= offlineTime) {
+      } else if (matchedDevice.last_contact >= tr069Times.offline) {
       // if we are inside second threshold.
         deviceColor = 'red';
       }
