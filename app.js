@@ -56,7 +56,7 @@ if (!fs.existsSync('./tmp')) {
 }
 
 // configurations related to deployment are in an untracked file.
-let deploymentConfigurations = 'config/configs.js'
+let deploymentConfigurations = './config/configs.js'
 fs.access(deploymentConfigurations, fs.constants.F_OK, function (err) { // check file accessibility.
   let default_license_control_fqdn = "controle.anlix.io"
 
