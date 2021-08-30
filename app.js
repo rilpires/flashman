@@ -227,7 +227,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
       // 1 is the mandatory lan vlan id
       if (! vlans.includes(1)) {
-        config.vlans_profiles.push({vlan_id: 1, profile_name: 'Internet'});
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
         saveConfig = true;
       }
     }

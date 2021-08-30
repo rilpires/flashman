@@ -163,7 +163,7 @@ const flashboxFirmwareDevices = {
   },
   'ACTIONRF1200V1': {
     'vlan_support': true,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [3, 2, 1],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -179,7 +179,7 @@ const flashboxFirmwareDevices = {
   },
   'ACTIONRG1200V1': {
     'vlan_support': true,
-    'lan_ports': [2, 1, 0], // inverted
+    'lan_ports': [2, 1, 0],
     'num_usable_lan_ports': 3,
     'wan_port': 3,
     'cpu_port': 6,
@@ -211,7 +211,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC5V4': {
     'vlan_support': true,
-    'lan_ports': [3, 2, 1, 0], // inverted
+    'lan_ports': [3, 2, 1, 0],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
     'cpu_port': 5,
@@ -227,12 +227,12 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC20V1': {
     'vlan_support': false,
-    'lan_ports': [3, 4, 1, 2], // 2 lshifts
+    'lan_ports': [3, 4, 1, 2],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'ramips',
-    'network_chip': 'mt7628',
+    'network_chip': 'mt7620',
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': true,
@@ -324,7 +324,7 @@ const flashboxFirmwareDevices = {
   'ARCHERC60V2': {
     'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan
                            // into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -341,7 +341,7 @@ const flashboxFirmwareDevices = {
   'ARCHERC60V3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -501,7 +501,7 @@ const flashboxFirmwareDevices = {
   },
   'EC220-G5V2': {
     'vlan_support': true,
-    'lan_ports': [2, 1, 0], // inverted
+    'lan_ports': [2, 1, 0],
     'num_usable_lan_ports': 3,
     'wan_port': 3,
     'cpu_port': 5,
@@ -517,7 +517,7 @@ const flashboxFirmwareDevices = {
   },
   'GWR1200ACV1': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -533,7 +533,7 @@ const flashboxFirmwareDevices = {
   },
   'GWR1200ACV2': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -565,7 +565,7 @@ const flashboxFirmwareDevices = {
   },
   'GF1200V1': {
     'vlan_support': true,
-    'lan_ports': [3, 2, 1], // inverted
+    'lan_ports': [3, 2, 1],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -581,7 +581,7 @@ const flashboxFirmwareDevices = {
   },
   'MAXLINKAC1200GV1': {
     'vlan_support': true,
-    'lan_ports': [1, 2, 3, 4],
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
@@ -662,7 +662,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WDR3500V1': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
@@ -726,7 +726,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740N/NDV4': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -742,7 +742,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740NDV4': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -758,7 +758,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740N/NDV5': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -774,7 +774,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740NDV5': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -791,7 +791,7 @@ const flashboxFirmwareDevices = {
   'TL-WR740N/NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -808,7 +808,7 @@ const flashboxFirmwareDevices = {
   'TL-WR740NDV6': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -840,7 +840,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR741NDV4': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -984,7 +984,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841N/NDV7': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 1,
@@ -1000,7 +1000,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841NDV7': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
@@ -1016,7 +1016,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841N/NDV8': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1032,7 +1032,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841NDV8': {
     'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1049,7 +1049,7 @@ const flashboxFirmwareDevices = {
   'TL-WR842N/NDV3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // lan/wan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // lshift
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1066,7 +1066,7 @@ const flashboxFirmwareDevices = {
   'TL-WR842NDV3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // lan/wan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // 1 lshift
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1146,7 +1146,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV4': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1162,7 +1162,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV5': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1178,7 +1178,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV6': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1194,7 +1194,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR949NV6': {
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1226,7 +1226,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR845NV4': { //
     'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
@@ -1495,7 +1495,7 @@ const grantVlanSupport = function(version, model) {
     ret = flashboxFirmwareDevices[model];
   }
   if (version.match(versionRegex)) {
-    if (versionCompare(version, '0.31.0') >= 0) {
+    if (versionCompare(version, '0.30.2') >= 0) {
       return ret['vlan_support'];
     } else {
       return false;
