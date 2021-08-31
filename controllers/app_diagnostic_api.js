@@ -564,6 +564,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           'onuConfig': onuConfig,
           'certification': certification,
           'prefix': prefixObj,
+          'external_reference': device.external_reference || '',
         });
       }
 
@@ -582,6 +583,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         },
         'certification': certification,
         'prefix': prefixObj,
+        'external_reference': device.external_reference || '',
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
