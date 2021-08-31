@@ -11,6 +11,7 @@ let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
   serial_tr069: String,
+  alt_uid_tr069: String, // Used when serial is not reliable for crossing data
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   created_at: {type: Date},
