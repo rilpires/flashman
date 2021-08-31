@@ -457,7 +457,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       let tr069Info = {url: '', interval: 0};
-      
+
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
       } else if (req.body.isOnu) {
@@ -465,7 +465,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      
+
       if (!device) {
         return res.status(200).json({
           'success': true,
@@ -483,8 +483,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
             certification: true,
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
-            personalizationHash: true
-          }
+            personalizationHash: true,
+          },
         ).catch((err) => err)
       );
 
