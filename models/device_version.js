@@ -91,6 +91,23 @@ const tr069Devices = {
     },
     wifi2_extended_channels_support: false,
   },
+  '121AC': {
+    vendor: 'Intelbras',
+    versions_upgrade: {
+      'V210414': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: false,
+  },
   'G-140W-C': {
     vendor: 'Nokia',
     versions_upgrade: {
