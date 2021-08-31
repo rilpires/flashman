@@ -167,6 +167,10 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({
+          alt_uid_tr069: req.body.useAlternativeTR069UID,
+        });
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
@@ -425,6 +429,10 @@ diagAppAPIController.receiveCertification = async (req, res) => {
         let device;
         if (req.body.isOnu && req.body.onuMac) {
           device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({
+            alt_uid_tr069: req.body.useAlternativeTR069UID,
+          });
         } else if (req.body.isOnu) {
           let devices = await DeviceModel.find({serial_tr069: req.body.mac});
           if (devices.length > 0) {
@@ -460,6 +468,10 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
 
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({
+          alt_uid_tr069: req.body.useAlternativeTR069UID,
+        });
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
@@ -615,6 +627,10 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({
+          alt_uid_tr069: req.body.useAlternativeTR069UID,
+        });
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
@@ -653,6 +669,10 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({
+          alt_uid_tr069: req.body.useAlternativeTR069UID,
+        });
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
