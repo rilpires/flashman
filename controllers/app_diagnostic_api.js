@@ -5,6 +5,7 @@ const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
 const keyHandlers = require('./handlers/keys');
+const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
@@ -332,7 +333,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         if (targetMode === 0 && device.mesh_slaves.length > 0) {
           // Cannot disable mesh mode with registered slaves
           return res.status(500).json({
-            'error': 'Cannot disable mesh with reigstered slaves',
+            'error': 'Cannot disable mesh with registered slaves',
           });
         }
         device.mesh_mode = targetMode;
@@ -678,6 +679,167 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
   }
+};
+
+diagAppAPIController.addSlave = async function(req, res) {
+  if (!req.body.master || !req.body.slave) {
+    return res.status(500).json({message:
+      'Tentativa de registrar o CPE secundário' +
+      ' para o CPE ' + req.body.id +
+      ' falhou: JSON recebido não é válido',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  const master = req.body.master.toUpperCase();
+  const slave = req.body.slave.toUpperCase();
+  if (!utilHandlers.isMacValid(master)) {
+    return res.status(403).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: MAC do CPE primário inválido',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  let matchedMaster = await DeviceModel.findById(master).catch((err) => {
+    return res.status(500).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: Erro interno',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  });
+  let matchedSlave = await DeviceModel.findById(slave).catch((err) => {
+    return res.status(500).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: Erro interno',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  });
+  if (!matchedMaster) {
+    return res.status(404).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: CPE primário não encontrado',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  if (matchedMaster.mesh_mode === 0) {
+    return res.status(403).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: CPE indicado como primário não está em modo mesh',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  if (matchedMaster.mesh_master) {
+    return res.status(403).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: CPE indicado como primário é secundário',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  let isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[master];
+  });
+  isMasterOn = true;
+  if (!isMasterOn) {
+    return res.status(403).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: CPE indicado como primário não está online',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  if (!utilHandlers.isMacValid(slave)) {
+    return res.status(403).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: MAC do CPE candidato a secundário inválido',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  if (!matchedSlave) {
+    return res.status(404).json({message:
+      'Tentativa de registrar o CPE secundário ' + slave +
+      ' para o CPE ' + master +
+      ' falhou: CPE candidato a secundário não encontrado',
+      is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+  }
+  let isRegistered = 2;
+  let pos = matchedMaster.mesh_slaves.indexOf(slave);
+  if (pos < 0) {
+    if (matchedSlave.mesh_master) {
+      return res.status(403).json({message:
+        'Tentativa de registrar o CPE secundário ' + slave +
+        ' para o CPE ' + master +
+        ' falhou: CPE candidato a secundário já está registrado' +
+        ' em outro primário',
+        is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+    }
+    if (matchedSlave.mesh_mode != '0' && !matchedSlave.mesh_master) {
+      return res.status(403).json({message:
+        'Tentativa de registrar o CPE secundário ' + slave +
+        ' para o CPE ' + master +
+        ' falhou: CPE candidato a secundário é primário',
+        is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+    }
+    if (matchedSlave.use_tr069) {
+      return res.status(403).json({message:
+        'Tentativa de registrar o CPE secundário ' + slave +
+        ' para o CPE ' + master +
+        ' falhou: CPE candidato a secundário não pode ser TR-069',
+        is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+    }
+    let isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[slave];
+    });
+    isSlaveOn = true;
+    if (!isSlaveOn) {
+      return res.status(403).json({message:
+        'Tentativa de registrar o CPE secundário ' + slave +
+        ' para o CPE ' + master +
+        ' falhou: CPE candidato a secundário não está online',
+        is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
+    }
+
+    matchedSlave.mesh_master = matchedMaster._id;
+    meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
+    matchedSlave.save();
+
+    matchedMaster.mesh_slaves.push(slave);
+    matchedMaster.save();
+
+    isRegistered = 1;
+  }
+  // Now we must put slave in bridge mode
+
+  let isBridge;
+  let isSwitchEnabled;
+
+  if (!matchedSlave.bridge_mode_enabled) {
+    isBridge = 1;
+    matchedSlave.bridge_mode_enabled = true;
+  } else {
+    // Already in bridge mode
+    isBridge = 2;
+  }
+  if (matchedSlave.bridge_mode_switch_disable) {
+    isSwitchEnabled = 1;
+    matchedSlave.bridge_mode_switch_disable = false;
+  } else {
+    // Switch already enabled
+    isSwitchEnabled = 2;
+  }
+
+  if (isBridge === 1 || isSwitchEnabled === 1) {
+    matchedSlave.save();
+  }
+
+  if (isRegistered === 1 || isBridge === 1 || isSwitchEnabled === 1) {
+    // Push updates to the Slave
+    mqtt.anlixMessageRouterUpdate(slave);
+  }
+
+  return res.status(200).json({message:
+    'Tentativa de registrar o CPE secundário ' + slave +
+    ' para o CPE ' + master +
+    ' foi um sucesso',
+    is_registered: isRegistered,
+    is_bridge: isBridge,
+    is_switch_enabled: isSwitchEnabled});
 };
 
 module.exports = diagAppAPIController;
