@@ -62,42 +62,46 @@ const convertMesh = function(mesh) {
   };
 };
 
-const pushCertification = function(arr, c, finished) {
+const pushCertification = (arr, c, finished) => {
   arr.push({
     finished: finished,
     mac: c.mac,
-    onuMac: (c.onuMac) ? c.onuMac : '',
-    isOnu: (c.isONU) ? c.isONU : false,
-    routerModel: (c.routerModel) ? c.routerModel : '',
-    routerVersion: (c.routerVersion) ? c.routerVersion : '',
-    routerRelease: (c.routerRelease) ? c.routerRelease : '',
-    localEpochTimestamp: (c.timestamp) ? c.timestamp : 0,
-    didDiagnose: (c.didDiagnose) ? c.didDiagnose : false,
+    onuMac: c.onuMac || '',
+    isOnu: c.isONU || false,
+    routerModel: c.routerModel || '',
+    routerVersion: c.routerVersion || '',
+    routerRelease: c.routerRelease || '',
+    localEpochTimestamp: c.timestamp || 0,
+    didDiagnose: c.didDiagnose || false,
     diagnostic: convertDiagnostic(c.diagnostic),
-    didConfigureWan: (c.didWan) ? c.didWan : false,
-    wanConfigOnu: (c.wanConfigOnu) ? c.wanConfigOnu : '',
-    didConfigureTR069: (c.didTR069) ? c.didTR069 : false,
-    routerConnType: (c.routerConnType) ? c.routerConnType : '',
-    pppoeUser: (c.pppoeUser) ? c.pppoeUser : '',
-    bridgeIP: (c.bridgeIP) ? c.bridgeIP : '',
-    bridgeGateway: (c.bridgeGateway) ? c.bridgeGateway : '',
-    bridgeDNS: (c.bridgeDNS) ? c.bridgeDNS : '',
-    bridgeSwitch: (c.bridgeSwitch) ? c.bridgeSwitch : true,
-    didConfigureWifi: (c.didWifi) ? c.didWifi : false,
+    didConfigureWan: c.didWan || false,
+    wanConfigOnu: c.wanConfigOnu || '',
+    didConfigureTR069: c.didTR069 || false,
+    routerConnType: c.routerConnType || '',
+    pppoeUser: c.pppoeUser || '',
+    bridgeIP: c.bridgeIP || '',
+    bridgeGateway: c.bridgeGateway || '',
+    bridgeDNS: c.bridgeDNS || '',
+    bridgeSwitch: c.bridgeSwitch || true,
+    didConfigureWifi: c.didWifi || false,
     wifiConfig: convertWifi(c.wifiConfig),
-    didConfigureMesh: (c.didMesh) ? c.didMesh : false,
+    didConfigureMesh: c.didMesh || false,
     mesh: convertMesh(c.mesh),
-    didConfigureContract: (c.didContract) ? c.didContract : false,
-    didConfigureObservation: (c.didObservation) ? c.didObservation : false,
-    contract: (c.contract) ? c.contract : '',
-    observations: (c.observations) ? c.observations : '',
-    cancelReason: (c.reason) ? c.reason : '',
-    latitude: (c.latitude) ? c.latitude : 0,
-    longitude: (c.longitude) ? c.longitude : 0,
+    didConfigureContract: c.didContract || false,
+    didConfigureObservation: c.didObservation || false,
+    contract: c.contract || '',
+    observations: c.observations || '',
+    cancelReason: c.reason || '',
+    latitude: c.latitude || 0,
+    longitude: c.longitude || 0,
   });
 };
 
-const generateSessionCredential = async function(user) {
+const generateSessionCredential = async (user) => {
+  let config = await ConfigModel.findOne(
+    {is_default: true},
+    {tr069: 1, pppoePassLength: 1},
+  ).catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -110,36 +114,43 @@ const generateSessionCredential = async function(user) {
   let buff = Buffer.from(JSON.stringify(expirationCredential));
   let b64Json = buff.toString('base64');
   let encryptedB64Json = await keyHandlers.encryptMsg(b64Json);
-  let session = {credential: b64Json, sign: encryptedB64Json};
+  let session = {
+    credential: b64Json,
+    sign: encryptedB64Json,
+    pppoePassLength: config.pppoePassLength || '',
+  };
   // Add onu config, if present
-  let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
   if (config && config.tr069) {
     let trConf = config.tr069;
-    session.onuLogin = (trConf.web_login) ? trConf.web_login : '';
-    session.onuPassword = (trConf.web_password) ? trConf.web_password : '';
-    session.onuUserLogin = (trConf.web_login_user) ? trConf.web_login_user : '';
-    session.onuUserPassword = (trConf.web_password_user) ?
-                              trConf.web_password_user : '';
+    session.onuLogin = trConf.web_login || '';
+    session.onuPassword = trConf.web_password || '';
+    session.onuUserLogin = trConf.web_login_user || '';
+    session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
   }
   return session;
 };
 
-diagAppAPIController.sessionLogin = function(req, res) {
-  UserModel.findOne({name: req.body.user}, function(err, user) {
+diagAppAPIController.sessionLogin = (req, res) => {
+  UserModel.findOne({name: req.body.user}, (err, user) => {
     if (err || !user) {
-      return res.status(404).json({success: false,
-                                   message: 'Usuário não encontrado'});
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
     }
-    Role.findOne({name: user.role}, async function(err, role) {
+    Role.findOne({name: user.role }, async (err, role) => {
       if (err || (!user.is_superuser && !role)) {
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao encontrar permissões'});
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao encontrar permissões'
+        });
       }
       if (!user.is_superuser && !role.grantDiagAppAccess) {
-        return res.status(403).json({success: false,
-                                     message: 'Permissão negada'});
+        return res.status(403).json({
+          success: false,
+          message: 'Permissão negada'
+        });
       }
       let session = await generateSessionCredential(user.name);
       session.success = true;
@@ -156,6 +167,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
@@ -389,7 +402,7 @@ diagAppAPIController.removeMeshSlave = async function(req, res) {
   }
 };
 
-diagAppAPIController.receiveCertification = async function(req, res) {
+diagAppAPIController.receiveCertification = async (req, res) => {
   try {
     let result = await UserModel.find({'name': req.body.user});
     if (result.length === 0) {
@@ -414,6 +427,8 @@ diagAppAPIController.receiveCertification = async function(req, res) {
         let device;
         if (req.body.isOnu && req.body.onuMac) {
           device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
         } else if (req.body.isOnu) {
           let devices = await DeviceModel.find({serial_tr069: req.body.mac});
           if (devices.length > 0) {
@@ -446,23 +461,15 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       let tr069Info = {url: '', interval: 0};
-      
+
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
         device = await DeviceModel.findById(req.body.mac);
-      }
-      
-      if (!device) {
-        return res.status(200).json({
-          'success': true,
-          'isRegister': false,
-          'isOnline': false,
-          'tr069Info': tr069Info,
-          'certification': certification,
-        });
       }
 
       let config = await(
@@ -472,8 +479,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
             certification: true,
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
-            personalizationHash: true
-          }
+            personalizationHash: true,
+          },
         ).catch((err) => err)
       );
 
@@ -497,6 +504,16 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         certification.requiredDns = config.certification.dns_step_required;
         certification.requiredFlashman =
           config.certification.flashman_step_required;
+      }
+
+      if (!device) {
+        return res.status(200).json({
+          'success': true,
+          'isRegister': false,
+          'isOnline': false,
+          'tr069Info': tr069Info,
+          'certification': certification,
+        });
       }
 
       let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -604,6 +621,8 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
@@ -642,6 +661,8 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {

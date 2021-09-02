@@ -10,6 +10,12 @@ let router = express.Router();
 // *** Devices ***
 // ***************
 
+// Returns all devices
+router.route('/device/get').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.getDevices);
+
 // Query devices
 router.route('/device/search').put(
   authController.ensureAPIAccess,

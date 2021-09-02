@@ -56,7 +56,7 @@ if (!fs.existsSync('./tmp')) {
 }
 
 // configurations related to deployment are in an untracked file.
-let deploymentConfigurations = 'config/configs.js'
+let deploymentConfigurations = './config/configs.js'
 fs.access(deploymentConfigurations, fs.constants.F_OK, function (err) { // check file accessibility.
   let default_license_control_fqdn = "controle.anlix.io"
 
@@ -227,7 +227,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
       // 1 is the mandatory lan vlan id
       if (! vlans.includes(1)) {
-        config.vlans_profiles.push({vlan_id: 1, profile_name: 'Internet'});
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
         saveConfig = true;
       }
     }
