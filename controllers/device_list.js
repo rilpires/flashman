@@ -2992,6 +2992,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     const csvFields = [
       {label: 'Endereço MAC', value: '_id'},
       {label: 'Identificador Serial', value: 'serial_tr069'},
+      {label: 'Identificador TR-069 Alternativo', value: 'alt_uid_tr069'},
       {label: 'Tipo de Conexão WAN', value: 'connection_type'},
       {label: 'Usuário PPPoE', value: 'pppoe_user'},
     ];

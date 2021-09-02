@@ -168,6 +168,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
@@ -426,6 +428,8 @@ diagAppAPIController.receiveCertification = async (req, res) => {
         let device;
         if (req.body.isOnu && req.body.onuMac) {
           device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
         } else if (req.body.isOnu) {
           let devices = await DeviceModel.find({serial_tr069: req.body.mac});
           if (devices.length > 0) {
@@ -458,23 +462,15 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
       // Fetch device from database - query depends on if it's ONU or not
       let device;
       let tr069Info = {url: '', interval: 0};
-      
+
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         device = await DeviceModel.findOne({serial_tr069: req.body.mac});
       } else {
         device = await DeviceModel.findById(req.body.mac);
-      }
-      
-      if (!device) {
-        return res.status(200).json({
-          'success': true,
-          'isRegister': false,
-          'isOnline': false,
-          'tr069Info': tr069Info,
-          'certification': certification,
-        });
       }
 
       let config = await(
@@ -484,8 +480,8 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
             certification: true,
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
-            personalizationHash: true
-          }
+            personalizationHash: true,
+          },
         ).catch((err) => err)
       );
 
@@ -509,6 +505,16 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         certification.requiredDns = config.certification.dns_step_required;
         certification.requiredFlashman =
           config.certification.flashman_step_required;
+      }
+
+      if (!device) {
+        return res.status(200).json({
+          'success': true,
+          'isRegister': false,
+          'isOnline': false,
+          'tr069Info': tr069Info,
+          'certification': certification,
+        });
       }
 
       let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -616,6 +622,8 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
@@ -654,6 +662,8 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
       let device;
       if (req.body.isOnu && req.body.onuMac) {
         device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
       } else if (req.body.isOnu) {
         let devices = await DeviceModel.find({serial_tr069: req.body.mac});
         if (devices.length > 0) {
