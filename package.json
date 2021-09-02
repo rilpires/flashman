@@ -1,10 +1,10 @@
 {
   "name": "flashman",
-  "version": "2.6.1",
+  "version": "2.10.0",
   "private": true,
   "scripts": {
-    "dev": "webpack --config webpack.dev.js",
-    "test": "jest",
+    "dev": "webpack --watch --config webpack.dev.js",
+    "test": "jest --detectOpenHandles",
     "build": "webpack --config webpack.prod.js"
   },
   "updater": {
@@ -16,8 +16,8 @@
   },
   "genieacs": {
     "ref": "d29448e3a7d3f3ae9cdbcfeae7b9c7ec4e9ee675",
-    "presetHash": "e78ed54d55253b6114ac8a7e841f547e",
-    "provisionHash": "cceb25eb11e4203674233b2195963985"
+    "presetHash": "c27d0bde19e042f46e9bf32e4248f840",
+    "provisionHash": "e7468467d992402a911b371d815b52d7"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",
@@ -79,13 +79,16 @@
   "devDependencies": {
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
+    "@shelf/jest-mongodb": "^1.2.5",
     "babel-loader": "^8.2.2",
     "clean-css-cli": "^4.3.0",
     "css-loader": "^5.2.4",
     "eslint": "^6.8.0",
     "eslint-config-google": "^0.9.1",
+    "eslint-plugin-jest": "^24.3.6",
     "file-loader": "^6.2.0",
     "jest": "^25.4.0",
+    "mockingoose": "^2.15.2",
     "mqtt": "1.14.0",
     "nodemon": "^2.0.3",
     "regenerator-runtime": "^0.13.7",

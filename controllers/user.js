@@ -467,7 +467,7 @@ userController.deleteCertificates = async function(req, res) {
 
 userController.deleteUser = function(req, res) {
   User.find({'_id': {$in: req.body.ids}}, function(err, users) {
-    if (err || !users) {
+    if (err || users.length === 0) {
       console.log('User delete error: ' + err);
       return res.json({
         success: false,
@@ -491,7 +491,7 @@ userController.deleteRole = function(req, res) {
   User.countDocuments({'role': {$in: req.body.names}}, function(err, count) {
     if (count == 0) {
       Role.find({'_id': {$in: req.body.ids}}, function(err, roles) {
-        if (err || !roles) {
+        if (err || roles.length === 0) {
           console.log('Role delete error: ' + err);
           return res.json({
             success: false,
@@ -759,23 +759,31 @@ userController.setUserCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      matchedConfig.traps_callbacks.user_crud.url = req.body.url;
-      if ('user' in req.body && 'secret' in req.body) {
-        matchedConfig.traps_callbacks.user_crud.user = req.body.user;
-        matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
-      }
-      matchedConfig.save((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao gravar dados na base',
-          });
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.user_crud.url = req.body.url;
+
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.user_crud.user = req.body.user;
+          matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
         }
-        return res.status(200).json({
-          success: true,
-          message: 'Endereço salvo com sucesso',
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao gravar dados na base',
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: 'Endereço salvo com sucesso',
+          });
         });
-      });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Formato invalido',
+        });
+      }
     }
   });
 };
@@ -789,23 +797,30 @@ userController.setRoleCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      matchedConfig.traps_callbacks.role_crud.url = req.body.url;
-      if ('user' in req.body && 'secret' in req.body) {
-        matchedConfig.traps_callbacks.role_crud.user = req.body.user;
-        matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
-      }
-      matchedConfig.save((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao gravar dados na base',
-          });
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.role_crud.url = req.body.url;
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.role_crud.user = req.body.user;
+          matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
         }
-        return res.status(200).json({
-          success: true,
-          message: 'Endereço salvo com sucesso',
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao gravar dados na base',
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: 'Endereço salvo com sucesso',
+          });
         });
-      });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Formato invalido',
+        });
+      }
     }
   });
 };
