@@ -733,10 +733,9 @@ diagAppAPIController.addSlave = async function(req, res) {
       ' falhou: CPE indicado como primário é secundário',
       is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
   }
-  let isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+  const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[master];
   });
-  isMasterOn = true;
   if (!isMasterOn) {
     return res.status(403).json({message:
       'Tentativa de registrar o CPE secundário ' + slave +
@@ -783,10 +782,9 @@ diagAppAPIController.addSlave = async function(req, res) {
         ' falhou: CPE candidato a secundário não pode ser TR-069',
         is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
     }
-    let isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
       return map[slave];
     });
-    isSlaveOn = true;
     if (!isSlaveOn) {
       return res.status(403).json({message:
         'Tentativa de registrar o CPE secundário ' + slave +
