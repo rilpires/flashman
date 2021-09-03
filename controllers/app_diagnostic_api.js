@@ -436,7 +436,7 @@ diagAppAPIController.receiveCertification = async (req, res) => {
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
         device.external_reference.kind = content.current.contractType;
-        device.external_reference.data = content.current.contractData;
+        device.external_reference.data = content.current.contractData || '';
         await device.save();
       }
       pushCertification(certifications, content.current, true);
