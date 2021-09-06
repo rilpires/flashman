@@ -426,9 +426,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
         let ssidPrefix = checkResponse.prefix;
         const validator = new Validator();
-        genericValidate(ssidPrefix+util.
-          returnObjOrEmptyStr(matchedDevice.
-            wifi_ssid), validator.validateSSID,
+        let ssid2ghz = util.returnObjOrEmptyStr(matchedDevice.wifi_ssid);
+        genericValidate(ssidPrefix + ssid2ghz, validator.validateSSID,
                         'ssid', null, errors);
 
         // Update old entries
@@ -824,15 +823,16 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             fetchedVlans = containerVlans.vlans;
             vlanHash = containerVlans.hash;
           }
-          let wifi_ssid_5ghz = util.
-              returnObjOrEmptyStr(matchedDevice.
-                wifi_ssid_5ghz);
+          let wifiSsid2ghz = ssidPrefix + util.returnObjOrEmptyStr(
+            matchedDevice.wifi_ssid);
+          let wifiSsid5ghz = util.returnObjOrEmptyStr(
+            matchedDevice.wifi_ssid_5ghz);
           /*
             to not return appended ssidPrefix
             in case device not support 5GHz
           */
           if (matchedDevice.wifi_is_5ghz_capable) {
-            wifi_ssid_5ghz = ssidPrefix + wifi_ssid_5ghz;
+            wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
           }
 
           let resJson = {
@@ -845,9 +845,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'pppoe_password': util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
             'lan_netmask': util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
-            'wifi_ssid': ssidPrefix+util.
-              returnObjOrEmptyStr(matchedDevice.
-                wifi_ssid),
+            'wifi_ssid': wifiSsid2ghz,
             'wifi_password': util.returnObjOrEmptyStr(matchedDevice.wifi_password),
             'wifi_channel': util.returnObjOrEmptyStr(matchedDevice.wifi_channel),
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
@@ -855,7 +853,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state': matchedDevice.wifi_state,
             'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
             'wifi_hidden': matchedDevice.wifi_hidden,
-            'wifi_ssid_5ghz': wifi_ssid_5ghz,
+            'wifi_ssid_5ghz': wifiSsid5ghz,
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),
