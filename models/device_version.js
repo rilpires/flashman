@@ -78,6 +78,7 @@ const tr069Devices = {
     vendor: 'Multilaser',
     versions_upgrade: {
       'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
+      'V9.1.0P3N2_MUL': [],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': {
