@@ -269,9 +269,16 @@ const getNokiaFields = function() {
   return fields;
 };
 
-const getStavixFields = function() {
+const getStavixFields = function(model) {
   let fields = getDefaultFields();
-  fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  switch (model) {
+    case 'GONUAC001':
+      fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+      break;
+    case 'xPON':
+      fields.common.alt_uid = fields.common.mac;
+      break;
+  }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
@@ -314,9 +321,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
-      fields = getStavixFields();
+      fields = getStavixFields(model);
       break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
