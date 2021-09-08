@@ -271,10 +271,18 @@ const getNokiaFields = function() {
   return fields;
 };
 
-const getStavixFields = function() {
+const getStavixFields = function(model) {
   let fields = getDefaultFields();
+  switch (model) {
+    case 'GONUAC001':
+      fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+      break;
+    case 'xPON':
+      fields.common.alt_uid = fields.common.mac;
+      break;
+  }
   /* Removed due to high json payload in cwmp request from provision.js.
-  This field make the json request in syncDeviceData to big,
+  This field make the json request in syncDeviceData too big,
   around 97kB of payload in pppoe and 116kb of payload in ipoe/dhcp.
   The default limit is 100KB. In the large scale perspective of CPE
   administration, its easily could consume up to 100MB/min of bandwidth
@@ -321,9 +329,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
-      fields = getStavixFields();
+      fields = getStavixFields(model);
       break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';

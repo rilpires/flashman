@@ -244,6 +244,12 @@ const createRegistry = async function(req) {
   ssid = checkResponse.ssid2;
   ssid5ghz = checkResponse.ssid5;
 
+  // Check for an alternative UID to replace serial field
+  let altUid;
+  if (data.common.alt_uid) {
+    altUid = data.common.alt_uid;
+  }
+
   // Greatek does not expose these fields normally, only under this config file,
   // a XML with proprietary format. We parse it using regex to get what we want
   if (data.common.greatek_config) {
@@ -256,6 +262,7 @@ const createRegistry = async function(req) {
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
     serial_tr069: splitID[splitID.length - 1],
+    alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
     model: (data.common.model) ? data.common.model : '',
     version: data.common.version,
@@ -374,6 +381,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   device.serial_tr069 = splitID[splitID.length - 1];
+
+  // Check for an alternative UID to replace serial field
+  if (data.common.alt_uid) {
+    let altUid = data.common.alt_uid;
+    device.alt_uid_tr069 = altUid;
+  }
 
   // Greatek does not expose these fields normally, only under this config file,
   // a XML with proprietary format. We parse it using regex to get what we want

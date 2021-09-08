@@ -553,6 +553,7 @@ $(document).ready(function() {
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
     rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
+    rowAttr += ' data-alt-uid-tr069="' + device.alt_uid_tr069 + '"';
     return rowAttr;
   };
 
@@ -713,6 +714,12 @@ $(document).ready(function() {
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
+    let uid = device._id;
+    if (device.use_tr069 && device.alt_uid_tr069) {
+      uid = device.alt_uid_tr069;
+    } else if (device.use_tr069) {
+      uid = device.serial_tr069;
+    }
     let infoRow = '<tr class=" ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
@@ -726,7 +733,7 @@ $(document).ready(function() {
       '</td><td class="text-center device-pppoe-user">'+
         ((!device.pppoe_user) ? '' : device.pppoe_user) +
       '</td><td class="text-center">'+
-        ((device.use_tr069) ? device.serial_tr069 : device._id)+
+        uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
       '</td><td class="text-center device-ip">'+
@@ -1192,6 +1199,7 @@ $(document).ready(function() {
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-serialid="'+device.serial_tr069+'"';
+          formAttr += ' data-alt-uid-tr069="'+device.alt_uid_tr069+'"';
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
