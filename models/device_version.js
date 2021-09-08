@@ -77,10 +77,16 @@ const tr069Devices = {
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V9.1.0P1_MUL': [],
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+      'V9.1.0P3N2_MUL': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
        rangeSymmetric: true,
