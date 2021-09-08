@@ -75,7 +75,10 @@ const tr069Devices = {
     },
   },
   'ZXHN H199A': {
-    port_forward_support: true,
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V9.1.0P1_MUL': [],
+    },
     port_forward_opts: {
       'V9.1.0P1_MUL': {
        simpleSymmetric: true,
@@ -84,7 +87,16 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
-    pon_signal_support: false,
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+      firmware_upgrade: true,
+    },
     wifi2_extended_channels_support: true,
   },
   'GONUAC001': {
