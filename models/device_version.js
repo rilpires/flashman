@@ -10,6 +10,8 @@ const tr069Devices = {
       'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
       'V1.1.20P1T18': ['V1.1.20P3N3'],
       'V1.1.20P3N3': [],
+      'V1.1.20P3N4C': [],
+      'V1.1.20P3N4D': [],
     },
     port_forward_opts: {
       'V1.1.20P1T18': {
@@ -25,6 +27,18 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
       'V1.1.20P3N3': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
+      'V1.1.20P3N4C': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
+      'V1.1.20P3N4D': {
        simpleSymmetric: true,
        simpleAsymmetric: true,
        rangeSymmetric: false,
@@ -73,6 +87,38 @@ const tr069Devices = {
       pon_signal: false,
       firmware_upgrade: true,
     },
+  },
+  'ZXHN H199A': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
+      'V9.1.0P3N2_MUL': [],
+    },
+    port_forward_opts: {
+      'V9.1.0P1_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+      'V9.1.0P3N2_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+      firmware_upgrade: true,
+    },
+    wifi2_extended_channels_support: true,
   },
   'GONUAC001': {
     vendor: 'Greatek',
@@ -146,6 +192,23 @@ const tr069Devices = {
     vendor: 'Huawei',
     versions_upgrade: {
       '10.0.5.9(C506)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'WS5200-40': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.5(C947)': [],
     },
     feature_support: {
       port_forward: false,
