@@ -553,7 +553,9 @@ $(document).ready(function() {
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
     rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
-    rowAttr += ' data-alt-uid-tr069="' + device.alt_uid_tr069 + '"';
+    if (device.alt_uid_tr069) {
+      rowAttr += ' data-alt-uid-tr069="' + device.alt_uid_tr069 + '"';
+    }
     return rowAttr;
   };
 
@@ -1199,7 +1201,9 @@ $(document).ready(function() {
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-serialid="'+device.serial_tr069+'"';
-          formAttr += ' data-alt-uid-tr069="'+device.alt_uid_tr069+'"';
+          if (device.alt_uid_tr069) {
+            formAttr += ' data-alt-uid-tr069="'+device.alt_uid_tr069+'"';
+          }
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
