@@ -15,7 +15,7 @@ controlController.checkPubKey = async function(app) {
   let newConfig = new Config({
     is_default: true,
     autoUpdate: true,
-    pppoePassLength: 8,
+    pppoePassLength: 1,
   });
 
   try {
