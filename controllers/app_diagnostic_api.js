@@ -476,16 +476,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device = await DeviceModel.findById(req.body.mac);
       }
 
-      if (!device) {
-        return res.status(200).json({
-          'success': true,
-          'isRegister': false,
-          'isOnline': false,
-          'tr069Info': tr069Info,
-          'certification': certification,
-        });
-      }
-
       let config = await(
         ConfigModel.findOne({is_default: true},
           {
