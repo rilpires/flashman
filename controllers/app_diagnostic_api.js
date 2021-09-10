@@ -723,7 +723,7 @@ diagAppAPIController.addSlave = async function(req, res) {
       is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
   }
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves').catch((err) => {
+  'mesh_master mesh_slaves mesh_mode').catch((err) => {
     return res.status(500).json({message:
       'Tentativa de registrar o CPE secundário ' + slaveMacAddr +
       ' para o CPE ' + masterMacAddr +
@@ -731,7 +731,8 @@ diagAppAPIController.addSlave = async function(req, res) {
       is_registered: 0, is_bridge: 0, is_switch_enabled: 0});
   });
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves').catch((err) => {
+  'mesh_master mesh_slaves mesh_mode bridge_mode_enabled bridge_mode_switch_disable')
+  .catch((err) => {
     return res.status(500).json({message:
       'Tentativa de registrar o CPE secundário ' + slaveMacAddr +
       ' para o CPE ' + masterMacAddr +
@@ -837,7 +838,7 @@ diagAppAPIController.addSlave = async function(req, res) {
 
   if (isRegistered === 1 || isBridge === 1 || isSwitchEnabled === 1) {
     // Push updates to the Slave
-    mqtt.anlixMessageRouterUpdate(slave);
+    mqtt.anlixMessageRouterUpdate(slaveMacAddr);
   }
 
   return res.status(200).json({message:
