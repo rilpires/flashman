@@ -234,7 +234,9 @@ const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN H199A':
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
       fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
@@ -310,8 +312,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getHuaweiFields(model);
       break;
+    case 'ZXHN H199A': // Multilaser ZTE RE914
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
       message = '';
       fields = getZTEFields(model);
@@ -345,8 +349,10 @@ const getModelFields = function(oui, model) {
 const getProtocolByModel = function(model) {
   let ret = '';
   switch (model) {
+    case 'ZXHN H199A':
     case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
+    case 'ZXHN%20H199A': // URI encoded
       ret = 'BOTH';
       break;
     case 'HG8245Q2':

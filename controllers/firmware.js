@@ -45,7 +45,7 @@ let removeFirmware = async function(firmware) {
   }
 
   try {
-    await fsPromises.unlink(imageReleasesDir + firmware.filename);
+    await fsPromises.unlink(path.join(imageReleasesDir, firmware.filename));
   } catch (e) {
     throw new Error('Arquivo bin não encontrado');
   }
@@ -235,7 +235,7 @@ firmwareController.uploadFirmware = async function(req, res) {
                      'válidos: *FABRICANTE*_*MODELO*_*VERSÃO*_*RELEASE*.bin'});
   }
   try {
-    await firmwarefile.mv(imageReleasesDir + firmwarefile.name);
+    await firmwarefile.mv(path.join(imageReleasesDir, firmwarefile.name));
   } catch (err) {
     return res.json({type: 'danger', message: 'Erro ao mover arquivo'});
   }
