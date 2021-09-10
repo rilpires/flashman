@@ -769,7 +769,16 @@ diagAppAPIController.addSlave = async function(req, res) {
   }
   let isRegistered = 2;
   let pos = matchedMaster.mesh_slaves.indexOf(slaveMacAddr);
-  if (pos < 0) {
+  if (pos >= 0) {
+    // Slave and master are not syncrhonized
+    if (matchedSlave.mesh_mode === 0) {
+      matchedSlave.mesh_master = matchedMaster._id;
+      meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
+      matchedSlave.save();
+
+      isRegistered = 1;
+    }
+  } else {
     if (matchedSlave.mesh_master) {
       return res.status(403).json({message:
         'Tentativa de registrar o CPE secundário ' + slaveMacAddr +
