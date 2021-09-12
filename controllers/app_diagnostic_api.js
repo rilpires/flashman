@@ -783,7 +783,7 @@ diagAppAPIController.addSlave = async function(req, res) {
   // to make sure master and slave are synchronized
   matchedSlave.mesh_master = matchedMaster._id;
   meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
-  matchedSlave.save();
+  await matchedSlave.save();
 
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     matchedMaster.mesh_slaves.push(slaveMacAddr);
@@ -811,7 +811,7 @@ diagAppAPIController.addSlave = async function(req, res) {
   }
 
   if (isBridge === 1 || isSwitchEnabled === 1) {
-    matchedSlave.save();
+    await matchedSlave.save();
   }
 
   // We always update the slave
