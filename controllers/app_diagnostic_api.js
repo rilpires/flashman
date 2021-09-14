@@ -136,20 +136,20 @@ diagAppAPIController.sessionLogin = (req, res) => {
     if (err || !user) {
       return res.status(404).json({
         success: false,
-        message: 'Usuário não encontrado'
+        message: 'Usuário não encontrado',
       });
     }
-    Role.findOne({name: user.role }, async (err, role) => {
+    Role.findOne({name: user.role}, async (err, role) => {
       if (err || (!user.is_superuser && !role)) {
         return res.status(500).json({
           success: false,
-          message: 'Erro ao encontrar permissões'
+          message: 'Erro ao encontrar permissões',
         });
       }
       if (!user.is_superuser && !role.grantDiagAppAccess) {
         return res.status(403).json({
           success: false,
-          message: 'Permissão negada'
+          message: 'Permissão negada',
         });
       }
       let session = await generateSessionCredential(user.name);
@@ -306,7 +306,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
           await notification.save().catch(
             function(err) {
               console.error('Error creating notification: ' + err);
-            }
+            },
           );
         }
       }
@@ -439,6 +439,10 @@ diagAppAPIController.receiveCertification = async (req, res) => {
         }
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
+        if (content.current.contractType && content.current.contract) {
+          device.external_reference.kind = content.current.contractType;
+          device.external_reference.data = content.current.contract;
+        }
         await device.save();
       }
       pushCertification(certifications, content.current, true);
@@ -454,7 +458,7 @@ diagAppAPIController.receiveCertification = async (req, res) => {
   }
 };
 
-diagAppAPIController.verifyFlashman = async function(req, res) {
+diagAppAPIController.verifyFlashman = async (req, res) => {
   try {
     // Make sure we have a mac to verify in database
     if (req.body.mac) {
@@ -555,7 +559,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
           onuConfig.onuPonThresholdCritical =
             config.tr069.pon_signal_threshold_critical;
-          onuConfig.onuPonThresholdCriticalHigh = 
+          onuConfig.onuPonThresholdCriticalHigh =
             config.tr069.pon_signal_threshold_critical_high;
         }
         return res.status(200).json({
@@ -570,6 +574,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
           'onuConfig': onuConfig,
           'certification': certification,
           'prefix': prefixObj,
+          'external_reference': device.external_reference || '',
         });
       }
 
@@ -588,6 +593,7 @@ diagAppAPIController.verifyFlashman = async function(req, res) {
         },
         'certification': certification,
         'prefix': prefixObj,
+        'external_reference': device.external_reference || '',
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
