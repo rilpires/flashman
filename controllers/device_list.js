@@ -700,6 +700,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
     queryContents = queryContents.filter(
       (query) => query !== '/sort-wan-uptime');
     sortKeys.wan_up_time = sortTypeOrder;
+  } else if (queryContents.includes('/sort-pon-signal')) {
+    queryContents= queryContents.filter(
+      (query) => query !== '/sort-pon-signal');
+    sortKeys.pon_rxpower = sortTypeOrder;
   } else {
     sortKeys._id = sortTypeOrder;
   }
