@@ -611,7 +611,8 @@ updateController.setAutoConfig = async function(req, res) {
     if (config.personalizationHash !== '') {
       config.isSsidPrefixEnabled =
         (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix'],
+        config.isSsidPrefixEnabled);
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',

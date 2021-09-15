@@ -53,8 +53,9 @@ window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
   let validator = new Validator();
 
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
+  let validField = validator
+    .validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
 
   if (!validField.valid) {
     setSsidPrefixError();
@@ -96,7 +97,8 @@ let configFlashman = function(event) {
     allValid = false; // we won't send the configurations.
   }
   if (getConfigStorage('isClientPayingPersonalizationApp')) {
-    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
     // check ssid prefix value
     if (ssidPrefixInput.validity.valid && !validField.valid) {
       setSsidPrefixError();
