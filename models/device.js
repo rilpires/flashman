@@ -249,6 +249,16 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
+deviceSchema.statics.findByMacOrAcsId = function(id) {
+  if (id.includes(':')) {
+    return this.find({'_id': id});
+  } else if (id.includes('-')) {
+    return this.find({'acs_id': id});
+  } else {
+    return {};
+  }
+};
+
 // Hooks for device traps notifications
 deviceSchema.pre('save', function(callback) {
   let device = this;
