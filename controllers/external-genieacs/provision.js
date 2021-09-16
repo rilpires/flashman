@@ -46,7 +46,7 @@ let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
-let args = {oui: oui, model: modelClass};
+let args = {oui: oui, model: modelClass, acs_id: genieID};
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 if (!result.success || !result.fields) {
   log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
@@ -56,13 +56,16 @@ if (!result.success || !result.fields) {
 }
 let fields = result.fields;
 
-let data = {
-  common: updateConfiguration(fields.common),
-  wan: updateConfiguration(fields.wan),
-  lan: updateConfiguration(fields.lan),
-  wifi2: updateConfiguration(fields.wifi2),
-  wifi5: updateConfiguration(fields.wifi5),
-};
+let data = {};
+if (result.measure) {
+  data = {
+    common: updateConfiguration(fields.common),
+    wan: updateConfiguration(fields.wan),
+    lan: updateConfiguration(fields.lan),
+    wifi2: updateConfiguration(fields.wifi2),
+    wifi5: updateConfiguration(fields.wifi5),
+  };
+}
 
 args = {acs_id: genieID, data: data};
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
