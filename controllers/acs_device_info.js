@@ -628,6 +628,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   device.last_contact = Date.now();
+  device.last_tr069_sync = Date.now();
   // daily data fetching
   if (!device.last_contact_daily) {
     device.last_contact_daily = Date.now();

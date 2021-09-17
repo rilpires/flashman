@@ -386,7 +386,7 @@ const getDeviceFields = async function(args, callback) {
   return callback(null, {
     success: true,
     fields: fieldsResult.fields,
-    measure: flashRes.measure,
+    measure: flashRes.data.measure,
   });
 };
 
