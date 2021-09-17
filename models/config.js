@@ -20,7 +20,7 @@ let configSchema = new mongoose.Schema({
     web_password_user: String,
     remote_access: {type: Boolean, default: false},
     inform_interval: {type: Number, required: true, default: 5*60*1000}, // ms
-    sync_interval: {type: Number, required: true, default: 60*60*1000}, // ms
+    sync_interval: {type: Number, required: true, default: 5*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
     pon_signal_threshold: {type: Number, default: -18},
