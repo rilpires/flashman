@@ -345,6 +345,41 @@ const createRegistry = async function(req) {
   return true;
 };
 
+acsDeviceInfoController.informDevice = async function(req, res) {
+  let id = req.body.acs_id;
+  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
+    return res.status(500).json({success: false, message: 'Error in database'});
+  });
+  // New devices need to sync immediately
+  if (!device) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  // Why is a non tr069 device calling this function? Just a sanity check
+  if (!device.use_tr069) {
+    return res.status(500).json({
+      success: false,
+      message: 'Attempt to sync acs data with non-tr-069 device',
+    });
+  }
+  // Devices updating need to return immediately
+  // Devices with no last sync need to sync immediately
+  if (device.do_update || !device.last_tr069_sync) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  let config = await Config.findOne({is_default: true}).catch((err)=>{
+    return res.status(500).json({success: false, message: 'Error in database'});
+  });
+  // Devices that havent synced in (config interval) need to sync immediately
+  let syncDiff = Date.now() - device.last_tr069_sync;
+  if (syncDiff >= config.tr069.sync_interval) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  // Simply update last_contact to keep device online, no need to sync
+  device.last_contact = Date.now();
+  await device.save();
+  return res.status(200).json({success: true, measure: false});
+};
+
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   if (!data || !data.common || !data.common.mac) {
