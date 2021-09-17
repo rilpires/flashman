@@ -1048,11 +1048,14 @@ acsDeviceInfoController.requestUpStatus = function(device) {
     name: 'getParameterValues',
     parameterNames: [
       fields.common.uptime,
-      fields.wan.uptime,
-      fields.wan.uptime_ppp,
-      fields.wan.pppoe_user,
     ],
   };
+  if (device.connection_type === 'pppoe') {
+    task.parameterNames.push(fields.wan.uptime_ppp);
+    task.parameterNames.push(fields.wan.pppoe_user);
+  } else if (device.connection_type === 'dhcp') {
+    task.parameterNames.push(fields.wan.uptime);
+  }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchUpStatusFromGenie(mac, acsID);
