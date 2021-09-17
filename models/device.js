@@ -249,14 +249,14 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
-deviceSchema.statics.findByMacOrAcsId = function(id) {
-  if (id.includes(':')) {
-    return this.find({'_id': id});
-  } else if (id.includes('-')) {
-    return this.find({'acs_id': id});
-  } else {
-    return {};
-  }
+deviceSchema.statics.findByMacOrSerial = function(id) {
+  let regex = new RegExp(id, 'i');
+  let query = {'$regex': regex};
+  return this.find({$or: [
+        {'_id': query}, // mac address
+        {'acs_id': query}, // serial
+        {'serial_tr069': query}, // serial
+        {'alt_uid_tr069': query}]}); // mac address
 };
 
 // Hooks for device traps notifications
