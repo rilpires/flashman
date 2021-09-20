@@ -14,6 +14,7 @@ let deviceSchema = new Schema({
   alt_uid_tr069: String, // Used when serial is not reliable for crossing data
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
+  last_tr069_sync: Date,
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},

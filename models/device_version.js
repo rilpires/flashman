@@ -88,6 +88,38 @@ const tr069Devices = {
       firmware_upgrade: true,
     },
   },
+  'ZXHN H199A': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
+      'V9.1.0P3N2_MUL': [],
+    },
+    port_forward_opts: {
+      'V9.1.0P1_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+      'V9.1.0P3N2_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+      firmware_upgrade: true,
+    },
+    wifi2_extended_channels_support: true,
+  },
   'GONUAC001': {
     vendor: 'Greatek',
     versions_upgrade: {

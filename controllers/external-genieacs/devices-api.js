@@ -10,6 +10,7 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
 const API_URL = 'http://localhost:$PORT/acs/';
+const FLASHMAN_PORT = 8000;
 
 const request = require('request');
 
@@ -234,7 +235,9 @@ const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN H199A':
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
       fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
@@ -310,8 +313,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getHuaweiFields(model);
       break;
+    case 'ZXHN H199A': // Multilaser ZTE RE914
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
       message = '';
       fields = getZTEFields(model);
@@ -345,8 +350,10 @@ const getModelFields = function(oui, model) {
 const getProtocolByModel = function(model) {
   let ret = '';
   switch (model) {
+    case 'ZXHN H199A':
     case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
+    case 'ZXHN%20H199A': // URI encoded
       ret = 'BOTH';
       break;
     case 'HG8245Q2':
@@ -359,7 +366,7 @@ const getProtocolByModel = function(model) {
   return ret;
 };
 
-const getDeviceFields = function(args, callback) {
+const getDeviceFields = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.oui || !params.model) {
     return callback(null, {
@@ -367,10 +374,79 @@ const getDeviceFields = function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  return callback(null, getModelFields(params.oui, params.model));
+  let flashRes = await sendFlashmanRequest('device/inform', params, callback);
+  if (!flashRes['success'] ||
+      Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
+    return callback(null, flashRes);
+  }
+  let fieldsResult = getModelFields(params.oui, params.model);
+  if (!fieldsResult['success']) {
+    return callback(null, fieldsResult);
+  }
+  return callback(null, {
+    success: true,
+    fields: fieldsResult.fields,
+    measure: flashRes.data.measure,
+  });
 };
 
-const syncDeviceData = function(args, callback) {
+const computeFlashmanUrl = function() {
+  let url = API_URL;
+  let numInstances = INSTANCES_COUNT;
+  if (numInstances > 1) {
+    // More than 1 instance - share load between instances 1 and N-1
+    // We ignore instance 0 for the same reason we ignore it for router syn
+    // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
+    // FLASHMAN_PORT+i
+    let target = Math.floor(Math.random()*(numInstances-1)) + FLASHMAN_PORT + 1;
+    url = url.replace('$PORT', target.toString());
+  } else {
+    // Only 1 instance - force on instance 0
+    url = url.replace('$PORT', FLASHMAN_PORT.toString());
+  }
+  return url;
+};
+
+const sendFlashmanRequest = function(route, params) {
+  return new Promise((resolve, reject)=>{
+    let url = computeFlashmanUrl();
+    request({
+      url: url + route,
+      method: 'POST',
+      json: params,
+    },
+    function(error, response, body) {
+      if (error) {
+        return resolve({
+          success: false,
+          message: 'Error contacting Flashman',
+        });
+      }
+      if (response.statusCode === 200) {
+        if (body.success) {
+          return resolve({success: true, data: body});
+        } else if (body.message) {
+          return resolve({
+            success: false,
+            message: body.message,
+          });
+        } else {
+          return resolve({
+            success: false,
+            message: (body.message) ? body.message : 'Flashman internal error',
+          });
+        }
+      } else {
+        return resolve({
+          success: false,
+          message: (body.message) ? body.message : 'Error in Flashman request',
+        });
+      }
+    });
+  });
+};
+
+const syncDeviceData = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.data || !params.acs_id) {
     return callback(null, {
@@ -378,51 +454,8 @@ const syncDeviceData = function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let url = API_URL;
-  let numInstances = INSTANCES_COUNT;
-  if (numInstances > 1) {
-    // More than 1 instance - share load between instances 1 and N-1
-    // We ignore instance 0 for the same reason we ignore it for router syn
-    // Instance 0 will be at port 8000, instance i will be at 8000+i
-    let target = Math.floor(Math.random()*(numInstances-1)) + 8001;
-    url = url.replace('$PORT', target.toString());
-  } else {
-    // Only 1 instance - force on instance 0
-    url = url.replace('$PORT', '8000');
-  }
-  request({
-    url: url + 'device/syn',
-    method: 'POST',
-    json: params,
-  },
-  function(error, response, body) {
-    if (error) {
-      return callback(null, {
-        success: false,
-        message: 'Error contacting Flashman',
-      });
-    }
-    if (response.statusCode === 200) {
-      if (body.success) {
-        return callback(null, {success: true});
-      } else if (body.message) {
-        return callback(null, {
-          success: false,
-          message: body.message,
-        });
-      } else {
-        return callback(null, {
-          success: false,
-          message: (body.message) ? body.message : 'Error in Flashman process',
-        });
-      }
-    } else {
-      return callback(null, {
-        success: false,
-        message: (body.message) ? body.message : 'Error in Flashman request',
-      });
-    }
-  });
+  let result = await sendFlashmanRequest('device/syn', params, callback);
+  callback(null, result);
 };
 
 exports.convertField = convertField;
