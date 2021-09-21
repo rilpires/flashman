@@ -250,8 +250,20 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
 };
 
 deviceSchema.statics.findByMacOrSerial = function(id) {
-  let regex = new RegExp(id, 'i');
-  let query = {'$regex': regex};
+  let query;
+  if (Array.isArray(id)) {
+    let regexList = [];
+    id.forEach((i) => {
+      let regex = new RegExp(i, 'i');
+      regexList.push(regex);
+    });
+    query = {'$in': regexList};
+  } else if (id !== undefined) {
+    let regex = new RegExp(id, 'i');
+    query = {'$regex': regex};
+  } else {
+    return [];
+  }
   return this.find({$or: [
         {'_id': query}, // mac address
         {'acs_id': query}, // serial
