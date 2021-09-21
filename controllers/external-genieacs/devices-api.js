@@ -143,10 +143,12 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
-      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
     },
     port_mapping: {
-      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
+      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMapping',
+      template_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
       enable: 'PortMappingEnabled',
       lease: 'PortMappingLeaseDuration',
       external_port_start: 'ExternalPort',
@@ -276,7 +278,13 @@ const getStavixFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'GONUAC001':
-      fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+      /* Removed due to high json payload in cwmp request from provision.js.
+      This field make the json request in syncDeviceData too big,
+      around 97kB of payload in pppoe and 116kb of payload in ipoe/dhcp.
+      The default limit is 100KB. In the large scale perspective of CPE
+      administration, its easily could consume up to 100MB/min of bandwidth
+      fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
+      ConfigFile'; */
       break;
     case 'xPON':
       fields.common.alt_uid = fields.common.mac;
