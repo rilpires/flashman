@@ -842,7 +842,7 @@ diagAppAPIController.addSlave = async function(req, res) {
 
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     matchedMaster.mesh_slaves.push(slaveMacAddr);
-    matchedMaster.save();
+    await matchedMaster.save();
   }
 
   // Now we must put slave in bridge mode
