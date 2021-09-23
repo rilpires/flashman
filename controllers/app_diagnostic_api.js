@@ -767,6 +767,14 @@ diagAppAPIController.addSlave = async function(req, res) {
       registrationStatus: 'failed', bridgeStatus: 'failed',
       switchEnabledStatus: 'failed'});
   }
+  if (!DeviceVersion.grantMeshMode(
+  matchedSlave.version, matchedSlave.model)) {
+    return res.status(403).json({message:
+      'CPE candidato a secundário não é ' +
+      'compatível com o mesh v2',
+      registrationStatus: 'failed', bridgeStatus: 'failed',
+      switchEnabledStatus: 'failed'});
+  }
   if (matchedSlave.mesh_master &&
   matchedSlave.mesh_master !== masterMacAddr) {
     return res.status(403).json({message:
