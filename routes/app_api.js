@@ -103,4 +103,10 @@ router.route('/diagnostic/poollastbootdate').post(
   diagAPIController.poolLastBootDate,
 );
 
+router.route('/diagnostic/removeslave').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.removeSlave,
+);
+
 module.exports = router;
