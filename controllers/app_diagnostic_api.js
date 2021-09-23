@@ -886,4 +886,38 @@ diagAppAPIController.addSlave = async function(req, res) {
   });
 };
 
+diagAppAPIController.poolLastBootDate = async function(req, res) {
+  if (!req.body.mac) {
+    return res.status(500).json({message:
+      'JSON recebido não é válido',
+      lastBoot: '',
+    });
+  }
+  const macAddr = req.body.mac.toUpperCase();
+  if (!utilHandlers.isMacValid(macAddr)) {
+    return res.status(403).json({message:
+      'MAC inválido',
+      lastBoot: '',
+    });
+  }
+  let matchedDevice = await DeviceModel.findById(macAddr,
+  'lastboot_date')
+  .catch((err) => {
+    return res.status(500).json({message:
+      'Erro interno',
+      lastBoot: '',
+    });
+  });
+  if (!matchedDevice) {
+    return res.status(404).json({message:
+      'CPE não encontrado',
+      lastBoot: '',
+    });
+  }
+  return res.status(200).json({message:
+    'Sucesso',
+    lastBoot: matchedDevice.lastboot_date
+  });
+};
+
 module.exports = diagAppAPIController;
