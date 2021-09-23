@@ -712,7 +712,9 @@ diagAppAPIController.addSlave = async function(req, res) {
     return res.status(500).json({message:
       'JSON recebido não é válido',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   const masterMacAddr = req.body.master.toUpperCase();
   const slaveMacAddr = req.body.slave.toUpperCase();
@@ -720,38 +722,50 @@ diagAppAPIController.addSlave = async function(req, res) {
     return res.status(403).json({message:
       'MAC do CPE primário inválido',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
     return res.status(403).json({message:
       'MAC do CPE candidato a secundário inválido',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
   'mesh_master mesh_slaves mesh_mode').catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   });
   if (!matchedMaster) {
     return res.status(404).json({message:
       'CPE primário não encontrado',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (matchedMaster.mesh_mode === 0) {
     return res.status(403).json({message:
       'CPE indicado como primário não está em modo mesh',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (matchedMaster.mesh_master) {
     return res.status(403).json({message:
       'CPE indicado como primário é secundário',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
   'mesh_master mesh_slaves mesh_mode bridge_mode_enabled bridge_mode_switch_disable')
@@ -759,13 +773,17 @@ diagAppAPIController.addSlave = async function(req, res) {
     return res.status(500).json({message:
       'Erro interno',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   });
   if (!matchedSlave) {
     return res.status(404).json({message:
       'CPE candidato a secundário não encontrado',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (!DeviceVersion.grantMeshMode(
   matchedSlave.version, matchedSlave.model)) {
@@ -773,7 +791,9 @@ diagAppAPIController.addSlave = async function(req, res) {
       'CPE candidato a secundário não é ' +
       'compatível com o mesh v2',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (matchedSlave.mesh_master &&
   matchedSlave.mesh_master !== masterMacAddr) {
@@ -781,19 +801,25 @@ diagAppAPIController.addSlave = async function(req, res) {
       'CPE candidato a secundário já está registrado' +
       ' como secundário de ' + matchedSlave.mesh_master,
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) {
     return res.status(403).json({message:
       'CPE candidato a secundário é primário',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   if (matchedSlave.use_tr069) {
     return res.status(403).json({message:
       'CPE candidato a secundário não pode ser TR-069',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[slaveMacAddr];
@@ -802,7 +828,9 @@ diagAppAPIController.addSlave = async function(req, res) {
     return res.status(403).json({message:
       'CPE candidato a secundário não está online',
       registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed'});
+      switchEnabledStatus: 'failed',
+      lastBootDate: '',
+    });
   }
 
   // If no errors occur always update the slave
@@ -840,18 +868,21 @@ diagAppAPIController.addSlave = async function(req, res) {
     await matchedSlave.save();
   }
 
-  // We always update the slave
-  mqtt.anlixMessageRouterUpdate(slaveMacAddr);
-
   // We do not differentiate the case where
   // the slave was already registered in relation to the master.
   // If no errors occur, always treat as a new register.
   // This is done in case some config on the slave was outdated.
+
+  // Instead of updating slave, we send lastboot_date
+  // to app and a reboot is done
+
   return res.status(200).json({message:
     'Sucesso',
     registrationStatus: 'success',
     bridgeStatus: isBridge,
-    switchEnabledStatus: isSwitchEnabled});
+    switchEnabledStatus: isSwitchEnabled,
+    lastBootDate: matchedSlave.lastboot_date
+  });
 };
 
 module.exports = diagAppAPIController;
