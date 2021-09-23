@@ -769,7 +769,8 @@ diagAppAPIController.addSlave = async function(req, res) {
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
   'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
-  'bridge_mode_switch_disable lastboot_date use_tr069')
+  'bridge_mode_switch_disable lastboot_date use_tr069 ' +
+  'version model wifi_is_5ghz_capable')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
@@ -786,8 +787,10 @@ diagAppAPIController.addSlave = async function(req, res) {
       lastBootDate: '',
     });
   }
-  if (!DeviceVersion.grantMeshMode(
-  matchedSlave.version, matchedSlave.model)) {
+  if (!DeviceVersion.findByVersion(
+  matchedSlave.version,
+  matchedSlave.wifi_is_5ghz_capable,
+  matchedSlave.model).grantMeshMode) {
     return res.status(403).json({message:
       'CPE candidato a secundário não é ' +
       'compatível com o mesh v2',
