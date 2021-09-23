@@ -768,7 +768,8 @@ diagAppAPIController.addSlave = async function(req, res) {
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode bridge_mode_enabled bridge_mode_switch_disable')
+  'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
+  'bridge_mode_switch_disable lastboot_date')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
