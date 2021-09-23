@@ -767,7 +767,8 @@ diagAppAPIController.addSlave = async function(req, res) {
       registrationStatus: 'failed', bridgeStatus: 'failed',
       switchEnabledStatus: 'failed'});
   }
-  if (matchedSlave.mesh_master !== slaveMacAddr) {
+  if (matchedSlave.mesh_master &&
+  matchedSlave.mesh_master !== masterMacAddr) {
     return res.status(403).json({message:
       'CPE candidato a secundário já está registrado' +
       ' como secundário de ' + matchedSlave.mesh_master,
