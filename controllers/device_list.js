@@ -1030,7 +1030,7 @@ deviceListController.factoryResetDevice = function(req, res) {
 deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
@@ -1241,7 +1241,7 @@ deviceListController.sendMqttMsg = function(req, res) {
 };
 
 deviceListController.getFirstBootLog = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
@@ -1267,7 +1267,7 @@ deviceListController.getFirstBootLog = function(req, res) {
 };
 
 deviceListController.getLastBootLog = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
@@ -1293,7 +1293,7 @@ deviceListController.getLastBootLog = function(req, res) {
 };
 
 deviceListController.getDeviceReg = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       console.log(err);
@@ -1358,7 +1358,7 @@ deviceListController.getDeviceReg = function(req, res) {
 
 deviceListController.setDeviceReg = function(req, res) {
   console.log(req.params.id);
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({
@@ -2481,7 +2481,7 @@ deviceListController.setPortForward = function(req, res) {
 };
 
 deviceListController.getPortForward = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
@@ -2556,7 +2556,7 @@ deviceListController.getPortForward = function(req, res) {
 };
 
 deviceListController.getPingHostsList = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
