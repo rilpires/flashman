@@ -314,8 +314,8 @@ deviceListController.changeUpdate = async function(req, res) {
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
-      return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
+      return res.status(500).json({success: false,
+                                   message: 'Dispositivo não encontrado'});
     }
   } catch (e) {
     error = e;
@@ -1036,10 +1036,6 @@ deviceListController.sendMqttMsg = function(req, res) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (device == null) {
-      return res.status(200).json({success: false,
-                                   message: 'CPE não encontrado'});
-    }
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
@@ -1251,10 +1247,6 @@ deviceListController.getFirstBootLog = function(req, res) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({success: false,
-                                   message: 'CPE não encontrado'});
-    }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
@@ -1280,10 +1272,6 @@ deviceListController.getLastBootLog = function(req, res) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
-    }
-    if (matchedDevice == null) {
-      return res.status(200).json({success: false,
-                                   message: 'CPE não encontrado'});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
@@ -1311,10 +1299,6 @@ deviceListController.getDeviceReg = function(req, res) {
       console.log(err);
       return res.status(500).json({success: false,
                                    message: 'Erro interno do servidor'});
-    }
-    if (matchedDevice == null) {
-      return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
@@ -1383,18 +1367,11 @@ deviceListController.setDeviceReg = function(req, res) {
         errors: [],
       });
     }
-    if (matchedDevice == null) {
-      return res.status(404).json({
-        success: false,
-        message: 'CPE não encontrado',
-        errors: [],
-      });
-    }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
+        message: 'CPE não encontrado', errors: []});
     }
 
     if (util.isJSONObject(req.body.content)) {
@@ -2512,12 +2489,6 @@ deviceListController.getPortForward = function(req, res) {
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
-    }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
@@ -2591,12 +2562,6 @@ deviceListController.getPingHostsList = function(req, res) {
       return res.status(200).json({
         success: false,
         message: 'Erro interno do servidor',
-      });
-    }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
