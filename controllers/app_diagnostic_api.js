@@ -790,7 +790,7 @@ diagAppAPIController.addSlave = async function(req, res) {
   if (!DeviceVersion.findByVersion(
   matchedSlave.version,
   matchedSlave.wifi_is_5ghz_capable,
-  matchedSlave.model).grantMeshMode) {
+  matchedSlave.model).grantMeshV2) {
     return res.status(403).json({message:
       'CPE candidato a secundário não é ' +
       'compatível com o mesh v2',
