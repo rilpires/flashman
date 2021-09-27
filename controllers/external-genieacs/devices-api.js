@@ -203,6 +203,7 @@ const getHuaweiFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
       fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
@@ -317,6 +318,7 @@ const getModelFields = function(oui, model) {
   let fields = {};
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
     case 'Huawei': // Huawei WS5200
       message = '';
       fields = getHuaweiFields(model);
