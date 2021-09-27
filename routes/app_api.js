@@ -73,6 +73,12 @@ router.route('/diagnostic/meshstatus').post(
   diagAPIController.checkMeshStatus,
 );
 
+router.route('/diagnostic/meshremove').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.removeMeshSlave,
+);
+
 router.route('/diagnostic/certificate').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
