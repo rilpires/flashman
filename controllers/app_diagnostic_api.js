@@ -735,7 +735,11 @@ diagAppAPIController.associateSlave = async function(req, res) {
     });
   }
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode').catch((err) => {
+  'mesh_master mesh_slaves mesh_mode mesh_key mesh_id wifi_ssid '+
+  'wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
+  'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
+  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz'+
+  'wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz').catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
       registrationStatus: 'failed', bridgeStatus: 'failed',
@@ -770,7 +774,10 @@ diagAppAPIController.associateSlave = async function(req, res) {
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
   'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
   'bridge_mode_switch_disable lastboot_date use_tr069 ' +
-  'version model wifi_is_5ghz_capable')
+  'version model mesh_key mesh_id wifi_ssid wifi_password '+
+  'wifi_band wifi_mode wifi_state wifi_hidden isSsidPrefixEnabled '+
+  'wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz wifi_password_5ghz '+
+  'wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
