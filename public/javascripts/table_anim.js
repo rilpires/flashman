@@ -1154,6 +1154,7 @@ $(document).ready(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
+          let grantMeshV2 = device.permissions.grantMeshV2;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1710,7 +1711,7 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          if (grantMeshMode) {
+          if (grantMeshMode || grantMeshV2) {
             selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
             meshForm = meshForm.replace(selectTarget, 'selected="selected"');
             meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
