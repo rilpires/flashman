@@ -91,10 +91,10 @@ router.route('/diagnostic/getConfig').post(
   diagAPIController.fetchOnuConfig,
 );
 
-router.route('/diagnostic/addslave').post(
+router.route('/diagnostic/assocslave').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.addSlave,
+  diagAPIController.associateSlave,
 );
 
 router.route('/diagnostic/poollastbootdate').post(
@@ -103,10 +103,10 @@ router.route('/diagnostic/poollastbootdate').post(
   diagAPIController.poolLastBootDate,
 );
 
-router.route('/diagnostic/removeslave').post(
+router.route('/diagnostic/disassocslave').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.removeSlave,
+  diagAPIController.disassociateSlave,
 );
 
 module.exports = router;

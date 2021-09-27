@@ -707,7 +707,7 @@ STATUS MAPPING:
 404: device not found,
 500: internal error;
 */
-diagAppAPIController.addSlave = async function(req, res) {
+diagAppAPIController.associateSlave = async function(req, res) {
   if (!req.body.master || !req.body.slave) {
     return res.status(500).json({message:
       'JSON recebido não é válido',
@@ -889,7 +889,7 @@ diagAppAPIController.addSlave = async function(req, res) {
   });
 };
 
-diagAppAPIController.removeSlave = async function(req, res) {
+diagAppAPIController.disassociateSlave = async function(req, res) {
   if (!req.body.slave) {
     return res.status(500).json({message:
       'JSON recebido não é válido',
