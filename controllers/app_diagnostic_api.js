@@ -1001,9 +1001,16 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
       fieldValue: '',
     });
   }
+  const fieldValue = matchedDevice[field];
+  if (fieldValue === undefined) {
+    return res.status(404).json({message:
+      'Campo não encontrado',
+      fieldValue: '',
+    });
+  }
   return res.status(200).json({message:
     'Sucesso',
-    fieldValue: matchedDevice[field],
+    fieldValue: fieldValue,
   });
 };
 
