@@ -764,6 +764,12 @@ $(document).ready(function() {
     '</button>';
   };
 
+  const buildDisassociateSlave = function() {
+    return '<button class="btn btn-danger btn-sm btn-disassoc m-0" type="button">'+
+      '<i class="fas fa-minus-circle"></i><span>&nbsp Desassociar</span>'+
+    '</button>';
+  };
+
   const buildFormSubmit = function(mesh=false) {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row">'+
@@ -2291,13 +2297,13 @@ $(document).ready(function() {
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
-              let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
+              let disassocSlaveButton = '<td>'+buildDisassociateSlave()+'</td>';
               let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
               infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
-              infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
+              infoRow = infoRow.replace('$REPLACE_UPGRADE', disassocSlaveButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
               if (isSuperuser || grantNotificationPopups) {
@@ -2675,6 +2681,42 @@ $(document).ready(function() {
               title: 'Um erro ocorreu',
               text: 'Não foi possível restaurar o CPE para o firmware de '+
                     'fábrica. Por favor tente novamente.',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '.btn-disassoc', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Tem certeza que deseja desassociar esse roteador do mesh?',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          url: '/devicelist/disassociate',
+          type: 'post',
+          traditional: true,
+          data: {slave: id},
+          success: function(res) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: res.type,
+              title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });
