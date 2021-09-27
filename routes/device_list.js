@@ -3,6 +3,7 @@ const express = require('express');
 const updaterScheduleController = require('../controllers/update_scheduler');
 const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
+const diagAPIController = require('../controllers/app_diagnostic_api');
 
 let router = express.Router();
 
@@ -75,6 +76,12 @@ router.route('/delete').post(
   authController.ensureLogin(),
   authController.ensurePermission('grantDeviceRemoval'),
   deviceListController.delDeviceReg);
+
+// Disassociate slave
+router.route('/disassociate').post(
+  authController.ensureLogin(),
+  authController.ensurePermission('grantSlaveDisassociate'),
+  diagAPIController.disassociateSlave);
 
 // Change device registry
 router.route('/update/:id').post(
