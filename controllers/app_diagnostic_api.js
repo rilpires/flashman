@@ -380,29 +380,6 @@ diagAppAPIController.checkMeshStatus = async function(req, res) {
   }
 };
 
-diagAppAPIController.removeMeshSlave = async function(req, res) {
-  try {
-    // Make sure we have a mac to remove from database
-    if (req.body.remove_mac) {
-      // Fetch device from database
-      let device = await DeviceModel.findById(req.body.remove_mac);
-      if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
-      }
-      if (!device.mesh_master) {
-        return res.status(403).json({'error': 'Device is not a mesh slave!'});
-      }
-      deviceHandlers.removeDeviceFromDatabase(device);
-      return res.status(200).json({'success': true});
-    } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
-    }
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
-  }
-};
-
 diagAppAPIController.receiveCertification = async (req, res) => {
   try {
     let result = await UserModel.find({'name': req.body.user});
