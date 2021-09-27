@@ -809,7 +809,8 @@ diagAppAPIController.associateSlave = async function(req, res) {
       lastBootDate: '',
     });
   }
-  if (matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) {
+  if ((matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) ||
+  (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length)) {
     return res.status(403).json({message:
       'CPE candidato a secundário é primário',
       registrationStatus: 'failed', bridgeStatus: 'failed',
@@ -918,7 +919,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       'CPE indicado como secundário não possui primário associado',
     });
   }
-  if (matchedSlave.mesh_slaves) {
+  if (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length) {
     return res.status(403).json({message:
       'CPE indicado como secundário possui ' +
       'CPEs secundários associados',
