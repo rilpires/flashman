@@ -91,10 +91,10 @@ router.route('/diagnostic/assocslave').post(
   diagAPIController.associateSlave,
 );
 
-router.route('/diagnostic/poollastbootdate').post(
+router.route('/diagnostic/poolflashmanfield').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.poolLastBootDate,
+  diagAPIController.poolFlashmanField,
 );
 
 router.route('/diagnostic/disassocslave').post(
