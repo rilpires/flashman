@@ -975,6 +975,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   }
 
   matchedSlave.mesh_master = '';
+  matchedSlave.mesh_mode = 0;
   await matchedSlave.save();
 
   const slaveIndex = matchedMaster.mesh_slaves.indexOf(slaveMacAddr);
