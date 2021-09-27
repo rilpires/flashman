@@ -158,6 +158,7 @@ userController.postRole = function(req, res) {
     grantNotificationPopups: req.body['grant-notification-popups'],
     grantLanEdit: req.body['grant-lan-edit'],
     grantOpmodeEdit: req.body['grant-opmode-edit'],
+    grantSlaveDisassociate: req.body['grant-slave-disassociate'],
     grantLanDevices: parseInt(req.body['grant-lan-devices']),
     grantLanDevicesBlock: req.body['grant-lan-devices-block'],
     grantSiteSurvey: req.body['grant-site-survey'],
@@ -365,6 +366,7 @@ userController.editRole = function(req, res) {
     role.grantNotificationPopups = req.body['grant-notification-popups'];
     role.grantLanEdit = req.body['grant-lan-edit'];
     role.grantOpmodeEdit = req.body['grant-opmode-edit'];
+    role.grantSlaveDisassociate = req.body['grant-slave-disassociate'];
     role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
     role.grantLanDevicesBlock = req.body['grant-lan-devices-block'];
     role.grantSiteSurvey = req.body['grant-site-survey'];
