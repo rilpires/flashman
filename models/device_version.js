@@ -160,7 +160,8 @@ const tr069Devices = {
   'EG8145V5': {
     vendor: 'Huawei',
     versions_upgrade: {
-      'V5R019C10S350': [],
+      'V5R019C10S350': ['V5R020C00S280'],
+      'V5R020C00S280': [],
     },
     feature_support: {
       port_forward: false,
