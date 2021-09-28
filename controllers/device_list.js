@@ -2278,7 +2278,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
 };
 
 deviceListController.setPortForward = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
@@ -2286,11 +2286,11 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
@@ -2320,6 +2320,7 @@ deviceListController.setPortForward = function(req, res) {
     // vanilla routers
     } else {
       console.log('Updating Port Forward for ' + matchedDevice._id);
+      console.log('!@#', req.body.content);
       if (util.isJsonString(req.body.content)) {
         let content = JSON.parse(req.body.content);
 
