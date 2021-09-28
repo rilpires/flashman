@@ -91,4 +91,10 @@ router.route('/diagnostic/getConfig').post(
   diagAPIController.fetchOnuConfig,
 );
 
+router.route('/diagnostic/addslave').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.addSlave,
+);
+
 module.exports = router;
