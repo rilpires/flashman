@@ -619,6 +619,14 @@ updateController.setAutoConfig = async function(req, res) {
           message: 'Erro validando os campos',
         });
       }
+      /* check if ssid prefix was not empty and for some reason is coming
+        from UI a empty ssid prefix */
+      if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Prefixo de SSID não pode ser vazio',
+        });
+      }
       config.ssidPrefix = req.body['ssid-prefix'];
     }
 
