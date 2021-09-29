@@ -911,6 +911,20 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       'lista de secundários do CPE indicado como primário',
     });
   }
+  const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[slaveMacAddr];
+  });
+  if (!isSlaveOn) {
+    response.message = 'CPE secundário não está online';
+    return res.status(403).json(response);
+  }
+  const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[masterMacAddr];
+  });
+  if (!isMasterOn) {
+    response.message = 'CPE primário não está online';
+    return res.status(403).json(response);
+  }
 
   matchedSlave.mesh_master = '';
   matchedSlave.mesh_mode = 0;
@@ -919,6 +933,9 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   const slaveIndex = matchedMaster.mesh_slaves.indexOf(slaveMacAddr);
   matchedMaster.mesh_slaves.splice(slaveIndex, 1);
   await matchedMaster.save();
+
+  mqtt.anlixMessageRouterUpdate(slaveMacAddr);
+  mqtt.anlixMessageRouterUpdate(masterMacAddr);
 
   return res.status(200).json({message:
     'Sucesso',
