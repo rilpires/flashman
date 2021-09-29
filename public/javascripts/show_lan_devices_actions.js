@@ -464,6 +464,10 @@ $(document).ready(function() {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let serialid = row.data('serialid');
+    let altuid = row.data('alt-uid-tr069');
+    if (altuid) {
+      serialid = altuid;
+    }
     let isTR069 = row.data('is-tr069') === true; // cast to bool
     let isBridge = row.data('bridge-enabled') === 'Sim';
     let slaveCount = parseInt(row.data('slave-count'));

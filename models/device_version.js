@@ -5,7 +5,14 @@ const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
 const tr069Devices = {
   'F670L': {
-    port_forward_support: true,
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
+      'V1.1.20P1T18': ['V1.1.20P3N3'],
+      'V1.1.20P3N3': [],
+      'V1.1.20P3N4C': [],
+      'V1.1.20P3N4D': [],
+    },
     port_forward_opts: {
       'V1.1.20P1T18': {
        simpleSymmetric: true,
@@ -25,12 +32,37 @@ const tr069Devices = {
        rangeSymmetric: false,
        rangeAsymmetric: false,
       },
+      'V1.1.20P3N4C': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
+      'V1.1.20P3N4D': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: false,
+       rangeAsymmetric: false,
+      },
     },
-    pon_signal_support: true,
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+      firmware_upgrade: true,
+    },
     wifi2_extended_channels_support: true,
   },
   'ZXHN H198A V3.0': {
-    port_forward_support: true,
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
+      'V3.0.0C6_MUL': [],
+    },
     port_forward_opts: {
       'V3.0.0C5_MUL': {
        simpleSymmetric: true,
@@ -45,29 +77,157 @@ const tr069Devices = {
        rangeAsymmetric: false,
       },
     },
-    pon_signal_support: false,
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+      firmware_upgrade: true,
+    },
+  },
+  'ZXHN H199A': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
+      'V9.1.0P3N2_MUL': [],
+    },
+    port_forward_opts: {
+      'V9.1.0P1_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+      'V9.1.0P3N2_MUL': {
+       simpleSymmetric: true,
+       simpleAsymmetric: true,
+       rangeSymmetric: true,
+       rangeAsymmetric: false,
+      },
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: false,
+      firmware_upgrade: true,
+    },
     wifi2_extended_channels_support: true,
   },
   'GONUAC001': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    vendor: 'Greatek',
+    versions_upgrade: {
+      'V1.2.3': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: false,
+  },
+  '121AC': {
+    vendor: 'Intelbras',
+    versions_upgrade: {
+      'V210414': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
     wifi2_extended_channels_support: false,
   },
   'G-140W-C': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE46343AFIA89': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
     wifi2_extended_channels_support: true,
   },
   'HG8245Q2': {
-    port_forward_support: false,
-    pon_signal_support: true,
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V3R017C10S100': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'WS5200-21': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.9(C506)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'WS5200-40': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.5(C947)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+    },
     wifi2_extended_channels_support: true,
   },
 };
 
 const flashboxFirmwareDevices = {
   'W5-1200FV1': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
@@ -75,7 +235,7 @@ const flashboxFirmwareDevices = {
     'soc': 'realtek',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -83,15 +243,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ACTIONRF1200V1': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [3, 2, 1],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'realtek',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -99,15 +260,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ACTIONRG1200V1': {
-    'vlan_support': false,
-    'lan_ports': [2, 1, 0], // inverted
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [2, 1, 0],
     'num_usable_lan_ports': 3,
     'wan_port': 3,
     'cpu_port': 6,
     'soc': 'realtek',
-    'network_chip': '',
+    'network_chip': '8367r',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -116,6 +278,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC2V1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -132,7 +295,8 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC5V4': {
     'vlan_support': true,
-    'lan_ports': [3, 2, 1, 0], // inverted
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [3, 2, 1, 0],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
     'cpu_port': 5,
@@ -147,15 +311,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V1': {
-    'vlan_support': false,
-    'lan_ports': [3, 4, 1, 2], // 2 lshifts
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [3, 4, 1, 2],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'ramips',
-    'network_chip': 'mt7628',
+    'network_chip': 'mt7620',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 15,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -163,7 +328,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V4': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -171,7 +337,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -179,7 +345,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V5': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -187,7 +354,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -195,7 +362,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC20V5PRESET': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -203,7 +371,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -211,7 +379,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC50V3': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -219,7 +388,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -227,7 +396,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'ARCHERC50V4': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -235,7 +405,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': true,
     'wps_support': true,
     'speedtest_support': true,
@@ -245,7 +415,8 @@ const flashboxFirmwareDevices = {
   'ARCHERC60V2': {
     'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan
                            // into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -262,7 +433,8 @@ const flashboxFirmwareDevices = {
   'ARCHERC60V3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -278,6 +450,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC6V2US': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [2, 3, 4, 5],
     'num_usable_lan_ports': 4,
     'wan_port': 1,
@@ -294,6 +467,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC7V5': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [2, 3, 4, 5],
     'num_usable_lan_ports': 4,
     'wan_port': 1,
@@ -310,6 +484,7 @@ const flashboxFirmwareDevices = {
   },
   'COVR-C1200A1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [2],
     'num_usable_lan_ports': 1,
     'wan_port': 1,
@@ -326,6 +501,7 @@ const flashboxFirmwareDevices = {
   },
   'DIR-819A1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -342,6 +518,7 @@ const flashboxFirmwareDevices = {
   },
   'DIR-815D1': {
     'vlan_support': false,
+    'vlan_support_since': '1.0.0',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -349,7 +526,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -357,7 +534,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'DWR-116A1': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -365,7 +543,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 15,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -373,7 +551,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'DWR-116A2': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -381,7 +560,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 15,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -389,7 +568,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'DWR-116A3': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -397,7 +577,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 15,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -406,6 +586,7 @@ const flashboxFirmwareDevices = {
   },
   'EMG1702-T10AA1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -422,7 +603,8 @@ const flashboxFirmwareDevices = {
   },
   'EC220-G5V2': {
     'vlan_support': true,
-    'lan_ports': [2, 1, 0], // inverted
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [2, 1, 0],
     'num_usable_lan_ports': 3,
     'wan_port': 3,
     'cpu_port': 5,
@@ -437,15 +619,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'GWR1200ACV1': {
-    'vlan_support': false,
-    'lan_ports': [1, 2, 3, 4],
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'realtek',
-    'network_chip': '',
+    'network_chip': '8367r',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -453,15 +636,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'GWR1200ACV2': {
-    'vlan_support': false,
-    'lan_ports': [1, 2, 3, 4],
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'realtek',
-    'network_chip': '',
+    'network_chip': '83xx',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -469,7 +653,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'GWR300NV1': {
-    'vlan_support': false,
+    'vlan_support': false, // Frozen in kernel 3 without VLAN support
+    'vlan_support_since': '1.0.0',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -485,15 +670,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'GF1200V1': {
-    'vlan_support': false,
-    'lan_ports': [3, 2, 1], // inverted
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [3, 2, 1],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'realtek',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -501,15 +687,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'MAXLINKAC1200GV1': {
-    'vlan_support': false,
-    'lan_ports': [1, 2, 3, 4],
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
+    'lan_ports': [1, 2, 3],
     'num_usable_lan_ports': 3,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'realtek',
-    'network_chip': '',
+    'network_chip': '8367r',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -517,7 +704,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'NCLOUD': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -525,7 +713,7 @@ const flashboxFirmwareDevices = {
     'soc': '',
     'network_chip': '',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -533,15 +721,16 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'RE708V1': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
     'cpu_port': 6,
     'soc': 'realtek',
-    'network_chip': '',
+    'network_chip': '8367r',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -549,7 +738,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'RE172V1': {
-    'vlan_support': false,
+    'vlan_support': false, // Frozen in kernel 3 without VLAN support
+    'vlan_support_since': '1.0.0',
     'lan_ports': [0, 1, 2, 3],
     'num_usable_lan_ports': 4,
     'wan_port': 4,
@@ -567,6 +757,7 @@ const flashboxFirmwareDevices = {
   'TL-MR3020V1': {
     'vlan_support': false, // even though it's in openwrt 19
                            // it doesn't have lan ports
+    'vlan_support_since': '1.0.0',
     'lan_ports': [],
     'num_usable_lan_ports': 0,
     'wan_port': 0,
@@ -582,8 +773,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WDR3500V1': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // even though it's in openwrt 19 it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
@@ -599,6 +792,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WDR3600V1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [2, 3, 4, 5],
     'num_usable_lan_ports': 4,
     'wan_port': 1,
@@ -615,6 +809,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WDR4300V1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [2, 3, 4, 5],
     'num_usable_lan_ports': 4,
     'wan_port': 1,
@@ -631,6 +826,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR2543N/NDV1': {
     'vlan_support': true,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -646,8 +842,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV4': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -662,8 +860,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV4': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -678,8 +878,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV5': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -694,8 +896,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV5': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -710,9 +914,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740N/NDV6': {
-    'vlan_support': false, // even though it's in openwrt 19 it splits
+    'vlan_support': false, // it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -727,9 +932,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR740NDV6': {
-    'vlan_support': false, // even though it's in openwrt 19 it splits
+    'vlan_support': false, // it splits
                            // wan/lan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -744,7 +950,9 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR741N/NDV4': {
-    'vlan_support': false,
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
@@ -760,8 +968,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR741NDV4': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -776,7 +986,9 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR741N/NDV5': {
-    'vlan_support': false,
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
@@ -792,7 +1004,9 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR741NDV5': {
-    'vlan_support': false,
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
@@ -808,7 +1022,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV4': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -816,7 +1031,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -824,7 +1039,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV5': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -832,7 +1048,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -840,7 +1056,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV6': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -848,7 +1065,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -856,7 +1073,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV62': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -864,7 +1082,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -872,7 +1090,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV5PRESET': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -880,7 +1099,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -888,7 +1107,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR840NV6PRESET': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -896,7 +1116,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -904,8 +1124,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR841N/NDV7': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 1,
@@ -920,8 +1142,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR841NDV7': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
@@ -936,8 +1160,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR841N/NDV8': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -952,8 +1178,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR841NDV8': {
-    'vlan_support': false,
-    'lan_ports': [2, 3, 4, 1], // 1 lshift
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -968,9 +1196,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR842N/NDV3': {
-    'vlan_support': false, // even though it's in openwrt 19 it splits
+    'vlan_support': false, // it splits
                            // lan/wan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // lshift
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -985,9 +1214,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR842NDV3': {
-    'vlan_support': false, // even though it's in openwrt 19 it splits
+    'vlan_support': false, // it splits
                            // lan/wan into different interfaces
-    'lan_ports': [4, 3, 2, 1], // 1 lshift
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1002,7 +1232,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV4': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1010,7 +1241,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': true,
     'speedtest_support': true,
@@ -1018,7 +1249,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV5': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1026,7 +1258,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -1034,7 +1266,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV6': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1042,7 +1275,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -1050,7 +1283,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR849NV62': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1058,7 +1292,7 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -1066,8 +1300,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV4': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1082,8 +1318,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV5': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1098,8 +1336,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR940NV6': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1114,8 +1354,10 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR949NV6': {
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+    'vlan_support': false, // it splits
+                           // lan/wan into different interfaces
+    'vlan_support_since': '1.0.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 5,
     'cpu_port': 0,
@@ -1130,7 +1372,8 @@ const flashboxFirmwareDevices = {
     'wifi2_extended_channels_support': false,
   },
   'TL-WR845NV3': {
-    'vlan_support': false,
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1138,23 +1381,24 @@ const flashboxFirmwareDevices = {
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
     'wifi2_extended_channels_support': false,
   },
-  'TL-WR845NV4': { //
-    'vlan_support': false,
-    'lan_ports': [4, 3, 2, 1], // inverted
+  'TL-WR845NV4': {
+    'vlan_support': true,
+    'vlan_support_since': '0.32.0',
+    'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
     'cpu_port': 6,
     'soc': 'ramips',
     'network_chip': 'mt7628',
     'wifi_chip': '',
-    'max_vid': 0,
+    'max_vid': 4094,
     'mesh_support': false,
     'wps_support': false,
     'speedtest_support': true,
@@ -1193,22 +1437,22 @@ const grantResetDevices = function(version) {
 };
 
 const grantPortForward = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].port_forward_support &&
-      tr069Devices[model].port_forward_opts[version] !== undefined) {
-    // Compatible TR-069 CPE
+  if (Object.keys(tr069Devices).includes(model)) {
+    if (tr069Devices[model].feature_support.port_forward &&
+        tr069Devices[model].port_forward_opts[version] !== undefined) {
+      return true;
+    }
+    return false;
+  }
+  if (version.match(versionRegex)) {
+    // Oficial Flashbox firmware
+    return (versionCompare(version, '0.10.0') >= 0);
+  } else if (version.match(devVersionRegex)) {
+    // Development version, enable everything by default
     return true;
   } else {
-    if (version.match(versionRegex)) {
-      // Oficial Flashbox firmware
-      return (versionCompare(version, '0.10.0') >= 0);
-    } else if (version.match(devVersionRegex)) {
-      // Development version, enable everything by default
-      return true;
-    } else {
-      // Unknown device and or version
-      return false;
-    }
+    // Unknown device and or version
+    return false;
   }
 };
 
@@ -1334,7 +1578,10 @@ const grantSiteSurvey = function(version) {
   }
 };
 
-const grantUpnp = function(version) {
+const grantUpnp = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.upnp;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.21.0') >= 0);
   } else {
@@ -1345,32 +1592,42 @@ const grantUpnp = function(version) {
 
 const grantSpeedTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    // TR-069 does not have speed test at the moment
-    return false;
-  } else {
-    if (version.match(versionRegex)) {
-      if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-        // Unspecified model
-        return false;
-      }
-      if (!flashboxFirmwareDevices[model].speedtest_support) {
-        // Model is not compatible with feature
-        return false;
-      }
-      return (versionCompare(version, '0.24.0') >= 0);
-    } else {
-      // Development version, enable everything by default
-      return true;
+    return tr069Devices[model].feature_support.speed_test;
+  }
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
     }
+    if (!flashboxFirmwareDevices[model].speedtest_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (versionCompare(version, '0.24.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
   }
 };
 
 const grantSpeedTestLimit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.speed_test_limit;
+  }
   if (grantSpeedTest(version, model) &&
       Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
   }
+
   return 0;
+};
+
+const grantBlockDevices = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_devices;
+  }
+  // Enabled for all Flashbox firmwares
+  return true;
 };
 
 const grantOpmode = function(version) {
@@ -1385,6 +1642,7 @@ const grantOpmode = function(version) {
 const grantVlanSupport = function(version, model) {
   let ret = { // default return value
     'vlan_support': false,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1403,7 +1661,7 @@ const grantVlanSupport = function(version, model) {
     ret = flashboxFirmwareDevices[model];
   }
   if (version.match(versionRegex)) {
-    if (versionCompare(version, '0.31.0') >= 0) {
+    if (versionCompare(version, ret['vlan_support_since']) >= 0) {
       return ret['vlan_support'];
     } else {
       return false;
@@ -1425,7 +1683,7 @@ const grantWanBytesSupport = function(version) {
 
 const grantPonSignalSupport = function(version, model) {
   if (Object.keys(tr069Devices).includes(model) &&
-      tr069Devices[model].pon_signal_support
+      tr069Devices[model].feature_support.pon_signal
   ) {
     // Compatible TR-069 ONU
     return true;
@@ -1461,6 +1719,9 @@ const grantUpdateAck = function(version) {
 };
 
 const grantWpsFunction = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wps;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1495,9 +1756,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantLanGwEdit = grantLanGwEdit(version);
   result.grantLanDevices = grantLanDevices(version);
   result.grantSiteSurvey = grantSiteSurvey(version);
-  result.grantUpnp = grantUpnp(version);
+  result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
+  result.grantBlockDevices = grantBlockDevices(model);
   result.grantOpmode = grantOpmode(version);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version);
@@ -1505,6 +1767,10 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantUpdateAck = grantUpdateAck(version);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
+    result.grantPortForwardOpts =
+      DeviceVersion.getPortForwardTr069Compatibility(model, version);
+  }
   return result;
 };
 
@@ -1522,6 +1788,7 @@ DeviceVersion.getPortsQuantity = function(model) {
 DeviceVersion.getDeviceInfo = function(model) {
   let ret = { // default return value
     'vlan_support': false,
+    'vlan_support_since': '0.30.2',
     'lan_ports': [1, 2, 3, 4],
     'num_usable_lan_ports': 4,
     'wan_port': 0,
@@ -1552,6 +1819,45 @@ DeviceVersion.getVlanCompatible = function() {
 
 DeviceVersion.getPortForwardTr069Compatibility = function(model, version) {
   return tr069Devices[model].port_forward_opts[version];
+};
+
+DeviceVersion.getTr069ModelsAndVersions = function() {
+  let ret = {};
+  // only send models that support firmware upgrade
+  ret.models = Object.entries(tr069Devices)
+    .filter((dev) => dev[1].feature_support.firmware_upgrade)
+    .map((dev) => dev[0]);
+  ret.versions = {};
+  ret.models.forEach((m) => {
+    ret.versions[m] = Object.keys(tr069Devices[m].versions_upgrade);
+  });
+  return ret;
+};
+
+DeviceVersion.getVendorByModel = function(model) {
+  let ret = '';
+  if (tr069Devices[model]) {
+    ret = tr069Devices[model].vendor;
+  }
+  return ret;
+};
+
+DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
+  let versions = [];
+  if (tr069Devices[model]) {
+    if (Array.isArray(tr069Devices[model].versions_upgrade[version])) {
+      versions = tr069Devices[model].versions_upgrade[version];
+    }
+  }
+  return versions;
+};
+
+DeviceVersion.isUpgradeSupport = function(model) {
+  let upgradeAvailable = false;
+  if (tr069Devices[model]) {
+    upgradeAvailable = tr069Devices[model].feature_support.firmware_upgrade;
+  }
+  return upgradeAvailable;
 };
 
 module.exports = DeviceVersion;

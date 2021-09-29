@@ -1,6 +1,7 @@
 const Config = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const util = require('./util');
 
 let deviceHandlers = {};
 
@@ -153,6 +154,96 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
       }
     });
   }
+};
+
+/*
+  Function to validate ssid and remove prefix
+  if it already in the start of ssid
+*/
+const cleanAndCheckSsid = function(prefix, ssid) {
+  let strPrefix = '';
+  if (typeof prefix !== 'undefined') {
+    strPrefix = prefix;
+  }
+  if (typeof ssid === 'undefined') {
+    // If no SSID provided it will not be this call
+    // that will decide prefix, so return true
+    return {enablePrefix: true, ssid: ''};
+  }
+  const escapedSsidPrefix = util.escapeRegExp(strPrefix);
+  const rePrefix = new RegExp('^' + escapedSsidPrefix + '.*$', 'g');
+  // Test if incoming SSID already have the prefix
+  if (rePrefix.test(ssid)) {
+    // Remove prefix from incoming SSID
+    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix), 'i');
+    const finalSsid = ssid.replace(toRemove, '');
+    const combinedSsid = strPrefix + finalSsid;
+    if (combinedSsid.length > 32) {
+      return {enablePrefix: false, ssid: finalSsid};
+    } else {
+      // Enable prefix on registry
+      return {enablePrefix: true, ssid: finalSsid};
+    }
+  } else {
+    const combinedSsid = strPrefix + ssid;
+    if (combinedSsid.length > 32) {
+      return {enablePrefix: false, ssid: ssid};
+    } else {
+      // Enable prefix on registry
+      return {enablePrefix: true, ssid: ssid};
+    }
+  }
+};
+
+/*
+  Function to be called in all points of the system
+  where ssid of a device is verified to be sent to a
+  device or saved in the database
+
+  warning to the cases below:
+  -> new registry:
+    Enabled only when hash AND config is enabled.
+    If the client stop paying the personalization app
+    him new devices registry will be prefix free.
+    So in new registries is to be called with deviceEnabled as disabled;
+
+  -> updating registry:
+    In the scenario where the client disable the configEnabled flag
+    or stop paying the personalization the app, we want to avoid
+    mass disabling ssid prefix. First to avoid stressing the system,
+    second because will be odd if the system by itself remove prefix
+    of already set devices.
+    What only matters in this case is the deviceEnabled flag.
+    So in updating registries hash and configEnabled shall be disabled;
+
+*/
+
+deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
+  keepDevicePrefix, isNewRegistry=false) {
+  // default configuration return
+  let prefixObj = {
+    enablePrefix: false,
+    ssid2: ssid2ghz,
+    ssid5: ssid5ghz,
+    prefix: '',
+  };
+  // clean and check the ssid regardless the flags
+  let valObj2 = cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
+  let valObj5 = cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
+  // set the cleaned ssid to be returned
+  prefixObj.ssid2 = valObj2.ssid;
+  prefixObj.ssid5 = valObj5.ssid;
+
+  // try to enable prefix
+  if ((isNewRegistry && config.personalizationHash !== '' &&
+     config.isSsidPrefixEnabled) || keepDevicePrefix) {
+    // only enable if is the clean and check for both ssid
+    //  (2ghz and 5ghz) is alright
+    prefixObj.enablePrefix = valObj2.enablePrefix && valObj5.enablePrefix;
+    // return a empty prefix case something goes wrong
+    prefixObj.prefix = prefixObj.enablePrefix ? config.ssidPrefix : '';
+  }
+  return prefixObj;
 };
 
 module.exports = deviceHandlers;

@@ -54,6 +54,7 @@ module.exports = {
     ],
     index: [
       './public/src/common.index.js',
+      './public/javascripts/session_storage.js',
       './public/javascripts/upgrade_flashman.js',
       './public/javascripts/device_validator.js',
       './public/javascripts/new_device.js',

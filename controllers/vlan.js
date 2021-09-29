@@ -198,7 +198,8 @@ vlanController.addVlanProfile = async function(req, res) {
       if (config.vlans_profiles[i].vlan_id == newVlanProfile.vlan_id) {
         is_vlan_id_unique = false;
       }
-      if (config.vlans_profiles[i].profile_name == newVlanProfile.profile_name) {
+      if (config.vlans_profiles[i].profile_name == newVlanProfile.profile_name
+      ) {
         is_profile_name_unique = false;
       }
     }
@@ -284,54 +285,48 @@ vlanController.editVlanProfile = async function(req, res) {
   }
 };
 
-vlanController.checkDevicesBeforeUpdate = async function(req, res) {
+vlanController.checkDevicesAffected = async function(req, res) {
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
     return res.json({success: false, type: 'danger', message: rej.message});
   });
   if (config) {
-    let vlanId;
+    let vlanProfile = config.vlans_profiles.find(
+      (vlanProfile) => vlanProfile._id == req.params.profileid);
+    if (typeof vlanProfile === 'undefined') {
+      return res.json({success: false, type: 'danger',
+                       message: 'Perfil de VLAN não encontrado'});
+    }
+    let vlanId = vlanProfile.vlan_id;
 
-    config.vlans_profiles.forEach((vlanProfile) => {
-      if (vlanProfile._id == req.params.profileid) {
-        vlanId = vlanProfile.vlan_id;
-      }
+    let matchedDevices = await DeviceModel
+    .find(
+      {vlan: {$exists: true, $not: {$size: 0}}},
+      {_id: true, vlan: true})
+    .catch((err) => {
+      return res.json({success: false, type: 'danger',
+                       message: 'Dispositivos não encontrados'});
     });
-
-    DeviceModel.find({'vlan': {'$exists': true, '$not': {'$size': 0}}},
-    function(err, matchedDevices) {
-      if (err) {
-        return res.json({success: false, type: 'danger',
-                         message: 'Dispositivos não encontrados'});
+    for (let device of matchedDevices) {
+      let doUpdate = false;
+      for (let vlan of device.vlan) {
+        if (vlanId == vlan.vlan_id) {
+          vlan.vlan_id = 1;
+          doUpdate = true;
+        }
       }
-      let updateDevices = [];
-      matchedDevices.every((device) => {
-        let doUpdate = false;
-        let vlans = device.vlan;
-        for (let j = 0; j < device.vlan.length; j++) {
-          if (vlanId == device.vlan[j].vlan_id) {
-            let deviceInfo = DeviceVersion.getDeviceInfo(device.model);
-            if (deviceInfo['soc'] === 'realtek') {
-              vlans[j].vlan_id = 9;
-            } else {
-              vlans[j].vlan_id = 1;
-            }
-            doUpdate = true;
-          }
-        }
-        if (doUpdate) {
-          let updateDeviceObj = {
-            deviceId: device.id,
-            vlans: JSON.stringify(vlans),
-          };
-          updateDevices.push(JSON.stringify(updateDeviceObj));
-        }
-        return true;
-      });
-      return res.json({success: true, type: 'success',
-                       updateDevices: updateDevices});
-    });
+      if (doUpdate) {
+        await device.save().catch((err) => {
+          return res.json({success: false, type: 'danger',
+                           message: 'Erro ao gravar na base de dados'});
+        });
+        mqtt.anlixMessageRouterUpdate(device._id);
+      }
+    }
+    return res.json({success: true, type: 'success',
+                     message: 'Realizado com sucesso'});
   } else {
-    res.json({success: false, type: 'danger', message: config});
+    return res.json({success: false, type: 'danger',
+                     message: 'Configuração não encontrada'});
   }
 };
 
@@ -428,10 +423,14 @@ vlanController.updateVlans = async function(req, res) {
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
 
-  if (vlanObj === undefined) {
+  if (typeof vlanObj === 'undefined') {
     vlanObj = '';
   } else {
-    vlanObj = JSON.parse(vlanObj);
+    try {
+      vlanObj = JSON.parse(vlanObj);
+    } catch(e) {
+      vlanObj = '';
+    }
   }
 
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
@@ -441,33 +440,22 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let cpu_port = deviceInfo['cpu_port'];
   let vlan_of_lan = '1';
   let vlan_of_wan = '2';
-  if (deviceInfo['soc'] === 'realtek') {
-    vlan_of_lan = '9';
-    vlan_of_wan = '8';
-  }
 
   // on well behavior object of vlan that needs to treat others vlans
-  let vlan_ports = '';
-  let aux_idx; // auxiliar index to toggle vid 1 or 9
-  if (vlanObj !== undefined && vlanObj.length > 0) {
+  let aux_idx;
+  if ((typeof vlanObj !== 'undefined') && (vlanObj.length > 0)) {
     // initialize keys values with empty string
     for (let i = 0; i < vlanObj.length; i++) {
-      // check vlan_id to pass the right vid in case device is realtek or not
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
-
       digestedVlans[aux_idx] = '';
     }
     // put on every key an append to the value as the matching port
     for (let i = 0; i < vlanObj.length; i++) {
-      // check vlan_id to pass the right vid in case device is realtek or not
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
-
-      if (aux_idx == '1' || aux_idx == '9') {
+      if (aux_idx == vlan_of_lan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+' ';
-      } else {
+      } else if (aux_idx != vlan_of_wan) {
         digestedVlans[aux_idx] += lan_ports[vlanObj[i].port-1].toString()+'t ';
-
-        vlan_ports += lan_ports[vlanObj[i].port-1].toString()+' ';
       }
     }
   } else {
@@ -482,14 +470,13 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
 
   // put the tagged ports
   for (let key in digestedVlans) {
-    if (key == 1 || key == 9) {
-      digestedVlans[key] += cpu_port.toString()+'t';
-    } else {
+    if (key == vlan_of_lan) {
+      digestedVlans[key] += cpu_port.toString() + 't';
+    } else if (key != vlan_of_wan) {
       digestedVlans[key] += wan_port.toString()+'t';
     }
   }
-  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' +
-                               vlan_ports + cpu_port.toString() + 't';
+  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + cpu_port.toString() + 't';
 
   return digestedVlans;
 };
@@ -514,15 +501,8 @@ vlanController.retrieveVlansToDevice = function(device) {
 };
 
 vlanController.getValidVlan = async function(model, convertedVlan) {
-  let deviceInfo = DeviceVersion.getDeviceInfo(model);
-  let soc = deviceInfo.soc;
-  let lanVlan;
+  let lanVlan = 1;
   let filteredVlan = [];
-  if (soc === 'realtek') {
-    lanVlan = 9;
-  } else {
-    lanVlan = 1;
-  }
   let didChange = false;
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
     return {success: false, type: 'danger', message: rej.message};
@@ -558,16 +538,10 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
   let lanPorts = deviceInfo.lan_ports;
   let wanPort = deviceInfo.wan_port;
   let cpuPort = deviceInfo.cpu_port;
-  let soc = deviceInfo.soc;
   let lanVlan;
   let wanVlan;
-  if (soc === 'realtek') {
-    lanVlan = 9;
-    wanVlan = 8;
-  } else {
-    lanVlan = 1;
-    wanVlan = 2;
-  }
+  lanVlan = 1;
+  wanVlan = 2;
   let vids = Object.keys(receivedVlan);
   let idxLan = vids.indexOf(lanVlan.toString());
   vids.splice(idxLan, 1);

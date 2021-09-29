@@ -47,9 +47,12 @@ form.needs-validation(id="deviceForm", novalidate)
       select.browser-default.md-select(id="new_wifi_mode")
         option(value="11n") BGN
         option(value="11g") G
-  .md-form.input-entry
-    label(for="new_wifi_ssid") SSID do Wi-Fi
-    input.form-control(type="text",
+  .md-form.input-group.input-entry
+    label(for="new_wifi_ssid", id="ssid_label") SSID do Wi-Fi
+    #ssid_prefix_div.input-group-prepend.d-none
+      span#ssid_prefix.input-group-text.px-0.text-primary(
+        style="background:inherit;border:none;")
+    input.form-control.pl-0(type="text",
                        id="new_wifi_ssid",
                        maxlength="32")
     .invalid-feedback

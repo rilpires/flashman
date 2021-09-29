@@ -5,7 +5,7 @@ let configSchema = new mongoose.Schema({
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   hasMajorUpdate: {type: Boolean, default: false},
-  pppoePassLength: {type: Number, default: 8},
+  pppoePassLength: {type: Number, default: 1},
   measureServerIP: {type: String},
   measureServerPort: {type: Number, default: 80},
   messaging_configs: {
@@ -19,12 +19,26 @@ let configSchema = new mongoose.Schema({
     web_login_user: String,
     web_password_user: String,
     remote_access: {type: Boolean, default: false},
-    inform_interval: {type: Number, required: true, default: 1*60*1000}, // ms
+    inform_interval: {type: Number, required: true, default: 5*60*1000}, // ms
+    sync_interval: {type: Number, required: true, default: 5*60*1000}, // ms
     recovery_threshold: {type: Number, required: true, default: 1}, // intervals
     offline_threshold: {type: Number, required: true, default: 3}, // intervals
     pon_signal_threshold: {type: Number, default: -18},
     pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
+  },
+  certification: {
+    // WAN steps required here are:
+    // - Response of a ping to gateway must succeed
+    wan_step_required: {type: Boolean, required: true, default: true},
+    ipv4_step_required: {type: Boolean, required: true, default: true},
+    ipv6_step_required: {type: Boolean, required: true, default: false},
+    dns_step_required: {type: Boolean, required: true, default: true},
+    // Flashman steps required here are:
+    // - CPE must have a registry created successfully at Flashman DB
+    // - CPE must be present at MQTT list of connected devices if it is a
+    //   CPE using Flashbox firmware
+    flashman_step_required: {type: Boolean, required: true, default: true},
   },
   data_collecting: {
     is_active: Boolean,
@@ -83,9 +97,14 @@ let configSchema = new mongoose.Schema({
   personalizationHash: {type: String, default: ''},
   vlans_profiles: [{
     // restricted to this range of value by the definition of 802.1q protocol
-    vlan_id: {type: Number, required: true, min: 1, max: 4095},
-    profile_name: {type: String, required: true, match: /[A-Za-z0-9_-]/, maxLength: 32},
+    vlan_id: {type: Number, required: true, min: 1, max: 4094},
+    profile_name: {type: String,
+                   required: true,
+                   match: /[A-Za-z0-9_-]/,
+                   maxLength: 32},
   }],
+  isSsidPrefixEnabled: {type: Boolean},
+  ssidPrefix: {type: String},
 });
 
 let config = mongoose.model('config', configSchema);

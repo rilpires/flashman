@@ -1,10 +1,12 @@
 const localPackageJson = require('../package.json');
+const localEnvironmentJson = require('../environment.config.json');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
 const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
+const Validator = require('../public/javascripts/device_validator');
 let Config = require('../models/config');
 let updateController = {};
 
@@ -94,6 +96,7 @@ const updateGenieRepo = function(ref) {
   let checkout = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
+  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
@@ -103,7 +106,10 @@ const updateGenieRepo = function(ref) {
           if (err) return reject();
           exec(build, (err, stdout, stderr) => {
             if (err) return reject();
-            return resolve();
+            exec(reload, (err, stdout, stderr) => {
+              if (err) return reject();
+              return resolve();
+            });
           });
         });
       });
@@ -271,15 +277,27 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
 };
 
 updateController.rebootGenie = function(instances) {
-  // Treat bugged case where "max" parameter may set instance count to 0 upon
-  // reloading the service - use value from nproc instead of bugged 0
+  // Treat bugged case where pm2 may fail to provide the number of instances
+  // correctly - it may be 0 or undefined, and we must then rely on both the
+  // envitonment.config.json file and nproc to tell us how many flashman
+  // instances there are
   exec('nproc', (err, stdout, stderr)=>{
-    if (instances === 0 || instances === '0') {
-      instances = stdout.trim(); // remove trailing newline
+    instances = parseInt(instances);
+    if (isNaN(instances)) {
+      instances = parseInt(localEnvironmentJson.apps[0].instances);
+      if (isNaN(instances)) {
+        instances = parseInt(stdout.trim()); // remove trailing newline
+      }
+    }
+    // If somehow is still NaN, replace with 1 as a fallback
+    if (isNaN(instances)) {
+      instances = '1';
+    } else {
+      instances = instances.toString(); // Merely for type safety
     }
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
-    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    // issues with CPEs connections since exceptions lead to buggy exp. backoff
     exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
@@ -465,6 +483,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
+        tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
@@ -472,6 +491,15 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
+        isClientPayingPersonalizationApp: (
+          matchedConfig.personalizationHash !== '' ? true : false),
+        isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
+        ssidPrefix: matchedConfig.ssidPrefix,
+        wanStepRequired: matchedConfig.certification.wan_step_required,
+        ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
+        ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
+        dnsStepRequired: matchedConfig.certification.dns_step_required,
+        flashStepRequired: matchedConfig.certification.flashman_step_required,
       });
     } else {
       return res.status(200).json({
@@ -524,6 +552,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
 updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
+    let validator = new Validator();
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
@@ -540,7 +569,9 @@ updateController.setAutoConfig = async function(req, res) {
       // No change
       measureServerPort = config.measureServerPort;
     }
-    if (measureServerPort && (measureServerPort < 1 || measureServerPort > 65535)) {
+    if ((measureServerPort) &&
+        (measureServerPort < 1 || measureServerPort > 65535)
+    ) {
       return res.status(500).json({
         type: 'danger',
         message: 'Erro validando os campos',
@@ -553,7 +584,7 @@ updateController.setAutoConfig = async function(req, res) {
     if (isNaN(ponSignalThreshold)) {
       ponSignalThreshold = config.tr069.pon_signal_threshold;
     }
-    if (ponSignalThreshold &&
+    if ((ponSignalThreshold) &&
         (ponSignalThreshold < -100 || ponSignalThreshold > 100)
     ) {
       return res.status(500).json({
@@ -563,11 +594,12 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
 
-    let ponSignalThresholdCritical = parseInt(req.body['pon-signal-threshold-critical']);
+    let ponSignalThresholdCritical = parseInt(
+      req.body['pon-signal-threshold-critical']);
     if (isNaN(ponSignalThresholdCritical)) {
       ponSignalThresholdCritical = config.tr069.pon_signal_threshold_critical;
     }
-    if (ponSignalThresholdCritical &&
+    if ((ponSignalThresholdCritical) &&
         (ponSignalThresholdCritical < -100 || ponSignalThresholdCritical > 100)
     ) {
       return res.status(500).json({
@@ -577,11 +609,26 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
-    let ponSignalThresholdCriticalHigh = parseInt(req.body['pon-signal-threshold-critical-high']);
+    if (config.personalizationHash !== '') {
+      config.isSsidPrefixEnabled =
+        (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
+      if (!validField.valid) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Erro validando os campos',
+        });
+      }
+      config.ssidPrefix = req.body['ssid-prefix'];
+    }
+
+    let ponSignalThresholdCriticalHigh = parseInt(
+      req.body['pon-signal-threshold-critical-high']);
+
     if (isNaN(ponSignalThresholdCriticalHigh)) {
       ponSignalThresholdCriticalHigh = config.tr069.pon_signal_threshold;
     }
-    if (ponSignalThresholdCriticalHigh &&
+    if ((ponSignalThresholdCriticalHigh) &&
         (ponSignalThresholdCriticalHigh < -100 ||
          ponSignalThresholdCriticalHigh > 100)
     ) {
@@ -608,6 +655,7 @@ updateController.setAutoConfig = async function(req, res) {
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
+    let tr069SyncInterval = Number(req.body['sync-interval']);
     let tr069RecoveryThreshold =
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
@@ -617,6 +665,7 @@ updateController.setAutoConfig = async function(req, res) {
      && !isNaN(tr069OfflineThreshold)
      // and inform interval, recovery and offline values are within boundaries,
      && tr069InformInterval >= 60 && tr069InformInterval <= 86400
+     && tr069SyncInterval >= 60 && tr069SyncInterval <= 86400
      && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
@@ -635,6 +684,7 @@ updateController.setAutoConfig = async function(req, res) {
         remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
+        sync_interval: tr069SyncInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
         offline_threshold: tr069OfflineThreshold,
         pon_signal_threshold: ponSignalThreshold,
@@ -647,6 +697,27 @@ updateController.setAutoConfig = async function(req, res) {
         type: 'danger',
         message: 'Erro validando os campos relacionados ao TR-069.',
       });
+    }
+
+    let wanStepRequired = req.body['wan-step-required'] === 'true';
+    let ipv4StepRequired = req.body['ipv4-step-required'] === 'true';
+    let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
+    let dnsStepRequired = req.body['dns-step-required'] === 'true';
+    let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
+    if (typeof wanStepRequired === 'boolean') {
+      config.certification.wan_step_required = wanStepRequired;
+    }
+    if (typeof ipv4StepRequired === 'boolean') {
+      config.certification.ipv4_step_required = ipv4StepRequired;
+    }
+    if (typeof ipv6StepRequired === 'boolean') {
+      config.certification.ipv6_step_required = ipv6StepRequired;
+    }
+    if (typeof dnsStepRequired === 'boolean') {
+      config.certification.dns_step_required = dnsStepRequired;
+    }
+    if (typeof flashmanStepRequired === 'boolean') {
+      config.certification.flashman_step_required = flashmanStepRequired;
     }
 
     await config.save();

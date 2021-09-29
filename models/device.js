@@ -11,8 +11,10 @@ let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
   serial_tr069: String,
+  alt_uid_tr069: String, // Used when serial is not reliable for crossing data
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
+  last_tr069_sync: Date,
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -35,6 +37,7 @@ let deviceSchema = new Schema({
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
   wifi_ssid: String,
+  wifi_bssid: String,
   wifi_password: String,
   wifi_channel: String,
   wifi_last_channel: String, // last channel in use reported from router
@@ -48,6 +51,7 @@ let deviceSchema = new Schema({
   ]},
   wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
+  wifi_bssid_5ghz: String,
   wifi_password_5ghz: String,
   wifi_channel_5ghz: String,
   wifi_last_channel_5ghz: String,
@@ -179,6 +183,7 @@ let deviceSchema = new Schema({
   lastboot_log: Buffer, // used as simply last requested live log for TR-069
   lastboot_date: Date, // used as simply last requested live log for TR-069
   apps: [{id: String, secret: String}],
+  pending_app_secret: String, // used as tr069 secret authentication
   // For port forward
   forward_index: String,
   // For blocked devices
@@ -218,6 +223,9 @@ let deviceSchema = new Schema({
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
+  isSsidPrefixEnabled: {type: Boolean},
+  web_admin_username: String,
+  web_admin_password: String,
 });
 
 deviceSchema.set('autoIndex', false);

@@ -75,6 +75,9 @@ typings/
 # Deployment configuration file
 config/configs.js
 
+# Webpack dev files
+public/dist/*.map
+
 ### Vim ###
 # swap
 [._]*.s[a-v][a-z]
@@ -88,5 +91,8 @@ Session.vim
 *~
 # auto-generated tag files
 tags
+
+# jest files
+globalConfig.json
 
 # End of https://www.gitignore.io/api/code,vim,node

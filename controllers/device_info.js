@@ -10,6 +10,7 @@ const updateScheduler = require('./update_scheduler');
 const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
+const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const crypto = require('crypto');
 
@@ -103,174 +104,224 @@ const createRegistry = async function(req, res) {
   let sentWifiLastChannel5G = util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
   let sentWifiLastBand = util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
   let sentWifiLastBand5G = util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
-
   // The syn came from flashbox keepalive procedure
   // Keepalive is designed to failsafe existing devices and not create new ones
   if (flmUpdater == '0') {
     return res.status(400).end();
   }
 
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
-    if (err || !matchedConfig) {
-      console.log('Error creating entry: ' + err);
+  let matchedConfig = await Config.findOne({is_default: true}).catch(
+    function(err) {
+      console.error('Error creating entry: ' + err);
       return res.status(500).end();
     }
+  );
+  if (!matchedConfig) {
+    console.error('Error creating entry. Config does not exists.');
+    return res.status(500).end();
+  }
+  let ssidPrefix = '';
+  let isSsidPrefixEnabled = false;
+  let createPrefixErrNotification = false;
+  // -> 'new registry' scenario
+  let checkResponse = deviceHandlers.checkSsidPrefix(
+    matchedConfig, ssid, ssid5ghz, false, true);
+  /* if in the check is not enabled but hash exists and is
+    enabled in config, so we have an error */
+  createPrefixErrNotification = !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled;
+  isSsidPrefixEnabled = checkResponse.enablePrefix;
+  ssidPrefix = checkResponse.prefix;
+  // clean ssid
+  ssid = checkResponse.ssid2;
+  ssid5ghz = checkResponse.ssid5;
 
-    // Validate fields
-    genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
-    if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
-        connectionType != '') {
-      return res.status(500).end();
-    }
-    if (pppoe) {
-      genericValidate(pppoeUser, validator.validateUser,
-                      'pppoe_user', null, errors);
-      genericValidate(pppoePassword, validator.validatePassword,
-                      'pppoe_password', matchedConfig.pppoePassLength, errors);
-    }
-    genericValidate(ssid, validator.validateSSID,
-                    'ssid', null, errors);
-    genericValidate(password, validator.validateWifiPassword,
-                    'password', null, errors);
-    genericValidate(channel, validator.validateChannel,
-                    'channel', null, errors);
+  // Validate fields
+  genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
+  if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
+      connectionType != '') {
+    return res.status(500).end();
+  }
+  if (pppoe) {
+    genericValidate(pppoeUser, validator.validateUser,
+                    'pppoe_user', null, errors);
+    genericValidate(pppoePassword, validator.validatePassword,
+                    'pppoe_password', matchedConfig.pppoePassLength, errors);
+  }
+  genericValidate(ssidPrefix + ssid, validator.validateSSID,
+                  'ssid', null, errors);
+  genericValidate(password, validator.validateWifiPassword,
+                  'password', null, errors);
+  genericValidate(channel, validator.validateChannel,
+                  'channel', null, errors);
 
-    let permissions = DeviceVersion.findByVersion(version, is5ghzCapable,
-                                                  model);
-    if (permissions.grantWifiBand) {
-      genericValidate(band, validator.validateBand,
-                      'band', null, errors);
-      genericValidate(mode, validator.validateMode,
-                      'mode', null, errors);
+  let permissions = DeviceVersion.findByVersion(version, is5ghzCapable,
+                                                model);
+  if (permissions.grantWifiBand) {
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
+    genericValidate(mode, validator.validateMode,
+                    'mode', null, errors);
+  }
+  if (permissions.grantWifiPowerHiddenIpv6Box) {
+    genericValidate(power, validator.validatePower,
+                    'power', null, errors);
+  }
+  if (permissions.grantWifi5ghz) {
+    genericValidate(ssidPrefix + ssid5ghz, validator.validateSSID,
+                    'ssid5ghz', null, errors);
+    genericValidate(password5ghz, validator.validateWifiPassword,
+                    'password5ghz', null, errors);
+    genericValidate(channel5ghz, validator.validateChannel,
+                    'channel5ghz', null, errors);
+    genericValidate(band5ghz, validator.validateBand,
+                    'band5ghz', null, errors);
+
+    // Fix for devices that uses 11a as 11ac mode
+    if (mode5ghz == '11a') {
+      mode5ghz = '11ac';
     }
+    genericValidate(mode5ghz, validator.validateMode,
+                    'mode5ghz', null, errors);
     if (permissions.grantWifiPowerHiddenIpv6Box) {
-      genericValidate(power, validator.validatePower,
-                      'power', null, errors);
+      genericValidate(power5ghz, validator.validatePower,
+                      'power5ghz', null, errors);
+    }
+  }
+
+  if (bridgeEnabled > 0) {
+    // Make sure that connection type is DHCP. Avoids bugs in version
+    // 0.26.0 of Flashbox firmware
+    connectionType = 'dhcp';
+
+    if (bridgeFixIP !== '') {
+      genericValidate(bridgeFixIP, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+      genericValidate(bridgeFixGateway, validator.validateIP,
+                      'bridge_fix_gateway', null, errors);
+      genericValidate(bridgeFixDNS, validator.validateIP,
+                      'bridge_fix_ip', null, errors);
+    }
+  }
+
+  if (errors.length < 1) {
+    let newMeshId = meshHandlers.genMeshID();
+    let newMeshKey = meshHandlers.genMeshKey();
+    let deviceObj = {
+      '_id': macAddr,
+      'created_at': new Date(),
+      'model': model,
+      'version': version,
+      'installed_release': installedRelease,
+      'release': installedRelease,
+      'pppoe_user': pppoeUser,
+      'pppoe_password': pppoePassword,
+      'lan_subnet': lanSubnet,
+      'lan_netmask': lanNetmask,
+      'wifi_ssid': ssid,
+      'wifi_password': password,
+      'wifi_channel': channel,
+      'wifi_last_channel': sentWifiLastChannel,
+      'wifi_band': band,
+      'wifi_last_band': sentWifiLastBand,
+      'wifi_mode': mode,
+      'wifi_power': power,
+      'wifi_state': wifiState,
+      'wifi_hidden': wifiHidden,
+      'wifi_is_5ghz_capable': is5ghzCapable,
+      'wifi_ssid_5ghz': ssid5ghz,
+      'wifi_password_5ghz': password5ghz,
+      'wifi_channel_5ghz': channel5ghz,
+      'wifi_last_channel_5ghz': sentWifiLastChannel5G,
+      'wifi_band_5ghz': band5ghz,
+      'wifi_last_band_5ghz': sentWifiLastBand5G,
+      'wifi_mode_5ghz': mode5ghz,
+      'wifi_power_5ghz': power5ghz,
+      'wifi_state_5ghz': wifiState5ghz,
+      'wifi_hidden_5ghz': wifiHidden5ghz,
+      'wan_ip': wanIp,
+      'wan_negociated_speed': wanSpeed,
+      'wan_negociated_duplex': wanDuplex,
+      'ipv6_enabled': wanIpv6Enabled,
+      'ip': ip,
+      'last_contact': Date.now(),
+      'do_update': false,
+      'do_update_parameters': false,
+      'sys_up_time': sysUpTime,
+      'wan_up_time': wanUpTime,
+      'bridge_mode_enabled': (bridgeEnabled > 0),
+      'bridge_mode_switch_disable': (bridgeSwitchDisable > 0),
+      'bridge_mode_ip': bridgeFixIP,
+      'bridge_mode_gateway': bridgeFixGateway,
+      'bridge_mode_dns': bridgeFixDNS,
+      'mesh_mode': meshMode,
+      'mesh_id': newMeshId,
+      'mesh_key': newMeshKey,
+      'wps_is_active': wpsState,
+      'isSsidPrefixEnabled': isSsidPrefixEnabled,
+    };
+    if (vlanParsed !== undefined) {
+      deviceObj.vlan = vlanParsed;
+    }
+    let newDeviceModel = new DeviceModel(deviceObj);
+    if (connectionType != '') {
+      newDeviceModel.connection_type = connectionType;
+    }
+    await newDeviceModel.save().catch(
+      function(err) {
+        console.error('Error creating entry: ' + err);
+        return res.status(500).end();
+      }
+    );
+    if (createPrefixErrNotification) {
+      // Notify if ssid prefix was impossible to be assigned
+      let matchedNotif = await Notification
+      .findOne({'message_code': 5, 'target': deviceObj._id})
+      .catch(function(err) {
+        console.error('Error fetching database: ' + err);
+      });
+      if (!matchedNotif || matchedNotif.allow_duplicate) {
+        let notification = new Notification({
+          'message': 'Não foi possível habilitar o prefixo SSID ' +
+                     'pois o tamanho máximo de 32 caracteres foi excedido.',
+          'message_code': 5,
+          'severity': 'alert',
+          'type': 'communication',
+          'action_title': 'Ok',
+          'allow_duplicate': false,
+          'target': deviceObj._id,
+        });
+        await notification.save().catch(
+          function(err) {
+            console.error('Error creating notification: ' + err);
+          }
+        );
+      }
+    }
+    let response = {'do_update': false,
+                    'do_newprobe': true,
+                    'release_id:': installedRelease,
+                    'mesh_mode': meshMode,
+                    'mesh_id': newMeshId,
+                    'mesh_key': newMeshKey,
+                    'wifi_ssid': ssidPrefix + ssid};
+    if (vlanDidChange) {
+      let vlanToDevice = vlanController.convertFlashmanVlan(
+        model, JSON.stringify(vlanParsed));
+      let vlanHash = crypto.createHash('md5').update(
+        JSON.stringify(vlanToDevice)).digest('base64');
+      response.vlan = vlanToDevice;
+      response.vlan_index = vlanHash;
     }
     if (permissions.grantWifi5ghz) {
-      genericValidate(ssid5ghz, validator.validateSSID,
-                      'ssid5ghz', null, errors);
-      genericValidate(password5ghz, validator.validateWifiPassword,
-                      'password5ghz', null, errors);
-      genericValidate(channel5ghz, validator.validateChannel,
-                      'channel5ghz', null, errors);
-      genericValidate(band5ghz, validator.validateBand,
-                      'band5ghz', null, errors);
-
-      // Fix for devices that uses 11a as 11ac mode
-      if (mode5ghz == '11a') {
-        mode5ghz = '11ac';
-      }
-      genericValidate(mode5ghz, validator.validateMode,
-                      'mode5ghz', null, errors);
-      if (permissions.grantWifiPowerHiddenIpv6Box) {
-        genericValidate(power5ghz, validator.validatePower,
-                        'power5ghz', null, errors);
-      }
+      response.wifi_ssid_5ghz = ssidPrefix + ssid5ghz;
     }
-
-    if (bridgeEnabled > 0) {
-      // Make sure that connection type is DHCP. Avoids bugs in version
-      // 0.26.0 of Flashbox firmware
-      connectionType = 'dhcp';
-
-      if (bridgeFixIP !== '') {
-        genericValidate(bridgeFixIP, validator.validateIP,
-                        'bridge_fix_ip', null, errors);
-        genericValidate(bridgeFixGateway, validator.validateIP,
-                        'bridge_fix_gateway', null, errors);
-        genericValidate(bridgeFixDNS, validator.validateIP,
-                        'bridge_fix_ip', null, errors);
-      }
-    }
-
-    if (errors.length < 1) {
-      let newMeshId = meshHandlers.genMeshID();
-      let newMeshKey = meshHandlers.genMeshKey();
-      let deviceObj = {
-        '_id': macAddr,
-        'created_at': new Date(),
-        'model': model,
-        'version': version,
-        'installed_release': installedRelease,
-        'release': installedRelease,
-        'pppoe_user': pppoeUser,
-        'pppoe_password': pppoePassword,
-        'lan_subnet': lanSubnet,
-        'lan_netmask': lanNetmask,
-        'wifi_ssid': ssid,
-        'wifi_password': password,
-        'wifi_channel': channel,
-        'wifi_last_channel': sentWifiLastChannel,
-        'wifi_band': band,
-        'wifi_last_band': sentWifiLastBand,
-        'wifi_mode': mode,
-        'wifi_power': power,
-        'wifi_state': wifiState,
-        'wifi_hidden': wifiHidden,
-        'wifi_is_5ghz_capable': is5ghzCapable,
-        'wifi_ssid_5ghz': ssid5ghz,
-        'wifi_password_5ghz': password5ghz,
-        'wifi_channel_5ghz': channel5ghz,
-        'wifi_last_channel_5ghz': sentWifiLastChannel5G,
-        'wifi_band_5ghz': band5ghz,
-        'wifi_last_band_5ghz': sentWifiLastBand5G,
-        'wifi_mode_5ghz': mode5ghz,
-        'wifi_power_5ghz': power5ghz,
-        'wifi_state_5ghz': wifiState5ghz,
-        'wifi_hidden_5ghz': wifiHidden5ghz,
-        'wan_ip': wanIp,
-        'wan_negociated_speed': wanSpeed,
-        'wan_negociated_duplex': wanDuplex,
-        'ipv6_enabled': wanIpv6Enabled,
-        'ip': ip,
-        'last_contact': Date.now(),
-        'do_update': false,
-        'do_update_parameters': false,
-        'sys_up_time': sysUpTime,
-        'wan_up_time': wanUpTime,
-        'bridge_mode_enabled': (bridgeEnabled > 0),
-        'bridge_mode_switch_disable': (bridgeSwitchDisable > 0),
-        'bridge_mode_ip': bridgeFixIP,
-        'bridge_mode_gateway': bridgeFixGateway,
-        'bridge_mode_dns': bridgeFixDNS,
-        'mesh_mode': meshMode,
-        'mesh_id': newMeshId,
-        'mesh_key': newMeshKey,
-        'wps_is_active': wpsState,
-      };
-      if (vlanParsed !== undefined) {
-        deviceObj.vlan = vlanParsed;
-      }
-      let newDeviceModel = new DeviceModel(deviceObj);
-      if (connectionType != '') {
-        newDeviceModel.connection_type = connectionType;
-      }
-      newDeviceModel.save(function(err) {
-        if (err) {
-          console.log('Error creating entry: ' + err);
-          return res.status(500).end();
-        } else {
-          let response = {'do_update': false,
-                          'do_newprobe': true,
-                          'release_id:': installedRelease,
-                          'mesh_mode': meshMode,
-                          'mesh_id': newMeshId,
-                          'mesh_key': newMeshKey};
-          if (vlanDidChange) {
-            let vlanToDevice = vlanController.convertFlashmanVlan(model, JSON.stringify(vlanFiltered));
-            let vlanHash = crypto.createHash('md5').update(JSON.stringify(vlanToDevice)).digest('base64');
-            response.vlan = vlanToDevice;
-            response.vlan_index = vlanHash;
-          }
-          return res.status(200).json(response);
-        }
-      });
-    } else {
-      console.log('Error creating entry: ' + JSON.stringify(errors));
-      return res.status(500).end();
-    }
-  });
+    return res.json(response);
+  } else {
+    console.error('Error creating entry: ' + JSON.stringify(errors));
+    return res.status(500).end();
+  }
 };
 
 const serializeBlocked = function(devices) {
@@ -347,7 +398,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
   }
 
   let devId = req.body.id.toUpperCase();
-  DeviceModel.findById(devId).lean().exec(function(err, matchedDevice) {
+  DeviceModel.findById(devId).lean().exec(async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device ' + devId + ': ' + err);
       return res.status(500).end();
@@ -357,6 +408,27 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
       } else {
         let deviceSetQuery = {};
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        let errors = [];
+        // validate 2.4GHz because feature of ssid prefix
+        let config;
+        try {
+          config = await Config.findOne({is_default: true}).lean();
+          if (!config) throw new Error('Config not found');
+        } catch (error) {
+          console.log(error);
+        }
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
+          matchedDevice.isSsidPrefixEnabled);
+        matchedDevice.wifi_ssid = checkResponse.ssid2;
+        matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
+        matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
+        let ssidPrefix = checkResponse.prefix;
+        const validator = new Validator();
+        let ssid2ghz = util.returnObjOrEmptyStr(matchedDevice.wifi_ssid);
+        genericValidate(ssidPrefix + ssid2ghz, validator.validateSSID,
+                        'ssid', null, errors);
 
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
@@ -463,8 +535,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             sentVersion, is5ghzCapable, (bodyModel + bodyModelVer));
           let permissionsCurrVersion = DeviceVersion.findByVersion(
             matchedDevice.version, is5ghzCapable, matchedDevice.model);
-          let errors = [];
-          const validator = new Validator();
+
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
             let band =
@@ -501,7 +572,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             let mode5ghz =
               util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
 
-            genericValidate(ssid5ghz, validator.validateSSID,
+            genericValidate(ssidPrefix+ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
@@ -752,6 +823,17 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             fetchedVlans = containerVlans.vlans;
             vlanHash = containerVlans.hash;
           }
+          let wifiSsid2ghz = ssidPrefix + util.returnObjOrEmptyStr(
+            matchedDevice.wifi_ssid);
+          let wifiSsid5ghz = util.returnObjOrEmptyStr(
+            matchedDevice.wifi_ssid_5ghz);
+          /*
+            to not return appended ssidPrefix
+            in case device not support 5GHz
+          */
+          if (matchedDevice.wifi_is_5ghz_capable) {
+            wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,
@@ -763,7 +845,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'pppoe_password': util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
             'lan_netmask': util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
-            'wifi_ssid': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid),
+            'wifi_ssid': wifiSsid2ghz,
             'wifi_password': util.returnObjOrEmptyStr(matchedDevice.wifi_password),
             'wifi_channel': util.returnObjOrEmptyStr(matchedDevice.wifi_channel),
             'wifi_band': util.returnObjOrEmptyStr(matchedDevice.wifi_band),
@@ -771,7 +853,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state': matchedDevice.wifi_state,
             'wifi_power': util.returnObjOrNum(matchedDevice.wifi_power, 100),
             'wifi_hidden': matchedDevice.wifi_hidden,
-            'wifi_ssid_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_ssid_5ghz),
+            'wifi_ssid_5ghz': wifiSsid5ghz,
             'wifi_password_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_password_5ghz),
             'wifi_channel_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_channel_5ghz),
             'wifi_band_5ghz': util.returnObjOrEmptyStr(matchedDevice.wifi_band_5ghz),

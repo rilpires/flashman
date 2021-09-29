@@ -64,30 +64,24 @@
   }
 }
 
-// Length select on DataTable
-.dataTables_length {
+.custom-select {
+  // Remove arrow on Firefox
+  -moz-appearance: none;
+  // Remove arrow on Chrome
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent !important;
   border: 0;
-  position: relative;
+  border-bottom: 1px solid $input-border-color;
+  color: $input-color;
 
-  .custom-select {
-    // Remove arrow on Firefox
-    -moz-appearance: none;
-    // Remove arrow on Chrome
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid $input-border-color;
-    color: $input-color;
+  // Remove arrow on IE10
+  &::-ms-expand {
+    display: none;
+  }
 
-    // Remove arrow on IE10
-    &::-ms-expand {
-      display: none;
-    }
-
-    &:focus {
-      outline: none;
-    }
+  &:focus {
+    outline: none;
   }
 }
 
@@ -387,3 +381,17 @@ input:checked + .slider:before {
   border: none;
 }
 
+/* Wi-Fi tabs */
+
+.nav-tabs .nav-link {
+  border-radius: 0;
+}
+
+.wifi-tab-content {
+  > .tab-pane {
+    display: none;
+  }
+  > .active {
+    display: flex;
+  }
+}

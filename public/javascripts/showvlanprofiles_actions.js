@@ -70,7 +70,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
           $('<td>').append(
             $('<button>').append(
               $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span>').html('&nbsp Editar'),
+              $('<span>').html('&nbsp Editar nome'),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
@@ -182,40 +182,10 @@ $(document).ready(function() {
     }).then(async function(result) {
       if (!result.value) return;
       let updatesFailed = false;
-      let deviceFailed;
       for (let i = 0; i < selectedItens.length; i++) {
         let res = await $.get('/vlan/profile/check/'+selectedItens[i], 'json');
-        if (res.type == 'success') {
-          res.updateDevices.every((updateObj) => {
-            updateObj = JSON.parse(updateObj);
-            $.ajax({
-              type: 'POST',
-              url: '/vlan/update/'+updateObj.deviceId,
-              traditional: true,
-              data: {
-                vlans: updateObj.vlans,
-              },
-              success: function(res) {
-                return true;
-              },
-              error: function(res) {
-                updatesFailed = true;
-                deviceFailed = updateObj.deviceId;
-                return false;
-              },
-            });
-          });
-        } else {
-          swal.close();
-          swal({
-            type: 'error',
-            title: 'Erro ao excluir perfis de VLAN',
-            text: 'Perfis de VLAN nao encontrados. ' +
-            'Por favor tente novamente',
-            confirmButtonColor: '#4db6ac',
-          });
-        }
-        if (updatesFailed === true) {
+        if (!res.success) {
+          updatesFailed = true;
           break;
         }
       }
@@ -224,8 +194,8 @@ $(document).ready(function() {
         swal({
           type: 'error',
           title: 'Erro ao excluir perfis de VLAN',
-          text: 'Exclusão de perfis não foi possível pois dispositivo ' +
-          deviceFailed +' não atualizou sua configuração de VLAN.',
+          text: 'Exclusão de perfis não foi possível pois ' +
+                'alguns CPEs não atualizaram a configuração de VLAN.',
           confirmButtonColor: '#4db6ac',
         });
       } else {
