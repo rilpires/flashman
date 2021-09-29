@@ -926,11 +926,11 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
 };
 
 diagAppAPIController.poolFlashmanField = async function(req, res) {
-  if (!req.body.mac || !req.body.field
+  if (!req.body.mac || !req.body.field) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   const macAddr = req.body.mac.toUpperCase();
-  if (!utilHandlers.isMacValid(macAddr)
+  if (!utilHandlers.isMacValid(macAddr)) {
     return res.status(403).json({message: 'MAC inválido'});
   }
   const field = req.body.field;
@@ -938,11 +938,11 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   .catch((err) => {
     return res.status(500).json(response{message: 'Erro interno'};
   });
-  if (!matchedDevice
+  if (!matchedDevice) {
     return res.status(404).json({message: 'CPE não encontrado'});
   }
   const fieldValue = matchedDevice[field];
-  if (fieldValue === undefined
+  if (fieldValue === undefined) {
     return res.status(404).json({message: 'Campo não encontrado'});
   }
   return res.status(200).json({fieldValue: fieldValue});
