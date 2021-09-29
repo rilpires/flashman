@@ -915,15 +915,17 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     return map[slaveMacAddr];
   });
   if (!isSlaveOn) {
-    response.message = 'CPE secundário não está online';
-    return res.status(403).json(response);
+    return res.status(403).json({
+      message: 'CPE secundário não está online'
+    });
   }
   const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[masterMacAddr];
   });
   if (!isMasterOn) {
-    response.message = 'CPE primário não está online';
-    return res.status(403).json(response);
+    return res.status(403).json({
+      message: 'CPE primário não está online'
+    });
   }
 
   matchedSlave.mesh_master = '';
