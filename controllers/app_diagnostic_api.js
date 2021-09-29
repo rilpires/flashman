@@ -936,7 +936,7 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   const field = req.body.field;
   let matchedDevice = await DeviceModel.findById(macAddr, field)
   .catch((err) => {
-    return res.status(500).json(response{message: 'Erro interno'});
+    return res.status(500).json({message: 'Erro interno'});
   });
   if (!matchedDevice) {
     return res.status(404).json({message: 'CPE não encontrado'});
