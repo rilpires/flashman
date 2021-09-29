@@ -644,6 +644,75 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     500 - Não existe firmware com essa versão
     500 - <outras mensagens>
     200 - success true */
+  test('Enable firwmare update of an CPE(flashbox): not exists',
+  async () => {
+    let id = 'CC:CC:CC:CC:CC:CC';
+    let firmware = '0000-flm';
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(500);
+    expect(res.body.success).toBeFalsy();
+    expect(res.body.message).toBe('Dispositivo não encontrado');
+  });
+  test('Enable firwmare update of an CPE(flashbox): exists',
+  async () => {
+    let id = '00:E0:4C:C4:80:14';
+    let firmware = 'M119-aix';
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBeTruthy();
+  });
+  test('Enable firwmare update of an CPE(tr-069): not exists by acs_id',
+  async () => {
+    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
+    let firmware = 'V1.1.20P1T18'; //
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(500);
+    expect(res.body.success).toBeFalsy();
+    expect(res.body.message).toBe('Dispositivo não encontrado');
+  });
+  test('Enable firwmare update of an CPE(tr-069): exists by acs_id',
+  async () => {
+    let id = 'E01954-F670L-ZTE0QHEL4M05104';
+    let firmware = 'V1.1.20P3N3';
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBeTruthy();
+  });
+  test('Enable firwmare update of an CPE(tr-069): not exists by serial',
+  async () => {
+    let id = 'MFI3OFMI1FM3';
+    let firmware = 'V1.1.20P1T18';
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(500);
+    expect(res.body.success).toBeFalsy();
+    expect(res.body.message).toBe('Dispositivo não encontrado');
+  });
+  test('Enable firwmare update of an CPE(tr-069): exists by acs_id',
+  async () => {
+    let id = 'ZTEKQHELBU28569';
+    let firmware = 'V1.1.20P3N4D';
+    let res = await request('localhost:8000')
+      .put('/api/v2/device/update/'+id+'/'+firmware)
+      .set('Accept', 'application/json')
+      .auth('admin', 'landufrj123');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBeTruthy();
+  });
 
   /* Enviar comando para um roteador
   localhost:8000/api/v2/device/command/:id/:msg PUT
