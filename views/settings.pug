@@ -52,7 +52,7 @@ block content
                   span &nbsp; Dica! Utilize o mesmo prefixo SSID configurado no
                     |  preset das firmwares Flashbox. Lembre dos caracteres
                     |  maiúsculos e minúsculos
-                .md-form.input-entry
+                .md-form.input-entry#ssid-prefix-box
                   label Prefixo SSID
                   input#ssid-prefix.form-control(
                     type="text",
@@ -65,7 +65,8 @@ block content
                 .custom-control.custom-checkbox
                   input#is-ssid-prefix-enabled.custom-control-input(
                     name="is-ssid-prefix-enabled",
-                    type="checkbox"
+                    type="checkbox",
+                    onchange="changeSsidPrefixInputDisableness(this)"
                   )
                   label.custom-control-label.text-muted(for="is-ssid-prefix-enabled")
                     | Habilitar prefixo SSID no Wi-Fi dos CPEs

@@ -64,6 +64,15 @@ window.checkSsidPrefixValidity = function() {
   }
 };
 
+window.changeSsidPrefixInputDisableness = function(value) {
+  let ssidPrefixBox = document.getElementById('ssid-prefix-box');
+  if (value.checked) {
+    ssidPrefixBox.style.display = 'block';
+  } else {
+    ssidPrefixBox.style.display = 'none';
+  }
+};
+
 
 const setSsidPrefixError = function() {
   ssidPrefixInput.setCustomValidity('Este campo não pode ter '+
