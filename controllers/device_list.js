@@ -3047,4 +3047,30 @@ deviceListController.exportDevicesCsv = async function(req, res) {
   }
 };
 
+deviceListController.getPermissions = function(req, res) {
+  let matchedDevice = await DeviceModel.findById(
+  req.params.id.toUpperCase(), 'version wifi_is_5ghz_capable model')
+  .catch((err) => {
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno'
+    });
+  });
+  if (!matchedDevice) {
+    return res.status(404).json({
+      success: false,
+      message: 'CPE não encontrado'
+    });
+  }
+  let permissions = DeviceVersion.findByVersion(
+    matchedDevice.version,
+    matchedDevice.wifi_is_5ghz_capable,
+    matchedDevice.model
+  );
+  return res.status(200).json({
+    success: true,
+    permissions: permissions
+  });
+};
+
 module.exports = deviceListController;

@@ -83,6 +83,11 @@ router.route('/disassociate').post(
   authController.ensurePermission('grantSlaveDisassociate'),
   diagAPIController.disassociateSlave);
 
+// Fetch device permissions
+router.route('/getpermissions/:id').get(
+  authController.ensureLogin(),
+  deviceListController.getPermissions);
+
 // Change device registry
 router.route('/update/:id').post(
   authController.ensureLogin(),

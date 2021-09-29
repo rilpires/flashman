@@ -2297,19 +2297,40 @@ $(document).ready(function() {
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
-              let disassocSlaveButton = '<td>'+buildDisassociateSlave()+'</td>';
+              let isMeshV2Compatible = false;
+              $.ajax({
+                type: 'GET',
+                url: `/devicelist/getpermissions/${device._id}`,
+                dataType: 'json',
+                success: function(res) {
+                  if (res.success) {
+                    isMeshV2Compatible = res.permissions.grantMeshV2;
+                  } else {
+                    displayAlertMsg(res);
+                  }
+                },
+                error: function(xhr, status, error) {
+                  displayAlertMsg(JSON.parse(xhr.responseText));
+                },
+              });
               let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
               infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
-              infoRow = infoRow.replace('$REPLACE_UPGRADE', disassocSlaveButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
               if (isSuperuser || grantNotificationPopups) {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
               } else {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
+              }
+              if (isMeshV2Compatible) {
+                let disassocSlaveButton = '<td>'+buildDisassociateSlave()+'</td>';
+                infoRow = infoRow.replace('$REPLACE_UPGRADE', disassocSlaveButton);
+              } else {
+                let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
+                infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               }
               finalHtml += infoRow;
 

@@ -708,141 +708,92 @@ STATUS MAPPING:
 500: internal error;
 */
 diagAppAPIController.associateSlave = async function(req, res) {
+  let response = {
+    registrationStatus: 'failed',
+    bridgeStatus: 'failed',
+    switchEnabledStatus: 'failed'
+  };
   if (!req.body.master || !req.body.slave) {
-    return res.status(500).json({message:
-      'JSON recebido não é válido',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'JSON recebido não é válido';
+    return res.status(500).json(response);
   }
   const masterMacAddr = req.body.master.toUpperCase();
   const slaveMacAddr = req.body.slave.toUpperCase();
   if (!utilHandlers.isMacValid(masterMacAddr)) {
-    return res.status(403).json({message:
-      'MAC do CPE primário inválido',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'MAC do CPE primário inválido';
+    return res.status(403).json(response);
   }
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
-    return res.status(403).json({message:
-      'MAC do CPE candidato a secundário inválido',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'MAC do CPE candidato a secundário inválido';
+    return res.status(403).json(response);
   }
-  let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode mesh_key mesh_id wifi_ssid '+
+  const masterProjection = 'mesh_master mesh_slaves mesh_mode mesh_key mesh_id wifi_ssid '+
   'wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
   'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
-  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz'+
-  'wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz').catch((err) => {
-    return res.status(500).json({message:
-      'Erro interno',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz '+
+  'wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
+  let matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection)
+  .catch((err) => {
+    response.message = 'Erro interno';
+    return res.status(500).json(response);
   });
   if (!matchedMaster) {
-    return res.status(404).json({message:
-      'CPE primário não encontrado',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE primário não encontrado';
+    return res.status(404).json(response);
   }
   if (matchedMaster.mesh_mode === 0) {
-    return res.status(403).json({message:
-      'CPE indicado como primário não está em modo mesh',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE indicado como primário não está em modo mesh';
+    return res.status(403).json(response);
   }
   if (matchedMaster.mesh_master) {
-    return res.status(403).json({message:
-      'CPE indicado como primário é secundário',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE indicado como primário é secundário';
+    return res.status(403).json(response);
   }
-  let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
+  const slaveProjection = 'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
   'bridge_mode_switch_disable lastboot_date use_tr069 ' +
   'version model mesh_key mesh_id wifi_ssid wifi_password '+
   'wifi_band wifi_mode wifi_state wifi_hidden isSsidPrefixEnabled '+
   'wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz wifi_password_5ghz '+
-  'wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz')
+  'wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
+  let matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection)
   .catch((err) => {
-    return res.status(500).json({message:
-      'Erro interno',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'Erro interno';
+    return res.status(500).json(response);
   });
   if (!matchedSlave) {
-    return res.status(404).json({message:
-      'CPE candidato a secundário não encontrado',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE candidato a secundário não encontrado';
+    return res.status(404).json(response);
   }
-  if (!DeviceVersion.findByVersion(
+  const isMeshV2Compatible = DeviceVersion.findByVersion(
   matchedSlave.version,
   matchedSlave.wifi_is_5ghz_capable,
-  matchedSlave.model).grantMeshV2) {
-    return res.status(403).json({message:
-      'CPE candidato a secundário não é ' +
-      'compatível com o mesh v2',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+  matchedSlave.model).grantMeshV2;
+  if (!isMeshV2Compatible) {
+    response.message = 'CPE candidato a secundário não é ' +
+    'compatível com o mesh v2';
+    return res.status(403).json(response);
   }
   if (matchedSlave.mesh_master &&
   matchedSlave.mesh_master !== masterMacAddr) {
-    return res.status(403).json({message:
-      'CPE candidato a secundário já está registrado' +
-      ' como secundário de ' + matchedSlave.mesh_master,
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE candidato a secundário já está registrado' +
+    ' como secundário de ' + matchedSlave.mesh_master;
+    return res.status(403).json(response);
   }
   if ((matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) ||
   (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length)) {
-    return res.status(403).json({message:
-      'CPE candidato a secundário é primário',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE candidato a secundário é primário';
+    return res.status(403).json(response);
   }
   if (matchedSlave.use_tr069) {
-    return res.status(403).json({message:
-      'CPE candidato a secundário não pode ser TR-069',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE candidato a secundário não pode ser TR-069';
+    return res.status(403).json(response);
   }
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[slaveMacAddr];
   });
   if (!isSlaveOn) {
-    return res.status(403).json({message:
-      'CPE candidato a secundário não está online',
-      registrationStatus: 'failed', bridgeStatus: 'failed',
-      switchEnabledStatus: 'failed',
-      lastBootDate: '',
-    });
+    response.message = 'CPE candidato a secundário não está online';
+    return res.status(403).json(response);
   }
 
   // If no errors occur always update the slave
@@ -888,13 +839,13 @@ diagAppAPIController.associateSlave = async function(req, res) {
   // Instead of updating slave, we send lastboot_date
   // to app and a reboot is done
 
-  return res.status(200).json({message:
-    'Sucesso',
-    registrationStatus: 'success',
-    bridgeStatus: isBridge,
-    switchEnabledStatus: isSwitchEnabled,
-    lastBootDate: matchedSlave.lastboot_date
-  });
+  response.message = 'Sucesso';
+  response.registrationStatus = 'success';
+  response.bridgeStatus = isBridge;
+  response.switchEnabledStatus = isSwitchEnabled;
+  response.lastBootDate = matchedSlave.lastboot_date;
+
+  return res.status(200).json(response);
 };
 
 diagAppAPIController.disassociateSlave = async function(req, res) {
@@ -930,11 +881,6 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     return res.status(403).json({message:
       'CPE indicado como secundário possui ' +
       'CPEs secundários associados',
-    });
-  }
-  if (matchedSlave.use_tr069) {
-    return res.status(403).json({message:
-      'CPE secundário não pode ser TR-069',
     });
   }
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -996,45 +942,26 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
 };
 
 diagAppAPIController.poolFlashmanField = async function(req, res) {
-  if (!req.body.mac || !req.body.field) {
-    return res.status(500).json({message:
-      'JSON recebido não é válido',
-      fieldValue: '',
-    });
+  if (!req.body.mac || !req.body.field
+    return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   const macAddr = req.body.mac.toUpperCase();
-  const field = req.body.field;
-  if (!utilHandlers.isMacValid(macAddr)) {
-    return res.status(403).json({message:
-      'MAC inválido',
-      fieldValue: '',
-    });
+  if (!utilHandlers.isMacValid(macAddr)
+    return res.status(403).json({message: 'MAC inválido'});
   }
-  let matchedDevice = await DeviceModel.findById(macAddr,
-  field)
+  const field = req.body.field;
+  let matchedDevice = await DeviceModel.findById(macAddr, field)
   .catch((err) => {
-    return res.status(500).json({message:
-      'Erro interno',
-      fieldValue: '',
-    });
+    return res.status(500).json(response{message: 'Erro interno'};
   });
-  if (!matchedDevice) {
-    return res.status(404).json({message:
-      'CPE não encontrado',
-      fieldValue: '',
-    });
+  if (!matchedDevice
+    return res.status(404).json({message: 'CPE não encontrado'});
   }
   const fieldValue = matchedDevice[field];
-  if (fieldValue === undefined) {
-    return res.status(404).json({message:
-      'Campo não encontrado',
-      fieldValue: '',
-    });
+  if (fieldValue === undefined
+    return res.status(404).json({message: 'Campo não encontrado'});
   }
-  return res.status(200).json({message:
-    'Sucesso',
-    fieldValue: fieldValue,
-  });
+  return res.status(200).json({fieldValue: fieldValue});
 };
 
 module.exports = diagAppAPIController;
