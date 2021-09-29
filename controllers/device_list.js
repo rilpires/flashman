@@ -3047,7 +3047,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
   }
 };
 
-deviceListController.getPermissions = function(req, res) {
+deviceListController.getPermissions = async function(req, res) {
   let matchedDevice = await DeviceModel.findById(
   req.params.id.toUpperCase(), 'version wifi_is_5ghz_capable model')
   .catch((err) => {
