@@ -239,6 +239,10 @@ $(document).ready(function() {
         $('#inform-interval').val(resp.tr069InformInterval)
                              .siblings('label').addClass('active');
       }
+      if (resp.tr069SyncInterval) {
+        $('#sync-interval').val(resp.tr069SyncInterval)
+                           .siblings('label').addClass('active');
+      }
       if (resp.tr069RecoveryThreshold) {
         $('#lost-informs-recovery-threshold')
           .val(resp.tr069RecoveryThreshold)

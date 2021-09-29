@@ -483,6 +483,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
+        tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
@@ -663,6 +664,7 @@ updateController.setAutoConfig = async function(req, res) {
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
+    let tr069SyncInterval = Number(req.body['sync-interval']);
     let tr069RecoveryThreshold =
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
@@ -672,6 +674,7 @@ updateController.setAutoConfig = async function(req, res) {
      && !isNaN(tr069OfflineThreshold)
      // and inform interval, recovery and offline values are within boundaries,
      && tr069InformInterval >= 60 && tr069InformInterval <= 86400
+     && tr069SyncInterval >= 60 && tr069SyncInterval <= 86400
      && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
@@ -690,6 +693,7 @@ updateController.setAutoConfig = async function(req, res) {
         remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
+        sync_interval: tr069SyncInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
         offline_threshold: tr069OfflineThreshold,
         pon_signal_threshold: ponSignalThreshold,

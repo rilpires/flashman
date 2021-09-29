@@ -211,7 +211,8 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user !== '');
+  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
+    && data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let splitID = req.body.acs_id.split('-');
@@ -345,6 +346,41 @@ const createRegistry = async function(req) {
   return true;
 };
 
+acsDeviceInfoController.informDevice = async function(req, res) {
+  let id = req.body.acs_id;
+  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
+    return res.status(500).json({success: false, message: 'Error in database'});
+  });
+  // New devices need to sync immediately
+  if (!device) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  // Why is a non tr069 device calling this function? Just a sanity check
+  if (!device.use_tr069) {
+    return res.status(500).json({
+      success: false,
+      message: 'Attempt to sync acs data with non-tr-069 device',
+    });
+  }
+  // Devices updating need to return immediately
+  // Devices with no last sync need to sync immediately
+  if (device.do_update || !device.last_tr069_sync) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  let config = await Config.findOne({is_default: true}).catch((err)=>{
+    return res.status(500).json({success: false, message: 'Error in database'});
+  });
+  // Devices that havent synced in (config interval) need to sync immediately
+  let syncDiff = Date.now() - device.last_tr069_sync;
+  if (syncDiff >= config.tr069.sync_interval) {
+    return res.status(200).json({success: true, measure: true});
+  }
+  // Simply update last_contact to keep device online, no need to sync
+  device.last_contact = Date.now();
+  await device.save();
+  return res.status(200).json({success: true, measure: false});
+};
+
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   if (!data || !data.common || !data.common.mac) {
@@ -371,7 +407,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user !== '');
+  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
+    && data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
@@ -396,12 +433,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 
   if (data.common.model) device.model = data.common.model.trim();
   if (data.common.version) device.version = data.common.version.trim();
+  device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
   if (hasPPPoE) {
-    if (device.connection_type !== 'pppoe') {
-      changes.wan.pppoe_user = data.wan.pppoe_user.trim();
-      changes.wan.pppoe_pass = data.wan.pppoe_pass.trim();
-      hasChanges = true;
-    }
     if (!device.pppoe_user) {
       device.pppoe_user = data.wan.pppoe_user.trim();
     } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.trim()) {
@@ -415,12 +448,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wan.pppoe_pass = device.pppoe_password.trim();
       hasChanges = true;
     }
+    if (data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
+    if (data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
   } else {
-    if (device.connection_type !== 'dhcp') {
-      changes.wan.pppoe_user = device.pppoe_user.trim();
-      changes.wan.pppoe_pass = device.pppoe_password.trim();
-      hasChanges = true;
-    }
+    if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
+    if (data.wan.uptime) device.wan_up_time = data.wan.uptime;
+    device.pppoe_user = '';
+    device.pppoe_password = '';
   }
 
   if (typeof data.wifi2.enable !== 'undefined') {
@@ -559,10 +593,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
   if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
   if (data.common.uptime) device.sys_up_time = data.common.uptime;
-  if (hasPPPoE && data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
-  else if (!hasPPPoE && data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
-  if (hasPPPoE && data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
-  else if (!hasPPPoE && data.wan.uptime) device.wan_up_time = data.wan.uptime;
   if (cpeIP) device.ip = cpeIP;
 
   if (hasChanges) {
@@ -593,15 +623,23 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   device.last_contact = Date.now();
+  device.last_tr069_sync = Date.now();
   // daily data fetching
   if (!device.last_contact_daily) {
     device.last_contact_daily = Date.now();
   } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
     // for every day fetch to device port forward entries
     device.last_contact_daily = Date.now();
-    acsDeviceInfoController.
-    checkPortForwardRules(device,
-      device.port_mapping.length - data.wan.port_mapping_entries);
+    let entriesDiff = 0;
+    if (device.connection_type === 'pppoe') {
+      entriesDiff = device.port_mapping.length -
+        data.wan.port_mapping_entries_ppp;
+    } else {
+      entriesDiff = device.port_mapping.length -
+        data.wan.port_mapping_entries;
+    }
+    acsDeviceInfoController
+    .checkPortForwardRules(device, entriesDiff);
   }
   await device.save();
   return res.status(200).json({success: true});
@@ -1046,11 +1084,14 @@ acsDeviceInfoController.requestUpStatus = function(device) {
     name: 'getParameterValues',
     parameterNames: [
       fields.common.uptime,
-      fields.wan.uptime,
-      fields.wan.uptime_ppp,
-      fields.wan.pppoe_user,
     ],
   };
+  if (device.connection_type === 'pppoe') {
+    task.parameterNames.push(fields.wan.uptime_ppp);
+    task.parameterNames.push(fields.wan.pppoe_user);
+  } else if (device.connection_type === 'dhcp') {
+    task.parameterNames.push(fields.wan.uptime);
+  }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchUpStatusFromGenie(mac, acsID);
@@ -1187,6 +1228,12 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let specFields = fields.port_mapping;
+  let portMappingTemplate = '';
+  if (device.connection_type === 'pppoe') {
+    portMappingTemplate = specFields.template_ppp;
+  } else {
+    portMappingTemplate = specFields.template;
+  }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
   let query = {device: acsID}; // selecting all tasks for a given device id.
@@ -1215,7 +1262,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     for (i = (device.port_mapping.length + rulesDiffLength);
         i > device.port_mapping.length;
         i--) {
-      changeEntriesSizeTask.objectName = specFields.template + '.' + i;
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
           3000, [5000, 10000]);
@@ -1228,7 +1275,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
   } else if (rulesDiffLength > 0) {
-    changeEntriesSizeTask.objectName = specFields.template;
+    changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
@@ -1244,7 +1291,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   }
   // set entries values for respective array in the device
   for (i = 0; i < device.port_mapping.length; i++) {
-    const iterateTemplate = specFields.template + '.' + (i+1) + '.';
+    const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     updateTasks.parameterValues.push([
       iterateTemplate+specFields.enable,
       true,
@@ -1319,8 +1366,15 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [fields.port_mapping.template],
+    parameterNames: [],
   };
+  let portMappingTemplate = '';
+  if (device.connection_type === 'pppoe') {
+    portMappingTemplate = fields.port_mapping.template_ppp;
+  } else {
+    portMappingTemplate = fields.port_mapping.template;
+  }
+  task.parameterNames.push(portMappingTemplate);
   /*
     if entries sizes are not the same, no need to check
     entry by entry differences
@@ -1333,10 +1387,10 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (result.finished == true && result.task.name === 'getParameterValues') {
     let query = {_id: acsID};
-    let projection1 = fields.port_mapping.template.
-    replace('*', '1').replace('*', '1');
-    let projection2 = fields.port_mapping.template.
-    replace('*', '1').replace('*', '2');
+    let projection1 = portMappingTemplate
+    .replace('*', '1').replace('*', '1');
+    let projection2 = portMappingTemplate
+    .replace('*', '1').replace('*', '2');
     let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
                projection1 + ',' + projection2;
     let options = {

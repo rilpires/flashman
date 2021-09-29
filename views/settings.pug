@@ -213,14 +213,48 @@ block content
                     )
                     .invalid-feedback Insira um FQDN válido
                   .md-form.input-entry
+                    label Login para a interface web das CPEs
+                    input#onu-web-login.form-control(
+                      type="text",
+                      name="onu-web-login"
+                    )
+                    .invalid-feedback Insira um login válido
+                  .md-form.input-entry
+                    label Senha para a interface web das CPEs
+                    input#onu-web-password.form-control(
+                      type="text",
+                      name="onu-web-password"
+                    )
+                    .invalid-feedback Insira uma senha válida
+                  .custom-control.custom-checkbox
+                    input#onu_web_remote.custom-control-input(
+                      name="onu_web_remote",
+                      type="checkbox"
+                    )
+                    label.custom-control-label.text-muted(for="onu_web_remote")
+                      | Configurar acesso remoto para ONUs
+                    .invalid-feedback
+                .col-md-6.col-12.pl-0.pr-0
+                  .md-form.input-entry
                     label Intervalo entre informes do TR-069 (s)
                     input#inform-interval.form-control(
                       type="number",
                       name="inform-interval",
                       min=60,
                       max=86400,
-                      value=600,
-                      placeholder="600"
+                      value=300,
+                      placeholder="300"
+                    )
+                    .invalid-feedback Valor inválido. Valor mínimo de 60 segundos
+                  .md-form.input-entry
+                    label Intervalo entre sincronizações de dados do TR-069 (s)
+                    input#inform-interval.form-control(
+                      type="number",
+                      name="sync-interval",
+                      min=60,
+                      max=86400,
+                      value=300,
+                      placeholder="300"
                     )
                     .invalid-feedback Valor inválido. Valor mínimo de 60 segundos
                   .md-form.input-entry
@@ -247,29 +281,6 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
-                .col-md-6.col-12.pl-0.pr-0
-                  .md-form.input-entry
-                    label Login para a interface web das CPEs
-                    input#onu-web-login.form-control(
-                      type="text",
-                      name="onu-web-login"
-                    )
-                    .invalid-feedback Insira um login válido
-                  .md-form.input-entry
-                    label Senha para a interface web das CPEs
-                    input#onu-web-password.form-control(
-                      type="text",
-                      name="onu-web-password"
-                    )
-                    .invalid-feedback Insira uma senha válida
-                  .custom-control.custom-checkbox
-                    input#onu_web_remote.custom-control-input(
-                      name="onu_web_remote",
-                      type="checkbox"
-                    )
-                    label.custom-control-label.text-muted(for="onu_web_remote")
-                      | Configurar acesso remoto para ONUs
-                    .invalid-feedback
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg
