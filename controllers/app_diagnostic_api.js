@@ -883,14 +883,6 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       'CPEs secundários associados',
     });
   }
-  const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[slaveMacAddr];
-  });
-  if (!isSlaveOn) {
-    return res.status(403).json({message:
-      'CPE indicado como secundário não está online',
-    });
-  }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
   'mesh_master mesh_slaves mesh_mode').catch((err) => {
@@ -917,14 +909,6 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     return res.status(403).json({message:
       'CPE indicado como secundário não está na ' +
       'lista de secundários do CPE indicado como primário',
-    });
-  }
-  const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[masterMacAddr];
-  });
-  if (!isMasterOn) {
-    return res.status(403).json({message:
-      'CPE indicado como primário não está online',
     });
   }
 
