@@ -267,7 +267,6 @@ deviceSchema.statics.findByMacOrSerial = function(id) {
   }
   return this.find({$or: [
         {'_id': query}, // mac address
-        {'acs_id': query}, // serial
         {'serial_tr069': query}, // serial
         {'alt_uid_tr069': query}]}); // mac address
 };
