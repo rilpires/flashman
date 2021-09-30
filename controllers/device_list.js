@@ -320,7 +320,7 @@ deviceListController.changeUpdate = async function(req, res) {
   } catch (e) {
     error = e;
   }
-  if (error || !matchedDevice || matchedDevice.length == 0) {
+  if (error || !matchedDevice) {
     return res.status(500).json({success: false,
       message: 'Erro ao encontrar dispositivo'});
   }
