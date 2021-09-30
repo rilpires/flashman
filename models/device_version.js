@@ -3,10 +3,6 @@ let DeviceVersion = {};
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
-if the
-// WLANConfiguration object needed for the
-// virtual mesh SSID configuration already exists
-
 const tr069Devices = {
   'F670L': {
     vendor: 'Multilaser',
