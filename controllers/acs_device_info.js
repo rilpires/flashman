@@ -297,6 +297,7 @@ const createRegistry = async function(req) {
     isSsidPrefixEnabled: isSsidPrefixEnabled,
     web_admin_username: data.common.web_admin_username,
     web_admin_password: data.common.web_admin_password,
+    mesh_mode: 0,
   });
   try {
     await newDevice.save();
@@ -1193,7 +1194,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         and here call updateInfo, and is more clean
         to check on the edge;
       */
-      if (key === 'ssid') {
+      if (key === 'ssid' &
+      (masterKey === 'wifi2' || masterKey === 'wifi5')) {
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }

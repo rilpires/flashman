@@ -1828,8 +1828,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('mesh_mode') &&
-                meshMode !== matchedDevice.mesh_mode &&
-                !matchedDevice.use_tr069) {
+                meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
                 matchedDevice.mesh_mode = meshMode;
                 updateParameters = true;

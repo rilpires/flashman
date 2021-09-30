@@ -18,9 +18,19 @@ const getFieldType = function(masterKey, key) {
   switch (masterKey+'-'+key) {
     case 'wifi2-channel':
     case 'wifi5-channel':
+    case 'mesh2-channel':
+    case 'mesh5-channel':
       return 'xsd:unsignedInt';
     case 'wifi2-enable':
     case 'wifi5-enable':
+    case 'wifi2-auto':
+    case 'wifi5-auto':
+    case 'mesh2-enable':
+    case 'mesh5-enable':
+    case 'mesh2-auto':
+    case 'mesh5-auto':
+    case 'mesh2-advertise':
+    case 'mesh5-advertise':
       return 'xsd:boolean';
     default:
       return 'xsd:string';
@@ -103,18 +113,28 @@ const convertField = function(masterKey, key, oui, model, value) {
       break;
     case 'wifi2-enable':
     case 'wifi5-enable':
+    case 'mesh2-enable':
+    case 'mesh5-enable':
+    case 'mesh2-advertise':
+    case 'mesh5-advertise':
       result.value = (value > 0) ? true : false; // convert to boolean
       break;
     case 'wifi2-channel':
     case 'wifi5-channel':
+    case 'mesh2-channel':
+    case 'mesh5-channel':
       result.value = parseInt(value); // convert to integer
       break;
     case 'wifi2-mode':
     case 'wifi5-mode':
+    case 'mesh2-mode':
+    case 'mesh5-mode':
       result.value = convertWifiMode(value, oui, model); // convert to TR-069
       break;
     case 'wifi2-band':
     case 'wifi5-band':
+    case 'mesh2-band':
+    case 'mesh5-band':
       result.value = convertWifiBand(value); // convert to TR-069 format
       break;
     default:
@@ -184,6 +204,28 @@ const getDefaultFields = function() {
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
     },
+    mesh2: {
+      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BSSID',
+      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.KeyPassphrase',
+      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AutoChannelEnable',
+      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard',
+      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
+      advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSIDAdvertisementEnabled',
+      encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.WPAEncryptionModes',
+    },
+    mesh5: {
+      ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.BSSID',
+      password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.KeyPassphrase',
+      channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Channel',
+      auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.AutoChannelEnable',
+      mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Standard',
+      enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Enable',
+      advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSIDAdvertisementEnabled',
+      encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.WPAEncryptionModes',
+    },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
       hosts: 'InternetGatewayDevice.LANDevice.1.Hosts',
@@ -215,6 +257,8 @@ const getHuaweiFields = function(model) {
       fields.port_mapping.external_port_end = 'ExternalPortEndRange';
       fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       break;
     case 'Huawei': // Huawei WS5200
       fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
@@ -228,6 +272,26 @@ const getHuaweiFields = function(model) {
       fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
       fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '3');
+      fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '4');
+      fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '3');
+      fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '4');
+      fields.mesh2.password = fields.mesh5.password.replace(/6/g, '3');
+      fields.mesh5.password = fields.mesh5.password.replace(/6/g, '4');
+      fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '3');
+      fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '4');
+      fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '3');
+      fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '4');
+      fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '3');
+      fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '4');
+      fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '3');
+      fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '4');
+      fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '3');
+      fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '4');
+      fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '3');
+      fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '4');
+      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       break;
   }
   return fields;
@@ -260,6 +324,8 @@ const getZTEFields = function(model) {
   fields.port_mapping.external_port_end = 'ExternalPortEndRange';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   return fields;
 };
 
@@ -269,6 +335,8 @@ const getNokiaFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
   return fields;
@@ -308,6 +376,24 @@ const getStavixFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
   fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '7');
+  fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '2');
+  fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '7');
+  fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '2');
+  fields.mesh2.password = fields.mesh5.password.replace(/6/g, '7');
+  fields.mesh5.password = fields.mesh5.password.replace(/6/g, '2');
+  fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '7');
+  fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '2');
+  fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '7');
+  fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '2');
+  fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '7');
+  fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '2');
+  fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '7');
+  fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '2');
+  fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '7');
+  fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '2');
+  fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '7');
+  fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '2');
   return fields;
 };
 

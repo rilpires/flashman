@@ -275,15 +275,15 @@ diagAppAPIController.configureWifi = async function(req, res) {
       if (!updateParameters) {
         return res.status(200).json({'success': true});
       }
-      // Apply changes to database and send mqtt message
+      // Apply changes to database and update device
       device.do_update_parameters = true;
       await device.save();
+      meshHandlers.syncSlaves(device);
       if (device.use_tr069) {
         // tr-069 device, call acs
         acsDeviceInfo.updateInfo(device, changes);
       } else {
         // flashbox device, call mqtt
-        meshHandlers.syncSlaves(device);
         mqtt.anlixMessageRouterUpdate(device._id);
       }
       if (createPrefixErrNotification) {
@@ -324,31 +324,103 @@ diagAppAPIController.configureWifi = async function(req, res) {
 diagAppAPIController.configureMeshMode = async function(req, res) {
   try {
     // Make sure we have a mac to verify in database
-    if (req.body.mac) {
-      // Fetch device from database
-      let device = await DeviceModel.findById(req.body.mac);
-      if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
-      }
-      let targetMode = parseInt(req.body.mesh_mode);
-      if (!isNaN(targetMode) && targetMode >= 0 && targetMode <= 4) {
-        if (targetMode === 0 && device.mesh_slaves.length > 0) {
-          // Cannot disable mesh mode with registered slaves
-          return res.status(500).json({
-            'error': 'Cannot disable mesh with registered slaves',
-          });
-        }
-        device.mesh_mode = targetMode;
-      }
-      // Apply changes to database and send mqtt message
-      device.do_update_parameters = true;
-      await device.save();
-      meshHandlers.syncSlaves(device);
-      mqtt.anlixMessageRouterUpdate(device._id);
-      return res.status(200).json({'success': true});
-    } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+    if (!req.body.mac) {
+      return res.status(500).json({'error': 'JSON invalid'});
     }
+    // Fetch device from database
+    let device = await DeviceModel.findById(req.body.mac);
+    if (!device) {
+      return res.status(404).json({'error': 'Device not found'});
+    }
+    let targetMode = parseInt(req.body.mesh_mode);
+    if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
+      return res.status(403).json({'error': 'invalid targetMode'});
+    }
+    if (targetMode === 0 && device.mesh_slaves.length > 0) {
+      // Cannot disable mesh mode with registered slaves
+      return res.status(500).json({
+        'error': 'Cannot disable mesh with registered slaves',
+      });
+    }
+    let isMeshV2Compatible = false;
+    let changes = {mesh2: {}, mesh5: {}};
+    if (device.use_tr069) {
+      let acsID = device.acs_id;
+      let splitID = acsID.split('-');
+      let model = splitID.slice(1, splitID.length-1).join('-');
+      isMeshV2Compatible = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable,
+        model,
+      ).grantMeshV2;
+      if (!isMeshV2Compatible) {
+        return res.status(403).json({
+          'error': 'CPE isn\'t compatibe with mesh v2',
+        });
+      }
+      switch (targetMode) {
+        case 0:
+        case 1:
+          changes.mesh2.enable = false;
+          changes.mesh5.enable = false;
+          break;
+        case 2:
+          changes.mesh2.ssid = device.mesh_id;
+          changes.mesh2.password = device.mesh_key;
+          changes.mesh2.bssid = device.wifi_bssid;
+          changes.mesh2.channel = device.wifi_channel;
+          changes.mesh2.mode = device.wifi_mode;
+          changes.mesh2.advertise = false;
+          changes.mesh2.encryption = 'AESEncryption';
+          changes.mesh2.enable = true;
+          changes.mesh2.enable = true;
+          changes.mesh5.enable = false;
+          break;
+        case 3:
+          changes.mesh5.ssid = device.mesh_id;
+          changes.mesh5.password = device.mesh_key;
+          changes.mesh5.bssid = device.wifi_bssid_5ghz;
+          changes.mesh5.channel = device.wifi_channel_5ghz;
+          changes.mesh5.mode = device.wifi_mode_5ghz;
+          changes.mesh5.advertise = false;
+          changes.mesh5.encryption = 'AESEncryption';
+          changes.mesh5.enable = true;
+          changes.mesh2.enable = false;
+          break;
+        case 4:
+          changes.mesh2.ssid = device.mesh_id;
+          changes.mesh2.password = device.mesh_key;
+          changes.mesh2.bssid = device.wifi_bssid;
+          changes.mesh2.channel = device.wifi_channel;
+          changes.mesh2.mode = device.wifi_mode;
+          changes.mesh2.enable = true;
+          changes.mesh2.advertise = false;
+          changes.mesh2.encryption = 'AESEncryption';
+          changes.mesh5.ssid = device.mesh_id;
+          changes.mesh5.password = device.mesh_key;
+          changes.mesh5.bssid = device.wifi_bssid_5ghz;
+          changes.mesh5.channel = device.wifi_channel_5ghz;
+          changes.mesh5.mode = device.wifi_mode_5ghz;
+          changes.mesh5.advertise = false;
+          changes.mesh5.encryption = 'AESEncryption';
+          changes.mesh5.enable = true;
+          break;
+        default:
+      }
+    }
+    device.mesh_mode = targetMode;
+    // Apply changes to database and update device
+    device.do_update_parameters = true;
+    await device.save();
+    meshHandlers.syncSlaves(device);
+    if (device.use_tr069) {
+      // tr-069 device, call acs
+      acsDeviceInfo.updateInfo(device, changes);
+    } else {
+      // flashbox device, call mqtt
+      mqtt.anlixMessageRouterUpdate(device._id);
+    }
+    return res.status(200).json({'success': true});
   } catch (err) {
     console.log(err);
     return res.status(500).json({'error': 'Internal error'});
@@ -570,6 +642,9 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           'deviceInfo': {
             'pppoe_pass': device.pppoe_password,
             'onu_mac': device._id,
+            'mesh_mode': device.mesh_mode,
+            'mesh_master': device.mesh_master,
+            'mesh_slaves': device.mesh_slaves,
           },
           'tr069Info': tr069Info,
           'onuConfig': onuConfig,
@@ -765,9 +840,10 @@ diagAppAPIController.associateSlave = async function(req, res) {
     return res.status(404).json(response);
   }
   const isMeshV2Compatible = DeviceVersion.findByVersion(
-  matchedSlave.version,
-  matchedSlave.wifi_is_5ghz_capable,
-  matchedSlave.model).grantMeshV2;
+    matchedSlave.version,
+    matchedSlave.wifi_is_5ghz_capable,
+    matchedSlave.model
+  ).grantMeshV2;
   if (!isMeshV2Compatible) {
     response.message = 'CPE candidato a secundário não é ' +
     'compatível com o mesh v2';

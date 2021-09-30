@@ -3,6 +3,10 @@ let DeviceVersion = {};
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
+if the
+// WLANConfiguration object needed for the
+// virtual mesh SSID configuration already exists
+
 const tr069Devices = {
   'F670L': {
     vendor: 'Multilaser',
@@ -54,6 +58,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
   },
@@ -86,6 +91,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      mesh_v2: true,
     },
   },
   'ZXHN H199A': {
@@ -117,6 +123,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
   },
@@ -134,6 +141,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: false,
   },
@@ -151,6 +159,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: false,
   },
@@ -168,6 +177,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
   },
@@ -185,6 +195,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: false,
     },
     wifi2_extended_channels_support: true,
   },
@@ -202,6 +213,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: false,
     },
     wifi2_extended_channels_support: true,
   },
@@ -219,6 +231,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2: false,
     },
     wifi2_extended_channels_support: true,
   },
@@ -1779,6 +1792,9 @@ const grantMeshMode = function(version, model) {
 };
 
 const grantMeshV2 = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
