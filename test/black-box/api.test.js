@@ -135,29 +135,6 @@ describe('api_v2', () => {
     expect(r.success).toBeFalsy();
     expect(r.message).toMatch(/CPE não encontrado/);
   });
-  test('Visualize first boot log of an CPE(tr-069): existent acs_id +'+
-    ' non existent log',
-  async () => {
-    let id = '0CF0B4-GONUAC001-MKPGB4461FCE';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/firstlog/'+id)
-      .auth('admin', 'landufrj123');
-    let r = res.body;
-    expect(res.statusCode).toBe(200);
-    expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
-  });
-  test('Visualize first boot log of an CPE(tr-069): non existent acs_id',
-  async () => {
-    let id = 'A4ADF2-Huawei-F1H03H0391FH1091H';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/firstlog/'+id)
-      .auth('admin', 'landufrj123');
-    let r = res.body;
-    expect(res.statusCode).toBe(200);
-    expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
-  });
   test('Visualize first boot log of an CPE(tr-069): existent serial +'+
     ' non existent log',
   async () => {
@@ -227,40 +204,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(r.success).toBeFalsy();
     expect(r.message).toMatch(/CPE não encontrado/);
   });
-  test('Visualize last boot log of an CPE(tr-069): existent acs_id +'+
-    ' existent log',
-  async () => {
-    let id = 'E01954-F670L-ZTE0QHEL4M05104';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/lastlog/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.header['content-encoding']).toBe('gzip');
-    expect(res.header['content-type']).toBe('text/plain');
-  });
-  test('Visualize last boot log of an CPE(tr-069): existent acs_id +'+
-    ' non existent log',
-  async () => {
-    let id = '00259E-HG8245Q2-4857544380B0B09E';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/lastlog/'+id)
-      .auth('admin', 'landufrj123');
-    let r = res.body;
-    expect(res.statusCode).toBe(200);
-    expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
-  });
-  test('Visualize last boot log of an CPE(tr-069): non existent acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/lastlog/'+id)
-      .auth('admin', 'landufrj123');
-    let r = res.body;
-    expect(res.statusCode).toBe(200);
-    expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
-  });
   test('Visualize last boot log of an CPE(tr-069): existent serial +'+
     ' existent log',
   async () => {
@@ -318,23 +261,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     let id = 'DD:DD:DD:DD:DD:DD';
     let res = await request('localhost:8000')
       .get('//api/v2/device/update/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(404);
-  });
-  test('Query info of an CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = '98006A-F670L-ZTEKQHELBU28569';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/update/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.acs_id).toBe(id);
-  });
-  test('Query info of an CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'BEDCAF-ChinaNet-A451092U0HF21H949';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/update/'+id)
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(404);
   });
@@ -410,39 +336,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.body.success).toBeTruthy();
     expect(typeof res.body.landevices).toMatch(/object/);
   });
-  test('Query port forward of an CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/portforward/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
-  });
-  test('Query port forward of an CPE(tr-069): exists by acs_id +'+
-    ' do not have this feature',
-  async () => {
-    let id = '00259E-HG8245Q2-4857544380B0B09E';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/portforward/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não possui essa função/);
-  });
-  test('Query port forward of an CPE(tr-069): exists by acs_id +'+
-    ' have this feature',
-  async () => {
-    let id = 'E01954-F670L-ZTE0QHEL4M05104';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/portforward/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-    expect(typeof res.body.content).toMatch(/object/);
-    expect(typeof res.body.compatibility).toMatch(/object/);
-  });
   test('Query port forward of an CPE(tr-069): not exists by serial',
   async () => {
     let id = 'MFI3OFMI1FM3';
@@ -508,26 +401,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.body.success).toBeTruthy();
     expect(typeof res.body.ping_hosts_list).toMatch(/object/);
   });
-  test('Query ping test address list of an CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/pinghostslist/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
-  });
-  test('Query ping test address list of an CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = '00259E-HG8245Q2-4857544380B0B09E';
-    let res = await request('localhost:8000')
-      .get('/api/v2/device/pinghostslist/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-    expect(typeof res.body.ping_hosts_list).toMatch(/object/);
-  });
   test('Query ping test address list of an CPE(tr-069): not exists by serial',
   async () => {
     let id = 'MFI3OFMI1FM3';
@@ -565,32 +438,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   test('Delete a CPE(flashbox): exists',
   async () => {
     let id = '58:D5:6E:D0:48:00';
-    let res = await request('localhost:8000')
-      .delete('/api/v2/device/delete/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-    expect(res.body.type).toMatch(/success/);
-    expect(res.body.message).toBe('Cadastro(s) removido(s) com sucesso!');
-    let resCheck = await request('localhost:8000')
-      .get('/api/v2/device/update/'+id)
-      .auth('admin', 'landufrj123');
-    expect(resCheck.statusCode).toBe(404);
-  });
-  test('Delete a CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let res = await request('localhost:8000')
-      .delete('/api/v2/device/delete/'+id)
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.type).toMatch(/danger/);
-    expect(res.body.message).toMatch(/Nenhum roteador encontrado/);
-  });
-  test('Delete a CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = '00259E-HG8245Q2-4857544380B0B09E';
     let res = await request('localhost:8000')
       .delete('/api/v2/device/delete/'+id)
       .auth('admin', 'landufrj123');
@@ -667,29 +514,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeTruthy();
   });
-  test('Enable firwmare update of an CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let firmware = 'V1.1.20P1T18'; //
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/update/'+id+'/'+firmware)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(500);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('Dispositivo não encontrado');
-  });
-  test('Enable firwmare update of an CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = 'E01954-F670L-ZTE0QHEL4M05104';
-    let firmware = 'V1.1.20P3N3';
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/update/'+id+'/'+firmware)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-  });
   test('Enable firwmare update of an CPE(tr-069): not exists by serial',
   async () => {
     let id = 'MFI3OFMI1FM3';
@@ -701,17 +525,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(500);
     expect(res.body.success).toBeFalsy();
     expect(res.body.message).toBe('Dispositivo não encontrado');
-  });
-  test('Enable firwmare update of an CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = 'ZTEKQHELBU28569';
-    let firmware = 'V1.1.20P3N4D';
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/update/'+id+'/'+firmware)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
   });
 
   /* Enviar comando para um roteador
@@ -738,27 +551,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   test('Send command to CPE(flashbox): exists',
   async () => {
     let id = 'B0:4E:26:E3:DB:9C';
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/command/'+id+'/onlinedevs')
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-  });
-  test('Send command to CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/command/'+id+'/onlinedevs')
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('CPE não encontrado');
-  });
-  test('Send command to CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = '98006A-F670L-ZTEKQHELBU28569';
     let res = await request('localhost:8000')
       .put('/api/v2/device/command/'+id+'/onlinedevs')
       .set('Accept', 'application/json')
@@ -818,38 +610,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   test('Set CPE(flashbox) registry: not exists',
   async () => {
     let id = 'AA:AA:AA:AA:AA:AA';
-    let body = {
-      'content': {
-        'wifi_ssid': 'Teste-Rotas',
-      },
-    };
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/update/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('CPE não encontrado');
-  });
-  test('Set CPE(tr-069) registry: exists by acs_id',
-  async () => {
-    let id = '0CF0B4-GONUAC001-MKPGB4461FCE';
-    let body = {
-      'content': {
-        'wifi_ssid': 'Teste-Rotas',
-      },
-    };
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/update/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.wifi_ssid).toBe('Teste-Rotas');
-  });
-  test('Set CPE(tr-069) registry: not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
     let body = {
       'content': {
         'wifi_ssid': 'Teste-Rotas',
@@ -965,40 +725,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.body.success).toBeFalsy();
     expect(res.body.message).toBe('CPE não encontrado');
   });
-  test('Set port forward in a CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = 'E01954-F670L-ZTE0QHEL4M05104';
-    let body = {
-      'content': '['+
-        '{'+
-          '"ip": "192.168.1.10",'+
-          '"external_port_start": 1010,'+
-          '"external_port_end": 1010,'+
-          '"internal_port_start": 1010,'+
-          '"internal_port_end": 1010'+
-        '}]'};
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/portforward/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-    expect(res.body.message).toMatch(/salvo com sucesso/);
-  });
-  test('Set port forward in a CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
-    let body = {};
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/portforward/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch('CPE não encontrado');
-  });
   test('Set port forward in a CPE(tr-069): exists by serial',
   async () => {
     let id = 'ZTE0QHEL4M05104';
@@ -1065,45 +791,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   test('Set a ping test address list in a CPE(flashbox): not exists',
   async () => {
     let id = 'FF:FF:FF:FF:FF:FF';
-    let body = {
-      'content': '{'+
-        '"hosts":['+
-          '"www.npmjs.com",'+
-          '"github.com",'+
-          '"bitbucket.org"'+
-        ']}'};
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/pinghostslist/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch('CPE não encontrado');
-  });
-  test('Set a ping test address list in a CPE(tr-069): exists by acs_id',
-  async () => {
-    let id = 'E01954-F670L-ZTE0QHEL4M05104';
-    let body = {
-      'content': '{'+
-        '"hosts":['+
-          '"www.npmjs.com",'+
-          '"github.com",'+
-          '"bitbucket.org"'+
-        ']}'};
-    let res = await request('localhost:8000')
-      .put('/api/v2/device/pinghostslist/'+id)
-      .send(body)
-      .set('Accept', 'application/json')
-      .auth('admin', 'landufrj123');
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBeTruthy();
-    expect(JSON.stringify(res.body.hosts))
-    .toMatch(JSON.stringify(JSON.parse(body.content)['hosts']));
-  });
-  test('Set a ping test address list in a CPE(tr-069): not exists by acs_id',
-  async () => {
-    let id = 'DCFFAB-Fiberhome-9FN1309NG04N1F9N';
     let body = {
       'content': '{'+
         '"hosts":['+
