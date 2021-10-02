@@ -1361,7 +1361,6 @@ deviceListController.getDeviceReg = function(req, res) {
 };
 
 deviceListController.setDeviceReg = function(req, res) {
-  console.log(req.params.id);
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {

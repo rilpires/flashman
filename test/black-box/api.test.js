@@ -93,8 +93,8 @@ describe('api_v2', () => {
   /* Visualizar log de boot de um roteador
   localhost:8000/api/v2/device/firstlog/:id GET
   possiveis entradas:
-    req.params.id - id(mac/acs_id/serial_tr069) existente
-    req.params.id - id(mac/acs_id/serial_tr069) não existente
+    req.params.id - id(mac/serial_tr069) existente
+    req.params.id - id(mac/serial_tr069) não existente
   possiveis saidas:
     200 - Não existe log deste CPE
     200 - getHeader('Content-Encoding', 'gzip');
@@ -162,8 +162,8 @@ describe('api_v2', () => {
   /* Visualizar último log enviado de um roteador
   localhost:8000/api/v2/device/lastlog/:id GET
   possiveis entradas:
-    req.params.id - id(mac/acs_id/serial_tr069) existente
-    req.params.id - id(mac/acs_id/serial_tr069) não existente
+    req.params.id - id(mac/serial_tr069) existente
+    req.params.id - id(mac/serial_tr069) não existente
   possiveis saidas:
     200 - Não existe log deste CPE
     200 - getHeader('Content-Encoding', 'gzip');
@@ -241,8 +241,8 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   /* Consultar informações de um roteador
   localhost:8000/api/v2/device/update/:id GET
   possiveis entradas:
-    req.params.id - id(mac/acs_id/serial_tr069) existente
-    req.params.id - id(mac/acs_id/serial_tr069) não existente
+    req.params.id - id(mac/serial_tr069) existente
+    req.params.id - id(mac/serial_tr069) não existente
   possiveis saidas:
     200 - { <model/device.js> }
     500 - Erro interno do servidor
@@ -260,7 +260,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   async () => {
     let id = 'DD:DD:DD:DD:DD:DD';
     let res = await request('localhost:8000')
-      .get('//api/v2/device/update/'+id)
+      .get('/api/v2/device/update/'+id)
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(404);
   });
@@ -285,8 +285,8 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   /* Consultar abertura de portas de um roteador
   localhost:8000/api/v2/device/portforward/:id GET
   possiveis entradas:
-    req.params.id - id(mac/acs_id/serial_tr069) existente
-    req.params.id - id(mac/acs_id/serial_tr069) não existente
+    req.params.id - id(mac/serial_tr069) existente
+    req.params.id - id(mac/serial_tr069) não existente
   possiveis saidas:
     200 - "landevices": [
         {
@@ -373,8 +373,8 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   /* Consultar lista de endereços para teste de ping
   localhost:8000/api/v2/device/pinghostslist/:id GET
   possiveis entradas:
-    req.params.id - id(mac/acs_id/serial_tr069) existente
-    req.params.id - id(mac/acs_id/serial_tr069) não existente
+    req.params.id - id(mac/serial_tr069) existente
+    req.params.id - id(mac/serial_tr069) não existente
   possiveis saidas:
     200 - "ping_hosts_list": [
         "www.google.com",...
