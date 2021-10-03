@@ -1604,6 +1604,7 @@ $(document).ready(function() {
           let opmodeTab = '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
+                (!isTR069 ?
                 '<div class="md-form">'+
                   '<div class="input-group">'+
                     '<div class="md-selectfield form-control my-0">'+
@@ -1615,8 +1616,11 @@ $(document).ready(function() {
                       '</select>'+
                     '</div>'+
                   '</div>'+
-                '</div>'+
+                '</div>':
+                ''
+                )+
                 '$REPLACE_MESH_MODE'+
+                (!isTR069 ?
                 '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
@@ -1639,8 +1643,11 @@ $(document).ready(function() {
                       'Flashbox na sua rede deve possuir um servidor DHCP tanto para IPv4 quanto para IPv6'+
                     '</span>'+
                   '</div>'+
-                '</div>'+
+                '</div>':
+                ''
+                )+
               '</div>'+
+              (!isTR069 ?
               '<div class="col-6">'+
                 '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
                   '<div class="md-form input-entry">'+
@@ -1675,7 +1682,9 @@ $(document).ready(function() {
                     '</span>'+
                   '</div>'+
                 '</div>'+
-              '</div>'+
+              '</div>':
+              ''
+              )+
             '</div>'+
           '</div>';
           if (!isSuperuser && !grantOpmodeEdit) {
@@ -2259,10 +2268,8 @@ $(document).ready(function() {
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
           }
-          if (!isTR069 && grantOpmode) {
+          if (grantOpmode) {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
-          } else {
-            formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
           }
           if (isSuperuser || grantWifiInfo >= 1) {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', wifiEdit);
