@@ -8,6 +8,7 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 
 const pako = require('pako');
 const http = require('http');
@@ -258,6 +259,9 @@ const createRegistry = async function(req) {
     data.common.web_admin_password = webCredentials.password;
   }
 
+  let newMeshId = meshHandlers.genMeshID();
+  let newMeshKey = meshHandlers.genMeshKey();
+
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
@@ -298,6 +302,8 @@ const createRegistry = async function(req) {
     web_admin_username: data.common.web_admin_username,
     web_admin_password: data.common.web_admin_password,
     mesh_mode: 0,
+    mesh_key: newMeshKey,
+    mesh_id: newMeshId,
   });
   try {
     await newDevice.save();
