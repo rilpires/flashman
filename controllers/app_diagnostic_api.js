@@ -937,7 +937,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode use_tr069')
+  'mesh_master mesh_slaves mesh_mode')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
@@ -961,7 +961,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode').catch((err) => {
+  'mesh_master mesh_slaves mesh_mode use_tr069').catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
     });
@@ -995,13 +995,15 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       message: 'CPE secundário não está online'
     });
   }
-  const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[masterMacAddr];
-  });
-  if (!isMasterOn) {
-    return res.status(403).json({
-      message: 'CPE primário não está online'
+  if (!matchedMaster.use_tr069) {
+    const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[masterMacAddr];
     });
+    if (!isMasterOn) {
+      return res.status(403).json({
+        message: 'CPE primário não está online'
+      });
+    }
   }
 
   matchedSlave.mesh_master = '';
@@ -1013,7 +1015,9 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   await matchedMaster.save();
 
   mqtt.anlixMessageRouterUpdate(slaveMacAddr);
-  mqtt.anlixMessageRouterUpdate(masterMacAddr);
+  if (!matchedMaster.use_tr069) {
+    mqtt.anlixMessageRouterUpdate(masterMacAddr);
+  }
 
   return res.status(200).json({message:
     'Sucesso',
