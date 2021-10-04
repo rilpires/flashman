@@ -12,6 +12,7 @@ const acsDeviceInfo = require('./acs_device_info.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
+const deviceList = require('./device_list.js');
 
 let diagAppAPIController = {};
 
@@ -995,15 +996,23 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       message: 'CPE secundário não está online'
     });
   }
-  if (!matchedMaster.use_tr069) {
-    const isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[masterMacAddr];
-    });
-    if (!isMasterOn) {
-      return res.status(403).json({
-        message: 'CPE primário não está online'
-      });
+  let isMasterOn = false;
+  if (matchedMaster.use_tr069) {
+    // tr069 time thresholds for device status.
+    let tr069Times = await deviceList.buildTr069Thresholds();
+    // // classifying device status.
+    if (matchedMaster.last_contact >= tr069Times.recovery) {
+      isMasterOn = true;
     }
+  } else {
+    isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.params.id.toUpperCase()];
+    });
+  }
+  if (!isMasterOn) {
+    return res.status(403).json({
+      message: 'CPE primário não está online'
+    });
   }
 
   matchedSlave.mesh_master = '';
