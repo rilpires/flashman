@@ -803,11 +803,11 @@ diagAppAPIController.associateSlave = async function(req, res) {
     response.message = 'MAC do CPE candidato a secundário inválido';
     return res.status(403).json(response);
   }
-  const masterProjection = 'mesh_master mesh_slaves mesh_mode mesh_key mesh_id wifi_ssid '+
-  'wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
-  'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
-  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz '+
-  'wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
+  const masterProjection = 'mesh_master mesh_slaves mesh_mode mesh_key mesh_id '+
+  'wifi_ssid wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
+  'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz '+
+  'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz '+
+  'wifi_hidden_5ghz wifi_channel_5ghz bssid_mesh2 bssid_mesh5';
   let matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection)
   .catch((err) => {
     response.message = 'Erro interno';
@@ -826,11 +826,12 @@ diagAppAPIController.associateSlave = async function(req, res) {
     return res.status(403).json(response);
   }
   const slaveProjection = 'mesh_master mesh_slaves mesh_mode bridge_mode_enabled ' +
-  'bridge_mode_switch_disable lastboot_date use_tr069 ' +
-  'version model mesh_key mesh_id wifi_ssid wifi_password '+
-  'wifi_band wifi_mode wifi_state wifi_hidden isSsidPrefixEnabled '+
-  'wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz wifi_password_5ghz '+
-  'wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
+  'bridge_mode_switch_disable lastboot_date use_tr069 version model mesh_key ' +
+  'mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state '+
+  'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
+  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
+  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz master_bssid_mesh2 ' +
+  'master_bssid_mesh5';
   let matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection)
   .catch((err) => {
     response.message = 'Erro interno';
@@ -876,6 +877,8 @@ diagAppAPIController.associateSlave = async function(req, res) {
   // If no errors occur always update the slave
   // to make sure master and slave are synchronized
   matchedSlave.mesh_master = matchedMaster._id;
+  matchedSlave.master_bssid_mesh2 = matchedMaster.bssid_mesh2;
+  matchedSlave.master_bssid_mesh5 = matchedMaster.bssid_mesh5;
   meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
   await matchedSlave.save();
 
@@ -938,7 +941,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode')
+  'mesh_master mesh_slaves mesh_mode master_bssid_mesh2 master_bssid_mesh5')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
@@ -1016,6 +1019,8 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   }
 
   matchedSlave.mesh_master = '';
+  matchedSlave.master_bssid_mesh2 = '';
+  matchedSlave.master_bssid_mesh5 = '';
   matchedSlave.mesh_mode = 0;
   await matchedSlave.save();
 
