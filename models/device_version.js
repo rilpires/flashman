@@ -1994,18 +1994,23 @@ DeviceVersion.isUpgradeSupport = function(model) {
 DeviceVersion.getMeshBSSIDs = function(model, MAC) {
   let meshBSSIDs = {};
   if (tr069Devices[model] && tr069Devices[model].feature_support.mesh_v2) {
-    let MACOctects2 = MAC.split(':');
-    let MACOctects5 = MACOctects2;
-    for (let i = 0; i < MACOctects2.length; i++) {
-      MACOctects5[i] = toString(
-        parseInt(`0x${MACOctects2[i]}`) +
-        parseInt(tr069Devices[model].mesh5_bssid_offset));
-      MACOctects2[i] = toString(
-        parseInt(`0x${MACOctects2[i]}`) +
-        parseInt(tr069Devices[model].mesh2_bssid_offset));
+    let MACOctets2 = MAC.split(':');
+    let MACOctets5 = MAC.split(':');
+    for (let i = 0; i < MACOctets2.length; i++) {
+      MACOctets5[i] = (parseInt(`0x${MACOctets5[i]}`) +
+        parseInt(tr069Devices[model].mesh5_bssid_offset[i])).toString(16).toUpperCase();
+      MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
+        parseInt(tr069Devices[model].mesh2_bssid_offset[i])).toString(16).toUpperCase();
+      // we need the second hex digit for BSSID addresses
+      if (MACOctets5[i].length === 1) {
+        MACOctets5[i] = `0${MACOctets5[i]}`;
+      }
+      if (MACOctets2[1].length === 1) {
+        MACOctets2[i] = `0${MACOctets2[i]}`;
+      }
     }
-    meshBSSIDs.mesh2 = MACOctects2.join(':');
-    meshBSSIDs.mesh5 = MACOctects5.join(':');
+    meshBSSIDs.mesh2 = MACOctets2.join(':');
+    meshBSSIDs.mesh5 = MACOctets5.join(':');
   } else {
     meshBSSIDs.mesh2 = '';
     meshBSSIDs.mesh5 = '';
