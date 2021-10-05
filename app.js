@@ -27,6 +27,7 @@ let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
+let DeviceModel = require('./models/device_version');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 
@@ -153,12 +154,16 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
                      {bridge_mode_enabled: true, connection_type: 'pppoe'},
                      {isSsidPrefixEnabled: {$exists: false}},
                      {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
+                     {bssid_mesh2: {$exists: false}},
+                     {bssid_mesh5: {$exists: false}},
   ]},
   {installed_release: true, do_update: true,
    do_update_status: true, release: true,
    mesh_key: true, mesh_id: true,
    bridge_mode_enabled: true, connection_type: true,
-   pppoe_user: true, pppoe_password: true, isSsidPrefixEnabled: true},
+   pppoe_user: true, pppoe_password: true,
+   isSsidPrefixEnabled: true, bssid_mesh2: true,
+   bssid_mesh5: true, use_tr069: true, _id: true, model: true},
   function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
@@ -200,6 +205,17 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         */
         if (typeof devices[idx].isSsidPrefixEnabled === 'undefined') {
           devices[idx].isSsidPrefixEnabled = false;
+          saveDevice = true;
+        }
+        /*
+          Check if tr-069 device has mesh bssids registered
+        */
+        if (devices[idx].use_tr069 &&
+          (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
+          let meshBSSIDs = DeviceModel.getMeshBSSIDs(
+            devices[idx].model, devices[idx]._id);
+          devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
+          devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
           saveDevice = true;
         }
         if (saveDevice) {
