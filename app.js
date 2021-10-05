@@ -212,6 +212,17 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
     }
   });
+  /* Check if not exists indexes for acs_id, serial_tr069 and
+    alt_uid_tr069 and create it */
+  Device.collection.getIndexes({full: true}).then(async (idxs) => {
+    if (idxs.length != 4) {
+      console.log('Creating devices indexes');
+      await Device.collection.createIndex({acs_id: 1}, {sparse: true});
+      await Device.collection.createIndex({serial_tr069: 1}, {sparse: true});
+      await Device.collection.createIndex({alt_uid_tr069: 1}, {sparse: true});
+      await Device.syncIndexes();
+    }
+  }).catch(console.error);
 
   // put default values in old config
   Config.findOne({is_default: true}, function(err, config) {
