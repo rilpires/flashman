@@ -57,6 +57,11 @@ const tr069Devices = {
       mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
   },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
@@ -89,6 +94,11 @@ const tr069Devices = {
       firmware_upgrade: true,
       mesh_v2: true,
     },
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '-0x50', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '-0x7', '0x0', '0x1'],
   },
   'ZXHN H199A': {
     vendor: 'Multilaser',
@@ -122,6 +132,11 @@ const tr069Devices = {
       mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
   },
   'GONUAC001': {
     vendor: 'Greatek',
@@ -140,6 +155,11 @@ const tr069Devices = {
       mesh_v2: true,
     },
     wifi2_extended_channels_support: false,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
   },
   '121AC': {
     vendor: 'Intelbras',
@@ -158,6 +178,11 @@ const tr069Devices = {
       mesh_v2: true,
     },
     wifi2_extended_channels_support: false,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
   },
   'G-140W-C': {
     vendor: 'Nokia',
@@ -176,6 +201,11 @@ const tr069Devices = {
       mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
   },
   'HG8245Q2': {
     vendor: 'Huawei',
@@ -1958,6 +1988,29 @@ DeviceVersion.isUpgradeSupport = function(model) {
     upgradeAvailable = tr069Devices[model].feature_support.firmware_upgrade;
   }
   return upgradeAvailable;
+};
+
+// Virtual APs BSSIDs are hardcoded
+DeviceVersion.getMeshBSSIDs = function(model, MAC) {
+  let meshBSSIDs = {};
+  if (tr069Devices[model] && tr069Devices[model].feature_support.mesh_v2) {
+    let MACOctects2 = MAC.split(':');
+    let MACOctects5 = MACOctects2;
+    for (let i = 0; i < MACOctects2.length; i++) {
+      MACOctects5[i] = toString(
+        parseInt(`0x${MACOctects2[i]}`) +
+        parseInt(tr069Devices[model].mesh5_bssid_offset));
+      MACOctects2[i] = toString(
+        parseInt(`0x${MACOctects2[i]}`) +
+        parseInt(tr069Devices[model].mesh2_bssid_offset));
+    }
+    meshBSSIDs.mesh2 = MACOctects2.join(':');
+    meshBSSIDs.mesh5 = MACOctects5.join(':');
+  } else {
+    meshBSSIDs.mesh2 = '';
+    meshBSSIDs.mesh5 = '';
+  }
+  return meshBSSIDs;
 };
 
 module.exports = DeviceVersion;

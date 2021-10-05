@@ -79,6 +79,8 @@ const createRegistry = async function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
+  let bssidMesh2 = util.returnObjOrEmptyStr(req.body.bssid_mesh2).trim().toUpperCase();
+  let bssidMesh5 = util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
   let vlan = util.returnObjOrEmptyStr(req.body.vlan);
   let vlanFiltered;
   let vlanDidChange = false;
@@ -258,6 +260,8 @@ const createRegistry = async function(req, res) {
       'mesh_mode': meshMode,
       'mesh_id': newMeshId,
       'mesh_key': newMeshKey,
+      'bssid_mesh2': bssidMesh2,
+      'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
     };

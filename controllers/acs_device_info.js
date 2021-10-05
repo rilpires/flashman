@@ -262,6 +262,9 @@ const createRegistry = async function(req) {
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
+  let meshBSSIDs = DeviceModel.getMeshBSSIDs(
+    data.common.model, data.common.mac.toUpperCase());
+
   let newDevice = new DeviceModel({
     _id: data.common.mac.toUpperCase(),
     use_tr069: true,
@@ -304,6 +307,8 @@ const createRegistry = async function(req) {
     mesh_mode: 0,
     mesh_key: newMeshKey,
     mesh_id: newMeshId,
+    bssid_mesh2: meshBSSIDs.mesh2,
+    bssid_mesh5: meshBSSIDs.mesh5,
   });
   try {
     await newDevice.save();
