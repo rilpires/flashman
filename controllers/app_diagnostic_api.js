@@ -962,7 +962,8 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode use_tr069').catch((err) => {
+  'mesh_master mesh_slaves mesh_mode use_tr069 last_contact')
+  .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
     });
@@ -1000,13 +1001,12 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   if (matchedMaster.use_tr069) {
     // tr069 time thresholds for device status.
     let tr069Times = await deviceList.buildTr069Thresholds();
-    // // classifying device status.
     if (matchedMaster.last_contact >= tr069Times.recovery) {
       isMasterOn = true;
     }
   } else {
     isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.params.id.toUpperCase()];
+      return map[masterMacAddr];
     });
   }
   if (!isMasterOn) {
