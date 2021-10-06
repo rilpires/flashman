@@ -10,10 +10,10 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
-  serial_tr069: String,
+  serial_tr069: {type: String, sparse: true},
   // Used when serial is not reliable for crossing data
-  alt_uid_tr069: String,
-  acs_id: String,
+  alt_uid_tr069: {type: String, sparse: true},
+  acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   last_tr069_sync: Date,
   created_at: {type: Date},
@@ -103,8 +103,10 @@ let deviceSchema = new Schema({
   }],
   port_mapping: [{
     ip: String,
-    external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
-    external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    external_port_start: {type: Number, required: true, min: 1,
+      max: 65535, unique: true, sparse: true},
+    external_port_end: {type: Number, required: true, min: 1,
+      max: 65535, unique: true, sparse: true},
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
@@ -220,7 +222,8 @@ let deviceSchema = new Schema({
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
   vlan: [{
-    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    port: {type: Number, required: true, min: 1, max: 32,
+      unique: true, sparse: true},
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
@@ -228,6 +231,8 @@ let deviceSchema = new Schema({
   web_admin_username: String,
   web_admin_password: String,
 });
+
+deviceSchema.set('autoIndex', false);
 
 deviceSchema.plugin(mongoosePaginate);
 
