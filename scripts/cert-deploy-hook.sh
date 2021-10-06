@@ -20,12 +20,14 @@ for domain in $RENEWED_DOMAINS; do
 
     # Apply the proper file ownership and permissions for
     # the daemon to read its certificate and key.
-    chown $destination_user "$flashman_mqtt_cert_root/cert.pem" \
-      "$flashman_mqtt_cert_root/key.pem"
-    chmod 400 "$flashman_mqtt_cert_root/cert.pem" \
-      "$flashman_mqtt_cert_root/key.pem"
     cat "$flashman_mqtt_cert_root/cert.pem" \
       "$flashman_mqtt_cert_root/key.pem" > \
+      "$flashman_mqtt_cert_root/combined.pem"
+    chown $destination_user "$flashman_mqtt_cert_root/cert.pem" \
+      "$flashman_mqtt_cert_root/key.pem" \
+      "$flashman_mqtt_cert_root/combined.pem"
+    chmod 400 "$flashman_mqtt_cert_root/cert.pem" \
+      "$flashman_mqtt_cert_root/key.pem" \
       "$flashman_mqtt_cert_root/combined.pem"
     ;;
   esac
