@@ -328,8 +328,13 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     if (!req.body.mac) {
       return res.status(500).json({'error': 'JSON invalid'});
     }
-    // Fetch device from database
-    let device = await DeviceModel.findById(req.body.mac);
+    // Fetch device from database - query depends on if it's ONU or not
+    let device;
+    if (req.body.isOnu && req.body.onuMac) {
+      device = await DeviceModel.findById(req.body.onuMac);
+    } else {
+      device = await DeviceModel.findById(req.body.mac);
+    }
     if (!device) {
       return res.status(404).json({'error': 'Device not found'});
     }
