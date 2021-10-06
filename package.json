@@ -1,10 +1,11 @@
 {
   "name": "flashman",
-  "version": "2.12.0",
+  "version": "2.14.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest --detectOpenHandles",
+    "e2e": "jest --runInBand --detectOpenHandles test/black-box/*",
     "build": "webpack --config webpack.prod.js"
   },
   "updater": {

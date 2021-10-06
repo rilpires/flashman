@@ -10,7 +10,10 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
 const API_URL = 'http://localhost:$PORT/acs/';
-const FLASHMAN_PORT = 8000;
+/* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
+ environment.genieacs.json or in shell environment with the same value
+ that is in environment.config.json */
+const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
 
@@ -245,6 +248,7 @@ const getHuaweiFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
       fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
@@ -403,6 +407,7 @@ const getModelFields = function(oui, model) {
   let fields = {};
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
     case 'Huawei': // Huawei WS5200
       message = '';
       fields = getHuaweiFields(model);

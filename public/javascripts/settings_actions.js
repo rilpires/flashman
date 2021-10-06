@@ -53,13 +53,23 @@ window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
   let validator = new Validator();
 
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
+  let validField = validator
+    .validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
 
   if (!validField.valid) {
     setSsidPrefixError();
   } else {
     resetSsidPrefixError();
+  }
+};
+
+window.changeSsidPrefixInputDisableness = function(value) {
+  let ssidPrefixBox = document.getElementById('ssid-prefix-box');
+  if (value.checked) {
+    ssidPrefixBox.style.display = 'block';
+  } else {
+    ssidPrefixBox.style.display = 'none';
   }
 };
 
@@ -96,7 +106,8 @@ let configFlashman = function(event) {
     allValid = false; // we won't send the configurations.
   }
   if (getConfigStorage('isClientPayingPersonalizationApp')) {
-    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
     // check ssid prefix value
     if (ssidPrefixInput.validity.valid && !validField.valid) {
       setSsidPrefixError();

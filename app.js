@@ -36,8 +36,12 @@ let app = express();
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
 
+const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
+  'flashman' :
+  process.env.FLM_DATABASE_NAME;
+
 mongoose.connect(
-  'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman',
+  'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed integer with 32 bits.
    useUnifiedTopology: true,
@@ -224,6 +228,13 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       }
     }
   });
+  /* Check if not exists indexes and sync them */
+  Device.collection.getIndexes({full: true}).then(async (idxs) => {
+     if (idxs.length < 4) {
+       console.log('Creating devices indexes');
+       await Device.syncIndexes();
+     }
+  }).catch(console.error);
 
   // put default values in old config
   Config.findOne({is_default: true}, function(err, config) {

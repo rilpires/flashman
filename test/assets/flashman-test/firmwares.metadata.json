@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"12fc3bf328204680861e36b943675e0f","collectionName":"firmwares","type":"collection"}
