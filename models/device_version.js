@@ -3,47 +3,36 @@ let DeviceVersion = {};
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 
+const portForwardNoRanges = {
+ simpleSymmetric: true,
+ simpleAsymmetric: true,
+ rangeSymmetric: false,
+ rangeAsymmetric: false,
+};
+
+const portForwardNoAsymRanges = {
+ simpleSymmetric: true,
+ simpleAsymmetric: true,
+ rangeSymmetric: true,
+ rangeAsymmetric: false,
+};
+
 const tr069Devices = {
   'F670L': {
     vendor: 'Multilaser',
     versions_upgrade: {
       'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
       'V1.1.20P1T18': ['V1.1.20P3N3'],
-      'V1.1.20P3N3': [],
-      'V1.1.20P3N4C': [],
+      'V1.1.20P3N3': ['V1.1.20P3N4D'],
+      'V1.1.20P3N4C': ['V1.1.20P3N4D'],
       'V1.1.20P3N4D': [],
     },
     port_forward_opts: {
-      'V1.1.20P1T18': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
-      'V1.1.20P1T4': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
-      'V1.1.20P3N3': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
-      'V1.1.20P3N4C': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
-      'V1.1.20P3N4D': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: false,
-       rangeAsymmetric: false,
-      },
+      'V1.1.20P1T18': portForwardNoRanges,
+      'V1.1.20P1T4': portForwardNoRanges,
+      'V1.1.20P3N3': portForwardNoRanges,
+      'V1.1.20P3N4C': portForwardNoRanges,
+      'V1.1.20P3N4D': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
@@ -64,18 +53,8 @@ const tr069Devices = {
       'V3.0.0C6_MUL': [],
     },
     port_forward_opts: {
-      'V3.0.0C5_MUL': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: true,
-       rangeAsymmetric: false,
-      },
-      'V3.0.0C6_MUL': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: true,
-       rangeAsymmetric: false,
-      },
+      'V3.0.0C5_MUL': portForwardNoAsymRanges,
+      'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -95,18 +74,8 @@ const tr069Devices = {
       'V9.1.0P3N2_MUL': [],
     },
     port_forward_opts: {
-      'V9.1.0P1_MUL': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: true,
-       rangeAsymmetric: false,
-      },
-      'V9.1.0P3N2_MUL': {
-       simpleSymmetric: true,
-       simpleAsymmetric: true,
-       rangeSymmetric: true,
-       rangeAsymmetric: false,
-      },
+      'V9.1.0P1_MUL': portForwardNoAsymRanges,
+      'V9.1.0P3N2_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -185,6 +154,24 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'EG8145V5': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V5R019C10S350': ['V5R020C00S280'],
+      'V5R020C00S280': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: true,
   },
