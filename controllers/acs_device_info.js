@@ -3,6 +3,7 @@ const TasksAPI = require('./external-genieacs/tasks-api');
 const FirmwaresAPI = require('./external-genieacs/firmwares-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const DeviceVersion = require('../models/device_version.js');
 const FirmwareModel = require('../models/firmware');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
@@ -262,7 +263,7 @@ const createRegistry = async function(req) {
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
-  let meshBSSIDs = DeviceModel.getMeshBSSIDs(
+  let meshBSSIDs = DeviceVersion.getMeshBSSIDs(
     data.common.model, data.common.mac.toUpperCase());
 
   let newDevice = new DeviceModel({
