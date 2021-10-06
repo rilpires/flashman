@@ -640,6 +640,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           'success': true,
           'isRegister': true,
           'isOnline': true,
+          'permissions': permissions,
           'deviceInfo': {
             'pppoe_pass': device.pppoe_password,
             'onu_mac': device._id,
