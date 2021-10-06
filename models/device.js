@@ -10,8 +10,9 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
-  serial_tr069: String,
-  alt_uid_tr069: String, // Used when serial is not reliable for crossing data
+  serial_tr069: {type: String, sparse: true},
+  // Used when serial is not reliable for crossing data
+  alt_uid_tr069: {type: String, sparse: true},
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   last_tr069_sync: Date,
@@ -102,8 +103,10 @@ let deviceSchema = new Schema({
   }],
   port_mapping: [{
     ip: String,
-    external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
-    external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    external_port_start: {type: Number, required: true, min: 1,
+      max: 65535, unique: true, sparse: true},
+    external_port_end: {type: Number, required: true, min: 1,
+      max: 65535, unique: true, sparse: true},
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
@@ -219,7 +222,8 @@ let deviceSchema = new Schema({
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
   vlan: [{
-    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    port: {type: Number, required: true, min: 1, max: 32,
+      unique: true, sparse: true},
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
@@ -248,6 +252,27 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   return this.ap_survey.find(function(device, idx) {
     return device.mac == mac;
   });
+};
+
+deviceSchema.statics.findByMacOrSerial = function(id) {
+  let query;
+  if (Array.isArray(id)) {
+    let regexList = [];
+    id.forEach((i) => {
+      let regex = new RegExp(i, 'i');
+      regexList.push(regex);
+    });
+    query = {'$in': regexList};
+  } else if (id !== undefined) {
+    let regex = new RegExp(id, 'i');
+    query = {'$regex': regex};
+  } else {
+    return [];
+  }
+  return this.find({$or: [
+        {'_id': query}, // mac address
+        {'serial_tr069': query}, // serial
+        {'alt_uid_tr069': query}]}); // mac address
 };
 
 // Hooks for device traps notifications
