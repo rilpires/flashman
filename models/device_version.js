@@ -1801,6 +1801,9 @@ const grantPonSignalSupport = function(version, model) {
 };
 
 const grantMeshMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1810,7 +1813,8 @@ const grantMeshMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.27.0') >= 0);
+    return (versionCompare(version, '0.27.0') >= 0 &&
+    versionCompare(version, '0.32.0') < 0);
   } else {
     // Development version, enable everything by default
     return true;
