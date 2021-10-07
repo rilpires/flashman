@@ -31,9 +31,11 @@ const fetchUsers = function(usersTable) {
             $('<td></td>').html(userObj.role) :
             $('<td></td>')
           ),
-          $('<td></td>').html(new Date(userObj.createdAt).toLocaleString()),
+          $('<td></td>').html(new Date(userObj.createdAt)
+                        .toLocaleString('pt-BR')),
           (userObj.lastLogin ?
-            $('<td></td>').html(new Date(userObj.lastLogin).toLocaleString()) :
+            $('<td></td>').html(new Date(userObj.lastLogin)
+                          .toLocaleString('pt-BR')) :
             $('<td></td>')
           ),
           $('<td></td>').append(
