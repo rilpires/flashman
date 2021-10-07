@@ -2262,17 +2262,16 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   // push a hash from rules json
   device.forward_index = crypto.createHash('md5').
   update(JSON.stringify(content)).digest('base64');
-  await device.save(function(err) {
-    let ret = {};
-    if (err) {
-      console.log('Error Saving Port Forward: '+err);
-      ret.success = false;
-      ret.message = 'Erro ao salvar regras no servidor';
-      return ret;
-    }
-    // geniacs-api call
-    acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
-  });
+  try {
+    await device.save();
+  } catch (err) {
+    console.log('Error Saving Port Forward: '+err);
+    ret.success = false;
+    ret.message = 'Erro ao salvar regras no servidor';
+    return ret;
+  }
+  // geniacs-api call
+  acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
   ret.success = true;
   ret.message = 'Mapeamento de portas no dispositivo '+
     device.acs_id+
