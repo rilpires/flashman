@@ -146,22 +146,36 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
-      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
     },
-    port_mapping: {
-      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMapping',
-      template_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
-      enable: 'PortMappingEnabled',
-      lease: 'PortMappingLeaseDuration',
-      external_port_start: 'ExternalPort',
-      external_port_end: '',
-      internal_port_start: 'InternalPort',
-      internal_port_end: '',
-      protocol: 'PortMappingProtocol',
-      client: 'InternalClient',
-      description: 'PortMappingDescription',
-      remote_host: 'RemoteHost',
+    port_mapping_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.'+
+      '*.WANIPConnection.*.PortMapping',
+    port_mapping_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.'+
+      '*.WANPPPConnection.*.PortMapping',
+    /* The port_mapping_(values|fields) is a auxiliary sub object to dispatch
+      setParameterValues task in genie. Its works on the settings below:
+        First array element - Field on tr-069 xml spec;
+        Second array element - Default value or field in port_mapping
+          definition of models/device.js that carry the value;
+        Third array element - The xml data type specification; */
+    port_mapping_fields: {
+      external_port_start: ['ExternalPort', 'external_port_start',
+        'xsd:unsignedInt'],
+      // external_port_end: ['', 'external_port_end', 'xsd:unsignedInt'],
+      internal_port_start: ['InternalPort', 'internal_port_start',
+        'xsd:unsignedInt'],
+      // internal_port_end: ['', 'internal_port_start', 'xsd:unsignedInt'],
+      client: ['InternalClient', 'ip', 'xsd:string'],
+    },
+    port_mapping_values: {
+      enable: ['PortMappingEnabled', true, 'xsd:boolean'],
+      lease: ['PortMappingLeaseDuration', 0, 'xsd:unsignedInt'],
+      // hardcoded for every device
+      protocol: ['PortMappingProtocol', '',
+        'xsd:string'],
+      description: ['PortMappingDescription', '', 'xsd:string'],
+      remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
     lan: {
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -215,8 +229,9 @@ const getHuaweiFields = function(model) {
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
-      fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
-      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+      fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'TCP/UDP';
       fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       break;
@@ -248,7 +263,8 @@ const getZTEFields = function(model) {
       fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
-      fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'BOTH';
       break;
     case 'F670L': // Multilaser ZTE F670L
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
@@ -259,9 +275,10 @@ const getZTEFields = function(model) {
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
+      fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
       break;
   }
-  fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   return fields;
@@ -360,25 +377,6 @@ const getModelFields = function(oui, model) {
   };
 };
 
-const getProtocolByModel = function(model) {
-  let ret = '';
-  switch (model) {
-    case 'ZXHN H199A':
-    case 'ZXHN H198A V3.0':
-    case 'ZXHN%20H198A%20V3%2E0':
-    case 'ZXHN%20H199A': // URI encoded
-      ret = 'BOTH';
-      break;
-    case 'HG8245Q2':
-      ret = 'TCP/UDP';
-      break;
-    default:
-      ret = 'TCP AND UDP';
-      break;
-  }
-  return ret;
-};
-
 const getDeviceFields = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.oui || !params.model) {
@@ -473,6 +471,5 @@ const syncDeviceData = async function(args, callback) {
 
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
-exports.getProtocolByModel = getProtocolByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
