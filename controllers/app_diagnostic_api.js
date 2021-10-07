@@ -813,7 +813,7 @@ diagAppAPIController.associateSlave = async function(req, res) {
   'wifi_ssid wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
   'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz '+
   'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz '+
-  'wifi_hidden_5ghz wifi_channel_5ghz bssid_mesh2 bssid_mesh5';
+  'wifi_hidden_5ghz wifi_channel_5ghz';
   let matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection)
   .catch((err) => {
     response.message = 'Erro interno';
@@ -836,8 +836,7 @@ diagAppAPIController.associateSlave = async function(req, res) {
   'mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state '+
   'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
   'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
-  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz master_bssid_mesh2 ' +
-  'master_bssid_mesh5';
+  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
   let matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection)
   .catch((err) => {
     response.message = 'Erro interno';
@@ -883,8 +882,6 @@ diagAppAPIController.associateSlave = async function(req, res) {
   // If no errors occur always update the slave
   // to make sure master and slave are synchronized
   matchedSlave.mesh_master = matchedMaster._id;
-  matchedSlave.master_bssid_mesh2 = matchedMaster.bssid_mesh2;
-  matchedSlave.master_bssid_mesh5 = matchedMaster.bssid_mesh5;
   meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
   await matchedSlave.save();
 

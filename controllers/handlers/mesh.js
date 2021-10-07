@@ -216,4 +216,62 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
   });
 };
 
+/*
+  This returns the lists of BSSID of devices
+  in the mesh network
+*/
+meshHandlers.generateBSSIDLists = async function(device) {
+  // If device is master we return empty lists
+  if (!device.mesh_master) {
+    return {
+      mesh2: [],
+      mesh5: [],
+    };
+  }
+  const masterMacAddr = device.mesh_master.toUpperCase();
+  let matchedMaster = await DeviceModel.findById(masterMacAddr,
+  'mesh_master mesh_slaves mesh_mode')
+  .catch((err) => {
+    console.log('Erro interno');
+    return;
+  });
+  if (!matchedMaster) {
+    console.log('CPE indicado como primário não encontrado');
+    return;
+  }
+  if (matchedMaster.mesh_mode === 0) {
+    console.log('CPE indicado como primário não está em modo mesh');
+    return;
+  }
+  if (matchedMaster.mesh_master) {
+    console.log('CPE indicado como primário é secundário');
+    return;
+  }
+  let bssids2 = [matchedMaster.devices_bssid_mesh2];
+  let bssids5 = [matchedMaster.devices_bssid_mesh5];
+  matchedMaster.mesh_slaves.forEach((slaveMac)=>{
+    // We don't want to add it's own mesh BSSIDs
+    if (slaveMac.toUpperCase() === device._id.toUpperCase()) {
+      return;
+    }
+    DeviceModel.findById(slaveMac, 'bssid_mesh2 bssid_mesh5',
+    function(err, matchedSlave) {
+      if (err) {
+        console.log('Attempt to access mesh slave '+ slaveMac +
+                    ' failed: database error.');
+      } else if (!matchedSlave) {
+        console.log('Attempt to access mesh slave '+ slaveMac +
+                    ' failed: devimasterDevicece not found.');
+      } else {
+        bssids2.push(matchedSlave.bssid_mesh2);
+        bssids5.push(matchedSlave.bssid_mesh5);
+      }
+    });
+  });
+  return {
+    mesh2: bssids2,
+    mesh5: bssids5,
+  };
+};
+
 module.exports = meshHandlers;

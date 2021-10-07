@@ -856,6 +856,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
           }
 
+          let bssids = meshHandlers(matchedDevice);
+
           let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
@@ -904,8 +906,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
-            'master_bssid_mesh2': matchedDevice.master_bssid_mesh2,
-            'master_bssid_mesh5': matchedDevice.master_bssid_mesh5,
+            'devices_bssid_mesh2': bssids.mesh2,
+            'devices_bssid_mesh5': bssids.mesh5,
           };
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
