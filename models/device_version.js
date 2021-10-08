@@ -10,6 +10,13 @@ const portForwardNoRanges = {
  rangeAsymmetric: false,
 };
 
+const portForwardNoAsym = {
+ simpleSymmetric: true,
+ simpleAsymmetric: false,
+ rangeSymmetric: true,
+ rangeAsymmetric: false,
+};
+
 const portForwardNoAsymRanges = {
  simpleSymmetric: true,
  simpleAsymmetric: true,
@@ -145,8 +152,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V3R017C10S100': [],
     },
+    port_forward_opts: {
+      'V3R017C10S100': portForwardNoAsym,
+    },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
@@ -158,13 +168,17 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'EG8145V5': {
+    port_forward_opts: {
+      'V5R019C10S350': portForwardNoAsym,
+      'V5R020C00S280': portForwardNoAsym,
+    },
     vendor: 'Huawei',
     versions_upgrade: {
       'V5R019C10S350': ['V5R020C00S280'],
       'V5R020C00S280': [],
     },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
