@@ -944,7 +944,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode master_bssid_mesh2 master_bssid_mesh5')
+  'mesh_master mesh_slaves mesh_mode')
   .catch((err) => {
     return res.status(500).json({message:
       'Erro interno',
@@ -1022,8 +1022,6 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   }
 
   matchedSlave.mesh_master = '';
-  matchedSlave.master_bssid_mesh2 = '';
-  matchedSlave.master_bssid_mesh5 = '';
   matchedSlave.mesh_mode = 0;
   await matchedSlave.save();
 
