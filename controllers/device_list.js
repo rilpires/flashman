@@ -1539,7 +1539,7 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+            let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {}};
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
@@ -1845,8 +1845,18 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('mesh_mode') &&
                 meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
+                  return res.status(403).json({
+                    success: false,
+                    type: 'danger',
+                    message: 'Não pode desabilitar o mesh com secundários associados',
+                  });
+                }
                 matchedDevice.mesh_mode = meshMode;
                 updateParameters = true;
+                const auxChanges = meshHandlers.buildTR069Changes(matchedDevice, meshMode);
+                changes.mesh2 = auxChanges.mesh2;
+                changes.mesh5 = auxChanges.mesh5;
               } else {
                 hasPermissionError = true;
               }
@@ -1873,14 +1883,14 @@ deviceListController.setDeviceReg = function(req, res) {
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-                meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
                 acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
+              meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
 
-                matchedDevice.success = true;
-                return res.status(200).json(matchedDevice);
+              matchedDevice.success = true;
+              return res.status(200).json(matchedDevice);
             });
           });
         } else {

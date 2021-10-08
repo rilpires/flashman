@@ -216,6 +216,60 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
   });
 };
 
+meshHandlers.buildTR069Changes = function(device, targetMode) {
+  let changes = {mesh2: {}, mesh5: {}};
+  switch (targetMode) {
+    case 0:
+    case 1:
+      changes.mesh2.enable = false;
+      changes.mesh5.enable = false;
+      break;
+    case 2:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.bssid = device.wifi_bssid;
+      changes.mesh2.channel = device.wifi_channel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.enable = true;
+      changes.mesh2.enable = true;
+      changes.mesh5.enable = false;
+      break;
+    case 3:
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.bssid = device.wifi_bssid_5ghz;
+      changes.mesh5.channel = device.wifi_channel_5ghz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.enable = true;
+      changes.mesh2.enable = false;
+      break;
+    case 4:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.bssid = device.wifi_bssid;
+      changes.mesh2.channel = device.wifi_channel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.enable = true;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.bssid = device.wifi_bssid_5ghz;
+      changes.mesh5.channel = device.wifi_channel_5ghz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.enable = true;
+      break;
+    default:
+  }
+  return changes;
+};
+
 /*
   This returns the lists of BSSID of devices
   in the mesh network

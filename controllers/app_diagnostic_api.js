@@ -343,13 +343,12 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       return res.status(403).json({'error': 'invalid targetMode'});
     }
     if (targetMode === 0 && device.mesh_slaves.length > 0) {
-      // Cannot disable mesh mode with registered slaves
       return res.status(500).json({
         'error': 'Cannot disable mesh with registered slaves',
       });
     }
     let isMeshV2Compatible = false;
-    let changes = {mesh2: {}, mesh5: {}};
+    let changes;
     if (device.use_tr069) {
       let acsID = device.acs_id;
       let splitID = acsID.split('-');
@@ -364,55 +363,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
           'error': 'CPE isn\'t compatibe with mesh v2',
         });
       }
-      switch (targetMode) {
-        case 0:
-        case 1:
-          changes.mesh2.enable = false;
-          changes.mesh5.enable = false;
-          break;
-        case 2:
-          changes.mesh2.ssid = device.mesh_id;
-          changes.mesh2.password = device.mesh_key;
-          changes.mesh2.bssid = device.wifi_bssid;
-          changes.mesh2.channel = device.wifi_channel;
-          changes.mesh2.mode = device.wifi_mode;
-          changes.mesh2.advertise = false;
-          changes.mesh2.encryption = 'AESEncryption';
-          changes.mesh2.enable = true;
-          changes.mesh2.enable = true;
-          changes.mesh5.enable = false;
-          break;
-        case 3:
-          changes.mesh5.ssid = device.mesh_id;
-          changes.mesh5.password = device.mesh_key;
-          changes.mesh5.bssid = device.wifi_bssid_5ghz;
-          changes.mesh5.channel = device.wifi_channel_5ghz;
-          changes.mesh5.mode = device.wifi_mode_5ghz;
-          changes.mesh5.advertise = false;
-          changes.mesh5.encryption = 'AESEncryption';
-          changes.mesh5.enable = true;
-          changes.mesh2.enable = false;
-          break;
-        case 4:
-          changes.mesh2.ssid = device.mesh_id;
-          changes.mesh2.password = device.mesh_key;
-          changes.mesh2.bssid = device.wifi_bssid;
-          changes.mesh2.channel = device.wifi_channel;
-          changes.mesh2.mode = device.wifi_mode;
-          changes.mesh2.enable = true;
-          changes.mesh2.advertise = false;
-          changes.mesh2.encryption = 'AESEncryption';
-          changes.mesh5.ssid = device.mesh_id;
-          changes.mesh5.password = device.mesh_key;
-          changes.mesh5.bssid = device.wifi_bssid_5ghz;
-          changes.mesh5.channel = device.wifi_channel_5ghz;
-          changes.mesh5.mode = device.wifi_mode_5ghz;
-          changes.mesh5.advertise = false;
-          changes.mesh5.encryption = 'AESEncryption';
-          changes.mesh5.enable = true;
-          break;
-        default:
-      }
+      changes = meshHandlers.buildTR069Changes(device, targetMode);
     }
     device.mesh_mode = targetMode;
     // Apply changes to database and update device
