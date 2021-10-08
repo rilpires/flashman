@@ -1516,12 +1516,18 @@ const versionCompare = function(foo, bar) {
   return 0;
 };
 
-const grantViewLogs = function(version) {
+const grantViewLogs = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   // Enabled in all supported versions
   return true;
 };
 
-const grantResetDevices = function(version) {
+const grantResetDevices = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.10.0') >= 0);
   } else {
@@ -1550,7 +1556,10 @@ const grantPortForward = function(version, model) {
   }
 };
 
-const grantPortForwardAsym = function(version) {
+const grantPortForwardAsym = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.14.0') >= 0);
   } else {
@@ -1559,7 +1568,10 @@ const grantPortForwardAsym = function(version) {
   }
 };
 
-const grantPortOpenIpv6 = function(version) {
+const grantPortOpenIpv6 = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.15.0') >= 0);
   } else {
@@ -1568,7 +1580,10 @@ const grantPortOpenIpv6 = function(version) {
   }
 };
 
-const grantWifi5ghz = function(version, is5ghzCapable) {
+const grantWifi5ghz = function(version, is5ghzCapable, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (versionCompare(version, '0.13.0') >= 0));
   } else {
@@ -1577,7 +1592,10 @@ const grantWifi5ghz = function(version, is5ghzCapable) {
   }
 };
 
-const grantWifiBand = function(version) {
+const grantWifiBand = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1586,7 +1604,10 @@ const grantWifiBand = function(version) {
   }
 };
 
-const grantWifiBandAuto = function(version) {
+const grantWifiBandAuto = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.29.0') >= 0);
   } else {
@@ -1595,7 +1616,10 @@ const grantWifiBandAuto = function(version) {
   }
 };
 
-const grantWifiPowerHiddenIpv6 = function(version) {
+const grantWifiPowerHiddenIpv6 = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.28.0') >= 0);
   } else {
@@ -1604,7 +1628,10 @@ const grantWifiPowerHiddenIpv6 = function(version) {
   }
 };
 
-const grantWifiState = function(version) {
+const grantWifiState = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.23.0') >= 0);
   } else {
@@ -1627,7 +1654,10 @@ const grantWifiExtendedChannels = function(version, model) {
   }
 };
 
-const grantPingTest = function(version) {
+const grantPingTest = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1636,7 +1666,10 @@ const grantPingTest = function(version) {
   }
 };
 
-const grantLanEdit = function(version) {
+const grantLanEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1645,7 +1678,10 @@ const grantLanEdit = function(version) {
   }
 };
 
-const grantLanGwEdit = function(version) {
+const grantLanGwEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.23.0') >= 0);
   } else {
@@ -1654,7 +1690,10 @@ const grantLanGwEdit = function(version) {
   }
 };
 
-const grantLanDevices = function(version) {
+const grantLanDevices = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.14.0') >= 0);
   } else {
@@ -1663,7 +1702,10 @@ const grantLanDevices = function(version) {
   }
 };
 
-const grantSiteSurvey = function(version) {
+const grantSiteSurvey = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.29.0') >= 0);
   } else {
@@ -1724,7 +1766,10 @@ const grantBlockDevices = function(model) {
   return true;
 };
 
-const grantOpmode = function(version) {
+const grantOpmode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.25.0') >= 0);
   } else {
@@ -1734,6 +1779,9 @@ const grantOpmode = function(version) {
 };
 
 const grantVlanSupport = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   let ret = { // default return value
     'vlan_support': false,
     'vlan_support_since': '0.30.2',
@@ -1767,7 +1815,10 @@ const grantVlanSupport = function(version, model) {
   }
 };
 
-const grantWanBytesSupport = function(version) {
+const grantWanBytesSupport = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    true;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.25.0') >= 0);
   } else {
@@ -1828,7 +1879,10 @@ const grantMeshV2 = function(version, model) {
   }
 };
 
-const grantUpdateAck = function(version) {
+const grantUpdateAck = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    false;
+  }
   if (version.match(versionRegex)) {
     return (versionCompare(version, '0.27.0') >= 0);
   } else {
@@ -1859,33 +1913,33 @@ const grantWpsFunction = function(version, model) {
 
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
-  result.grantViewLogs = grantViewLogs(version);
-  result.grantResetDevices = grantResetDevices(version);
+  result.grantViewLogs = grantViewLogs(version, model);
+  result.grantResetDevices = grantResetDevices(version, model);
   result.grantPortForward = grantPortForward(version, model);
-  result.grantPortForwardAsym = grantPortForwardAsym(version);
-  result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
+  result.grantPortForwardAsym = grantPortForwardAsym(version, model);
+  result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
-  result.grantWifiBand = grantWifiBand(version);
-  result.grantWifiBandAuto = grantWifiBandAuto(version);
-  result.grantWifiState = grantWifiState(version);
-  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
+  result.grantWifiBand = grantWifiBand(version, model);
+  result.grantWifiBandAuto = grantWifiBandAuto(version, model);
+  result.grantWifiState = grantWifiState(version, model);
+  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
-  result.grantPingTest = grantPingTest(version);
-  result.grantLanEdit = grantLanEdit(version);
-  result.grantLanGwEdit = grantLanGwEdit(version);
-  result.grantLanDevices = grantLanDevices(version);
-  result.grantSiteSurvey = grantSiteSurvey(version);
+  result.grantPingTest = grantPingTest(version, model);
+  result.grantLanEdit = grantLanEdit(version, model);
+  result.grantLanGwEdit = grantLanGwEdit(version, model);
+  result.grantLanDevices = grantLanDevices(version, model);
+  result.grantSiteSurvey = grantSiteSurvey(version, model);
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
-  result.grantOpmode = grantOpmode(version);
+  result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
-  result.grantWanBytesSupport = grantWanBytesSupport(version);
+  result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(version, model);
   result.grantMeshMode = grantMeshMode(version, model);
   result.grantMeshV2 = grantMeshV2(version, model);
-  result.grantUpdateAck = grantUpdateAck(version);
+  result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
