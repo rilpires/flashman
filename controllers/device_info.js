@@ -856,7 +856,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
           }
 
-          let bssids = meshHandlers(matchedDevice);
+          let bssids = meshHandlers.generateBSSIDLists(matchedDevice);
 
           let resJson = {
             'do_update': matchedDevice.do_update,
