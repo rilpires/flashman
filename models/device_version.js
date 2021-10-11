@@ -150,8 +150,16 @@ const tr069Devices = {
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x3'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    // Some models have absolute values for some octets of the mesh virtual APs
+    // The mask indicates which octets these are and the absolute value
+    // indicates what value this is
+    mesh2_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
+    mesh5_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
+    mesh2_bssid_absolute: ['0x0', '0x0', '0x0', '0x01', '0x01', '0x0'],
+    mesh5_bssid_absolute: ['0x0', '0x0', '0x0', '0x00', '0x00', '0x0'],
+    needs_wifi_enabled_for_mesh: true,
   },
   'G-140W-C': {
     vendor: 'Nokia',
@@ -2042,16 +2050,27 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
     let MACOctets2 = MAC.split(':');
     let MACOctets5 = MAC.split(':');
     for (let i = 0; i < MACOctets2.length; i++) {
-      MACOctets5[i] = (parseInt(`0x${MACOctets5[i]}`) +
-        parseInt(tr069Devices[model].mesh5_bssid_offset[i])).toString(16).toUpperCase();
-      MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
-        parseInt(tr069Devices[model].mesh2_bssid_offset[i])).toString(16).toUpperCase();
-      // we need the second hex digit for BSSID addresses
-      if (MACOctets5[i].length === 1) {
-        MACOctets5[i] = `0${MACOctets5[i]}`;
+      if (tr069Devices[model].mesh2_bssid_absolute_mask &&
+        tr069Devices[model].mesh2_bssid_absolute_mask[i]) {
+        MACOctets2[i] = tr069Devices[model].mesh2_bssid_absolute[i].replace('0x', '');
+      } else {
+        MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
+          parseInt(tr069Devices[model].mesh2_bssid_offset[i])).toString(16).toUpperCase();
+        // we need the second hex digit for BSSID addresses
+        if (MACOctets2[1].length === 1) {
+          MACOctets2[i] = `0${MACOctets2[i]}`;
+        }
       }
-      if (MACOctets2[1].length === 1) {
-        MACOctets2[i] = `0${MACOctets2[i]}`;
+      if (tr069Devices[model].mesh5_bssid_absolute_mask &&
+        tr069Devices[model].mesh5_bssid_absolute_mask[i]) {
+        MACOctets5[i] = tr069Devices[model].mesh5_bssid_absolute[i].replace('0x', '');
+      } else {
+        MACOctets5[i] = (parseInt(`0x${MACOctets5[i]}`) +
+          parseInt(tr069Devices[model].mesh5_bssid_offset[i])).toString(16).toUpperCase();
+        // we need the second hex digit for BSSID addresses
+        if (MACOctets5[i].length === 1) {
+          MACOctets5[i] = `0${MACOctets5[i]}`;
+        }
       }
     }
     meshBSSIDs.mesh2 = MACOctets2.join(':');
