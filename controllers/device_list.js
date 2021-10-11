@@ -1541,6 +1541,14 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {}};
 
+            let model;
+
+            if (matchedDevice.use_tr069) {
+              const acsID = matchedDevice.acs_id;
+              const splitID = acsID.split('-');
+              model = splitID.slice(1, splitID.length-1).join('-');
+            }
+
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
@@ -1641,6 +1649,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState !== matchedDevice.wifi_state) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.enable = wifiState;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState) {
+                  changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
               } else {
@@ -1722,6 +1734,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState5ghz !== matchedDevice.wifi_state_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.enable = wifiState5ghz;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState5ghz) {
+                  changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
               } else {
