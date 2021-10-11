@@ -197,6 +197,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BeaconType',
     },
     wifi5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
@@ -206,6 +207,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BeaconType',
     },
     mesh2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID',
@@ -217,6 +219,7 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
       advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSIDAdvertisementEnabled',
       encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.WPAEncryptionModes',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BeaconType',
     },
     mesh5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSID',
@@ -228,6 +231,7 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Enable',
       advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSIDAdvertisementEnabled',
       encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.WPAEncryptionModes',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.BeaconType',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -274,6 +278,7 @@ const getHuaweiFields = function(model) {
       fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
       fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
       fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+      fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
       fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '3');
@@ -294,6 +299,8 @@ const getHuaweiFields = function(model) {
       fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '4');
       fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '3');
       fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '4');
+      fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
+      fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
       fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       break;
@@ -380,6 +387,8 @@ const getStavixFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
   fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.wifi2.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '6');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '1');
   fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '7');
   fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '2');
   fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '7');
@@ -398,6 +407,8 @@ const getStavixFields = function(model) {
   fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '2');
   fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '7');
   fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '2');
+  fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '7');
+  fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '2');
   return fields;
 };
 
@@ -460,6 +471,24 @@ const getProtocolByModel = function(model) {
       break;
     default:
       ret = 'TCP AND UDP';
+      break;
+  }
+  return ret;
+};
+
+const getBeaconTypeByModel = function(model) {
+  let ret = '';
+  switch (model) {
+    case 'G-140W-C': // Nokia G-140W-C
+    case 'G%2D140W%2DC': // URI encoded
+      ret = 'WPA/WPA2';
+      break;
+    case 'F670L': // Multilaser ZTE F670L
+    case 'HG8245Q2': // Huawei HG8245Q2
+      ret = 'WPAand11i';
+      break;
+    default:
+      ret = '11i';
       break;
   }
   return ret;
@@ -560,5 +589,6 @@ const syncDeviceData = async function(args, callback) {
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
 exports.getProtocolByModel = getProtocolByModel;
+exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;

@@ -3,6 +3,7 @@ const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
+const DevicesAPI = require('../external-genieacs/devices-api');
 
 let meshHandlers = {};
 
@@ -217,6 +218,10 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
 };
 
 meshHandlers.buildTR069Changes = function(device, targetMode) {
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  const beaconType = DevicesAPI.getBeaconTypeByModel(model);
   let changes = {mesh2: {}, mesh5: {}};
   switch (targetMode) {
     case 0:
@@ -232,7 +237,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh2.mode = device.wifi_mode;
       changes.mesh2.advertise = false;
       changes.mesh2.encryption = 'AESEncryption';
-      changes.mesh2.enable = true;
+      changes.mesh2.beacon_type = beaconType;
       changes.mesh2.enable = true;
       changes.mesh5.enable = false;
       break;
@@ -244,6 +249,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh5.mode = device.wifi_mode_5ghz;
       changes.mesh5.advertise = false;
       changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
       changes.mesh5.enable = true;
       changes.mesh2.enable = false;
       break;
@@ -256,6 +262,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh2.enable = true;
       changes.mesh2.advertise = false;
       changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.beacon_type = beaconType;
       changes.mesh5.ssid = device.mesh_id;
       changes.mesh5.password = device.mesh_key;
       changes.mesh5.bssid = device.wifi_bssid_5ghz;
@@ -263,6 +270,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh5.mode = device.wifi_mode_5ghz;
       changes.mesh5.advertise = false;
       changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
       changes.mesh5.enable = true;
       break;
     default:

@@ -428,6 +428,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
+  const model = splitID.slice(1, splitID.length-1).join('-');
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
@@ -474,6 +475,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let enable = (data.wifi2.enable) ? 1 : 0;
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
+      // When enabling Wi-Fi set beacon type
+      if (device.wifi_state) {
+        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      }
       hasChanges = true;
     }
   }
@@ -481,6 +486,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let enable = (data.wifi5.enable) ? 1 : 0;
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
+      // When enabling Wi-Fi set beacon type
+      if (device.wifi_state_5ghz) {
+        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      }
       hasChanges = true;
     }
   }
