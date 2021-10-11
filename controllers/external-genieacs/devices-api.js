@@ -34,6 +34,8 @@ const getFieldType = function(masterKey, key) {
     case 'mesh5-auto':
     case 'mesh2-advertise':
     case 'mesh5-advertise':
+    case 'mesh2-radio_enable':
+    case 'mesh5-radio_enable':
       return 'xsd:boolean';
     default:
       return 'xsd:string';
@@ -217,6 +219,8 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable',
       advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSIDAdvertisementEnabled',
       encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.WPAEncryptionModes',
+      radio_enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.RadioEnabled',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BeaconType',
     },
     mesh5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSID',
@@ -228,6 +232,8 @@ const getDefaultFields = function() {
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Enable',
       advertise: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSIDAdvertisementEnabled',
       encryption: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.WPAEncryptionModes',
+      radio_enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.RadioEnabled',
+      beacon_type: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.BeaconType',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -294,6 +300,10 @@ const getHuaweiFields = function(model) {
       fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '4');
       fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '3');
       fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '4');
+      fields.mesh2.radio_enable = fields.mesh5.radio_enable.replace(/6/g, '3');
+      fields.mesh5.radio_enable = fields.mesh5.radio_enable.replace(/6/g, '4');
+      fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
+      fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
       fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       break;
@@ -398,6 +408,10 @@ const getStavixFields = function(model) {
   fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '2');
   fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '7');
   fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '2');
+  fields.mesh2.radio_enable = fields.mesh5.radio_enable.replace(/6/g, '7');
+  fields.mesh5.radio_enable = fields.mesh5.radio_enable.replace(/6/g, '2');
+  fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '7');
+  fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '2');
   return fields;
 };
 

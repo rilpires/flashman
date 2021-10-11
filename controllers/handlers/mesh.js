@@ -232,7 +232,8 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh2.mode = device.wifi_mode;
       changes.mesh2.advertise = false;
       changes.mesh2.encryption = 'AESEncryption';
-      changes.mesh2.enable = true;
+      changes.mesh2.radio_enabled = 'true';
+      changes.mesh2.beacon_type = '11i';
       changes.mesh2.enable = true;
       changes.mesh5.enable = false;
       break;
@@ -244,6 +245,8 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh5.mode = device.wifi_mode_5ghz;
       changes.mesh5.advertise = false;
       changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.radio_enabled = 'true';
+      changes.mesh5.beacon_type = '11i';
       changes.mesh5.enable = true;
       changes.mesh2.enable = false;
       break;
@@ -256,6 +259,8 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh2.enable = true;
       changes.mesh2.advertise = false;
       changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.radio_enabled = 'true';
+      changes.mesh2.beacon_type = '11i';
       changes.mesh5.ssid = device.mesh_id;
       changes.mesh5.password = device.mesh_key;
       changes.mesh5.bssid = device.wifi_bssid_5ghz;
@@ -263,6 +268,8 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
       changes.mesh5.mode = device.wifi_mode_5ghz;
       changes.mesh5.advertise = false;
       changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.radio_enabled = 'true';
+      changes.mesh5.beacon_type = '11i';
       changes.mesh5.enable = true;
       break;
     default:
