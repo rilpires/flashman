@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const DeviceVersion = require('../../models/device_version');
 
 const noRangePortForwawrdOpts = {
@@ -16,33 +15,6 @@ const noAsymRangePortForwawrdOpts = {
 };
 
 describe('DeviceVersion API', () => {
-  beforeAll(async (done) => {
-    await mongoose.connect(
-      'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman-tests',
-      {
-        useNewUrlParser: true,
-        serverSelectionTimeoutMS: 2 ** 31 - 1,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
-      },
-      (err) => {
-        if (err) {
-          console.error(err);
-          process.exit(1);
-        }
-      },
-    );
-    done();
-  });
-
-  afterAll(async (done) => {
-    await mongoose.connection.close();
-    done();
-  });
-
-  // Flashbox tests
-
   test('findByVersion on 0.30.0', () => {
     let permissions = DeviceVersion.findByVersion('0.30.0', true, 'ARCHERC5V4');
 

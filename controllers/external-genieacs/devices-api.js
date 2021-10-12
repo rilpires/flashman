@@ -10,7 +10,10 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
 const API_URL = 'http://localhost:$PORT/acs/';
-const FLASHMAN_PORT = 8000;
+/* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
+ environment.genieacs.json or in shell environment with the same value
+ that is in environment.config.json */
+const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
 

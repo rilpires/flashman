@@ -610,16 +610,35 @@ updateController.setAutoConfig = async function(req, res) {
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
     if (config.personalizationHash !== '') {
-      config.isSsidPrefixEnabled =
+      const isSsidPrefixEnabled =
         (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix'],
+        isSsidPrefixEnabled);
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
           message: 'Erro validando os campos',
         });
       }
+      /* check if ssid prefix was not empty and for some reason is coming
+        from UI a empty ssid prefix */
+      if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Prefixo de SSID não pode ser vazio',
+        });
+      // If prefix is disabled, do not allow changes in current prefix
+      } else if (!isSsidPrefixEnabled &&
+                 config.ssidPrefix !== '' &&
+                 config.ssidPrefix !== req.body['ssid-prefix']) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Prefixo de SSID não pode ser ' +
+                   'alterado se estiver desabilitado',
+        });
+      }
       config.ssidPrefix = req.body['ssid-prefix'];
+      config.isSsidPrefixEnabled = isSsidPrefixEnabled;
     }
 
     let ponSignalThresholdCriticalHigh = parseInt(
