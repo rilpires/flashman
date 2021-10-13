@@ -516,6 +516,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
             personalizationHash: true,
+            licenseApiSecret: true,
+            company: true,
           },
         ).catch((err) => err)
       );
@@ -611,6 +613,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           'certification': certification,
           'prefix': prefixObj,
           'external_reference': device.external_reference || '',
+          'licenseApiSecret': config.licenseApiSecret || '',
+          'company': config.company || '',
         });
       }
 
@@ -630,6 +634,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         'certification': certification,
         'prefix': prefixObj,
         'external_reference': device.external_reference || '',
+        'licenseApiSecret': config.licenseApiSecret || '',
+        'company': config.company || '',
       });
     } else {
       return res.status(403).json({'error': 'Did not specify MAC'});
