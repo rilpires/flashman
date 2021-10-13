@@ -153,7 +153,7 @@ const tr069Devices = {
       'V3R017C10S100': [],
     },
     port_forward_opts: {
-      'V3R017C10S100': portForwardNoAsym,
+      'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -169,8 +169,8 @@ const tr069Devices = {
   },
   'EG8145V5': {
     port_forward_opts: {
-      'V5R019C10S350': portForwardNoAsym,
-      'V5R020C00S280': portForwardNoAsym,
+      'V5R019C10S350': portForwardNoAsymRanges,
+      'V5R020C00S280': portForwardNoAsymRanges,
     },
     vendor: 'Huawei',
     versions_upgrade: {
