@@ -47,6 +47,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11g':
       if (ouiModelStr === 'IGD') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
+      else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
@@ -57,6 +58,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'F680') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
@@ -65,6 +67,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
@@ -73,6 +76,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'F680') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
@@ -251,6 +255,7 @@ const getZTEFields = function(model) {
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
+    case 'F680': // Multilaser ZTE F680
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
@@ -331,6 +336,7 @@ const getModelFields = function(oui, model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
     case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
+    case 'F680': // Multilaser ZTE F680
       message = '';
       fields = getZTEFields(model);
       break;

@@ -99,6 +99,7 @@ const convertWifiMode = function(mode, is5ghz) {
 const convertToDbm = function(model, rxPower) {
   switch (model) {
     case 'F670L':
+    case 'F680':
     case 'G-140W-C':
       return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
     case 'GONUAC001':
