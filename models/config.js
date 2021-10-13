@@ -105,6 +105,8 @@ let configSchema = new mongoose.Schema({
   }],
   isSsidPrefixEnabled: {type: Boolean},
   ssidPrefix: {type: String},
+  licenseApiSecret: {type: String, default: ''},
+  company: {type: String, default: ''},
 });
 
 let config = mongoose.model('config', configSchema);

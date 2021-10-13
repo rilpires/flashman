@@ -220,7 +220,7 @@ controlController.getLicenseApiSecret = function(app) {
         return resolve({
           success: true,
           apiSecret: res.licenseApiSecret,
-          organization: res.company,
+          company: res.company,
         });
       } else {
         return resolve({success: false, message: res.message});
