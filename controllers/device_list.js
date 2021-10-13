@@ -627,15 +627,15 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 };
 
 // returns an array with all searched devices.
-deviceListController.getDevices = async function (req, res) {
+deviceListController.getDevices = async function(req, res) {
   // reading body parameters.
   let queryContents = []; // array that will hold the user's search filter.
   let projectedFields = []; // array that will hold the fields to return.
   if (req.body !== undefined) { // if request has a body.
-    let body = req.body // shortening variable name to decrease line length.
+    let body = req.body; // shortening variable name to decrease line length.
     // if 'filter_list' key is present and its value is a string.
-    if (body.filter_list !== undefined && 
-    body.filter_list.constructor === String) {
+    if (body.filter_list !== undefined &&
+        body.filter_list.constructor === String) {
       queryContents = body.filter_list.split(',');
     }
     // if 'fields' key is present and its value is a string.
@@ -663,7 +663,7 @@ deviceListController.getDevices = async function (req, res) {
     success: false,
     message: 'Error when loading devices.',
   }));
-}
+};
 
 deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
@@ -1297,7 +1297,7 @@ deviceListController.getLastBootLog = function(req, res) {
 };
 
 deviceListController.getDeviceReg = function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase(), true).exec(
   async function(err, matchedDevice) {
     if (err) {
       console.log(err);
