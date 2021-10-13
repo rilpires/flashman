@@ -2057,7 +2057,7 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
         MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
           parseInt(tr069Devices[model].mesh2_bssid_offset[i])).toString(16).toUpperCase();
         // we need the second hex digit for BSSID addresses
-        if (MACOctets2[1].length === 1) {
+        if (MACOctets2[i].length === 1) {
           MACOctets2[i] = `0${MACOctets2[i]}`;
         }
       }
