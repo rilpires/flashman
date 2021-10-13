@@ -102,7 +102,7 @@ const pushCertification = (arr, c, finished) => {
 const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
-    {tr069: 1, pppoePassLength: 1},
+    {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
   ).catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
@@ -120,6 +120,8 @@ const generateSessionCredential = async (user) => {
     credential: b64Json,
     sign: encryptedB64Json,
     pppoePassLength: config.pppoePassLength || '',
+    licenseApiSecret: config.licenseApiSecret,
+    company: config.company,
   };
   // Add onu config, if present
   if (config && config.tr069) {
