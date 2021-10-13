@@ -802,7 +802,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         );
 
         Config.findOne({is_default: true}).lean()
-        .exec(function(err, matchedConfig) {
+        .exec(async function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
           let dataCollecting = { // nothing happens in device with these parameters.
@@ -856,7 +856,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
           }
 
-          let bssids = meshHandlers.generateBSSIDLists(matchedDevice);
+          let bssids = await meshHandlers.generateBSSIDLists(matchedDevice);
 
           let resJson = {
             'do_update': matchedDevice.do_update,

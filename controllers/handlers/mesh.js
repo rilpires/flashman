@@ -292,7 +292,7 @@ meshHandlers.generateBSSIDLists = async function(device) {
   }
   const masterMacAddr = device.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode')
+  'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
   .catch((err) => {
     console.log('Erro interno');
     return;
@@ -309,8 +309,8 @@ meshHandlers.generateBSSIDLists = async function(device) {
     console.log('CPE indicado como primário é secundário');
     return;
   }
-  let bssids2 = [matchedMaster.devices_bssid_mesh2];
-  let bssids5 = [matchedMaster.devices_bssid_mesh5];
+  let bssids2 = [matchedMaster.bssid_mesh2];
+  let bssids5 = [matchedMaster.bssid_mesh5];
   matchedMaster.mesh_slaves.forEach((slaveMac)=>{
     // We don't want to add it's own mesh BSSIDs
     if (slaveMac.toUpperCase() === device._id.toUpperCase()) {
