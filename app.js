@@ -426,11 +426,13 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       acsDeviceController.reportOnuDevices(app);
       userController.checkAccountIsBlocked(app);
       updater.updateAppPersonalization(app);
+      updater.updateLicenseApiSecret(app);
     });
 
     acsDeviceController.reportOnuDevices(app);
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
+    updater.updateLicenseApiSecret(app);
     // Restart genieacs service whenever Flashman is restarted
     updater.rebootGenie(process.env.instances);
     // Force an update check to alert user on app startup

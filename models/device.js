@@ -104,9 +104,9 @@ let deviceSchema = new Schema({
   port_mapping: [{
     ip: String,
     external_port_start: {type: Number, required: true, min: 1,
-      max: 65535, unique: true, sparse: true},
+      max: 65535},
     external_port_end: {type: Number, required: true, min: 1,
-      max: 65535, unique: true, sparse: true},
+      max: 65535},
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
@@ -224,8 +224,7 @@ let deviceSchema = new Schema({
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
   vlan: [{
-    port: {type: Number, required: true, min: 1, max: 32,
-      unique: true, sparse: true},
+    port: {type: Number, required: true, min: 1, max: 32},
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
