@@ -849,7 +849,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
 
   afterAll(async () => {
     if (fakeDevicesInstances.length > 0) {
-      await disconnectThemAll(fakeDevicesInstances).catch(catchError);
+      await disconnectThemAll(fakeDevicesInstances);
       fakeDevicesInstances = [];
     }
     await mongooseConnection.disconnect().catch(catchError);

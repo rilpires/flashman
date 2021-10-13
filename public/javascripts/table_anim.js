@@ -784,14 +784,14 @@ $(document).ready(function() {
       createdDateStr = 'Não disponível';
     } else {
       let createdDate = new Date(device.created_at);
-      createdDateStr = createdDate.toLocaleDateString(navigator.language,
+      createdDateStr = createdDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     if (isNaN(Date.parse(device.last_hardreset))) {
       resetDateStr = 'Não disponível';
     } else {
       let resetDate = new Date(device.last_hardreset);
-      resetDateStr = resetDate.toLocaleDateString(navigator.language,
+      resetDateStr = resetDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
