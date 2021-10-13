@@ -229,7 +229,7 @@ const getHuaweiFields = function(model) {
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
-      fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt'];
       fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
       delete fields.port_mapping_values.remote_host;
       fields.port_mapping_values.protocol[1] = 'TCP/UDP';
