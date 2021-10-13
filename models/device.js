@@ -255,7 +255,7 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
-deviceSchema.statics.findByMacOrSerial = function(id) {
+deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
   let query;
   if (Array.isArray(id)) {
     let regexList = [];
@@ -270,10 +270,17 @@ deviceSchema.statics.findByMacOrSerial = function(id) {
   } else {
     return [];
   }
-  return this.find({$or: [
-        {'_id': query}, // mac address
-        {'serial_tr069': query}, // serial
-        {'alt_uid_tr069': query}]}); // mac address
+  if (useLean) {
+    return this.find({$or: [
+      {'_id': query}, // mac address
+      {'serial_tr069': query}, // serial
+      {'alt_uid_tr069': query}]}).lean(); // mac address
+  } else {
+    return this.find({$or: [
+      {'_id': query}, // mac address
+      {'serial_tr069': query}, // serial
+      {'alt_uid_tr069': query}]}); // mac address
+  }
 };
 
 // Hooks for device traps notifications

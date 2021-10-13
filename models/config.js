@@ -5,7 +5,7 @@ let configSchema = new mongoose.Schema({
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   hasMajorUpdate: {type: Boolean, default: false},
-  pppoePassLength: {type: Number, default: 1},
+  pppoePassLength: {type: Number, default: 1, min: 1, max: 64},
   measureServerIP: {type: String},
   measureServerPort: {type: Number, default: 80},
   messaging_configs: {

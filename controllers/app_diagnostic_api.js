@@ -119,7 +119,7 @@ const generateSessionCredential = async (user) => {
   let session = {
     credential: b64Json,
     sign: encryptedB64Json,
-    pppoePassLength: config.pppoePassLength || '',
+    pppoePassLength: config.pppoePassLength || 1,
     licenseApiSecret: config.licenseApiSecret,
     company: config.company,
   };
