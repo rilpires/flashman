@@ -593,3 +593,4 @@ exports.getProtocolByModel = getProtocolByModel;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
+exports.convertWifiMode = convertWifiMode;
