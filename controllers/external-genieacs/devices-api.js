@@ -181,6 +181,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
+      band: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BandWidth',
     },
     wifi5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
@@ -190,6 +191,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
+      band: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BandWidth',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -317,6 +319,8 @@ const getStavixFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
   fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.wifi2.band = fields.wifi5.band.replace(/5/g, '6');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '1');
   return fields;
 };
 

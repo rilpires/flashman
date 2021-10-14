@@ -52,7 +52,7 @@ const tr069Devices = {
       'V6.0.10P3N9': [],
     },
     port_forward_opts: {
-      'V6.0.10P3N9': portForwardNoRanges,
+      'V6.0.10P3N9': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
