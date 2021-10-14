@@ -181,8 +181,8 @@ const tr069Devices = {
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x4'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x1', '0x0', '0x0'],
   },
   'HG8245Q2': {
     vendor: 'Huawei',
