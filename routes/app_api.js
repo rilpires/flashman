@@ -31,6 +31,21 @@ router.route('/set/whitelist').post(appAPIController.appSetWhitelist);
 router.route('/set/editdevice').post(appAPIController.appSetDeviceInfo);
 router.route('/set/portforward').post(appAPIController.appSetPortForward);
 
+// ==========================================
+// Creating speed test routes on flashman.
+router.route('/diagnostic/get/speedtest').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.getSpeedTest,
+);
+
+router.route('/diagnostic/speedtest').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.doSpeedTest,
+);
+// ==========================================
+
 router.route('/diagnostic/login').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),

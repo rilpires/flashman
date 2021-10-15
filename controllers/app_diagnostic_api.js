@@ -845,4 +845,110 @@ diagAppAPIController.addSlave = async function(req, res) {
     switchEnabledStatus: isSwitchEnabled});
 };
 
+
+// ==========================================
+// Implementation of speed test routes methods on flashman.
+diagAppAPIController.getSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+    let appObj = matchedDevice.apps.filter(function(app) {
+      return app.id === req.body.app_id;
+    });
+    if (appObj.length == 0) {
+      return res.status(404).json({message: 'App não encontrado'});
+    }
+
+    let config;
+    try {
+      config = await ConfigModel.findOne({is_default: true}).lean();
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+
+    let reply = {'speedtest': {}};
+    if (config && config.measureServerIP) {
+      reply.speedtest.server = config.measureServerIP;
+    }
+    let previous = matchedDevice.speedtest_results;
+    reply.speedtest.previous = previous;
+    if (previous.length > 0) {
+      reply.last_uid = previous[previous.length - 1]._id;
+    } else {
+      reply.last_uid = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      reply.last_error_uid = matchedDevice.last_speedtest_error.unique_id;
+      reply.last_error = matchedDevice.last_speedtest_error.error;
+    } else {
+      reply.last_error_uid = '';
+      reply.last_error = '';
+    }
+
+    return res.status(200).json(reply);
+  });
+};
+
+diagAppAPIController.doSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+
+    // Send reply first, then send mqtt message
+    let lastMeasureID;
+    let lastErrorID;
+    let previous = matchedDevice.speedtest_results;
+    if (previous.length > 0) {
+      lastMeasureID = previous[previous.length - 1]._id;
+    } else {
+      lastMeasureID = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      lastErrorID = matchedDevice.last_speedtest_error.unique_id;
+    } else {
+      lastErrorID = '';
+    }
+
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.mac.toUpperCase()];
+    });
+
+    res.status(200).json({
+      has_access: isDevOn,
+      last_uid: lastMeasureID,
+      last_error_uid: lastErrorID,
+    });
+
+    // Wait for a few seconds so the app can receive the reply
+    // We need to do this because the measurement blocks all traffic
+    setTimeout(async () => {
+      let config;
+      try {
+        config = await ConfigModel.findOne({is_default: true}).lean();
+        if (!config) throw {error: 'Config not found'};
+      } catch (err) {
+        console.log(err);
+      }
+
+      if (config && config.measureServerIP) {
+        // Send mqtt message to perform speedtest
+        let url = config.measureServerIP + ':' + config.measureServerPort;
+        console.log(req.user.name);
+        mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
+                                         {name: req.user.name});
+      }
+    }, 1.5*1000);
+  });
+};
+// ==========================================
+
 module.exports = diagAppAPIController;
