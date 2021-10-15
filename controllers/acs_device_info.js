@@ -125,6 +125,16 @@ const convertWifiBand = function(band, mode) {
   }
 };
 
+const convertWifiRate = function(model, rate) {
+  switch (model) {
+    case 'F670L':
+    case 'F680':
+      return rate = parseInt(rate) / 1000;
+    default:
+      return rate = parseInt(rate);
+  }
+};
+
 const extractGreatekCredentials = function(config) {
   let usernameRegex = /SUSER_NAME(.+?)\//g;
   let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
@@ -188,6 +198,7 @@ const saveDeviceData = async function(mac, landevices) {
       registered.dhcp_name = lanDev.name;
       registered.ip = lanDev.ip;
       registered.conn_type = (lanDev.wifi) ? 1 : 0;
+      if (lanDev.rate) registered.conn_speed = lanDev.rate;
       if (lanDev.wifi_freq) registered.wifi_freq = lanDev.wifi_freq;
       if (lanDev.rssi) registered.wifi_signal = lanDev.rssi;
       if (lanDev.snr) registered.wifi_snr = lanDev.snr;
@@ -198,6 +209,7 @@ const saveDeviceData = async function(mac, landevices) {
         dhcp_name: lanDev.name,
         ip: lanDev.ip,
         conn_type: (lanDev.wifi) ? 1 : 0,
+        conn_speed: (lanDev.rate) ? lanDev.rate : undefined,
         wifi_signal: (lanDev.rssi) ? lanDev.rssi : undefined,
         wifi_freq: (lanDev.wifi_freq) ? lanDev.wifi_freq : undefined,
         wifi_snr: (lanDev.snr) ? lanDev.snr : undefined,
@@ -1022,6 +1034,13 @@ const fetchDevicesFromGenie = function(mac, acsID) {
               snrKey = snrKey.replace('*', iface).replace('*', index);
               device.snr = getFromNestedKey(data, snrKey+'._value');
             }
+            // Collect connection speed, if available
+            if (fields.devices.host_rate) {
+              let rateKey = fields.devices.host_rate;
+              rateKey = rateKey.replace('*', iface).replace('*', index);
+              device.rate = getFromNestedKey(data, rateKey+'._value');
+              device.rate = convertWifiRate(model, device.rate);
+            }
           });
         });
         await saveDeviceData(mac, devices);
@@ -1216,7 +1235,9 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   });
 };
 
-acsDeviceInfoController.changePortForwardRules = async function(device, rulesDiffLength) {
+acsDeviceInfoController.changePortForwardRules = async function(device,
+                                                                rulesDiffLength,
+) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let i;
@@ -1241,9 +1262,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let tasks;
   try {
     tasks = await TasksAPI.getFromCollection('tasks', query);
-  } catch(e) {
+  } catch (e) {
     console.log('[!] -> '+e.message+' in '+acsID);
-  };
+  }
   if (!Array.isArray(tasks)) return;
   /* if find some task with name addObject or deleteObject */
   let hasAlreadySentTasks = tasks.some((t) => {
@@ -1348,7 +1369,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       'xsd:string',
     ]);
   }
-  // just send tasks if there are port mappings to fill/set  
+  // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
     TasksAPI.addTask(acsID, updateTasks,
@@ -1358,7 +1379,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   }
 };
 
-acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
+acsDeviceInfoController.checkPortForwardRules = async function(device,
+                                                               rulesDiffLength,
+) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
   let acsID = device.acs_id;
