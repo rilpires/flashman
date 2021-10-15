@@ -49,7 +49,8 @@ const tr069Devices = {
   'F680': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V6.0.10P3N9': [],
+      'V6.0.10P3N9': ['V6.0.10P3N12B'],
+      'V6.0.10P3N12B': [],
     },
     port_forward_opts: {
       'V6.0.10P3N9': portForwardNoAsymRanges,

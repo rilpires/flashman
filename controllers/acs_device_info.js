@@ -359,6 +359,9 @@ const createRegistry = async function(req) {
   return true;
 };
 
+// Essential information sent from CPE gets handled here.
+// It will also check for complete synchronization necessity by dispatching
+// "measure" as true. Complete synchronization is done by "syncDevice" function
 acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
@@ -394,6 +397,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   return res.status(200).json({success: true, measure: false});
 };
 
+// Complete CPE information synchronization gets done here. This function
+// call is controlled by "informDevice" function when setting "measure" as
+// true
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   if (!data || !data.common || !data.common.mac) {
@@ -402,7 +408,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Missing mac field',
     });
   }
-
+  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  .catch((err) => {
+    return res.status(500).json({success: false,
+                                 message: 'Error finding Config in database'});
+  });
   let device = await DeviceModel.findById(data.common.mac.toUpperCase());
   if (!device) {
     if (await createRegistry(req)) {
@@ -424,7 +434,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     && data.wan.pppoe_user !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
   let cpeIP = processHostFromURL(data.common.ip);
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
@@ -591,9 +601,19 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     );
   }
   if (data.common.web_admin_username) {
+    if (typeof config.tr069.web_login_user !== 'undefined' &&
+        config.tr069.web_login_user !== data.common.web_admin_username) {
+      changes.common.web_admin_username = config.tr069.web_login_user;
+      hasChanges = true;
+    }
     device.web_admin_username = data.common.web_admin_username;
   }
   if (data.common.web_admin_password) {
+    if (typeof config.tr069.web_password_user !== 'undefined' &&
+        config.tr069.web_password_user !== data.common.web_admin_password) {
+      changes.common.web_admin_password = config.tr069.web_password_user;
+      hasChanges = true;
+    }
     device.web_admin_password = data.common.web_admin_password;
   }
   if (data.common.version && data.common.version !== device.installed_release) {
