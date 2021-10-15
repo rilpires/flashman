@@ -8,6 +8,8 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const xml2js = require('fast-xml-parser');
+const js2xml = require('fast-xml-parser').j2xParser;
 
 const pako = require('pako');
 const http = require('http');
@@ -1224,6 +1226,11 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
+  // redirect to config file binding instead of setParametervalues
+  if (model == 'GONUAC001' || model == 'xPON') {
+    configFileEditing(device, rulesDiffLength);
+    return;
+  }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
@@ -1347,7 +1354,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
       'xsd:string',
     ]);
   }
-  // just send tasks if there are port mappings to fill/set  
+  // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
     TasksAPI.addTask(acsID, updateTasks,
@@ -1355,6 +1362,59 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
           console.error('[!] -> '+e.message+' in '+acsID);
         });
   }
+};
+
+const configFileEditing = async function(device, rulesDiffLength) {
+  let acsID = device.acs_id;
+  // get xml config file to genieacs
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [configField],
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error at '+acsID+' on retrieving ConfigFile');
+    return;
+  }
+  // get xml config file from genieacs
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+configField;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      data = JSON.parse(data)[0];
+      if (checkForNestedKey(data, configField+'._value')) {
+        data = getFromNestedKey(data, configField+'._value');
+        console.log('!@#', data);
+        // modify xml config file
+          // parse xml to json
+            // modify using device.port_mapping
+          // parse json to xml
+        // set xml config file to genieacs
+        task.name = 'setParameterValues';
+        task.parameterNames = [[configField, data, 'xsd:string']];
+        result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+        if (!result || !result.finished ||
+            result.task.name !== 'setParameterValues') {
+          console.log('Error at '+acsID+
+            ' on writing ConfigFile');
+          return;
+        }
+      }
+    });
+  });
+  req.end();
 };
 
 acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiffLength) {
