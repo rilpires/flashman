@@ -17,6 +17,13 @@ const portForwardNoAsymRanges = {
  rangeAsymmetric: false,
 };
 
+const portForwardFullSupport = {
+ simpleSymmetric: true,
+ simpleAsymmetric: true,
+ rangeSymmetric: true,
+ rangeAsymmetric: true,
+};
+
 const tr069Devices = {
   'F670L': {
     vendor: 'Multilaser',
@@ -94,8 +101,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.2.3': [],
     },
+    port_forward_opts: {
+      'V1.2.3': portForwardFullSupport,
+    },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
@@ -111,8 +121,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V210414': [],
     },
+    port_forward_opts: {
+      'V210414': portForwardFullSupport,
+    },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
