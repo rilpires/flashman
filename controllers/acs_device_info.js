@@ -402,7 +402,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 // true
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
-  if (!data || !data.common || !data.common.mac) {
+  if (!data || !data.common || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
       message: 'Missing mac field',
@@ -413,7 +413,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     return res.status(500).json({success: false,
                                  message: 'Error finding Config in database'});
   });
-  let device = await DeviceModel.findById(data.common.mac.toUpperCase());
+  let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
   if (!device) {
     if (await createRegistry(req)) {
       return res.status(200).json({success: true});
@@ -430,10 +430,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
-    && data.wan.pppoe_user !== '');
-  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
-  let cpeIP = processHostFromURL(data.common.ip);
+  let hasPPPoE = (typeof data.wan.pppoe_user.value === 'string'
+    && data.wan.pppoe_user.value !== '');
+  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+  let cpeIP = processHostFromURL(data.common.ip.value);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
@@ -441,54 +441,56 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
-  if (data.common.alt_uid) {
-    let altUid = data.common.alt_uid;
+  if (data.common.alt_uid && data.common.alt_uid.value) {
+    let altUid = data.common.alt_uid.value;
     device.alt_uid_tr069 = altUid;
   }
 
   // Greatek does not expose these fields normally, only under this config file,
   // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config) {
-    let webCredentials = extractGreatekCredentials(data.common.greatek_config);
-    data.common.web_admin_username = webCredentials.username;
-    data.common.web_admin_password = webCredentials.password;
+  if (data.common.greatek_config && data.common.greatek_config.value) {
+    let webCredentials = extractGreatekCredentials(data.common.greatek_config.value);
+    data.common.web_admin_username = {};
+    data.common.web_admin_password = {};
+    data.common.web_admin_username.value = webCredentials.username;
+    data.common.web_admin_password.value = webCredentials.password;
   }
 
-  if (data.common.model) device.model = data.common.model.trim();
-  if (data.common.version) device.version = data.common.version.trim();
+  if (data.common.model.value) device.model = data.common.model.value.trim();
+  if (data.common.version.value) device.version = data.common.version.value.trim();
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
   if (hasPPPoE) {
     if (!device.pppoe_user) {
-      device.pppoe_user = data.wan.pppoe_user.trim();
-    } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.trim()) {
+      device.pppoe_user = data.wan.pppoe_user.value.trim();
+    } else if (device.pppoe_user.trim() !== data.wan.pppoe_user.value.trim()) {
       changes.wan.pppoe_user = device.pppoe_user.trim();
       hasChanges = true;
     }
     if (!device.pppoe_password) {
-      device.pppoe_password = data.wan.pppoe_pass.trim();
-    } else if (data.wan.pppoe_pass && // make sure this onu reports the password
-               device.pppoe_password.trim() !== data.wan.pppoe_pass.trim()) {
+      device.pppoe_password = data.wan.pppoe_pass.value.trim();
+    } else if (data.wan.pppoe_pass.value && // make sure this onu reports the password
+               device.pppoe_password.trim() !== data.wan.pppoe_pass.value.trim()) {
       changes.wan.pppoe_pass = device.pppoe_password.trim();
       hasChanges = true;
     }
-    if (data.wan.wan_ip_ppp) device.wan_ip = data.wan.wan_ip_ppp;
-    if (data.wan.uptime_ppp) device.wan_up_time = data.wan.uptime_ppp;
+    if (data.wan.wan_ip_ppp.value) device.wan_ip = data.wan.wan_ip_ppp.value;
+    if (data.wan.uptime_ppp.value) device.wan_up_time = data.wan.uptime_ppp.value;
   } else {
-    if (data.wan.wan_ip) device.wan_ip = data.wan.wan_ip;
-    if (data.wan.uptime) device.wan_up_time = data.wan.uptime;
+    if (data.wan.wan_ip.value) device.wan_ip = data.wan.wan_ip.value;
+    if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
     device.pppoe_user = '';
     device.pppoe_password = '';
   }
 
-  if (typeof data.wifi2.enable !== 'undefined') {
-    let enable = (data.wifi2.enable) ? 1 : 0;
+  if (typeof data.wifi2.enable.value !== 'undefined') {
+    let enable = (data.wifi2.enable.value) ? 1 : 0;
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
       hasChanges = true;
     }
   }
-  if (typeof data.wifi5.enable !== 'undefined') {
-    let enable = (data.wifi5.enable) ? 1 : 0;
+  if (typeof data.wifi5.enable.value !== 'undefined') {
+    let enable = (data.wifi5.enable.value) ? 1 : 0;
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
       hasChanges = true;
@@ -500,77 +502,77 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // apply cleaned ssid
   device.wifi_ssid = checkResponse.ssid2;
   device.wifi_ssid_5ghz = checkResponse.ssid5;
-  if (data.wifi2.ssid && !device.wifi_ssid) {
-    device.wifi_ssid = data.wifi2.ssid.trim();
+  if (data.wifi2.ssid.value && !device.wifi_ssid) {
+    device.wifi_ssid = data.wifi2.ssid.value.trim();
   }
   if (ssidPrefix + device.wifi_ssid.trim()
-    !== data.wifi2.ssid.trim()) {
+    !== data.wifi2.ssid.value.trim()) {
     changes.wifi2.ssid = device.wifi_ssid.trim();
     hasChanges = true;
   }
-  let bssid2 = data.wifi2.bssid;
+  let bssid2 = data.wifi2.bssid.value;
   if ((bssid2 && !device.wifi_bssid) ||
       (device.wifi_bssid !== bssid2.toUpperCase())) {
     device.wifi_bssid = bssid2.toUpperCase();
   }
-  let channel2 = (data.wifi2.auto) ? 'auto' : data.wifi2.channel.toString();
+  let channel2 = (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
   if (channel2 && !device.wifi_channel) {
     device.wifi_channel = channel2;
   } else if (device.wifi_channel !== channel2) {
     changes.wifi2.channel = device.wifi_channel;
     hasChanges = true;
   }
-  let mode2 = convertWifiMode(data.wifi2.mode, false);
-  if (data.wifi2.mode && !device.wifi_mode) {
+  let mode2 = convertWifiMode(data.wifi2.mode.value, false);
+  if (data.wifi2.mode.value && !device.wifi_mode) {
     device.wifi_mode = mode2;
   } else if (device.wifi_mode !== mode2) {
     changes.wifi2.mode = device.wifi_mode;
     hasChanges = true;
   }
-  let band2 = convertWifiBand(data.wifi2.band, data.wifi2.mode);
-  if (data.wifi2.band && !device.wifi_band) {
+  let band2 = convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value);
+  if (data.wifi2.band.value && !device.wifi_band) {
     device.wifi_band = band2;
   } else if (device.wifi_band !== band2) {
     changes.wifi2.band = device.wifi_band;
   }
 
-  if (data.wifi5.ssid && !device.wifi_ssid_5ghz) {
-    device.wifi_ssid_5ghz = data.wifi5.ssid.trim();
+  if (data.wifi5.ssid.value && !device.wifi_ssid_5ghz) {
+    device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
   }
   if (ssidPrefix + device.wifi_ssid_5ghz.trim()
-    !== data.wifi5.ssid.trim()) {
+    !== data.wifi5.ssid.value.trim()) {
     changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
     hasChanges = true;
   }
-  let bssid5 = data.wifi5.bssid;
+  let bssid5 = data.wifi5.bssid.value;
   if ((bssid5 && !device.wifi_bssid_5ghz) ||
       (device.wifi_bssid_5ghz !== bssid5.toUpperCase())) {
     device.wifi_bssid_5ghz = bssid5.toUpperCase();
   }
-  let channel5 = (data.wifi5.auto) ? 'auto' : data.wifi5.channel.toString();
+  let channel5 = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
   if (channel5 && !device.wifi_channel_5ghz) {
     device.wifi_channel_5ghz = channel5;
   } else if (device.wifi_channel_5ghz !== channel5) {
     changes.wifi5.channel = device.wifi_channel_5ghz;
     hasChanges = true;
   }
-  let mode5 = convertWifiMode(data.wifi5.mode, true);
-  if (data.wifi5.mode && !device.wifi_mode_5ghz) {
+  let mode5 = convertWifiMode(data.wifi5.mode.value, true);
+  if (data.wifi5.mode.value && !device.wifi_mode_5ghz) {
     device.wifi_mode_5ghz = mode5;
   } else if (device.wifi_mode_5ghz !== mode5) {
     changes.wifi5.mode = device.wifi_mode_5ghz;
     hasChanges = true;
   }
-  let band5 = convertWifiBand(data.wifi5.band, data.wifi5.mode);
-  if (data.wifi5.band && !device.wifi_band_5ghz) {
+  let band5 = convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value);
+  if (data.wifi5.band.value && !device.wifi_band_5ghz) {
     device.wifi_band_5ghz = band5;
   } else if (device.wifi_band_5ghz !== band5) {
     changes.wifi5.band = device.wifi_band_5ghz;
   }
 
-  if (data.lan.router_ip && !device.lan_subnet) {
-    device.lan_subnet = data.lan.router_ip;
-  } else if (device.lan_subnet !== data.lan.router_ip) {
+  if (data.lan.router_ip.value && !device.lan_subnet) {
+    device.lan_subnet = data.lan.router_ip.value;
+  } else if (device.lan_subnet !== data.lan.router_ip.value) {
     changes.lan.router_ip = device.lan_subnet;
     hasChanges = true;
   }
@@ -580,52 +582,63 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.lan.subnet_mask = device.lan_netmask;
     hasChanges = true;
   }
-  if (data.wan.recv_bytes && data.wan.sent_bytes) {
+  if (data.wan.recv_bytes && data.wan.recv_bytes.value &&
+      data.wan.sent_bytes && data.wan.sent_bytes.value) {
     device.wan_bytes = appendBytesMeasure(
       device.wan_bytes,
-      data.wan.recv_bytes,
-      data.wan.sent_bytes,
+      data.wan.recv_bytes.value,
+      data.wan.sent_bytes.value,
     );
   }
-  if (data.wan.pon_rxpower) {
-    device.pon_rxpower = convertToDbm(data.common.model, data.wan.pon_rxpower);
+  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
+    device.pon_rxpower = convertToDbm(data.common.model.value, data.wan.pon_rxpower.value);
   }
-  if (data.wan.pon_txpower) {
-    device.pon_txpower = convertToDbm(data.common.model, data.wan.pon_txpower);
+  if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
+    device.pon_txpower = convertToDbm(data.common.model.value, data.wan.pon_txpower.value);
   }
-  if (data.wan.pon_rxpower && data.wan.pon_txpower) {
+  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value &&
+      data.wan.pon_txpower && data.wan.pon_txpower.value) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
       device.pon_rxpower,
       device.pon_txpower,
     );
   }
-  if (data.common.web_admin_username) {
+  if (data.common.web_admin_username && data.common.web_admin_username.value) {
     if (typeof config.tr069.web_login_user !== 'undefined' &&
-        config.tr069.web_login_user !== data.common.web_admin_username) {
+        data.common.web_admin_username.writable &&
+        config.tr069.web_login_user !== data.common.web_admin_username.value) {
       changes.common.web_admin_username = config.tr069.web_login_user;
       hasChanges = true;
     }
-    device.web_admin_username = data.common.web_admin_username;
+    device.web_admin_username = data.common.web_admin_username.value;
   }
-  if (data.common.web_admin_password) {
+  if (data.common.web_admin_password && data.common.web_admin_password.value) {
     if (typeof config.tr069.web_password_user !== 'undefined' &&
-        config.tr069.web_password_user !== data.common.web_admin_password) {
+        data.common.web_password_user.writable &&
+        config.tr069.web_password_user !== data.common.web_admin_password.value) {
       changes.common.web_admin_password = config.tr069.web_password_user;
       hasChanges = true;
     }
-    device.web_admin_password = data.common.web_admin_password;
+    device.web_admin_password = data.common.web_admin_password.value;
   }
-  if (data.common.version && data.common.version !== device.installed_release) {
-    device.installed_release = data.common.version;
+  if (data.common.version &&
+      data.common.version.value !== device.installed_release) {
+    device.installed_release = data.common.version.value;
   }
   if (device.installed_release === device.release) {
     device.do_update = false;
     device.do_update_status = 1;
   }
-  if (data.wan.rate) device.wan_negociated_speed = data.wan.rate;
-  if (data.wan.duplex) device.wan_negociated_duplex = data.wan.duplex;
-  if (data.common.uptime) device.sys_up_time = data.common.uptime;
+  if (data.wan.rate && data.wan.rate.value) {
+    device.wan_negociated_speed = data.wan.rate.value;
+  }
+  if (data.wan.duplex && data.wan.duplex.value) {
+    device.wan_negociated_duplex = data.wan.duplex.value;
+  }
+  if (data.common.uptime && data.common.uptime.value) {
+    device.sys_up_time = data.common.uptime.value;
+  }
   if (cpeIP) device.ip = cpeIP;
 
   if (hasChanges) {
@@ -666,10 +679,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let entriesDiff = 0;
     if (device.connection_type === 'pppoe') {
       entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries_ppp;
+        data.wan.port_mapping_entries_ppp.value;
     } else {
       entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries;
+        data.wan.port_mapping_entries.value;
     }
     acsDeviceInfoController
     .checkPortForwardRules(device, entriesDiff);
