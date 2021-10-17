@@ -665,11 +665,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             const bssidMesh5 =
               util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
             if (errors.length < 1) {
-              if (matchedDevice.bssid_mesh2 !== bssidMesh2) {
+              if (matchedDevice.bssid_mesh2 !== bssidMesh2 && bssidMesh2) {
                 deviceSetQuery.bssid_mesh2 = bssidMesh2;
                 matchedDevice.bssid_mesh2 = bssidMesh2; // Used in device response
               }
-              if (matchedDevice.bssid_mesh5 !== bssidMesh5) {
+              if (matchedDevice.bssid_mesh5 !== bssidMesh5 && bssidMesh5) {
                 deviceSetQuery.bssid_mesh5 = bssidMesh5;
                 matchedDevice.bssid_mesh5 = bssidMesh5; // Used in device response
               }
