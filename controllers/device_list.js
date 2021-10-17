@@ -1144,10 +1144,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestConnectedDevices(device);
           } else {
             mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-            });
           }
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'sitesurvey') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForSiteSurveyNotification(
@@ -1178,10 +1178,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestWanBytes(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-            });
           }
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+          });
         } else if (msgtype === 'upstatustr069') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
