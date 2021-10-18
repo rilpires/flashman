@@ -1849,7 +1849,7 @@ $(document).ready(function() {
                     '</div>'+
                     '<div class="custom-control custom-checkbox">'+
                       '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN>'+
+                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN'+
                       ((device.mesh_mode == 3 || device.mesh_mode == 4) ? ' disabled>' : '>')+'</input>'+
                       '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
                       'Ativar Wi-Fi 5.0GHz'+
