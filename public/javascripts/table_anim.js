@@ -2306,22 +2306,6 @@ $(document).ready(function() {
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
-              let isMeshV2Compatible = false;
-              $.ajax({
-                type: 'GET',
-                url: `/devicelist/getpermissions/${device._id}`,
-                dataType: 'json',
-                success: function(res) {
-                  if (res.success) {
-                    isMeshV2Compatible = res.permissions.grantMeshV2;
-                  } else {
-                    displayAlertMsg(res);
-                  }
-                },
-                error: function(xhr, status, error) {
-                  displayAlertMsg(JSON.parse(xhr.responseText));
-                },
-              });
               let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
@@ -2334,7 +2318,7 @@ $(document).ready(function() {
               } else {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
               }
-              if (isMeshV2Compatible) {
+              if (grantMeshV2) {
                 let disassocSlaveButton = '<td>'+buildDisassociateSlave()+'</td>';
                 infoRow = infoRow.replace('$REPLACE_UPGRADE', disassocSlaveButton);
               } else {
