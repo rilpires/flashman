@@ -630,19 +630,19 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     );
   }
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
-    if (typeof config.tr069.web_login_user !== 'undefined' &&
+    if (typeof config.tr069.web_login !== 'undefined' &&
         data.common.web_admin_username.writable &&
-        config.tr069.web_login_user !== data.common.web_admin_username.value) {
-      changes.common.web_admin_username = config.tr069.web_login_user;
+        config.tr069.web_login !== data.common.web_admin_username.value) {
+      changes.common.web_admin_username = config.tr069.web_login;
       hasChanges = true;
     }
     device.web_admin_username = data.common.web_admin_username.value;
   }
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
-    if (typeof config.tr069.web_password_user !== 'undefined' &&
+    if (typeof config.tr069.web_password !== 'undefined' &&
         data.common.web_password_user.writable &&
-        config.tr069.web_password_user !== data.common.web_admin_password.value) {
-      changes.common.web_admin_password = config.tr069.web_password_user;
+        config.tr069.web_password !== data.common.web_admin_password.value) {
+      changes.common.web_admin_password = config.tr069.web_password;
       hasChanges = true;
     }
     device.web_admin_password = data.common.web_admin_password.value;
