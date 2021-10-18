@@ -160,11 +160,22 @@ block content
                   .fas.fa-info-circle.fa-lg
                   span &nbsp; A etapa a ser desabilitada na WAN será o teste 
                     | de ping feito para o gateway do CPE
+                .alert.alert-info
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; A etapa a ser desabilitada no registro do
+                    |  Flashman abrange o teste de existência de uma conexão
+                    | MQTTS ativa para CPEs que utilizem o firmware Flashbox
               .col-md-6.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Verificação de IPv4 obrigatória
                     select.browser-default.md-select(name="ipv4-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Execução do teste de velocidade
+                    select.browser-default.md-select(name="speedtest-step-required")
                       option(value="true") Habilitado
                       option(value="false") Desabilitado
                 .md-form
@@ -185,12 +196,7 @@ block content
                     select.browser-default.md-select(name="flashman-step-required")
                       option(value="true") Habilitado
                       option(value="false") Desabilitado
-                .alert.alert-info
-                  .fas.fa-info-circle.fa-lg
-                  span &nbsp; A etapa a ser desabilitada no registro do
-                    |  Flashman abrange o teste de existência de uma conexão
-                    | MQTTS ativa para CPEs que utilizem o firmware Flashbox
-
+                
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
               data-toggle="collapse",

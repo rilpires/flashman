@@ -39,6 +39,7 @@ let configSchema = new mongoose.Schema({
     // - CPE must be present at MQTT list of connected devices if it is a
     //   CPE using Flashbox firmware
     flashman_step_required: {type: Boolean, required: true, default: true},
+    speedtest_step_required: {type: Boolean, default: false},
   },
   data_collecting: {
     is_active: Boolean,

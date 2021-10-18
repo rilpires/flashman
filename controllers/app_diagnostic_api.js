@@ -485,6 +485,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
             personalizationHash: true,
+            measureServerIP: true,
           },
         ).catch((err) => err)
       );
@@ -501,6 +502,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         requiredIpv6: false,
         requiredDns: true,
         requiredFlashman: true,
+        requiredSpeedTest: false,
       };
       if (config.certification) {
         certification.requiredWan = config.certification.wan_step_required;
@@ -512,6 +514,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       }
 
       if (!device) {
+        // REMOVER PRINT
+        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': false,
@@ -538,6 +542,17 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.model,
       );
 
+      // TODO: remover esse true e verificar se o provedor habilitou o speedtest
+      // config.certification.speedtest_step_required;
+      console.log(config.certification.speedtest_step_required);
+      if (config.certification.speedtest_step_required) {
+        if (config) { console.log(config.measureServerIP); }
+        if (config && config.measureServerIP) {
+          // TODO: verificar se o servidor de speedtest está configurado
+          certification.requiredSpeedTest = permissions.grantSpeedTest;
+        }
+      }
+
       if (req.body.isOnu) {
         // Save passwords sent from app
         if (req.body.pppoePass) {
@@ -563,6 +578,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           onuConfig.onuPonThresholdCriticalHigh =
             config.tr069.pon_signal_threshold_critical_high;
         }
+        // REMOVER PRINT
+        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': true,
@@ -582,6 +599,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
+      // REMOVER PRINT
+      console.log(certification);
       return res.status(200).json({
         'success': true,
         'isRegister': true,
