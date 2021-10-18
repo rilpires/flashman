@@ -159,7 +159,6 @@ const tr069Devices = {
     mesh5_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
     mesh2_bssid_absolute: ['0x0', '0x0', '0x0', '0x01', '0x01', '0x0'],
     mesh5_bssid_absolute: ['0x0', '0x0', '0x0', '0x00', '0x00', '0x0'],
-    needs_wifi_enabled_for_mesh: true,
   },
   'G-140W-C': {
     vendor: 'Nokia',

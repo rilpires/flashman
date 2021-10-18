@@ -1861,18 +1861,37 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('mesh_mode') &&
                 meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
-                if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
-                  return res.status(403).json({
-                    success: false,
-                    type: 'danger',
-                    message: 'Não pode desabilitar o mesh com secundários associados',
-                  });
+                // We must enable Wi-Fi corresponding to mesh radio we're using
+                // Some models have this restriction.
+                // For simplicity we're doing this for all devices
+                if (meshMode > 1 && !(superuserGrant || role.grantWifiInfo > 1)) {
+                  hasPermissionError = true;
+                } else {
+                  if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
+                    return res.status(403).json({
+                      success: false,
+                      type: 'danger',
+                      message: 'Não pode desabilitar o mesh com secundários associados',
+                    });
+                  }
+                  matchedDevice.mesh_mode = meshMode;
+                  const auxChanges = meshHandlers.buildTR069Changes(matchedDevice, meshMode);
+                  changes.mesh2 = auxChanges.mesh2;
+                  changes.mesh5 = auxChanges.mesh5;
+                  if ((meshMode === 2 || meshMode === 4) && !matchedDevice.wifi_state) {
+                    changes.wifi2.enable = 1;
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+                    matchedDevice.wifi_state = 1;
+                  }
+                  if ((meshMode === 3 || meshMode === 4) && !matchedDevice.wifi_state_5ghz) {
+                    changes.wifi5.enable = 1;
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+                    matchedDevice.wifi_state_5ghz = 1;
+                  }
+                  updateParameters = true;
                 }
-                matchedDevice.mesh_mode = meshMode;
-                updateParameters = true;
-                const auxChanges = meshHandlers.buildTR069Changes(matchedDevice, meshMode);
-                changes.mesh2 = auxChanges.mesh2;
-                changes.mesh5 = auxChanges.mesh5;
               } else {
                 hasPermissionError = true;
               }

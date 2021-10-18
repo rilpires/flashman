@@ -1849,7 +1849,8 @@ $(document).ready(function() {
                     '</div>'+
                     '<div class="custom-control custom-checkbox">'+
                       '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN></input>'+
+                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN>'+
+                      ((device.mesh_mode === 3 || device.mesh_mode === 4) ? ' disabled' : '')+'</input>'+
                       '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
                       'Ativar Wi-Fi 5.0GHz'+
                       '</label>'+
@@ -1967,7 +1968,8 @@ $(document).ready(function() {
                       '</div>'+
                       '<div class="custom-control custom-checkbox">'+
                         '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
-                        '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
+                        '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN>'+
+                        ((device.mesh_mode === 2 || device.mesh_mode === 4) ? ' disabled' : '')+'</input>'+
                         '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
                         'Ativar Wi-Fi 2.4GHz'+
                         '</label>'+
