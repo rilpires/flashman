@@ -1868,10 +1868,12 @@ deviceListController.setDeviceReg = function(req, res) {
                   hasPermissionError = true;
                 } else {
                   if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
+                    const msg = 'Não pode desabilitar o mesh com secundários associados';
+                    console.log(msg);
                     return res.status(403).json({
                       success: false,
                       type: 'danger',
-                      message: 'Não pode desabilitar o mesh com secundários associados',
+                      message: msg,
                     });
                   }
                   matchedDevice.mesh_mode = meshMode;
