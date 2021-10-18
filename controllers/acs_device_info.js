@@ -430,8 +430,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (typeof data.wan.pppoe_user.value === 'string'
-    && data.wan.pppoe_user.value !== '');
+  let hasPPPoE = (data.wan.pppoe_user &&
+                  typeof data.wan.pppoe_user.value === 'string' &&
+                  data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP = processHostFromURL(data.common.ip.value);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
@@ -482,14 +483,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.pppoe_password = '';
   }
 
-  if (typeof data.wifi2.enable.value !== 'undefined') {
+  if (data.wifi2.enable && typeof data.wifi2.enable.value !== 'undefined') {
     let enable = (data.wifi2.enable.value) ? 1 : 0;
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
       hasChanges = true;
     }
   }
-  if (typeof data.wifi5.enable.value !== 'undefined') {
+  if (data.wifi5.enable && typeof data.wifi5.enable.value !== 'undefined') {
     let enable = (data.wifi5.enable.value) ? 1 : 0;
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
@@ -502,79 +503,101 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // apply cleaned ssid
   device.wifi_ssid = checkResponse.ssid2;
   device.wifi_ssid_5ghz = checkResponse.ssid5;
-  if (data.wifi2.ssid.value && !device.wifi_ssid) {
-    device.wifi_ssid = data.wifi2.ssid.value.trim();
+  if (data.wifi2.ssid) {
+    if (data.wifi2.ssid.value && !device.wifi_ssid) {
+      device.wifi_ssid = data.wifi2.ssid.value.trim();
+    }
+    if (ssidPrefix + device.wifi_ssid.trim() !== data.wifi2.ssid.value.trim()) {
+      changes.wifi2.ssid = device.wifi_ssid.trim();
+      hasChanges = true;
+    }
   }
-  if (ssidPrefix + device.wifi_ssid.trim()
-    !== data.wifi2.ssid.value.trim()) {
-    changes.wifi2.ssid = device.wifi_ssid.trim();
-    hasChanges = true;
+  if (data.wifi2.bssid) {
+    let bssid2 = data.wifi2.bssid.value;
+    if ((bssid2 && !device.wifi_bssid) ||
+        (device.wifi_bssid !== bssid2.toUpperCase())) {
+      device.wifi_bssid = bssid2.toUpperCase();
+    }
   }
-  let bssid2 = data.wifi2.bssid.value;
-  if ((bssid2 && !device.wifi_bssid) ||
-      (device.wifi_bssid !== bssid2.toUpperCase())) {
-    device.wifi_bssid = bssid2.toUpperCase();
+  if (data.wifi2.auto && data.wifi2.channel) {
+    let channel2 =
+      (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
+    if (channel2 && !device.wifi_channel) {
+      device.wifi_channel = channel2;
+    } else if (device.wifi_channel !== channel2) {
+      changes.wifi2.channel = device.wifi_channel;
+      hasChanges = true;
+    }
   }
-  let channel2 = (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
-  if (channel2 && !device.wifi_channel) {
-    device.wifi_channel = channel2;
-  } else if (device.wifi_channel !== channel2) {
-    changes.wifi2.channel = device.wifi_channel;
-    hasChanges = true;
+  if (data.wifi2.mode) {
+    let mode2 = convertWifiMode(data.wifi2.mode.value, false);
+    if (data.wifi2.mode.value && !device.wifi_mode) {
+      device.wifi_mode = mode2;
+    } else if (device.wifi_mode !== mode2) {
+      changes.wifi2.mode = device.wifi_mode;
+      hasChanges = true;
+    }
   }
-  let mode2 = convertWifiMode(data.wifi2.mode.value, false);
-  if (data.wifi2.mode.value && !device.wifi_mode) {
-    device.wifi_mode = mode2;
-  } else if (device.wifi_mode !== mode2) {
-    changes.wifi2.mode = device.wifi_mode;
-    hasChanges = true;
+  if (data.wifi2.band) {
+    let band2 = convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value);
+    if (data.wifi2.band.value && !device.wifi_band) {
+      device.wifi_band = band2;
+    } else if (device.wifi_band !== band2) {
+      changes.wifi2.band = device.wifi_band;
+    }
   }
-  let band2 = convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value);
-  if (data.wifi2.band.value && !device.wifi_band) {
-    device.wifi_band = band2;
-  } else if (device.wifi_band !== band2) {
-    changes.wifi2.band = device.wifi_band;
+  if (data.wifi5.ssid) {
+    if (data.wifi5.ssid.value && !device.wifi_ssid_5ghz) {
+      device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
+    }
+    if (ssidPrefix + device.wifi_ssid_5ghz.trim() !==
+        data.wifi5.ssid.value.trim()
+    ) {
+      changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
+      hasChanges = true;
+    }
   }
-
-  if (data.wifi5.ssid.value && !device.wifi_ssid_5ghz) {
-    device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
+  if (data.wifi5.bssid) {
+    let bssid5 = data.wifi5.bssid.value;
+    if ((bssid5 && !device.wifi_bssid_5ghz) ||
+        (device.wifi_bssid_5ghz !== bssid5.toUpperCase())) {
+      device.wifi_bssid_5ghz = bssid5.toUpperCase();
+    }
   }
-  if (ssidPrefix + device.wifi_ssid_5ghz.trim()
-    !== data.wifi5.ssid.value.trim()) {
-    changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
-    hasChanges = true;
+  if (data.wifi5.auto && data.wifi5.channel) {
+    let channel5 =
+      (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
+    if (channel5 && !device.wifi_channel_5ghz) {
+      device.wifi_channel_5ghz = channel5;
+    } else if (device.wifi_channel_5ghz !== channel5) {
+      changes.wifi5.channel = device.wifi_channel_5ghz;
+      hasChanges = true;
+    }
   }
-  let bssid5 = data.wifi5.bssid.value;
-  if ((bssid5 && !device.wifi_bssid_5ghz) ||
-      (device.wifi_bssid_5ghz !== bssid5.toUpperCase())) {
-    device.wifi_bssid_5ghz = bssid5.toUpperCase();
+  if (data.wifi5.mode) {
+    let mode5 = convertWifiMode(data.wifi5.mode.value, true);
+    if (data.wifi5.mode.value && !device.wifi_mode_5ghz) {
+      device.wifi_mode_5ghz = mode5;
+    } else if (device.wifi_mode_5ghz !== mode5) {
+      changes.wifi5.mode = device.wifi_mode_5ghz;
+      hasChanges = true;
+    }
   }
-  let channel5 = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
-  if (channel5 && !device.wifi_channel_5ghz) {
-    device.wifi_channel_5ghz = channel5;
-  } else if (device.wifi_channel_5ghz !== channel5) {
-    changes.wifi5.channel = device.wifi_channel_5ghz;
-    hasChanges = true;
+  if (data.wifi5.band && data.wifi5.mode) {
+    let band5 = convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value);
+    if (data.wifi5.band.value && !device.wifi_band_5ghz) {
+      device.wifi_band_5ghz = band5;
+    } else if (device.wifi_band_5ghz !== band5) {
+      changes.wifi5.band = device.wifi_band_5ghz;
+    }
   }
-  let mode5 = convertWifiMode(data.wifi5.mode.value, true);
-  if (data.wifi5.mode.value && !device.wifi_mode_5ghz) {
-    device.wifi_mode_5ghz = mode5;
-  } else if (device.wifi_mode_5ghz !== mode5) {
-    changes.wifi5.mode = device.wifi_mode_5ghz;
-    hasChanges = true;
-  }
-  let band5 = convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value);
-  if (data.wifi5.band.value && !device.wifi_band_5ghz) {
-    device.wifi_band_5ghz = band5;
-  } else if (device.wifi_band_5ghz !== band5) {
-    changes.wifi5.band = device.wifi_band_5ghz;
-  }
-
-  if (data.lan.router_ip.value && !device.lan_subnet) {
-    device.lan_subnet = data.lan.router_ip.value;
-  } else if (device.lan_subnet !== data.lan.router_ip.value) {
-    changes.lan.router_ip = device.lan_subnet;
-    hasChanges = true;
+  if (data.lan.router_ip) {
+    if (data.lan.router_ip.value && !device.lan_subnet) {
+      device.lan_subnet = data.lan.router_ip.value;
+    } else if (device.lan_subnet !== data.lan.router_ip.value) {
+      changes.lan.router_ip = device.lan_subnet;
+      hasChanges = true;
+    }
   }
   if (subnetNumber > 0 && !device.lan_netmask) {
     device.lan_netmask = subnetNumber;
@@ -591,10 +614,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     );
   }
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    device.pon_rxpower = convertToDbm(data.common.model.value, data.wan.pon_rxpower.value);
+    device.pon_rxpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_rxpower.value);
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    device.pon_txpower = convertToDbm(data.common.model.value, data.wan.pon_txpower.value);
+    device.pon_txpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_txpower.value);
   }
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value &&
       data.wan.pon_txpower && data.wan.pon_txpower.value) {
