@@ -640,7 +640,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
     if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_password_user.writable &&
+        data.common.web_admin_password.writable &&
         config.tr069.web_password !== data.common.web_admin_password.value) {
       changes.common.web_admin_password = config.tr069.web_password;
       hasChanges = true;
