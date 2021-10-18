@@ -9,7 +9,8 @@ const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const xml2js = require('fast-xml-parser');
-const js2xml = require('fast-xml-parser').j2xParser;
+const XmlParser = require('fast-xml-parser').j2xParser;
+const fs = require('fs');
 
 const pako = require('pako');
 const http = require('http');
@@ -1390,26 +1391,142 @@ const configFileEditing = async function(device, rulesDiffLength) {
   };
   let req = http.request(options, (resp)=>{
     resp.setEncoding('utf8');
-    let data = '';
-    resp.on('data', (chunk)=>data+=chunk);
+    let rawConfigFile = '';
+    resp.on('data', (chunk)=>rawConfigFile+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
-      if (checkForNestedKey(data, configField+'._value')) {
-        data = getFromNestedKey(data, configField+'._value');
-        console.log('!@#', data);
+      rawConfigFile = JSON.parse(rawConfigFile)[0];
+      if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
+        rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
+        let opts = {
+          ignoreAttributes: false, // default is true
+          ignoreNameSpace: false,
+          allowBooleanAttributes: false,
+          parseNodeValue: false, // default is true
+          parseAttributeValue: false,
+          trimValues: false, // default is true
+          cdataTagName: false, // default is 'false'
+          parseTrueNumberOnly: false,
+          arrayMode: false,
+        };
+        if (xml2js.validate(rawConfigFile) === true) {
           // parse xml to json
-            // modify using device.port_mapping
+          let jsonConfigFile = xml2js.parse(rawConfigFile, opts);
+          // find and set PORT_FW_ENABLE to 1
+          let i = jsonConfigFile['Config']['Dir']
+          .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
+          console.log('!$', i);
+          let j = jsonConfigFile['Config']['Dir'][i]['Value']
+          .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
+          console.log('!$', j);
+          jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'] = '1';
+          // find first PORT_FW_TBL
+          i = jsonConfigFile['Config']['Dir']
+          .findIndex((e) => e['@_Name'] == 'PORT_FW_TBL');
+          console.log('!$', i);
+          // delete others PORT_FW_TBL
+          jsonConfigFile['Config']['Dir'] =
+          jsonConfigFile['Config']['Dir']
+          .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
+          // add new PORT_FW_TBL values based on device.port_mapping
+          device.port_mapping.forEach((pm) => {
+            let newPortFwTbl = {
+              '@_Name': 'PORT_FW_TBL',
+              'Value': [
+                {
+                  '@_Name': 'InstanceNum',
+                  '@_Value': '0',
+                },
+                {
+                  '@_Name': 'Dynamic',
+                  '@_Value': '0',
+                },
+                {
+                  '@_Name': 'externalportEnd',
+                  '@_Value': pm.external_port_end.toString(),
+                },
+                {
+                  '@_Name': 'externalportStart',
+                  '@_Value': pm.external_port_start.toString(),
+                },
+                {
+                  '@_Name': 'remotehost',
+                  '@_Value': '0.0.0.0',
+                },
+                {
+                  '@_Name': 'leaseduration',
+                  '@_Value': '0',
+                },
+                {
+                  '@_Name': 'enable',
+                  '@_Value': '1',
+                },
+                {
+                  '@_Name': 'OutInf',
+                  '@_Value': '65535',
+                },
+                {
+                  '@_Name': 'Comment',
+                  '@_Value': '',
+                },
+                {
+                  '@_Name': 'Protocol',
+                  '@_Value': '4',
+                },
+                {
+                  '@_Name': 'PortEnd',
+                  '@_Value': pm.internal_port_end.toString(),
+                },
+                {
+                  '@_Name': 'PortStart',
+                  '@_Value': pm.internal_port_start.toString(),
+                },
+                {
+                  '@_Name': 'IP',
+                  '@_Value': pm.ip,
+                },
+              ],
+            };
+            jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
+          });
           // parse json to xml
-        // set xml config file to genieacs
-        task.name = 'setParameterValues';
-        task.parameterNames = [[configField, data, 'xsd:string']];
-        result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-        if (!result || !result.finished ||
-            result.task.name !== 'setParameterValues') {
-          console.log('Error at '+acsID+
-            ' on writing ConfigFile');
-          return;
+          opts = {
+            ignoreAttributes: false,
+            format: true,
+            indentBy: ' ',
+            supressEmptyNode: false,
+          };
+          let js2xml = new XmlParser(opts);
+          let xmlConfigFile = js2xml.parse(jsonConfigFile);
+          xmlConfigFile = xmlConfigFile
+            .replace(/(([\n\t\r])|(\s\s\n)|(\s\s))/g, '');
+          // debug
+          console.log('!@#');
+          fs.writeFile('/home/devanlix/Projects/flashman/example.json',
+            JSON.stringify(jsonConfigFile),
+            (e) => {if (e) throw e;});
+          fs.writeFile('/home/devanlix/Projects/flashman/original.xml',
+            rawConfigFile,
+            (e) => {if (e) throw e;});
+          fs.writeFile('/home/devanlix/Projects/flashman/parsed.xml',
+            xmlConfigFile,
+            (e) => {if (e) throw e;});
+          console.log('#@!');
+
+          // set xml config file to genieacs
+          /*task = {
+            name: 'setParameterValues',
+            parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
+          };
+          result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+          if (!result || !result.finished ||
+              result.task.name !== 'setParameterValues') {
+            console.log('Error at '+acsID+
+              ' on writing ConfigFile');
+            return;
+          }*/
+        } else {
+          console.log('failed xml validation');
         }
       }
     });
@@ -1690,7 +1807,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       }
     }
   }
-  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  // trigger 7557/devices/<acs_id>/tasks POST 'name': 'download'
   let response = '';
   try {
     response = await FirmwaresAPI.sendUpgradeFirmware(firmware, device);
