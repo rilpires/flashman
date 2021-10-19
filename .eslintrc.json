@@ -10,5 +10,13 @@
         "es6": true,
         "jquery": true,
         "jest": true
+    },
+    "plugins": [
+        "jest"
+    ],
+    "rules": {
+       "no-undef": 2,
+       "no-invalid-this": "off",
+       "dot-location": ["error", "property"]
     }
 }

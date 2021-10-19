@@ -36,7 +36,7 @@ const fetchUsers = function(usersTable, hasTrash) {
             ),
             $('<td>').html(cert.mac),
             $('<td>').html(
-              new Date(cert.localEpochTimestamp).toLocaleString('en-US')
+              new Date(cert.localEpochTimestamp).toLocaleString('pt-BR')
             ),
             $('<td>').html(userObj.name),
             $('<td class="btn-detail">').append(
@@ -82,7 +82,7 @@ const fetchCertification = function(id, name, timestamp) {
       }
       // Change basic info
       $('#user-name').html('&nbsp;'+name);
-      let certDate = new Date(cert.localEpochTimestamp).toLocaleString();
+      let certDate = new Date(cert.localEpochTimestamp).toLocaleString('pt-BR');
       $('#user-date').html('&nbsp;'+certDate);
       if (cert.contract) {
         $('#user-contract').html('&nbsp;'+cert.contract);

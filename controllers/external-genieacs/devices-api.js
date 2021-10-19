@@ -10,6 +10,10 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
 const API_URL = 'http://localhost:$PORT/acs/';
+/* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
+ environment.genieacs.json or in shell environment with the same value
+ that is in environment.config.json */
+const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
 
@@ -44,12 +48,14 @@ const convertWifiMode = function(mode, oui, model) {
       if (ouiModelStr === 'IGD') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
+      else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
       else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else if (ouiModelStr === 'GONUAC001') return 'bgn';
@@ -57,6 +63,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else if (ouiModelStr === 'GONUAC001') return 'an';
@@ -64,6 +71,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else if (ouiModelStr === 'GONUAC001') return 'anac';
@@ -138,10 +146,12 @@ const getDefaultFields = function() {
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
-      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
     },
     port_mapping: {
-      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
+      template: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMapping',
+      template_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping',
       enable: 'PortMappingEnabled',
       lease: 'PortMappingLeaseDuration',
       external_port_start: 'ExternalPort',
@@ -161,6 +171,7 @@ const getDefaultFields = function() {
     },
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BSSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel',
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
@@ -169,6 +180,7 @@ const getDefaultFields = function() {
     },
     wifi5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
+      bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BSSID',
       password: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.KeyPassphrase',
       channel: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel',
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
@@ -190,18 +202,38 @@ const getDefaultFields = function() {
   };
 };
 
-const getHuaweiFields = function() {
+const getHuaweiFields = function(model) {
   let fields = getDefaultFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-  fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
-  fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+  switch (model) {
+    case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
+      fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
+      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
+      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
+      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
+      fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
+      fields.port_mapping.internal_port_end = 'X_HW_InternalEndPort';
+      fields.port_mapping.external_port_end = 'ExternalPortEndRange';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+      break;
+    case 'Huawei': // Huawei WS5200
+      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+      fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+      fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+      fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+      fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+      fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+      fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+      fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      break;
+  }
   return fields;
 };
 
@@ -209,12 +241,18 @@ const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
+    case 'ZXHN H199A':
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
+      fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
       break;
     case 'F670L': // Multilaser ZTE F670L
+      fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
+      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
@@ -231,6 +269,8 @@ const getZTEFields = function(model) {
 
 const getNokiaFields = function() {
   let fields = getDefaultFields();
+  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
+  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
@@ -238,14 +278,30 @@ const getNokiaFields = function() {
   return fields;
 };
 
-const getStavixFields = function() {
+const getStavixFields = function(model) {
   let fields = getDefaultFields();
+  switch (model) {
+    case 'GONUAC001':
+      /* Removed due to high json payload in cwmp request from provision.js.
+      This field make the json request in syncDeviceData too big,
+      around 97kB of payload in pppoe and 116kb of payload in ipoe/dhcp.
+      The default limit is 100KB. In the large scale perspective of CPE
+      administration, its easily could consume up to 100MB/min of bandwidth
+      fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
+      ConfigFile'; */
+      break;
+    case 'xPON':
+      fields.common.alt_uid = fields.common.mac;
+      break;
+  }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.bssid = fields.wifi5.bssid.replace(/5/g, '6');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '1');
   fields.wifi2.password = fields.wifi5.password.replace(/5/g, '6');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
   fields.wifi2.channel = fields.wifi5.channel.replace(/5/g, '6');
@@ -265,11 +321,15 @@ const getModelFields = function(oui, model) {
   let fields = {};
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
+    case 'EG8145V5': // Huawei EG8145V5
+    case 'Huawei': // Huawei WS5200
       message = '';
-      fields = getHuaweiFields();
+      fields = getHuaweiFields(model);
       break;
+    case 'ZXHN H199A': // Multilaser ZTE RE914
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
+    case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
       message = '';
       fields = getZTEFields(model);
@@ -279,9 +339,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
-      fields = getStavixFields();
+      fields = getStavixFields(model);
       break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
@@ -302,8 +363,10 @@ const getModelFields = function(oui, model) {
 const getProtocolByModel = function(model) {
   let ret = '';
   switch (model) {
+    case 'ZXHN H199A':
     case 'ZXHN H198A V3.0':
     case 'ZXHN%20H198A%20V3%2E0':
+    case 'ZXHN%20H199A': // URI encoded
       ret = 'BOTH';
       break;
     case 'HG8245Q2':
@@ -316,7 +379,7 @@ const getProtocolByModel = function(model) {
   return ret;
 };
 
-const getDeviceFields = function(args, callback) {
+const getDeviceFields = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.oui || !params.model) {
     return callback(null, {
@@ -324,10 +387,79 @@ const getDeviceFields = function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  return callback(null, getModelFields(params.oui, params.model));
+  let flashRes = await sendFlashmanRequest('device/inform', params, callback);
+  if (!flashRes['success'] ||
+      Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
+    return callback(null, flashRes);
+  }
+  let fieldsResult = getModelFields(params.oui, params.model);
+  if (!fieldsResult['success']) {
+    return callback(null, fieldsResult);
+  }
+  return callback(null, {
+    success: true,
+    fields: fieldsResult.fields,
+    measure: flashRes.data.measure,
+  });
 };
 
-const syncDeviceData = function(args, callback) {
+const computeFlashmanUrl = function() {
+  let url = API_URL;
+  let numInstances = INSTANCES_COUNT;
+  if (numInstances > 1) {
+    // More than 1 instance - share load between instances 1 and N-1
+    // We ignore instance 0 for the same reason we ignore it for router syn
+    // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
+    // FLASHMAN_PORT+i
+    let target = Math.floor(Math.random()*(numInstances-1)) + FLASHMAN_PORT + 1;
+    url = url.replace('$PORT', target.toString());
+  } else {
+    // Only 1 instance - force on instance 0
+    url = url.replace('$PORT', FLASHMAN_PORT.toString());
+  }
+  return url;
+};
+
+const sendFlashmanRequest = function(route, params) {
+  return new Promise((resolve, reject)=>{
+    let url = computeFlashmanUrl();
+    request({
+      url: url + route,
+      method: 'POST',
+      json: params,
+    },
+    function(error, response, body) {
+      if (error) {
+        return resolve({
+          success: false,
+          message: 'Error contacting Flashman',
+        });
+      }
+      if (response.statusCode === 200) {
+        if (body.success) {
+          return resolve({success: true, data: body});
+        } else if (body.message) {
+          return resolve({
+            success: false,
+            message: body.message,
+          });
+        } else {
+          return resolve({
+            success: false,
+            message: (body.message) ? body.message : 'Flashman internal error',
+          });
+        }
+      } else {
+        return resolve({
+          success: false,
+          message: (body.message) ? body.message : 'Error in Flashman request',
+        });
+      }
+    });
+  });
+};
+
+const syncDeviceData = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.data || !params.acs_id) {
     return callback(null, {
@@ -335,51 +467,8 @@ const syncDeviceData = function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let url = API_URL;
-  let numInstances = INSTANCES_COUNT;
-  if (numInstances > 1) {
-    // More than 1 instance - share load between instances 1 and N-1
-    // We ignore instance 0 for the same reason we ignore it for router syn
-    // Instance 0 will be at port 8000, instance i will be at 8000+i
-    let target = Math.floor(Math.random()*(numInstances-1)) + 8001;
-    url = url.replace('$PORT', target.toString());
-  } else {
-    // Only 1 instance - force on instance 0
-    url = url.replace('$PORT', '8000');
-  }
-  request({
-    url: url + 'device/syn',
-    method: 'POST',
-    json: params,
-  },
-  function(error, response, body) {
-    if (error) {
-      return callback(null, {
-        success: false,
-        message: 'Error contacting Flashman',
-      });
-    }
-    if (response.statusCode === 200) {
-      if (body.success) {
-        return callback(null, {success: true});
-      } else if (body.message) {
-        return callback(null, {
-          success: false,
-          message: body.message,
-        });
-      } else {
-        return callback(null, {
-          success: false,
-          message: (body.message) ? body.message : 'Error in Flashman process',
-        });
-      }
-    } else {
-      return callback(null, {
-        success: false,
-        message: (body.message) ? body.message : 'Error in Flashman request',
-      });
-    }
-  });
+  let result = await sendFlashmanRequest('device/syn', params, callback);
+  callback(null, result);
 };
 
 exports.convertField = convertField;

@@ -1,5 +1,6 @@
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
+import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 // assigning tr069 elements.
 let recoveryInput =
@@ -52,13 +53,23 @@ window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
   let validator = new Validator();
 
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
+  let validField = validator
+    .validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
 
   if (!validField.valid) {
     setSsidPrefixError();
   } else {
     resetSsidPrefixError();
+  }
+};
+
+window.changeSsidPrefixInputDisableness = function(value) {
+  let ssidPrefixBox = document.getElementById('ssid-prefix-box');
+  if (value.checked) {
+    ssidPrefixBox.style.display = 'block';
+  } else {
+    ssidPrefixBox.style.display = 'none';
   }
 };
 
@@ -94,12 +105,14 @@ let configFlashman = function(event) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
   }
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
-  // check ssid prefix value
-  if (ssidPrefixInput.validity.valid && !validField.valid) {
-    setSsidPrefixError();
-    allValid = false;
+  if (getConfigStorage('isClientPayingPersonalizationApp')) {
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
+    // check ssid prefix value
+    if (ssidPrefixInput.validity.valid && !validField.valid) {
+      setSsidPrefixError();
+      allValid = false;
+    }
   }
   // take action after validation is ready.
   if (allValid) {
@@ -124,6 +137,10 @@ let configFlashman = function(event) {
         );
       });
   } else {
+    displayAlertMsg({
+      type: 'danger',
+      message: 'Há erros em um ou mais campos de configuração',
+    });
     event.preventDefault();
     event.stopPropagation();
   }
@@ -132,6 +149,7 @@ let configFlashman = function(event) {
 };
 
 $(document).ready(function() {
+  setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
 
   // Load configuration options
@@ -168,11 +186,12 @@ $(document).ready(function() {
           .siblings('label').addClass('active');
       }
       if (resp.isClientPayingPersonalizationApp) {
-        $('#is-ssid-prefix-enabled-div').
-          removeClass('d-none').
-          addClass('d-block');
-        $('#is-ssid-prefix-enabled').
-          prop('checked', resp.isSsidPrefixEnabled).change();
+        setConfigStorage('isClientPayingPersonalizationApp',
+                         resp.isClientPayingPersonalizationApp);
+
+        $('#is-ssid-prefix-enabled-col').removeClass('d-none');
+        $('#is-ssid-prefix-enabled')
+          .prop('checked', resp.isSsidPrefixEnabled).change();
         $('#ssid-prefix').val(resp.ssidPrefix)
           .siblings('label').addClass('active');
       }
@@ -219,6 +238,10 @@ $(document).ready(function() {
       if (resp.tr069InformInterval) {
         $('#inform-interval').val(resp.tr069InformInterval)
                              .siblings('label').addClass('active');
+      }
+      if (resp.tr069SyncInterval) {
+        $('#sync-interval').val(resp.tr069SyncInterval)
+                           .siblings('label').addClass('active');
       }
       if (resp.tr069RecoveryThreshold) {
         $('#lost-informs-recovery-threshold')

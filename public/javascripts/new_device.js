@@ -1,5 +1,6 @@
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
+import {getConfigStorage} from './session_storage.js';
 
 let renderDeviceErrors = function(errors) {
   for (let key in errors) {
@@ -37,9 +38,9 @@ let validateNewDevice = function() {
   let externalReferenceType = $('#new_ext_ref_type_selected').html();
   let externalReferenceData = $('#new_external_reference').val();
   let ssidPrefix = '';
-  let isSsidPrefixEnabled = $('#ssid_prefix').data('isenabled');
+  let isSsidPrefixEnabled = getConfigStorage('isSsidPrefixEnabled');
   if (isSsidPrefixEnabled) {
-    ssidPrefix = $('#ssid_prefix').html();
+    ssidPrefix = getConfigStorage('ssidPrefix');
   }
 
   // Initialize error structure

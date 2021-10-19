@@ -32,5 +32,20 @@
       "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
       "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
     }
+  },
+  {
+    "name": "genieacs-fs",
+    "script": "../genieacs/dist/bin/genieacs-fs",
+    "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+    "autorestart": true,
+    "env": {
+      "production": true,
+      "GENIEACS_FS_ACCESS_LOG_FILE": "/dev/null",
+      "GENIEACS_EXT_DIR": "../flashman/controllers/external-genieacs",
+      "GENIEACS_EXT_TIMEOUT": 30000,
+      "GENIEACS_RETRY_DELAY": 15,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
+      "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
+    }
   }]
 }

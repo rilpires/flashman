@@ -6,38 +6,84 @@ block content
       .row
         .col-12.col-md-6
           .fas.fa-exchange-alt.fa-lg.mt-1
-          span &nbsp Upload de novo firmware
+          span &nbsp; Upload de novo firmware
         .col-12.col-md-6.mt-3.mt-md-0
           ul.nav.nav-pills.nav-justified
             li.nav-item
               a.nav-link(data-toggle="tab", role="tab", href="#panel1")
                 .fas.fa-file
-                span &nbsp Arquivo
+                span &nbsp; Arquivo
             li.nav-item
               a.nav-link.active(data-toggle="tab", role="tab", href="#panel2")
                 .fas.fa-globe
-                span &nbsp Conta da Anlix
+                span &nbsp; Conta da Anlix
     .card-body
       .tab-content
         .tab-pane.fade(id="panel1", role="tabpanel")
-          form(method="post", action="/firmware/upload", name="firmwareform")
-            .col
-              .input-group
-                .input-group-prepend
-                  label.btn.btn-md.btn-primary.btn-file.my-0
-                    | Arquivo...
-                    input.form-control(type="file", name="firmwarefile",
-                                       style="display:none;")
-                input.form-control(type="text", readonly)
-
-            .col.mt-4.text-center
-              .form-buttons
-                button.btn.btn-lg.btn-primary(
-                  type="submit",
-                  id="btn-submit-upload"
-                )
-                  .fas.fa-upload.fa-lg(id="btn-submit-icon")
-                  span &nbsp Upload
+          .row.pl-0
+            .col-md-2.col.md-form
+              .md-selectfield.form-control
+                label
+                  | Tipo
+                select#select-cpe-type.browser-default.md-select(
+                  name="cpe_type", onchange="changeCpeForm(this)", required)
+                  option(value='flashbox' selected) Flashbox
+                  option(value='tr069') TR-069
+          form#flashbox-form(method="post", action="/firmware/upload",
+                             name="firmwareflashboxform")
+            .row.pl-0
+              .col
+                .input-group
+                  .input-group-prepend
+                    label.btn.btn-md.btn-primary.btn-file.my-0.ml-0
+                      | Arquivo...
+                      input.form-control(type="file",
+                                         name="firmwareflashboxfile",
+                                         style="display:none;")
+                  input.form-control(type="text", readonly)
+            .row.mt-4
+              .col.text-center
+                .form-buttons
+                  button.btn.btn-lg.btn-primary.btn-submit-upload(type="submit")
+                    .fas.fa-upload.fa-lg.btn-submit-icon
+                    span &nbsp; Upload
+          form#tr069-form.needs-validation.d-none(method="post",
+                                                  action="/firmware/upload",
+                                                  name="firmwaretr069form",
+                                                  novalidate)
+            .row.pl-0
+              .col-md-3.col-12.md-form
+                .md-selectfield.form-control
+                  label
+                    | Modelo
+                  select#select-productclass.custom-select.md-select(
+                    name="productclass", onchange="updateVersions(this)",
+                      data-json=tr069Infos, required)
+                    option(value='')
+                  .invalid-feedback Selecione algum modelo
+              .col-md-3.col-12.md-form
+                .md-selectfield.form-control
+                  label
+                    | Versão
+                  select#select-version.custom-select.md-select(
+                    name="version", required)
+                    option(value='')
+                  .invalid-feedback Selecione alguma versão
+              .col-md-6.col-12.mt-4
+                .input-group
+                  .input-group-prepend
+                    label.btn.btn-md.btn-primary.btn-file.my-0.ml-0
+                      | Arquivo...
+                      input.form-control(type="file", name="firmwaretr069file",
+                                         style="display:none;")
+                  input.form-control(type="text", readonly, required)
+                  .invalid-feedback Selecione um firmware
+            .row.mt-4
+              .col.text-center
+                .form-buttons
+                  button.btn.btn-lg.btn-primary.btn-submit-upload(type="submit")
+                    .fas.fa-upload.fa-lg.btn-submit-icon
+                    span &nbsp; Upload
         .tab-pane.fade.in.show.active(id="panel2", role="tabpanel")
           .d-flex.justify-content-center.mb-5
             form.form-inline(method="post", action="/firmware/sync", name="firmwaresync")
@@ -78,7 +124,7 @@ block content
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-hdd.fa-lg
-      span &nbsp Firmwares
+      span &nbsp; Firmwares
     .card-body
       .table-responsive.mt-2
         table#firmware-table.table

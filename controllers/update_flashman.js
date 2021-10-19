@@ -1,4 +1,5 @@
 const localPackageJson = require('../package.json');
+const localEnvironmentJson = require('../environment.config.json');
 const exec = require('child_process').exec;
 const fs = require('fs');
 const requestLegacy = require('request');
@@ -95,6 +96,7 @@ const updateGenieRepo = function(ref) {
   let checkout = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
+  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
@@ -104,7 +106,10 @@ const updateGenieRepo = function(ref) {
           if (err) return reject();
           exec(build, (err, stdout, stderr) => {
             if (err) return reject();
-            return resolve();
+            exec(reload, (err, stdout, stderr) => {
+              if (err) return reject();
+              return resolve();
+            });
           });
         });
       });
@@ -272,15 +277,27 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
 };
 
 updateController.rebootGenie = function(instances) {
-  // Treat bugged case where "max" parameter may set instance count to 0 upon
-  // reloading the service - use value from nproc instead of bugged 0
+  // Treat bugged case where pm2 may fail to provide the number of instances
+  // correctly - it may be 0 or undefined, and we must then rely on both the
+  // envitonment.config.json file and nproc to tell us how many flashman
+  // instances there are
   exec('nproc', (err, stdout, stderr)=>{
-    if (instances === 0 || instances === '0') {
-      instances = stdout.trim(); // remove trailing newline
+    instances = parseInt(instances);
+    if (isNaN(instances)) {
+      instances = parseInt(localEnvironmentJson.apps[0].instances);
+      if (isNaN(instances)) {
+        instances = parseInt(stdout.trim()); // remove trailing newline
+      }
+    }
+    // If somehow is still NaN, replace with 1 as a fallback
+    if (isNaN(instances)) {
+      instances = '1';
+    } else {
+      instances = instances.toString(); // Merely for type safety
     }
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
-    // issues with ONU connections since exceptions lead to buggy exp. backoff
+    // issues with CPEs connections since exceptions lead to buggy exp. backoff
     exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
@@ -466,6 +483,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069WebRemote: matchedConfig.tr069.remote_access,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
+        tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
@@ -473,7 +491,8 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.tr069.pon_signal_threshold_critical,
         pon_signal_threshold_critical_high:
           matchedConfig.tr069.pon_signal_threshold_critical_high,
-        isClientPayingPersonalizationApp: !!matchedConfig.personalizationHash,
+        isClientPayingPersonalizationApp: (
+          matchedConfig.personalizationHash !== '' ? true : false),
         isSsidPrefixEnabled: matchedConfig.isSsidPrefixEnabled,
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
@@ -590,17 +609,37 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
-    config.isSsidPrefixEnabled = (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-
-    let validField = validator.
-      validateSSIDPrefix(req.body['ssid-prefix']);
-    if (!validField.valid) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro validando os campos',
-      });
+    if (config.personalizationHash !== '') {
+      const isSsidPrefixEnabled =
+        (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix'],
+        isSsidPrefixEnabled);
+      if (!validField.valid) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Erro validando os campos',
+        });
+      }
+      /* check if ssid prefix was not empty and for some reason is coming
+        from UI a empty ssid prefix */
+      if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Prefixo de SSID não pode ser vazio',
+        });
+      // If prefix is disabled, do not allow changes in current prefix
+      } else if (!isSsidPrefixEnabled &&
+                 config.ssidPrefix !== '' &&
+                 config.ssidPrefix !== req.body['ssid-prefix']) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'Prefixo de SSID não pode ser ' +
+                   'alterado se estiver desabilitado',
+        });
+      }
+      config.ssidPrefix = req.body['ssid-prefix'];
+      config.isSsidPrefixEnabled = isSsidPrefixEnabled;
     }
-    config.ssidPrefix = req.body['ssid-prefix'];
 
     let ponSignalThresholdCriticalHigh = parseInt(
       req.body['pon-signal-threshold-critical-high']);
@@ -635,6 +674,7 @@ updateController.setAutoConfig = async function(req, res) {
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
+    let tr069SyncInterval = Number(req.body['sync-interval']);
     let tr069RecoveryThreshold =
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
@@ -644,6 +684,7 @@ updateController.setAutoConfig = async function(req, res) {
      && !isNaN(tr069OfflineThreshold)
      // and inform interval, recovery and offline values are within boundaries,
      && tr069InformInterval >= 60 && tr069InformInterval <= 86400
+     && tr069SyncInterval >= 60 && tr069SyncInterval <= 86400
      && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
@@ -662,6 +703,7 @@ updateController.setAutoConfig = async function(req, res) {
         remote_access: onuRemote,
         // transforming from seconds to milliseconds.
         inform_interval: tr069InformInterval*1000,
+        sync_interval: tr069SyncInterval*1000,
         recovery_threshold: tr069RecoveryThreshold,
         offline_threshold: tr069OfflineThreshold,
         pon_signal_threshold: ponSignalThreshold,
@@ -730,19 +772,6 @@ updateController.updateAppPersonalization = async function(app) {
     });
   } else {
     console.log('Error at contact control');
-  }
-};
-
-
-updateController.getSsidPrefix = async function(isDeviceSsidPrefixEnabled) {
-  if (!isDeviceSsidPrefixEnabled) {
-    return '';
-  }
-  let matchedConfig = await Config.findOne({is_default: true});
-  if (!matchedConfig) {
-    return '';
-  } else {
-    return matchedConfig.ssidPrefix;
   }
 };
 

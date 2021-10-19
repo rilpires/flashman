@@ -63,6 +63,11 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
+    if (['session_terminated', 'timeout'].includes(doc.code)) {
+      // Ignore session timeout and session terminated errors - no benefit
+      // reporting them and clutter flashman
+      return;
+    }
     let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
@@ -84,11 +89,17 @@ const watchGenieFaults = async function() {
 const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  if (!device) return;
+  // check if a notification already exists for this device, dont add a new one
+  let hasNotification = await NotificationModel.findOne(
+    {target: device._id, type: 'genieacs'},
+  ).exec();
+  if (hasNotification) return;
   // notification values.
   let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
     message_error: errorMsg};
   if (genieDeviceId !== undefined) { // if error has an associated device.
-    params.message = 'Erro na ONU '+genieDeviceId+'. Chamar supporte.';
+    params.message = 'Erro na CPE '+genieDeviceId+'. Chamar supporte.';
     params.target = device._id;
     params.genieDeviceId = genieDeviceId;
   } else { // if error has no associated device.
@@ -122,7 +133,7 @@ if (Promise.allSettled === undefined) {
  defined by nodejs api. 'body' is the content of the request (should be a
  string) and it is up to the caller to set the correct header in case body is
  used. */
-const request = (options, body) => {
+genie.request = (options, body) => {
   return new Promise((resolve, reject) => {
     let req = http.request(options, (res) => {
       res.setEncoding('utf8');
@@ -131,7 +142,11 @@ const request = (options, body) => {
       res.on('end', () => resolve(res));
     });
     req.on('error', reject);
-    if (body !== undefined && body.constructor === String) req.write(body);
+    if (body !== undefined &&
+      (body.constructor === String ||
+       body.constructor === Buffer)) {
+      req.write(body);
+    }
     req.end();
   });
 };
@@ -159,7 +174,7 @@ genie.getFromCollection = async function(collection, query, projection) {
   let urlParameters = 'query='+encodeURIComponent(JSON.stringify(query));
   if (projection) urlParameters += '&projection='+projection;
 
-  let response = await request({
+  let response = await genie.request({
     method: 'GET', hostname: GENIEHOST, port: GENIEPORT,
     path: `/${collection}?${urlParameters}`,
   });
@@ -187,7 +202,7 @@ const checkPreset = function(preset) {
  genie json response parsed to javascript object. may throw unhandled errors */
 genie.putProvision = async function(script) {
   script = script.slice(0, -1); // Remove EOF
-  return request({
+  return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
     path: '/provisions/flashman',
     headers: {
@@ -203,7 +218,7 @@ genie.putPreset = async function(preset) {
   if (!checkPreset(preset)) throw new Error('preset is invalid.');
 
   let presetjson = JSON.stringify(preset);
-  return request({
+  return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
     path: `/presets/${encodeURIComponent(preset._id)}`,
     headers: {'Content-Type': 'application/json', 'Content-Length':
@@ -217,7 +232,7 @@ genie.putPreset = async function(preset) {
 const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   // console.log("Posting a task.")
-  return request({
+  return genie.request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
     path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
      (shouldRequestConnection ? '&connection_request' : ''),
@@ -229,7 +244,7 @@ const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
 /* simple request to delete a task, by its id, in GenieACS and get a promise
  the resolves to the request response or rejects to request error. */
 const deleteTask = function(taskid) {
-  return request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path:
+  return genie.request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path:
    '/tasks/'+taskid});
 };
 
@@ -241,7 +256,7 @@ let taskParameterIdFromType = {
   refreshObject: 'objectName',
   addObject: 'objectName',
   deleteObject: 'objectName',
-  download: 'file',
+  download: 'fileName',
   reboot: null,
 };
 
@@ -520,7 +535,7 @@ itself and will be removed and re added.*/
  array in which the first position is an error message if there were any or
  null otherwise and the second position is an array of tasks there were not
  processed in less than 'timeout' millisecond. 'shouldRequestConnection' is a
- boolean that tells GenieACS to initiate a connection to the CPE/ONU and
+ boolean that tells GenieACS to initiate a connection to the CPE and
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
 const sendTasks = async function(deviceid, tasks, timeout,
@@ -614,7 +629,7 @@ Arguments:
 'timeout' is a number in milliseconds that will be used as request timeout when
  communicating with GenieACS.
 'shouldRequestConnection' is a boolean that tells GenieACS to initiate a
- connection to the CPE/ONU and execute the task. When it's false, genie will
+ connection to the CPE and execute the task. When it's false, genie will
  always return as fast as possible saying task was scheduled for later.
 'watchTimes' is an array of numbers that are the milliseconds used for waiting
  for scheduled tasks to disappear from GenieACS database, used only if the

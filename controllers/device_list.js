@@ -15,7 +15,6 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
-const updateController = require('./update_flashman.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 
@@ -148,13 +147,15 @@ const getOnlineCountMesh = function(query, lastHour) {
 };
 
 // getting values for inform configurations for tr069 from Config.
-const getOnlyTR069Configs = async function(errormsg) {
+const getOnlyTR069Configs = async function() {
   let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err); // in case of error, return error in await.
+    .lean().exec()
+    .catch((err) => err); // in case of error, return error in await.
   // it's very unlikely that we will incur in any error but,
   if (configsWithTr069.constructor === Error) { // if we returned an error.
     // print error message.
-    console.log(errormsg, '\nUsing default values for tr069 config.');
+    console.log('Error when getting user config from database.'+
+      '\nUsing default values for tr069 config.');
     return { // build a default configuration.
       inform_interval: 10*60*1000,
       offline_threshold: 1,
@@ -164,6 +165,25 @@ const getOnlyTR069Configs = async function(errormsg) {
     return configsWithTr069.tr069; // get only tr069 config inside the document.
   }
 };
+
+// returns an object containing the tr069 time threshold used when defining
+// device status (to give it a color). Will return an Error Object in case
+// of any error.
+const buildTr069Thresholds = async function (currentTimestamp) {
+  // in some places this function is called, the current time was not taken.
+  currentTimestamp = currentTimestamp || Date.now();
+
+  // getting user configured tr069 parameters.
+  let tr069Config = await getOnlyTR069Configs();
+  return { // thresholds for tr069 status classification.
+    // time when devices are considered in recovery for tr069.
+    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.recovery_threshold)),
+    // time when devices are considered offline for tr069.
+    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.offline_threshold)),
+  };
+}
 
 // Main page
 deviceListController.index = function(req, res) {
@@ -286,59 +306,73 @@ deviceListController.index = function(req, res) {
   });
 };
 
-deviceListController.changeUpdate = function(req, res) {
-  DeviceModel.findById(req.params.id, function(err, matchedDevice) {
-    if (err || !matchedDevice) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.status(500).json({success: false,
-                                   message: 'Erro ao encontrar dispositivo'});
-    }
-    // Cast to boolean so that javascript works as intended
-    let doUpdate = req.body.do_update;
-    if (typeof req.body.do_update === 'string') {
-      doUpdate = (req.body.do_update === 'true');
-    }
-    // Reject update command to mesh slave, use command on mesh master instead
-    if (matchedDevice.mesh_master && doUpdate) {
-      return res.status(500).json({
-        success: false,
-        message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
-                 'deve ser feita a partir do CPE principal dessa rede',
-      });
-    }
-    matchedDevice.do_update = doUpdate;
-    if (doUpdate) {
-      matchedDevice.do_update_status = 0; // waiting
-      matchedDevice.release = req.params.release.trim();
-      messaging.sendUpdateMessage(matchedDevice);
-      // Set mesh master's remaining updates field to keep track of network
-      // update progress. This is only a helper value for the frontend.
-      if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
-        let slaveCount = matchedDevice.mesh_slaves.length;
-        matchedDevice.do_update_mesh_remaining = slaveCount + 1;
-      }
+deviceListController.changeUpdate = async function(req, res) {
+  let matchedDevice;
+  let error;
+  try {
+    matchedDevice = await DeviceModel.findByMacOrSerial(req.params.id);
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
     } else {
-      matchedDevice.do_update_status = 1; // success
-      meshHandlers.syncUpdateCancel(matchedDevice);
+      return res.status(500).json({success: false,
+                                   message: 'Dispositivo não encontrado'});
     }
-    matchedDevice.save(function(err) {
-      if (err) {
-        let indexContent = {};
-        indexContent.type = 'danger';
-        indexContent.message = err.message;
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao registrar atualização'});
-      }
-
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-      res.status(200).json({'success': true});
-
-      // Start ack timeout
-      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
+  } catch (e) {
+    error = e;
+  }
+  if (error || !matchedDevice) {
+    return res.status(500).json({success: false,
+      message: 'Erro ao encontrar dispositivo'});
+  }
+  // Cast to boolean so that javascript works as intended
+  let doUpdate = req.body.do_update;
+  if (typeof req.body.do_update === 'string') {
+    doUpdate = (req.body.do_update === 'true');
+  }
+  // Reject update command to mesh slave, use command on mesh master instead
+  if (matchedDevice.mesh_master && doUpdate) {
+    return res.status(500).json({
+      success: false,
+      message: 'Este CPE é secundário em uma rede mesh, sua atualização '+
+               'deve ser feita a partir do CPE principal dessa rede',
     });
-  });
+  }
+  matchedDevice.do_update = doUpdate;
+  if (doUpdate) {
+    matchedDevice.do_update_status = 0; // waiting
+    matchedDevice.release = req.params.release.trim();
+    messaging.sendUpdateMessage(matchedDevice);
+    // Set mesh master's remaining updates field to keep track of network
+    // update progress. This is only a helper value for the frontend.
+    if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+      let slaveCount = matchedDevice.mesh_slaves.length;
+      matchedDevice.do_update_mesh_remaining = slaveCount + 1;
+    }
+  } else {
+    matchedDevice.do_update_status = 1; // success
+    meshHandlers.syncUpdateCancel(matchedDevice);
+  }
+  try {
+    await matchedDevice.save();
+  } catch (e) {
+    return res.status(500).json({success: false,
+      message: 'Erro ao registrar atualização'});
+  }
+
+  if (matchedDevice.use_tr069 && doUpdate) {
+    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+    if (response.success) {
+      return res.status(200).json(response);
+    } else {
+      return res.status(500).json(response);
+    }
+  } else {
+    mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+  }
+  res.status(200).json({'success': true});
+
+  // Start ack timeout
+  deviceHandlers.timeoutUpdateAck(matchedDevice._id);
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {
@@ -432,7 +466,7 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
 };
 
 deviceListController.complexSearchDeviceQuery = async function(queryContents,
- mqttClients, lastHour, tr069Times) {
+ mqttClients, currentTimestamp, tr069Times) {
   let finalQuery = {};
   let finalQueryArray = [];
 
@@ -452,36 +486,29 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
-  // won't make an exact match, but the other tags need to be exact.
+  // won't make an exact match, but the other tags need to be exact. This will
+  // help with "Array.some((r) => r.test(tag))".
+
+  let matchedConfig; // will be assigned a value if it reaches a place where
+  // it's being used.
 
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
 
+    // if tag affects both flashboxes and ONUs.
     if (Object.values(statusTags).some((r) => r.test(tag))) {
-    // if we need more than one query for each controller protocol.
+    // We need more than one query for each controller protocol.
 
-      /* if arguments are undefined, we define them only if we are going to use
- them. */
+      // Some functions already had 'mqttClients' built in scope, so they pass
+      // it as argument. For the functions that don't, they can keep that
+      // argument undefined, in which case we built it here.
       if (mqttClients === undefined) {
         mqttClients = mqtt.getConnectedClients();
       }
-      let currentTime = Date.now();
-      if (lastHour === undefined) {
-        lastHour = new Date(currentTime -3600000);
-      }
-      if (tr069Times === undefined) {
-        let tr069 = await getOnlyTR069Configs('Error when getting tr069 '
-        +'parameters in database to for \'complexSearchDeviceQuery\'.');
-        tr069Times = { // thresholds for tr069 status classification.
-          // time when devices are considered in recovery for tr069.
-          recovery: new Date(currentTime - (tr069.inform_interval*
-           tr069.recovery_threshold)),
-          // time when devices are considered offline for tr069.
-          offline: new Date(currentTime - (tr069.inform_interval*
-           tr069.offline_threshold)),
-        };
-      }
+      currentTimestamp = currentTimestamp || Date.now();
+      let lastHour = new Date(currentTimestamp -3600000);
+      tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -527,10 +554,40 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.do_update = {$eq: true};
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
+      } 
+    } else if (/^coleta (?:on|off)$/.test(tag)) { // data collecting.
+      query.use_tr069 = {$ne: true}; // only for flashbox.
+      if (tag.includes('on')) {
+        query['data_collecting.is_active'] = true;
+      } else if (tag.includes('off')) {
+        query['data_collecting.is_active'] = {$ne: true}; // undefined & false.
+      } 
+    } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
+      query.use_tr069 = true; // only for ONUs
+      if (matchedConfig === undefined) {
+        matchedConfig = await Config.findOne({is_default: true});
       }
+      if (tag.includes('fraco')) {
+        query.pon_rxpower = {
+          $gte: matchedConfig.tr069.pon_signal_threshold_critical,
+          $lte: matchedConfig.tr069.pon_signal_threshold,
+        };
+      } else if (tag.includes('bom')) {
+        query.pon_rxpower = {
+          $gte: matchedConfig.tr069.pon_signal_threshold,
+          $lte: matchedConfig.tr069.pon_signal_threshold_critical_high,
+        };
+      } else if (tag.includes('ruim')) {
+        query.pon_rxpower = {
+          $lte: matchedConfig.tr069.pon_signal_threshold_critical,
+        };
+      }
+    } else if (/^sem sinal$/.test(tag)) {
+      query.use_tr069 = true; // only for ONUs
+      query.pon_rxpower = {$exists: false}
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
-    } else if (tag === 'tr069') { // ONU routers.
+    } else if (tag === 'tr069') { // CPE TR-069 routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
       let queryArray = [];
@@ -567,6 +624,45 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   // only return 'finalQuery' if 'finalQueryArray' isn't empty.
   if (finalQueryArray.length > 0) return finalQuery;
   else return {};
+};
+
+// returns an array with all searched devices.
+deviceListController.getDevices = async function(req, res) {
+  // reading body parameters.
+  let queryContents = []; // array that will hold the user's search filter.
+  let projectedFields = []; // array that will hold the fields to return.
+  if (req.body !== undefined) { // if request has a body.
+    let body = req.body; // shortening variable name to decrease line length.
+    // if 'filter_list' key is present and its value is a string.
+    if (body.filter_list !== undefined &&
+        body.filter_list.constructor === String) {
+      queryContents = body.filter_list.split(',');
+    }
+    // if 'fields' key is present and its value is a string.
+    if (body.fields !== undefined && body.fields.constructor === String) {
+      projectedFields = body.fields.split(','); // split by commas.
+    }
+  }
+
+  // building search query.
+  const userRole = await Role.findOne({
+    name: util.returnObjOrEmptyStr(req.user.role),
+  });
+  let finalQuery;
+  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+    finalQuery = await deviceListController.complexSearchDeviceQuery(
+      queryContents);
+  } else {
+    finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+  }
+
+  // querying devices.
+  DeviceModel.find(finalQuery, projectedFields).lean().exec()
+  .then((devices) => res.json(devices)) // responding with array as json.
+  .catch((err) => res.status(500).json({ // in case of error, returns message.
+    success: false,
+    message: 'Error when loading devices.',
+  }));
 };
 
 deviceListController.searchDeviceReg = async function(req, res) {
@@ -610,29 +706,13 @@ deviceListController.searchDeviceReg = async function(req, res) {
     queryContents = queryContents.filter(
       (query) => query !== '/sort-wan-uptime');
     sortKeys.wan_up_time = sortTypeOrder;
+  } else if (queryContents.includes('/sort-pon-signal')) {
+    queryContents= queryContents.filter(
+      (query) => query !== '/sort-pon-signal');
+    sortKeys.pon_rxpower = sortTypeOrder;
   } else {
     sortKeys._id = sortTypeOrder;
   }
-
-  let currentTime = Date.now();
-  let lastHour = new Date(currentTime -3600000);
-  // getting user configurations.
-  let matchedConfig = await Config.findOne({is_default: true},
-    'tr069 pppoePassLength').exec().catch((err) => err);
-  if (matchedConfig.constructor === Error) {
-    console.log('Error when getting user config in database to build '
-      +'device list.');
-    return;
-  }
-  let tr069Times = { // thresholds for tr069 status classification.
-    // time when devices are considered in recovery for tr069.
-    recovery: new Date(currentTime - (matchedConfig.tr069.inform_interval*
-      matchedConfig.tr069.recovery_threshold)),
-    // time when devices are considered offline for tr069.
-    offline: new Date(currentTime - (matchedConfig.tr069.inform_interval*
-      matchedConfig.tr069.offline_threshold)),
-  };
-
 
   // online devices.
   // will be passed to the functions that need an array of ids.
@@ -643,13 +723,19 @@ deviceListController.searchDeviceReg = async function(req, res) {
     mqttClientsMap[mqttClientsArray[i]] = true;
   }
 
+  let currentTimestamp = Date.now()
+  let lastHour = new Date(currentTimestamp -3600000);
+
+  // time threshold for tr069 status (status color).
+  let tr069Times = await buildTr069Thresholds(currentTimestamp);
+
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
   });
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
-     queryContents, mqttClientsArray, lastHour, tr069Times);
+      queryContents, mqttClientsArray, currentTimestamp, tr069Times);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
@@ -687,8 +773,24 @@ deviceListController.searchDeviceReg = async function(req, res) {
     .then(function(releases) {
       let enrichDevice = function(device) {
         const model = device.model.replace('N/', '');
-        const devReleases = releases.filter(
+        let devReleases = releases.filter(
           (release) => release.model === model);
+        if (device.use_tr069) {
+          /* get allowed version of upgrade by
+            current device version  */
+          let allowedVersions = DeviceVersion
+            .getFirmwaresUpgradesByVersion(model,
+              device.installed_release);
+          /* filter by allowed version that
+            current version can jump to */
+          devReleases = devReleases.filter(
+            (release) => allowedVersions.includes(release.id));
+          /* for tr069 devices enable "btn-group device-update"
+            if have feature support for the model is granted */
+          device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+        } else {
+          device.isUpgradeEnabled = true;
+        }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 
@@ -789,6 +891,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  ponConfig: {
+                    ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
+                    ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
+                    ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high,
+                  },
                 });
               });
             }, (error) => {
@@ -805,25 +912,38 @@ deviceListController.searchDeviceReg = async function(req, res) {
   });
 };
 
-deviceListController.delDeviceReg = function(req, res) {
-  DeviceModel.find({'_id': {$in: req.body.ids}}, function(err, devices) {
-    if (err || !devices) {
-      console.log('User delete error: ' + err);
+deviceListController.delDeviceReg = async function(req, res) {
+  try {
+    let removeList = [];
+    if (req.params.id) {
+      removeList = [req.params.id];
+    } else {
+      removeList = req.body.ids;
+    }
+    let devices = await DeviceModel.findByMacOrSerial(removeList).exec();
+    if (devices.length === 0) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro interno ao remover cadastro(s)',
+        message: 'Nenhum roteador encontrado',
       });
     }
-    devices.forEach((device) => {
+    for (let device of devices) {
       deviceHandlers.removeDeviceFromDatabase(device);
-    });
+    }
     return res.json({
       success: true,
       type: 'success',
       message: 'Cadastro(s) removido(s) com sucesso!',
     });
-  });
+  } catch (err) {
+    console.error('Erro na remoção: ' + err);
+    return res.json({
+      success: false,
+      type: 'danger',
+      message: 'Erro interno ao remover cadastro(s)',
+    });
+  }
 };
 
 const downloadStockFirmware = async function(model) {
@@ -914,13 +1034,15 @@ deviceListController.factoryResetDevice = function(req, res) {
 deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, device) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (device == null) {
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
       return res.status(200).json({success: false,
                                    message: 'CPE não encontrado'});
     }
@@ -1123,13 +1245,15 @@ deviceListController.sendMqttMsg = function(req, res) {
 };
 
 deviceListController.getFirstBootLog = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
       return res.status(200).json({success: false,
                                    message: 'CPE não encontrado'});
     }
@@ -1147,13 +1271,15 @@ deviceListController.getFirstBootLog = function(req, res) {
 };
 
 deviceListController.getLastBootLog = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
       return res.status(200).json({success: false,
                                    message: 'CPE não encontrado'});
     }
@@ -1171,13 +1297,16 @@ deviceListController.getLastBootLog = function(req, res) {
 };
 
 deviceListController.getDeviceReg = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase()).lean().exec(
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase(), true).exec(
   async function(err, matchedDevice) {
     if (err) {
+      console.log(err);
       return res.status(500).json({success: false,
                                    message: 'Erro interno do servidor'});
     }
-    if (matchedDevice == null) {
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
       return res.status(404).json({success: false,
                                    message: 'CPE não encontrado'});
     }
@@ -1198,24 +1327,14 @@ deviceListController.getDeviceReg = function(req, res) {
     let deviceColor = 'grey';
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
-      // getting tr069 inform parameters.
-      let tr069Configs = await getOnlyTR069Configs('Error when getting tr069 '
-        +'parameters in database to set tr069 status color in device list '
-        +'line item.');
-      let currentTime = Date.now();
-      // // thresholds for tr069 status classification.
-      // time when devices are considered in recovery for tr069.
-      let recoveryTime = new Date(currentTime - (tr069Configs.inform_interval*
-        tr069Configs.recovery_threshold));
-      // time when devices are considered offline for tr069.
-      let offlineTime = new Date(currentTime - (tr069Configs.inform_interval*
-        tr069Configs.offline_threshold));
+      // tr069 time thresholds for device status.
+      let tr069Times = await buildTr069Thresholds();
       // // classifying device status.
-      if (matchedDevice.last_contact >= recoveryTime) {
+      if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
         deviceColor = 'green';
         matchedDevice.online_status = true;
-      } else if (matchedDevice.last_contact >= offlineTime) {
+      } else if (matchedDevice.last_contact >= tr069Times.offline) {
       // if we are inside second threshold.
         deviceColor = 'red';
       }
@@ -1230,7 +1349,8 @@ deviceListController.getDeviceReg = function(req, res) {
       lastHour.setHours(lastHour.getHours() - 1);
       if (matchedDevice.online_status) {
         deviceColor = 'green';
-      } else if (matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
+      } else if (!!matchedDevice.last_contact &&
+        matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
         deviceColor = 'red';
       }
     }
@@ -1241,8 +1361,8 @@ deviceListController.getDeviceReg = function(req, res) {
 };
 
 deviceListController.setDeviceReg = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({
         success: false,
@@ -1250,12 +1370,11 @@ deviceListController.setDeviceReg = function(req, res) {
         errors: [],
       });
     }
-    if (matchedDevice == null) {
-      return res.status(404).json({
-        success: false,
-        message: 'CPE não encontrado',
-        errors: [],
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(404).json({success: false,
+        message: 'CPE não encontrado', errors: []});
     }
 
     if (util.isJSONObject(req.body.content)) {
@@ -1342,8 +1461,15 @@ deviceListController.setDeviceReg = function(req, res) {
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
         }
-        let ssidPrefix = await updateController.
-          getSsidPrefix(isSsidPrefixEnabled);
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          matchedConfig, ssid, ssid5ghz, isSsidPrefixEnabled);
+        isSsidPrefixEnabled = checkResponse.enablePrefix;
+        // cleaned ssid
+        ssid = checkResponse.ssid2;
+        ssid5ghz = checkResponse.ssid5;
+        let ssidPrefix = checkResponse.prefix;
+
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(ssidPrefix+ssid,
             validator.validateSSID, 'ssid');
@@ -1832,11 +1958,13 @@ deviceListController.createDeviceReg = function(req, res) {
       } else {
         connectionType = 'dhcp';
       }
-      let enabledForAllFlashman = (
-        !!matchedConfig.personalizationHash &&
-          matchedConfig.isSsidPrefixEnabled);
-      let ssidPrefix = await updateController.
-        getSsidPrefix(enabledForAllFlashman);
+      let isSsidPrefixEnabled = false;
+      // -> 'new registry' scenario
+      let checkResponse = deviceHandlers.checkSsidPrefix(
+        matchedConfig, ssid, '', false, true);
+      isSsidPrefixEnabled = checkResponse.enablePrefix;
+      let ssidPrefix = checkResponse.prefix;
+
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
       genericValidate(password, validator.validateWifiPassword, 'password');
@@ -1872,7 +2000,7 @@ deviceListController.createDeviceReg = function(req, res) {
               'last_contact': new Date('January 1, 1970 01:00:00'),
               'do_update': false,
               'do_update_parameters': false,
-              'isSsidPrefixEnabled': enabledForAllFlashman,
+              'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
@@ -2153,7 +2281,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
 };
 
 deviceListController.setPortForward = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
@@ -2161,11 +2289,11 @@ deviceListController.setPortForward = function(req, res) {
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
@@ -2195,6 +2323,7 @@ deviceListController.setPortForward = function(req, res) {
     // vanilla routers
     } else {
       console.log('Updating Port Forward for ' + matchedDevice._id);
+      console.log('!@#', req.body.content);
       if (util.isJsonString(req.body.content)) {
         let content = JSON.parse(req.body.content);
 
@@ -2356,19 +2485,19 @@ deviceListController.setPortForward = function(req, res) {
 };
 
 deviceListController.getPortForward = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
-  function(err, matchedDevice) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
         success: false,
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
@@ -2431,7 +2560,7 @@ deviceListController.getPortForward = function(req, res) {
 };
 
 deviceListController.getPingHostsList = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
@@ -2439,11 +2568,11 @@ deviceListController.getPingHostsList = function(req, res) {
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     return res.status(200).json({
       success: true,
@@ -2453,7 +2582,7 @@ deviceListController.getPingHostsList = function(req, res) {
 };
 
 deviceListController.setPingHostsList = function(req, res) {
-  DeviceModel.findById(req.params.id.toUpperCase(),
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
@@ -2461,11 +2590,11 @@ deviceListController.setPingHostsList = function(req, res) {
         message: 'Erro interno do servidor',
       });
     }
-    if (matchedDevice == null) {
-      return res.status(200).json({
-        success: false,
-        message: 'CPE não encontrado',
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     console.log('Updating hosts ping list for ' + matchedDevice._id);
     if (util.isJsonString(req.body.content)) {
@@ -2734,23 +2863,30 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      matchedConfig.traps_callbacks.device_crud.url = req.body.url;
-      if ('user' in req.body && 'secret' in req.body) {
-        matchedConfig.traps_callbacks.device_crud.user = req.body.user;
-        matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
-      }
-      matchedConfig.save((err) => {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao gravar dados na base',
-          });
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.device_crud.user = req.body.user;
+          matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
         }
-        return res.status(200).json({
-          success: true,
-          message: 'Endereço salvo com sucesso',
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao gravar dados na base',
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: 'Endereço salvo com sucesso',
+          });
         });
-      });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Formato invalido',
+        });
+      }
     }
   });
 };
@@ -2876,6 +3012,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     const csvFields = [
       {label: 'Endereço MAC', value: '_id'},
       {label: 'Identificador Serial', value: 'serial_tr069'},
+      {label: 'Identificador TR-069 Alternativo', value: 'alt_uid_tr069'},
       {label: 'Tipo de Conexão WAN', value: 'connection_type'},
       {label: 'Usuário PPPoE', value: 'pppoe_user'},
     ];

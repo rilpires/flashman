@@ -5,6 +5,7 @@ import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
 import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
+import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
@@ -552,6 +553,9 @@ $(document).ready(function() {
                (device.mesh_slaves ? device.mesh_slaves.length : 0) + '"';
     rowAttr += ' data-deviceid="' + device._id + '"';
     rowAttr += ' data-serialid="' + device.serial_tr069 + '"';
+    if (device.alt_uid_tr069) {
+      rowAttr += ' data-alt-uid-tr069="' + device.alt_uid_tr069 + '"';
+    }
     return rowAttr;
   };
 
@@ -571,7 +575,33 @@ $(document).ready(function() {
     '</a>';
   };
 
-  const buildUpgradeCol = function(device, slaves=[], isTR069=false) {
+  const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
+    let ponSignalStatus;
+    let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
+    if (device.pon_rxpower === undefined) { 
+      ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+      ponSignalRxPower = '';
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh){
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Alto</div>';
+    } else if (device.pon_rxpower >= config.ponSignalThreshold) {
+      ponSignalStatus = '<div class="badge bg-success">Sinal Bom</div>';
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCritical) {
+      ponSignalStatus = '<div class="badge bg-warning">Sinal Fraco</div>';
+    } else {
+      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+    }
+    let ponSignalStatusColumn = (grantPonSignalSupport) ? `
+      <td>
+        <div class="text-center align-items-center">
+          ${ponSignalRxPower}<br>
+          ${ponSignalStatus} 
+        </div>
+      </td>
+    ` : '<td></td>';
+    return ponSignalStatusColumn;
+  };
+
+  const buildUpgradeCol = function(device, slaves=[]) {
     let upgradeOpts = '';
     for (let idx = 0; idx < device.releases.length; idx++) {
       let release = device.releases[idx];
@@ -589,7 +619,7 @@ $(document).ready(function() {
       if (!slaveHasRelease) continue;
       upgradeOpts += '<a class="dropdown-item text-center">'+release.id+'</a>';
     }
-    let upgradeCol = (isTR069) ? '<td></td>':
+    let upgradeCol = (!device.isUpgradeEnabled) ? '<td></td>':
     '<td>'+
       '<div class="btn-group device-update">'+
         '<button class="btn btn-sm px-2'+
@@ -686,6 +716,12 @@ $(document).ready(function() {
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
     '</a>';
+    let uid = device._id;
+    if (device.use_tr069 && device.alt_uid_tr069) {
+      uid = device.alt_uid_tr069;
+    } else if (device.use_tr069) {
+      uid = device.serial_tr069;
+    }
     let infoRow = '<tr class=" ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
@@ -697,9 +733,9 @@ $(document).ready(function() {
         '$REPLACE_NOTIFICATIONS'+
         '</div><div class="badge teal $REPLACE_COLOR_CLASS_PILL">$REPLACE_PILL_TEXT</div>'+
       '</td><td class="text-center device-pppoe-user">'+
-        device.pppoe_user+
+        ((!device.pppoe_user) ? '' : device.pppoe_user) +
       '</td><td class="text-center">'+
-        ((device.use_tr069) ? device.serial_tr069 : device._id)+
+        uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
       '</td><td class="text-center device-ip">'+
@@ -715,6 +751,7 @@ $(document).ready(function() {
         (device.wan_up_time && device.status_color !== 'grey-text' ?
           secondsTimeSpanToHMS(parseInt(device.wan_up_time)) : '')+
       '</td>'+
+      '$REPLACE_PONSIGNAL'+
       '$REPLACE_UPGRADE'+
     '</tr>';
     return infoRow;
@@ -747,14 +784,14 @@ $(document).ready(function() {
       createdDateStr = 'Não disponível';
     } else {
       let createdDate = new Date(device.created_at);
-      createdDateStr = createdDate.toLocaleDateString(navigator.language,
+      createdDateStr = createdDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     if (isNaN(Date.parse(device.last_hardreset))) {
       resetDateStr = 'Não disponível';
     } else {
       let resetDate = new Date(device.last_hardreset);
-      resetDateStr = resetDate.toLocaleDateString(navigator.language,
+      resetDateStr = resetDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
@@ -984,7 +1021,7 @@ $(document).ready(function() {
     // Start loading animation
     deviceTableContent.append(
       $('<tr>').append(
-        $('<td>').attr('colspan', '12')
+        $('<td>').attr('colspan', '13')
         .addClass('grey lighten-5 text-center')
         .append(
           $('<h3>').append(
@@ -1002,10 +1039,11 @@ $(document).ready(function() {
           displayAlertMsg(res);
           return;
         }
-        // show or not ssid prefix in new device form
-        $('#ssid_prefix').text(res.ssidPrefix);
-        $('#ssid_prefix').data('isenabled', res.isSsidPrefixEnabled);
+        setConfigStorage('ssidPrefix', res.ssidPrefix);
+        setConfigStorage('isSsidPrefixEnabled', res.isSsidPrefixEnabled);
+        // ssid prefix in new device form
         if (res.isSsidPrefixEnabled) {
+          $('#ssid_prefix').text(res.ssidPrefix);
           $('#ssid_prefix_div').removeClass('d-none');
           $('#ssid_prefix_div').addClass('d-block');
           $('#ssid_label').addClass('active');
@@ -1015,7 +1053,7 @@ $(document).ready(function() {
         // Just fill not found message if there are no devices found
         if (res.devices.length == 0) {
           deviceTableContent.html(
-            '<tr><td class="grey lighten-5 text-center" colspan="12">'+
+            '<tr><td class="grey lighten-5 text-center" colspan="13">'+
               '<h5>Nenhum CPE encontrado</h5>'+
             '</td></tr>',
           );
@@ -1064,7 +1102,7 @@ $(document).ready(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || grantShowSearchSummary) {
@@ -1131,12 +1169,14 @@ $(document).ready(function() {
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
-          let upgradeCol = buildUpgradeCol(device, slaves, isTR069);
+          let upgradeCol = buildUpgradeCol(device, slaves);
+          let ponSignalCol = buildPonSignalColumn(device, res.ponConfig, grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
           infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
           infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+          infoRow = infoRow.replace('$REPLACE_PONSIGNAL', ponSignalCol);
           if (isSuperuser || grantNotificationPopups) {
             infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
           } else {
@@ -1161,6 +1201,9 @@ $(document).ready(function() {
           formAttr += ' data-index="'+index+'"';
           formAttr += ' data-deviceid="'+device._id+'"';
           formAttr += ' data-serialid="'+device.serial_tr069+'"';
+          if (device.alt_uid_tr069) {
+            formAttr += ' data-alt-uid-tr069="'+device.alt_uid_tr069+'"';
+          }
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
@@ -1685,7 +1728,7 @@ $(document).ready(function() {
           let ssidPrefixEnabledCheckbox = '';
           if (device.isToShowSsidPrefixCheckbox) {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
-                '" class="custom-control custom-checkbox">'+
+                '" class="custom-control custom-checkbox pl-2">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
@@ -1696,7 +1739,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1704,7 +1747,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
@@ -1712,7 +1755,7 @@ $(document).ready(function() {
               haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
@@ -1720,14 +1763,14 @@ $(document).ready(function() {
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
-                  $('#ssid_prefix').html()+
+                getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
               '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
             }
           } else {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
-                '" class="custom-control custom-checkbox d-none">'+
+                '" class="custom-control custom-checkbox pl-2 d-none">'+
                 '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
                 '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
                 '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+
@@ -2165,7 +2208,7 @@ $(document).ready(function() {
           '</div>';
 
           let formRow = '<tr class="d-none" $REPLACE_ATTRIBUTES>'+
-            '<td class="grey lighten-5" colspan="12">'+
+            '<td class="grey lighten-5" colspan="13">'+
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
@@ -2252,6 +2295,7 @@ $(document).ready(function() {
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
               infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
@@ -2262,7 +2306,7 @@ $(document).ready(function() {
               }
               finalHtml += infoRow;
 
-              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="12">'+
+              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
                 buildAboutTab(slaveDev, index, false,
                               grantWifiExtendedChannels, slaveIdx)+
               '</td></tr>';
@@ -2286,7 +2330,7 @@ $(document).ready(function() {
             let editButtonRow = buildFormSubmit(true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
-              '<td class="grey lighten-5" colspan="12">'+
+              '<td class="grey lighten-5" colspan="13">'+
                 editButtonRow+
               '</td>'+
             '</tr>';
