@@ -3,6 +3,7 @@ const TasksAPI = require('./external-genieacs/tasks-api');
 const FirmwaresAPI = require('./external-genieacs/firmwares-api');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
+const DeviceVersion = require('../models/device_version');
 const FirmwareModel = require('../models/firmware');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
@@ -705,18 +706,32 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!device.last_contact_daily) {
     device.last_contact_daily = Date.now();
   } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
-    // for every day fetch to device port forward entries
     device.last_contact_daily = Date.now();
-    let entriesDiff = 0;
-    if (device.connection_type === 'pppoe' &&
-        data.wan.port_mapping_entries_ppp) {
-      entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries_ppp.value;
-    } else if (data.wan.port_mapping_entries_dhcp) {
-      entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries_dhcp.value;
+    // Fetch functionalities of device
+    let permissions = DeviceVersion.findByVersion(
+      device.version,
+      device.wifi_is_5ghz_capable,
+      device.model,
+    );
+    if (permissions.grantPortForward) {
+      // For every day fetch to device port forward entries
+      let entriesDiff = 0;
+      if (device.connection_type === 'pppoe' &&
+          data.wan.port_mapping_entries_ppp) {
+        entriesDiff = device.port_mapping.length -
+          data.wan.port_mapping_entries_ppp.value;
+      } else if (data.wan.port_mapping_entries_dhcp) {
+        entriesDiff = device.port_mapping.length -
+          data.wan.port_mapping_entries_dhcp.value;
+      }
+      // If entries sizes are not the same, no need to check
+      // entry by entry differences
+      if (entriesDiff != 0) {
+        acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
+      } else {
+        acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
+      }
     }
-    acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
     // Send web admin password correct setup for those CPEs that always
     // retrieve blank on this field
     if (typeof config.tr069.web_password !== 'undefined' &&
@@ -1424,7 +1439,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
                                                                rulesDiffLength,
 ) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  // let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1440,15 +1454,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
     portMappingTemplate = fields.port_mapping_dhcp;
   }
   task.parameterNames.push(portMappingTemplate);
-  /*
-    if entries sizes are not the same, no need to check
-    entry by entry differences
-  */
-  if (rulesDiffLength != 0) {
-    acsDeviceInfoController.changePortForwardRules(device,
-      rulesDiffLength);
-    return;
-  }
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (result && result.finished == true &&
       result.task.name === 'getParameterValues') {
