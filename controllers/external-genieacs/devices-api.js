@@ -47,6 +47,7 @@ const convertWifiMode = function(mode, oui, model) {
     case '11g':
       if (ouiModelStr === 'IGD') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
+      else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C') return 'b,g';
@@ -57,6 +58,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'F680') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
       else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
@@ -65,6 +67,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'G-140W-C') return 'a,n';
       else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
@@ -73,6 +76,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'F680') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
       else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
@@ -191,6 +195,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable',
+      band: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BandWidth',
     },
     wifi5: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID',
@@ -200,6 +205,7 @@ const getDefaultFields = function() {
       auto: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable',
       mode: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard',
       enable: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable',
+      band: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BandWidth',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
     devices: {
@@ -257,9 +263,7 @@ const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
-    case 'ZXHN H199A':
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
-    case 'ZXHN%20H199A': // URI encoded
       fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_ZTE-COM_AdminAccount.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
@@ -267,13 +271,24 @@ const getZTEFields = function(model) {
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
       break;
+    case 'ZXHN H199A':
+    case 'ZXHN%20H199A': // URI encoded
+      fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
+      fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
+      fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      break;
     case 'F670L': // Multilaser ZTE F670L
+    case 'F680': // Multilaser ZTE F680
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+      fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
@@ -330,6 +345,8 @@ const getStavixFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
   fields.wifi2.enable = fields.wifi5.enable.replace(/5/g, '6');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.wifi2.band = fields.wifi5.band.replace(/5/g, '6');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '1');
   return fields;
 };
 
@@ -349,6 +366,7 @@ const getModelFields = function(oui, model) {
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
     case 'ZXHN%20H199A': // URI encoded
     case 'F670L': // Multilaser ZTE F670L
+    case 'F680': // Multilaser ZTE F680
       message = '';
       fields = getZTEFields(model);
       break;

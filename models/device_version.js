@@ -53,6 +53,27 @@ const tr069Devices = {
     },
     wifi2_extended_channels_support: true,
   },
+  'F680': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V6.0.10P3N9': ['V6.0.10P3N12B'],
+      'V6.0.10P3N12B': [],
+    },
+    port_forward_opts: {
+      'V6.0.10P3N9': portForwardNoAsymRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+      firmware_upgrade: true,
+    },
+    wifi2_extended_channels_support: true,
+  },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
     versions_upgrade: {
