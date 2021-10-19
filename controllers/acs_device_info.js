@@ -1563,7 +1563,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
             acsDeviceInfoController.changePortForwardRules(device, 0);
           }
         } else {
-          console.log('Wrong PortMapping in the device tree from genie');
+          console.log('Wrong PortMapping in the device tree ' +
+                      'from genie. ACS ID is ' + acsID);
         }
       });
     });
