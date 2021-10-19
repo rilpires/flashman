@@ -1435,9 +1435,9 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
   };
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
-    portMappingTemplate = fields.port_mapping.template_ppp;
+    portMappingTemplate = fields.port_mapping_ppp;
   } else {
-    portMappingTemplate = fields.port_mapping.template;
+    portMappingTemplate = fields.port_mapping_dhcp;
   }
   task.parameterNames.push(portMappingTemplate);
   /*
@@ -1481,58 +1481,76 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
         if (template != '') {
           for (i = 0; i < device.port_mapping.length; i++) {
             let iterateTemplate = template+'.'+(i+1)+'.';
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.enable)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.enable) != true) {
+            let portMapEnablePath = iterateTemplate +
+                                    fields.port_mapping_values.enable[0];
+            if (checkForNestedKey(data, portMapEnablePath)) {
+              if (getFromNestedKey(data, portMapEnablePath) != true) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.lease)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.lease) != 0) {
+            let portMapLeasePath = iterateTemplate +
+                                    fields.port_mapping_values.lease[0];
+            if (checkForNestedKey(data, portMapLeasePath)) {
+              if (getFromNestedKey(data, portMapLeasePath) != 0) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.protocol)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping_values.protocol[0]) !=
-               fields.port_mapping_values.protocol[1]) {
+            let portMapProtocolPath = iterateTemplate +
+                                      fields.port_mapping_values.protocol[0];
+            if (checkForNestedKey(data, portMapProtocolPath)) {
+              if (getFromNestedKey(data,
+                portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+              ) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.client)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.client) !=
-                device.port_mapping[i].ip) {
+            let portMapClientPath = iterateTemplate +
+                                    fields.port_mapping_fields.client[0];
+            if (checkForNestedKey(data, portMapClientPath)) {
+              if (getFromNestedKey(data,
+                portMapClientPath) != device.port_mapping[i].ip
+              ) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start) !=
+            let portMapExtStart = iterateTemplate +
+              fields.port_mapping_fields.external_port_start[0];
+            if (checkForNestedKey(data, portMapExtStart)) {
+              if (getFromNestedKey(data, portMapExtStart) !=
                 device.port_mapping[i].external_port_start) {
                 isDiff = true;
                 break;
               }
             }
-            if (fields.port_mapping.external_port_end != '') {
-              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end)) {
-                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end) !=
+            if (fields.port_mapping_fields.external_port_end != '') {
+              let portMapExtEnd = iterateTemplate +
+                fields.port_mapping_fields.external_port_end[0];
+              if (checkForNestedKey(data, portMapExtEnd)) {
+                if (getFromNestedKey(data, portMapExtEnd) !=
                   device.port_mapping[i].external_port_end) {
                   isDiff = true;
                   break;
                 }
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start) !=
+            let portMapIntStart = iterateTemplate +
+              fields.port_mapping_fields.internal_port_start[0];
+            if (checkForNestedKey(data, portMapIntStart)) {
+              if (getFromNestedKey(data, portMapIntStart) !=
                 device.port_mapping[i].internal_port_start) {
                 isDiff = true;
                 break;
               }
             }
-            if (fields.port_mapping.internal_port_end != '') {
-              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end)) {
-                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end) !=
+            if (fields.port_mapping_fields.internal_port_end != '') {
+              let portMapIntEnd = iterateTemplate +
+                fields.port_mapping_fields.internal_port_end[0];
+              if (checkForNestedKey(data, portMapIntEnd)) {
+                if (getFromNestedKey(data, portMapIntEnd) !=
                   device.port_mapping[i].internal_port_end) {
                   isDiff = true;
                   break;
