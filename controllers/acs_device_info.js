@@ -1450,7 +1450,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
     return;
   }
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (result.finished == true && result.task.name === 'getParameterValues') {
+  if (result && result.finished == true &&
+      result.task.name === 'getParameterValues') {
     let query = {_id: acsID};
     let projection1 = portMappingTemplate
     .replace('*', '1').replace('*', '1');
