@@ -137,7 +137,8 @@ const tr069Devices = {
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
-      'V210414': [],
+      'V210414': ['1.0-210917'],
+      '1.0-210917': [],
     },
     feature_support: {
       port_forward: false,
