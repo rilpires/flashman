@@ -712,9 +712,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         data.wan.port_mapping_entries_ppp) {
       entriesDiff = device.port_mapping.length -
         data.wan.port_mapping_entries_ppp.value;
-    } else if (data.wan.port_mapping_entries) {
+    } else if (data.wan.port_mapping_entries_dhcp) {
       entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries.value;
+        data.wan.port_mapping_entries_dhcp.value;
     }
     acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
     // Send web admin password correct setup for those CPEs that always
@@ -1337,12 +1337,11 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
-  let specFields = fields.port_mapping;
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
-    portMappingTemplate = specFields.template_ppp;
+    portMappingTemplate = fields.port_mapping_ppp;
   } else {
-    portMappingTemplate = specFields.template;
+    portMappingTemplate = fields.port_mapping_dhcp;
   }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
@@ -1354,13 +1353,12 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
     console.log('[!] -> '+e.message+' in '+acsID);
   }
   if (!Array.isArray(tasks)) return;
-  /* if find some task with name addObject or deleteObject */
+  // if find some task with name addObject or deleteObject
   let hasAlreadySentTasks = tasks.some((t) => {
     return t.name === 'addObject' ||
     t.name === 'deleteObject';
   });
-  /* drop this call of changePortForwardRules
-  */
+  // drop this call of changePortForwardRules
   if (hasAlreadySentTasks) {
     console.log('[#] -> DC in '+acsID);
     return;
@@ -1402,60 +1400,15 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   // set entries values for respective array in the device
   for (i = 0; i < device.port_mapping.length; i++) {
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.enable,
-      true,
-      'xsd:boolean',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.lease,
-      0,
-      'xsd:unsignedInt',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.external_port_start,
-      device.port_mapping[i].external_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.external_port_end != '') {
+    Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+specFields.external_port_end,
-        device.port_mapping[i].external_port_end,
-        'xsd:unsignedInt',
-      ]);
-    }
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.internal_port_start,
-      device.port_mapping[i].internal_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.internal_port_end != '') {
+        iterateTemplate+v[1][0],
+        device.port_mapping[i][v[1][1]], v[1][2]]);
+    });
+    Object.entries(fields.port_mapping_values).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+specFields.internal_port_end,
-        device.port_mapping[i].internal_port_end,
-        'xsd:unsignedInt',
-      ]);
-    }
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.protocol,
-      DevicesAPI.getProtocolByModel(model),
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.client,
-      device.port_mapping[i].ip,
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.description,
-      '',
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.remote_host,
-      '0.0.0.0',
-      'xsd:string',
-    ]);
+        iterateTemplate+v[1][0], v[1][1], v[1][2]]);
+    });
   }
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
@@ -1541,8 +1494,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
               }
             }
             if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.protocol)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.protocol) !=
-               DevicesAPI.getProtocolByModel(model)) {
+              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping_values.protocol[0]) !=
+               fields.port_mapping_values.protocol[1]) {
                 isDiff = true;
                 break;
               }
