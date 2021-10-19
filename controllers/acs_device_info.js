@@ -708,10 +708,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     // for every day fetch to device port forward entries
     device.last_contact_daily = Date.now();
     let entriesDiff = 0;
-    if (device.connection_type === 'pppoe') {
+    if (device.connection_type === 'pppoe' &&
+        data.wan.port_mapping_entries_ppp) {
       entriesDiff = device.port_mapping.length -
         data.wan.port_mapping_entries_ppp.value;
-    } else {
+    } else if (data.wan.port_mapping_entries) {
       entriesDiff = device.port_mapping.length -
         data.wan.port_mapping_entries.value;
     }
