@@ -352,8 +352,7 @@ const createRegistry = async function(req) {
       await notification.save().catch(
         function(err) {
           console.error('Error creating notification: ' + err);
-        }
-      );
+      });
     }
   }
   return true;
@@ -450,7 +449,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // Greatek does not expose these fields normally, only under this config file,
   // a XML with proprietary format. We parse it using regex to get what we want
   if (data.common.greatek_config && data.common.greatek_config.value) {
-    let webCredentials = extractGreatekCredentials(data.common.greatek_config.value);
+    let webCredentials =
+      extractGreatekCredentials(data.common.greatek_config.value);
     data.common.web_admin_username = {};
     data.common.web_admin_password = {};
     data.common.web_admin_username.value = webCredentials.username;
@@ -458,7 +458,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
 
   if (data.common.model.value) device.model = data.common.model.value.trim();
-  if (data.common.version.value) device.version = data.common.version.value.trim();
+  if (data.common.version.value) {
+    device.version = data.common.version.value.trim();
+  }
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
   if (hasPPPoE) {
     if (!device.pppoe_user) {
@@ -469,13 +471,17 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
     if (!device.pppoe_password) {
       device.pppoe_password = data.wan.pppoe_pass.value.trim();
-    } else if (data.wan.pppoe_pass.value && // make sure this onu reports the password
-               device.pppoe_password.trim() !== data.wan.pppoe_pass.value.trim()) {
+      // make sure this onu reports the password
+    } else if (data.wan.pppoe_pass.value &&
+               device.pppoe_password.trim() !== data.wan.pppoe_pass.value.trim()
+    ) {
       changes.wan.pppoe_pass = device.pppoe_password.trim();
       hasChanges = true;
     }
     if (data.wan.wan_ip_ppp.value) device.wan_ip = data.wan.wan_ip_ppp.value;
-    if (data.wan.uptime_ppp.value) device.wan_up_time = data.wan.uptime_ppp.value;
+    if (data.wan.uptime_ppp.value) {
+      device.wan_up_time = data.wan.uptime_ppp.value;
+    }
   } else {
     if (data.wan.wan_ip.value) device.wan_ip = data.wan.wan_ip.value;
     if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
@@ -936,10 +942,12 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
-        if (ponSignal.rxpower) ponSignal.rxpower = convertToDbm(deviceEdit.model,
-                                                                ponSignal.rxpower);
-        if (ponSignal.txpower) ponSignal.txpower = convertToDbm(deviceEdit.model,
-                                                                ponSignal.txpower);
+        if (ponSignal.rxpower) {
+          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
+        }
+        if (ponSignal.txpower) {
+          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+        }
         ponSignal = appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
@@ -1285,8 +1293,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           + /(?=.*[A-Z])/.source
           + /(?=.*[a-z])/.source
           + /(?=.*[0-9])/.source
-          + /(?=.*[-!@#$%^&*+_.]).*/.source
-        );
+          + /(?=.*[-!@#$%^&*+_.]).*/.source);
         if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
@@ -1721,7 +1728,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     } else {
       let response = await acsDeviceInfoController.addFirmwareInACS(firmware);
       if (!response) {
-        return {success: false, message: e.message};
+        return {success: false, message: 'Erro ao adicionar firmware'};
       }
     }
   }
