@@ -277,7 +277,8 @@ const getZTEFields = function(model) {
       fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
       fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
-      fields.port_mapping.internal_port_end = 'X_ZTE-COM_InternalPortEndRange';
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'BOTH';
       break;
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
