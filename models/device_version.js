@@ -148,7 +148,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
-      firmware_upgrade: false,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: false,
   },
