@@ -878,6 +878,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>'+
+          (device.permissions.grantWifi5ghz ?
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
@@ -902,6 +903,8 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>':
+          ''
+          ):
           ''
         )+
       '</div>'+
@@ -936,6 +939,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>'+
+          (device.permissions.grantWifi5ghz ?
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
@@ -950,6 +954,8 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>':
+          ''
+          ):
           ''
         )+
       '</div>'+
