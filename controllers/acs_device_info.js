@@ -716,8 +716,17 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       entriesDiff = device.port_mapping.length -
         data.wan.port_mapping_entries.value;
     }
-    acsDeviceInfoController
-    .checkPortForwardRules(device, entriesDiff);
+    acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
+    // Send web admin password correct setup for those CPEs that always
+    // retrieve blank on this field
+    if (typeof config.tr069.web_password !== 'undefined' &&
+        data.common.web_admin_password &&
+        data.common.web_admin_password.writable &&
+        data.common.web_admin_password.value === '') {
+      let passChange = {common: {}};
+      passChange.common.web_admin_password = config.tr069.web_password;
+      acsDeviceInfoController.updateInfo(device, passChange);
+    }
   }
   await device.save();
   return res.status(200).json({success: true});
