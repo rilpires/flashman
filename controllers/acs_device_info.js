@@ -658,7 +658,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         data.wan.port_mapping_entries_ppp;
     } else {
       entriesDiff = device.port_mapping.length -
-        data.wan.port_mapping_entries;
+        data.wan.port_mapping_entries_dhcp;
     }
     acsDeviceInfoController
     .checkPortForwardRules(device, entriesDiff);
@@ -1238,7 +1238,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   });
 };
 
-acsDeviceInfoController.changePortForwardRules = async function(device, rulesDiffLength) {
+acsDeviceInfoController.changePortForwardRules =
+ async function(device, rulesDiffLength) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let i;
@@ -1250,12 +1251,11 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
-  let specFields = fields.port_mapping;
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
-    portMappingTemplate = specFields.template_ppp;
+    portMappingTemplate = fields.port_mapping_ppp;
   } else {
-    portMappingTemplate = specFields.template;
+    portMappingTemplate = fields.port_mapping_dhcp;
   }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
@@ -1263,17 +1263,16 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let tasks;
   try {
     tasks = await TasksAPI.getFromCollection('tasks', query);
-  } catch(e) {
+  } catch (e) {
     console.log('[!] -> '+e.message+' in '+acsID);
-  };
+  }
   if (!Array.isArray(tasks)) return;
-  /* if find some task with name addObject or deleteObject */
+  // if find some task with name addObject or deleteObject
   let hasAlreadySentTasks = tasks.some((t) => {
     return t.name === 'addObject' ||
     t.name === 'deleteObject';
   });
-  /* drop this call of changePortForwardRules
-  */
+  // drop this call of changePortForwardRules
   if (hasAlreadySentTasks) {
     console.log('[#] -> DC in '+acsID);
     return;
@@ -1315,62 +1314,17 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   // set entries values for respective array in the device
   for (i = 0; i < device.port_mapping.length; i++) {
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.enable,
-      true,
-      'xsd:boolean',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.lease,
-      0,
-      'xsd:unsignedInt',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.external_port_start,
-      device.port_mapping[i].external_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.external_port_end != '') {
+    Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+specFields.external_port_end,
-        device.port_mapping[i].external_port_end,
-        'xsd:unsignedInt',
-      ]);
-    }
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.internal_port_start,
-      device.port_mapping[i].internal_port_start,
-      'xsd:unsignedInt',
-    ]);
-    if (specFields.internal_port_end != '') {
+        iterateTemplate+v[1][0],
+        device.port_mapping[i][v[1][1]], v[1][2]]);
+    });
+    Object.entries(fields.port_mapping_values).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+specFields.internal_port_end,
-        device.port_mapping[i].internal_port_end,
-        'xsd:unsignedInt',
-      ]);
-    }
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.protocol,
-      DevicesAPI.getProtocolByModel(model),
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.client,
-      device.port_mapping[i].ip,
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.description,
-      '',
-      'xsd:string',
-    ]);
-    updateTasks.parameterValues.push([
-      iterateTemplate+specFields.remote_host,
-      '0.0.0.0',
-      'xsd:string',
-    ]);
+        iterateTemplate+v[1][0], v[1][1], v[1][2]]);
+    });
   }
-  // just send tasks if there are port mappings to fill/set  
+  // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
     TasksAPI.addTask(acsID, updateTasks,
@@ -1393,9 +1347,9 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
   };
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
-    portMappingTemplate = fields.port_mapping.template_ppp;
+    portMappingTemplate = fields.port_mapping_ppp;
   } else {
-    portMappingTemplate = fields.port_mapping.template;
+    portMappingTemplate = fields.port_mapping_dhcp;
   }
   task.parameterNames.push(portMappingTemplate);
   /*
@@ -1439,58 +1393,76 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
         if (template != '') {
           for (i = 0; i < device.port_mapping.length; i++) {
             let iterateTemplate = template+'.'+(i+1)+'.';
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.enable)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.enable) != true) {
+            let portMapEnablePath = iterateTemplate +
+                                    fields.port_mapping_values.enable[0];
+            if (checkForNestedKey(data, portMapEnablePath)) {
+              if (getFromNestedKey(data, portMapEnablePath) != true) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.lease)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.lease) != 0) {
+            let portMapLeasePath = iterateTemplate +
+                                    fields.port_mapping_values.lease[0];
+            if (checkForNestedKey(data, portMapLeasePath)) {
+              if (getFromNestedKey(data, portMapLeasePath) != 0) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.protocol)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.protocol) !=
-               DevicesAPI.getProtocolByModel(model)) {
+            let portMapProtocolPath = iterateTemplate +
+                                      fields.port_mapping_values.protocol[0];
+            if (checkForNestedKey(data, portMapProtocolPath)) {
+              if (getFromNestedKey(data,
+                portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+              ) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.client)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.client) !=
-                device.port_mapping[i].ip) {
+            let portMapClientPath = iterateTemplate +
+                                    fields.port_mapping_fields.client[0];
+            if (checkForNestedKey(data, portMapClientPath)) {
+              if (getFromNestedKey(data,
+                portMapClientPath) != device.port_mapping[i].ip
+              ) {
                 isDiff = true;
                 break;
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_start) !=
+            let portMapExtStart = iterateTemplate +
+              fields.port_mapping_fields.external_port_start[0];
+            if (checkForNestedKey(data, portMapExtStart)) {
+              if (getFromNestedKey(data, portMapExtStart) !=
                 device.port_mapping[i].external_port_start) {
                 isDiff = true;
                 break;
               }
             }
-            if (fields.port_mapping.external_port_end != '') {
-              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end)) {
-                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.external_port_end) !=
+            if (fields.port_mapping_fields.external_port_end != '') {
+              let portMapExtEnd = iterateTemplate +
+                fields.port_mapping_fields.external_port_end[0];
+              if (checkForNestedKey(data, portMapExtEnd)) {
+                if (getFromNestedKey(data, portMapExtEnd) !=
                   device.port_mapping[i].external_port_end) {
                   isDiff = true;
                   break;
                 }
               }
             }
-            if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start)) {
-              if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_start) !=
+            let portMapIntStart = iterateTemplate +
+              fields.port_mapping_fields.internal_port_start[0];
+            if (checkForNestedKey(data, portMapIntStart)) {
+              if (getFromNestedKey(data, portMapIntStart) !=
                 device.port_mapping[i].internal_port_start) {
                 isDiff = true;
                 break;
               }
             }
-            if (fields.port_mapping.internal_port_end != '') {
-              if (checkForNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end)) {
-                if (getFromNestedKey(data, iterateTemplate+fields.port_mapping.internal_port_end) !=
+            if (fields.port_mapping_fields.internal_port_end != '') {
+              let portMapIntEnd = iterateTemplate +
+                fields.port_mapping_fields.internal_port_end[0];
+              if (checkForNestedKey(data, portMapIntEnd)) {
+                if (getFromNestedKey(data, portMapIntEnd) !=
                   device.port_mapping[i].internal_port_end) {
                   isDiff = true;
                   break;
