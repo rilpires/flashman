@@ -1276,6 +1276,19 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
       }
+      if (key === 'web_admin_password') {
+        // Validate if matches 8 char minimum, 16 char maximum, has upper case,
+        // at least one number, lower case and special char
+        let password = changes[masterKey][key];
+        let passRegex= new RegExp(''
+          + /(?=.{8,16}$)/.source
+          + /(?=.*[A-Z])/.source
+          + /(?=.*[a-z])/.source
+          + /(?=.*[0-9])/.source
+          + /(?=.*[-!@#$%^&*+_.]).*/.source
+        );
+        if (!passRegex.test(password)) return;
+      }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
       );
