@@ -11,7 +11,6 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const xml2js = require('fast-xml-parser');
 const XmlParser = require('fast-xml-parser').j2xParser;
-const fs = require('fs');
 
 const pako = require('pako');
 const http = require('http');
