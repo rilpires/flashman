@@ -1,6 +1,7 @@
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Role = require('../models/role');
+const DeviceVersion = require('../models/device_version');
 const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
@@ -869,6 +870,10 @@ scheduleController.startSchedule = async function(req, res) {
           });
           if (!valid) return false;
         }
+        const valid = DeviceVersion.testFirmwareUpgradeMeshLegacy(
+          device.mesh_mode, device.mesh_slaves,
+          device.installed_release, release);
+        if (!valid) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of

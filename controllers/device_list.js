@@ -789,6 +789,13 @@ deviceListController.searchDeviceReg = async function(req, res) {
             if have feature support for the model is granted */
           device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
         } else {
+          devReleases = devReleases.filter(
+            (release) => {
+              return DeviceVersion.testFirmwareUpgradeMeshLegacy(
+                device.mesh_mode, device.mesh_slaves,
+                device.installed_release, release);
+            },
+          );
           device.isUpgradeEnabled = true;
         }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];

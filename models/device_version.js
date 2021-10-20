@@ -2048,6 +2048,22 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   return versions;
 };
 
+/*
+  Flashbox devices with firmware version before 0.32.0 only
+  had mesh v1 capabilities. If these models are in mesh mode (not on cable, > 1)
+  with associated slaves they can't be allowed to upgrade because
+  mesh v2 is not compatible with mesh v1 (slaves will lose connection)
+*/
+DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
+  meshMode, slaves, curRelease, nextRelease) {
+  if (meshMode > 1 && slaves && slaves.length > 0 &&
+    (versionCompare(curRelease, '0.32.0') < 0)) {
+    return (versionCompare(nextRelease, '0.32.0') < 0);
+  } else {
+    return true;
+  }
+};
+
 DeviceVersion.isUpgradeSupport = function(model) {
   let upgradeAvailable = false;
   if (tr069Devices[model]) {
