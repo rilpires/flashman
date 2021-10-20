@@ -10,6 +10,13 @@ const portForwardNoRanges = {
  rangeAsymmetric: false,
 };
 
+const portForwardNoAsym = {
+ simpleSymmetric: true,
+ simpleAsymmetric: false,
+ rangeSymmetric: true,
+ rangeAsymmetric: false,
+};
+
 const portForwardNoAsymRanges = {
  simpleSymmetric: true,
  simpleAsymmetric: true,
@@ -40,6 +47,27 @@ const tr069Devices = {
       'V1.1.20P3N3': portForwardNoRanges,
       'V1.1.20P3N4C': portForwardNoRanges,
       'V1.1.20P3N4D': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+      firmware_upgrade: true,
+    },
+    wifi2_extended_channels_support: true,
+  },
+  'F680': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V6.0.10P3N9': ['V6.0.10P3N12B'],
+      'V6.0.10P3N12B': [],
+    },
+    port_forward_opts: {
+      'V6.0.10P3N9': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -119,10 +147,12 @@ const tr069Devices = {
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
-      'V210414': [],
+      'V210414': ['1.0-210917'],
+      '1.0-210917': [],
     },
     port_forward_opts: {
       'V210414': portForwardFullSupport,
+      '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
       port_forward: true,
@@ -132,7 +162,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
-      firmware_upgrade: false,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: false,
   },
@@ -158,8 +188,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V3R017C10S100': [],
     },
+    port_forward_opts: {
+      'V3R017C10S100': portForwardNoAsymRanges,
+    },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
@@ -171,13 +204,17 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
   },
   'EG8145V5': {
+    port_forward_opts: {
+      'V5R019C10S350': portForwardNoAsymRanges,
+      'V5R020C00S280': portForwardNoAsymRanges,
+    },
     vendor: 'Huawei',
     versions_upgrade: {
       'V5R019C10S350': ['V5R020C00S280'],
       'V5R020C00S280': [],
     },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
