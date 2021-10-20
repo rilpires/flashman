@@ -26,6 +26,11 @@ const convertDiagnostic = function(diagnostic) {
     dns: (diagnostic && diagnostic.dns === 0),
     anlix: (diagnostic && diagnostic.anlix === 0),
     flashman: (diagnostic && diagnostic.flashman === 0),
+    speedtest: (diagnostic && diagnostic.speedtest === 0),
+    speedValue: (diagnostic && 'speedValue' in diagnostic) ?
+                  diagnostic.speedValue : -1,
+    speedTestLimit: (diagnostic && 'speedTestLimit' in diagnostic) ?
+                  diagnostic.speedTestLimit : -1,
   };
 };
 
@@ -90,6 +95,7 @@ const pushCertification = (arr, c, finished) => {
     mesh: convertMesh(c.mesh),
     didConfigureContract: c.didContract || false,
     didConfigureObservation: c.didObservation || false,
+    didSpeedTest: c.didSpeedTest || false,
     contract: c.contract || '',
     observations: c.observations || '',
     cancelReason: c.reason || '',
