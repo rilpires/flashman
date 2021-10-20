@@ -548,13 +548,9 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.model,
       );
 
-      // TODO: remover esse true e verificar se o provedor habilitou o speedtest
-      // config.certification.speedtest_step_required;
-      console.log(config.certification.speedtest_step_required);
       if (config.certification.speedtest_step_required) {
         if (config) { console.log(config.measureServerIP); }
         if (config && config.measureServerIP) {
-          // TODO: verificar se o servidor de speedtest está configurado
           certification.requiredSpeedTest = permissions.grantSpeedTest;
         }
       }

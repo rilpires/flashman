@@ -1761,27 +1761,6 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   return result;
 };
 
-// TODO: verificar se essa função realmente faz sentido
-// DeviceVersion.grantSpeedTest = function(version, model) {
-//   if (Object.keys(tr069Devices).includes(model)) {
-//     return tr069Devices[model].feature_support.speed_test;
-//   }
-//   if (version.match(versionRegex)) {
-//     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-//       // Unspecified model
-//       return false;
-//     }
-//     if (!flashboxFirmwareDevices[model].speedtest_support) {
-//       // Model is not compatible with feature
-//       return false;
-//     }
-//     return (versionCompare(version, '0.24.0') >= 0);
-//   } else {
-//     // Development version, enable everything by default
-//     return true;
-//   }
-// };
-
 DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
   let ret = 4;
