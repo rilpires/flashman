@@ -875,12 +875,12 @@ diagAppAPIController.getSpeedTest = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    /*let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
       return res.status(404).json({message: 'App não encontrado'});
-    }
+    }*/
 
     let config;
     try {
