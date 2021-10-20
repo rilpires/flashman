@@ -1229,7 +1229,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   let model = splitID.slice(1, splitID.length-1).join('-');
   // redirect to config file binding instead of setParametervalues
   if (model == 'GONUAC001' || model == 'xPON') {
-    configFileEditing(device, rulesDiffLength);
+    configFileEditing(device);
     return;
   }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
@@ -1365,8 +1365,69 @@ acsDeviceInfoController.changePortForwardRules = async function(device, rulesDif
   }
 };
 
-const configFileEditing = async function(device, rulesDiffLength) {
+const createNewPortFwTbl = function(pm) {
+  return {
+    '@_Name': 'PORT_FW_TBL',
+    'Value': [
+      {
+        '@_Name': 'InstanceNum',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'Dynamic',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'externalportEnd',
+        '@_Value': pm.external_port_end.toString(),
+      },
+      {
+        '@_Name': 'externalportStart',
+        '@_Value': pm.external_port_start.toString(),
+      },
+      {
+        '@_Name': 'remotehost',
+        '@_Value': '0.0.0.0',
+      },
+      {
+        '@_Name': 'leaseduration',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'enable',
+        '@_Value': '1',
+      },
+      {
+        '@_Name': 'OutInf',
+        '@_Value': '65535',
+      },
+      {
+        '@_Name': 'Comment',
+        '@_Value': '',
+      },
+      {
+        '@_Name': 'Protocol',
+        '@_Value': '4',
+      },
+      {
+        '@_Name': 'PortEnd',
+        '@_Value': pm.internal_port_end.toString(),
+      },
+      {
+        '@_Name': 'PortStart',
+        '@_Value': pm.internal_port_start.toString(),
+      },
+      {
+        '@_Name': 'IP',
+        '@_Value': pm.ip,
+      },
+    ],
+  };
+};
+
+const configFileEditing = async function(device) {
   let acsID = device.acs_id;
+  let serial = device.serial_tr069;
   // get xml config file to genieacs
   let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
   let task = {
@@ -1376,7 +1437,7 @@ const configFileEditing = async function(device, rulesDiffLength) {
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (!result || !result.finished ||
       result.task.name !== 'getParameterValues') {
-    console.log('Error at '+acsID+' on retrieving ConfigFile');
+    console.log('Error: failed to retrieve ConfigFile at '+serial);
     return;
   }
   // get xml config file from genieacs
@@ -1415,80 +1476,40 @@ const configFileEditing = async function(device, rulesDiffLength) {
           // find and set PORT_FW_ENABLE to 1
           let i = jsonConfigFile['Config']['Dir']
           .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
-          console.log('!$', i);
+          if (i < 0) {
+            console.log('Error: failed MIB_TABLE index finding at '
+              +serial);
+            return;
+          }
           let j = jsonConfigFile['Config']['Dir'][i]['Value']
           .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
-          console.log('!$', j);
-          jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'] = '1';
+          if (j < 0) {
+            console.log('Error: failed PORT_FW_ENABLE index finding at '
+              +serial);
+            return;
+          }
+          jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
+           = (device.port_mapping.length == 0)?'0':'1';
           // find first PORT_FW_TBL
           i = jsonConfigFile['Config']['Dir']
           .findIndex((e) => e['@_Name'] == 'PORT_FW_TBL');
-          console.log('!$', i);
+          if (i < 0) {
+            console.log('Error: failed PORT_FW_TBL index finding at '+serial);
+            return;
+          }
           // delete others PORT_FW_TBL
           jsonConfigFile['Config']['Dir'] =
           jsonConfigFile['Config']['Dir']
           .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
           // add new PORT_FW_TBL values based on device.port_mapping
           device.port_mapping.forEach((pm) => {
-            let newPortFwTbl = {
-              '@_Name': 'PORT_FW_TBL',
-              'Value': [
-                {
-                  '@_Name': 'InstanceNum',
-                  '@_Value': '0',
-                },
-                {
-                  '@_Name': 'Dynamic',
-                  '@_Value': '0',
-                },
-                {
-                  '@_Name': 'externalportEnd',
-                  '@_Value': pm.external_port_end.toString(),
-                },
-                {
-                  '@_Name': 'externalportStart',
-                  '@_Value': pm.external_port_start.toString(),
-                },
-                {
-                  '@_Name': 'remotehost',
-                  '@_Value': '0.0.0.0',
-                },
-                {
-                  '@_Name': 'leaseduration',
-                  '@_Value': '0',
-                },
-                {
-                  '@_Name': 'enable',
-                  '@_Value': '1',
-                },
-                {
-                  '@_Name': 'OutInf',
-                  '@_Value': '65535',
-                },
-                {
-                  '@_Name': 'Comment',
-                  '@_Value': '',
-                },
-                {
-                  '@_Name': 'Protocol',
-                  '@_Value': '4',
-                },
-                {
-                  '@_Name': 'PortEnd',
-                  '@_Value': pm.internal_port_end.toString(),
-                },
-                {
-                  '@_Name': 'PortStart',
-                  '@_Value': pm.internal_port_start.toString(),
-                },
-                {
-                  '@_Name': 'IP',
-                  '@_Value': pm.ip,
-                },
-              ],
-            };
+            let newPortFwTbl = createNewPortFwTbl(pm);
             jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
           });
+          if (device.port_mapping.length == 0) {
+            jsonConfigFile['Config']['Dir'].splice(i, 0,
+              {'@_Name': 'PORT_FW_TBL'});
+          }
           // parse json to xml
           opts = {
             ignoreAttributes: false,
@@ -1500,34 +1521,23 @@ const configFileEditing = async function(device, rulesDiffLength) {
           let xmlConfigFile = js2xml.parse(jsonConfigFile);
           xmlConfigFile = xmlConfigFile
             .replace(/(([\n\t\r])|(\s\s\n)|(\s\s))/g, '');
-          // debug
-          console.log('!@#');
-          fs.writeFile('/home/devanlix/Projects/flashman/example.json',
-            JSON.stringify(jsonConfigFile),
-            (e) => {if (e) throw e;});
-          fs.writeFile('/home/devanlix/Projects/flashman/original.xml',
-            rawConfigFile,
-            (e) => {if (e) throw e;});
-          fs.writeFile('/home/devanlix/Projects/flashman/parsed.xml',
-            xmlConfigFile,
-            (e) => {if (e) throw e;});
-          console.log('#@!');
 
           // set xml config file to genieacs
-          /*task = {
+          task = {
             name: 'setParameterValues',
             parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
           };
           result = await TasksAPI.addTask(acsID, task, true, 10000, []);
           if (!result || !result.finished ||
               result.task.name !== 'setParameterValues') {
-            console.log('Error at '+acsID+
-              ' on writing ConfigFile');
+            console.log('Error: failed to write ConfigFile at '+serial);
             return;
-          }*/
+          }
         } else {
-          console.log('failed xml validation');
+          console.log('Error: failed xml validation at '+serial);
         }
+      } else {
+        console.log('Error: no config file retrieved at '+serial);
       }
     });
   });
@@ -1556,7 +1566,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device, rulesDiff
     if entries sizes are not the same, no need to check
     entry by entry differences
   */
-  if (rulesDiffLength != 0) {
+  if (rulesDiffLength != 0 || model == 'GONUAC001' || model == 'xPON') {
     acsDeviceInfoController.changePortForwardRules(device,
       rulesDiffLength);
     return;
