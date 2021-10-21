@@ -225,10 +225,11 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req) {
   let data = req.body.data;
-  let hasPPPoE = (typeof data.wan.pppoe_user === 'string'
-    && data.wan.pppoe_user !== '');
-  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask);
-  let cpeIP = processHostFromURL(data.common.ip);
+  let hasPPPoE = (data.wan.pppoe_user &&
+                  typeof data.wan.pppoe_user.value === 'string' &&
+                  data.wan.pppoe_user.value !== '');
+  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+  let cpeIP = processHostFromURL(data.common.ip.value);
   let splitID = req.body.acs_id.split('-');
 
   let matchedConfig = await Config.findOne({is_default: true}).catch(
@@ -241,8 +242,8 @@ const createRegistry = async function(req) {
     console.error('Error creating entry. Config does not exists.');
     return false;
   }
-  let ssid = data.wifi2.ssid.trim();
-  let ssid5ghz = data.wifi5.ssid.trim();
+  let ssid = data.wifi2.ssid.value.trim();
+  let ssid5ghz = data.wifi5.ssid.value.trim();
   let isSsidPrefixEnabled = false;
   let createPrefixErrNotification = false;
   // -> 'new registry' scenario
@@ -266,51 +267,57 @@ const createRegistry = async function(req) {
 
   // Greatek does not expose these fields normally, only under this config file,
   // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config) {
-    let webCredentials = extractGreatekCredentials(data.common.greatek_config);
-    data.common.web_admin_username = webCredentials.username;
-    data.common.web_admin_password = webCredentials.password;
+  if (data.common.greatek_config && data.common.greatek_config.value) {
+    let webCredentials = extractGreatekCredentials(
+      data.common.greatek_config.value);
+    data.common.web_admin_username = {};
+    data.common.web_admin_password = {};
+    data.common.web_admin_username.value = webCredentials.username;
+    data.common.web_admin_password.value = webCredentials.password;
   }
 
   let newDevice = new DeviceModel({
-    _id: data.common.mac.toUpperCase(),
+    _id: data.common.mac.value.toUpperCase(),
     use_tr069: true,
     serial_tr069: splitID[splitID.length - 1],
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
-    model: (data.common.model) ? data.common.model : '',
-    version: data.common.version,
-    installed_release: data.common.version,
-    release: data.common.version,
+    model: (data.common.model) ? data.common.model.value : '',
+    version: data.common.version.value,
+    installed_release: data.common.version.value,
+    release: data.common.version.value,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
-    pppoe_user: (hasPPPoE) ? data.wan.pppoe_user : undefined,
-    pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass : undefined,
+    pppoe_user: (hasPPPoE) ? data.wan.pppoe_user.value : undefined,
+    pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     wifi_ssid: ssid,
-    wifi_bssid: (data.wifi2.bssid) ? data.wifi2.bssid.toUpperCase() : undefined,
-    wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel,
-    wifi_mode: convertWifiMode(data.wifi2.mode, false),
-    wifi_band: convertWifiBand(data.wifi2.band, data.wifi2.mode),
-    wifi_state: (data.wifi2.enable) ? 1 : 0,
+    wifi_bssid:
+      (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
+    wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel.value,
+    wifi_mode: convertWifiMode(data.wifi2.mode.value, false),
+    wifi_band: convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value),
+    wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: true,
     wifi_ssid_5ghz: ssid5ghz,
     wifi_bssid_5ghz:
-        (data.wifi5.bssid) ? data.wifi5.bssid.toUpperCase() : undefined,
-    wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel,
-    wifi_mode_5ghz: convertWifiMode(data.wifi5.mode, true),
-    wifi_state_5ghz: (data.wifi5.enable) ? 1 : 0,
-    lan_subnet: data.lan.router_ip,
+      (data.wifi5.bssid) ? data.wifi5.bssid.value.toUpperCase() : undefined,
+    wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel.value,
+    wifi_mode_5ghz: convertWifiMode(data.wifi5.mode.value, true),
+    wifi_state_5ghz: (data.wifi5.enable.value) ? 1 : 0,
+    lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
-    wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp : data.wan.wan_ip,
-    wan_negociated_speed: data.wan.rate,
-    wan_negociated_duplex: data.wan.duplex,
-    sys_up_time: data.common.uptime,
-    wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp : data.wan.uptime,
+    wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
+    wan_negociated_speed: data.wan.rate.value,
+    wan_negociated_duplex: data.wan.duplex.value,
+    sys_up_time: data.common.uptime.value,
+    wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp.value : data.wan.uptime.value,
     created_at: Date.now(),
     last_contact: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
-    web_admin_username: data.common.web_admin_username,
-    web_admin_password: data.common.web_admin_password,
+    web_admin_username: (data.common.web_admin_username) ?
+      data.common.web_admin_username.value : undefined,
+    web_admin_password: (data.common.web_admin_password) ?
+      data.common.web_admin_password.value : undefined,
   });
   try {
     await newDevice.save();
@@ -321,7 +328,7 @@ const createRegistry = async function(req) {
   }
   // Update SSID prefix on CPE if enabled
   if (isSsidPrefixEnabled) {
-    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
     // Increment sync task loops
