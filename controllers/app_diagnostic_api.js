@@ -26,6 +26,11 @@ const convertDiagnostic = function(diagnostic) {
     dns: (diagnostic && diagnostic.dns === 0),
     anlix: (diagnostic && diagnostic.anlix === 0),
     flashman: (diagnostic && diagnostic.flashman === 0),
+    speedtest: (diagnostic && diagnostic.speedtest === 0),
+    speedValue: (diagnostic && 'speedValue' in diagnostic) ?
+                  diagnostic.speedValue : -1,
+    speedTestLimit: (diagnostic && 'speedTestLimit' in diagnostic) ?
+                  diagnostic.speedTestLimit : -1,
   };
 };
 
@@ -90,6 +95,7 @@ const pushCertification = (arr, c, finished) => {
     mesh: convertMesh(c.mesh),
     didConfigureContract: c.didContract || false,
     didConfigureObservation: c.didObservation || false,
+    didSpeedTest: c.didSpeedTest || false,
     contract: c.contract || '',
     observations: c.observations || '',
     cancelReason: c.reason || '',
@@ -514,8 +520,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       }
 
       if (!device) {
-        // REMOVER PRINT
-        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': false,
@@ -542,13 +546,9 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.model,
       );
 
-      // TODO: remover esse true e verificar se o provedor habilitou o speedtest
-      // config.certification.speedtest_step_required;
-      console.log(config.certification.speedtest_step_required);
       if (config.certification.speedtest_step_required) {
         if (config) { console.log(config.measureServerIP); }
         if (config && config.measureServerIP) {
-          // TODO: verificar se o servidor de speedtest está configurado
           certification.requiredSpeedTest = permissions.grantSpeedTest;
         }
       }
@@ -578,8 +578,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           onuConfig.onuPonThresholdCriticalHigh =
             config.tr069.pon_signal_threshold_critical_high;
         }
-        // REMOVER PRINT
-        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': true,
@@ -599,8 +597,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
-      // REMOVER PRINT
-      console.log(certification);
       return res.status(200).json({
         'success': true,
         'isRegister': true,
@@ -875,12 +871,12 @@ diagAppAPIController.getSpeedTest = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
     }
-    let appObj = matchedDevice.apps.filter(function(app) {
+    /*let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
       return res.status(404).json({message: 'App não encontrado'});
-    }
+    }*/
 
     let config;
     try {
@@ -961,7 +957,6 @@ diagAppAPIController.doSpeedTest = function(req, res) {
       if (config && config.measureServerIP) {
         // Send mqtt message to perform speedtest
         let url = config.measureServerIP + ':' + config.measureServerPort;
-        console.log(req.user.name);
         mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
                                          {name: req.user.name});
       }

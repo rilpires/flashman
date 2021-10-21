@@ -732,8 +732,6 @@ updateController.setAutoConfig = async function(req, res) {
       config.certification.ipv4_step_required = ipv4StepRequired;
     }
     if (typeof speedTestStepRequired === 'boolean') {
-      console.log("speedteststeprequired:");
-      console.log(speedTestStepRequired);
       config.certification.speedtest_step_required = speedTestStepRequired;
     }
     if (typeof ipv6StepRequired === 'boolean') {
