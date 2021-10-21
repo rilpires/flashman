@@ -59,6 +59,27 @@ const tr069Devices = {
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
   },
+  'F680': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V6.0.10P3N9': ['V6.0.10P3N12B'],
+      'V6.0.10P3N12B': [],
+    },
+    port_forward_opts: {
+      'V6.0.10P3N9': portForwardNoAsymRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+      firmware_upgrade: true,
+    },
+    wifi2_extended_channels_support: true,
+  },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
     versions_upgrade: {
@@ -140,7 +161,8 @@ const tr069Devices = {
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
-      'V210414': [],
+      'V210414': ['1.0-210917'],
+      '1.0-210917': [],
     },
     feature_support: {
       port_forward: false,
@@ -150,8 +172,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
-      firmware_upgrade: false,
       mesh_v2: true,
+      firmware_upgrade: true,
     },
     wifi2_extended_channels_support: false,
     // offset of each BSSID octet in relation
