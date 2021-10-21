@@ -293,8 +293,10 @@ const createRegistry = async function(req) {
     wifi_bssid:
       (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
     wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel.value,
-    wifi_mode: convertWifiMode(data.wifi2.mode.value, false),
-    wifi_band: convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value),
+    wifi_mode: (data.wifi2.mode) ?
+      convertWifiMode(data.wifi2.mode.value, false) : undefined,
+    wifi_band: (data.wifi2.band) ?
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) : undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: true,
     wifi_ssid_5ghz: ssid5ghz,
