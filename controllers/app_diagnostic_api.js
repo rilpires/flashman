@@ -520,8 +520,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       }
 
       if (!device) {
-        // REMOVER PRINT
-        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': false,
@@ -580,8 +578,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           onuConfig.onuPonThresholdCriticalHigh =
             config.tr069.pon_signal_threshold_critical_high;
         }
-        // REMOVER PRINT
-        console.log(certification);
         return res.status(200).json({
           'success': true,
           'isRegister': true,
@@ -601,8 +597,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
         return map[req.body.mac.toUpperCase()];
       });
-      // REMOVER PRINT
-      console.log(certification);
       return res.status(200).json({
         'success': true,
         'isRegister': true,
@@ -963,7 +957,6 @@ diagAppAPIController.doSpeedTest = function(req, res) {
       if (config && config.measureServerIP) {
         // Send mqtt message to perform speedtest
         let url = config.measureServerIP + ':' + config.measureServerPort;
-        console.log(req.user.name);
         mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
                                          {name: req.user.name});
       }
