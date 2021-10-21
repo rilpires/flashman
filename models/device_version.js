@@ -1883,7 +1883,7 @@ const grantPonSignalSupport = function(version, model) {
 
 const grantMeshMode = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
