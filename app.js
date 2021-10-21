@@ -17,7 +17,6 @@ const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
 let session = require('express-session');
 
-let data_collecting = require('./controllers/data_collecting');
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
 let userController = require('./controllers/user');
@@ -400,7 +399,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     // Schedule automatic update
     schedule.scheduleJob(late8pmRule, function() {
       updater.update();
-      // data_collecting.pingLicenseStatus();
     });
     let midnightRule = new schedule.RecurrenceRule();
     midnightRule.hour = 0;
