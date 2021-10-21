@@ -1502,7 +1502,7 @@ const createNewPortFwTbl = function(pm) {
   };
 };
 
-const digestXmlConfig = function(device, rawXml) {
+acsDeviceInfoController.digestXmlConfig = function(device, rawXml) {
   let serial = device.serial_tr069;
   let opts = {
     ignoreAttributes: false, // default is true
@@ -1604,7 +1604,8 @@ const configFileEditing = async function(device) {
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
         rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
-        let xmlConfigFile = digestXmlConfig(device, rawConfigFile);
+        let xmlConfigFile = acsDeviceInfoController
+          .digestXmlConfig(device, rawConfigFile);
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
           task = {
