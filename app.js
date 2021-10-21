@@ -34,7 +34,11 @@ let packageJson = require('./package.json');
 let app = express();
 
 // Express OpenAPI docs generator handling responses first
-expressOasGenerator.handleResponses(app, {});
+expressOasGenerator.handleResponses(app, {
+  specOutputPath: './flashman_spec.json',
+  mongooseModels: mongoose.modelNames(),
+  alwaysServeDocs: true,
+});
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
@@ -377,9 +381,6 @@ app.use(function(err, req, res, next) {
     });
   }
 });
-
-// Express OpenAPI Generator
-expressOasGenerator.init(app, {});
 
 // Check device update schedule, if active must re-initialize
 if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
