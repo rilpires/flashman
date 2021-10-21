@@ -658,23 +658,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               }
             }
           }
-          if ( permissionsSentVersion.grantMeshV2 &&
-            !permissionsCurrVersion.grantMeshV2) {
-            const bssidMesh2 =
-              util.returnObjOrEmptyStr(req.body.bssid_mesh2).trim().toUpperCase();
-            const bssidMesh5 =
-              util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
-            if (errors.length < 1) {
-              if (matchedDevice.bssid_mesh2 !== bssidMesh2 && bssidMesh2) {
-                deviceSetQuery.bssid_mesh2 = bssidMesh2;
-                matchedDevice.bssid_mesh2 = bssidMesh2; // Used in device response
-              }
-              if (matchedDevice.bssid_mesh5 !== bssidMesh5 && bssidMesh5) {
-                deviceSetQuery.bssid_mesh5 = bssidMesh5;
-                matchedDevice.bssid_mesh5 = bssidMesh5; // Used in device response
-              }
-            }
-          }
           if (matchedDevice.version !== sentVersion) {
             deviceSetQuery.version = sentVersion;
           }
@@ -732,6 +715,21 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
         if (sentWifiLastBand5G !== matchedDevice.wifi_last_band_5ghz) {
           deviceSetQuery.wifi_last_band_5ghz = sentWifiLastBand5G;
+        }
+
+        const bssidMesh2 =
+          util.returnObjOrEmptyStr(req.body.bssid_mesh2).trim().toUpperCase();
+        const bssidMesh5 =
+          util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
+        if (errors.length < 1) {
+          if (matchedDevice.bssid_mesh2 !== bssidMesh2 && bssidMesh2) {
+            deviceSetQuery.bssid_mesh2 = bssidMesh2;
+            matchedDevice.bssid_mesh2 = bssidMesh2; // Used in device response
+          }
+          if (matchedDevice.bssid_mesh5 !== bssidMesh5 && bssidMesh5) {
+            deviceSetQuery.bssid_mesh5 = bssidMesh5;
+            matchedDevice.bssid_mesh5 = bssidMesh5; // Used in device response
+          }
         }
 
         deviceSetQuery.last_contact = Date.now();
