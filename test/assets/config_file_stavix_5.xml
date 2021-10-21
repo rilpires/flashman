@@ -1,0 +1,156 @@
+{
+  "_id": "BD3E8AC-GONUAC001-H3981FH398HF13981H",
+  "InternetGatewayDevice": {
+    "WANDevice": {
+      "1": {
+        "WANConnectionDevice": {
+          "1": {
+            "WANIPConnection": {
+              "1": {
+                "PortMapping": {
+                  "1": {
+                    "ExternalPort": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 7171,
+                      "_writable": true
+                    },
+                    "ExternalPortEndRange": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 7171,
+                      "_writable": true
+                    },
+                    "InternalClient": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:string",
+                      "_value": "192.168.18.3",
+                      "_writable": true
+                    },
+                    "InternalPort": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 7171,
+                      "_writable": true
+                    },
+                    "PortMappingDescription": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "PortMappingEnabled": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "PortMappingLeaseDuration": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 0,
+                      "_writable": true
+                    },
+                    "PortMappingProtocol": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:string",
+                      "_value": "TCP/UDP",
+                      "_writable": true
+                    },
+                    "RemoteHost": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "X_HW_ExternalSrcEndPort": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 0,
+                      "_writable": true
+                    },
+                    "X_HW_ExternalSrcPort": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 0,
+                      "_writable": true
+                    },
+                    "X_HW_InternalEndPort": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:16.928Z",
+                      "_type": "xsd:unsignedInt",
+                      "_value": 7171,
+                      "_writable": true
+                    },
+                    "X_HW_Portlist": {
+                      "1": {
+                        "ExternalPort": {
+                          "_object": false,
+                          "_timestamp": "2021-10-13T19:12:17.057Z",
+                          "_type": "xsd:string",
+                          "_value": "7171:7171",
+                          "_writable": true
+                        },
+                        "ExternalSrcPort": {
+                          "_object": false,
+                          "_timestamp": "2021-10-13T19:12:17.057Z",
+                          "_type": "xsd:string",
+                          "_value": "0:0",
+                          "_writable": true
+                        },
+                        "InternalPort": {
+                          "_object": false,
+                          "_timestamp": "2021-10-13T19:12:17.057Z",
+                          "_type": "xsd:string",
+                          "_value": "7171:7171",
+                          "_writable": true
+                        },
+                        "Protocol": {
+                          "_object": false,
+                          "_timestamp": "2021-10-13T19:12:17.057Z",
+                          "_type": "xsd:string",
+                          "_value": "TCP/UDP",
+                          "_writable": true
+                        },
+                        "_object": true,
+                        "_timestamp": "2021-10-13T19:12:16.925Z",
+                        "_writable": true
+                      },
+                      "_object": true,
+                      "_timestamp": "2021-10-13T19:12:16.925Z",
+                      "_writable": true
+                    },
+                    "X_HW_RemoteHostRange": {
+                      "_object": false,
+                      "_timestamp": "2021-10-13T19:12:17.055Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "_object": true,
+                    "_timestamp": "2021-10-13T19:12:16.925Z",
+                    "_writable": true
+                  },
+                  "_object": true,
+                  "_writable": true,
+                  "_timestamp": "2021-10-13T19:12:16.925Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
