@@ -86,6 +86,7 @@ let userSchema = new mongoose.Schema({
     cancelReason: {type: String, required: false},
     latitude: {type: Number, default: 0},
     longitude: {type: Number, default: 0},
+    didSpeedTest: {type: Boolean, default: false},
   }]
 });
 

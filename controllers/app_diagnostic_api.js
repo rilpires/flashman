@@ -69,6 +69,8 @@ const convertMesh = function(mesh) {
 };
 
 const pushCertification = (arr, c, finished) => {
+  console.log(c);
+  console.log(typeof c.didSpeedTest);
   arr.push({
     finished: finished,
     mac: c.mac,
