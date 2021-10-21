@@ -1884,9 +1884,11 @@ deviceListController.setDeviceReg = function(req, res) {
                     });
                   }
                   matchedDevice.mesh_mode = meshMode;
-                  const auxChanges = meshHandlers.buildTR069Changes(matchedDevice, meshMode);
-                  changes.mesh2 = auxChanges.mesh2;
-                  changes.mesh5 = auxChanges.mesh5;
+                  if (matchedDevice.use_tr069) {
+                    const auxChanges = meshHandlers.buildTR069Changes(matchedDevice, meshMode);
+                    changes.mesh2 = auxChanges.mesh2;
+                    changes.mesh5 = auxChanges.mesh5;
+                  }
                   if ((meshMode === 2 || meshMode === 4) && !matchedDevice.wifi_state) {
                     changes.wifi2.enable = 1;
                     // When enabling Wi-Fi set beacon type
