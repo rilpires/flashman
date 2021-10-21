@@ -262,7 +262,7 @@ const createRegistry = async function(req) {
   // Check for an alternative UID to replace serial field
   let altUid;
   if (data.common.alt_uid) {
-    altUid = data.common.alt_uid;
+    altUid = data.common.alt_uid.value;
   }
 
   // Greatek does not expose these fields normally, only under this config file,
@@ -303,14 +303,18 @@ const createRegistry = async function(req) {
     wifi_bssid_5ghz:
       (data.wifi5.bssid) ? data.wifi5.bssid.value.toUpperCase() : undefined,
     wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel.value,
-    wifi_mode_5ghz: convertWifiMode(data.wifi5.mode.value, true),
+    wifi_mode_5ghz: (data.wifi5.mode) ?
+      convertWifiMode(data.wifi5.mode.value, true) : undefined,
+    wifi_band_5ghz: (data.wifi5.band) ?
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) : undefined,
     wifi_state_5ghz: (data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: data.wan.rate.value,
-    wan_negociated_duplex: data.wan.duplex.value,
+    wan_negociated_speed: (data.wan.rate) ? data.wan.rate.value : undefined,
+    wan_negociated_duplex:
+      (data.wan.duplex) ? data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
     wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp.value : data.wan.uptime.value,
     created_at: Date.now(),
