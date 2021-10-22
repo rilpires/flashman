@@ -510,6 +510,19 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         certification.requiredFlashman =
           config.certification.flashman_step_required;
       }
+      let onuConfig = {};
+      if (config.tr069) {
+        onuConfig.onuLogin = config.tr069.web_login || '';
+        onuConfig.onuPassword = config.tr069.web_password || '';
+        onuConfig.onuUserLogin = config.tr069.web_login_user || '';
+        onuConfig.onuUserPassword = config.tr069.web_password_user || '';
+        onuConfig.onuRemote = config.tr069.remote_access;
+        onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
+        onuConfig.onuPonThresholdCritical =
+          config.tr069.pon_signal_threshold_critical;
+        onuConfig.onuPonThresholdCriticalHigh =
+          config.tr069.pon_signal_threshold_critical_high;
+      }
 
       if (!device) {
         return res.status(200).json({
@@ -517,6 +530,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           'isRegister': false,
           'isOnline': false,
           'tr069Info': tr069Info,
+          'onuConfig': onuConfig,
           'certification': certification,
         });
       }
@@ -550,19 +564,6 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
           device.wifi_password_5ghz = req.body.wifi5Pass;
         }
         await device.save();
-        let onuConfig = {};
-        if (config.tr069) {
-          onuConfig.onuLogin = config.tr069.web_login || '';
-          onuConfig.onuPassword = config.tr069.web_password || '';
-          onuConfig.onuUserLogin = config.tr069.web_login_user || '';
-          onuConfig.onuUserPassword = config.tr069.web_password_user || '';
-          onuConfig.onuRemote = config.tr069.remote_access;
-          onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
-          onuConfig.onuPonThresholdCritical =
-            config.tr069.pon_signal_threshold_critical;
-          onuConfig.onuPonThresholdCriticalHigh =
-            config.tr069.pon_signal_threshold_critical_high;
-        }
         return res.status(200).json({
           'success': true,
           'isRegister': true,
