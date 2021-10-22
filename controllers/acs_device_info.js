@@ -289,6 +289,7 @@ const createRegistry = async function(req) {
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user.value : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
+    wan_vlan_id: (data.wan.vlan) ? data.wan.vlan.value : undefined,
     wifi_ssid: ssid,
     wifi_bssid:
       (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
@@ -501,6 +502,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
     device.pppoe_user = '';
     device.pppoe_password = '';
+  }
+
+  if (data.wan.vlan && data.wan.vlan.value) {
+    let vlan = data.wan.vlan.value;
+    device.wan_vlan_id = vlan;
   }
 
   if (data.wifi2.enable && typeof data.wifi2.enable.value !== 'undefined') {
