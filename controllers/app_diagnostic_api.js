@@ -945,6 +945,14 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       'CPEs secundários associados',
     });
   }
+  const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    return map[slaveMacAddr];
+  });
+  if (!isSlaveOn) {
+    return res.status(403).json({
+      message: 'CPE secundário não está online',
+    });
+  }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
   'mesh_master mesh_slaves mesh_mode use_tr069 last_contact')
@@ -974,23 +982,6 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
       'lista de secundários do CPE indicado como primário',
     });
   }
-  let isMasterOn = false;
-  if (matchedMaster.use_tr069) {
-    // tr069 time thresholds for device status.
-    let tr069Times = await deviceList.buildTr069Thresholds();
-    if (matchedMaster.last_contact >= tr069Times.recovery) {
-      isMasterOn = true;
-    }
-  } else {
-    isMasterOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[masterMacAddr];
-    });
-  }
-  if (!isMasterOn) {
-    return res.status(403).json({
-      message: 'CPE primário não está online'
-    });
-  }
 
   matchedSlave.mesh_master = '';
   matchedSlave.mesh_mode = 0;
@@ -1000,13 +991,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   matchedMaster.mesh_slaves.splice(slaveIndex, 1);
   await matchedMaster.save();
 
-  const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[slaveMacAddr];
-  });
-  if (isSlaveOn) mqtt.anlixMessageRouterUpdate(slaveMacAddr);
-  if (!matchedMaster.use_tr069) {
-    mqtt.anlixMessageRouterUpdate(masterMacAddr);
-  }
+  mqtt.anlixMessageRouterUpdate(slaveMacAddr);
 
   return res.status(200).json({message:
     'Sucesso',
