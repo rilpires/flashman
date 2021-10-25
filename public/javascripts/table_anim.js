@@ -2741,6 +2741,18 @@ $(document).ready(function() {
               confirmButtonText: 'OK',
             });
           },
+          error: function(xhr, status, error) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: 'error',
+              title: 'Erro interno',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
         });
       }
     });
