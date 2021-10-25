@@ -363,7 +363,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       device.wifi_is_5ghz_capable,
       model,
     );
-    const isMeshV1Compatible = permissions.grandMeshMode;
+    const isMeshV1Compatible = permissions.grantMeshMode;
     const isMeshV2Compatible = permissions.grantMeshV2;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
       return res.status(403).json({
