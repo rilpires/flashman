@@ -912,36 +912,42 @@ diagAppAPIController.associateSlave = async function(req, res) {
 
 diagAppAPIController.disassociateSlave = async function(req, res) {
   if (!req.body.slave) {
-    return res.status(500).json({message:
-      'JSON recebido não é válido',
+    return res.status(500).json({
+      success: false,
+      message: 'JSON recebido não é válido',
     });
   }
   const slaveMacAddr = req.body.slave.toUpperCase();
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
-    return res.status(403).json({message:
-      'MAC do CPE indicado como secundário inválido',
+    return res.status(403).json({
+      success: false,
+      message: 'MAC do CPE indicado como secundário inválido',
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
   'mesh_master mesh_slaves mesh_mode')
   .catch((err) => {
-    return res.status(500).json({message:
-      'Erro interno',
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno',
     });
   });
   if (!matchedSlave) {
-    return res.status(404).json({message:
-      'CPE indicado como secundário não encontrado',
+    return res.status(404).json({
+      success: false,
+      message: 'CPE indicado como secundário não encontrado',
     });
   }
   if (!matchedSlave.mesh_master) {
-    return res.status(403).json({message:
-      'CPE indicado como secundário não possui primário associado',
+    return res.status(403).json({
+      success: false,
+      message: 'CPE indicado como secundário não possui primário associado',
     });
   }
   if (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length) {
-    return res.status(403).json({message:
-      'CPE indicado como secundário possui ' +
+    return res.status(403).json({
+      success: false,
+      message: 'CPE indicado como secundário possui ' +
       'CPEs secundários associados',
     });
   }
@@ -950,6 +956,7 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   });
   if (!isSlaveOn) {
     return res.status(403).json({
+      success: false,
       message: 'CPE secundário não está online',
     });
   }
@@ -957,28 +964,33 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
   'mesh_master mesh_slaves mesh_mode use_tr069 last_contact')
   .catch((err) => {
-    return res.status(500).json({message:
-      'Erro interno',
+    return res.status(500).json({
+      success: false,
+      message: 'Erro interno',
     });
   });
   if (!matchedMaster) {
-    return res.status(404).json({message:
-      'CPE indicado como primário não encontrado',
+    return res.status(404).json({
+      success: false,
+      message: 'CPE indicado como primário não encontrado',
     });
   }
   if (matchedMaster.mesh_mode === 0) {
-    return res.status(403).json({message:
-      'CPE indicado como primário não está em modo mesh',
+    return res.status(403).json({
+      success: false,
+      message: 'CPE indicado como primário não está em modo mesh',
     });
   }
   if (matchedMaster.mesh_master) {
-    return res.status(403).json({message:
-      'CPE indicado como primário é secundário',
+    return res.status(403).json({
+      success: false,
+      message: 'CPE indicado como primário é secundário',
     });
   }
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
-    return res.status(403).json({message:
-      'CPE indicado como secundário não está na ' +
+    return res.status(403).json({
+      success: false,
+      message: 'CPE indicado como secundário não está na ' +
       'lista de secundários do CPE indicado como primário',
     });
   }
@@ -993,8 +1005,9 @@ diagAppAPIController.disassociateSlave = async function(req, res) {
 
   mqtt.anlixMessageRouterUpdate(slaveMacAddr);
 
-  return res.status(200).json({message:
-    'Sucesso',
+  return res.status(200).json({
+    success: true,
+    message: 'Sucesso',
   });
 };
 

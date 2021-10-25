@@ -2735,7 +2735,7 @@ $(document).ready(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal({
-              type: res.type,
+              type: (res.success ? 'success':'error'),
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
