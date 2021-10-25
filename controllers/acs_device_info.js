@@ -454,6 +454,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
@@ -741,10 +742,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
       // If entries sizes are not the same, no need to check
       // entry by entry differences
-      if (entriesDiff != 0) {
+      if (entriesDiff != 0 || model == 'GONUAC001' || model == 'xPON') {
         acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
       } else {
-        acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
+        acsDeviceInfoController.checkPortForwardRules(device);
       }
     }
     // Send web admin password correct setup for those CPEs that always
@@ -1642,9 +1643,7 @@ const configFileEditing = async function(device) {
   req.end();
 };
 
-acsDeviceInfoController.checkPortForwardRules = async function(device,
-                                                               rulesDiffLength,
-) {
+acsDeviceInfoController.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
@@ -1661,13 +1660,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device,
     portMappingTemplate = fields.port_mapping_dhcp;
   }
   task.parameterNames.push(portMappingTemplate);
-  /* if entries sizes are not the same, no need to check
-    entry by entry differences */
-  if (rulesDiffLength != 0 || model == 'GONUAC001' || model == 'xPON') {
-    acsDeviceInfoController.changePortForwardRules(device,
-      rulesDiffLength);
-    return;
-  }
   let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
   if (result && result.finished == true &&
       result.task.name === 'getParameterValues') {
