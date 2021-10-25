@@ -453,11 +453,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let lanSubnet = util.returnObjOrEmptyStr(req.body.lan_addr).trim();
         let lanNetmask = parseInt(util.returnObjOrNum(req.body.lan_netmask, 24));
         if (((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
-            lanSubnet != '') || changeLAN) {
+            lanSubnet != '') || (changeLAN === '1')) {
           deviceSetQuery.lan_subnet = lanSubnet;
           matchedDevice.lan_subnet = lanSubnet; // Used in device response
         }
-        if (!matchedDevice.lan_netmask || changeLAN) {
+        if (!matchedDevice.lan_netmask || (changeLAN === '1')) {
           deviceSetQuery.lan_netmask = lanNetmask;
           matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
