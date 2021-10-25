@@ -759,6 +759,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       acsDeviceInfoController.updateInfo(device, passChange);
     }
   }
+  // trigger xml config syncing for
+  // web admin user and password
+  if (model == 'GONUAC001' || model == 'xPON') {
+    device.web_admin = config.tr069;
+    configFileEditing(device, 'web-admin');
+  }
   await device.save();
   return res.status(200).json({success: true});
 };
@@ -1367,7 +1373,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let model = splitID.slice(1, splitID.length-1).join('-');
   // redirect to config file binding instead of setParametervalues
   if (model == 'GONUAC001' || model == 'xPON') {
-    configFileEditing(device);
+    configFileEditing(device, 'port-forward');
     return;
   }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
@@ -1516,8 +1522,83 @@ const createNewPortFwTbl = function(pm) {
   };
 };
 
-acsDeviceInfoController.digestXmlConfig = function(device, rawXml) {
-  let serial = device.serial_tr069;
+const setXmlPortForward = function(jsonConfigFile, device) {
+  // find and set PORT_FW_ENABLE to 1
+  let i = jsonConfigFile['Config']['Dir']
+  .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
+  if (i < 0) {
+    console.log('Error: failed MIB_TABLE index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+  let j = jsonConfigFile['Config']['Dir'][i]['Value']
+  .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
+  if (j < 0) {
+    console.log('Error: failed PORT_FW_ENABLE index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
+   = (device.port_mapping.length == 0)?'0':'1';
+  // find first PORT_FW_TBL
+  i = jsonConfigFile['Config']['Dir']
+  .findIndex((e) => e['@_Name'] == 'PORT_FW_TBL');
+  if (i < 0) {
+    console.log('Error: failed PORT_FW_TBL index finding at '+
+      device.serial_tr069);
+    return '';
+  }
+  // delete others PORT_FW_TBL
+  jsonConfigFile['Config']['Dir'] =
+  jsonConfigFile['Config']['Dir']
+  .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
+  // add new PORT_FW_TBL values based on device.port_mapping
+  device.port_mapping.forEach((pm) => {
+    let newPortFwTbl = createNewPortFwTbl(pm);
+    jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
+  });
+  if (device.port_mapping.length == 0) {
+    jsonConfigFile['Config']['Dir'].splice(i, 0,
+      {'@_Name': 'PORT_FW_TBL'});
+  }
+  return jsonConfigFile;
+};
+
+const setXmlWebAdmin = function(jsonConfigFile, device) {
+  // find mib table
+  console.log(device.web_admin);
+  let i = jsonConfigFile['Config']['Dir']
+  .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
+  if (i < 0) {
+    console.log('Error: failed MIB_TABLE index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+  let j = jsonConfigFile['Config']['Dir'][i]['Value']
+  .findIndex((e) => e['@_Name'] == 'SUSER_NAME');
+  if (j < 0) {
+    console.log('Error: failed SUSER_NAME index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+  // set web login
+  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
+   = device.web_admin.web_login;
+
+  j = jsonConfigFile['Config']['Dir'][i]['Value']
+  .findIndex((e) => e['@_Name'] == 'SUSER_PASSWORD');
+  if (j < 0) {
+    console.log('Error: failed SUSER_PASSWORD index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+  // set web password
+  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
+   = device.web_admin.web_password;
+  return jsonConfigFile;
+};
+
+acsDeviceInfoController.digestXmlConfig = function(device, rawXml, target) {
   let opts = {
     ignoreAttributes: false, // default is true
     ignoreNameSpace: false,
@@ -1532,42 +1613,12 @@ acsDeviceInfoController.digestXmlConfig = function(device, rawXml) {
   if (xml2js.validate(rawXml) === true) {
     // parse xml to json
     let jsonConfigFile = xml2js.parse(rawXml, opts);
-    // find and set PORT_FW_ENABLE to 1
-    let i = jsonConfigFile['Config']['Dir']
-    .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
-    if (i < 0) {
-      console.log('Error: failed MIB_TABLE index finding at '
-        +serial);
+    if (target === 'port-forward') {
+      jsonConfigFile = setXmlPortForward(jsonConfigFile, device);
+    } else if (target === 'web-admin') {
+      jsonConfigFile = setXmlWebAdmin(jsonConfigFile, device);
+    } else {
       return '';
-    }
-    let j = jsonConfigFile['Config']['Dir'][i]['Value']
-    .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
-    if (j < 0) {
-      console.log('Error: failed PORT_FW_ENABLE index finding at '
-        +serial);
-      return '';
-    }
-    jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-     = (device.port_mapping.length == 0)?'0':'1';
-    // find first PORT_FW_TBL
-    i = jsonConfigFile['Config']['Dir']
-    .findIndex((e) => e['@_Name'] == 'PORT_FW_TBL');
-    if (i < 0) {
-      console.log('Error: failed PORT_FW_TBL index finding at '+serial);
-      return '';
-    }
-    // delete others PORT_FW_TBL
-    jsonConfigFile['Config']['Dir'] =
-    jsonConfigFile['Config']['Dir']
-    .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
-    // add new PORT_FW_TBL values based on device.port_mapping
-    device.port_mapping.forEach((pm) => {
-      let newPortFwTbl = createNewPortFwTbl(pm);
-      jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
-    });
-    if (device.port_mapping.length == 0) {
-      jsonConfigFile['Config']['Dir'].splice(i, 0,
-        {'@_Name': 'PORT_FW_TBL'});
     }
     // parse json to xml
     opts = {
@@ -1584,7 +1635,7 @@ acsDeviceInfoController.digestXmlConfig = function(device, rawXml) {
   }
 };
 
-const configFileEditing = async function(device) {
+const configFileEditing = async function(device, target) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   // get xml config file to genieacs
@@ -1619,7 +1670,7 @@ const configFileEditing = async function(device) {
         // modify xml config file
         rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
         let xmlConfigFile = acsDeviceInfoController
-          .digestXmlConfig(device, rawConfigFile);
+          .digestXmlConfig(device, rawConfigFile, target);
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
           task = {
