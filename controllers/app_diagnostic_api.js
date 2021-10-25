@@ -358,37 +358,41 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       model = splitID.slice(1, splitID.length-1).join('-');
       changes = meshHandlers.buildTR069Changes(device, targetMode);
     }
-    let isMeshV2Compatible = DeviceVersion.findByVersion(
+    const permissions = DeviceVersion.findByVersion(
       device.version,
       device.wifi_is_5ghz_capable,
       model,
-    ).grantMeshV2;
-    if (!isMeshV2Compatible) {
+    );
+    const isMeshV1Compatible = permissions.grandMeshMode;
+    const isMeshV2Compatible = permissions.grantMeshV2;
+    if (!isMeshV1Compatible && !isMeshV2Compatible) {
       return res.status(403).json({
-        'error': 'CPE isn\'t compatibe with mesh v2',
+        'error': 'CPE isn\'t compatibe with mesh',
       });
     }
-    if (device.use_tr069) {
-      changes = meshHandlers.buildTR069Changes(device, targetMode);
-    }
-    device.mesh_mode = targetMode;
-    if ((targetMode === 2 || targetMode === 4) && !device.wifi_state) {
+    if (isMeshV2Compatible) {
       if (device.use_tr069) {
-        changes.wifi2.enable = 1;
-        // When enabling Wi-Fi set beacon type
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        changes = meshHandlers.buildTR069Changes(device, targetMode);
       }
-      device.wifi_state = 1;
-    }
-    if ((targetMode === 3 || targetMode === 4) && !device.wifi_state_5ghz) {
-      if (device.use_tr069) {
-        changes.wifi5.enable = 1;
-        // When enabling Wi-Fi set beacon type
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      if ((targetMode === 2 || targetMode === 4) && !device.wifi_state) {
+        if (device.use_tr069) {
+          changes.wifi2.enable = 1;
+          // When enabling Wi-Fi set beacon type
+          changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        }
+        device.wifi_state = 1;
       }
-      device.wifi_state_5ghz = 1;
+      if ((targetMode === 3 || targetMode === 4) && !device.wifi_state_5ghz) {
+        if (device.use_tr069) {
+          changes.wifi5.enable = 1;
+          // When enabling Wi-Fi set beacon type
+          changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        }
+        device.wifi_state_5ghz = 1;
+      }
     }
     // Apply changes to database and update device
+    device.mesh_mode = targetMode;
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
