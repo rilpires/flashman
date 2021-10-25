@@ -9,6 +9,8 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const xml2js = require('fast-xml-parser');
+const XmlParser = require('fast-xml-parser').j2xParser;
 
 const pako = require('pako');
 const http = require('http');
@@ -452,6 +454,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let hasChanges = false;
   device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
@@ -739,10 +742,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
       // If entries sizes are not the same, no need to check
       // entry by entry differences
-      if (entriesDiff != 0) {
+      if (entriesDiff != 0 || model == 'GONUAC001' || model == 'xPON') {
         acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
       } else {
-        acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
+        acsDeviceInfoController.checkPortForwardRules(device);
       }
     }
     // Send web admin password correct setup for those CPEs that always
@@ -1362,6 +1365,11 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
+  // redirect to config file binding instead of setParametervalues
+  if (model == 'GONUAC001' || model == 'xPON') {
+    configFileEditing(device);
+    return;
+  }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
@@ -1448,9 +1456,194 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
-acsDeviceInfoController.checkPortForwardRules = async function(device,
-                                                               rulesDiffLength,
-) {
+const createNewPortFwTbl = function(pm) {
+  return {
+    '@_Name': 'PORT_FW_TBL',
+    'Value': [
+      {
+        '@_Name': 'InstanceNum',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'Dynamic',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'externalportEnd',
+        '@_Value': pm.external_port_end.toString(),
+      },
+      {
+        '@_Name': 'externalportStart',
+        '@_Value': pm.external_port_start.toString(),
+      },
+      {
+        '@_Name': 'remotehost',
+        '@_Value': '0.0.0.0',
+      },
+      {
+        '@_Name': 'leaseduration',
+        '@_Value': '0',
+      },
+      {
+        '@_Name': 'enable',
+        '@_Value': '1',
+      },
+      {
+        '@_Name': 'OutInf',
+        '@_Value': '65535',
+      },
+      {
+        '@_Name': 'Comment',
+        '@_Value': '',
+      },
+      {
+        '@_Name': 'Protocol',
+        '@_Value': '4',
+      },
+      {
+        '@_Name': 'PortEnd',
+        '@_Value': pm.internal_port_end.toString(),
+      },
+      {
+        '@_Name': 'PortStart',
+        '@_Value': pm.internal_port_start.toString(),
+      },
+      {
+        '@_Name': 'IP',
+        '@_Value': pm.ip,
+      },
+    ],
+  };
+};
+
+acsDeviceInfoController.digestXmlConfig = function(device, rawXml) {
+  let serial = device.serial_tr069;
+  let opts = {
+    ignoreAttributes: false, // default is true
+    ignoreNameSpace: false,
+    allowBooleanAttributes: false,
+    parseNodeValue: false, // default is true
+    parseAttributeValue: false,
+    trimValues: false, // default is true
+    cdataTagName: false, // default is 'false'
+    parseTrueNumberOnly: false,
+    arrayMode: false,
+  };
+  if (xml2js.validate(rawXml) === true) {
+    // parse xml to json
+    let jsonConfigFile = xml2js.parse(rawXml, opts);
+    // find and set PORT_FW_ENABLE to 1
+    let i = jsonConfigFile['Config']['Dir']
+    .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
+    if (i < 0) {
+      console.log('Error: failed MIB_TABLE index finding at '
+        +serial);
+      return '';
+    }
+    let j = jsonConfigFile['Config']['Dir'][i]['Value']
+    .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
+    if (j < 0) {
+      console.log('Error: failed PORT_FW_ENABLE index finding at '
+        +serial);
+      return '';
+    }
+    jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
+     = (device.port_mapping.length == 0)?'0':'1';
+    // find first PORT_FW_TBL
+    i = jsonConfigFile['Config']['Dir']
+    .findIndex((e) => e['@_Name'] == 'PORT_FW_TBL');
+    if (i < 0) {
+      console.log('Error: failed PORT_FW_TBL index finding at '+serial);
+      return '';
+    }
+    // delete others PORT_FW_TBL
+    jsonConfigFile['Config']['Dir'] =
+    jsonConfigFile['Config']['Dir']
+    .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
+    // add new PORT_FW_TBL values based on device.port_mapping
+    device.port_mapping.forEach((pm) => {
+      let newPortFwTbl = createNewPortFwTbl(pm);
+      jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
+    });
+    if (device.port_mapping.length == 0) {
+      jsonConfigFile['Config']['Dir'].splice(i, 0,
+        {'@_Name': 'PORT_FW_TBL'});
+    }
+    // parse json to xml
+    opts = {
+      ignoreAttributes: false,
+      format: true,
+      indentBy: ' ',
+      supressEmptyNode: false,
+    };
+    let js2xml = new XmlParser(opts);
+    return js2xml.parse(jsonConfigFile)
+      .replace(/(([\n\t\r])|(\s\s\n)|(\s\s))/g, '');
+  } else {
+    return '';
+  }
+};
+
+const configFileEditing = async function(device) {
+  let acsID = device.acs_id;
+  let serial = device.serial_tr069;
+  // get xml config file to genieacs
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [configField],
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve ConfigFile at '+serial);
+    return;
+  }
+  // get xml config file from genieacs
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+configField;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let rawConfigFile = '';
+    resp.on('data', (chunk)=>rawConfigFile+=chunk);
+    resp.on('end', async ()=>{
+      rawConfigFile = JSON.parse(rawConfigFile)[0];
+      if (checkForNestedKey(rawConfigFile, configField+'._value')) {
+        // modify xml config file
+        rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
+        let xmlConfigFile = acsDeviceInfoController
+          .digestXmlConfig(device, rawConfigFile);
+        if (xmlConfigFile != '') {
+          // set xml config file to genieacs
+          task = {
+            name: 'setParameterValues',
+            parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
+          };
+          result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+          if (!result || !result.finished ||
+              result.task.name !== 'setParameterValues') {
+            console.log('Error: failed to write ConfigFile at '+serial);
+            return;
+          }
+        } else {
+          console.log('Error: failed xml validation at '+serial);
+        }
+      } else {
+        console.log('Error: no config file retrieved at '+serial);
+      }
+    });
+  });
+  req.end();
+};
+
+acsDeviceInfoController.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
@@ -1733,7 +1926,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       }
     }
   }
-  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  // trigger 7557/devices/<acs_id>/tasks POST 'name': 'download'
   let response = '';
   try {
     response = await FirmwaresAPI.sendUpgradeFirmware(firmware, device);
