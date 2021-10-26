@@ -37,7 +37,13 @@ let app = express();
 expressOasGenerator.handleResponses(app, {
   specOutputPath: './flashman_spec.json',
   mongooseModels: mongoose.modelNames(),
-  alwaysServeDocs: true,
+  swaggerDocumentOptions: {
+    customCss: `
+      .swagger-ui .topbar {
+        background-color: #4db6ac;
+      }
+    `
+  },
 });
 
 // Specify some variables available to all views
@@ -352,6 +358,9 @@ app.use(fileUpload());
 
 app.use('/', index);
 
+// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
+expressOasGenerator.handleRequests();
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   let err = new Error('Not Found');
@@ -401,7 +410,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
   if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
-  expressOasGenerator.handleRequests();
   app.listen(parseInt(schedulePort), function() {
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
