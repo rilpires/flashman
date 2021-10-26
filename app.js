@@ -11,7 +11,6 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const expressOasGenerator = require('express-oas-generator');
-const expressJSDocSwagger = require('express-jsdoc-swagger');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
