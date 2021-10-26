@@ -1025,10 +1025,11 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   if (!matchedDevice) {
     return res.status(404).json({message: 'CPE não encontrado'});
   }
-  const fieldValue = matchedDevice[field];
+  let fieldValue = matchedDevice[field];
   if (fieldValue === undefined) {
     return res.status(404).json({message: 'Campo não encontrado'});
   }
+  if (fieldValue instanceof Date) fieldValue = fieldValue.getTime();
   return res.status(200).json({fieldValue: fieldValue});
 };
 
