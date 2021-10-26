@@ -516,6 +516,48 @@ let formatDevices = function(device) {
   };
 };
 
+const makeDeviceBackupData = function(device, config, certFile) {
+  let now = new Date();
+  let formattedNow = '';
+  formattedNow += now.getDate() + '/';
+  formattedNow += now.getMonth() + '/';
+  formattedNow += now.getFullYear() + ' às ';
+  formattedNow += now.getHours() + ':';
+  formattedNow += now.getMinutes();
+  return {
+    timestamp: formattedNow,
+    model: device.model,
+    firmware: device.version,
+    mac: device._id,
+    serial: device.serial_tr069,
+    alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
+    wan: {
+      conn_type: device.connection_type,
+      pppoe_user: device.pppoe_user,
+      pppoe_password: device.pppoe_password,
+      vlan: device.wan_vlan_id,
+      mtu: device.wan_mtu,
+    },
+    tr069: {
+      url: config.tr069.server_url,
+      interval: parseInt(config.tr069.inform_interval/1000),
+      certificate: certFile,
+    },
+    wifi: getWifiConfig(device),
+    remote: config.tr069.remote_access,
+    credentials: {
+      admin: {
+        name: config.tr069.web_login,
+        pass: config.tr069.web_password,
+      },
+      user: {
+        name: config.tr069.web_login_user,
+        pass: config.tr069.web_password_user,
+      },
+    },
+  };
+};
+
 appDeviceAPIController.registerApp = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
@@ -1283,45 +1325,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     let resetBackup = {};
     if (config.tr069) {
       let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-      let now = new Date();
-      let formattedNow = '';
-      formattedNow += now.getDate() + '/';
-      formattedNow += now.getMonth() + '/';
-      formattedNow += now.getFullYear() + ' às ';
-      formattedNow += now.getHours() + ':';
-      formattedNow += now.getMinutes();
-      resetBackup = {
-        timestamp: formattedNow,
-        model: device.model,
-        firmware: device.version,
-        mac: device._id,
-        serial: device.serial_tr069,
-        alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
-        wan: {
-          conn_type: device.connection_type,
-          pppoe_user: device.pppoe_user,
-          pppoe_password: device.pppoe_password,
-          vlan: device.wan_vlan_id,
-          mtu: device.wan_mtu,
-        },
-        tr069: {
-          url: config.tr069.server_url,
-          interval: parseInt(config.tr069.inform_interval/1000),
-          certificate: certFile,
-        },
-        wifi: getWifiConfig(device),
-        remote: config.tr069.remote_access,
-        credentials: {
-          admin: {
-            name: config.tr069.web_login,
-            pass: config.tr069.web_password,
-          },
-          user: {
-            name: config.tr069.web_login_user,
-            pass: config.tr069.web_password_user,
-          },
-        },
-      };
+      resetBackup = makeDeviceBackupData(device, config, certFile);
     }
     return res.status(200).json({
       serialOk: true,
@@ -1432,52 +1436,54 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
       });
     }
     // Build hard reset backup structure for client app
-    let resetBackup = {};
     let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-    now = new Date();
-    let formattedNow = '';
-    formattedNow += now.getDate() + '/';
-    formattedNow += now.getMonth() + '/';
-    formattedNow += now.getFullYear() + ' às ';
-    formattedNow += now.getHours() + ':';
-    formattedNow += now.getMinutes();
-    resetBackup = {
-      timestamp: formattedNow,
-      model: device.model,
-      firmware: device.version,
-      mac: device._id,
-      serial: device.serial_tr069,
-      alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
-      wan: {
-        conn_type: device.connection_type,
-        pppoe_user: device.pppoe_user,
-        pppoe_password: device.pppoe_password,
-        vlan: device.wan_vlan_id,
-        mtu: device.wan_mtu,
-      },
-      tr069: {
-        url: config.tr069.server_url,
-        interval: parseInt(config.tr069.inform_interval/1000),
-        certificate: certFile,
-      },
-      wifi: getWifiConfig(device),
-      remote: config.tr069.remote_access,
-      credentials: {
-        admin: {
-          name: config.tr069.web_login,
-          pass: config.tr069.web_password,
-        },
-        user: {
-          name: config.tr069.web_login_user,
-          pass: config.tr069.web_password_user,
-        },
-      },
-    };
+    let resetBackup = makeDeviceBackupData(device, config, certFile);
     return res.status(200).json({
       success: true,
       isRegister: true,
       isOnline: false,
       resetBackup: resetBackup,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({success: false});
+  }
+};
+
+appDeviceAPIController.signalResetRecover = async function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query;
+  if (req.body.alt_uid) {
+    query = {alt_uid_tr069: req.body.serial};
+  } else {
+    query = {serial_tr069: req.body.serial};
+  }
+  try {
+    let device = await DeviceModel.find(query);
+    if (!device) {
+      // Device is not registered, cannot reconfigure
+      return res.status(200).json({success: true, isRegister: false});
+    }
+    let config = await Config.findOne(
+      {is_default: true}, 'tr069',
+    ).exec().catch((err) => err);
+    let lastContact = device.last_contact;
+    let now = Date.now();
+    if (now - lastContact <= 2*config.tr069.inform_interval) {
+      // Device is online, no need to reconfigure
+      return res.status(200).json({
+        success: true, isRegister: true, isOnline: true,
+      });
+    }
+    // Set device hard reset flag so that it fully syncs on the next inform
+    device.recovering_tr069_reset = true;
+    device.save();
+    return res.status(200).json({
+      success: true,
+      isRegister: true,
+      isOnline: false,
     });
   } catch (err) {
     console.log(err);
