@@ -77,8 +77,14 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      mesh_v2: true,
     },
     wifi2_extended_channels_support: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
   },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
@@ -252,6 +258,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: true,
+      mesh_v2: false,
     },
     wifi2_extended_channels_support: true,
   },

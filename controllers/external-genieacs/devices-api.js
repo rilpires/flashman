@@ -505,6 +505,7 @@ const getBeaconTypeByModel = function(model) {
       ret = 'WPA/WPA2';
       break;
     case 'F670L': // Multilaser ZTE F670L
+    case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
       ret = 'WPAand11i';
