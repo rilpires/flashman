@@ -212,23 +212,23 @@ const fetchCertification = function(id, name, timestamp) {
           let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
           let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
           let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
-          console.log(cert);
           if (cert.didSpeedTest) {
             let diagSpeedtest = (cert.diagnostic.speedtest) ? 'OK' : 'Erro';
             let diagSpeedValue;
-            if (cert.diagnostic.speedtest) {
+            $('#diagnostic-router-speedtest').html('&nbsp;'+diagSpeedtest);
+            $('#diagnostic-speedtest').show();
+            if (cert.diagnostic.speedValue != null) {
               if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
                 diagSpeedValue = cert.diagnostic.speedTestLimit + '+ Mpbs';
               } else {
                 diagSpeedValue = cert.diagnostic.speedValue + ' Mpbs';
               }
+              $('#diagnostic-router-speedValue').html('&nbsp;'+diagSpeedValue);
+              $('#diagnostic-speedValue').show();
             } else {
-              diagSpeedValue = 'Não aferido';
+              $('#diagnostic-router-speedtest').html('&nbsp;'+'Erro');
+              $('#diagnostic-speedValue').hide();
             }
-            $('#diagnostic-router-speedtest').html('&nbsp;'+diagSpeedtest);
-            $('#diagnostic-router-speedValue').html('&nbsp;'+diagSpeedValue);
-            $('#diagnostic-speedtest').show();
-            $('#diagnostic-speedValue').show();
           } else {
             $('#diagnostic-speedtest').hide();
             $('#diagnostic-speedValue').hide();

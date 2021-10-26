@@ -28,9 +28,9 @@ const convertDiagnostic = function(diagnostic) {
     flashman: (diagnostic && diagnostic.flashman === 0),
     speedtest: (diagnostic && diagnostic.speedtest === 0),
     speedValue: (diagnostic && 'speedValue' in diagnostic) ?
-                  diagnostic.speedValue : -1,
+                  diagnostic.speedValue : null,
     speedTestLimit: (diagnostic && 'speedTestLimit' in diagnostic) ?
-                  diagnostic.speedTestLimit : -1,
+                  diagnostic.speedTestLimit : null,
   };
 };
 
