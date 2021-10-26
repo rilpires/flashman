@@ -11,6 +11,7 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const expressOasGenerator = require('express-oas-generator');
+const expressJSDocSwagger = require('express-jsdoc-swagger');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -33,17 +34,24 @@ let packageJson = require('./package.json');
 let app = express();
 
 // Express OpenAPI docs generator handling responses first
-expressOasGenerator.handleResponses(app, {
-  specOutputPath: './flashman_spec.json',
-  mongooseModels: mongoose.modelNames(),
-  swaggerDocumentOptions: {
-    customCss: `
-      .swagger-ui .topbar {
-        background-color: #4db6ac;
-      }
-    `
-  },
-});
+const { SPEC_OUTPUT_FILE_BEHAVIOR } = expressOasGenerator;
+if (process.env.NODE_ENV !== 'production') {
+  expressOasGenerator.handleResponses(
+    app, 
+    {
+      mongooseModels: mongoose.modelNames(),
+      swaggerDocumentOptions: {
+        customCss: `
+          .swagger-ui .topbar {
+            background-color: #4db6ac;
+          }
+        `
+      },
+      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
+      alwaysServeDocs: false,
+    }
+  );
+};
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
@@ -358,7 +366,9 @@ app.use(fileUpload());
 app.use('/', index);
 
 // NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
-expressOasGenerator.handleRequests();
+if (process.env.NODE_ENV !== 'production') {
+  expressOasGenerator.handleRequests();
+}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
