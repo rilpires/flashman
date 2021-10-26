@@ -504,6 +504,9 @@ const getBeaconTypeByModel = function(model) {
     case 'G%2D140W%2DC': // URI encoded
       ret = 'WPA/WPA2';
       break;
+    case 'GONUAC001': // Greatek Stavix G421R
+      ret = 'WPA2';
+      break;
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2
