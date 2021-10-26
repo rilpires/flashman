@@ -1,4 +1,4 @@
-const acsDeviceInfo = require('../../controllers/acs_device_info');
+const acsHandlers = require('../../controllers/handlers/acs');
 const fs = require('fs');
 
 const xmlFailTest = function(idx) {
@@ -8,7 +8,8 @@ const xmlFailTest = function(idx) {
   };
   let initXml = fs.readFileSync('./test/assets/config_file_stavix_'+
     idx+'.xml', 'utf8');
-  return acsDeviceInfo.digestXmlConfig(device, initXml);
+  return acsHandlers
+    .digestXmlConfig(device, initXml, ['port-forward']);
 };
 
 describe('TR-069 GenieACS communication methods', () => {
@@ -55,7 +56,8 @@ describe('TR-069 GenieACS communication methods', () => {
     initDirNamesList.forEach((dn) => {
       DirNamesMap.set(dn);
     });
-    let finiXml = acsDeviceInfo.digestXmlConfig(device, initXml);
+    let finiXml = acsHandlers
+      .digestXmlConfig(device, initXml, ['port-forward']);
     let searchPortFwTbl = new RegExp('Dir Name="PORT_FW_TBL"', 'g');
     let searchPortFwEnable = new RegExp('PORT_FW_ENABLE" Value="[0-9]');
     let finiDirNamesList = finiXml.match(searchDirNames);
@@ -86,7 +88,8 @@ describe('TR-069 GenieACS communication methods', () => {
     initDirNamesList.forEach((dn) => {
       DirNamesMap.set(dn);
     });
-    let finiXml = acsDeviceInfo.digestXmlConfig(device, initXml);
+    let finiXml = acsHandlers
+      .digestXmlConfig(device, initXml, ['port-forward']);
     let searchPortFwTbl = new RegExp('Dir Name="PORT_FW_TBL"', 'g');
     let searchPortFwEnable = new RegExp('PORT_FW_ENABLE" Value="[0-9]');
     let finiDirNamesList = finiXml.match(searchDirNames);
