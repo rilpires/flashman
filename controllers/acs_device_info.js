@@ -729,6 +729,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_is_5ghz_capable,
       device.model,
     );
+    let targets = [];
     if (permissions.grantPortForward) {
       // For every day fetch to device port forward entries
       let entriesDiff = 0;
@@ -740,13 +741,24 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         entriesDiff = device.port_mapping.length -
           data.wan.port_mapping_entries_dhcp.value;
       }
-      // If entries sizes are not the same, no need to check
-      // entry by entry differences
-      if (entriesDiff != 0 || model == 'GONUAC001' || model == 'xPON') {
-        acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
+      if (model == 'GONUAC001' || model == 'xPON') {
+        targets.push('port-forward');
       } else {
-        acsDeviceInfoController.checkPortForwardRules(device);
+        if (entriesDiff != 0) {
+          // If entries sizes are not the same, no need to check
+          // entry by entry differences
+          acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
+        } else {
+          acsDeviceInfoController.checkPortForwardRules(device);
+        }
       }
+    }
+    if (model == 'GONUAC001' || model == 'xPON') {
+    // trigger xml config syncing for
+    // web admin user and password
+      device.web_admin = config.tr069;
+      targets.push('web-admin');
+      configFileEditing(device, targets);
     }
     // Send web admin password correct setup for those CPEs that always
     // retrieve blank on this field
@@ -758,12 +770,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       passChange.common.web_admin_password = config.tr069.web_password;
       acsDeviceInfoController.updateInfo(device, passChange);
     }
-  }
-  // trigger xml config syncing for
-  // web admin user and password
-  if (model == 'GONUAC001' || model == 'xPON') {
-    device.web_admin = config.tr069;
-    configFileEditing(device, 'web-admin');
   }
   await device.save();
   return res.status(200).json({success: true});
@@ -1373,7 +1379,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let model = splitID.slice(1, splitID.length-1).join('-');
   // redirect to config file binding instead of setParametervalues
   if (model == 'GONUAC001' || model == 'xPON') {
-    configFileEditing(device, 'port-forward');
+    configFileEditing(device, ['port-forward']);
     return;
   }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
@@ -1566,7 +1572,6 @@ const setXmlPortForward = function(jsonConfigFile, device) {
 
 const setXmlWebAdmin = function(jsonConfigFile, device) {
   // find mib table
-  console.log(device.web_admin);
   let i = jsonConfigFile['Config']['Dir']
   .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
   if (i < 0) {
@@ -1613,12 +1618,11 @@ acsDeviceInfoController.digestXmlConfig = function(device, rawXml, target) {
   if (xml2js.validate(rawXml) === true) {
     // parse xml to json
     let jsonConfigFile = xml2js.parse(rawXml, opts);
-    if (target === 'port-forward') {
+    if (target.includes('port-forward')) {
       jsonConfigFile = setXmlPortForward(jsonConfigFile, device);
-    } else if (target === 'web-admin') {
+    }
+    if (target.includes('web-admin')) {
       jsonConfigFile = setXmlWebAdmin(jsonConfigFile, device);
-    } else {
-      return '';
     }
     // parse json to xml
     opts = {
