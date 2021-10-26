@@ -376,6 +376,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       }
       if ((targetMode === 2 || targetMode === 4) && !device.wifi_state) {
         if (device.use_tr069) {
+          changes.wifi2 = {};
           changes.wifi2.enable = 1;
           // When enabling Wi-Fi set beacon type
           changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
@@ -384,6 +385,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       }
       if ((targetMode === 3 || targetMode === 4) && !device.wifi_state_5ghz) {
         if (device.use_tr069) {
+          changes.wifi5 = {};
           changes.wifi5.enable = 1;
           // When enabling Wi-Fi set beacon type
           changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
