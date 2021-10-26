@@ -35,7 +35,7 @@ let app = express();
 
 // Express OpenAPI docs generator handling responses first
 const { SPEC_OUTPUT_FILE_BEHAVIOR } = expressOasGenerator;
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.production) {
   expressOasGenerator.handleResponses(
     app, 
     {
@@ -366,7 +366,7 @@ app.use(fileUpload());
 app.use('/', index);
 
 // NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.production) {
   expressOasGenerator.handleRequests();
 }
 
