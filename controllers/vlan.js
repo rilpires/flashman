@@ -428,7 +428,7 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
   } else {
     try {
       vlanObj = JSON.parse(vlanObj);
-    } catch(e) {
+    } catch (e) {
       vlanObj = '';
     }
   }
@@ -476,7 +476,8 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       digestedVlans[key] += wan_port.toString()+'t';
     }
   }
-  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + cpu_port.toString() + 't';
+  digestedVlans[vlan_of_wan] = wan_port.toString() +
+    ' ' + cpu_port.toString() + 't';
 
   return digestedVlans;
 };
