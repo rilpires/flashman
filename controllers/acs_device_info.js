@@ -729,20 +729,20 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.model,
     );
     let targets = [];
+    // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      // For every day fetch to device port forward entries
-      let entriesDiff = 0;
-      if (device.connection_type === 'pppoe' &&
-          data.wan.port_mapping_entries_ppp) {
-        entriesDiff = device.port_mapping.length -
-          data.wan.port_mapping_entries_ppp.value;
-      } else if (data.wan.port_mapping_entries_dhcp) {
-        entriesDiff = device.port_mapping.length -
-          data.wan.port_mapping_entries_dhcp.value;
-      }
       if (model == 'GONUAC001' || model == 'xPON') {
         targets.push('port-forward');
       } else {
+        let entriesDiff = 0;
+        if (device.connection_type === 'pppoe' &&
+            data.wan.port_mapping_entries_ppp) {
+          entriesDiff = device.port_mapping.length -
+            data.wan.port_mapping_entries_ppp.value;
+        } else if (data.wan.port_mapping_entries_dhcp) {
+          entriesDiff = device.port_mapping.length -
+            data.wan.port_mapping_entries_dhcp.value;
+        }
         if (entriesDiff != 0) {
           // If entries sizes are not the same, no need to check
           // entry by entry differences
@@ -753,21 +753,22 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
     }
     if (model == 'GONUAC001' || model == 'xPON') {
-    // trigger xml config syncing for
-    // web admin user and password
+      // Trigger xml config syncing for
+      // web admin user and password
       device.web_admin = config.tr069;
       targets.push('web-admin');
       configFileEditing(device, targets);
-    }
-    // Send web admin password correct setup for those CPEs that always
-    // retrieve blank on this field
-    if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_admin_password &&
-        data.common.web_admin_password.writable &&
-        data.common.web_admin_password.value === '') {
-      let passChange = {common: {}};
-      passChange.common.web_admin_password = config.tr069.web_password;
-      acsDeviceInfoController.updateInfo(device, passChange);
+    } else {
+      // Send web admin password correct setup for those CPEs that always
+      // retrieve blank on this field
+      if (typeof config.tr069.web_password !== 'undefined' &&
+          data.common.web_admin_password &&
+          data.common.web_admin_password.writable &&
+          data.common.web_admin_password.value === '') {
+        let passChange = {common: {}};
+        passChange.common.web_admin_password = config.tr069.web_password;
+        acsDeviceInfoController.updateInfo(device, passChange);
+      }
     }
   }
   await device.save();
