@@ -890,10 +890,6 @@ $(document).ready(function() {
                   '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
                   '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
                   '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                  '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
-                  '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
-                  '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
-                  '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
                   '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
                   '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
                   '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
@@ -1817,10 +1813,6 @@ $(document).ready(function() {
                             '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
                             '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
                             '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                            '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
-                            '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
-                            '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
-                            '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
                             '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
                             '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
                             '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
