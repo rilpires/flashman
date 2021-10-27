@@ -10,6 +10,7 @@ const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
+const acsHandlers = require('./handlers/acs');
 
 const pako = require('pako');
 const http = require('http');
@@ -462,9 +463,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let cpeIP = processHostFromURL(data.common.ip.value);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   let hasChanges = false;
-  device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
-  const model = splitID.slice(1, splitID.length-1).join('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  device.acs_id = req.body.acs_id;
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
@@ -747,34 +748,47 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_is_5ghz_capable,
       device.model,
     );
+    let targets = [];
+    // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      // For every day fetch to device port forward entries
-      let entriesDiff = 0;
-      if (device.connection_type === 'pppoe' &&
-          data.wan.port_mapping_entries_ppp) {
-        entriesDiff = device.port_mapping.length -
-          data.wan.port_mapping_entries_ppp.value;
-      } else if (data.wan.port_mapping_entries_dhcp) {
-        entriesDiff = device.port_mapping.length -
-          data.wan.port_mapping_entries_dhcp.value;
-      }
-      // If entries sizes are not the same, no need to check
-      // entry by entry differences
-      if (entriesDiff != 0) {
-        acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
+      if (model == 'GONUAC001' || model == 'xPON') {
+        targets.push('port-forward');
       } else {
-        acsDeviceInfoController.checkPortForwardRules(device, entriesDiff);
+        let entriesDiff = 0;
+        if (device.connection_type === 'pppoe' &&
+            data.wan.port_mapping_entries_ppp) {
+          entriesDiff = device.port_mapping.length -
+            data.wan.port_mapping_entries_ppp.value;
+        } else if (data.wan.port_mapping_entries_dhcp) {
+          entriesDiff = device.port_mapping.length -
+            data.wan.port_mapping_entries_dhcp.value;
+        }
+        if (entriesDiff != 0) {
+          // If entries sizes are not the same, no need to check
+          // entry by entry differences
+          acsDeviceInfoController.changePortForwardRules(device, entriesDiff);
+        } else {
+          acsDeviceInfoController.checkPortForwardRules(device);
+        }
       }
     }
-    // Send web admin password correct setup for those CPEs that always
-    // retrieve blank on this field
-    if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_admin_password &&
-        data.common.web_admin_password.writable &&
-        data.common.web_admin_password.value === '') {
-      let passChange = {common: {}};
-      passChange.common.web_admin_password = config.tr069.web_password;
-      acsDeviceInfoController.updateInfo(device, passChange);
+    if (model == 'GONUAC001' || model == 'xPON') {
+      // Trigger xml config syncing for
+      // web admin user and password
+      device.web_admin = config.tr069;
+      targets.push('web-admin');
+      configFileEditing(device, targets);
+    } else {
+      // Send web admin password correct setup for those CPEs that always
+      // retrieve blank on this field
+      if (typeof config.tr069.web_password !== 'undefined' &&
+          data.common.web_admin_password &&
+          data.common.web_admin_password.writable &&
+          data.common.web_admin_password.value === '') {
+        let passChange = {common: {}};
+        passChange.common.web_admin_password = config.tr069.web_password;
+        acsDeviceInfoController.updateInfo(device, passChange);
+      }
     }
   }
   await device.save();
@@ -1384,6 +1398,11 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
+  // redirect to config file binding instead of setParametervalues
+  if (model == 'GONUAC001' || model == 'xPON') {
+    configFileEditing(device, ['port-forward']);
+    return;
+  }
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
@@ -1470,9 +1489,66 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
-acsDeviceInfoController.checkPortForwardRules = async function(device,
-                                                               rulesDiffLength,
-) {
+const configFileEditing = async function(device, target) {
+  let acsID = device.acs_id;
+  let serial = device.serial_tr069;
+  // get xml config file to genieacs
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [configField],
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve ConfigFile at '+serial);
+    return;
+  }
+  // get xml config file from genieacs
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+configField;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let rawConfigFile = '';
+    resp.on('data', (chunk)=>rawConfigFile+=chunk);
+    resp.on('end', async ()=>{
+      rawConfigFile = JSON.parse(rawConfigFile)[0];
+      if (checkForNestedKey(rawConfigFile, configField+'._value')) {
+        // modify xml config file
+        rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
+        let xmlConfigFile = acsHandlers
+          .digestXmlConfig(device, rawConfigFile, target);
+        if (xmlConfigFile != '') {
+          // set xml config file to genieacs
+          task = {
+            name: 'setParameterValues',
+            parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
+          };
+          result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+          if (!result || !result.finished ||
+              result.task.name !== 'setParameterValues') {
+            console.log('Error: failed to write ConfigFile at '+serial);
+            return;
+          }
+        } else {
+          console.log('Error: failed xml validation at '+serial);
+        }
+      } else {
+        console.log('Error: no config file retrieved at '+serial);
+      }
+    });
+  });
+  req.end();
+};
+
+acsDeviceInfoController.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
@@ -1755,7 +1831,7 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       }
     }
   }
-  // trigger 7557/devices/<acs_id>/tasks POST "name": "download"
+  // trigger 7557/devices/<acs_id>/tasks POST 'name': 'download'
   let response = '';
   try {
     response = await FirmwaresAPI.sendUpgradeFirmware(firmware, device);

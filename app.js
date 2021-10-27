@@ -10,6 +10,7 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
+const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -32,6 +33,27 @@ let packageJson = require('./package.json');
 
 let app = express();
 
+// Express OpenAPI docs generator handling responses first
+const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
+const isOnProduction = (process.env.production === 'true');
+if (!isOnProduction) {
+  expressOasGenerator.handleResponses(
+    app,
+    {
+      mongooseModels: mongoose.modelNames(),
+      swaggerDocumentOptions: {
+        customCss: `
+          .swagger-ui .topbar {
+            background-color: #4db6ac;
+          }
+        `
+      },
+      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
+      alwaysServeDocs: false,
+    },
+  );
+}
+
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
 
@@ -42,7 +64,7 @@ const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
 mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
   {useNewUrlParser: true,
-   serverSelectionTimeoutMS: 2**31-1, // biggest positive signed integer with 32 bits.
+   serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
    useFindAndModify: false,
    useCreateIndex: true,
@@ -50,7 +72,9 @@ mongoose.connect(
 mongoose.set('useCreateIndex', true);
 
 // Release dir must exists
-if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) && process.env.FLM_IMG_RELEASE_DIR !== undefined) {
+if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) &&
+    process.env.FLM_IMG_RELEASE_DIR !== undefined
+) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
 }
 
@@ -58,23 +82,6 @@ if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) && process.env.FLM_IMG_RELEA
 if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp');
 }
-
-// configurations related to deployment are in an untracked file.
-let deploymentConfigurations = './config/configs.js'
-fs.access(deploymentConfigurations, fs.constants.F_OK, function (err) { // check file accessibility.
-  let default_license_control_fqdn = "controle.anlix.io"
-
-  if (err) { // if file doesn't exist or isn't accessible. use default values.
-    process.env.LC_FQDN = default_license_control_fqdn
-    return
-  }
-
-  // if file exist, get configurations from it. 
-  // if a configuration doesn't exist in file, use default value.
-  let configs = require(deploymentConfigurations); 
-  process.env.LC_FQDN = configs.license_control_fqdn || default_license_control_fqdn 
-});
-
 
 if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = process.env.FLM_COMPANY_SECRET;
@@ -358,6 +365,11 @@ app.use(passport.session());
 app.use(fileUpload());
 
 app.use('/', index);
+
+// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
+if (!isOnProduction) {
+  expressOasGenerator.handleRequests();
+}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
