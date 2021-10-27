@@ -1670,7 +1670,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi2.enable = wifiState;
                 // When enabling Wi-Fi set beacon type
                 if (wifiState) {
-                  changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+                  changes.wifi2.beacon_type =
+                    DevicesAPI.getBeaconTypeByModel(model);
                 }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
@@ -1886,25 +1887,35 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('mesh_mode') &&
                 meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // The chosen channel includes better results on some routers
+                const mesh5GhzChannel = 40;
                 matchedDevice.mesh_mode = meshMode;
                 if (matchedDevice.use_tr069) {
                   const auxChanges =
                     meshHandlers.buildTR069Changes(matchedDevice, meshMode);
                   changes.mesh2 = auxChanges.mesh2;
                   changes.mesh5 = auxChanges.mesh5;
-                  if ((meshMode === 2 || meshMode === 4) &&
-                      !matchedDevice.wifi_state) {
-                    changes.wifi2.enable = 1;
+                  if (meshMode === 2 || meshMode === 4) {
                     // When enabling Wi-Fi set beacon type
+                    changes.wifi2.enable = 1;
                     changes.wifi2.beacon_type =
                       DevicesAPI.getBeaconTypeByModel(model);
                   }
-                  if ((meshMode === 3 || meshMode === 4) &&
-                      !matchedDevice.wifi_state_5ghz) {
-                    changes.wifi5.enable = 1;
+                  if (meshMode === 3 || meshMode === 4) {
+                    // For best performance and avoiding DFS issues
+                    // all APs must work on a single 5GHz non-DFS channel
+                    changes.wifi5.channel = mesh5GhzChannel;
+                    matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
                     // When enabling Wi-Fi set beacon type
+                    changes.wifi5.enable = 1;
                     changes.wifi5.beacon_type =
                       DevicesAPI.getBeaconTypeByModel(model);
+                  }
+                } else {
+                  if (meshMode === 3 || meshMode === 4) {
+                    // For best performance and avoiding DFS issues
+                    // all APs must work on a single 5GHz non-DFS channel
+                    matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
                   }
                 }
                 updateParameters = true;
