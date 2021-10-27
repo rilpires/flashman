@@ -1228,9 +1228,14 @@ $(document).ready(function() {
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
           if (device.data_collecting !== undefined) {
-            formAttr += ' data-data_collecting-is_active="'+(device.data_collecting.is_active ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-has_latency="'+(device.data_collecting.has_latency ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-ping_fqdn="'+(device.data_collecting.ping_fqdn || '')+'"';
+            let booleans = ['is_active', 'has_latency', 'burst_loss', 'conn_pings', 'wifi_devices'];
+            for (let parameter of booleans) {
+              formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] ? 'true' : 'false'}"`;
+            }
+            let strings = ['ping_fqdn'];
+            for (let parameter of strings) {
+              formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] || ''}"`;
+            }
           }
 
           let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';

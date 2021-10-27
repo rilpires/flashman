@@ -47,6 +47,8 @@ const checkNumericField = (v) => v.constructor === Number;
 const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
+const checkId = (obj) =>
+  checkField(obj, 'id', util.isMacValid);
 const checkIsActive = (obj) =>
   checkField(obj, 'is_active', checkBooleanField);
 const checkHaslatency = (obj) =>
@@ -59,8 +61,13 @@ const checkPingFqdnToUnset = (obj) =>
   fieldExistenceForUnset(obj, 'ping_fqdn');
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets', checkNumericFieldInsideInterval(100, 100));
-const checkId = (obj) =>
-  checkField(obj, 'id', util.isMacValid);
+const checkBurstLoss = (obj) =>
+  checkField(obj, 'burst_loss', checkBooleanField);
+const checkConnPings = (obj) =>
+  checkField(obj, 'conn_pings', checkBooleanField);
+const checkWifiDevices = (obj) =>
+  checkField(obj, 'wifi_devices', checkBooleanField);
+
 
 // An Object class to be used as errors to be returned in responses.
 // Every router http handler will have a final catch that expects an object of
@@ -137,7 +144,7 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
     let change = changes[changeKey];
     if (change.obj !== undefined && change.obj.constructor === Object) {
       // getting and object where keys are full path field names and their 
-      // values to be set or unset
+      // values to be set or unset.
       let fields = checkDataCollectingFields(change.obj, change.fieldChecks);
       if (Object.keys(fields).length > 0) { // if any existing and valid field.
         noChange = false; // at least one update will be made.
@@ -190,7 +197,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
-        checkPingFqdn, checkPingPackets],
+        checkPingFqdn, checkPingPackets, checkBurstLoss, checkConnPings,
+        checkWifiDevices],
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update)
@@ -206,10 +214,13 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
-      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
+      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
+        checkBurstLoss, checkConnPings, checkWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
+      // for front-end, if user leave this field as empty string, it means
+      // he wants to use the value from Config, instead of the device value.
       fieldChecks: [checkPingFqdnToUnset],
     },
   }))
@@ -254,7 +265,8 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
-      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
+      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
+        checkBurstLoss, checkConnPings, checkWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
@@ -273,21 +285,25 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
 };
 
 dataCollectingController.getConfig = function(req, res) {
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
-    if (!err && matchedConfig) {
-      return res.status(200).json({
-        data_collecting_is_active: matchedConfig.data_collecting.is_active,
-        data_collecting_alarm_fqdn: matchedConfig.data_collecting.alarm_fqdn,
-        data_collecting_ping_fqdn: matchedConfig.data_collecting.ping_fqdn,
-        data_collecting_ping_packets:
-          matchedConfig.data_collecting.ping_packets,
-      });
-    } else {
+  Config.findOne({is_default: true}, function(err, config) {
+    if (err || !config) {
       return res.status(500).json({
         type: 'danger',
         message: 'Erro ao obter parâmetros de coleta de dados',
       });
     }
+    // if data_collecting is not defined, we assign an empty object to it.
+    if (config.data_collecting === undefined) config.data_collecting = {};
+    // returning default values for values that are not defined.
+    return res.status(200).json({
+      is_active: config.data_collecting.is_active || false,
+      alarm_fqdn: config.data_collecting.alarm_fqdn || '',
+      ping_fqdn: config.data_collecting.ping_fqdn || '',
+      ping_packets: config.data_collecting.ping_packets || 100,
+      burst_loss: config.data_collecting.burst_loss || false,
+      conn_pings: config.data_collecting.conn_pings || false,
+      wifi_devices: config.data_collecting.wifi_devices || false,
+    });
   });
 };
 

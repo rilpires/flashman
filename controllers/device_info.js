@@ -790,6 +790,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             ping_fqdn: '',
             alarm_fqdn: '',
             ping_packets: 100,
+            burst_loss: false,
+            conn_pings: false,
+            wifi_devices: false,
           };
           // for each data_collecting parameter, in config, we copy its value.
           // This also makes the code compatible with a data base with no data
@@ -802,13 +805,18 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           if (matchedDevice.data_collecting !== undefined) {
             let d = matchedDevice.data_collecting; // parameters from device model.
             let p = dataCollecting; // the final parameters.
-            // for on/off buttons, device value && config value if it exists in device.
-            d.is_active !== undefined && (p.is_active = p.is_active && d.is_active);
-            d.has_latency !== undefined && (p.has_latency = p.has_latency && d.has_latency);
-            // preference for device value if it exists.
+            // for on/off buttons.
+            let booleans = ['is_active', 'has_latency', 'burst_loss', 'conn_pings',
+              'wifi_devices'];
+            // eslint-disable-next-line guard-for-in
+            for (let bool of booleans) {
+              // device value && config value, if it exists in device.
+              d[bool] !== undefined && (p[bool] = p[bool] && d[bool]);
+            }
+            // for values that device value has preference, use it if it exists.
             d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
           } else {
-            // if data collecting doesn't exist, device won't collect anything.
+            // if data collecting doesn't exist for device, it won't collect.
             dataCollecting.is_active = false;
           }
 
@@ -862,11 +870,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'wifi_state_5ghz': matchedDevice.wifi_state_5ghz,
             'wifi_hidden_5ghz': matchedDevice.wifi_hidden_5ghz,
             'app_password': util.returnObjOrEmptyStr(matchedDevice.app_password),
-            'data_collecting_is_active': dataCollecting.is_active,
-            'data_collecting_has_latency': dataCollecting.has_latency,
-            'data_collecting_alarm_fqdn': dataCollecting.alarm_fqdn,
-            'data_collecting_ping_fqdn': dataCollecting.ping_fqdn,
-            'data_collecting_ping_packets': dataCollecting.ping_packets,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index': util.returnObjOrEmptyStr(matchedDevice.forward_index),
@@ -884,6 +887,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
           };
+          // adding all data_collecting parameters to response json.
+          // eslint-disable-next-line guard-for-in
+          for (let parameter in dataCollecting) {
+            resJson[key] = dataCollecting[key];
+          }
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
             resJson.ipv6_enabled = matchedDevice.ipv6_enabled;

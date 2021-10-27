@@ -107,17 +107,25 @@ $(document).ready(function() {
     type: 'GET',
     url: '/data_collecting/config',
     success: function(resp) {
-      let isActive = document.getElementById('data_collecting_service_is_active');
-      if (isActive) isActive.checked = resp.data_collecting_is_active || false;
-      let alarmFqdn = document.getElementById('data_collecting_service_alarm_fqdn');
-      if (alarmFqdn) alarmFqdn.value = resp.data_collecting_alarm_fqdn || '';
-      let pingFqdn = document.getElementById('data_collecting_service_ping_fqdn');
-      if (pingFqdn) pingFqdn.value = resp.data_collecting_ping_fqdn || '';
-      let pingPackets = document.getElementById('data_collecting_service_ping_packets');
-      if (pingPackets) pingPackets.value = resp.data_collecting_ping_packets;
-      [alarmFqdn, pingFqdn].forEach((input) => {
-        if (input && input.value !== '') input.previousElementSibling.classList.add('active');
-      });
+      for (let key of resp) {
+        // element id is derived from the data_collecting original parameter name.
+        let element = document.getElementById('data_collecting_service_'+key);
+        if (!element) continue; // if element doesn't exist, skip it.
+
+        let value = resp[key];
+        switch (value.constructor) { // value assignment to the html element differs by data type.
+        case Boolean: // a checkbox implements boolean values.
+          element.checked = value;
+          break;
+        case String: // an input field of type text implements strings.
+          element.value = value;
+          if (element.value !== '') element.previousElementSibling.classList.add('active');
+          break;
+        case Number: // an input field of type numeric implements numbers.
+          element.value = value;
+          break;
+        }
+      }
     },
   });
   let isSuperuser = $('.container').data('superuser');

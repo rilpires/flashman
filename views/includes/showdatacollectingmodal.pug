@@ -35,6 +35,22 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_burst_loss",
+                                               id="data_collecting_service_burst_loss")
+                    label.custom-control-label(for="data_collecting_service_burst_loss") Ligado
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Coleta de perda de pacotes."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+
             .row
               .col
                 .input-group
@@ -87,6 +103,37 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_conn_pings",
+                                               id="data_collecting_service_conn_pings")
+                    label.custom-control-label(for="data_collecting_service_conn_pings") Ligado
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Coleta de conectividade."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_wifi_devices",
+                                               id="data_collecting_service_wifi_devices")
+                    label.custom-control-label(for="data_collecting_service_wifi_devices") Ligado
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Coleta de sinal dos dispositivos no wifi."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+
             .row
               .col.text-center
                 button.btn.btn-primary(type="submit")
@@ -119,8 +166,8 @@
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-1
                     .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_is_active") Coleta de perda
-                      select.browser-default.md-select(id="data_collecting_mass_update_is_active")
+                      label(for="data_collecting_mass_update_burst_loss") Coleta de perda de pacote
+                      select.browser-default.md-select(id="data_collecting_mass_update_burst_loss")
                         option(value="") Não alterar
                         option(value="True") Ativa
                         option(value="False") Desativa
@@ -130,22 +177,6 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
-            .row
-              .col
-                .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
-                    .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_has_latency") Coleta de latência
-                      select.browser-default.md-select(id="data_collecting_mass_update_has_latency")
-                        option(value="") Não alterar
-                        option(value="True") Ativa
-                        option(value="False") Desativa
-                  .input-group-append(
-                      data-toggle="tooltip",
-                      title="Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos."
-                    )
-                      span.input-group-text.md-addon.pr-0
-                        .fas.fa-question-circle.fa-lg
             .row
               .col
                 .input-group
@@ -166,6 +197,38 @@
                     )
                       span.input-group-text.md-addon.pr-0
                         .fas.fa-question-circle.fa-lg
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_conn_pings") Coleta de conectividade
+                      select.browser-default.md-select(id="data_collecting_mass_update_conn_pings")
+                        option(value="") Não alterar
+                        option(value="True") Ativa
+                        option(value="False") Desativa
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_wifi_devices") Coleta de sinal dos dispositivos do wifi.
+                      select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
+                        option(value="") Não alterar
+                        option(value="True") Ativa
+                        option(value="False") Desativa
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
             .row
               .col.text-center
                 button.btn.btn-primary(type="submit")
@@ -198,7 +261,7 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_is_active",
                                              id="data_collecting_device_is_active")
-                  label.custom-control-label(for="data_collecting_device_is_active") Coleta de perda
+                  label.custom-control-label(for="data_collecting_device_is_active") Todas as coletas
                 .input-group-append(
                   data-toggle="tooltip",
                   title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
@@ -210,9 +273,9 @@
               .input-group(style="align-items: center;").my-2
                 .custom-control.custom-checkbox
                   input.custom-control-input(type="checkbox",
-                                             name="data_collecting_device_has_latency",
-                                             id="data_collecting_device_has_latency")
-                  label.custom-control-label(for="data_collecting_device_has_latency") Coleta de latência
+                                             name="data_collecting_device_burst_loss",
+                                             id="data_collecting_device_burst_loss")
+                  label.custom-control-label(for="data_collecting_device_burst_loss") Coleta de perda
                 .input-group-append(
                   data-toggle="tooltip",
                   title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
@@ -232,6 +295,34 @@
                 .input-group-append(
                   data-toggle="tooltip",
                   title="IPv4, IPv6 ou endereço de DNS. Campo vazio faz o dispositivo seguir o valor padrão do serviço."
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_conn_pings",
+                                             id="data_collecting_device_conn_pings")
+                  label.custom-control-label(for="data_collecting_device_conn_pings") Coleta de conectividade
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_wifi_devices",
+                                             id="data_collecting_device_wifi_devices")
+                  label.custom-control-label(for="data_collecting_device_wifi_devices") Coleta de sinal dos dispositivos do wifi
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
