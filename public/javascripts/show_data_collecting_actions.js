@@ -82,24 +82,128 @@ let hideModalShowAllert = function(modalJQueryElement, message,
 let totalDevicesFromSearch = 0;
 
 $(document).ready(function() {
+  // // data_collecting parameters for service.
+  // let serviceParameters = {
+  //   is_active: Boolean,
+  //   has_latency: Boolean,
+  //   burst_loss: Boolean,
+  //   conn_pings: Boolean,
+  //   wifi_devices: Boolean,
+  //   ping_fqdn: String,
+  //   alarm_fqdn: String,
+  //   ping_packets: Number,
+  // }
+  // // separating elements into data types.
+  // let serviceBooleans = {};
+  // let serviceStrings = {};
+  // let serviceNumbers = {};
+  // for (let name in serviceParameters) {
+  //   let element = document.getElementById('data_collecting_service_'+name);
+  //   if (serviceParameters[name] === Boolean)  serviceBooleans[name] = element;
+  //   else if (serviceParameters[name] === String) serviceStrings[name] = element;
+  //   else if (serviceParameters[name] === Number)  serviceNumbers[name] = element;
+  // }
+
+  // // data_collecting parameters for device.
+  // let deviceParameters = {
+  //   is_active: Boolean,
+  //   has_latency: Boolean,
+  //   burst_loss: Boolean,
+  //   conn_pings: Boolean,
+  //   wifi_devices: Boolean,
+  //   ping_fqdn: String,
+  // }
+  // // separating elements into data types.
+  // let deviceBooleans = {};
+  // let deviceStrings = {};
+  // // let deviceNumbers = {};
+  // for (let name in deviceParameters) {
+  //   let element = document.getElementById('data_collecting_device_'+name);
+  //   if (deviceParameters[name] === Boolean)  deviceBooleans[name] = element;
+  //   else if (deviceParameters[name] === String) deviceStrings[name] = element;
+  //   // else if (deviceParameters[name] === Number)  deviceNumbers[name] = element;
+  // }
+  // // separating elements into data types.
+  // let massUpdateBooleans = {};
+  // let massUpdateStrings = {};
+  // // let massUpdateNumbers = {};
+  // for (let name in deviceParameters) {
+  //   let element = document.getElementById('data_collecting_mass_update_'+name);
+  //   if (deviceParameters[name] === Boolean)  deviceBooleans[name] = element;
+  //   else if (deviceParameters[name] === String) deviceStrings[name] = element;
+  //   // else if (deviceParameters[name] === Number)  deviceNumbers[name] = element;
+  // }
+  // // all validation functions used in parameters. As service and device
+  // // parameters were named the same, we can define each parameter only once.
+  // let validations = {
+  //   ping_fqdn: isFqdnValid,
+  //   alarm_fqdn: isFqdnValid,
+  // }
+  // let invalidMessages = { // messages that appear bellow an invalid field.
+  //   ping_fqdn: 'Insira um endereço válido',
+  //   alarm_fqdn: 'Insira um endereço válido',
+  // }
+
+  // data_collecting parameters used in both service and device.
+  let parameters = {
+    is_active: {type: Boolean, service: true, device: true},
+    has_latency: {type: Boolean, service: true, device: true},
+    burst_loss: {type: Boolean, service: true, device: true},
+    conn_pings: {type: Boolean, service: true, device: true},
+    wifi_devices: {type: Boolean, service: true, device: true},
+    ping_fqdn: {
+      type: String,
+      service: true, device: true,
+      validations: isFqdnValid,
+      invalidMessage: 'Insira um endereço válido'},
+    alarm_fqdn: {
+      type: String,
+      service: true, device: true,
+      validations: isFqdnValid, invalidMessage: 'Insira um endereço válido'},
+    ping_packets: { // validation for ping_packets is done directly in html.
+      type: Number,
+      service: true, 
+      invalidMessage: 'Insira um número inteiro entre 0 e 100.'
+    },
+  }
+  for (let name in parameters) {
+    let p = parameters[name];
+    if (p.service) { // if service is true.
+      // substituting it with the html element that holds its value.
+      p.service = document.getElementById('data_collecting_service_'+name)
+    }
+    if (p.device) { // if device is true.
+      // substituting it with the html element that holds its value.
+      p.service = document.getElementById('data_collecting_device_'+name)
+      // creating an attribute pointing to the html element that holds the mass update value.
+      p.massUpdate = document.getElementById('data_collecting_mass_update_'+name)
+    }
+  }
+
+
   let deviceForm = document.getElementById('data_collecting_deviceForm');
   let serviceModal = $('#data_collecting-service-modal');
   let deviceModal = $('#data_collecting-device-modal');
   let deviceRow;
 
-  let getDeviceParameters = (row) => ({
-    is_active: row.getAttribute('data-data_collecting-is_active') === 'true',
-    has_latency: row.getAttribute('data-data_collecting-has_latency') === 'true',
-    ping_fqdn: row.getAttribute('data-data_collecting-ping_fqdn') || '',
-  });
+  let getDeviceParameters = (row) => {
+    let ret = {};
+    for (let name in deviceParameters) {
+      let value = row.getAttribute('data-data_collecting-'+name);
+      if (deviceParameters[name] === Boolean) value = value === 'true';
+      else if (deviceParameters[name] === String) value = value || '';
+      ret[name] = value;
+    }
+    return ret;
+  };
 
   let setDeviceParameters = (row, parameters) => {
-    row.setAttribute('data-data_collecting-is_active', '' +
-                     parameters.is_active);
-    row.setAttribute('data-data_collecting-has_latency', '' +
-                     parameters.has_latency);
-    row.setAttribute('data-data_collecting-ping_fqdn',
-                     parameters.ping_fqdn || '');
+    for (let name in deviceParameters) {
+      let value = parameters[name];
+      if (deviceParameters[name] === Boolean) value = ''+value;
+      else if (deviceParameters[name] === String) value = value || '';
+      row.setAttribute('data-data_collecting-'+name, value);
+    }
   };
 
   // the search value when the search was submitted.
@@ -137,77 +241,142 @@ $(document).ready(function() {
   };
 
   let submitServiceParameters = function(event) {
-    let isActive = document.getElementById('data_collecting_service_is_active');
-    let alarmFqdn = document.getElementById('data_collecting_service_alarm_fqdn');
-    let pingFqdn = document.getElementById('data_collecting_service_ping_fqdn');
-    let pingPackets = document.getElementById('data_collecting_service_ping_packets');
+    // for text fields, resetting custom validity, trimming and executing validation.
+    for (let name in parameters) {
+      let p = parameters[name];
+      let input = p.service; // the html element.
+      // if parameter name not defined in service or parameter not of type string.
+      if (!input || p.type !== String) continue;
 
-    // FQDN text inputs.
-    [alarmFqdn, pingFqdn].forEach((input) => {
       input.setCustomValidity('');
       input.value = input.value.trim();
-      if (!isFqdnValid(input.value)) {
-        input.setCustomValidity('Insira um endereço válido');
+      if (p.validation !== undefined && !p.validation(input.value)) {
+        input.setCustomValidity(p.invalidMessage);
       }
-    });
+    }
 
     let form = event.target;
     let valid = form.checkValidity();
     form.classList.add('was-validated');
     if (valid) {
-      let data = {
-        is_active: isActive.checked,
-        alarm_fqdn: alarmFqdn.value,
-        ping_fqdn: pingFqdn.value,
-        ping_packets: Number(pingPackets.value),
-      };
+      let data = {}; // data to be submitted.
+      for (let name in parameters) {
+        let p = parameters[name];
+        let value;
+        // reading element value for each data type.
+        if (p.type === Boolean) value = p.service.checked;
+        else if (p.type === String) value = p.service.value;
+        else if (p.type === Number) value = Number(p.service.value);
+        data[name] = value; // assigning value to data to be submitted.
+      }
       sendDataCollectingParameters(data, form, 'Parâmetros salvos.');
     }
     return false;
   };
 
   let submitUpdateManyParameters = function(event) {
-    let isActive = document.getElementById('data_collecting_mass_update_is_active');
-    let hasLatency = document.getElementById('data_collecting_mass_update_has_latency');
-    let pingFqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
-    [pingFqdn].forEach((input) => {
-      input.setCustomValidity('');
-      input.value = input.value.trim();
-    });
+    // // for text fields, resetting custom validity and trimming.
+    // for (let name in parameters) {
+    //   let p = parameters[name];
+    //   // if parameter name not defined in service or parameter not of type string.
+    //   if (!p.massUpdate || p.type !== String) continue;
 
-    // defining boolean set statements. we never unset boolean parameters.
-    let data = {};
+    //   let input = p.massUpdate; // the html element.
+    //   input.setCustomValidity('');
+    //   input.value = input.value.trim();
+    // }
+
+    let data = {}; // data to be submitted.
     let anyChange = false;
-    // these are not check boxes. values can be true, false or no change.
-    let booleanFields = {
-      is_active: isActive.value,
-      has_latency: hasLatency.value,
-    };
-    for (let fieldname of booleanFields) {
-      let value = booleanFields[fieldname];
-      if (value === '') continue;
-      if (value === 'True') value = true;
-      else if (value === 'False') value = false;
-      if (data.$set === undefined) data.$set = {};
-      data.$set[fieldname] = value;
-      anyChange = true;
-    }
 
-    // defining ping_fqdn set or unset statement for mass update input text.
-    if (pingFqdn.value === 'Apagar') { // when to unset.
-      if (data.$unset === undefined) data.$unset = {};
-      data.$unset['ping_fqdn'] = '';
-      anyChange = true;
-    // when to set.
-    } else if (pingFqdn.value !== '' && pingFqdn.value !== 'Não alterar') {
-      if (data.$set === undefined) data.$set = {};
-      // if invalid, set input as invalid. if valid, set data.
-      if (!isFqdnValid(pingFqdn.value)) {
-        pingFqdn.setCustomValidity('Insira um endereço válido');
-      } else {
-        data.$set['ping_fqdn'] = pingFqdn.value;
+    // // defining boolean set statements. we never unset boolean parameters.
+    // // these are not check boxes. values can be true, false or no change.
+    // for (let fieldname of massUpdateBooleans) {
+    //   let value = massUpdateBooleans[fieldname].value;
+    //   if (value === '') continue;
+    //   if (value === 'True') value = true;
+    //   else if (value === 'False') value = false;
+    //   if (data.$set === undefined) data.$set = {};
+    //   data.$set[fieldname] = value;
+    //   anyChange = true;
+    // }
+
+    // // defining set or unset statement for mass update input text.
+    // for (let name in massUpdateStrings) {
+    //   let input = massUpdateStrings[name];
+    //   if (input.value === 'Apagar') { // when we have to unset.
+    //     if (data.$unset === undefined) data.$unset = {};
+    //     data.$unset[name] = '';
+    //     anyChange = true;
+    //   // when we have to set.
+    //   } else if (input.value !== '' && input.value !== 'Não alterar') {
+    //     if (data.$set === undefined) data.$set = {};
+    //     // if invalid, sets input as invalid. if valid, sets data.
+    //     if (!validations[name](input.value)) {
+    //       input.setCustomValidity(invalidMessages[name]);
+    //     } else {
+    //       data.$set[name] = input.value;
+    //     }
+    //     anyChange = true;
+    //   }
+    // }
+
+    for (let name in parameters) {
+      let p = parameters[name];
+      let input = p.massUpdate; // the html element.
+      if (!input) continue; // if attribute 'massUpdate' is not defined, skip parameter.
+
+      // these are not check boxes. values can be true, false or no change.
+      if (p.type === Boolean) {
+        let value = input.value; // value
+        if (value === '') continue;
+        if (value === 'True') value = true;
+        else if (value === 'False') value = false;
+
+        // defining boolean set statements. we never unset boolean parameters.
+        if (data.$set === undefined) data.$set = {};
+        data.$set[fieldname] = value;
+        anyChange = true;
+
+      // defining set or unset statement for mass update input text.
+      } else if (p.type === String) {
+        input.setCustomValidity('');
+        input.value = input.value.trim();
+        // when we have to unset.
+        if (input.value === 'Apagar') {
+          if (data.$unset === undefined) data.$unset = {};
+          data.$unset[name] = '';
+          anyChange = true;
+        // when we have to set.
+        } else if (input.value !== '' && input.value !== 'Não alterar') {
+          if (data.$set === undefined) data.$set = {};
+          // if invalid, sets input as invalid. if valid, sets data.
+          if (p.validation !== undefined && !p.validation(input.value)) {
+            input.setCustomValidity(p.invalidMessage);
+          } else {
+            data.$set[name] = input.value;
+          }
+          anyChange = true;
+        }
+
+      } else if (p.type === Number) { // currently no numeric parameters exist for device.
+        let value = input.value; // value
+        if (value === '') continue;
+        let numericValue = Number(value);
+        if (isNaN(numericValue)) {
+          input.setCustomValidity('Valor não é numérico');
+          continue
+        }
+        if (p.validation !== undefined && !p.validation(value)) {
+          input.setCustomValidity(p.invalidMessage);
+        } else {
+          if (data.$set === undefined) data.$set = {};
+          data.$set[fieldname] = value;
+        }
+        anyChange = true;
+
+      // defining set or unset statement for mass update input text.
       }
-      anyChange = true;
     }
 
     if (anyChange) {
@@ -227,100 +396,127 @@ $(document).ready(function() {
   };
 
   let submitDeviceParameters = function(event) {
-    try {
-      let isActive = document.getElementById('data_collecting_device_is_active');
-      let hasLatency = document.getElementById('data_collecting_device_has_latency');
-      let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
-      [pingFqdn].forEach((input) => { // all text fields.
-        input.setCustomValidity('');
-        input.value = input.value.trim();
-        if (input.value !== '' && !isFqdnValid(input.value)) {
-          input.setCustomValidity('Insira um endereço válido');
-        }
-      });
+    // [deviceStrings.ping_fqdn].forEach((input) => { // all FQDN fields.
+    //   input.setCustomValidity('');
+    //   input.value = input.value.trim();
+    //   if (input.value !== '' && !isFqdnValid(input.value)) {
+    //     input.setCustomValidity('Insira um endereço válido');
+    //   }
+    // });
 
-      // checking if submitted data is any different from data already saved.
-      let submittedDeviceData = { // user submitted data.
-        is_active: isActive.checked,
-        has_latency: hasLatency.checked,
-        ping_fqdn: pingFqdn.value,
-      };
-      let savedDeviceData = getDeviceParameters(deviceRow);
-      let anyChange = false;
-      for (let key in savedDeviceData) {
-        if (savedDeviceData[key] !== submittedDeviceData[key]) {
-          anyChange = true;
-          break;
+    // // checking if new data is any different from data already saved.
+    // let newDeviceData = {}; // device's new data.
+    // for (let name in deviceBooleans) newDeviceData[name] = deviceBooleans[name].checked;
+    // for (let name in deviceStrings) newDeviceData[name] = deviceStrings[name].value;
+    // // for (let name in deviceNumbers) newDeviceData[name] = Number(deviceNumbers[name].value);
+
+    // // checking if there is any change, before submitting data.
+    // let savedDeviceData = getDeviceParameters(deviceRow);
+    // let anyChange = false;
+    // for (let key in savedDeviceData) {
+    //   if (savedDeviceData[key] !== newDeviceData[key]) {
+    //     anyChange = true;
+    //     break;
+    //   }
+    // }
+
+    let savedDeviceData = getDeviceParameters(deviceRow); // data for device in device_list.
+    let data = {$set: {}}; // data to be submitted.
+    let anyChange = false;
+    for (let name in parameters) {
+      let p = parameters[name];
+      let input = p.device; // the html element.
+      if (!input) continue; // if attribute 'device' is not defined, skip parameter.
+
+      let value;
+
+      if (p.type === Boolean) {
+        value = input.checked; // reading parameter value from html element.
+        data.$set[name] = value; // adding value to data to be submitted.
+        if (value !== savedDeviceData[name]) anyChange = true; // checking change.
+
+      } else if (p.type === String) {
+        input.setCustomValidity(''); // resetting validation.
+        input.value = input.value.trim(); // trimming data and updating value.
+        // validating data.
+        if (input.value !== '' && p.validation !== undefined && !p.validation(input.value)) {
+          input.setCustomValidity(p.invalidMessage); // setting message for invalid field.
         }
+        value = input.value; // reading parameter value from html element.
+        // adding value to data to be submitted.
+        if (value === '') { // empty string means we should remove data from database.
+          if (data.$unset === undefined) data.$unset = {}; // if unset field is not defined yet.
+          data.$unset[name] = ''; // adding name to data to be submitted. any value will work.
+        } else { // any other string value should be set as is (validation has already happened).
+          data.$set[name] = value; // adding value to data to be submitted.
+        }
+        if (value !== savedDeviceData[name]) anyChange = true;
+      } else if (p.type === Number) { // currently no numeric parameters exist for device.
+        value = Number(input.value); // reading parameter value from html element.
+        data.$set[name] = value; // adding value to data to be submitted.
+        if (value !== savedDeviceData[name]) anyChange = true; // checking change.
       }
+    }
 
-      if (anyChange) {
-        let form = event.target;
-        let valid = form.checkValidity();
-        form.classList.add('was-validated');
-        let deviceId = form.getAttribute('data-id');
+    if (anyChange) {
+      let form = event.target;
+      let valid = form.checkValidity();
+      form.classList.add('was-validated');
+      let deviceId = form.getAttribute('data-id');
 
-        if (valid) {
-          let data = {$set: {
-            is_active: isActive.checked,
-            has_latency: hasLatency.checked,
-          }};
-
-          // FQDN text inputs.
-          let textInputs = {pingFqdn};
-          // eslint-disable-next-line guard-for-in
-          for (let key in textInputs) {
-            let input = textInputs[key];
-            if (input.value === '') {
-              if (data.$unset === undefined) data.$unset = {};
-              data.$unset[key] = '';
-            } else {
-              data.$set[key] = input.value;
-            }
-          }
-
-          setDeviceParameters(deviceRow, submittedDeviceData);
-          sendDataCollectingParameters(
-            data,
-            form,
-            `Parâmetros salvos para o dispositivo ${deviceId}.`,
-          );
-        }
-      } else {
-        hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
+      if (valid) {
+        setDeviceParameters(deviceRow, newDeviceData);
+        sendDataCollectingParameters(data, form,
+          `Parâmetros salvos para o dispositivo ${deviceId}.`);
       }
-    } catch (e) {
-      console.log(e);
+    } else {
+      hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger'); // we should change this from 'danger' to 'warn' or 'warning'.
     }
     return false;
   };
 
   let loadDeviceParamaters = function(event) {
+    // getting device parameters from device_list table row.
     deviceRow = event.target.closest('tr');
     let deviceId = deviceRow.getAttribute('data-deviceid');
+    // setting device modal form attributes.
     deviceForm.setAttribute('data-id', deviceId);
     deviceForm.setAttribute(
       'action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`);
+    // resetting validated state for device modal form.
     deviceForm.classList.remove('was-validated');
+    // ID in title of the device modal form.
     document.getElementById('data_collecting_deviceId').innerHTML = deviceId;
 
-    let isActive = document.getElementById('data_collecting_device_is_active');
-    let hasLatency = document.getElementById('data_collecting_device_has_latency');
-    let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
+    let deviceParameters = getDeviceParameters(deviceRow);
+    for (let name in parameters) {
+      let p = parameters[name];
+      let input = p.device; // the html element.
+      if (!input) continue; // if attribute 'device' is not defined, skip parameter.
 
-    let parameters = getDeviceParameters(deviceRow);
-    isActive.checked = parameters.is_active;
-    hasLatency.checked = parameters.has_latency;
-    pingFqdn.value = parameters.ping_fqdn;
-    [pingFqdn].forEach((input) => { // for every text input.
-      if (input) {
-        input.setCustomValidity('');
+      let value = deviceParameters[name] // value from device_list.
+      if (p.type === Boolean) {
+        input.checked = value;
+      } else if (p.type === String) {
+        input.value = value;
+        // resetting field validation after loading new device string parameter.
         setFieldValidLabel(input);
         if (input.value !== '') {
           input.previousElementSibling.classList.add('active');
         }
+      } else if (p.type === Number) {
+        input.value = String(value);
       }
-    });
+    }
+    // Object.values(deviceStrings).forEach((input) => { // for every text input.
+    //   if (input) {
+    //     input.setCustomValidity('');
+    //     setFieldValidLabel(input);
+    //     if (input.value !== '') {
+    //       input.previousElementSibling.classList.add('active');
+    //     }
+    //   }
+    // });
     deviceModal.modal('show');
   };
 
@@ -343,8 +539,8 @@ $(document).ready(function() {
   if (btnDataCollecting) {
     btnDataCollecting.onclick = (event) => serviceModal.modal('show');
   }
-  [...document.getElementsByClassName('panel-arrow')].forEach(
-    (e) => e.addEventListener('click', hideShowPannel));
+  [...document.getElementsByClassName('panel-arrow')].forEach((e) => 
+    e.addEventListener('click', hideShowPannel));
 
   let serviceForm = document.getElementById('data_collecting_serviceForm');
   if (serviceForm) {
