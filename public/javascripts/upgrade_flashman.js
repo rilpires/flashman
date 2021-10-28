@@ -105,25 +105,25 @@ $(document).ready(function() {
 
   $.ajax({
     type: 'GET',
-    url: '/data_collecting/config',
+    url: '/data_collecting/service/parameters',
     success: function(resp) {
-      for (let key of resp) {
+      for (let parameter in resp) {
         // element id is derived from the data_collecting original parameter name.
-        let element = document.getElementById('data_collecting_service_'+key);
+        let element = document.getElementById('data_collecting_service_'+parameter);
         if (!element) continue; // if element doesn't exist, skip it.
 
-        let value = resp[key];
+        let value = resp[parameter];
         switch (value.constructor) { // value assignment to the html element differs by data type.
-        case Boolean: // a checkbox implements boolean values.
-          element.checked = value;
-          break;
-        case String: // an input field of type text implements strings.
-          element.value = value;
-          if (element.value !== '') element.previousElementSibling.classList.add('active');
-          break;
-        case Number: // an input field of type numeric implements numbers.
-          element.value = value;
-          break;
+          case Boolean: // a checkbox implements boolean values.
+            element.checked = value;
+            break;
+          case String: // an input field of type text implements strings.
+            element.value = value;
+            if (element.value !== '') element.previousElementSibling.classList.add('active');
+            break;
+          case Number: // an input field of type numeric implements numbers.
+            element.value = value;
+            break;
         }
       }
     },

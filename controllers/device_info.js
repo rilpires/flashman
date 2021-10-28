@@ -890,7 +890,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // adding all data_collecting parameters to response json.
           // eslint-disable-next-line guard-for-in
           for (let parameter in dataCollecting) {
-            resJson[key] = dataCollecting[key];
+            resJson[parameter] = dataCollecting[parameter];
           }
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {

@@ -174,8 +174,8 @@ const sendErrorResponse = (res, e) => Promise.resolve()
   .catch((e) => console.log('Error when sending error message in data '+
     'collecting response.\n', e));
 
-const sendOkResponse = (res, json) => Promise.resolve()
-  .then(() => json ? res.status(200).json(json) : res.status(200).end())
+const sendOkResponse = (res, obj) => Promise.resolve()
+  .then(() => obj ? res.status(200).json(obj) : res.status(200).end())
   .catch((e) => console.log('Error when sending ok for data collecting '+
     'response.\n', e));
 
@@ -186,7 +186,19 @@ dataCollectingController.returnServiceParameters = function(req, res) {
   .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting').lean()
     .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao buscar os '+
       'parâmetros de coleta de dados.')))
-  .then((config) => sendOkResponse(res, config.data_collecting || {}))
+  .then((config) => {
+    // if data_collecting is not defined, we assign an empty object to it.
+    if (config.data_collecting === undefined) config.data_collecting = {};
+    return sendOkResponse(res, config.data_collecting && {
+      is_active: config.data_collecting.is_active || false,
+      alarm_fqdn: config.data_collecting.alarm_fqdn || '',
+      ping_fqdn: config.data_collecting.ping_fqdn || '',
+      ping_packets: config.data_collecting.ping_packets || 100,
+      burst_loss: config.data_collecting.burst_loss || false,
+      conn_pings: config.data_collecting.conn_pings || false,
+      wifi_devices: config.data_collecting.wifi_devices || false,
+    })
+  })
   .catch((e) => sendErrorResponse(res, e));
 };
 
@@ -249,12 +261,23 @@ dataCollectingController.updateManyParameters = async function(req, res) {
 };
 
 dataCollectingController.returnDeviceParameters = function(req, res) {
+  console.log('returnDeviceParameters id', req.params.id)
   return Promise.resolve()
   .then(() => checkIdUrlParameter(req.params))
   .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')
     .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao buscar os '+
       `parâmetros de coleta de dados do dispositivo ${req.params.id}.`)))
-  .then((device) => sendOkResponse(res, device.data_collecting || {}))
+  .then((device) => {
+    // if data_collecting is not defined, we assign an empty object to it.
+    if (device.data_collecting === undefined) device.data_collecting = {};
+    return sendOkResponse(res, device.data_collecting || {
+      is_active: device.data_collecting.is_active || false,
+      ping_fqdn: device.data_collecting.ping_fqdn || '',
+      burst_loss: device.data_collecting.burst_loss || false,
+      conn_pings: device.data_collecting.conn_pings || false,
+      wifi_devices: device.data_collecting.wifi_devices || false,
+    })
+  })
   .catch((e) => sendErrorResponse(res, e));
 };
 
@@ -280,31 +303,8 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   .then(() => Promise.resolve()
     .then(() => mqtt.anlixMessageRouterUpdate(req.params.id))
     .catch((e) => console.log('Error when forcing sync for device '
-      +`'${req.params.id}' after saving data its collecting parameters.\n`, e)))
+      +`'${req.params.id}' after saving its data_collecting parameters.\n`, e)))
   .catch((e) => sendErrorResponse(res, e));
-};
-
-dataCollectingController.getConfig = function(req, res) {
-  Config.findOne({is_default: true}, function(err, config) {
-    if (err || !config) {
-      return res.status(500).json({
-        type: 'danger',
-        message: 'Erro ao obter parâmetros de coleta de dados',
-      });
-    }
-    // if data_collecting is not defined, we assign an empty object to it.
-    if (config.data_collecting === undefined) config.data_collecting = {};
-    // returning default values for values that are not defined.
-    return res.status(200).json({
-      is_active: config.data_collecting.is_active || false,
-      alarm_fqdn: config.data_collecting.alarm_fqdn || '',
-      ping_fqdn: config.data_collecting.ping_fqdn || '',
-      ping_packets: config.data_collecting.ping_packets || 100,
-      burst_loss: config.data_collecting.burst_loss || false,
-      conn_pings: config.data_collecting.conn_pings || false,
-      wifi_devices: config.data_collecting.wifi_devices || false,
-    });
-  });
 };
 
 module.exports = dataCollectingController;
