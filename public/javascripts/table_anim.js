@@ -988,8 +988,10 @@ $(document).ready(function() {
     // Channel change only possible in cable only mesh mode
     if ((!isSuperuser && grantWifiInfo <= 1) || (device.mesh_mode !== 1)) {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
     } else {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, '');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_EN/g, '');
     }
     if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
        (!isSuperuser && grantWifiInfo <= 1)) {
@@ -1807,7 +1809,7 @@ $(document).ready(function() {
                         '<div class="md-selectfield form-control my-0">'+
                           '<label class="active">Canal do Wi-Fi</label>'+
                           '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
-                          '$REPLACE_WIFI5_EN>'+
+                          '$REPLACE_WIFI5_EN $REPLACE_WIFI5_CHANNEL_EN>'+
                             '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
                             '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
                             '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
@@ -2067,12 +2069,18 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER', '');
           }
-          if ((!isSuperuser && grantWifiInfo <= 1) || device.mesh_mode > 1) {
+          if (!isSuperuser && grantWifiInfo <= 1) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
           } else {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
+          }
+          if (device.mesh_mode > 1 && grantMeshV2) {
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g,
+                                      'disabled');
+          } else {
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g, '');
           }
           if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
@@ -2082,11 +2090,12 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
-              device.mesh_mode > 1
+              (device.mesh_mode > 1 && grantMeshV2)
           ) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
-            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN',
+                                      'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', '');
