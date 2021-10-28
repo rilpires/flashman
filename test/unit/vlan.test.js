@@ -60,6 +60,18 @@ describe('VLAN Controller', () => {
     expect(digestedVlans['1']).toBe('1 2 3 4 6t');
     expect(digestedVlans['2']).toBe('0 6t');
   });
+  test('convertFlashmanVlan : m4 v5.1', () => {
+    let model = 'test';
+    let vlanObj = '[{"vlan_id": 23, "port": 4},'+
+      '{"vlan_id": 1, "port": 2},'+
+      '{"vlan_id": 23, "port": 3},'+
+      '{"vlan_id": 1, "port": 1}]';
+    let digestedVlans = vlanController
+      .convertFlashmanVlan(model, vlanObj);
+    console.log(digestedVlans);
+    expect(digestedVlans['1']).toBe('1 2 3 4 6t');
+    expect(digestedVlans['2']).toBe('0 6t');
+  });
   test('convertFlashmanVlan : m3 v2', () => {
     let model = 'TL-WDR3600V1';
     let vlanObj = undefined;
@@ -186,14 +198,19 @@ describe('VLAN Controller', () => {
     expect(ret.vlans['12']).toBe('3t 0t');
     expect(ret.vlans['2']).toBe('0 6t');
   });
-  test('getValidVlan :', () => {
-    let model;
-    let convertedVlan;
-    expect(true).toBe(true);
-  });
+  /* list of possibilities
+    model
+      1 -
+      2 -
+    vlanObj*/
   test('convertDeviceVlan :', () => {
     let model;
     let vlanObj;
+    expect(true).toBe(true);
+  });
+  test('getValidVlan :', () => {
+    let model;
+    let convertedVlan;
     expect(true).toBe(true);
   });
 });
