@@ -422,8 +422,17 @@ vlanController.updateVlans = async function(req, res) {
 
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
+  let deviceInfo = DeviceVersion.getDeviceInfo(model);
 
-  if (typeof vlanObj === 'undefined') {
+  let lan_ports = deviceInfo['lan_ports'];
+  let wan_port = deviceInfo['wan_port'];
+  let cpu_port = deviceInfo['cpu_port'];
+  let max_vid = deviceInfo['max_vid'];
+  let qtd_ports = deviceInfo['num_usable_lan_ports'];
+  let vlan_of_lan = '1';
+  let vlan_of_wan = '2';
+
+  if (!vlanObj) {
     vlanObj = '';
   } else {
     try {
@@ -432,18 +441,24 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       vlanObj = '';
     }
   }
-
-  let deviceInfo = DeviceVersion.getDeviceInfo(model);
-
-  let lan_ports = deviceInfo['lan_ports'];
-  let wan_port = deviceInfo['wan_port'];
-  let cpu_port = deviceInfo['cpu_port'];
-  let vlan_of_lan = '1';
-  let vlan_of_wan = '2';
+  // sanity check of vlanObj
+  if (Array.isArray(vlanObj)) {
+    let isInShape = vlanObj.every((v) => {
+      let z = false;
+      let a = !!v.vlan_id && !!v.port;
+      let b = v.vlan_id <= max_vid;
+      let c = Number.isInteger(v.vlan_id);
+      let d = v.port <= qtd_ports;
+      let e = Number.isInteger(v.port);
+      z = a && b && c && d && e;
+      return z;
+    });
+    if (!isInShape) vlanObj = '';
+  } else vlanObj = '';
 
   // on well behavior object of vlan that needs to treat others vlans
   let aux_idx;
-  if ((typeof vlanObj !== 'undefined') && (vlanObj.length > 0)) {
+  if (vlanObj.length > 0) {
     // initialize keys values with empty string
     for (let i = 0; i < vlanObj.length; i++) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
