@@ -793,7 +793,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             (release) => {
               return DeviceVersion.testFirmwareUpgradeMeshLegacy(
                 device.mesh_mode, device.mesh_slaves,
-                device.installed_release, release);
+                device.version, release.flashbox_version);
             },
           );
           device.isUpgradeEnabled = true;

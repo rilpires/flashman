@@ -872,7 +872,7 @@ scheduleController.startSchedule = async function(req, res) {
         }
         const valid = DeviceVersion.testFirmwareUpgradeMeshLegacy(
           device.mesh_mode, device.mesh_slaves,
-          device.installed_release, release);
+          device.version, release.flashbox_version);
         if (!valid) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
