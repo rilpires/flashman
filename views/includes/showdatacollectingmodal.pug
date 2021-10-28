@@ -31,26 +31,10 @@
                     label.custom-control-label(for="data_collecting_service_is_active") Ligado
                   .input-group-append(
                     data-toggle="tooltip",
-                    title="Funcionamento geral da coleta de dados em todos os dispositivos."
+                    title="Ativa ou desativa todas as coleta em todos os dispositivos."
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
-
-            .row
-              .col
-                .input-group(style="align-items: center;")
-                  .custom-control.custom-checkbox
-                    input.custom-control-input(type="checkbox",
-                                               name="data_collecting_service_burst_loss",
-                                               id="data_collecting_service_burst_loss")
-                    label.custom-control-label(for="data_collecting_service_burst_loss") Ligado
-                  .input-group-append(
-                    data-toggle="tooltip",
-                    title="Coleta de perda de pacotes."
-                  )
-                    span.input-group-text.md-addon.pr-0
-                      .fas.fa-question-circle.fa-lg
-
             .row
               .col
                 .input-group
@@ -68,11 +52,26 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_burst_loss",
+                                               id="data_collecting_service_burst_loss")
+                    label.custom-control-label(for="data_collecting_service_burst_loss") Coleta de perda de pacote
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Ativa e desativa a coleta de perda de pacotes em todos os dispositivos."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
             .row
               .col
                 .input-group
                   .md-form.input-entry.my-2(style="flex-grow: 1;")
-                    label(for="data_collecting_ping_service_fqdn") Endereço para ping
+                    label(for="data_collecting_ping_service_fqdn") Endereço para ping na coleta de perda de pacote
                     input.form-control(type="text",
                                        id="data_collecting_service_ping_fqdn",
                                        required="required",
@@ -89,7 +88,7 @@
               .col
                 .input-group
                   .md-form.input-entry.my-2(style="flex-grow: 1;")
-                    label(for="data_collecting_service_ping_packets") Quantidade de pacotes ping
+                    label(for="data_collecting_service_ping_packets") Quantidade de pacotes ping na coleta de perda de pacote
                     input.form-control(type="number",
                                        id="data_collecting_service_ping_packets",
                                        min=100,
@@ -103,7 +102,7 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
-
+            hr
             .row
               .col
                 .input-group(style="align-items: center;")
@@ -111,14 +110,14 @@
                     input.custom-control-input(type="checkbox",
                                                name="data_collecting_service_conn_pings",
                                                id="data_collecting_service_conn_pings")
-                    label.custom-control-label(for="data_collecting_service_conn_pings") Ligado
+                    label.custom-control-label(for="data_collecting_service_conn_pings") Coleta de conectividade
                   .input-group-append(
                     data-toggle="tooltip",
-                    title="Coleta de conectividade."
+                    title="Ativa e desativa a coleta de conectividade em todos os dispositivos."
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
-
+            hr
             .row
               .col
                 .input-group(style="align-items: center;")
@@ -126,10 +125,10 @@
                     input.custom-control-input(type="checkbox",
                                                name="data_collecting_service_wifi_devices",
                                                id="data_collecting_service_wifi_devices")
-                    label.custom-control-label(for="data_collecting_service_wifi_devices") Ligado
+                    label.custom-control-label(for="data_collecting_service_wifi_devices") Coleta de sinal dos dispositivos no wifi
                   .input-group-append(
                     data-toggle="tooltip",
-                    title="Coleta de sinal dos dispositivos no wifi."
+                    title="Ativa e desativa a coleta de de sinal dos dispositivos no wifi em todos os dispositivos."
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
@@ -166,6 +165,23 @@
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-1
                     .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_is_active") Ligado
+                      select.browser-default.md-select(id="data_collecting_mass_update_is_active")
+                        option(value="") Não alterar
+                        option(value="True") Ativa
+                        option(value="False") Desativa
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title="Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos."
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                    .md-selectfield.form-control
                       label(for="data_collecting_mass_update_burst_loss") Coleta de perda de pacote
                       select.browser-default.md-select(id="data_collecting_mass_update_burst_loss")
                         option(value="") Não alterar
@@ -181,7 +197,7 @@
               .col
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-2
-                    label(for="data_collecting_mass_update_ping_fqdn") Endereço para ping
+                    label(for="data_collecting_mass_update_ping_fqdn") Endereço para ping na coleta de perda de pacote
                     input.form-control(list="ping_mass_update",
                                        id="data_collecting_mass_update_ping_fqdn",
                                        type="text"
@@ -197,6 +213,7 @@
                     )
                       span.input-group-text.md-addon.pr-0
                         .fas.fa-question-circle.fa-lg
+            hr
             .row
               .col
                 .input-group
@@ -213,12 +230,13 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+            hr
             .row
               .col
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-1
                     .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_wifi_devices") Coleta de sinal dos dispositivos do wifi.
+                      label(for="data_collecting_mass_update_wifi_devices") Coleta de sinal dos dispositivos no wifi.
                       select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
                         option(value="") Não alterar
                         option(value="True") Ativa
@@ -261,13 +279,14 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_is_active",
                                              id="data_collecting_device_is_active")
-                  label.custom-control-label(for="data_collecting_device_is_active") Todas as coletas
+                  label.custom-control-label(for="data_collecting_device_is_active") Ligada
                 .input-group-append(
                   data-toggle="tooltip",
                   title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
+          hr
           .row
             .col
               .input-group(style="align-items: center;").my-2
@@ -275,10 +294,10 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_burst_loss",
                                              id="data_collecting_device_burst_loss")
-                  label.custom-control-label(for="data_collecting_device_burst_loss") Coleta de perda
+                  label.custom-control-label(for="data_collecting_device_burst_loss") Coleta de perda de pacote
                 .input-group-append(
                   data-toggle="tooltip",
-                  title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
+                  title="Se o serviço de coleta não estiver ligado e com a coleta de perda de pacote do servico habilitada, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
@@ -286,7 +305,7 @@
             .col
               .input-group
                 .md-form.input-entry.my-2(style="flex-grow: 1;")
-                  label(for="data_collecting_device_ping_fqdn") Endereço para ping
+                  label(for="data_collecting_device_ping_fqdn") Endereço para ping na coleta de perda de pacote
                   input.form-control(type="text",
                                      id="data_collecting_device_ping_fqdn",
                                      minlength="3",
@@ -298,6 +317,7 @@
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
+          hr
           .row
             .col
               .input-group(style="align-items: center;").my-2
@@ -308,10 +328,11 @@
                   label.custom-control-label(for="data_collecting_device_conn_pings") Coleta de conectividade
                 .input-group-append(
                   data-toggle="tooltip",
-                  title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
+                  title="Se o serviço de coleta não estiver ligado e com a coleta de conectividade do serviço habilitada, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
+          hr
           .row
             .col
               .input-group(style="align-items: center;").my-2
@@ -319,10 +340,10 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_wifi_devices",
                                              id="data_collecting_device_wifi_devices")
-                  label.custom-control-label(for="data_collecting_device_wifi_devices") Coleta de sinal dos dispositivos do wifi
+                  label.custom-control-label(for="data_collecting_device_wifi_devices") Coleta de sinal dos dispositivos no wifi
                 .input-group-append(
                   data-toggle="tooltip",
-                  title="Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta."
+                  title="Se o serviço de coleta não estiver ligado e com a coleta de sinal dos dispositivos no wifi habilitada, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
