@@ -1889,6 +1889,7 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantOpmodeEdit) {
                 // The chosen channel includes better results on some routers
                 const mesh5GhzChannel = 40;
+                const wifiRadioState = 1;
                 matchedDevice.mesh_mode = meshMode;
                 if (matchedDevice.use_tr069) {
                   const auxChanges =
@@ -1897,7 +1898,7 @@ deviceListController.setDeviceReg = function(req, res) {
                   changes.mesh5 = auxChanges.mesh5;
                   if (meshMode === 2 || meshMode === 4) {
                     // When enabling Wi-Fi set beacon type
-                    changes.wifi2.enable = 1;
+                    changes.wifi2.enable = wifiRadioState;
                     changes.wifi2.beacon_type =
                       DevicesAPI.getBeaconTypeByModel(model);
                   }
@@ -1905,18 +1906,20 @@ deviceListController.setDeviceReg = function(req, res) {
                     // For best performance and avoiding DFS issues
                     // all APs must work on a single 5GHz non-DFS channel
                     changes.wifi5.channel = mesh5GhzChannel;
-                    matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
                     // When enabling Wi-Fi set beacon type
-                    changes.wifi5.enable = 1;
+                    changes.wifi5.enable = wifiRadioState;
                     changes.wifi5.beacon_type =
                       DevicesAPI.getBeaconTypeByModel(model);
                   }
-                } else {
-                  if (meshMode === 3 || meshMode === 4) {
-                    // For best performance and avoiding DFS issues
-                    // all APs must work on a single 5GHz non-DFS channel
-                    matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
-                  }
+                }
+                if (meshMode === 2 || meshMode === 4) {
+                  matchedDevice.wifi_state = wifiRadioState;
+                }
+                if (meshMode === 3 || meshMode === 4) {
+                  // For best performance and avoiding DFS issues
+                  // all APs must work on a single 5GHz non-DFS channel
+                  matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
+                  matchedDevice.wifi_state_5ghz = wifiRadioState;
                 }
                 updateParameters = true;
               } else {
