@@ -2100,16 +2100,21 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   Analogously, mesh v2 devices cannot upgrade to mesh v1 under same conditions
 */
 DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
-  meshMode, slaves, curRelease, nextRelease) {
-  if (meshMode > 1 && slaves && slaves.length > 0) {
-    if (!nextRelease) {
-      return false;
-    } else if (versionCompare(curRelease, '0.32.0') < 0) {
-      return (versionCompare(nextRelease, '0.32.0') < 0);
+  meshMode, slaves, curVersion, nextVersion, device) {
+  if (curVersion.match(versionRegex)) {
+    if (meshMode > 1 && slaves && slaves.length > 0) {
+      if (!nextVersion, device) {
+        return false;
+      } else if (versionCompare(curVersion, '0.32.0') < 0) {
+        return (versionCompare(nextVersion, device, '0.32.0') < 0);
+      } else {
+        return (versionCompare(nextVersion, device, '0.32.0') >= 0);
+      }
     } else {
-      return (versionCompare(nextRelease, '0.32.0') >= 0);
+      return true;
     }
   } else {
+    // development version, allow everything
     return true;
   }
 };
