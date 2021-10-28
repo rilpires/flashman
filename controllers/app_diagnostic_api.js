@@ -12,7 +12,6 @@ const acsDeviceInfo = require('./acs_device_info.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
-const deviceList = require('./device_list.js');
 const DevicesAPI = require('./external-genieacs/devices-api');
 
 let diagAppAPIController = {};
@@ -356,13 +355,14 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       let acsID = device.acs_id;
       let splitID = acsID.split('-');
       model = splitID.slice(1, splitID.length-1).join('-');
-      changes = meshHandlers.buildTR069Changes(device, targetMode);
     }
     const permissions = DeviceVersion.findByVersion(
       device.version,
       device.wifi_is_5ghz_capable,
       model,
     );
+    const wifiRadioState = 1;
+    const mesh5GhzChannel = 40; // Value has better results on some routers
     const isMeshV1Compatible = permissions.grantMeshMode;
     const isMeshV2Compatible = permissions.grantMeshV2;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
@@ -370,31 +370,36 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'CPE isn\'t compatibe with mesh',
       });
     }
-    if (isMeshV2Compatible) {
-      if (device.use_tr069) {
-        changes = meshHandlers.buildTR069Changes(device, targetMode);
+    if (isMeshV2Compatible && device.use_tr069) {
+      changes = meshHandlers.buildTR069Changes(device, targetMode);
+      if (targetMode === 2 || targetMode === 4) {
+        changes.wifi2 = {};
+        // When enabling Wi-Fi set beacon type
+        changes.wifi2.enable = wifiRadioState;
+        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
       }
-      if ((targetMode === 2 || targetMode === 4) && !device.wifi_state) {
-        if (device.use_tr069) {
-          changes.wifi2 = {};
-          changes.wifi2.enable = 1;
-          // When enabling Wi-Fi set beacon type
-          changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
-        }
-        device.wifi_state = 1;
-      }
-      if ((targetMode === 3 || targetMode === 4) && !device.wifi_state_5ghz) {
-        if (device.use_tr069) {
-          changes.wifi5 = {};
-          changes.wifi5.enable = 1;
-          // When enabling Wi-Fi set beacon type
-          changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
-        }
-        device.wifi_state_5ghz = 1;
+      if (targetMode === 3 || targetMode === 4) {
+        changes.wifi5 = {};
+        // For best performance and avoiding DFS issues
+        // all APs must work on a single 5GHz non-DFS channel
+        changes.wifi5.channel = mesh5GhzChannel;
+        // When enabling Wi-Fi set beacon type
+        changes.wifi5.enable = wifiRadioState;
+        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
       }
     }
-    // Apply changes to database and update device
+    // Assure radios are enabled and correct channels are set
+    if (targetMode === 2 || targetMode === 4) {
+      device.wifi_state = wifiRadioState;
+    }
+    if (targetMode === 3 || targetMode === 4) {
+      // For best performance and avoiding DFS issues
+      // all APs must work on a single 5GHz non-DFS channel
+      device.wifi_channel_5ghz = mesh5GhzChannel;
+      device.wifi_state_5ghz = wifiRadioState;
+    }
     device.mesh_mode = targetMode;
+    // Apply changes to database and update device
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
