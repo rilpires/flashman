@@ -1164,7 +1164,7 @@ $(document).ready(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
-          let grantMeshV2 = device.permissions.grantMeshV2;
+          let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1730,7 +1730,7 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          if (grantMeshMode || grantMeshV2) {
+          if (grantMeshMode || grantMeshV2PrimMode) {
             selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
             meshForm = meshForm.replace(selectTarget, 'selected="selected"');
             meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
@@ -2076,7 +2076,7 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
           }
-          if (device.mesh_mode > 1 && grantMeshV2) {
+          if (device.mesh_mode > 1 && grantMeshV2PrimMode) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g,
                                       'disabled');
           } else {
@@ -2090,7 +2090,7 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
-              (device.mesh_mode > 1 && grantMeshV2)
+              (device.mesh_mode > 1 && grantMeshV2PrimMode)
           ) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
@@ -2325,11 +2325,13 @@ $(document).ready(function() {
               } else {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
               }
-              if (grantMeshV2) {
-                let disassocSlaveButton = '<td>'+buildDisassociateSlave()+'</td>';
-                infoRow = infoRow.replace('$REPLACE_UPGRADE', disassocSlaveButton);
+              if (grantMeshV2PrimMode) {
+                let disassocSlaveButton = '<td>' +
+                                          buildDisassociateSlave() + '</td>';
+                infoRow = infoRow.replace('$REPLACE_UPGRADE',
+                                          disassocSlaveButton);
               } else {
-                let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
+                let removeButton = '<td>' + buildRemoveDevice(true) + '</td>';
                 infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               }
               finalHtml += infoRow;

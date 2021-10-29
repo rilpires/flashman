@@ -844,7 +844,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     matchedSlave.version,
     matchedSlave.wifi_is_5ghz_capable,
     matchedSlave.model,
-  ).grantMeshV2;
+  ).grantMeshV2SecondaryMode;
   if (!isMeshV2Compatible) {
     response.message = 'CPE candidato a secundário não é ' +
     'compatível com o mesh v2';
