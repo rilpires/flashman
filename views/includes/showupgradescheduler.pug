@@ -114,13 +114,17 @@
                   .text-center
                     strong Atenção! Atualmente
                       span#warning-newTotal
-                      span  dos
+                      span  dos 
                       span#warning-prevTotal
                       span  CPEs selecionados serão atualizados!
                   #list-onus
                     h6.mt-4 Dentre os selecionados, 
                       span#onu-count
-                      span são ONUs e por isso não serão atualizadas.
+                      span são CPEs TR-069 ou CPEs numa rede mesh onde o principal é uma CPE TR-069 e por isso não serão atualizadas.
+                  #list-mesh
+                    h6.mt-4 Dentre os selecionados, 
+                      span#mesh-count
+                      span são CPEs configuradas numa mesh no padrão antigo e a release escolhida é compatível com o mesh no novo padrão, ou vice-versa. Por isso não serão atualizadas.
                   #list-missing-models
                     h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os CPEs!
                     ul#warning-missing-models
