@@ -784,7 +784,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         .exec(function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
-          let dataCollecting = { // nothing happens in device with these parameters.
+          let data_collecting = { // nothing happens in device with these parameters.
             is_active: false,
             has_latency: false,
             ping_fqdn: '',
@@ -799,12 +799,12 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // collecting parameters.
           // eslint-disable-next-line guard-for-in
           for (let key in matchedConfig.data_collecting) {
-            dataCollecting[key] = matchedConfig.data_collecting[key];
+            data_collecting[key] = matchedConfig.data_collecting[key];
           }
           // combining 'Device' and 'Config' if data_collecting exists in Config.
           if (matchedDevice.data_collecting !== undefined) {
             let d = matchedDevice.data_collecting; // parameters from device model.
-            let p = dataCollecting; // the final parameters.
+            let p = data_collecting; // the final parameters.
             // for on/off buttons.
             let booleans = ['is_active', 'has_latency', 'burst_loss', 'conn_pings',
               'wifi_devices'];
@@ -817,7 +817,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
           } else {
             // if data collecting doesn't exist for device, it won't collect.
-            dataCollecting.is_active = false;
+            data_collecting.is_active = false;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -889,8 +889,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           };
           // adding all data_collecting parameters to response json.
           // eslint-disable-next-line guard-for-in
-          for (let parameter in dataCollecting) {
-            resJson[parameter] = dataCollecting[parameter];
+          for (let parameter in data_collecting) {
+            resJson['data_collecting_'+parameter] = data_collecting[parameter];
           }
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
