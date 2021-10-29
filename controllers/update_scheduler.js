@@ -338,6 +338,8 @@ scheduleController.successDownload = async function(mac) {
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status downloading to updating
   try {
