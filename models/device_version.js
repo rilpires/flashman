@@ -1644,7 +1644,7 @@ const flashboxFirmwareDevices = {
   },
 };
 
-const versionCompare = function(foo, bar) {
+DeviceVersion.versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
    return parseInt(val);
@@ -1672,7 +1672,7 @@ const grantResetDevices = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.10.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1689,7 +1689,7 @@ const grantPortForward = function(version, model) {
   }
   if (version.match(versionRegex)) {
     // Oficial Flashbox firmware
-    return (versionCompare(version, '0.10.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
   } else if (version.match(devVersionRegex)) {
     // Development version, enable everything by default
     return true;
@@ -1704,7 +1704,7 @@ const grantPortForwardAsym = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.14.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1716,7 +1716,7 @@ const grantPortOpenIpv6 = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.15.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.15.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1728,7 +1728,7 @@ const grantWifi5ghz = function(version, is5ghzCapable, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (is5ghzCapable && (versionCompare(version, '0.13.0') >= 0));
+    return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
@@ -1740,7 +1740,7 @@ const grantWifiBand = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1752,7 +1752,7 @@ const grantWifiBandAuto = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.29.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1764,7 +1764,7 @@ const grantWifiPowerHiddenIpv6 = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.28.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1776,7 +1776,7 @@ const grantWifiState = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.23.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1802,7 +1802,7 @@ const grantPingTest = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1814,7 +1814,7 @@ const grantLanEdit = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1826,7 +1826,7 @@ const grantLanGwEdit = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.23.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1838,7 +1838,7 @@ const grantLanDevices = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.14.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1850,7 +1850,7 @@ const grantSiteSurvey = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.29.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1862,7 +1862,7 @@ const grantUpnp = function(version, model) {
     return tr069Devices[model].feature_support.upnp;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.21.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.21.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1882,7 +1882,7 @@ const grantSpeedTest = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.24.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.24.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1914,7 +1914,7 @@ const grantOpmode = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.25.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1948,7 +1948,7 @@ const grantVlanSupport = function(version, model) {
     ret = flashboxFirmwareDevices[model];
   }
   if (version.match(versionRegex)) {
-    if (versionCompare(version, ret['vlan_support_since']) >= 0) {
+    if (DeviceVersion.versionCompare(version, ret['vlan_support_since']) >= 0) {
       return ret['vlan_support'];
     } else {
       return false;
@@ -1964,7 +1964,7 @@ const grantWanBytesSupport = function(version, model) {
     true;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.25.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1995,8 +1995,8 @@ const grantMeshV1Mode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.27.0') >= 0 &&
-    versionCompare(version, '0.32.0') < 0);
+    return (DeviceVersion.versionCompare(version, '0.27.0') >= 0 &&
+    DeviceVersion.versionCompare(version, '0.32.0') < 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -2016,7 +2016,7 @@ const grantMeshV2PrimaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.32.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -2036,7 +2036,7 @@ const grantMeshV2SecondaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.32.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -2048,7 +2048,7 @@ const grantUpdateAck = function(version, model) {
     false;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.27.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.27.0') >= 0);
   } else {
     // Development version, no way to know version so disable by default
     return false;
@@ -2068,7 +2068,7 @@ const grantWpsFunction = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.28.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, no way to know version so disable by default
     return true;
@@ -2207,10 +2207,10 @@ DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
     if (meshMode > 1 && slaves && slaves.length > 0) {
       if (!nextVersion) {
         return false;
-      } else if (versionCompare(curVersion, '0.32.0') < 0) {
-        return (versionCompare(nextVersion, '0.32.0') < 0);
+      } else if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
+        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0);
       } else {
-        return (versionCompare(nextVersion, '0.32.0') >= 0);
+        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') >= 0);
       }
     } else {
       return true;
