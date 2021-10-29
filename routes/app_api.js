@@ -76,7 +76,7 @@ router.route('/diagnostic/meshstatus').post(
 router.route('/diagnostic/meshremove').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.removeMeshSlave,
+  diagAPIController.removeSlaveMeshV1,
 );
 
 router.route('/diagnostic/certificate').post(
@@ -94,7 +94,7 @@ router.route('/diagnostic/getConfig').post(
 router.route('/diagnostic/assocslave').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.associateSlave,
+  diagAPIController.associateSlaveMeshV2,
 );
 
 router.route('/diagnostic/poolflashmanfield').post(
@@ -106,7 +106,7 @@ router.route('/diagnostic/poolflashmanfield').post(
 router.route('/diagnostic/disassocslave').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.disassociateSlave,
+  diagAPIController.disassociateSlaveMeshV2,
 );
 
 module.exports = router;

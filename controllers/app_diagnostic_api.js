@@ -442,7 +442,7 @@ diagAppAPIController.checkMeshStatus = async function(req, res) {
   }
 };
 
-diagAppAPIController.removeMeshSlave = async function(req, res) {
+diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
   try {
     // Make sure we have a mac to remove from database
     if (req.body.remove_mac) {
@@ -780,7 +780,7 @@ STATUS MAPPING:
 404: device not found,
 500: internal error;
 */
-diagAppAPIController.associateSlave = async function(req, res) {
+diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   let response = {
     registrationStatus: 'failed',
     bridgeStatus: 'failed',
@@ -925,7 +925,7 @@ diagAppAPIController.associateSlave = async function(req, res) {
   return res.status(200).json(response);
 };
 
-diagAppAPIController.disassociateSlave = async function(req, res) {
+diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!req.body.slave) {
     return res.status(500).json({
       success: false,

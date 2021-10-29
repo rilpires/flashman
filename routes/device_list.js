@@ -81,7 +81,7 @@ router.route('/delete').post(
 router.route('/disassociate').post(
   authController.ensureLogin(),
   authController.ensurePermission('grantSlaveDisassociate'),
-  diagAPIController.disassociateSlave);
+  diagAPIController.disassociateSlaveMeshV2);
 
 // Change device registry
 router.route('/update/:id').post(
