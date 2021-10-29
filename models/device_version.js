@@ -930,7 +930,7 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
-    'mesh_v2_primary_support': false,
+    'mesh_v2_primary_support': true,
     'mesh_v2_secondary_support': false,
     'wps_support': false,
     'speedtest_support': true,
