@@ -800,15 +800,14 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.message = 'MAC do CPE candidato a secundário inválido';
     return res.status(403).json(response);
   }
-  const masterProjection =
-    'mesh_master mesh_slaves mesh_mode mesh_key mesh_id ' +
-    'wifi_ssid wifi_password wifi_band wifi_mode wifi_state wifi_hidden ' +
-    'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz ' +
-    'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz ' +
-    'wifi_hidden_5ghz wifi_channel_5ghz';
-  let matchedMaster = await DeviceModel.findById(masterMacAddr,
-                                                 masterProjection)
-  .catch((err) => {
+  const masterProjection = 'mesh_master mesh_slaves mesh_mode mesh_key '+
+  'mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
+  'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz '+
+  'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz '+
+  'wifi_hidden_5ghz wifi_channel_5ghz';
+  let matchedMaster = await DeviceModel.findById(
+    masterMacAddr, masterProjection,
+  ).catch((err) => {
     response.message = 'Erro interno';
     return res.status(500).json(response);
   });
@@ -824,13 +823,12 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.message = 'CPE indicado como primário é secundário';
     return res.status(403).json(response);
   }
-  const slaveProjection =
-    'mesh_master mesh_slaves mesh_mode bridge_mode_enabled lastboot_date' +
-    'bridge_mode_switch_disable use_tr069 version model mesh_key ' +
-    'mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state '+
-    'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
-    'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
-    'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
+  const slaveProjection = 'mesh_master mesh_slaves mesh_mode version model ' +
+  'bridge_mode_enabled bridge_mode_switch_disable lastboot_date use_tr069 ' +
+  'mesh_key mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state '+
+  'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
+  'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
+  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
   let matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection)
   .catch((err) => {
     response.message = 'Erro interno';
