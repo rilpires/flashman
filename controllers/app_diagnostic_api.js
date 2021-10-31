@@ -918,7 +918,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   response.registrationStatus = 'success';
   response.bridgeStatus = isBridge;
   response.switchEnabledStatus = isSwitchEnabled;
-  response.lastBootDate = matchedSlave.lastboot_date;
+  response.lastBootDate = matchedSlave.lastboot_date.getTime();
 
   return res.status(200).json(response);
 };
