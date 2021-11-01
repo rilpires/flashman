@@ -387,6 +387,23 @@ describe('VLAN Controller', () => {
     expect(JSON.parse(vlan[3]).port).toBe(4);
     expect(JSON.parse(vlan[3]).vlan_id).toBe(1);
   });
+
+  test('convertDeviceVlan : m1 v8', () => {
+    let model = 'TL-WDR3600V1';
+    let vlanObj = '{"1": "2 5 0t", "23": "3 4 1t", "2": "1 0t"}';
+    let vlan = vlanController
+      .convertDeviceVlan(model, vlanObj);
+    expect(JSON.parse(vlan[0]).port).toBe(1);
+    expect(JSON.parse(vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(vlan[1]).port).toBe(2);
+    expect(JSON.parse(vlan[1]).vlan_id).toBe(23);
+    expect(JSON.parse(vlan[2]).port).toBe(3);
+    expect(JSON.parse(vlan[2]).vlan_id).toBe(23);
+    expect(JSON.parse(vlan[3]).port).toBe(4);
+    expect(JSON.parse(vlan[3]).vlan_id).toBe(1);
+  });
+  /* list of possibilities
+  */
   test('getValidVlan :', () => {
     let model;
     let convertedVlan;
