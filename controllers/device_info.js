@@ -782,9 +782,10 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          // data collecting parameters to be sent to device.
-          // initiating with default values.
-          let data_collecting = { // nothing happens in device with these parameters.
+          // data collecting parameters to be sent, to device, in response.
+          // initiating with default values. nothing happens in device with
+          // these parameters.
+          let data_collecting = {
             is_active: false,
             has_latency: false,
             ping_fqdn: '',
@@ -803,21 +804,26 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           }
           // combining 'Device' and 'Config' if data_collecting exists in Config.
           if (matchedDevice.data_collecting !== undefined) {
-            let d = matchedDevice.data_collecting; // parameters from device model.
-            let p = data_collecting; // the final parameters.
-            // for on/off buttons.
-            let booleans = ['is_active', 'has_latency', 'burst_loss', 'conn_pings',
-              'wifi_devices'];
+            // using shorter variable names.
+            let d = matchedDevice.data_collecting; // parameters from device.
+            let res = data_collecting; // the parameters sent in response.
+            // for on/off buttons for devices.
+            let applyAnd = ['is_active', 'has_latency', 'burst_loss', 
+              'conn_pings', 'wifi_devices'];
             // eslint-disable-next-line guard-for-in
-            for (let bool of booleans) {
+            for (let name of applyAnd) {
               // device value && config value, if it exists in device.
-              d[bool] !== undefined && (p[bool] = p[bool] && d[bool]);
+              d[name] !== undefined && (res[name] = res[name] && d[name]);
             }
-            // for values that device value has preference, use it if it exists.
-            d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
+            // for values that device has preference, use it, if it exists.
+            let devicePreference = ['ping_fqdn'];
+            for (let name of devicePreference) {
+              d[name] !== undefined && (res[name] = d[name]);
+            }
           } else {
             // if data collecting doesn't exist for device, it won't collect.
-            data_collecting.is_active = false;
+            // but we have to send at least that it's disabled.
+            res.is_active = false;
           }
 
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
