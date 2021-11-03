@@ -818,7 +818,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
         if (err || !matchedDeviceEdit) return;
         if (mustUpdateFCM) {
-          let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+          let device = matchedDeviceEdit.lan_devices.find(
+            (d)=>d.app_uid===appid);
           device.fcm_uid = fcmid;
           device.last_seen = Date.now();
         }
@@ -920,6 +921,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
       use_tr069: matchedDevice.use_tr069,
+      mesh_mode: matchedDevice.mesh_mode,
     });
   });
 };
