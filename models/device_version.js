@@ -1911,7 +1911,7 @@ const grantBlockDevices = function(model) {
 
 const grantOpmode = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return false;
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);

@@ -2275,6 +2275,8 @@ $(document).ready(function() {
           }
           if (grantOpmode) {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
+          } else {
+            formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
           }
           if (isSuperuser || grantWifiInfo >= 1) {
             formRow = formRow.replace('$REPLACE_WIFI_EDIT', wifiEdit);
