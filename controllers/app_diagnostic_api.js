@@ -792,7 +792,29 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     return res.status(500).json(response);
   }
   const masterMacAddr = req.body.master.toUpperCase();
-  const slaveMacAddr = req.body.slave.toUpperCase();
+  const slaveMacAddrList = req.body.slave.toUpperCase();
+  let slaveMacAddr = null;
+
+  // Slave MAC Addr might be a list read from bar codes.
+  // Use first MAC matched with database if it's a list
+  if (Array.isArray(slaveMacAddrList)) {
+    for (let possibleSlaveMac of slaveMacAddrList) {
+      if (!utilHandlers.isMacValid(possibleSlaveMac)) continue;
+      let possibleMatch = await DeviceModel.findById(
+        possibleSlaveMac, {_id: true})
+      .catch((err) => {
+        response.message = 'Erro ao acessar a base de dados';
+        return res.status(500).json(response);
+      });
+      if (possibleMatch && possibleMatch._id) {
+        slaveMacAddr = possibleMatch._id;
+        break;
+      }
+    }
+  } else {
+    slaveMacAddr = slaveMacAddrList;
+  }
+
   if (!utilHandlers.isMacValid(masterMacAddr)) {
     response.message = 'MAC do CPE primário inválido';
     return res.status(403).json(response);
