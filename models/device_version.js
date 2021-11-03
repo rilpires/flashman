@@ -1661,7 +1661,7 @@ DeviceVersion.versionCompare = function(foo, bar) {
 
 const grantViewLogs = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   // Enabled in all supported versions
   return true;
@@ -1669,7 +1669,7 @@ const grantViewLogs = function(version, model) {
 
 const grantResetDevices = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
@@ -1701,7 +1701,7 @@ const grantPortForward = function(version, model) {
 
 const grantPortForwardAsym = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
@@ -1713,7 +1713,7 @@ const grantPortForwardAsym = function(version, model) {
 
 const grantPortOpenIpv6 = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.15.0') >= 0);
@@ -1725,7 +1725,7 @@ const grantPortOpenIpv6 = function(version, model) {
 
 const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
@@ -1737,7 +1737,7 @@ const grantWifi5ghz = function(version, is5ghzCapable, model) {
 
 const grantWifiBand = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -1749,7 +1749,7 @@ const grantWifiBand = function(version, model) {
 
 const grantWifiBandAuto = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
@@ -1761,7 +1761,7 @@ const grantWifiBandAuto = function(version, model) {
 
 const grantWifiPowerHiddenIpv6 = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
@@ -1773,7 +1773,7 @@ const grantWifiPowerHiddenIpv6 = function(version, model) {
 
 const grantWifiState = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
@@ -1799,7 +1799,7 @@ const grantWifiExtendedChannels = function(version, model) {
 
 const grantPingTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -1811,7 +1811,7 @@ const grantPingTest = function(version, model) {
 
 const grantLanEdit = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -1823,7 +1823,7 @@ const grantLanEdit = function(version, model) {
 
 const grantLanGwEdit = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
@@ -1835,7 +1835,7 @@ const grantLanGwEdit = function(version, model) {
 
 const grantLanDevices = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
@@ -1847,7 +1847,7 @@ const grantLanDevices = function(version, model) {
 
 const grantSiteSurvey = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
@@ -1911,7 +1911,7 @@ const grantBlockDevices = function(model) {
 
 const grantOpmode = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
@@ -1923,7 +1923,7 @@ const grantOpmode = function(version, model) {
 
 const grantVlanSupport = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   let ret = { // default return value
     'vlan_support': false,
@@ -1961,7 +1961,7 @@ const grantVlanSupport = function(version, model) {
 
 const grantWanBytesSupport = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    true;
+    return true;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
@@ -2045,7 +2045,7 @@ const grantMeshV2SecondaryMode = function(version, model) {
 
 const grantUpdateAck = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    false;
+    return false;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.27.0') >= 0);
