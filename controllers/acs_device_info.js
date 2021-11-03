@@ -903,7 +903,7 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
         deviceEdit.wan_bytes = wanBytes;
         await deviceEdit.save();
       }
-      sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
+      sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
     });
   });
   req.end();

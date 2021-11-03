@@ -1113,6 +1113,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
+      case 'wanbytes':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1181,13 +1182,25 @@ deviceListController.sendMqttMsg = function(req, res) {
             });
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestUpStatus(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
           });
+        } else if (msgtype === 'wanbytes') {
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForWanBytesNotification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+          }
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestWanBytes(device);
+          } else {
+            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
