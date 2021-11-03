@@ -135,9 +135,9 @@ $(document).ready(function() {
                       newDevice.conn_type !== undefined
                   ) {
                     doReplace = true;
-                  } else if (newDevice.conn_type == 1 && newDevice.wifi_signal) {
-                    doReplace = true;
-                  } else if (newDevice.conn_type == 0 && newDevice.conn_speed) {
+                  } else if (newDevice.conn_type == 1 &&
+                             newDevice.wifi_signal
+                  ) {
                     doReplace = true;
                   }
                   if (doReplace) {
