@@ -455,11 +455,7 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
-    let isTR069 = row.data('isTr069');
     let upstatusCmd = 'upstatus';
-    if (isTR069) {
-      upstatusCmd += 'tr069';
-    }
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
@@ -2507,24 +2503,6 @@ $(document).ready(function() {
         });
         // Important: include and initialize socket.io first using socket var
         socket.on('UPSTATUS', function(macaddr, data) {
-          let row = $('[id="' + macaddr + '"]');
-          if (data.sysuptime) {
-            row.find('.device-sys-up-time')
-            .removeClass('grey-text pending-update')
-            .html(
-              secondsTimeSpanToHMS(parseInt(data.sysuptime)),
-            );
-          }
-          if (data.wanuptime) {
-            row.find('.device-wan-up-time')
-            .removeClass('grey-text pending-update')
-            .html(
-              secondsTimeSpanToHMS(parseInt(data.wanuptime)),
-            );
-          }
-        });
-        // Important: include and initialize socket.io first using socket var
-        socket.on('UPSTATUSTR069', function(macaddr, data) {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')

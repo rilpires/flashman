@@ -971,7 +971,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
         deviceEdit.wan_up_time = wanUpTime;
         await deviceEdit.save();
       }
-      sio.anlixSendUpStatusTr069Notification(mac, {
+      sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
         wanuptime: wanUpTime,
       });
