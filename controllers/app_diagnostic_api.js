@@ -13,6 +13,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
 
@@ -996,6 +997,15 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
       success: false,
       message: 'CPE indicado como secundário não está na ' +
       'lista de secundários do CPE indicado como primário',
+    });
+  }
+
+  // Credit mesh license back
+  let controlApiRet = await controlApi.meshLicenseCredit(slaveMacAddr);
+  if (!controlApiRet.success) {
+    return res.status(500).json({
+      success: false,
+      message: 'Erro ao creditar a licença mesh',
     });
   }
 

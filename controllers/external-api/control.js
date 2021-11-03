@@ -231,4 +231,42 @@ controlController.getLicenseApiSecret = function(app) {
   });
 };
 
+controlController.meshLicenseCredit = async function(slaveId) {
+  let matchedConfig = null;
+
+  try {
+    matchedConfig = await Config.findOne({is_default: true});
+    if (!matchedConfig) {
+      console.error('Error obtaining message config');
+      return {success: false, message: 'Erro ao consultar configurações'};
+    }
+  } catch (err) {
+    console.error('Error obtaining message config');
+    return {success: false, message: 'Erro ao consultar configurações'};
+  }
+
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/license/mesh/set',
+      method: 'POST',
+      json: {
+        'id': slaveId,
+        'organization': matchedConfig.company,
+        'license_api_secret': matchedConfig.licenseApiSecret,
+        'activate_mesh': false,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({
+          success: true,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro: ' + err.message});
+    });
+  });
+};
+
 module.exports = controlController;
