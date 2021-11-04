@@ -1,4 +1,6 @@
 const vlanController = require('../../controllers/vlan.js');
+const ConfigModel = require('../../models/config');
+const mockingoose = require('mockingoose');
 const crypto = require('crypto');
 
 describe('VLAN Controller', () => {
@@ -361,7 +363,6 @@ describe('VLAN Controller', () => {
       ' "a b qde f", "ab": "2 3 0t"}';
     let vlan = vlanController
       .convertDeviceVlan(model, vlanObj);
-    console.log(vlan);
     expect(JSON.parse(vlan[0]).port).toBe(1);
     expect(JSON.parse(vlan[0]).vlan_id).toBe(1);
     expect(JSON.parse(vlan[1]).port).toBe(2);
@@ -377,7 +378,6 @@ describe('VLAN Controller', () => {
       ' "a b qde f"}';
     let vlan = vlanController
       .convertDeviceVlan(model, vlanObj);
-    console.log(vlan);
     expect(JSON.parse(vlan[0]).port).toBe(1);
     expect(JSON.parse(vlan[0]).vlan_id).toBe(1);
     expect(JSON.parse(vlan[1]).port).toBe(2);
@@ -403,10 +403,114 @@ describe('VLAN Controller', () => {
     expect(JSON.parse(vlan[3]).vlan_id).toBe(1);
   });
   /* list of possibilities
+    convertedVlan
+      1 - valid vlan
+      2 - corrupted vlan (null on port or vlan_id)
+    config.vlans_profiles
+      1 - all vlans that come from router
+      2 - lack of some vlan that come from router
   */
-  test('getValidVlan :', () => {
-    let model;
-    let convertedVlan;
-    expect(true).toBe(true);
+  test('getValidVlan : v1 p1', async () => {
+    let convertedVlan = ['{"port":1,"vlan_id":1}',
+      '{"port":2,"vlan_id":23}',
+      '{"port":3,"vlan_id":23}',
+      '{"port":4,"vlan_id":1}'];
+    const returnConfigMock = jest.fn().mockReturnValue({
+      is_default: true,
+      vlans_profiles: [
+        {'vlan_id': 1,
+        'profile_name': 'Internet'},
+        {'vlan_id': 23,
+        'profile_name': 'Test23'},
+      ],
+    });
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    let retObj = await vlanController.getValidVlan('', convertedVlan);
+    expect(retObj.success).toBe(true);
+    expect(retObj.didChange).toBe(false);
+    expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
+    expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
+    expect(JSON.parse(retObj.vlan[1]).vlan_id).toBe(23);
+    expect(JSON.parse(retObj.vlan[2]).port).toBe(3);
+    expect(JSON.parse(retObj.vlan[2]).vlan_id).toBe(23);
+    expect(JSON.parse(retObj.vlan[3]).port).toBe(4);
+    expect(JSON.parse(retObj.vlan[3]).vlan_id).toBe(1);
+  });
+  test('getValidVlan : v1 p2', async () => {
+    let convertedVlan = ['{"port":1,"vlan_id":1}',
+      '{"port":2,"vlan_id":23}',
+      '{"port":3,"vlan_id":23}',
+      '{"port":4,"vlan_id":1}'];
+    const returnConfigMock = jest.fn().mockReturnValue({
+      is_default: true,
+      vlans_profiles: [
+        {'vlan_id': 1,
+        'profile_name': 'Internet'}],
+    });
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    let retObj = await vlanController.getValidVlan('', convertedVlan);
+    expect(retObj.success).toBe(true);
+    expect(retObj.didChange).toBe(true);
+    expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
+    expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
+    expect(JSON.parse(retObj.vlan[1]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[2]).port).toBe(3);
+    expect(JSON.parse(retObj.vlan[2]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[3]).port).toBe(4);
+    expect(JSON.parse(retObj.vlan[3]).vlan_id).toBe(1);
+  });
+  test('getValidVlan : v2 p1', async () => {
+    let convertedVlan = ['{"port":null,"vlan_id":1}',
+      '{"port":2,"vlan_id":null}',
+      '{"port":3,"vlan_id":23}',
+      '{"port":4,"vlan_id":1}'];
+    const returnConfigMock = jest.fn().mockReturnValue({
+      is_default: true,
+      vlans_profiles: [
+        {'vlan_id': 1,
+        'profile_name': 'Internet'},
+        {'vlan_id': 23,
+        'profile_name': 'Test23'},
+      ],
+    });
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    let retObj = await vlanController.getValidVlan('', convertedVlan);
+    expect(retObj.success).toBe(true);
+    expect(retObj.didChange).toBe(true);
+    console.log(retObj);
+    expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
+    expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
+    expect(JSON.parse(retObj.vlan[1]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[2]).port).toBe(3);
+    expect(JSON.parse(retObj.vlan[2]).vlan_id).toBe(23);
+    expect(JSON.parse(retObj.vlan[3]).port).toBe(4);
+    expect(JSON.parse(retObj.vlan[3]).vlan_id).toBe(1);
+  });
+  test('getValidVlan : v2 p2', async () => {
+    let convertedVlan = ['{"port":1,"vlan_id":1}',
+      '{"port":null,"vlan_id":23}',
+      '{"port":3,"vlan_id":null}',
+      '{"port":4,"vlan_id":1}'];
+    const returnConfigMock = jest.fn().mockReturnValue({
+      is_default: true,
+      vlans_profiles: [{'vlan_id': 1,
+        'profile_name': 'Internet'}],
+    });
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    let retObj = await vlanController.getValidVlan('', convertedVlan);
+    expect(retObj.success).toBe(true);
+    expect(retObj.didChange).toBe(true);
+    console.log(retObj);
+    expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
+    expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
+    expect(JSON.parse(retObj.vlan[1]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[2]).port).toBe(3);
+    expect(JSON.parse(retObj.vlan[2]).vlan_id).toBe(1);
+    expect(JSON.parse(retObj.vlan[3]).port).toBe(4);
+    expect(JSON.parse(retObj.vlan[3]).vlan_id).toBe(1);
   });
 });
