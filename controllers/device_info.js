@@ -1318,11 +1318,14 @@ deviceInfoController.receiveDevices = function(req, res) {
         let outDev = {};
         let upConnDevMac = connDeviceMac.toLowerCase();
         let upConnDev = devsData[upConnDevMac];
+        let ipRes = {valid: false};
         // Skip if not lowercase
         if (!upConnDev) continue;
 
-        let ipRes = validator.validateIP(upConnDev.ip);
         let devReg = matchedDevice.getLanDevice(upConnDevMac);
+        if (upConnDev.ip) {
+          ipRes = validator.validateIP(upConnDev.ip);
+        }
         // Check wifi or cable data
         if (upConnDev.conn_type) {
           upConnDev.conn_type = parseInt(upConnDev.conn_type);
