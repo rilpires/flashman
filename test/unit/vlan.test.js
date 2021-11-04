@@ -331,7 +331,6 @@ describe('VLAN Controller', () => {
       ' "a b qde f", "2": "0 6t"}';
     let vlan = vlanController
       .convertDeviceVlan(model, vlanObj);
-    console.log(vlan);
     expect(JSON.parse(vlan[0]).port).toBe(1);
     expect(JSON.parse(vlan[0]).vlan_id).toBe(1);
     expect(JSON.parse(vlan[1]).port).toBe(2);
@@ -347,15 +346,14 @@ describe('VLAN Controller', () => {
       ' "a b qde f", "2": "0 6t"}';
     let vlan = vlanController
       .convertDeviceVlan(model, vlanObj);
-    console.log(vlan);
     expect(JSON.parse(vlan[0]).port).toBe(1);
-    expect(JSON.parse(vlan[0]).vlan_id).toBe(1);
+    expect(JSON.parse(vlan[0]).vlan_id).toBe(100);
     expect(JSON.parse(vlan[1]).port).toBe(2);
     expect(JSON.parse(vlan[1]).vlan_id).toBe(1);
     expect(JSON.parse(vlan[2]).port).toBe(3);
     expect(JSON.parse(vlan[2]).vlan_id).toBe(1);
     expect(JSON.parse(vlan[3]).port).toBe(4);
-    expect(JSON.parse(vlan[3]).vlan_id).toBe(1);
+    expect(JSON.parse(vlan[3]).vlan_id).toBe(100);
   });
   test('convertDeviceVlan : m2 v9.3', () => {
     let model = 'test';
@@ -479,7 +477,6 @@ describe('VLAN Controller', () => {
     let retObj = await vlanController.getValidVlan('', convertedVlan);
     expect(retObj.success).toBe(true);
     expect(retObj.didChange).toBe(true);
-    console.log(retObj);
     expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
     expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
     expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
@@ -503,7 +500,6 @@ describe('VLAN Controller', () => {
     let retObj = await vlanController.getValidVlan('', convertedVlan);
     expect(retObj.success).toBe(true);
     expect(retObj.didChange).toBe(true);
-    console.log(retObj);
     expect(JSON.parse(retObj.vlan[0]).port).toBe(1);
     expect(JSON.parse(retObj.vlan[0]).vlan_id).toBe(1);
     expect(JSON.parse(retObj.vlan[1]).port).toBe(2);
