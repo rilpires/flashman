@@ -553,8 +553,24 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
 };
 
 vlanController.convertDeviceVlan = function(model, vlanObj) {
-  let receivedVlan = JSON.parse(vlanObj);
+  let defaultVlan = ['{"port":1,"vlan_id":1}',
+    '{"port":2,"vlan_id":1}',
+    '{"port":3,"vlan_id":1}',
+    '{"port":4,"vlan_id":1}'];
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  let maxVid = deviceInfo['max_vid'];
+  let qtdPorts = deviceInfo['num_usable_lan_ports'];
+  let receivedVlan;
+  if (!vlanObj) {
+    return defaultVlan;
+  } else {
+    try {
+      receivedVlan = JSON.parse(vlanObj);
+    } catch (e) {
+      return defaultVlan;
+    }
+  }
+  if (!(receivedVlan instanceof Object)) return defaultVlan;
   let lanPorts = deviceInfo.lan_ports;
   let wanPort = deviceInfo.wan_port;
   let cpuPort = deviceInfo.cpu_port;
@@ -579,6 +595,7 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
       ports = ports.split(' ');
       if (ports.includes(lanPorts[i].toString())) {
         vid = parseInt(vids[j]);
+        if(!vid) vid = 1;
         break;
       }
     }
