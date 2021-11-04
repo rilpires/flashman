@@ -789,6 +789,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   };
   if (!req.body.master || !req.body.slave) {
     response.message = 'JSON recebido não é válido';
+    response.errcode = 'invalid';
     return res.status(500).json(response);
   }
   const masterMacAddr = req.body.master.toUpperCase();
@@ -817,10 +818,12 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
 
   if (!utilHandlers.isMacValid(masterMacAddr)) {
     response.message = 'MAC do CPE primário inválido';
+    response.errcode = 'invalid-mac-primary';
     return res.status(403).json(response);
   }
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
     response.message = 'MAC do CPE candidato a secundário inválido';
+    response.errcode = 'invalid-mac-secondary';
     return res.status(403).json(response);
   }
   const masterProjection = 'mesh_master mesh_slaves mesh_mode mesh_key '+
@@ -828,22 +831,27 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz '+
   'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz '+
   'wifi_hidden_5ghz wifi_channel_5ghz';
-  let matchedMaster = await DeviceModel.findById(
-    masterMacAddr, masterProjection,
-  ).catch((err) => {
+  let matchedMaster;
+  try {
+    matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection);
+  } catch (err) {
     response.message = 'Erro interno';
+    response.errcode = 'internal';
     return res.status(500).json(response);
-  });
+  }
   if (!matchedMaster) {
     response.message = 'CPE primário não encontrado';
+    response.errcode = 'notfound-mac-primary';
     return res.status(404).json(response);
   }
   if (matchedMaster.mesh_mode === 0) {
     response.message = 'CPE indicado como primário não está em modo mesh';
+    response.errcode = 'primary-not-mesh';
     return res.status(403).json(response);
   }
   if (matchedMaster.mesh_master) {
     response.message = 'CPE indicado como primário é secundário';
+    response.errcode = 'primary-is-secondary';
     return res.status(403).json(response);
   }
   const slaveProjection = 'mesh_master mesh_slaves mesh_mode version model ' +
@@ -852,13 +860,17 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
   'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
   'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
-  let matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection)
-  .catch((err) => {
+  let matchedSlave;
+  try {
+    matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection);
+  } catch (err) {
     response.message = 'Erro interno';
+    response.errcode = 'internal';
     return res.status(500).json(response);
-  });
+  }
   if (!matchedSlave) {
     response.message = 'CPE candidato a secundário não encontrado';
+    response.errcode = 'notfound-mac-secondary';
     return res.status(404).json(response);
   }
   const isMeshV2Compatible = DeviceVersion.findByVersion(
@@ -869,21 +881,25 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   if (!isMeshV2Compatible) {
     response.message = 'CPE candidato a secundário não é ' +
     'compatível com o mesh v2';
+    response.errcode = 'secondary-incompatible';
     return res.status(403).json(response);
   }
   if (matchedSlave.mesh_master &&
   matchedSlave.mesh_master !== masterMacAddr) {
     response.message = 'CPE candidato a secundário já está registrado' +
     ' como secundário de ' + matchedSlave.mesh_master;
+    response.errcode = 'secondary-already-has-master';
     return res.status(403).json(response);
   }
   if ((matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) ||
   (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length)) {
     response.message = 'CPE candidato a secundário é primário';
+  response.errcode = 'secondary-is-primary';
     return res.status(403).json(response);
   }
   if (matchedSlave.use_tr069) {
     response.message = 'CPE candidato a secundário não pode ser TR-069';
+    response.errcode = 'secondary-is-tr069';
     return res.status(403).json(response);
   }
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -891,6 +907,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   });
   if (!isSlaveOn) {
     response.message = 'CPE candidato a secundário não está online';
+    response.errcode = 'secondary-not-online';
     return res.status(403).json(response);
   }
 
