@@ -76,7 +76,7 @@ typings/
 config/configs.js
 
 # Webpack dev files
-public/dist/*.map
+public/dist/*
 
 ### Vim ###
 # swap
