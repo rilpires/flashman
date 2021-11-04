@@ -17,6 +17,7 @@ const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
+const path = require('path');
 
 let deviceListController = {};
 
@@ -963,14 +964,16 @@ const downloadStockFirmware = async function(model) {
         method: 'GET',
       });
       let currentMd5 = '';
-      let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
+      let md5fname = '.' + model + '_9999-aix.zip.md5';
+      let localMd5Path = path.join(imageReleasesDir, md5fname);
       // Check for local md5 hash
       if (fs.existsSync(localMd5Path)) {
         currentMd5 = fs.readFileSync(localMd5Path, 'utf8');
       }
       if (targetMd5 !== currentMd5) {
         // Mismatch, download new zip file
-        console.log('UPDATE: Downloading factory reset fware for '+model+'...');
+        console.log('UPDATE: Downloading factory reset firmware for ' +
+                    model + '...');
         fs.writeFileSync(localMd5Path, targetMd5);
         let responseStream = request({url: remoteFileUrl, method: 'GET'})
         .on('error', (err)=>{
@@ -983,10 +986,13 @@ const downloadStockFirmware = async function(model) {
           }
           responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
             let fname = entry.path;
-            let writeStream = fs.createWriteStream(imageReleasesDir + fname);
+            let fullFilePath = path.join(imageReleasesDir, fname);
+            let md5FName = '.' + fname.replace('.bin', '.md5');
+            let fullMd5FilePath = path.join(imageReleasesDir, md5FName);
+            let writeStream = fs.createWriteStream(fullFilePath);
             writeStream.on('close', ()=>{
-              let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
-              let binfname = imageReleasesDir + fname;
+              let md5fname = fullMd5FilePath;
+              let binfname = fullFilePath;
               let md5Checksum = md5File.sync(binfname);
               fs.writeFileSync(md5fname, md5Checksum);
               return resolve(true);
