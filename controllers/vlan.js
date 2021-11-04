@@ -515,7 +515,8 @@ vlanController.retrieveVlansToDevice = function(device) {
     hash: hashVlan,
   };
 };
-
+/* This function clean outcome vlan from router
+  that profile is no more recorded in flashman */
 vlanController.getValidVlan = async function(model, convertedVlan) {
   let lanVlan = 1;
   let filteredVlan = [];
@@ -535,6 +536,9 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
         vlanParsed.vlan_id = lanVlan;
       } else {
         vlanParsed.vlan_id = parseInt(vlanParsed.vlan_id);
+      }
+      if (!vlanParsed.port) {
+        vlanParsed.port = i+1;
       }
       filteredVlan.push(JSON.stringify(vlanParsed));
     }
