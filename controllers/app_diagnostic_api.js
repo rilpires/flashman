@@ -365,7 +365,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     const wifiRadioState = 1;
     const mesh5GhzChannel = 40; // Value has better results on some routers
     const isMeshV1Compatible = permissions.grantMeshMode;
-    const isMeshV2Compatible = permissions.grantMeshV2;
+    const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
       return res.status(403).json({
         'error': 'CPE isn\'t compatibe with mesh',
