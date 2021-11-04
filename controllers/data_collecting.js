@@ -6,8 +6,65 @@ const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
 const Config = require('../models/config');
+const DeviceVersion = require('../models/device_version');
 
 let dataCollectingController = {};
+
+
+// receives data_collecting parameters object from service and from device and
+// merges them, taking the device's version into consideration for
+// compatibility, and returns the res data_collecting parameters.
+dataCollectingController.mergeConfigs = function(service, device, version) {
+  // default data collecting parameters to be sent, to device, in response.
+  let res = { // nothing happens in device with these parameters.
+    is_active: false,
+    has_latency: false,
+    ping_fqdn: '',
+    alarm_fqdn: '',
+    ping_packets: 100,
+    burst_loss: false,
+    conn_pings: false,
+    wifi_devices: false,
+  };
+
+  // for each data_collecting parameter, in service, we copy its value.
+  // This also makes the code compatible with a data base with no data
+  // collecting parameters.
+  // eslint-disable-next-line guard-for-in
+  for (let parameter in service) res[parameter] = service[parameter];
+
+  // combining 'device' and 'service' if data_collecting exists in 'device'.
+  if (device !== undefined) {
+    // for on/off buttons we apply bit wise AND when merging.
+    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'conn_pings',
+      'wifi_devices'];
+    // eslint-disable-next-line guard-for-in
+    for (let name of applyAnd) {
+      // device value && config value, if it exists in device.
+      if (device[name] !== undefined) res[name] = res[name] && device[name];
+    }
+    // for firmware versions where data_collecting had only one measure.
+    if (DeviceVersion.is_data_collecting_SingleMeasure(version)) {
+      // we use both 'burst_loss' and 'is_active' to activate the service.
+      res.is_active = res.is_active && res.burst_loss;
+      // burst loss used to be the only measure and were controlled by
+      // 'is_active', which would also control the service being on or off
+      // in the device.
+    }
+
+    // for values that device has preference, use it, if it exists.
+    let devicePreference = ['ping_fqdn'];
+    for (let name of devicePreference) {
+      if (device[name] !== undefined) res[name] = device[name];
+    }
+  } else { // if data collecting doesn't exist for device, it won't collect.
+    // but we have to send at least one variable to disabled it.
+    res.is_active = false;
+  }
+
+  return res;
+}
+
 
 // A function that treats body fields.
 // Executes a given validity function for 'fieldName's value, if 'fieldName'

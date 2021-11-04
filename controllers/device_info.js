@@ -13,6 +13,7 @@ const meshHandlers = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+const data_collecting = require('./data_collecting')
 
 let deviceInfoController = {};
 
@@ -782,50 +783,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         Config.findOne({is_default: true}).lean()
         .exec(function(err, matchedConfig) {
-          // data collecting parameters to be sent, to device, in response.
-          // initiating with default values. nothing happens in device with
-          // these parameters.
-          let data_collecting = {
-            is_active: false,
-            has_latency: false,
-            ping_fqdn: '',
-            alarm_fqdn: '',
-            ping_packets: 100,
-            burst_loss: false,
-            conn_pings: false,
-            wifi_devices: false,
-          };
-          // for each data_collecting parameter, in config, we copy its value.
-          // This also makes the code compatible with a data base with no data
-          // collecting parameters.
-          // eslint-disable-next-line guard-for-in
-          for (let key in matchedConfig.data_collecting) {
-            data_collecting[key] = matchedConfig.data_collecting[key];
-          }
-          // combining 'Device' and 'Config' if data_collecting exists in Config.
-          if (matchedDevice.data_collecting !== undefined) {
-            // using shorter variable names.
-            let d = matchedDevice.data_collecting; // parameters from device.
-            let res = data_collecting; // the parameters sent in response.
-            // for on/off buttons for devices.
-            let applyAnd = ['is_active', 'has_latency', 'burst_loss', 
-              'conn_pings', 'wifi_devices'];
-            // eslint-disable-next-line guard-for-in
-            for (let name of applyAnd) {
-              // device value && config value, if it exists in device.
-              d[name] !== undefined && (res[name] = res[name] && d[name]);
-            }
-            // for values that device has preference, use it, if it exists.
-            let devicePreference = ['ping_fqdn'];
-            for (let name of devicePreference) {
-              d[name] !== undefined && (res[name] = d[name]);
-            }
-          } else {
-            // if data collecting doesn't exist for device, it won't collect.
-            // but we have to send at least that it's disabled.
-            res.is_active = false;
-          }
-
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
             return map[matchedDevice._id];
           });
@@ -893,11 +850,19 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
           };
+
           // adding all data_collecting parameters to response json.
+          let dc_res = data_collecting.mergeConfigs(
+            matchedConfig.data_collecting, 
+            matchedDevice.data_collecting,
+            matchedDevice.version
+          );
           // eslint-disable-next-line guard-for-in
-          for (let parameter in data_collecting) {
-            resJson['data_collecting_'+parameter] = data_collecting[parameter];
+          for (let parameter in dc_res) {
+            console.log('parameter', parameter, dc_res[parameter])
+            resJson['data_collecting_'+parameter] = dc_res[parameter];
           }
+
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
             resJson.ipv6_enabled = matchedDevice.ipv6_enabled;

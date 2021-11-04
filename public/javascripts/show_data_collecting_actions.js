@@ -288,7 +288,7 @@ $(document).ready(function() {
         sendDataCollectingParameters(data, form, msg, true);
       }
     } else {
-      hideModalShowAllert(serviceModal, 'Nada a ser alterado', 'danger');
+      hideModalShowAllert(serviceModal, 'Nada a ser alterado.', 'danger');
     }
     return false;
   };

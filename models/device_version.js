@@ -1897,4 +1897,15 @@ DeviceVersion.isUpgradeSupport = function(model) {
   return upgradeAvailable;
 };
 
+// returns true if version is lower than the first firmware version where
+// data_collecting started having more than one measure.
+DeviceVersion.is_data_collecting_SingleMeasure = function(version) {
+  if (version.match(versionRegex)) {
+    return versionCompare(version, '0.32.0') < 0;
+  } else {
+    // Development version, should have more than one measure.
+    return false;
+  }
+};
+
 module.exports = DeviceVersion;
