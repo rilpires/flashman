@@ -225,7 +225,7 @@ const saveDeviceData = async function(mac, landevices) {
   await device.save();
 };
 
-const createRegistry = async function(req) {
+const createRegistry = async function(req, permissions) {
   let data = req.body.data;
   let hasPPPoE = (data.wan.pppoe_user &&
                   typeof data.wan.pppoe_user.value === 'string' &&
@@ -244,6 +244,8 @@ const createRegistry = async function(req) {
     console.error('Error creating entry. Config does not exists.');
     return false;
   }
+  let macAddr = data.common.mac.value.toUpperCase();
+  let model = (data.common.model) ? data.common.model.value : '';
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = data.wifi5.ssid.value.trim();
   let isSsidPrefixEnabled = false;
@@ -281,16 +283,25 @@ const createRegistry = async function(req) {
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
-  let meshBSSIDs = DeviceVersion.getMeshBSSIDs(
-    data.common.model.value, data.common.mac.value.toUpperCase());
+  let meshBSSIDs = {};
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2.bssid) {
+    meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
+    if (data.mesh5.bssid) {
+      meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
+    } else {
+      meshBSSIDs.mesh5 = '';
+    }
+  } else {
+    meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
+  }
 
   let newDevice = new DeviceModel({
-    _id: data.common.mac.value.toUpperCase(),
+    _id: macAddr,
     use_tr069: true,
     serial_tr069: splitID[splitID.length - 1],
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
-    model: (data.common.model) ? data.common.model.value : '',
+    model: model,
     version: data.common.version.value,
     installed_release: data.common.version.value,
     release: data.common.version.value,
@@ -440,8 +451,31 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
                                  message: 'Error finding Config in database'});
   });
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
+
+  // Fetch functionalities of CPE
+  let permissions = null;
+  if (!device && data.common.version && data.common.model) {
+    permissions = DeviceVersion.findByVersion(
+      data.common.version.value,
+      (data.wifi5.ssid ? true : false),
+      data.common.model.value,
+    );
+  } else {
+    permissions = DeviceVersion.findByVersion(
+      device.version,
+      device.wifi_is_5ghz_capable,
+      device.model,
+    );
+  }
+  if (!permissions) {
+    return res.status(500).json({
+      success: false,
+      message: 'Cannot find device permissions',
+    });
+  }
+
   if (!device) {
-    if (await createRegistry(req)) {
+    if (await createRegistry(req, permissions)) {
       return res.status(200).json({success: true});
     } else {
       return res.status(500).json({
@@ -588,6 +622,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.band = device.wifi_band;
     }
   }
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2.bssid) {
+    let bssid2 = data.mesh2.bssid.value;
+    if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
+      device.bssid_mesh2 = bssid2.toUpperCase();
+    }
+  }
   if (data.wifi5.ssid) {
     if (data.wifi5.ssid.value && !device.wifi_ssid_5ghz) {
       device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
@@ -631,6 +671,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
       changes.wifi5.band = device.wifi_band_5ghz;
+    }
+  }
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5.bssid) {
+    let bssid5 = data.mesh5.bssid.value;
+    if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
+      device.bssid_mesh5 = bssid5.toUpperCase();
     }
   }
   if (data.lan.router_ip) {
@@ -742,12 +788,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.last_contact_daily = Date.now();
   } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
     device.last_contact_daily = Date.now();
-    // Fetch functionalities of device
-    let permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {

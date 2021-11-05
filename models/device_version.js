@@ -61,6 +61,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -89,6 +90,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -117,11 +119,8 @@ const tr069Devices = {
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
-    // offset of each BSSID octet in relation
-    // to the MAC address (first element corresponds to
-    // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x50', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x7', '0x0', '0x1'],
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'ZXHN H199A': {
     vendor: 'Multilaser',
@@ -146,6 +145,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -173,6 +173,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -202,6 +203,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -233,6 +235,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -260,6 +263,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'EG8145V5': {
     port_forward_opts: {
@@ -284,6 +288,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'WS5200-21': {
     vendor: 'Huawei',
@@ -303,6 +308,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'WS5200-40': {
     vendor: 'Huawei',
@@ -322,6 +328,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
 };
 
@@ -2043,6 +2050,16 @@ const grantMeshV2SecondaryMode = function(version, model) {
   }
 };
 
+const grantMeshV2HardcodedBssid = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model) &&
+      tr069Devices[model].mesh_bssid_offset_hardcoded
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 const grantUpdateAck = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return false;
@@ -2104,6 +2121,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshMode = grantMeshV1Mode(version, model);
   result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
+  result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(version, model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
@@ -2112,7 +2130,6 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   }
   return result;
 };
-
 
 DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
