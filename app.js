@@ -159,13 +159,14 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   });
   // Check migration for devices checked for upgrade
   // Check mesh key existence or generate it
-  Device.find({$or: [{installed_release: {$exists: false}},
-                     {mesh_key: {$exists: false}},
-                     {bridge_mode_enabled: true, connection_type: 'pppoe'},
-                     {isSsidPrefixEnabled: {$exists: false}},
-                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
-                     {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
-                     {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
+  Device.find({$or: [
+    {installed_release: {$exists: false}},
+    {mesh_key: {$exists: false}},
+    {bridge_mode_enabled: true, connection_type: 'pppoe'},
+    {isSsidPrefixEnabled: {$exists: false}},
+    {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
+    {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
+    {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
   ]},
   {installed_release: true, do_update: true,
    do_update_status: true, release: true,

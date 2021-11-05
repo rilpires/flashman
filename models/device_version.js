@@ -2239,23 +2239,31 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
     let MACOctets5 = MAC.split(':');
     for (let i = 0; i < MACOctets2.length; i++) {
       if (tr069Devices[model].mesh2_bssid_absolute_mask &&
-        tr069Devices[model].mesh2_bssid_absolute_mask[i]) {
-        MACOctets2[i] = tr069Devices[model].mesh2_bssid_absolute[i].replace('0x', '');
+          tr069Devices[model].mesh2_bssid_absolute_mask[i]
+      ) {
+        MACOctets2[i] = tr069Devices[model].mesh2_bssid_absolute[i]
+                                           .replace('0x', '');
       } else {
         MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
-          parseInt(tr069Devices[model].mesh2_bssid_offset[i])).toString(16).toUpperCase();
-        // we need the second hex digit for BSSID addresses
+                         parseInt(tr069Devices[model].mesh2_bssid_offset[i]))
+                         .toString(16)
+                         .toUpperCase();
+        // We need the second hex digit for BSSID addresses
         if (MACOctets2[i].length === 1) {
           MACOctets2[i] = `0${MACOctets2[i]}`;
         }
       }
       if (tr069Devices[model].mesh5_bssid_absolute_mask &&
-        tr069Devices[model].mesh5_bssid_absolute_mask[i]) {
-        MACOctets5[i] = tr069Devices[model].mesh5_bssid_absolute[i].replace('0x', '');
+          tr069Devices[model].mesh5_bssid_absolute_mask[i]
+      ) {
+        MACOctets5[i] = tr069Devices[model].mesh5_bssid_absolute[i]
+                                           .replace('0x', '');
       } else {
         MACOctets5[i] = (parseInt(`0x${MACOctets5[i]}`) +
-          parseInt(tr069Devices[model].mesh5_bssid_offset[i])).toString(16).toUpperCase();
-        // we need the second hex digit for BSSID addresses
+                         parseInt(tr069Devices[model].mesh5_bssid_offset[i]))
+                         .toString(16)
+                         .toUpperCase();
+        // We need the second hex digit for BSSID addresses
         if (MACOctets5[i].length === 1) {
           MACOctets5[i] = `0${MACOctets5[i]}`;
         }
