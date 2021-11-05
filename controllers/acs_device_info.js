@@ -284,9 +284,11 @@ const createRegistry = async function(req, permissions) {
   let newMeshKey = meshHandlers.genMeshKey();
 
   let meshBSSIDs = {};
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2.bssid) {
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+      data.mesh2.bssid
+  ) {
     meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
-    if (data.mesh5.bssid) {
+    if (data.mesh5 && data.mesh5.bssid) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     } else {
       meshBSSIDs.mesh5 = '';
@@ -622,7 +624,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.band = device.wifi_band;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2.bssid) {
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+      data.mesh2.bssid
+  ) {
     let bssid2 = data.mesh2.bssid.value;
     if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
       device.bssid_mesh2 = bssid2.toUpperCase();
@@ -673,7 +677,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi5.band = device.wifi_band_5ghz;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5.bssid) {
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
+      data.mesh5.bssid
+  ) {
     let bssid5 = data.mesh5.bssid.value;
     if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
       device.bssid_mesh5 = bssid5.toUpperCase();
