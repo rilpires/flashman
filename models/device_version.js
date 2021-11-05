@@ -2250,7 +2250,9 @@ DeviceVersion.isUpgradeSupport = function(model) {
 DeviceVersion.getMeshBSSIDs = function(model, MAC) {
   let meshBSSIDs = {};
   if (tr069Devices[model] &&
-      tr069Devices[model].feature_support.mesh_v2_primary_support
+      tr069Devices[model].feature_support.mesh_v2_primary_support &&
+      tr069Devices[model].mesh2_bssid_offset &&
+      tr069Devices[model].mesh5_bssid_offset
   ) {
     let MACOctets2 = MAC.split(':');
     let MACOctets5 = MAC.split(':');
