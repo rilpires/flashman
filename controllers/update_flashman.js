@@ -761,17 +761,47 @@ updateController.updateAppPersonalization = async function(app) {
     let ios = controlReq.iosLink;
 
     Config.findOne({is_default: true}, function(err, config) {
-      if (err || !config) return console.log(err);
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
       config.personalizationHash = hash;
       config.androidLink = android;
       config.iosLink = ios;
       config.save(function(err) {
-        if (err) return console.log(err);
-        console.log('Saved succussfully!');
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
       });
     });
   } else {
-    console.log('Error at contact control');
+    console.error('App personalization hash update error');
+  }
+};
+
+updateController.updateLicenseApiSecret = async function(app) {
+  let controlReq = await controlApi.getLicenseApiSecret(app);
+  if (controlReq.success == true) {
+    const licenseApiSecret = controlReq.apiSecret;
+    const company = controlReq.company;
+
+    Config.findOne({is_default: true}, function(err, config) {
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
+      config.licenseApiSecret = licenseApiSecret;
+      config.company = company;
+      config.save(function(err) {
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
+      });
+    });
+  } else {
+    console.error('License API secret update error');
   }
 };
 

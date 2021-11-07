@@ -170,7 +170,7 @@ const getOnlyTR069Configs = async function() {
 // returns an object containing the tr069 time threshold used when defining
 // device status (to give it a color). Will return an Error Object in case
 // of any error.
-const buildTr069Thresholds = async function (currentTimestamp) {
+deviceListController.buildTr069Thresholds = async function (currentTimestamp) {
   // in some places this function is called, the current time was not taken.
   currentTimestamp = currentTimestamp || Date.now();
 
@@ -509,7 +509,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
       currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times || await deviceListController.buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -728,7 +728,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let lastHour = new Date(currentTimestamp -3600000);
 
   // time threshold for tr069 status (status color).
-  let tr069Times = await buildTr069Thresholds(currentTimestamp);
+  let tr069Times = await deviceListController.buildTr069Thresholds(currentTimestamp);
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
@@ -790,6 +790,13 @@ deviceListController.searchDeviceReg = async function(req, res) {
             if have feature support for the model is granted */
           device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
         } else {
+          devReleases = devReleases.filter(
+            (release) => {
+              return DeviceVersion.testFirmwareUpgradeMeshLegacy(
+                device.mesh_mode, device.mesh_slaves,
+                device.version, release.flashbox_version);
+            },
+          );
           device.isUpgradeEnabled = true;
         }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
@@ -1112,7 +1119,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'upstatustr069':
+      case 'wanbytes':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1150,10 +1157,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestConnectedDevices(device);
           } else {
             mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-            });
           }
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'sitesurvey') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForSiteSurveyNotification(
@@ -1181,29 +1188,24 @@ deviceListController.sendMqttMsg = function(req, res) {
             });
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestUpStatus(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-            });
           }
-        } else if (msgtype === 'upstatustr069') {
-          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+          });
+        } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForUpStatusTr069Notification(
+            sio.anlixWaitForWanBytesNotification(
               req.sessionID,
               req.params.id.toUpperCase(),
             );
-            slaves.forEach((slave)=>{
-              sio.anlixWaitForUpStatusTr069Notification(
-                req.sessionID,
-                slave.toUpperCase(),
-              );
-            });
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestUpStatus(device);
+            acsDeviceInfo.requestWanBytes(device);
+          } else {
+            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
@@ -1334,7 +1336,7 @@ deviceListController.getDeviceReg = function(req, res) {
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
       // tr069 time thresholds for device status.
-      let tr069Times = await buildTr069Thresholds();
+      let tr069Times = await deviceListController.buildTr069Thresholds();
       // // classifying device status.
       if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
@@ -1532,6 +1534,17 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
         }
+        // We must enable Wi-Fi corresponding to mesh radio we're using
+        // Some models have this restriction.
+        // For simplicity we're doing this for all devices
+        if (meshMode > 1 && (wifiState < 1 || wifiState5ghz < 1)) {
+          errors.push({'mesh_mode': 'Para configurar esse tipo de Mesh é ' +
+                                    'necessário habilitar todos os Wi-Fi'});
+        }
+        if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
+          errors.push({'mesh_mode': 'Não é possível desabilitar o mesh com ' +
+                                    'secundários associados'});
+        }
 
         if (errors.length < 1) {
           Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
@@ -1545,7 +1558,16 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+            let changes = {wan: {}, lan: {}, wifi2: {},
+                           wifi5: {}, mesh2: {}, mesh5: {}};
+
+            let model;
+
+            if (matchedDevice.use_tr069) {
+              const acsID = matchedDevice.acs_id;
+              const splitID = acsID.split('-');
+              model = splitID.slice(1, splitID.length-1).join('-');
+            }
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
@@ -1647,6 +1669,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState !== matchedDevice.wifi_state) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.enable = wifiState;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState) {
+                  changes.wifi2.beacon_type =
+                    DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
               } else {
@@ -1728,6 +1755,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState5ghz !== matchedDevice.wifi_state_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.enable = wifiState5ghz;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState5ghz) {
+                  changes.wifi5.beacon_type =
+                    DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
               } else {
@@ -1785,8 +1817,10 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('external_reference') &&
-                (content.external_reference.kind !== matchedDevice.external_reference.kind ||
-                 content.external_reference.data !== matchedDevice.external_reference.data)
+                (content.external_reference.kind !==
+                 matchedDevice.external_reference.kind ||
+                 content.external_reference.data !==
+                 matchedDevice.external_reference.data)
             ) {
               if (superuserGrant || role.grantDeviceId) {
                 matchedDevice.external_reference.kind =
@@ -1801,8 +1835,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeEnabled !== matchedDevice.bridge_mode_enabled &&
                 !matchedDevice.use_tr069) {
               if (superuserGrant || role.grantOpmodeEdit) {
-                // in the case of changing from bridge to router : clear vlan configuration
-                if(matchedDevice.bridge_mode_enabled == true && bridgeEnabled == false) {
+                // In the case of changing from bridge to router:
+                // Clear vlan configuration
+                if (matchedDevice.bridge_mode_enabled == true &&
+                    bridgeEnabled == false) {
                   matchedDevice.vlan = [];
                 }
 
@@ -1813,7 +1849,8 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('bridgeDisableSwitch') &&
-                bridgeDisableSwitch !== matchedDevice.bridge_mode_switch_disable) {
+                bridgeDisableSwitch !==
+                matchedDevice.bridge_mode_switch_disable) {
               if (superuserGrant || role.grantOpmodeEdit) {
                 matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
                 updateParameters = true;
@@ -1849,10 +1886,42 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('mesh_mode') &&
-                meshMode !== matchedDevice.mesh_mode &&
-                !matchedDevice.use_tr069) {
+                meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // The chosen channel includes better results on some routers
+                const mesh5GhzChannel = 40;
+                const wifiRadioState = 1;
                 matchedDevice.mesh_mode = meshMode;
+                if (matchedDevice.use_tr069) {
+                  const auxChanges =
+                    meshHandlers.buildTR069Changes(matchedDevice, meshMode);
+                  changes.mesh2 = auxChanges.mesh2;
+                  changes.mesh5 = auxChanges.mesh5;
+                  if (meshMode === 2 || meshMode === 4) {
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi2.enable = wifiRadioState;
+                    changes.wifi2.beacon_type =
+                      DevicesAPI.getBeaconTypeByModel(model);
+                  }
+                  if (meshMode === 3 || meshMode === 4) {
+                    // For best performance and avoiding DFS issues
+                    // all APs must work on a single 5GHz non-DFS channel
+                    changes.wifi5.channel = mesh5GhzChannel;
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi5.enable = wifiRadioState;
+                    changes.wifi5.beacon_type =
+                      DevicesAPI.getBeaconTypeByModel(model);
+                  }
+                }
+                if (meshMode === 2 || meshMode === 4) {
+                  matchedDevice.wifi_state = wifiRadioState;
+                }
+                if (meshMode === 3 || meshMode === 4) {
+                  // For best performance and avoiding DFS issues
+                  // all APs must work on a single 5GHz non-DFS channel
+                  matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
+                  matchedDevice.wifi_state_5ghz = wifiRadioState;
+                }
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -1880,14 +1949,14 @@ deviceListController.setDeviceReg = function(req, res) {
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-                meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
                 acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
+              meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
 
-                matchedDevice.success = true;
-                return res.status(200).json(matchedDevice);
+              matchedDevice.success = true;
+              return res.status(200).json(matchedDevice);
             });
           });
         } else {

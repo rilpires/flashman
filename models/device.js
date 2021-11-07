@@ -133,6 +133,8 @@ let deviceSchema = new Schema({
   mesh_slaves: [String], // Used for master only (Slave is null)
   mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
   mesh_key: String, // Security key in mesh network (key for backhaul)
+  bssid_mesh2: String, // BSSID of 2.4GHz mesh Virtual AP
+  bssid_mesh5: String, // Same as above but for 5GHz
   mesh_routers: [{ // Info from a point of view of each AP connected to mesh
     mac: String,
     last_seen: {type: Date},

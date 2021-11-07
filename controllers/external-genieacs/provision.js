@@ -67,6 +67,8 @@ let data = {
   lan: updateConfiguration(fields.lan),
   wifi2: updateConfiguration(fields.wifi2),
   wifi5: updateConfiguration(fields.wifi5),
+  mesh2: updateConfiguration(fields.mesh2),
+  mesh5: updateConfiguration(fields.mesh5),
 };
 args = {acs_id: genieID, data: data};
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));

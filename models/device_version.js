@@ -57,8 +57,16 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      mesh_v2_primary_support: true,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
   },
   'F680': {
     vendor: 'Multilaser',
@@ -78,8 +86,16 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      mesh_v2_primary_support: true,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
   },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
@@ -100,7 +116,11 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      mesh_v2_primary_support: true,
+      mesh_v2_secondary_support: false,
     },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'ZXHN H199A': {
     vendor: 'Multilaser',
@@ -121,8 +141,16 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      mesh_v2_primary_support: true,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
   },
   'GONUAC001': {
     vendor: 'Greatek',
@@ -141,8 +169,16 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
   },
   '121AC': {
     vendor: 'Intelbras',
@@ -163,8 +199,23 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x3'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    // Some models have absolute values for some octets of the mesh virtual APs
+    // The mask indicates which octets these are and the absolute value
+    // indicates what value this is
+    mesh2_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
+    mesh5_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
+    mesh2_bssid_absolute: ['0x0', '0x0', '0x0', '0x01', '0x01', '0x0'],
+    mesh5_bssid_absolute: ['0x0', '0x0', '0x0', '0x00', '0x00', '0x0'],
   },
   'G-140W-C': {
     vendor: 'Nokia',
@@ -180,8 +231,16 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x4'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x1', '0x0', '0x0'],
   },
   'HG8245Q2': {
     vendor: 'Huawei',
@@ -200,8 +259,11 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'EG8145V5': {
     port_forward_opts: {
@@ -222,8 +284,11 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'WS5200-21': {
     vendor: 'Huawei',
@@ -239,8 +304,11 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
   'WS5200-40': {
     vendor: 'Huawei',
@@ -256,8 +324,11 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
   },
 };
 
@@ -274,6 +345,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -291,6 +364,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -308,6 +383,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -325,6 +402,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 31,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
@@ -342,6 +421,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
@@ -359,6 +440,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -376,6 +459,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -393,6 +478,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -410,6 +497,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -427,6 +516,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -444,6 +535,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -462,6 +555,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -480,6 +575,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -497,6 +594,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -514,6 +613,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
@@ -531,6 +632,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -548,6 +651,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -565,6 +670,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -582,6 +689,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -599,6 +708,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -616,6 +727,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -633,6 +746,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 15,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -650,6 +765,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 300,
@@ -667,6 +784,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -684,6 +803,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -701,6 +822,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': false,
     'speedtest_limit': 100,
@@ -718,6 +841,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -735,6 +860,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -752,6 +879,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -769,6 +898,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -786,6 +917,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': false,
     'speedtest_limit': 100,
@@ -804,6 +937,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -822,6 +957,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -839,6 +976,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 150,
@@ -856,6 +995,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': true,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 150,
@@ -873,6 +1014,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 31,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 120,
@@ -891,6 +1034,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -909,6 +1054,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -927,6 +1074,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -945,6 +1094,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -963,6 +1114,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -981,6 +1134,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -999,6 +1154,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1017,6 +1174,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1035,6 +1194,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1053,6 +1214,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1070,6 +1233,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1087,6 +1252,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1104,6 +1271,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1121,6 +1290,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1138,6 +1309,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1155,6 +1328,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1173,6 +1348,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1191,6 +1368,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1209,6 +1388,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1227,6 +1408,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1245,6 +1428,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1263,6 +1448,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1280,6 +1467,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1297,6 +1486,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1314,6 +1505,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1331,6 +1524,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1349,6 +1544,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1367,6 +1564,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1385,6 +1584,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1403,6 +1604,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1420,6 +1623,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1437,6 +1642,8 @@ const flashboxFirmwareDevices = {
     'wifi_chip': '',
     'max_vid': 4094,
     'mesh_support': false,
+    'mesh_v2_primary_support': true,
+    'mesh_v2_secondary_support': true,
     'wps_support': false,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -1444,7 +1651,7 @@ const flashboxFirmwareDevices = {
   },
 };
 
-const versionCompare = function(foo, bar) {
+DeviceVersion.versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
    return parseInt(val);
@@ -1459,14 +1666,20 @@ const versionCompare = function(foo, bar) {
   return 0;
 };
 
-const grantViewLogs = function(version) {
+const grantViewLogs = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   // Enabled in all supported versions
   return true;
 };
 
-const grantResetDevices = function(version) {
+const grantResetDevices = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.10.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1483,7 +1696,7 @@ const grantPortForward = function(version, model) {
   }
   if (version.match(versionRegex)) {
     // Oficial Flashbox firmware
-    return (versionCompare(version, '0.10.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
   } else if (version.match(devVersionRegex)) {
     // Development version, enable everything by default
     return true;
@@ -1493,63 +1706,84 @@ const grantPortForward = function(version, model) {
   }
 };
 
-const grantPortForwardAsym = function(version) {
+const grantPortForwardAsym = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.14.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantPortOpenIpv6 = function(version) {
+const grantPortOpenIpv6 = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.15.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.15.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantWifi5ghz = function(version, is5ghzCapable) {
+const grantWifi5ghz = function(version, is5ghzCapable, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (is5ghzCapable && (versionCompare(version, '0.13.0') >= 0));
+    return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
   }
 };
 
-const grantWifiBand = function(version) {
+const grantWifiBand = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantWifiBandAuto = function(version) {
+const grantWifiBandAuto = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.29.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantWifiPowerHiddenIpv6 = function(version) {
+const grantWifiPowerHiddenIpv6 = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.28.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantWifiState = function(version) {
+const grantWifiState = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.23.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1570,45 +1804,60 @@ const grantWifiExtendedChannels = function(version, model) {
   }
 };
 
-const grantPingTest = function(version) {
+const grantPingTest = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantLanEdit = function(version) {
+const grantLanEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.13.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantLanGwEdit = function(version) {
+const grantLanGwEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.23.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantLanDevices = function(version) {
+const grantLanDevices = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.14.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantSiteSurvey = function(version) {
+const grantSiteSurvey = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.29.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1620,7 +1869,7 @@ const grantUpnp = function(version, model) {
     return tr069Devices[model].feature_support.upnp;
   }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.21.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.21.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1640,7 +1889,7 @@ const grantSpeedTest = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.24.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.24.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1667,9 +1916,12 @@ const grantBlockDevices = function(model) {
   return true;
 };
 
-const grantOpmode = function(version) {
+const grantOpmode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.25.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1677,6 +1929,9 @@ const grantOpmode = function(version) {
 };
 
 const grantVlanSupport = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   let ret = { // default return value
     'vlan_support': false,
     'vlan_support_since': '0.30.2',
@@ -1689,6 +1944,8 @@ const grantVlanSupport = function(version, model) {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': false,
     'speedtest_support': false,
     'speedtest_limit': 100,
@@ -1698,7 +1955,7 @@ const grantVlanSupport = function(version, model) {
     ret = flashboxFirmwareDevices[model];
   }
   if (version.match(versionRegex)) {
-    if (versionCompare(version, ret['vlan_support_since']) >= 0) {
+    if (DeviceVersion.versionCompare(version, ret['vlan_support_since']) >= 0) {
       return ret['vlan_support'];
     } else {
       return false;
@@ -1709,9 +1966,12 @@ const grantVlanSupport = function(version, model) {
   }
 };
 
-const grantWanBytesSupport = function(version) {
+const grantWanBytesSupport = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return true;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.25.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1729,7 +1989,10 @@ const grantPonSignalSupport = function(version, model) {
   }
 };
 
-const grantMeshMode = function(version, model) {
+const grantMeshV1Mode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1739,16 +2002,70 @@ const grantMeshMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.27.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.27.0') >= 0 &&
+    DeviceVersion.versionCompare(version, '0.32.0') < 0);
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantUpdateAck = function(version) {
+const grantMeshV2PrimaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
+  }
   if (version.match(versionRegex)) {
-    return (versionCompare(version, '0.27.0') >= 0);
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].mesh_v2_primary_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantMeshV2SecondaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_secondary_support;
+  }
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].mesh_v2_secondary_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantMeshV2HardcodedBssid = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model) &&
+      tr069Devices[model].mesh_bssid_offset_hardcoded
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const grantUpdateAck = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.27.0') >= 0);
   } else {
     // Development version, no way to know version so disable by default
     return false;
@@ -1768,7 +2085,7 @@ const grantWpsFunction = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (versionCompare(version, '0.28.0') >= 0);
+    return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
   } else {
     // Development version, no way to know version so disable by default
     return true;
@@ -1777,32 +2094,35 @@ const grantWpsFunction = function(version, model) {
 
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
-  result.grantViewLogs = grantViewLogs(version);
-  result.grantResetDevices = grantResetDevices(version);
+  result.grantViewLogs = grantViewLogs(version, model);
+  result.grantResetDevices = grantResetDevices(version, model);
   result.grantPortForward = grantPortForward(version, model);
-  result.grantPortForwardAsym = grantPortForwardAsym(version);
-  result.grantPortOpenIpv6 = grantPortOpenIpv6(version);
+  result.grantPortForwardAsym = grantPortForwardAsym(version, model);
+  result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
-  result.grantWifiBand = grantWifiBand(version);
-  result.grantWifiBandAuto = grantWifiBandAuto(version);
-  result.grantWifiState = grantWifiState(version);
-  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version);
+  result.grantWifiBand = grantWifiBand(version, model);
+  result.grantWifiBandAuto = grantWifiBandAuto(version, model);
+  result.grantWifiState = grantWifiState(version, model);
+  result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
-  result.grantPingTest = grantPingTest(version);
-  result.grantLanEdit = grantLanEdit(version);
-  result.grantLanGwEdit = grantLanGwEdit(version);
-  result.grantLanDevices = grantLanDevices(version);
-  result.grantSiteSurvey = grantSiteSurvey(version);
+  result.grantPingTest = grantPingTest(version, model);
+  result.grantLanEdit = grantLanEdit(version, model);
+  result.grantLanGwEdit = grantLanGwEdit(version, model);
+  result.grantLanDevices = grantLanDevices(version, model);
+  result.grantSiteSurvey = grantSiteSurvey(version, model);
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
-  result.grantOpmode = grantOpmode(version);
+  result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
-  result.grantWanBytesSupport = grantWanBytesSupport(version);
+  result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(version, model);
-  result.grantMeshMode = grantMeshMode(version, model);
-  result.grantUpdateAck = grantUpdateAck(version);
+  result.grantMeshMode = grantMeshV1Mode(version, model);
+  result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
+  result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(version, model);
+  result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
@@ -1810,7 +2130,6 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   }
   return result;
 };
-
 
 DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
@@ -1835,6 +2154,8 @@ DeviceVersion.getDeviceInfo = function(model) {
     'wifi_chip': '',
     'max_vid': 0,
     'mesh_support': false,
+    'mesh_v2_primary_support': false,
+    'mesh_v2_secondary_support': false,
     'wps_support': false,
     'speedtest_support': false,
     'speedtest_limit': 100,
@@ -1889,12 +2210,91 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   return versions;
 };
 
+/*
+  Flashbox devices with firmware version before 0.32.0 only
+  had mesh v1 capabilities. If these models are in mesh mode (not on cable, > 1)
+  with associated slaves they can't be allowed to upgrade to a mesh v2
+  compatible release because mesh v2 is not compatible with mesh v1
+  (slaves will lose connection).
+  Analogously, mesh v2 devices cannot upgrade to mesh v1 under same conditions
+*/
+DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
+  meshMode, slaves, curVersion, nextVersion) {
+  if (curVersion.match(versionRegex)) {
+    if (meshMode > 1 && slaves && slaves.length > 0) {
+      if (!nextVersion) {
+        return false;
+      } else if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
+        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0);
+      } else {
+        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') >= 0);
+      }
+    } else {
+      return true;
+    }
+  } else {
+    // development version, allow everything
+    return true;
+  }
+};
+
 DeviceVersion.isUpgradeSupport = function(model) {
   let upgradeAvailable = false;
   if (tr069Devices[model]) {
     upgradeAvailable = tr069Devices[model].feature_support.firmware_upgrade;
   }
   return upgradeAvailable;
+};
+
+// Virtual APs BSSIDs are hardcoded
+DeviceVersion.getMeshBSSIDs = function(model, MAC) {
+  let meshBSSIDs = {};
+  if (tr069Devices[model] &&
+      tr069Devices[model].feature_support.mesh_v2_primary_support &&
+      tr069Devices[model].mesh2_bssid_offset &&
+      tr069Devices[model].mesh5_bssid_offset
+  ) {
+    let MACOctets2 = MAC.split(':');
+    let MACOctets5 = MAC.split(':');
+    for (let i = 0; i < MACOctets2.length; i++) {
+      if (tr069Devices[model].mesh2_bssid_absolute_mask &&
+          tr069Devices[model].mesh2_bssid_absolute_mask[i]
+      ) {
+        MACOctets2[i] = tr069Devices[model].mesh2_bssid_absolute[i]
+                                           .replace('0x', '');
+      } else {
+        MACOctets2[i] = (parseInt(`0x${MACOctets2[i]}`) +
+                         parseInt(tr069Devices[model].mesh2_bssid_offset[i]))
+                         .toString(16)
+                         .toUpperCase();
+        // We need the second hex digit for BSSID addresses
+        if (MACOctets2[i].length === 1) {
+          MACOctets2[i] = `0${MACOctets2[i]}`;
+        }
+      }
+      if (tr069Devices[model].mesh5_bssid_absolute_mask &&
+          tr069Devices[model].mesh5_bssid_absolute_mask[i]
+      ) {
+        MACOctets5[i] = tr069Devices[model].mesh5_bssid_absolute[i]
+                                           .replace('0x', '');
+      } else {
+        MACOctets5[i] = (parseInt(`0x${MACOctets5[i]}`) +
+                         parseInt(tr069Devices[model].mesh5_bssid_offset[i]))
+                         .toString(16)
+                         .toUpperCase();
+        // We need the second hex digit for BSSID addresses
+        if (MACOctets5[i].length === 1) {
+          MACOctets5[i] = `0${MACOctets5[i]}`;
+        }
+      }
+    }
+    meshBSSIDs.mesh2 = MACOctets2.join(':');
+    meshBSSIDs.mesh5 = MACOctets5.join(':');
+  } else {
+    meshBSSIDs.mesh2 = '';
+    meshBSSIDs.mesh5 = '';
+  }
+  return meshBSSIDs;
 };
 
 module.exports = DeviceVersion;

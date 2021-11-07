@@ -9,6 +9,7 @@ const Notification = require('../models/notification');
 const Config = require('../models/config');
 const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
+const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
 
 const pako = require('pako');
@@ -224,7 +225,7 @@ const saveDeviceData = async function(mac, landevices) {
   await device.save();
 };
 
-const createRegistry = async function(req) {
+const createRegistry = async function(req, permissions) {
   let data = req.body.data;
   let hasPPPoE = (data.wan.pppoe_user &&
                   typeof data.wan.pppoe_user.value === 'string' &&
@@ -243,6 +244,8 @@ const createRegistry = async function(req) {
     console.error('Error creating entry. Config does not exists.');
     return false;
   }
+  let macAddr = data.common.mac.value.toUpperCase();
+  let model = (data.common.model) ? data.common.model.value : '';
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = data.wifi5.ssid.value.trim();
   let isSsidPrefixEnabled = false;
@@ -277,13 +280,30 @@ const createRegistry = async function(req) {
     data.common.web_admin_password.value = webCredentials.password;
   }
 
+  let newMeshId = meshHandlers.genMeshID();
+  let newMeshKey = meshHandlers.genMeshKey();
+
+  let meshBSSIDs = {};
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+      data.mesh2.bssid
+  ) {
+    meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
+    if (data.mesh5 && data.mesh5.bssid) {
+      meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
+    } else {
+      meshBSSIDs.mesh5 = '';
+    }
+  } else {
+    meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
+  }
+
   let newDevice = new DeviceModel({
-    _id: data.common.mac.value.toUpperCase(),
+    _id: macAddr,
     use_tr069: true,
     serial_tr069: splitID[splitID.length - 1],
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
-    model: (data.common.model) ? data.common.model.value : '',
+    model: model,
     version: data.common.version.value,
     installed_release: data.common.version.value,
     release: data.common.version.value,
@@ -325,6 +345,11 @@ const createRegistry = async function(req) {
       data.common.web_admin_username.value : undefined,
     web_admin_password: (data.common.web_admin_password) ?
       data.common.web_admin_password.value : undefined,
+    mesh_mode: 0,
+    mesh_key: newMeshKey,
+    mesh_id: newMeshId,
+    bssid_mesh2: meshBSSIDs.mesh2,
+    bssid_mesh5: meshBSSIDs.mesh5,
   });
   try {
     await newDevice.save();
@@ -428,8 +453,31 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
                                  message: 'Error finding Config in database'});
   });
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
+
+  // Fetch functionalities of CPE
+  let permissions = null;
+  if (!device && data.common.version && data.common.model) {
+    permissions = DeviceVersion.findByVersion(
+      data.common.version.value,
+      (data.wifi5.ssid ? true : false),
+      data.common.model.value,
+    );
+  } else {
+    permissions = DeviceVersion.findByVersion(
+      device.version,
+      device.wifi_is_5ghz_capable,
+      device.model,
+    );
+  }
+  if (!permissions) {
+    return res.status(500).json({
+      success: false,
+      message: 'Cannot find device permissions',
+    });
+  }
+
   if (!device) {
-    if (await createRegistry(req)) {
+    if (await createRegistry(req, permissions)) {
       return res.status(200).json({success: true});
     } else {
       return res.status(500).json({
@@ -451,9 +499,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let cpeIP = processHostFromURL(data.common.ip.value);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   let hasChanges = false;
-  device.acs_id = req.body.acs_id;
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
+  device.acs_id = req.body.acs_id;
   device.serial_tr069 = splitID[splitID.length - 1];
 
   // Check for an alternative UID to replace serial field
@@ -509,6 +557,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let enable = (data.wifi2.enable.value) ? 1 : 0;
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
+      // When enabling Wi-Fi set beacon type
+      if (device.wifi_state) {
+        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      }
       hasChanges = true;
     }
   }
@@ -516,6 +568,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let enable = (data.wifi5.enable.value) ? 1 : 0;
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
+      // When enabling Wi-Fi set beacon type
+      if (device.wifi_state_5ghz) {
+        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      }
       hasChanges = true;
     }
   }
@@ -568,6 +624,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.band = device.wifi_band;
     }
   }
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+      data.mesh2.bssid
+  ) {
+    let bssid2 = data.mesh2.bssid.value;
+    if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
+      device.bssid_mesh2 = bssid2.toUpperCase();
+    }
+  }
   if (data.wifi5.ssid) {
     if (data.wifi5.ssid.value && !device.wifi_ssid_5ghz) {
       device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
@@ -611,6 +675,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
       changes.wifi5.band = device.wifi_band_5ghz;
+    }
+  }
+  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
+      data.mesh5.bssid
+  ) {
+    let bssid5 = data.mesh5.bssid.value;
+    if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
+      device.bssid_mesh5 = bssid5.toUpperCase();
     }
   }
   if (data.lan.router_ip) {
@@ -722,12 +794,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.last_contact_daily = Date.now();
   } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
     device.last_contact_daily = Date.now();
-    // Fetch functionalities of device
-    let permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
@@ -883,7 +949,7 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
         deviceEdit.wan_bytes = wanBytes;
         await deviceEdit.save();
       }
-      sio.anlixSendUpStatusNotification(mac, {wanbytes: wanBytes});
+      sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
     });
   });
   req.end();
@@ -951,7 +1017,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
         deviceEdit.wan_up_time = wanUpTime;
         await deviceEdit.save();
       }
-      sio.anlixSendUpStatusTr069Notification(mac, {
+      sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
         wanuptime: wanUpTime,
       });
@@ -1332,7 +1398,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         and here call updateInfo, and is more clean
         to check on the edge;
       */
-      if (key === 'ssid') {
+      if (key === 'ssid' &
+      (masterKey === 'wifi2' || masterKey === 'wifi5')) {
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }

@@ -171,14 +171,16 @@ firmwareController.getReleases = async function(filenames, role,
         releases.push({id: releaseId,
                        model: [releaseModel],
                        is_beta: firmware.is_beta,
-                       is_restricted: firmware.is_restricted});
+                       is_restricted: firmware.is_restricted,
+                       flashbox_version: firmware.flashbox_version});
         releaseIds.push(releaseId);
       }
     } else {
       releases.push({id: releaseId,
                      model: releaseModel,
                      is_beta: firmware.is_beta,
-                     is_restricted: firmware.is_restricted});
+                     is_restricted: firmware.is_restricted,
+                     flashbox_version: firmware.flashbox_version});
     }
   });
   return releases;

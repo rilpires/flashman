@@ -1,6 +1,7 @@
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Role = require('../models/role');
+const DeviceVersion = require('../models/device_version');
 const mqtt = require('../mqtts');
 const messaging = require('./messaging');
 const deviceListController = require('./device_list');
@@ -669,72 +670,96 @@ scheduleController.getDevicesReleases = async function(req, res) {
   queryPromise.then((matchedDevices)=>{
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
-      let modelsNeeded = {};
-      let isOnu = {};
-      let modelMeshIntersections = [];
+      let devicesByModel = {};
+      let meshNetworks = [];
+      let onuCount = 0;
+      let totalCount = 0;
+      let releaseInfo = [];
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices) => {
         matchedDevices = matchedDevices.concat(extraDevices);
         matchedDevices.forEach((device)=>{
+          totalCount += 1;
           let model = device.model.replace('N/', '');
-          isOnu[model] = device.use_tr069;
-          let weight = 1;
-          if (device.mesh_master) return; // Ignore mesh slaves
-          if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            // Check for slave model, if it's different than master's, add it to
-            // intersections so we can couple them
-            let meshModels = {};
-            device.mesh_slaves.forEach((slave)=>{
-              let slaveDevice = matchedDevices.find((d) => d._id === slave);
+          if (device.use_tr069) {
+            onuCount += 1 + (device.mesh_slaves ?
+              device.mesh_slaves.length : 0);
+          } else if (!device.mesh_master && !(device.mesh_slaves
+            && device.mesh_slaves.length > 0)) {
+            // not a mesh device
+            if (!devicesByModel[model]) {
+              devicesByModel[model] = 1;
+            } else {
+              devicesByModel[model] += 1;
+            }
+          } else if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            const meshVersion =
+              DeviceVersion.versionCompare(device.version, '0.32.0') < 0 ?
+              1 : 2;
+            let models = [];
+            models.push(model);
+            for (let i = 0; i < device.mesh_slaves.length; i++) {
+              let slaveDevice = matchedDevices.find(
+                (d) => d._id === device.mesh_slaves[i],
+              );
               let slaveModel = slaveDevice.model.replace('N/', '');
-              if (model === slaveModel) {
-                weight += 1;
-              } else {
-                // Add slave model to models needed
-                if (slaveModel in modelsNeeded) {
-                  modelsNeeded[slaveModel] += 1;
-                } else {
-                  modelsNeeded[slaveModel] = 1;
-                }
-                // Add slave model to mesh models
-                if (slaveModel in meshModels) {
-                  meshModels[slaveModel] += 1;
-                } else {
-                  meshModels[slaveModel] = 1;
-                }
+              if (!models.includes(slaveModel)) {
+                models.push(slaveModel);
               }
+            }
+            meshNetworks.push({
+              deviceCount: 1 + device.mesh_slaves.length,
+              version: meshVersion,
+              models: models,
             });
-            meshModels[model] = weight;
-            modelMeshIntersections.push(meshModels);
-          }
-          if (model in modelsNeeded) {
-            modelsNeeded[model] += weight;
-          } else {
-            modelsNeeded[model] = weight;
           }
         });
-        let releasesMissing = releasesAvailable.map((release)=>{
-          let modelsMissing = [];
-          for (let model in modelsNeeded) {
-            /* below if is true if array of strings contains model name
-               inside any of its strings, where each string is a
-               concatenation of both model name and version. */
-            if (!release.model.some((modelAndVersion) => {
-              return modelAndVersion.includes(model);
-            })) {
-              modelsMissing.push({model: model, count: modelsNeeded[model],
-              isOnu: isOnu[model]});
+        releasesAvailable.forEach((release)=>{
+          let count = 0;
+          let meshIncompatibles = 0;
+          let missingModels = [];
+          const validModels = release.model;
+          Object.keys(devicesByModel).forEach(function eachKey(model) {
+            if (validModels.includes(model)) {
+              count += devicesByModel[model];
+            } else {
+              missingModels.push(model);
             }
-          }
-          return {
+          });
+          const releaseMeshVersion =
+            DeviceVersion.versionCompare(release.flashbox_version, '0.32.0')
+            < 0 ? 1 : 2;
+          meshNetworks.forEach((mesh)=>{
+            if (mesh.version !== releaseMeshVersion) {
+              meshIncompatibles += mesh.deviceCount;
+              return;
+            }
+            let allModelsOK = true;
+            for (let model in mesh.models) {
+              if (!validModels.includes(model)) {
+                // if one of the slaves can't upgrade then none of the devices
+                // in the mesh network will be allowed to upgrade
+                allModelsOK = false;
+                if (!missingModels.includes(model)) {
+                  missingModels.push(model);
+                }
+                break;
+              }
+            }
+            if (allModelsOK) count += mesh.deviceCount;
+          });
+          releaseInfo.push({
             id: release.id,
-            models: modelsMissing,
-          };
+            count: count,
+            meshIncompatibles: meshIncompatibles,
+            missingModels: missingModels,
+          });
         });
         return res.status(200).json({
           success: true,
-          releases: releasesMissing,
-          intersections: modelMeshIntersections,
+          onuCount: onuCount,
+          totalCount: totalCount,
+          releaseInfo: releaseInfo,
         });
       });
     });
@@ -869,6 +894,10 @@ scheduleController.startSchedule = async function(req, res) {
           });
           if (!valid) return false;
         }
+        const valid = DeviceVersion.testFirmwareUpgradeMeshLegacy(
+          device.mesh_mode, device.mesh_slaves,
+          device.version, release.flashbox_version);
+        if (!valid) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of

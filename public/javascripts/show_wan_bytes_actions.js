@@ -20,7 +20,7 @@ $(document).ready(function() {
   const refreshWanBytes = function(deviceId) {
     $('#btn-wan-bytes-refresh').prop('disabled', true);
     $.ajax({
-      url: '/devicelist/command/' + deviceId + '/upstatus',
+      url: '/devicelist/command/' + deviceId + '/wanbytes',
       type: 'post',
       dataType: 'json',
       success: function(res) {
@@ -52,7 +52,7 @@ $(document).ready(function() {
   };
 
   // Important: include and initialize socket.io first using socket var
-  socket.on('UPSTATUS', function(macaddr, data) {
+  socket.on('WANBYTES', function(macaddr, data) {
     if (data.wanbytes && macaddr === $('#wan-bytes-hlabel').text()) {
       $('#wan-bytes-graph').empty();
       let upBytes = [];
