@@ -64,6 +64,7 @@ let appSet = function(req, res, processFunction) {
       if (content.latitude && content.longitude) {
         matchedDevice.latitude = content.latitude;
         matchedDevice.longitude = content.longitude;
+        matchedDevice.last_location_date = new Date();
       }
 
       if (
@@ -826,6 +827,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
         if (mustUpdateLocation) {
           matchedDeviceEdit.latitude = latitude;
           matchedDeviceEdit.longitude = longitude;
+          matchedDeviceEdit.last_location_date = new Date();
         }
         matchedDeviceEdit.save();
       });
