@@ -1046,6 +1046,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
+      return res.status(500).json({message: 'Erro ao acessar configuração'});
     }
 
     let reply = {'speedtest': {}};

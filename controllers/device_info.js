@@ -532,8 +532,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         let sentVersion = util.returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
-          // console.log(devId + ' changed version to: '+ sentVersion);
-
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
           let permissionsSentVersion = DeviceVersion.findByVersion(
@@ -666,7 +664,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         let sentNtp = util.returnObjOrEmptyStr(req.body.ntp).trim();
         if (matchedDevice.ntp_status != sentNtp) {
-          // console.log('Device '+ devId +' changed NTP STATUS to: '+ sentNtp);
           deviceSetQuery.ntp_status = sentNtp;
         }
 

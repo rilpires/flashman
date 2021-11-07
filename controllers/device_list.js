@@ -2670,7 +2670,6 @@ deviceListController.setPingHostsList = function(req, res) {
       return res.status(200).json({success: false,
                                    message: 'CPE não encontrado'});
     }
-    console.log('Updating hosts ping list for ' + matchedDevice._id);
     if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
       let approvedHosts = [];
