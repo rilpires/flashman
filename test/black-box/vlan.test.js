@@ -493,19 +493,6 @@ describe('vlan routes', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.message).toMatch(/atualizada com sucesso/);
   });
-  test('/vlan/update/:deviceid  - Update a vlan in a device',
-  async () => {
-    let deviceId = '08:32:82:10:09:22';
-    let res = await request('localhost:8000')
-      .post('/vlan/update/'+deviceId)
-      .set('Cookie', testCookie)
-      .send({vlans: '[{"port":1, "vlan_id":10},{"port":2, "vlan_id":15},'+
-        '{"port":3, "vlan_id":10},{"port":4, "vlan_id":1}]'})
-      .catch(catchError);
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.message).toMatch(/atualizada com sucesso/);
-  });
   test('/vlan/update/:deviceid  - Update vlan config back in the'+
     ' previosly updated device',
   async () => {
