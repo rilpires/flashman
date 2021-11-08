@@ -13,6 +13,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
@@ -350,11 +351,16 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'Cannot disable mesh with registered slaves',
       });
     }
+    const wifiRadioState = 1;
+    const meshChannel = 6;
+    const meshChannel5GHz = 40; // Value has better results on some routers
     let model = device.model;
     let changes;
+    let acsID;
+    let splitID;
     if (device.use_tr069) {
-      let acsID = device.acs_id;
-      let splitID = acsID.split('-');
+      acsID = device.acs_id;
+      splitID = acsID.split('-');
       model = splitID.slice(1, splitID.length-1).join('-');
     }
     const permissions = DeviceVersion.findByVersion(
@@ -362,8 +368,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       device.wifi_is_5ghz_capable,
       model,
     );
-    const wifiRadioState = 1;
-    const mesh5GhzChannel = 40; // Value has better results on some routers
     const isMeshV1Compatible = permissions.grantMeshMode;
     const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
@@ -372,31 +376,154 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       });
     }
     if (isMeshV2Compatible && device.use_tr069) {
-      changes = meshHandlers.buildTR069Changes(device, targetMode);
-      if (targetMode === 2 || targetMode === 4) {
-        changes.wifi2 = {};
-        // When enabling Wi-Fi set beacon type
-        changes.wifi2.enable = wifiRadioState;
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      const hasMeshSSIDObject = DeviceVersion.hasMeshSSIDObject(model);
+      /*
+        If device doesn't have SSID Object by default, then
+        we need to check if it has been created already.
+        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+        IMPORTANT: even if target mode is 1 (cable) we must create these
+        objects because, in that case, we disable the virtual APs. If the
+        objects don't exist yet this will cause an error!
+      */
+      let populateSSIDObjects = false;
+      if (!hasMeshSSIDObject && targetMode > 0) {
+        // We have to check if the virtual AP object has been created already
+        const meshField = DevicesAPI.getModelFields(splitID[0], model)
+          .fields.mesh2.ssid.replace('.SSID', '');
+        const meshField5 = meshField.replace('.2', '.3');
+        const getObjTask = {
+          name: 'getParameterValues',
+          parameterNames: [
+            meshField,
+            meshField5,
+          ],
+        };
+        let meshObjsStatus;
+        try {
+          let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+          if (!ret || !ret.finished ||
+            ret.task.name !== 'getParameterValues') {
+            return res.status(500).json({'error': 'task error'});
+          }
+          if (ret.finished) {
+            meshObjsStatus = await acsDeviceInfo.checkMeshObjsCreated(acsID);
+          }
+        } catch (e) {
+          const msg = `[!] -> ${e.message} in ${acsID}`;
+          console.log(msg);
+          return res.status(500).json({'error': msg});
+        }
+        console.log(`DEBUG meshObjsStatus mesh2: ${meshObjsStatus.mesh2}`);
+        console.log(`DEBUG meshObjsStatus mesh5: ${meshObjsStatus.mesh5}`);
+        let deleteMesh5VAP = false;
+        let createMesh2VAP = false;
+        let createMesh5VAP = false;
+        /*
+          If the 2.4GHz virtual AP object hasn't been created
+          we must create it. Since the objects are created in order we
+          must delete the 5GHz virtual AP object if it exists and then
+          recreate it.
+        */
+        if (!meshObjsStatus.mesh2) {
+          populateSSIDObjects = true;
+          createMesh2VAP = true;
+          createMesh5VAP = true;
+          if (meshObjsStatus.mesh5) {
+            deleteMesh5VAP = true;
+          }
+        } else {
+          /*
+            2.4GHz virtual AP object is created. Here we treat only the
+            5GHz case.
+          */
+          if (!meshObjsStatus.mesh5) {
+            populateSSIDObjects = true;
+            createMesh5VAP = true;
+          }
+        }
+        /*
+          We never delete the 2.4GHz VAP object,
+          only the 5GHz one in specific cases
+        */
+        if (deleteMesh5VAP) {
+          const meshField5 = DevicesAPI.getModelFields(splitID[0], model)
+          .fields.mesh5.ssid.replace('.SSID', '');
+          let delObjTask = {
+            name: 'deleteObject',
+            objectName: meshField5,
+          };
+          try {
+            let ret = await TasksAPI.addTask(acsID, delObjTask, true,
+              3000, [5000, 10000]);
+            if (!ret || !ret.finished||
+              ret.task.name !== 'deleteObject') {
+              return res.status(500).json({'error': 'delObject task error'});
+            }
+          } catch (e) {
+            const msg = `[!] -> ${e.message} in ${acsID}`;
+            console.log(msg);
+            return res.status(500).json({'error': msg});
+          }
+        }
+        /*
+          Virtual APs objects haven't been created yet.
+          We must do that
+        */
+        if (createMesh2VAP || createMesh5VAP) {
+          let addObjTask = {
+            name: 'addObject',
+            objectName: meshField.replace('.2', ''),
+          };
+          /*
+            Regardless of which mesh mode is being set we create both
+            virtual AP objects. If 2.4GHz virtual AP object is already OK
+            then we only create the 5GHz virtual AP object.
+          */
+          let numObjsToCreate;
+          createMesh2VAP ? numObjsToCreate = 2 : numObjsToCreate = 1;
+
+          for (let i = 0; i < numObjsToCreate; i++) {
+            try {
+              let ret = await TasksAPI.addTask(acsID, addObjTask, true,
+                3000, [5000, 10000]);
+              if (!ret || !ret.finished||
+                ret.task.name !== 'addObject') {
+                return res.status(500).json({'error': 'task error'});
+              }
+            } catch (e) {
+              const msg = `[!] -> ${e.message} in ${acsID}`;
+              console.log(msg);
+              return res.status(500).json({'error': msg});
+            }
+
+            // A getParameterValues call forces the whole object to be created
+            try {
+              let ret = await TasksAPI.addTask(
+                acsID, getObjTask, true, 10000, []);
+              if (!ret || !ret.finished||
+                ret.task.name !== 'getParameterValues') {
+                return res.status(500).json({'error': 'task error'});
+              }
+            } catch (e) {
+              const msg = `[!] -> ${e.message} in ${acsID}`;
+              console.log(msg);
+              return res.status(500).json({'error': msg});
+            }
+          }
+        }
       }
-      if (targetMode === 3 || targetMode === 4) {
-        changes.wifi5 = {};
-        // For best performance and avoiding DFS issues
-        // all APs must work on a single 5GHz non-DFS channel
-        changes.wifi5.channel = mesh5GhzChannel;
-        // When enabling Wi-Fi set beacon type
-        changes.wifi5.enable = wifiRadioState;
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
-      }
+      changes = meshHandlers.buildTR069Changes(device, targetMode,
+        wifiRadioState, meshChannel, meshChannel5GHz, populateSSIDObjects);
     }
     // Assure radios are enabled and correct channels are set
     if (targetMode === 2 || targetMode === 4) {
+      device.wifi_channel = meshChannel;
       device.wifi_state = wifiRadioState;
     }
     if (targetMode === 3 || targetMode === 4) {
       // For best performance and avoiding DFS issues
       // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = mesh5GhzChannel;
+      device.wifi_channel_5ghz = meshChannel5GHz;
       device.wifi_state_5ghz = wifiRadioState;
     }
     device.mesh_mode = targetMode;

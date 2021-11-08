@@ -1026,6 +1026,44 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   req.end();
 };
 
+acsDeviceInfoController.checkMeshObjsCreated = function(acsID) {
+  return new Promise((resolve, reject) => {
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let query = {_id: acsID};
+    let projection = `${fields.mesh2.ssid}, ${fields.mesh5.ssid}`;
+    let path =
+      `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let result = {
+      mesh2: false,
+      mesh5: false,
+    };
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('data', (chunk)=>data+=chunk);
+      resp.on('end', async ()=>{
+        data = JSON.parse(data)[0];
+        if (checkForNestedKey(data, `${fields.mesh2.ssid}._value`)) {
+          result.mesh2 = true;
+        }
+        if (checkForNestedKey(data, `${fields.mesh5.ssid}._value`)) {
+          result.mesh5 = true;
+        }
+        resolve(result);
+      });
+    });
+    req.end();
+  });
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');

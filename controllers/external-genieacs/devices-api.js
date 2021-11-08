@@ -293,6 +293,31 @@ const getHuaweiFields = function(model) {
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
       fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+
+      fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '2');
+      fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '3');
+      fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '2');
+      fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '3');
+      fields.mesh2.password = fields.mesh5.password.replace(/6/g, '2');
+      fields.mesh5.password = fields.mesh5.password.replace(/6/g, '3');
+      fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '2');
+      fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '3');
+      fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '2');
+      fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '3');
+      fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '2');
+      fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '3');
+      fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '2');
+      fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '3');
+      fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '2');
+      fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '3');
+      fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '2');
+      fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '3');
+      fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '2');
+      fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
+      fields.mesh2.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BasicDataTransmitRates';
+      fields.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers';
+      fields.mesh5.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates';
+      fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers';
       break;
     case 'Huawei': // Huawei WS5200
       fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';

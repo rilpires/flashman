@@ -67,6 +67,7 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh_ssid_object_exists: true,
   },
   'F680': {
     vendor: 'Multilaser',
@@ -96,6 +97,7 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh_ssid_object_exists: true,
   },
   'ZXHN H198A V3.0': {
     vendor: 'Multilaser',
@@ -151,6 +153,7 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
   },
   'GONUAC001': {
     vendor: 'Greatek',
@@ -179,6 +182,7 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
   },
   '121AC': {
     vendor: 'Intelbras',
@@ -216,6 +220,7 @@ const tr069Devices = {
     mesh5_bssid_absolute_mask: [0, 0, 0, 1, 1, 0],
     mesh2_bssid_absolute: ['0x0', '0x0', '0x0', '0x01', '0x01', '0x0'],
     mesh5_bssid_absolute: ['0x0', '0x0', '0x0', '0x00', '0x00', '0x0'],
+    mesh_ssid_object_exists: true,
   },
   'G-140W-C': {
     vendor: 'Nokia',
@@ -241,6 +246,7 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x4'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x1', '0x0', '0x0'],
+    mesh_ssid_object_exists: true,
   },
   'HG8245Q2': {
     vendor: 'Huawei',
@@ -259,11 +265,17 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
-      mesh_v2_primary_support: false,
+      mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x7'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x8'],
+    mesh_ssid_object_exists: false,
   },
   'EG8145V5': {
     port_forward_opts: {
@@ -284,11 +296,17 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: true,
-      mesh_v2_primary_support: false,
+      mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x7'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x8'],
+    mesh_ssid_object_exists: false,
   },
   'WS5200-21': {
     vendor: 'Huawei',
@@ -2295,6 +2313,15 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
     meshBSSIDs.mesh5 = '';
   }
   return meshBSSIDs;
+};
+
+DeviceVersion.hasMeshSSIDObject = function(model) {
+  let hasMeshSSIDObject = false;
+  if (tr069Devices[model] &&
+    tr069Devices[model].feature_support.mesh_v2_primary_support) {
+    hasMeshSSIDObject = tr069Devices[model].mesh_ssid_object_exists;
+  }
+  return hasMeshSSIDObject;
 };
 
 module.exports = DeviceVersion;
