@@ -376,7 +376,12 @@ vlanController.updateVlans = async function(req, res) {
   });
   if (device) {
     let is_vlans_valid = true;
-    req.body.vlans = JSON.parse(req.body.vlans);
+    if (util.isJsonString(req.body.vlans)) {
+      req.body.vlans = JSON.parse(req.body.vlans);
+    } else {
+      return res.json({success: false, type: 'danger',
+                       message: 'Formato de VLANs inválido!'});
+    }
 
     if (Array.isArray(req.body.vlans)) {
       for (let v of req.body.vlans) {
