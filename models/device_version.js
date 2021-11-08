@@ -123,6 +123,7 @@ const tr069Devices = {
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
+    mesh_ssid_object_exists: true,
   },
   'ZXHN H199A': {
     vendor: 'Multilaser',
