@@ -349,7 +349,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
   test('Query port forward of an CPE(tr-069): exists by serial +'+
     ' do not have this feature',
   async () => {
-    let id = 'MKPGB4461FCE';
+    let id = '3FBADE4EAB3913124';
     let res = await request('localhost:8000')
       .get('/api/v2/device/portforward/'+id)
       .auth('admin', 'landufrj123');

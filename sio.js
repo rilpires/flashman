@@ -9,7 +9,7 @@ const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
-const SIO_NOTIFICATION_UP_STATUS_TR069 = 'UPSTATUSTR069';
+const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
@@ -298,22 +298,22 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   return found;
 };
 
-sio.anlixWaitForUpStatusTr069Notification = function(session, macaddr) {
+sio.anlixWaitForWanBytesNotification = function(session, macaddr) {
   if (!session) {
     return false;
   }
   if (!macaddr) {
     return false;
   }
-  registerNotification(session, SIO_NOTIFICATION_UP_STATUS_TR069, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_WAN_BYTES, macaddr);
   return true;
 };
 
-sio.anlixSendUpStatusTr069Notification = function(macaddr, upStatusData) {
+sio.anlixSendWanBytesNotification = function(macaddr, upStatusData) {
   if (!macaddr) {
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_UP_STATUS_TR069,
+  let found = emitNotification(SIO_NOTIFICATION_WAN_BYTES,
                                macaddr, upStatusData, macaddr);
   return found;
 };

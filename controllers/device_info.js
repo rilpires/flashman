@@ -79,6 +79,8 @@ const createRegistry = async function(req, res) {
   let bridgeFixGateway = util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
   let bridgeFixDNS = util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
   let meshMode = parseInt(util.returnObjOrNum(req.body.mesh_mode, 0));
+  let bssidMesh2 = util.returnObjOrEmptyStr(req.body.bssid_mesh2).trim().toUpperCase();
+  let bssidMesh5 = util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
   let vlan = util.returnObjOrEmptyStr(req.body.vlan);
   let vlanFiltered;
   let vlanDidChange = false;
@@ -258,6 +260,8 @@ const createRegistry = async function(req, res) {
       'mesh_mode': meshMode,
       'mesh_id': newMeshId,
       'mesh_key': newMeshKey,
+      'bssid_mesh2': bssidMesh2,
+      'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
     };
@@ -445,14 +449,15 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // Legacy versions include only model so let's include model version
           deviceSetQuery.model = bodyModel + bodyModelVer;
         }
+        const changeLAN = util.returnObjOrEmptyStr(req.body.local_change_lan).trim();
         let lanSubnet = util.returnObjOrEmptyStr(req.body.lan_addr).trim();
         let lanNetmask = parseInt(util.returnObjOrNum(req.body.lan_netmask, 24));
-        if ((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
-            lanSubnet != '') {
+        if (((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
+            lanSubnet != '') || (changeLAN === '1')) {
           deviceSetQuery.lan_subnet = lanSubnet;
           matchedDevice.lan_subnet = lanSubnet; // Used in device response
         }
-        if (!matchedDevice.lan_netmask) {
+        if (!matchedDevice.lan_netmask || (changeLAN === '1')) {
           deviceSetQuery.lan_netmask = lanNetmask;
           matchedDevice.lan_netmask = lanNetmask; // Used in device response
         }
@@ -527,8 +532,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         let sentVersion = util.returnObjOrEmptyStr(req.body.version).trim();
         if (matchedDevice.version != sentVersion) {
-          // console.log(devId + ' changed version to: '+ sentVersion);
-
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
           let permissionsSentVersion = DeviceVersion.findByVersion(
@@ -661,7 +664,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         let sentNtp = util.returnObjOrEmptyStr(req.body.ntp).trim();
         if (matchedDevice.ntp_status != sentNtp) {
-          // console.log('Device '+ devId +' changed NTP STATUS to: '+ sentNtp);
           deviceSetQuery.ntp_status = sentNtp;
         }
 
@@ -711,6 +713,21 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
         if (sentWifiLastBand5G !== matchedDevice.wifi_last_band_5ghz) {
           deviceSetQuery.wifi_last_band_5ghz = sentWifiLastBand5G;
+        }
+
+        const bssidMesh2 =
+          util.returnObjOrEmptyStr(req.body.bssid_mesh2).trim().toUpperCase();
+        const bssidMesh5 =
+          util.returnObjOrEmptyStr(req.body.bssid_mesh5).trim().toUpperCase();
+        if (errors.length < 1) {
+          if (matchedDevice.bssid_mesh2 !== bssidMesh2 && bssidMesh2) {
+            deviceSetQuery.bssid_mesh2 = bssidMesh2;
+            matchedDevice.bssid_mesh2 = bssidMesh2; // Used in device response
+          }
+          if (matchedDevice.bssid_mesh5 !== bssidMesh5 && bssidMesh5) {
+            deviceSetQuery.bssid_mesh5 = bssidMesh5;
+            matchedDevice.bssid_mesh5 = bssidMesh5; // Used in device response
+          }
         }
 
         deviceSetQuery.last_contact = Date.now();
@@ -781,7 +798,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         );
 
         Config.findOne({is_default: true}).lean()
-        .exec(function(err, matchedConfig) {
+        .exec(async function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
           let dataCollecting = { // nothing happens in device with these parameters.
@@ -835,6 +852,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             wifiSsid5ghz = ssidPrefix + wifiSsid5ghz;
           }
 
+          let bssids = await meshHandlers.generateBSSIDLists(matchedDevice);
+
           let resJson = {
             'do_update': matchedDevice.do_update,
             'do_newprobe': false,
@@ -883,6 +902,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'mesh_master': matchedDevice.mesh_master,
             'mesh_id': matchedDevice.mesh_id,
             'mesh_key': matchedDevice.mesh_key,
+            'devices_bssid_mesh2': bssids.mesh2,
+            'devices_bssid_mesh5': bssids.mesh5,
           };
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
@@ -1294,11 +1315,14 @@ deviceInfoController.receiveDevices = function(req, res) {
         let outDev = {};
         let upConnDevMac = connDeviceMac.toLowerCase();
         let upConnDev = devsData[upConnDevMac];
+        let ipRes = {valid: false};
         // Skip if not lowercase
         if (!upConnDev) continue;
 
-        let ipRes = validator.validateIP(upConnDev.ip);
         let devReg = matchedDevice.getLanDevice(upConnDevMac);
+        if (upConnDev.ip) {
+          ipRes = validator.validateIP(upConnDev.ip);
+        }
         // Check wifi or cable data
         if (upConnDev.conn_type) {
           upConnDev.conn_type = parseInt(upConnDev.conn_type);
@@ -1855,6 +1879,7 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
     matchedDevice.save();
     sio.anlixSendUpStatusNotification(id, req.body);
+    sio.anlixSendWanBytesNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
