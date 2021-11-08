@@ -352,7 +352,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       });
     }
     const wifiRadioState = 1;
-    const meshChannel = 6;
+    const meshChannel = 7;
     const meshChannel5GHz = 40; // Value has better results on some routers
     let model = device.model;
     let changes;
