@@ -85,8 +85,10 @@ const downloadUpdate = function(version) {
 
 const updateDependencies = function() {
   return new Promise((resolve, reject)=>{
-    exec('npm install --production', (err, stdout, stderr)=>{
-      (err) ? reject() : resolve();
+    exec('rm package-lock.json', (err, stdout, stderr)=>{
+      exec('npm install --production', (err, stdout, stderr)=>{
+        (err) ? reject() : resolve();
+      });
     });
   });
 };
