@@ -335,9 +335,15 @@ vlanController.removeVlanProfile = async function(req, res) {
     return res.json({success: false, type: 'danger', message: rej.message});
   });
   if (config) {
-    if (typeof req.body.ids === 'string') {
-      req.body.ids = [req.body.ids];
+    if (typeof req.body.ids === 'string' ||
+     typeof req.body.ids === 'number') {
+      req.body.ids = [req.body.ids.toString()];
+    } else if (!Array.isArray(req.body.ids)) {
+      return res.json({success: false, type: 'danger',
+        message: 'Formato errado'});
     }
+
+    req.body.ids = req.body.ids.map((i) => i.toString());
 
     config.vlans_profiles = config.vlans_profiles.filter(
       (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
