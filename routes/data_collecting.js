@@ -9,7 +9,7 @@ router.route('/service/parameters')
 .post(dataCollectingController.updateServiceParameters);
 
 router.route('/massupdate/parameters')
-.post(dataCollectingController.updateManyParameters);
+.post(dataCollectingController.updateManyDevices);
 
 router.route('/:id/parameters')
 .get(dataCollectingController.returnDeviceParameters)

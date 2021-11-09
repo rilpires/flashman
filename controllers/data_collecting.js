@@ -277,7 +277,7 @@ dataCollectingController.updateServiceParameters = function(req, res) {
   .catch((e) => sendErrorResponse(res, e));
 };
 
-dataCollectingController.updateManyParameters = async function(req, res) {
+dataCollectingController.updateManyDevices = async function(req, res) {
   return Promise.resolve()
   .then(() => checkBody(req.body))
   .then(() => readChangesAndBuildMongoDBUpdateObject({
