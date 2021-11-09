@@ -522,6 +522,58 @@ describe('vlan routes', () => {
     expect(res.body.message)
       .toMatch(/Perfis de VLAN deletados com sucesso/);
   });
+  test('/vlan/profile/del - Delete vlan profile'+
+    ' passing a number',
+  async () => {
+    let res = await request('localhost:8000')
+      .delete('/vlan/profile/del')
+      .set('Cookie', adminCookie)
+      .send({ids: 32})
+      .catch(catchError);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message)
+      .toMatch(/Perfis de VLAN deletados com sucesso/);
+  });
+  test('/vlan/profile/del - Delete vlan profile'+
+    ' passing a array of number',
+  async () => {
+    let res = await request('localhost:8000')
+      .delete('/vlan/profile/del')
+      .set('Cookie', adminCookie)
+      .send({ids: [64, 16, 15]})
+      .catch(catchError);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message)
+      .toMatch(/Perfis de VLAN deletados com sucesso/);
+  });
+  test('/vlan/profile/del - Try delete vlan profile'+
+    ' passing a object',
+  async () => {
+    let res = await request('localhost:8000')
+      .delete('/vlan/profile/del')
+      .set('Cookie', adminCookie)
+      .send({ids: {a: 123, b: 321}})
+      .catch(catchError);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message)
+      .toMatch(/Formato errado/);
+  });
+  test('/vlan/profile/del - Try delete vlan profile'+
+    ' passing undefined',
+  async () => {
+    let res = await request('localhost:8000')
+      .delete('/vlan/profile/del')
+      .set('Cookie', adminCookie)
+      .send({})
+      .catch(catchError);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message)
+      .toMatch(/Formato errado/);
+  });
 
   afterAll(async () => {
     if (fakeDevicesInstances.length > 0) {
