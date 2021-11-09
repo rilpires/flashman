@@ -200,6 +200,11 @@ $(document).ready(function() {
           resp.wanStepRequired + ']')
         .attr('selected', 'selected');
       }
+      if (typeof resp.speedTestStepRequired !== 'undefined') {
+        $('select[name=speedtest-step-required] option[value=' +
+          resp.speedTestStepRequired + ']')
+        .attr('selected', 'selected');
+      }
       if (typeof resp.ipv4StepRequired !== 'undefined') {
         $('select[name=ipv4-step-required] option[value=' +
           resp.ipv4StepRequired + ']')

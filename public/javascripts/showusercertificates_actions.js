@@ -212,6 +212,27 @@ const fetchCertification = function(id, name, timestamp) {
           let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
           let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
           let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
+          if (cert.didSpeedTest) {
+            let diagSpeedtest = (cert.diagnostic.speedtest) ? 'OK' : 'Erro';
+            let diagSpeedValue;
+            $('#diagnostic-router-speedtest').html('&nbsp;'+diagSpeedtest);
+            $('#diagnostic-speedtest').show();
+            if (cert.diagnostic.speedValue != null) {
+              if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
+                diagSpeedValue = cert.diagnostic.speedTestLimit + '+ Mpbs';
+              } else {
+                diagSpeedValue = cert.diagnostic.speedValue + ' Mpbs';
+              }
+              $('#diagnostic-router-speedValue').html('&nbsp;'+diagSpeedValue);
+              $('#diagnostic-speedValue').show();
+            } else {
+              $('#diagnostic-router-speedtest').html('&nbsp;'+'Erro');
+              $('#diagnostic-speedValue').hide();
+            }
+          } else {
+            $('#diagnostic-speedtest').hide();
+            $('#diagnostic-speedValue').hide();
+          }
           $('#diagnostic-router-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-router-ip4').html('&nbsp;'+diagIp4);
           $('#diagnostic-router-ip6').html('&nbsp;'+diagIp6);

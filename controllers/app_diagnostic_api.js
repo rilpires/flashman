@@ -28,6 +28,11 @@ const convertDiagnostic = function(diagnostic) {
     dns: (diagnostic && diagnostic.dns === 0),
     anlix: (diagnostic && diagnostic.anlix === 0),
     flashman: (diagnostic && diagnostic.flashman === 0),
+    speedtest: (diagnostic && diagnostic.speedtest === 0),
+    speedValue: (diagnostic && 'speedValue' in diagnostic) ?
+                  diagnostic.speedValue : null,
+    speedTestLimit: (diagnostic && 'speedTestLimit' in diagnostic) ?
+                  diagnostic.speedTestLimit : null,
   };
 };
 
@@ -92,6 +97,7 @@ const pushCertification = (arr, c, finished) => {
     mesh: convertMesh(c.mesh),
     didConfigureContract: c.didContract || false,
     didConfigureObservation: c.didObservation || false,
+    didSpeedTest: c.didSpeedTest || false,
     contract: c.contract || '',
     observations: c.observations || '',
     cancelReason: c.reason || '',
@@ -549,6 +555,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
             personalizationHash: true,
+            measureServerIP: true,
             licenseApiSecret: true,
             company: true,
           },
@@ -567,6 +574,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         requiredIpv6: false,
         requiredDns: true,
         requiredFlashman: true,
+        requiredSpeedTest: false,
       };
       if (config.certification) {
         certification.requiredWan = config.certification.wan_step_required;
@@ -617,6 +625,12 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.wifi_is_5ghz_capable,
         device.model,
       );
+
+      if (config.certification.speedtest_step_required) {
+        if (config && config.measureServerIP) {
+          certification.requiredSpeedTest = permissions.grantSpeedTest;
+        }
+      }
 
       if (req.body.isOnu) {
         // Save passwords sent from app
@@ -1091,5 +1105,104 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   if (fieldValue instanceof Date) fieldValue = fieldValue.getTime();
   return res.status(200).json({fieldValue: fieldValue});
 };
+
+
+// ==========================================
+// Implementation of speed test routes methods on flashman.
+diagAppAPIController.getSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+
+    let config;
+    try {
+      config = await ConfigModel.findOne({is_default: true}).lean();
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+
+    let reply = {'speedtest': {}};
+    if (config && config.measureServerIP) {
+      reply.speedtest.server = config.measureServerIP;
+    }
+    let previous = matchedDevice.speedtest_results;
+    reply.speedtest.previous = previous;
+    if (previous.length > 0) {
+      reply.last_uid = previous[previous.length - 1]._id;
+    } else {
+      reply.last_uid = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      reply.last_error_uid = matchedDevice.last_speedtest_error.unique_id;
+      reply.last_error = matchedDevice.last_speedtest_error.error;
+    } else {
+      reply.last_error_uid = '';
+      reply.last_error = '';
+    }
+
+    return res.status(200).json(reply);
+  });
+};
+
+diagAppAPIController.doSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+
+    // Send reply first, then send mqtt message
+    let lastMeasureID;
+    let lastErrorID;
+    let previous = matchedDevice.speedtest_results;
+    if (previous.length > 0) {
+      lastMeasureID = previous[previous.length - 1]._id;
+    } else {
+      lastMeasureID = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      lastErrorID = matchedDevice.last_speedtest_error.unique_id;
+    } else {
+      lastErrorID = '';
+    }
+
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.mac.toUpperCase()];
+    });
+
+    res.status(200).json({
+      has_access: isDevOn,
+      last_uid: lastMeasureID,
+      last_error_uid: lastErrorID,
+    });
+
+    // Wait for a few seconds so the app can receive the reply
+    // We need to do this because the measurement blocks all traffic
+    setTimeout(async () => {
+      let config;
+      try {
+        config = await ConfigModel.findOne({is_default: true}).lean();
+        if (!config) throw {error: 'Config not found'};
+      } catch (err) {
+        console.log(err);
+      }
+
+      if (config && config.measureServerIP) {
+        // Send mqtt message to perform speedtest
+        let url = config.measureServerIP + ':' + config.measureServerPort;
+        mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
+                                         {name: req.user.name});
+      }
+    }, 1.5*1000);
+  });
+};
+// ==========================================
 
 module.exports = diagAppAPIController;
