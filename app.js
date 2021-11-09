@@ -10,6 +10,7 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
+const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -26,10 +27,32 @@ let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
+let DeviceModel = require('./models/device_version');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 
 let app = express();
+
+// Express OpenAPI docs generator handling responses first
+const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
+const isOnProduction = (process.env.production === 'true');
+if (!isOnProduction) {
+  expressOasGenerator.handleResponses(
+    app,
+    {
+      mongooseModels: mongoose.modelNames(),
+      swaggerDocumentOptions: {
+        customCss: `
+          .swagger-ui .topbar {
+            background-color: #4db6ac;
+          }
+        `
+      },
+      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
+      alwaysServeDocs: false,
+    },
+  );
+}
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
@@ -41,7 +64,7 @@ const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
 mongoose.connect(
   'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
   {useNewUrlParser: true,
-   serverSelectionTimeoutMS: 2**31-1, // biggest positive signed integer with 32 bits.
+   serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
    useFindAndModify: false,
    useCreateIndex: true,
@@ -49,7 +72,9 @@ mongoose.connect(
 mongoose.set('useCreateIndex', true);
 
 // Release dir must exists
-if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) && process.env.FLM_IMG_RELEASE_DIR !== undefined) {
+if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) &&
+    process.env.FLM_IMG_RELEASE_DIR !== undefined
+) {
   fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
 }
 
@@ -57,23 +82,6 @@ if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) && process.env.FLM_IMG_RELEA
 if (!fs.existsSync('./tmp')) {
   fs.mkdirSync('./tmp');
 }
-
-// configurations related to deployment are in an untracked file.
-let deploymentConfigurations = './config/configs.js'
-fs.access(deploymentConfigurations, fs.constants.F_OK, function (err) { // check file accessibility.
-  let default_license_control_fqdn = "controle.anlix.io"
-
-  if (err) { // if file doesn't exist or isn't accessible. use default values.
-    process.env.LC_FQDN = default_license_control_fqdn
-    return
-  }
-
-  // if file exist, get configurations from it. 
-  // if a configuration doesn't exist in file, use default value.
-  let configs = require(deploymentConfigurations); 
-  process.env.LC_FQDN = configs.license_control_fqdn || default_license_control_fqdn 
-});
-
 
 if (process.env.FLM_COMPANY_SECRET) {
   app.locals.secret = process.env.FLM_COMPANY_SECRET;
@@ -151,17 +159,22 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   });
   // Check migration for devices checked for upgrade
   // Check mesh key existence or generate it
-  Device.find({$or: [{installed_release: {$exists: false}},
-                     {mesh_key: {$exists: false}},
-                     {bridge_mode_enabled: true, connection_type: 'pppoe'},
-                     {isSsidPrefixEnabled: {$exists: false}},
-                     {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
+  Device.find({$or: [
+    {installed_release: {$exists: false}},
+    {mesh_key: {$exists: false}},
+    {bridge_mode_enabled: true, connection_type: 'pppoe'},
+    {isSsidPrefixEnabled: {$exists: false}},
+    {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
+    {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
+    {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
   ]},
   {installed_release: true, do_update: true,
    do_update_status: true, release: true,
    mesh_key: true, mesh_id: true,
    bridge_mode_enabled: true, connection_type: true,
-   pppoe_user: true, pppoe_password: true, isSsidPrefixEnabled: true},
+   pppoe_user: true, pppoe_password: true,
+   isSsidPrefixEnabled: true, bssid_mesh2: true,
+   bssid_mesh5: true, use_tr069: true, _id: true, model: true},
   function(err, devices) {
     if (!err && devices) {
       for (let idx = 0; idx < devices.length; idx++) {
@@ -203,6 +216,17 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         */
         if (typeof devices[idx].isSsidPrefixEnabled === 'undefined') {
           devices[idx].isSsidPrefixEnabled = false;
+          saveDevice = true;
+        }
+        /*
+          Check if tr-069 device has mesh bssids registered
+        */
+        if (devices[idx].use_tr069 &&
+          (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
+          let meshBSSIDs = DeviceModel.getMeshBSSIDs(
+            devices[idx].model, devices[idx]._id);
+          devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
+          devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
           saveDevice = true;
         }
         if (saveDevice) {
@@ -343,6 +367,11 @@ app.use(fileUpload());
 
 app.use('/', index);
 
+// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
+if (!isOnProduction) {
+  expressOasGenerator.handleRequests();
+}
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   let err = new Error('Not Found');
@@ -408,11 +437,13 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       acsDeviceController.reportOnuDevices(app);
       userController.checkAccountIsBlocked(app);
       updater.updateAppPersonalization(app);
+      updater.updateLicenseApiSecret(app);
     });
 
     acsDeviceController.reportOnuDevices(app);
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
+    updater.updateLicenseApiSecret(app);
     // Restart genieacs service whenever Flashman is restarted
     updater.rebootGenie(process.env.instances);
     // Force an update check to alert user on app startup

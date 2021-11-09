@@ -133,12 +133,12 @@ $(document).ready(function() {
     let best5GhzChannel = 0;
     let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0};
-    let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
-                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 149: 0, 153: 0,
+                           157: 0, 161: 0, 165: 0};
     let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0};
-    let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 52: 0, 56: 0, 60: 0,
-                           64: 0, 149: 0, 153: 0, 157: 0, 161: 0, 165: 0};
+    let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 149: 0, 153: 0,
+                           157: 0, 161: 0, 165: 0};
     if (hasExtendedChannels) {
       ap2GhzCountDict[12] = 0;
       ap2GhzCountDict[13] = 0;

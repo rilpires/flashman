@@ -3,6 +3,7 @@ const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
+const DevicesAPI = require('../external-genieacs/devices-api');
 
 let meshHandlers = {};
 
@@ -214,6 +215,121 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
       }
     });
   });
+};
+
+meshHandlers.buildTR069Changes = function(device, targetMode) {
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  const beaconType = DevicesAPI.getBeaconTypeByModel(model);
+  let changes = {mesh2: {}, mesh5: {}};
+  switch (targetMode) {
+    case 0:
+    case 1:
+      changes.mesh2.enable = false;
+      changes.mesh5.enable = false;
+      break;
+    case 2:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.channel = device.wifi_channel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.beacon_type = beaconType;
+      changes.mesh2.enable = true;
+      changes.mesh5.enable = false;
+      break;
+    case 3:
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.channel = device.wifi_channel_5ghz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
+      changes.mesh5.enable = true;
+      changes.mesh2.enable = false;
+      break;
+    case 4:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.channel = device.wifi_channel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.enable = true;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.beacon_type = beaconType;
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.channel = device.wifi_channel_5ghz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
+      changes.mesh5.enable = true;
+      break;
+    default:
+  }
+  return changes;
+};
+
+/*
+  This returns the lists of BSSID of devices
+  in the mesh network
+*/
+meshHandlers.generateBSSIDLists = async function(device) {
+  // If device is master we return empty lists
+  if (!device.mesh_master) {
+    return {
+      mesh2: [],
+      mesh5: [],
+    };
+  }
+  const masterMacAddr = device.mesh_master.toUpperCase();
+  let matchedMaster = await DeviceModel.findById(masterMacAddr,
+  'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
+  .catch((err) => {
+    console.log('Erro interno');
+    return;
+  });
+  if (!matchedMaster) {
+    console.log('CPE indicado como primário não encontrado');
+    return;
+  }
+  if (matchedMaster.mesh_mode === 0) {
+    console.log('CPE indicado como primário não está em modo mesh');
+    return;
+  }
+  if (matchedMaster.mesh_master) {
+    console.log('CPE indicado como primário é secundário');
+    return;
+  }
+  let bssids2 = [matchedMaster.bssid_mesh2];
+  let bssids5 = [matchedMaster.bssid_mesh5];
+  matchedMaster.mesh_slaves.forEach((slaveMac)=>{
+    // We don't want to add it's own mesh BSSIDs
+    if (slaveMac.toUpperCase() === device._id.toUpperCase()) {
+      return;
+    }
+    DeviceModel.findById(slaveMac, 'bssid_mesh2 bssid_mesh5',
+    function(err, matchedSlave) {
+      if (err) {
+        console.log('Attempt to access mesh slave '+ slaveMac +
+                    ' failed: database error.');
+      } else if (!matchedSlave) {
+        console.log('Attempt to access mesh slave '+ slaveMac +
+                    ' failed: devimasterDevicece not found.');
+      } else {
+        bssids2.push(matchedSlave.bssid_mesh2);
+        bssids5.push(matchedSlave.bssid_mesh5);
+      }
+    });
+  });
+  return {
+    mesh2: bssids2,
+    mesh5: bssids5,
+  };
 };
 
 module.exports = meshHandlers;
