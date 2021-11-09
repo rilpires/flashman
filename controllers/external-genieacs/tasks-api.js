@@ -441,7 +441,7 @@ const deleteOldTasks = async function(tasksToDelete, deviceid) {
         +` genieacs rest api, for device ${deviceid}.`);
     } else if (results[i].value.data === 'Task not found') { // if it resolved
     // to GenieACS saying task wasn't found.
-      throw new Error(`Task not foud when deleting an old task in genieAcs `
+      throw new Error(`Task not found when deleting an old task in genieAcs `
         +`rest api, for device ${deviceid}.`);
     }
     /* successful deletes don't need to be noted. they are expected to be
@@ -680,13 +680,18 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
     if (Object.keys(tasksToDelete).length > 0) {
       // there will be tasks to be deleted.
-      await deleteOldTasks(tasksToDelete, deviceid);
+      try {
+        await deleteOldTasks(tasksToDelete, deviceid);
+      } catch (e) {
+        console.log('Warning (tasks-api): ' + e.message);
+      }
     }
   }
 
-  // console.log("sending tasks", tasks, ", timeout:", timeout,
-  // ", watchTimes:", watchTimes)
-  // sending the new task and the old tasks being substituted, then return result.
+  /* console.log("sending tasks", tasks, ", timeout:", timeout,
+   ", watchTimes:", watchTimes)
+   sending the new task and the old tasks being substituted,
+   then return result. */
   return sendTasks(deviceid, tasks, timeout, shouldRequestConnection,
    watchTimes, callback);
 };
