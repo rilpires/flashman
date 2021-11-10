@@ -279,23 +279,30 @@ meshHandlers.buildTR069Changes = function(device, targetMode) {
   in the mesh network
 */
 meshHandlers.generateBSSIDLists = async function(device) {
-  // If device is master we return empty lists
-  if (!device.mesh_master) {
+  if (!device.mesh_master && !device.mesh_slaves) {
+    // not in a mesh network
     return {
       mesh2: [],
       mesh5: [],
     };
   }
-  const masterMacAddr = device.mesh_master.toUpperCase();
-  let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
-  .catch((err) => {
-    console.log('Erro interno');
-    return;
-  });
-  if (!matchedMaster) {
-    console.log('CPE indicado como primário não encontrado');
-    return;
+  let masterMacAddr;
+  let matchedMaster;
+  if (!device.mesh_master) {
+    masterMacAddr = device._id.toUpperCase();
+    matchedMaster = device;
+  } else {
+    masterMacAddr = device.mesh_master.toUpperCase();
+    matchedMaster = await DeviceModel.findById(masterMacAddr,
+    'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
+    .catch((err) => {
+      console.log('Erro interno');
+      return;
+    });
+    if (!matchedMaster) {
+      console.log('CPE indicado como primário não encontrado');
+      return;
+    }
   }
   if (matchedMaster.mesh_mode === 0) {
     console.log('CPE indicado como primário não está em modo mesh');
@@ -305,27 +312,36 @@ meshHandlers.generateBSSIDLists = async function(device) {
     console.log('CPE indicado como primário é secundário');
     return;
   }
-  let bssids2 = [matchedMaster.bssid_mesh2];
-  let bssids5 = [matchedMaster.bssid_mesh5];
-  matchedMaster.mesh_slaves.forEach((slaveMac)=>{
+  let bssids2 = [];
+  let bssids5 = [];
+  /*
+    if device is slave then we push master bssids
+    if not, we don't push anything
+  */
+  if (device.mesh_master) {
+    bssids2.push(matchedMaster.bssid_mesh2);
+    bssids5.push(matchedMaster.bssid_mesh5);
+  }
+  for (let i=0; i<matchedMaster.mesh_slaves.length; i++) {
+    const slaveMac = matchedMaster.mesh_slaves[i].toUpperCase();
     // We don't want to add it's own mesh BSSIDs
-    if (slaveMac.toUpperCase() === device._id.toUpperCase()) {
-      return;
+    if (slaveMac === device._id.toUpperCase()) {
+      continue;
     }
-    DeviceModel.findById(slaveMac, 'bssid_mesh2 bssid_mesh5',
-    function(err, matchedSlave) {
-      if (err) {
-        console.log('Attempt to access mesh slave '+ slaveMac +
-                    ' failed: database error.');
-      } else if (!matchedSlave) {
-        console.log('Attempt to access mesh slave '+ slaveMac +
-                    ' failed: devimasterDevicece not found.');
-      } else {
-        bssids2.push(matchedSlave.bssid_mesh2);
-        bssids5.push(matchedSlave.bssid_mesh5);
-      }
+    let matchedSlave = await DeviceModel.findById(
+    slaveMac, 'bssid_mesh2 bssid_mesh5')
+    .catch((err) => {
+      console.log('Erro interno');
+      return;
     });
-  });
+    if (!matchedSlave) {
+      console.log('Attempt to access mesh slave '+ slaveMac +
+                  ' failed: device not found.');
+    } else {
+      bssids2.push(matchedSlave.bssid_mesh2);
+      bssids5.push(matchedSlave.bssid_mesh5);
+    }
+  }
   return {
     mesh2: bssids2,
     mesh5: bssids5,

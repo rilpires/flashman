@@ -853,6 +853,12 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           }
 
           let bssids = await meshHandlers.generateBSSIDLists(matchedDevice);
+          if (!bssids) {
+            bssids = {
+              mesh2: [],
+              mesh5: [],
+            };
+          }
 
           let resJson = {
             'do_update': matchedDevice.do_update,
