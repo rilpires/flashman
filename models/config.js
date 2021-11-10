@@ -39,6 +39,7 @@ let configSchema = new mongoose.Schema({
     // - CPE must be present at MQTT list of connected devices if it is a
     //   CPE using Flashbox firmware
     flashman_step_required: {type: Boolean, required: true, default: true},
+    speedtest_step_required: {type: Boolean, default: false},
   },
   data_collecting: {
     is_active: Boolean,
@@ -105,6 +106,8 @@ let configSchema = new mongoose.Schema({
   }],
   isSsidPrefixEnabled: {type: Boolean},
   ssidPrefix: {type: String},
+  licenseApiSecret: {type: String, default: ''},
+  company: {type: String, default: ''},
 });
 
 let config = mongoose.model('config', configSchema);

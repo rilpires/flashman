@@ -85,8 +85,10 @@ const downloadUpdate = function(version) {
 
 const updateDependencies = function() {
   return new Promise((resolve, reject)=>{
-    exec('npm install --production', (err, stdout, stderr)=>{
-      (err) ? reject() : resolve();
+    exec('rm package-lock.json', (err, stdout, stderr)=>{
+      exec('npm install --production', (err, stdout, stderr)=>{
+        (err) ? reject() : resolve();
+      });
     });
   });
 };
@@ -497,6 +499,7 @@ updateController.getAutoConfig = function(req, res) {
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
+        speedTestStepRequired: matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
@@ -720,6 +723,7 @@ updateController.setAutoConfig = async function(req, res) {
 
     let wanStepRequired = req.body['wan-step-required'] === 'true';
     let ipv4StepRequired = req.body['ipv4-step-required'] === 'true';
+    let speedTestStepRequired = req.body['speedtest-step-required'] === 'true';
     let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
     let dnsStepRequired = req.body['dns-step-required'] === 'true';
     let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
@@ -728,6 +732,9 @@ updateController.setAutoConfig = async function(req, res) {
     }
     if (typeof ipv4StepRequired === 'boolean') {
       config.certification.ipv4_step_required = ipv4StepRequired;
+    }
+    if (typeof speedTestStepRequired === 'boolean') {
+      config.certification.speedtest_step_required = speedTestStepRequired;
     }
     if (typeof ipv6StepRequired === 'boolean') {
       config.certification.ipv6_step_required = ipv6StepRequired;
@@ -761,17 +768,47 @@ updateController.updateAppPersonalization = async function(app) {
     let ios = controlReq.iosLink;
 
     Config.findOne({is_default: true}, function(err, config) {
-      if (err || !config) return console.log(err);
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
       config.personalizationHash = hash;
       config.androidLink = android;
       config.iosLink = ios;
       config.save(function(err) {
-        if (err) return console.log(err);
-        console.log('Saved succussfully!');
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
       });
     });
   } else {
-    console.log('Error at contact control');
+    console.error('App personalization hash update error');
+  }
+};
+
+updateController.updateLicenseApiSecret = async function(app) {
+  let controlReq = await controlApi.getLicenseApiSecret(app);
+  if (controlReq.success == true) {
+    const licenseApiSecret = controlReq.apiSecret;
+    const company = controlReq.company;
+
+    Config.findOne({is_default: true}, function(err, config) {
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
+      config.licenseApiSecret = licenseApiSecret;
+      config.company = company;
+      config.save(function(err) {
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
+      });
+    });
+  } else {
+    console.error('License API secret update error');
   }
 };
 

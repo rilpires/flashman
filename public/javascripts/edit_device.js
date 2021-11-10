@@ -128,8 +128,10 @@ let validateEditDevice = function(event) {
     lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
     lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
     bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
-    bridge_fixed_gateway: {field: '#edit_opmode_fixip_gateway-' + index.toString()},
+    bridge_fixed_gateway: {
+      field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
+    mesh_mode: {field: '#edit_meshMode-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -191,9 +193,12 @@ let validateEditDevice = function(event) {
                     validator.validateNetmask, errors.lan_netmask);
   }
   if (validateBridge && useBridgeFixIP) {
-    genericValidate(bridgeFixIP, validator.validateIP, errors.bridge_fixed_ip);
-    genericValidate(bridgeFixGateway, validator.validateIP, errors.bridge_fixed_gateway);
-    genericValidate(bridgeFixDNS, validator.validateIP, errors.bridge_fixed_dns);
+    genericValidate(bridgeFixIP, validator.validateIP,
+                    errors.bridge_fixed_ip);
+    genericValidate(bridgeFixGateway, validator.validateIP,
+                    errors.bridge_fixed_gateway);
+    genericValidate(bridgeFixDNS, validator.validateIP,
+                    errors.bridge_fixed_dns);
   }
 
   let hasNoErrors = function(key) {
@@ -244,7 +249,9 @@ let validateEditDevice = function(event) {
       data.content.lan_netmask = lanNetmask;
     }
     if (validateBridge) {
-      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0; // Keep this logic, because in the fronted was inverted from disable to enable
+      // Keep this logic, because in the fronted was
+      // inverted from disable to enable
+      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0;
       data.content.bridgeFixIP = bridgeFixIP;
       data.content.bridgeFixGateway = bridgeFixGateway;
       data.content.bridgeFixDNS = bridgeFixDNS;
@@ -295,6 +302,7 @@ let validateEditDevice = function(event) {
             band5ghz: errors.band5ghz,
             mode5ghz: errors.mode5ghz,
             power5ghz: errors.power5ghz,
+            mesh_mode: errors.mesh_mode,
           };
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
@@ -383,8 +391,8 @@ $(document).ready(function() {
             $('<label></label>')
             .addClass('custom-control-label')
             .attr('for', 'select-reboot-slave-'+s)
-            .html(slave)
-          )
+            .html(slave),
+          ),
         );
         s++;
       });

@@ -151,27 +151,6 @@ controlController.isAccountBlocked = function(app) {
   });
 };
 
-controlController.isAccountBlocked = function(app) {
-  return new Promise((resolve, reject) => {
-    request({
-      url: controlApiAddr + '/user/blocked',
-      method: 'POST',
-      json: {
-        'secret': app.locals.secret,
-      },
-      timeout: 20000,
-    }).then((res) => {
-      if (res.success) {
-        return resolve({success: true, isBlocked: res.blocked});
-      } else {
-        return resolve({success: false, message: res.message});
-      }
-    }, (err) => {
-      return resolve({success: false, message: 'Erro na requisição'});
-    });
-  });
-};
-
 controlController.reportDevices = function(app, devicesArray) {
   let stdDevicesArray = [];
   for (let i = 0; i < devicesArray.length; i++) {
@@ -218,6 +197,68 @@ controlController.getPersonalizationHash = function(app) {
           personalizationHash: res.personalizationHash,
           androidLink: res.androidLink,
           iosLink: res.iosLink,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro: ' + err.message});
+    });
+  });
+};
+
+controlController.getLicenseApiSecret = function(app) {
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/user/apiinfo',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({
+          success: true,
+          apiSecret: res.licenseApiSecret,
+          company: res.company,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: 'Erro: ' + err.message});
+    });
+  });
+};
+
+controlController.meshLicenseCredit = async function(slaveId) {
+  let matchedConfig = null;
+
+  try {
+    matchedConfig = await Config.findOne({is_default: true});
+    if (!matchedConfig) {
+      console.error('Error obtaining message config');
+      return {success: false, message: 'Erro ao consultar configurações'};
+    }
+  } catch (err) {
+    console.error('Error obtaining message config');
+    return {success: false, message: 'Erro ao consultar configurações'};
+  }
+
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/license/mesh/set',
+      method: 'POST',
+      json: {
+        'id': slaveId,
+        'organization': matchedConfig.company,
+        'license_api_secret': matchedConfig.licenseApiSecret,
+        'activate_mesh': false,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({
+          success: true,
         });
       } else {
         return resolve({success: false, message: res.message});
