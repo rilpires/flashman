@@ -685,6 +685,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.bssid_mesh5 = bssid5.toUpperCase();
     }
   }
+  if (permissions.grantMeshV2HardcodedBssid &&
+    (!device.bssid_mesh2 || !device.bssid_mesh5)) {
+    const meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, device._id);
+    device.bssid_mesh2 = meshBSSIDs.mesh2.toUpperCase();
+    device.bssid_mesh5 = meshBSSIDs.mesh5.toUpperCase();
+  }
   if (data.lan.router_ip) {
     if (data.lan.router_ip.value && !device.lan_subnet) {
       device.lan_subnet = data.lan.router_ip.value;
