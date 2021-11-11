@@ -413,8 +413,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
           console.log(msg);
           return res.status(500).json({'error': msg});
         }
-        console.log(`DEBUG meshObjsStatus mesh2: ${meshObjsStatus.mesh2}`);
-        console.log(`DEBUG meshObjsStatus mesh5: ${meshObjsStatus.mesh5}`);
         let deleteMesh5VAP = false;
         let createMesh2VAP = false;
         let createMesh5VAP = false;
