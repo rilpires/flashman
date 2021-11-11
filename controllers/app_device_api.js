@@ -521,10 +521,14 @@ const makeDeviceBackupData = function(device, config, certFile) {
   let now = new Date();
   let formattedNow = '';
   formattedNow += now.getDate() + '/';
-  formattedNow += now.getMonth() + '/';
+  formattedNow += now.getMonth()+1 + '/';
   formattedNow += now.getFullYear() + ' às ';
-  formattedNow += now.getHours() + ':';
-  formattedNow += now.getMinutes();
+  let hours = now.getHours();
+  hours = (hours < 10) ? '0'+hours : hours;
+  formattedNow += hours + ':';
+  let minutes = now.getMinutes();
+  minutes = (minutes < 10) ? '0'+minutes : minutes;
+  formattedNow += minutes;
   return {
     timestamp: formattedNow,
     model: device.model,
