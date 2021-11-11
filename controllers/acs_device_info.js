@@ -687,7 +687,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (permissions.grantMeshV2HardcodedBssid &&
     (!device.bssid_mesh2 || !device.bssid_mesh5)) {
-    const meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, device._id);
+    const meshBSSIDs = DeviceVersion.getMeshBSSIDs(device.model, device._id);
     device.bssid_mesh2 = meshBSSIDs.mesh2.toUpperCase();
     device.bssid_mesh5 = meshBSSIDs.mesh5.toUpperCase();
   }
