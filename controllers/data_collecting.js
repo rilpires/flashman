@@ -290,6 +290,9 @@ dataCollectingController.updateManyDevices = async function(req, res) {
       obj: req.body.$unset,
       // for front-end, if user leave this field as empty string, it means
       // he wants to use the value from Config, instead of the device value.
+      // so we remove the device's value and let the function
+      // 'dataCollectingController.mergeConfigs()' work. The ping_fqdn is coded
+      // to use the service value when device value is not present.
       fieldChecks: [checkPingFqdnToUnset],
     },
   }))
