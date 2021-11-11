@@ -962,6 +962,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     prefixObj.name = checkResponse.prefix;
     prefixObj.grant = checkResponse.enablePrefix;
 
+    let resetBackup = {};
+    if (config.tr069) {
+      let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+      resetBackup = makeDeviceBackupData(matchedDevice, config, certFile);
+    }
+
     return res.status(200).json({
       permissions: permissions,
       wifi: wifiConfig,
@@ -976,6 +982,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       has_access: isDevOn,
       use_tr069: matchedDevice.use_tr069,
       mesh_mode: matchedDevice.mesh_mode,
+      resetBackup: resetBackup,
     });
   });
 };
@@ -1289,11 +1296,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
-  let query = req.body.content.mac;
-  let projection = {
-    _id: 1, pending_app_secret: 1, serial_tr069: 1, apps: 1, app_password: 1,
-  };
-  DeviceModel.findById(query, projection, async function(err, device) {
+  DeviceModel.findById(req.body.content.mac, async function(err, device) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
     }
@@ -1422,13 +1425,13 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   let query;
-  if (req.body.alt_uid) {
-    query = {alt_uid_tr069: req.body.serial};
+  if (req.body.content.alt_uid) {
+    query = {alt_uid_tr069: req.body.content.serial};
   } else {
-    query = {serial_tr069: req.body.serial};
+    query = {serial_tr069: req.body.content.serial};
   }
   try {
-    let device = await DeviceModel.find(query).lean();
+    let device = await DeviceModel.findOne(query).lean();
     if (!device) {
       // Device is not registered, cannot reconfigure
       return res.status(200).json({success: true, isRegister: false});
@@ -1465,12 +1468,12 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
   }
   let query;
   if (req.body.alt_uid) {
-    query = {alt_uid_tr069: req.body.serial};
+    query = {alt_uid_tr069: req.body.content.serial};
   } else {
-    query = {serial_tr069: req.body.serial};
+    query = {serial_tr069: req.body.content.serial};
   }
   try {
-    let device = await DeviceModel.find(query);
+    let device = await DeviceModel.findOne(query);
     if (!device) {
       // Device is not registered, cannot reconfigure
       return res.status(200).json({success: true, isRegister: false});
