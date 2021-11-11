@@ -3,6 +3,7 @@ import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
 
 let renderEditErrors = function(errors) {
+  let allMessages = '';
   for (let key in errors) {
     if (errors[key].messages.length > 0) {
       let message = '';
@@ -12,8 +13,10 @@ let renderEditErrors = function(errors) {
       $(errors[key].field).closest('.input-entry')
                           .find('.invalid-feedback').html(message);
       $(errors[key].field)[0].setCustomValidity(message);
+      allMessages += message;
     }
   }
+  return allMessages;
 };
 
 const validateEditDeviceMesh = function(event) {
@@ -23,6 +26,16 @@ const validateEditDeviceMesh = function(event) {
     row = row.prev();
   }
   row.find('form').submit();
+};
+
+const openErrorSwal = function(message) {
+  swal({
+    type: 'error',
+    title: 'Erro',
+    text: message,
+    confirmButtonColor: '#4db6ac',
+    confirmButtonText: 'OK',
+  });
 };
 
 let validateEditDevice = function(event) {
@@ -36,6 +49,12 @@ let validateEditDevice = function(event) {
   let row = $(event.target).parents('tr');
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
+  // disable an make loading icon appear on submit button
+  row.find('#edit-button').prop('disabled', true);
+  let iconButtonSubmit = row.find('.fa-check');
+  iconButtonSubmit.removeClass('fa-check');
+  iconButtonSubmit.addClass('fa-spinner');
+  iconButtonSubmit.addClass('fa-pulse');
 
   // Get form values
   let mac = row.data('deviceid');
@@ -283,6 +302,11 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             addClass('d-none');
         }
+        row.find('#edit-button').prop('disabled', false);
+        iconButtonSubmit = row.find('.fa-spinner');
+        iconButtonSubmit.removeClass('fa-spinner');
+        iconButtonSubmit.removeClass('fa-pulse');
+        iconButtonSubmit.addClass('fa-check');
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -308,13 +332,25 @@ let validateEditDevice = function(event) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
           });
-          renderEditErrors(errors);
+          let message = renderEditErrors(errors);
+          openErrorSwal(message);
+          row.find('#edit-button').prop('disabled', false);
+          iconButtonSubmit = row.find('.fa-spinner');
+          iconButtonSubmit.removeClass('fa-spinner');
+          iconButtonSubmit.removeClass('fa-pulse');
+          iconButtonSubmit.addClass('fa-check');
         }
       },
     });
   } else {
     // Else, render errors on form
-    renderEditErrors(errors);
+    let message = renderEditErrors(errors);
+    openErrorSwal(message);
+    row.find('#edit-button').prop('disabled', false);
+    iconButtonSubmit = row.find('.fa-spinner');
+    iconButtonSubmit.removeClass('fa-spinner');
+    iconButtonSubmit.removeClass('fa-pulse');
+    iconButtonSubmit.addClass('fa-check');
   }
   editFormObj.addClass('was-validated');
   return false;
