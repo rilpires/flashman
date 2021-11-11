@@ -770,7 +770,8 @@ $(document).ready(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+meshClass+'" type="submit">'+
+        '<button id="edit-button" class="btn btn-primary mx-0 '+
+          meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
         '</button>'+
       '</div>'+
