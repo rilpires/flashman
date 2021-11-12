@@ -28,14 +28,42 @@ const validateEditDeviceMesh = function(event) {
   row.find('form').submit();
 };
 
-const openErrorSwal = function(message) {
+const openErrorSwal = function(errors) {
+  let allMessages = '';
+  for (let key in errors) {
+    if (errors[key].messages.length > 0) {
+      let message = '';
+      errors[key].messages.forEach(function(msg) {
+        message += msg + ' ';
+      });
+      allMessages += '(' + key + '): ' +message+', ';
+    }
+  }
   swal({
     type: 'error',
     title: 'Erro',
-    text: message,
+    text: allMessages,
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',
   });
+};
+
+// disable an make loading icon appear on submit button
+const switchSubmitButton = function(row) {
+  let iconButtonSubmit;
+  if (row.find('#edit-button').prop('disabled')) {
+    row.find('#edit-button').prop('disabled', false);
+    iconButtonSubmit = row.find('.fa-spinner');
+    iconButtonSubmit.addClass('fa-check');
+    iconButtonSubmit.removeClass('fa-spinner');
+    iconButtonSubmit.removeClass('fa-pulse');
+  } else {
+    row.find('#edit-button').prop('disabled', true);
+    iconButtonSubmit = row.find('.fa-check');
+    iconButtonSubmit.removeClass('fa-check');
+    iconButtonSubmit.addClass('fa-spinner');
+    iconButtonSubmit.addClass('fa-pulse');
+  }
 };
 
 let validateEditDevice = function(event) {
@@ -49,12 +77,7 @@ let validateEditDevice = function(event) {
   let row = $(event.target).parents('tr');
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
-  // disable an make loading icon appear on submit button
-  row.find('#edit-button').prop('disabled', true);
-  let iconButtonSubmit = row.find('.fa-check');
-  iconButtonSubmit.removeClass('fa-check');
-  iconButtonSubmit.addClass('fa-spinner');
-  iconButtonSubmit.addClass('fa-pulse');
+  switchSubmitButton(row);
 
   // Get form values
   let mac = row.data('deviceid');
@@ -302,11 +325,7 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             addClass('d-none');
         }
-        row.find('#edit-button').prop('disabled', false);
-        iconButtonSubmit = row.find('.fa-spinner');
-        iconButtonSubmit.removeClass('fa-spinner');
-        iconButtonSubmit.removeClass('fa-pulse');
-        iconButtonSubmit.addClass('fa-check');
+        switchSubmitButton(row);
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -332,25 +351,17 @@ let validateEditDevice = function(event) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
           });
-          let message = renderEditErrors(errors);
-          openErrorSwal(message);
-          row.find('#edit-button').prop('disabled', false);
-          iconButtonSubmit = row.find('.fa-spinner');
-          iconButtonSubmit.removeClass('fa-spinner');
-          iconButtonSubmit.removeClass('fa-pulse');
-          iconButtonSubmit.addClass('fa-check');
+          renderEditErrors(errors);
+          openErrorSwal(errors);
+          switchSubmitButton(row);
         }
       },
     });
   } else {
     // Else, render errors on form
-    let message = renderEditErrors(errors);
-    openErrorSwal(message);
-    row.find('#edit-button').prop('disabled', false);
-    iconButtonSubmit = row.find('.fa-spinner');
-    iconButtonSubmit.removeClass('fa-spinner');
-    iconButtonSubmit.removeClass('fa-pulse');
-    iconButtonSubmit.addClass('fa-check');
+    renderEditErrors(errors);
+    openErrorSwal(errors);
+    switchSubmitButton(row);
   }
   editFormObj.addClass('was-validated');
   return false;
