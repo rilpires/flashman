@@ -130,14 +130,37 @@ $(document).ready(function() {
             for (let newDevice of res.lan_devices) {
               let matchedDev = lanDevices.find(function(device) {
                 if (device.mac === newDevice.mac) {
+                  const slaves = $('#lan-devices').data('slaves');
+                  const gatewayMac = newDevice.gateway_mac;
+                  let isGatewayRouterSlave;
+                  slaves.includes(gatewayMac) ? isGatewayRouterSlave = true :
+                    isGatewayRouterSlave = false;
                   let doReplace = false;
                   if (device.conn_type === undefined &&
                       newDevice.conn_type !== undefined
                   ) {
                     doReplace = true;
-                  } else if (newDevice.conn_type == 1 &&
-                             newDevice.wifi_signal
-                  ) {
+                  } else if (isGatewayRouterSlave) {
+                    // incoming info from AP device is connected to
+                    newDevice.ip = device.ip;
+                    newDevice.ipv6 = device.ipv6;
+                    newDevice.ping = device.ping;
+                    newDevice.dhcp_name = device.dhcp_name;
+                    newDevice.dhcp_signature = device.dhcp_signature;
+                    newDevice.dhcp_vendor_class = device.dhcp_vendor_class;
+                    newDevice.dhcp_fingerprint = device.dhcp_fingerprint;
+                    doReplace = true;
+                  } else {
+                    // incoming info from mesh master
+                    newDevice.conn_type = device.conn_type;
+                    newDevice.conn_speed = device.conn_speed;
+                    newDevice.wifi_signal = device.wifi_signal;
+                    newDevice.wifi_snr = device.wifi_snr;
+                    newDevice.wifi_freq = device.wifi_freq;
+                    newDevice.wifi_mode = device.wifi_mode;
+                    newDevice.wifi_fingerprint = device.wifi_fingerprint;
+                    newDevice.gateway_mac = device.gateway_mac;
+                    newDevice.is_online = device.is_online;
                     doReplace = true;
                   }
                   if (doReplace) {
@@ -174,6 +197,9 @@ $(document).ready(function() {
           // Exhibit devices and routers if all routers have already answered
           if (syncedRouters >= totalRouters) {
             clearTimeout(lanDevicesGlobalTimer);
+            // sort so lan devices of same gateway CPE are shown together
+            lanDevices.sort((a, b) => (a.gateway_mac > b.gateway_mac) ? 1 :
+              ((b.gateway_mac > a.gateway_mac) ? -1 : 0));
             renderDevices(lanDevices, lanRouters, upnpSupport,
                           isBridge, hasSlaves);
           } else {
@@ -182,6 +208,9 @@ $(document).ready(function() {
             // Create a timeout if remaining routers stop responding
             lanDevicesGlobalTimer = setTimeout(function() {
               if (syncedRouters < totalRouters) {
+                // sort so lan devices of same gateway CPE are shown together
+                lanDevices.sort((a, b) => (a.gateway_mac > b.gateway_mac) ? 1 :
+                  ((b.gateway_mac > a.gateway_mac) ? -1 : 0));
                 renderDevices(lanDevices, lanRouters, upnpSupport,
                             isBridge, hasSlaves);
               }
