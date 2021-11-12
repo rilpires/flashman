@@ -28,22 +28,11 @@ const validateEditDeviceMesh = function(event) {
   row.find('form').submit();
 };
 
-const openErrorSwal = function(errors) {
-  let allMessages = '';
-  for (let key in errors) {
-    if (errors[key].messages.length > 0) {
-      let message = '';
-      errors[key].messages.forEach(function(msg) {
-        message += msg + ' ';
-      });
-      allMessages += '(' + key + '): ' +message+', ';
-    }
-  }
-  allMessages = allMessages.slice(0, -2);
+const openErrorSwal = function() {
   swal({
     type: 'error',
     title: 'Erro',
-    text: allMessages,
+    text: 'Alguns campos do formulário da CPE estão mal preenchidos',
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',
   });
@@ -353,7 +342,7 @@ let validateEditDevice = function(event) {
             keyToError[key].messages.push(pair[key]);
           });
           renderEditErrors(errors);
-          openErrorSwal(errors);
+          openErrorSwal();
           switchSubmitButton(row);
         }
       },
@@ -361,7 +350,7 @@ let validateEditDevice = function(event) {
   } else {
     // Else, render errors on form
     renderEditErrors(errors);
-    openErrorSwal(errors);
+    openErrorSwal();
     switchSubmitButton(row);
   }
   editFormObj.addClass('was-validated');
