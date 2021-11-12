@@ -39,6 +39,7 @@ const openErrorSwal = function(errors) {
       allMessages += '(' + key + '): ' +message+', ';
     }
   }
+  allMessages = allMessages.slice(0, -2);
   swal({
     type: 'error',
     title: 'Erro',
