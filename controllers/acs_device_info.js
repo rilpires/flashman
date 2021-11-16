@@ -760,6 +760,16 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (cpeIP) device.ip = cpeIP;
 
+  console.log(data);
+
+  if (data.diagnostics.ping.diag_state) {
+    console.log(data.diagnostics.ping.diag_state.value);
+  }
+
+  if (data.diagnostics.speedtest.diag_state) {
+    console.log(data.diagnostics.speedtest.diag_state.value);
+  }
+
   if (hasChanges) {
     // Increment sync task loops
     device.acs_sync_loops += 1;

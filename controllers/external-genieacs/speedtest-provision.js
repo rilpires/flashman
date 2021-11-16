@@ -40,44 +40,39 @@ const updateConfiguration = function(fields) {
   return result;
 };
 
+log('============================================== \n DIAGNOSTIC COMPLETE \n ==============================================');
+
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 
 log('Provision speedtest for device ' + genieID + ' started at ' + now.toString());
 
-let pingDiagnosticState = declare('InternetGatewayDevice.IPPingDiagnostics', {value: now}).value[0];
-log(JSON.stringify(pingDiagnosticState));
+let args = {oui: oui, model: modelClass, acs_id: genieID};
+let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
+log(JSON.stringify(result));
 
-
-
-// let args = {oui: oui, model: modelClass, acs_id: genieID};
-// let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
-
-// if (!result.success || !result.fields) {
-//   log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
-//   log('OUI identified: ' + oui);
-//   log('Model identified: ' + modelClass);
-//   return;
-// }
-// if (!result.measure) {
-//   return;
-// }
+if (!result.success || !result.fields) {
+  log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
+  log('OUI identified: ' + oui);
+  log('Model identified: ' + modelClass);
+  return;
+}
+if (!result.measure) {
+  return;
+}
 
 // log ('Provision collecting data for device ' + genieID + '...');
-// let fields = result.fields;
-// log(fields);
-// let data = {
-//   common: updateConfiguration(fields.common),
-//   wan: updateConfiguration(fields.wan),
-//   lan: updateConfiguration(fields.lan),
-//   wifi2: updateConfiguration(fields.wifi2),
-//   wifi5: updateConfiguration(fields.wifi5),
-//   mesh2: updateConfiguration(fields.mesh2),
-//   mesh5: updateConfiguration(fields.mesh5),
-// };
-// args = {acs_id: genieID, data: data};
-// result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
-// if (!result.success) {
-//   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
-// }
+let fields = result.fields;
+log(fields);
+let data = {
+  diagnostics: {
+    ping: updateConfiguration(fields.diagnostics.ping),
+    speedtest: updateConfiguration(fields.diagnostics.speedtest),
+  },
+};
+args = {acs_id: genieID, data: data};
+result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+if (!result.success) {
+  log('Provision sync for device ' + genieID + ' failed: ' + result.message);
+}
