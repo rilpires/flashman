@@ -41,14 +41,14 @@ const openErrorSwal = function() {
 // disable an make loading icon appear on submit button
 const switchSubmitButton = function(row) {
   let iconButtonSubmit;
-  if (row.find('#edit-button').prop('disabled')) {
-    row.find('#edit-button').prop('disabled', false);
+  if (row.find('.edit-button').prop('disabled')) {
+    row.find('.edit-button').prop('disabled', false);
     iconButtonSubmit = row.find('.fa-spinner');
     iconButtonSubmit.addClass('fa-check');
     iconButtonSubmit.removeClass('fa-spinner');
     iconButtonSubmit.removeClass('fa-pulse');
   } else {
-    row.find('#edit-button').prop('disabled', true);
+    row.find('.edit-button').prop('disabled', true);
     iconButtonSubmit = row.find('.fa-check');
     iconButtonSubmit.removeClass('fa-check');
     iconButtonSubmit.addClass('fa-spinner');
