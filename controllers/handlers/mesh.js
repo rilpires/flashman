@@ -284,13 +284,11 @@ meshHandlers.generateBSSIDLists = async function(device) {
     // not in a mesh network
     return emptyBssidObj;
   }
-  let masterMacAddr;
   let matchedMaster;
   if (!device.mesh_master) {
-    masterMacAddr = device._id.toUpperCase();
     matchedMaster = device;
   } else {
-    masterMacAddr = device.mesh_master.toUpperCase();
+    let masterMacAddr = device.mesh_master.toUpperCase();
     matchedMaster = await DeviceModel.findById(masterMacAddr,
     'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
     .catch((err) => {
