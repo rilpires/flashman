@@ -770,13 +770,17 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.web_admin_password = data.common.web_admin_password.value;
   }
   if (
-    device.recovering_tr069_reset && data.common.web_admin_username.writable
+    device.recovering_tr069_reset &&
+    data.common.web_admin_username &&
+    data.common.web_admin_username.writable
   ) {
     changes.common.web_admin_username = config.tr069.web_login;
     hasChanges = true;
   }
   if (
-    device.recovering_tr069_reset && data.common.web_admin_password.writable
+    device.recovering_tr069_reset &&
+    data.common.web_admin_password &&
+    data.common.web_admin_password.writable
   ) {
     changes.common.web_admin_password = config.tr069.web_password;
     hasChanges = true;
@@ -830,6 +834,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.acs_sync_loops = 0;
     }
   }
+  device.recovering_tr069_reset = false;
   device.last_contact = Date.now();
   device.last_tr069_sync = Date.now();
   // daily data fetching
