@@ -161,6 +161,7 @@ $(document).ready(function() {
                     newDevice.wifi_fingerprint = device.wifi_fingerprint;
                     newDevice.gateway_mac = device.gateway_mac;
                     newDevice.is_online = device.is_online;
+                    newDevice.is_old = device.is_old;
                     doReplace = true;
                   }
                   if (doReplace) {
