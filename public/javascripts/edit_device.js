@@ -69,7 +69,6 @@ let validateEditDevice = function(event) {
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
   switchSubmitButton(index);
-  console.log(index);
 
   // Get form values
   let mac = row.data('deviceid');
