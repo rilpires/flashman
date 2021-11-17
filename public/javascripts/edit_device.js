@@ -39,16 +39,17 @@ const openErrorSwal = function() {
 };
 
 // disable an make loading icon appear on submit button
-const switchSubmitButton = function(row) {
+const switchSubmitButton = function(i) {
+  let row = $('.edit-button-'+i);
   let iconButtonSubmit;
-  if (row.find('.edit-button').prop('disabled')) {
-    row.find('.edit-button').prop('disabled', false);
+  if (row.find('.btn-primary').prop('disabled')) {
+    row.find('.btn-primary').prop('disabled', false);
     iconButtonSubmit = row.find('.fa-spinner');
     iconButtonSubmit.addClass('fa-check');
     iconButtonSubmit.removeClass('fa-spinner');
     iconButtonSubmit.removeClass('fa-pulse');
   } else {
-    row.find('.edit-button').prop('disabled', true);
+    row.find('.btn-primary').prop('disabled', true);
     iconButtonSubmit = row.find('.fa-check');
     iconButtonSubmit.removeClass('fa-check');
     iconButtonSubmit.addClass('fa-spinner');
@@ -67,7 +68,8 @@ let validateEditDevice = function(event) {
   let row = $(event.target).parents('tr');
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
-  switchSubmitButton(row);
+  switchSubmitButton(index);
+  console.log(index);
 
   // Get form values
   let mac = row.data('deviceid');
@@ -315,7 +317,7 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             addClass('d-none');
         }
-        switchSubmitButton(row);
+        switchSubmitButton(index);
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -343,7 +345,7 @@ let validateEditDevice = function(event) {
           });
           renderEditErrors(errors);
           openErrorSwal();
-          switchSubmitButton(row);
+          switchSubmitButton(index);
         }
       },
     });
@@ -351,7 +353,7 @@ let validateEditDevice = function(event) {
     // Else, render errors on form
     renderEditErrors(errors);
     openErrorSwal();
-    switchSubmitButton(row);
+    switchSubmitButton(index);
   }
   editFormObj.addClass('was-validated');
   return false;

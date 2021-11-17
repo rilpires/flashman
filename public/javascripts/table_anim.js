@@ -766,11 +766,11 @@ $(document).ready(function() {
     '</button>';
   };
 
-  const buildFormSubmit = function(mesh=false) {
+  const buildFormSubmit = function(index, mesh) {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
-    return '<div class="row">'+
+    return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="edit-button btn btn-primary mx-0 '+
+        '<button class="btn btn-primary mx-0 '+
           meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
         '</button>'+
@@ -2296,7 +2296,7 @@ $(document).ready(function() {
             formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', removeDevice);
           }
           if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
-            let editButtonRow = buildFormSubmit();
+            let editButtonRow = buildFormSubmit(index, false);
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', editButtonRow);
           } else {
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', '');
@@ -2356,7 +2356,7 @@ $(document).ready(function() {
               }
               slaveIdx++;
             });
-            let editButtonRow = buildFormSubmit(true);
+            let editButtonRow = buildFormSubmit(index, true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
               '<td class="grey lighten-5" colspan="13">'+
