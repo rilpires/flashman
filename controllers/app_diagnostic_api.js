@@ -381,6 +381,12 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'CPE isn\'t compatibe with mesh',
       });
     }
+    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
+    if (!isWifi5GHzCompatible && targetMode > 2) {
+      return res.status(403).json({
+        'error': 'CPE is not compatible with 5GHz mesh',
+      });
+    }
     if (isMeshV2Compatible && device.use_tr069) {
       const hasMeshSSIDObject = DeviceVersion.hasMeshSSIDObject(model);
       /*
