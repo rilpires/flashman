@@ -890,7 +890,9 @@ const fetchLogFromGenie = function(success, mac, acsID) {
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
         data = 'Log não disponível!';
@@ -934,7 +936,9 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
     let wanBytes = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (checkForNestedKey(data, recvField+'._value') &&
           checkForNestedKey(data, sentField+'._value')) {
@@ -991,7 +995,9 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     let wanUpTime = 0;
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let successSys = false;
       let successWan = false;
       if (checkForNestedKey(data, fields.common.uptime+'._value')) {
@@ -1092,7 +1098,9 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (checkForNestedKey(data, rxPowerField+'._value') &&
           checkForNestedKey(data, txPowerField+'._value')) {
@@ -1148,7 +1156,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = true;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
@@ -1609,7 +1619,9 @@ const configFileEditing = async function(device, target) {
     let rawConfigFile = '';
     resp.on('data', (chunk)=>rawConfigFile+=chunk);
     resp.on('end', async ()=>{
-      rawConfigFile = JSON.parse(rawConfigFile)[0];
+      if (rawConfigFile.length > 0) {
+        rawConfigFile = JSON.parse(rawConfigFile)[0];
+      }
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
         rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
@@ -1677,7 +1689,9 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       let i;
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
-        data = JSON.parse(data)[0];
+        if (data.length > 0) {
+          data = JSON.parse(data)[0];
+        }
         let isDiff = false;
         let template = '';
         if (checkForNestedKey(data, projection1)) {

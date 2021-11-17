@@ -339,6 +339,8 @@ scheduleController.successDownload = async function(mac) {
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status downloading to updating
   try {
@@ -364,6 +366,8 @@ scheduleController.successUpdate = async function(mac) {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   // Change from status updating to ok
   try {
     if (device.slave_updates_remaining > 0 && device.state !== 'slave') {
@@ -428,6 +432,8 @@ scheduleController.failedDownloadAck = async function(mac) {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   try {
     // Move from in progress to done, with status error
     await configQuery(
@@ -463,6 +469,8 @@ scheduleController.failedDownload = async function(mac, slave='') {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   try {
     let setQuery = null;
     let pullQuery = null;
@@ -546,6 +554,8 @@ scheduleController.abortSchedule = async function(req, res) {
   let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   // Mark scheduled update as aborted - separately to mitigate racing conditions
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
     // Mark all todo devices as aborted

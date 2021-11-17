@@ -316,38 +316,34 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
   in the mesh network
 */
 meshHandlers.generateBSSIDLists = async function(device) {
+  let emptyBssidObj = {mesh2: [], mesh5: []};
   if (!device.mesh_master && !device.mesh_slaves) {
     // not in a mesh network
-    return {
-      mesh2: [],
-      mesh5: [],
-    };
+    return emptyBssidObj;
   }
-  let masterMacAddr;
   let matchedMaster;
   if (!device.mesh_master) {
-    masterMacAddr = device._id.toUpperCase();
     matchedMaster = device;
   } else {
-    masterMacAddr = device.mesh_master.toUpperCase();
+    let masterMacAddr = device.mesh_master.toUpperCase();
     matchedMaster = await DeviceModel.findById(masterMacAddr,
     'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
     .catch((err) => {
-      console.log('Erro interno');
-      return;
+      console.log('DB access error');
+      return emptyBssidObj;
     });
     if (!matchedMaster) {
-      console.log('CPE indicado como primário não encontrado');
-      return;
+      console.log('Primary CPE not found');
+      return emptyBssidObj;
     }
   }
   if (matchedMaster.mesh_mode === 0) {
-    console.log('CPE indicado como primário não está em modo mesh');
-    return;
+    console.log('Primary CPE not in mesh mode');
+    return emptyBssidObj;
   }
   if (matchedMaster.mesh_master) {
-    console.log('CPE indicado como primário é secundário');
-    return;
+    console.log('Primary CPE is in secondary mode of another mesh network');
+    return emptyBssidObj;
   }
   let bssids2 = [];
   let bssids5 = [];
@@ -368,8 +364,8 @@ meshHandlers.generateBSSIDLists = async function(device) {
     let matchedSlave = await DeviceModel.findById(
     slaveMac, 'bssid_mesh2 bssid_mesh5')
     .catch((err) => {
-      console.log('Erro interno');
-      return;
+      console.log('DB access error');
+      return emptyBssidObj;
     });
     if (!matchedSlave) {
       console.log('Attempt to access mesh slave '+ slaveMac +
