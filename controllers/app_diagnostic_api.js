@@ -399,14 +399,31 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       */
       let populateVAPObjects = false;
       if (!hasMeshVAPObject && targetMode > 0) {
-        const returnObj = await acsDeviceInfo.coordVAPObjects(acsID);
-        if (returnObj.code !== 200) {
-          return res.status(returnObj.code).json({'error': returnObj.msg});
+        const VAPObj = await acsDeviceInfo.coordVAPObjects(acsID);
+        if (VAPObj.code !== 200) {
+          return res.status(VAPObj.code).json({'error': VAPObj.msg});
         }
-        populateVAPObjects = returnObj.populate;
+        populateVAPObjects = VAPObj.populate;
       }
       changes = meshHandlers.buildTR069Changes(device, targetMode,
         wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
+      /*
+        Some devices have an invalid BSSID until the AP is enabled
+        If the device doesn't have the bssid yet we have to fetch it
+      */
+      if ((!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
+        (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))) {
+        const bssidsObj = await acsDeviceInfo.getMeshBSSID(acsID, targetMode);
+        if (bssidsObj.code !== 200) {
+          return res.status(bssidsObj.code).json({'error': bssidsObj.msg});
+        }
+        if (targetMode === 2 || targetMode === 4) {
+          device.bssid_mesh2 = bssidsObj.bssid_mesh2;
+        }
+        if (targetMode === 3 || targetMode === 4) {
+          device.bssid_mesh5 = bssidsObj.bssid_mesh5;
+        }
+      }
     }
     // Assure radios are enabled and correct channels are set
     if (targetMode === 2 || targetMode === 4) {

@@ -285,10 +285,11 @@ const createRegistry = async function(req, permissions) {
 
   let meshBSSIDs = {};
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid
+      data.mesh2.bssid && data.mesh2.bssid !== '00:00:00:00:00:00'
   ) {
     meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
-    if (data.mesh5 && data.mesh5.bssid) {
+    if (data.mesh5 && data.mesh5.bssid &&
+      data.mesh5.bssid !== '00:00:00:00:00:00') {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     } else {
       meshBSSIDs.mesh5 = '';
@@ -625,7 +626,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid
+      data.mesh2.bssid && data.mesh2.bssid !== '00:00:00:00:00:00'
   ) {
     let bssid2 = data.mesh2.bssid.value;
     if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
@@ -678,7 +679,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
-      data.mesh5.bssid
+      data.mesh5.bssid && data.mesh5.bssid !== '00:00:00:00:00:00'
   ) {
     let bssid5 = data.mesh5.bssid.value;
     if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
@@ -1082,6 +1083,72 @@ const checkMeshObjsCreated = function(acsID) {
   });
 };
 
+const fetchMeshBSSID = function(acsID, meshMode) {
+  return new Promise((resolve, reject) => {
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let query = {_id: acsID};
+    let projection = '';
+    if (meshMode === 2 || meshMode === 4) {
+      projection += `${fields.mesh2.bssid}`;
+    }
+    if (meshMode === 3 || meshMode === 4) {
+      projection += `${fields.mesh5.bssid}`;
+    }
+    let path =
+      `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let result = {
+      mesh2: '',
+      mesh5: '',
+      success: true,
+    };
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('data', (chunk)=>data+=chunk);
+      resp.on('end', async ()=>{
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          result.success = false;
+          resolve(result);
+        }
+        if (meshMode === 2 || meshMode === 4) {
+          if (checkForNestedKey(data, `${fields.mesh2.bssid}._value`)) {
+            result.mesh2 = getFromNestedKey(
+              data, `${fields.mesh2.bssid}._value`);
+            if (!result.mesh2 || !result.mesh2 === '00:00:00:00:00:00') {
+              result.success = false;
+            }
+          } else {
+            result.success = false;
+          }
+        }
+        if (meshMode === 3 || meshMode === 4) {
+          if (checkForNestedKey(data, `${fields.mesh5.bssid}._value`)) {
+            result.mesh5 = getFromNestedKey(
+              data, `${fields.mesh2.bssid}._value`);
+            if (!result.mesh5 || !result.mesh5 === '00:00:00:00:00:00') {
+              result.success = false;
+            }
+          } else {
+            result.success = false;
+          }
+        }
+        resolve(result);
+      });
+    });
+    req.end();
+  });
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -1399,6 +1466,57 @@ const getSsidPrefixCheck = async function(device) {
   return deviceHandlers.checkSsidPrefix(
     config, device.wifi_ssid, device.wifi_ssid_5ghz,
     device.isSsidPrefixEnabled);
+};
+
+acsDeviceInfoController.getMeshBSSID = async function(acsID, meshMode) {
+  let returnObj = {
+    code: 200,
+    msg: 'Success',
+    bssid_mesh2: '',
+    bssid_mesh5: '',
+  };
+  const splitID = acsID.split('-');
+  const model = splitID.slice(1, splitID.length-1).join('-');
+  // We have to check if the virtual AP object has been created already
+  const bssidField2 = DevicesAPI.getModelFields(splitID[0], model)
+    .fields.mesh2.bssid;
+  const bssidField5 = DevicesAPI.getModelFields(splitID[0], model)
+    .fields.mesh5.bssid;
+  const getObjTask = {
+    name: 'getParameterValues',
+    parameterNames: [],
+  };
+  if (meshMode === 2 || meshMode === 4) {
+    getObjTask.parameterNames.push(bssidField2);
+  }
+  if (meshMode === 3 || meshMode === 4) {
+    getObjTask.parameterNames.push(bssidField5);
+  }
+  let bssidsStatus;
+  try {
+    let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+    if (!ret || !ret.finished ||
+      ret.task.name !== 'getParameterValues') {
+      throw new Error('task error');
+    }
+    if (ret.finished) {
+      bssidsStatus = await fetchMeshBSSID(acsID, meshMode);
+      if (!bssidsStatus.success) {
+        throw new Error('invalid data');
+      }
+    }
+  } catch (e) {
+    const msg = `[!] -> ${e.message} in ${acsID}`;
+    console.log(msg);
+    returnObj.code = 500;
+    returnObj.msg = msg;
+    returnObj.bssid_mesh2 = bssidsStatus.mesh2;
+    returnObj.bssid_mesh5 = bssidsStatus.mesh5;
+    return returnObj;
+  }
+  returnObj.bssid_mesh2 = bssidsStatus.mesh2;
+  returnObj.bssid_mesh5 = bssidsStatus.mesh5;
+  return returnObj;
 };
 
 acsDeviceInfoController.coordVAPObjects = async function(acsID) {
