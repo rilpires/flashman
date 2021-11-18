@@ -61,7 +61,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -91,12 +91,12 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x2'],
     mesh_ssid_object_exists: true,
   },
   'ZXHN H198A V3.0': {
@@ -148,7 +148,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
