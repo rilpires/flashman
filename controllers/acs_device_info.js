@@ -1500,7 +1500,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
       name: 'addObject',
       // Removes index of the WLANConfiguration field name.
       // Will work only if 2.4GHz VAP WLANConfiguration index is lower than 10
-      objectName: meshField.splice(0, -2),
+      objectName: meshField.slice(0, -2),
     };
     /*
       Regardless of which mesh mode is being set we create both
