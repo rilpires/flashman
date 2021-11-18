@@ -1997,7 +1997,7 @@ const grantWanBytesSupport = function(version, model) {
   }
 };
 
-const grantPonSignalSupport = function(version, model) {
+const grantPonSignalSupport = function(model) {
   if (Object.keys(tr069Devices).includes(model) &&
       tr069Devices[model].feature_support.pon_signal
   ) {
@@ -2069,7 +2069,7 @@ const grantMeshV2SecondaryMode = function(version, model) {
   }
 };
 
-const grantMeshV2HardcodedBssid = function(version, model) {
+const grantMeshV2HardcodedBssid = function(model) {
   if (Object.keys(tr069Devices).includes(model) &&
       tr069Devices[model].mesh_bssid_offset_hardcoded
   ) {
@@ -2111,6 +2111,15 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const grantMeshVAPObject = function(model) {
+  if (Object.keys(tr069Devices).includes(model) &&
+    tr069Devices[model].mesh_ssid_object_exists) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   let result = {};
   result.grantViewLogs = grantViewLogs(version, model);
@@ -2136,11 +2145,12 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);
-  result.grantPonSignalSupport = grantPonSignalSupport(version, model);
+  result.grantPonSignalSupport = grantPonSignalSupport(model);
   result.grantMeshMode = grantMeshV1Mode(version, model);
   result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
-  result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(version, model);
+  result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(model);
+  result.grantMeshVAPObject = grantMeshVAPObject(model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
@@ -2314,15 +2324,6 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
     meshBSSIDs.mesh5 = '';
   }
   return meshBSSIDs;
-};
-
-DeviceVersion.hasMeshSSIDObject = function(model) {
-  let hasMeshSSIDObject = false;
-  if (tr069Devices[model] &&
-    tr069Devices[model].feature_support.mesh_v2_primary_support) {
-    hasMeshSSIDObject = tr069Devices[model].mesh_ssid_object_exists;
-  }
-  return hasMeshSSIDObject;
 };
 
 module.exports = DeviceVersion;

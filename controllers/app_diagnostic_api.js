@@ -388,7 +388,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       });
     }
     if (isMeshV2Compatible && device.use_tr069) {
-      const hasMeshSSIDObject = DeviceVersion.hasMeshSSIDObject(model);
+      const hasMeshVAPObject = permissions.grantMeshVAPObject(model);
       /*
         If device doesn't have SSID Object by default, then
         we need to check if it has been created already.
@@ -398,7 +398,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         objects don't exist yet this will cause an error!
       */
       let populateSSIDObjects = false;
-      if (!hasMeshSSIDObject && targetMode > 0) {
+      if (!hasMeshVAPObject && targetMode > 0) {
         // We have to check if the virtual AP object has been created already
         const meshField = DevicesAPI.getModelFields(splitID[0], model)
           .fields.mesh2.ssid.replace('.SSID', '');
