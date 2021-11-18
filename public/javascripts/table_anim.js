@@ -609,7 +609,7 @@ $(document).ready(function() {
       slaves.forEach((slave)=>{
         if (!slaveHasRelease) return;
         if (!slave.releases.find((r)=>r.id===release.id)) {
-          // slaveHasRelease = false;
+          slaveHasRelease = false;
         }
       });
       if (!slaveHasRelease) continue;
