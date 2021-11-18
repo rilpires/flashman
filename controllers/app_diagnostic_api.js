@@ -388,7 +388,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       });
     }
     if (isMeshV2Compatible && device.use_tr069) {
-      const hasMeshVAPObject = permissions.grantMeshVAPObject(model);
+      const hasMeshVAPObject = permissions.grantMeshVAPObject;
       /*
         If device doesn't have SSID Object by default, then
         we need to check if it has been created already.
