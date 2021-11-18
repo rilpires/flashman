@@ -1056,13 +1056,19 @@ const checkMeshObjsCreated = function(acsID) {
     let result = {
       mesh2: false,
       mesh5: false,
+      success: true,
     };
     let req = http.request(options, (resp)=>{
       resp.setEncoding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          result.success = false;
+          resolve(result);
+        }
         if (checkForNestedKey(data, `${fields.mesh2.ssid}._value`)) {
           result.mesh2 = true;
         }
@@ -1421,13 +1427,13 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
     let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
     if (!ret || !ret.finished ||
       ret.task.name !== 'getParameterValues') {
-      returnObj.code = 500;
-      returnObj.msg = 'task error';
-      returnObj.populate = populateVAPObjects;
-      return returnObj;
+      throw new Error('task error');
     }
     if (ret.finished) {
       meshObjsStatus = await checkMeshObjsCreated(acsID);
+      if (!meshObjsStatus.success) {
+        throw new Error('invalid data');
+      }
     }
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
@@ -1477,10 +1483,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
         3000, [5000, 10000]);
       if (!ret || !ret.finished||
         ret.task.name !== 'deleteObject') {
-        returnObj.code = 500;
-        returnObj.msg = 'delObject task error';
-        returnObj.populate = populateVAPObjects;
-        return returnObj;
+        throw new Error('delObject task error');
       }
     } catch (e) {
       const msg = `[!] -> ${e.message} in ${acsID}`;
@@ -1516,10 +1519,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
           3000, [5000, 10000]);
         if (!ret || !ret.finished||
           ret.task.name !== 'addObject') {
-          returnObj.code = 500;
-          returnObj.msg = 'task error';
-          returnObj.populate = populateVAPObjects;
-          return returnObj;
+          throw new Error('task error');
         }
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
@@ -1536,10 +1536,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
           acsID, getObjTask, true, 10000, []);
         if (!ret || !ret.finished||
           ret.task.name !== 'getParameterValues') {
-          returnObj.code = 500;
-          returnObj.msg = 'task error';
-          returnObj.populate = populateVAPObjects;
-          return returnObj;
+          throw new Error('task error');
         }
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
