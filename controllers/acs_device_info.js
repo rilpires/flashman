@@ -285,11 +285,11 @@ const createRegistry = async function(req, permissions) {
 
   let meshBSSIDs = {};
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid && data.mesh2.bssid !== '00:00:00:00:00:00'
+      data.mesh2.bssid && data.mesh2.bssid.value !== '00:00:00:00:00:00'
   ) {
     meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
     if (data.mesh5 && data.mesh5.bssid &&
-      data.mesh5.bssid !== '00:00:00:00:00:00') {
+      data.mesh5.bssid.value !== '00:00:00:00:00:00') {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     } else {
       meshBSSIDs.mesh5 = '';
@@ -626,7 +626,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid && data.mesh2.bssid !== '00:00:00:00:00:00'
+      data.mesh2.bssid && data.mesh2.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid2 = data.mesh2.bssid.value;
     if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
@@ -679,7 +679,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
-      data.mesh5.bssid && data.mesh5.bssid !== '00:00:00:00:00:00'
+      data.mesh5.bssid && data.mesh5.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid5 = data.mesh5.bssid.value;
     if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
