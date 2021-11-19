@@ -1765,7 +1765,7 @@ acsDeviceInfoController.updateInfo = async function(
     try {
       let ret = await TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000]);
       if (!ret || !ret.finished||
-        ret.task.name !== 'getParameterValues') {
+        ret.task.name !== 'setParameterValues') {
         throw new Error('task error');
       }
       return true;
