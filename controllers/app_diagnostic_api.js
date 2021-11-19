@@ -9,11 +9,10 @@ const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
+const deviceList = require('./device_list');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
-const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
