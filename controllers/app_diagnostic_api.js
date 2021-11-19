@@ -365,6 +365,18 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     let acsID;
     let splitID;
     if (device.use_tr069) {
+      let isDevOn = false;
+      // tr069 time thresholds for device status.
+      let tr069Times = await deviceList.buildTr069Thresholds();
+      if (device.last_contact >= tr069Times.recovery) {
+        isDevOn = true;
+      }
+      // If CPE is tr-069 it must be online when configuring mesh mode
+      if (!isDevOn) {
+        return res.status(403).json({
+          message: 'CPE isn\'t online',
+        });
+      }
       acsID = device.acs_id;
       splitID = acsID.split('-');
       model = splitID.slice(1, splitID.length-1).join('-');
