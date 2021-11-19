@@ -356,6 +356,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'Cannot disable mesh with registered slaves',
       });
     }
+
     const wifiRadioState = 1;
     const meshChannel = 7;
     const meshChannel5GHz = 40; // Value has better results on some routers
@@ -418,6 +419,28 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       }
       changes = meshHandlers.buildTR069Changes(device, targetMode,
         wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
+    }
+    // Assure radios are enabled and correct channels are set
+    if (targetMode === 2 || targetMode === 4) {
+      device.wifi_channel = meshChannel;
+      device.wifi_state = wifiRadioState;
+    }
+    if (targetMode === 3 || targetMode === 4) {
+      // For best performance and avoiding DFS issues
+      // all APs must work on a single 5GHz non-DFS channel
+      device.wifi_channel_5ghz = meshChannel5GHz;
+      device.wifi_state_5ghz = wifiRadioState;
+    }
+    device.mesh_mode = targetMode;
+    // Apply changes to database and update device
+    device.do_update_parameters = true;
+    meshHandlers.syncSlaves(device);
+    if (device.use_tr069) {
+      // tr-069 device, call acs
+      const updated = await acsDeviceInfo.updateInfo(device, changes, true);
+      if (!updated) {
+        return res.status(500).json({'error': 'Internal error'});
+      }
       /*
         Some devices have an invalid BSSID until the AP is enabled
         If the device doesn't have the bssid yet we have to fetch it
@@ -435,27 +458,9 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
           device.bssid_mesh5 = bssidsObj.bssid_mesh5;
         }
       }
-    }
-    // Assure radios are enabled and correct channels are set
-    if (targetMode === 2 || targetMode === 4) {
-      device.wifi_channel = meshChannel;
-      device.wifi_state = wifiRadioState;
-    }
-    if (targetMode === 3 || targetMode === 4) {
-      // For best performance and avoiding DFS issues
-      // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = meshChannel5GHz;
-      device.wifi_state_5ghz = wifiRadioState;
-    }
-    device.mesh_mode = targetMode;
-    // Apply changes to database and update device
-    device.do_update_parameters = true;
-    await device.save();
-    meshHandlers.syncSlaves(device);
-    if (device.use_tr069) {
-      // tr-069 device, call acs
-      acsDeviceInfo.updateInfo(device, changes);
+      await device.save();
     } else {
+      await device.save();
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
     }
