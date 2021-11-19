@@ -55,7 +55,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'IGD') return 'g';
+      if (ouiModelStr === 'IGD') return 'b,g';
       else if (ouiModelStr === 'G%2D140W%2DC') return 'g';
       else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
@@ -65,7 +65,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
-      if (ouiModelStr === 'IGD') return 'n';
+      if (ouiModelStr === 'IGD') return 'b,g,n';
       else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
@@ -75,7 +75,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
-      if (ouiModelStr === 'IGD') return 'n';
+      if (ouiModelStr === 'IGD') return 'a,n';
       else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
@@ -85,7 +85,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
-      if (ouiModelStr === 'IGD') return 'ac';
+      if (ouiModelStr === 'IGD') return 'ac,n,a';
       else if (ouiModelStr === 'G%2D140W%2DC') return 'ac';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
@@ -406,10 +406,14 @@ const getStavixFields = function(model) {
       fields.common.alt_uid = fields.common.mac;
       break;
   }
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.bssid = fields.wifi5.bssid.replace(/5/g, '6');
@@ -451,6 +455,59 @@ const getStavixFields = function(model) {
   return fields;
 };
 
+const getIgdFields = function() {
+  let fields = getDefaultFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wifi2.ssid = fields.wifi5.ssid;
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.bssid = fields.wifi5.bssid;
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '1');
+  fields.wifi2.password = fields.wifi5.password;
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
+  fields.wifi2.channel = fields.wifi5.channel;
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '1');
+  fields.wifi2.auto = fields.wifi5.auto;
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '1');
+  fields.wifi2.mode = fields.wifi5.mode;
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
+  fields.wifi2.enable = fields.wifi5.enable;
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.wifi2.band = fields.wifi5.band;
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '1');
+  fields.wifi2.beacon_type = fields.wifi5.beacon_type;
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '1');
+  /*
+  fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '7');
+  fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '2');
+  fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '7');
+  fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '2');
+  fields.mesh2.password = fields.mesh5.password.replace(/6/g, '7');
+  fields.mesh5.password = fields.mesh5.password.replace(/6/g, '2');
+  fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '7');
+  fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '2');
+  fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '7');
+  fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '2');
+  fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '7');
+  fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '2');
+  fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '7');
+  fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '2');
+  fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '7');
+  fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '2');
+  fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '7');
+  fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '2');
+  fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '7');
+  fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '2');
+  */
+  return fields;
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -484,6 +541,10 @@ const getModelFields = function(oui, model) {
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
+      break;
+    case 'IGD':
+      message = '';
+      fields = getIgdFields();
       break;
     default:
       success = false;
