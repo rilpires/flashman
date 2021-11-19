@@ -1096,6 +1096,8 @@ const fetchMeshBSSID = function(acsID, meshMode) {
     if (meshMode === 3 || meshMode === 4) {
       projection += `${fields.mesh5.bssid}`;
     }
+    // Removing trailing comma from projection
+    projection = projection.slice(0, -1);
     let path =
       `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
     let options = {
@@ -1124,7 +1126,7 @@ const fetchMeshBSSID = function(acsID, meshMode) {
           if (checkForNestedKey(data, `${fields.mesh2.bssid}._value`)) {
             result.mesh2 = getFromNestedKey(
               data, `${fields.mesh2.bssid}._value`);
-            if (!result.mesh2 || !result.mesh2 === '00:00:00:00:00:00') {
+            if (!result.mesh2 || result.mesh2 === '00:00:00:00:00:00') {
               result.success = false;
             }
           } else {
@@ -1135,7 +1137,7 @@ const fetchMeshBSSID = function(acsID, meshMode) {
           if (checkForNestedKey(data, `${fields.mesh5.bssid}._value`)) {
             result.mesh5 = getFromNestedKey(
               data, `${fields.mesh2.bssid}._value`);
-            if (!result.mesh5 || !result.mesh5 === '00:00:00:00:00:00') {
+            if (!result.mesh5 || result.mesh5 === '00:00:00:00:00:00') {
               result.success = false;
             }
           } else {
