@@ -1673,7 +1673,8 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
   return returnObj;
 };
 
-acsDeviceInfoController.updateInfo = async function(device, changes) {
+acsDeviceInfoController.updateInfo = async function(
+  device, changes, awaitUpdate = false) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
@@ -1760,9 +1761,24 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
-    // TODO: Do something with task complete?
-  });
+  if (awaitUpdate) {
+    try {
+      let ret = await TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000]);
+      if (!ret || !ret.finished||
+        ret.task.name !== 'getParameterValues') {
+        throw new Error('task error');
+      }
+      return true;
+    } catch (e) {
+      return;
+    }
+  } else {
+    try {
+      TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{});
+    } catch (e) {
+      return;
+    }
+  }
 };
 
 acsDeviceInfoController.changePortForwardRules = async function(device,
