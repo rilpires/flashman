@@ -92,6 +92,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'anac':
     case 'a,n,ac':
     case 'a/n/ac':
+    case 'ac,n,a':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
     default:
@@ -101,6 +102,7 @@ const convertWifiMode = function(mode, is5ghz) {
 
 const convertToDbm = function(model, rxPower) {
   switch (model) {
+    case 'IGD':
     case 'F670L':
     case 'F680':
     case 'G-140W-C':
