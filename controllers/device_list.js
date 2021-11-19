@@ -1044,6 +1044,8 @@ deviceListController.factoryResetDevice = function(req, res) {
 // REST API only functions
 //
 
+// TODO: adaptar o comando de ping e speedtest para lidar com dispositivos tr69
+// este isDevOn precisa ser encapsulado num if (!usetr69)
 deviceListController.sendMqttMsg = function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
@@ -1126,7 +1128,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[req.params.id.toUpperCase()];
         });
-        if (device && !device.use_tr069 && !isDevOn) {
+        if (device && !isDevOn) {
           return res.status(200).json({success: false,
                                      message: 'CPE não esta online!'});
         }
@@ -1173,6 +1175,7 @@ deviceListController.sendMqttMsg = function(req, res) {
               req.sessionID, req.params.id.toUpperCase());
           }
           mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          //TODO: em caso de tr69 chamar o acs.firepingdiagnose ou algo do tipo
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -2883,6 +2886,9 @@ deviceListController.doSpeedTest = function(req, res) {
         success: false,
         message: 'CPE não encontrado',
       });
+    }
+    if (matchedDevice.use_tr069) {
+      acsDeviceInfo.doSpeedTest(matchedDevice);
     }
     if (!isDevOn) {
       return res.status(200).json({

@@ -320,7 +320,8 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
-      speed_test: false,
+      ping_test: true,
+      speed_test: true,
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
@@ -1806,7 +1807,7 @@ const grantWifiExtendedChannels = function(version, model) {
 
 const grantPingTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return false;
+    return tr069Devices[model].feature_support.ping_test;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
