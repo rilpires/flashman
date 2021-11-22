@@ -1905,7 +1905,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.external_port_end != '') {
+            if (fields.port_mapping_fields.external_port_end) {
               let portMapExtEnd = iterateTemplate +
                 fields.port_mapping_fields.external_port_end[0];
               if (checkForNestedKey(data, portMapExtEnd)) {
@@ -1925,7 +1925,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.internal_port_end != '') {
+            if (fields.port_mapping_fields.internal_port_end) {
               let portMapIntEnd = iterateTemplate +
                 fields.port_mapping_fields.internal_port_end[0];
               if (checkForNestedKey(data, portMapIntEnd)) {
