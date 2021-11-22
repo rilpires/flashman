@@ -333,16 +333,13 @@ meshHandlers.generateBSSIDLists = async function(device) {
       return emptyBssidObj;
     });
     if (!matchedMaster) {
-      console.log('Primary CPE not found');
       return emptyBssidObj;
     }
   }
   if (matchedMaster.mesh_mode === 0) {
-    console.log('Primary CPE not in mesh mode');
     return emptyBssidObj;
   }
   if (matchedMaster.mesh_master) {
-    console.log('Primary CPE is in secondary mode of another mesh network');
     return emptyBssidObj;
   }
   let bssids2 = [];
@@ -367,10 +364,7 @@ meshHandlers.generateBSSIDLists = async function(device) {
       console.log('DB access error');
       return emptyBssidObj;
     });
-    if (!matchedSlave) {
-      console.log('Attempt to access mesh slave '+ slaveMac +
-                  ' failed: device not found.');
-    } else {
+    if (matchedSlave) {
       bssids2.push(matchedSlave.bssid_mesh2);
       bssids5.push(matchedSlave.bssid_mesh5);
     }
