@@ -1496,7 +1496,7 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
     getObjTask.parameterNames.push(bssidField5);
   }
   let bssidsStatus;
-  await new Promise(r => setTimeout(r, 10000));
+  await new Promise(r => setTimeout(r, 2000));
   try {
     let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
     if (!ret || !ret.finished ||
