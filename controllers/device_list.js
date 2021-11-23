@@ -1938,6 +1938,7 @@ deviceListController.setDeviceReg = async function(req, res) {
               if (!updated) {
                 return res.status(500).json({
                   success: false,
+                  type: 'danger',
                   message: 'Erro ao atualizar CPE TR-069',
                 });
               }
@@ -1949,9 +1950,8 @@ deviceListController.setDeviceReg = async function(req, res) {
                   type: 'danger',
                   message: postConfStatus.msg,
                 });
-              } else {
-                matchedDevice = postConfStatus.device;
               }
+              matchedDevice = postConfStatus.device;
               // Only after all checks are made do we update database
               matchedDevice = meshHandlers.setMeshMode(
                 matchedDevice, meshMode);
