@@ -1136,7 +1136,7 @@ const fetchMeshBSSID = function(acsID, meshMode) {
         if (meshMode === 3 || meshMode === 4) {
           if (checkForNestedKey(data, `${fields.mesh5.bssid}._value`)) {
             result.mesh5 = getFromNestedKey(
-              data, `${fields.mesh2.bssid}._value`);
+              data, `${fields.mesh5.bssid}._value`);
             if (!result.mesh5 || result.mesh5 === '00:00:00:00:00:00') {
               result.success = false;
             }
@@ -1496,6 +1496,7 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
     getObjTask.parameterNames.push(bssidField5);
   }
   let bssidsStatus;
+  await new Promise(r => setTimeout(r, 10000));
   try {
     let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
     if (!ret || !ret.finished ||
@@ -1517,8 +1518,8 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
     returnObj.bssid_mesh5 = bssidsStatus.mesh5;
     return returnObj;
   }
-  returnObj.bssid_mesh2 = bssidsStatus.mesh2;
-  returnObj.bssid_mesh5 = bssidsStatus.mesh5;
+  returnObj.bssid_mesh2 = bssidsStatus.mesh2.toUpperCase();
+  returnObj.bssid_mesh5 = bssidsStatus.mesh5.toUpperCase();
   return returnObj;
 };
 
