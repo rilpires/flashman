@@ -246,4 +246,43 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   return prefixObj;
 };
 
+// getting values for inform configurations for tr069 from Config.
+const getOnlyTR069Configs = async function() {
+  let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
+    .lean().exec()
+    .catch((err) => err); // in case of error, return error in await.
+  // it's very unlikely that we will incur in any error but,
+  if (configsWithTr069.constructor === Error) { // if we returned an error.
+    // print error message.
+    console.log('Error when getting user config from database.'+
+      '\nUsing default values for tr069 config.');
+    return { // build a default configuration.
+      inform_interval: 10*60*1000,
+      offline_threshold: 1,
+      recovery_threshold: 3,
+    };
+  } else { // if no error.
+    return configsWithTr069.tr069; // get only tr069 config inside the document.
+  }
+};
+
+// returns an object containing the tr069 time threshold used when defining
+// device status (to give it a color). Will return an Error Object in case
+// of any error.
+deviceHandlers.buildTr069Thresholds = async function (currentTimestamp) {
+  // in some places this function is called, the current time was not taken.
+  currentTimestamp = currentTimestamp || Date.now();
+
+  // getting user configured tr069 parameters.
+  let tr069Config = await getOnlyTR069Configs();
+  return { // thresholds for tr069 status classification.
+    // time when devices are considered in recovery for tr069.
+    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.recovery_threshold)),
+    // time when devices are considered offline for tr069.
+    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.offline_threshold)),
+  };
+};
+
 module.exports = deviceHandlers;

@@ -5,7 +5,6 @@ const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
 const DevicesAPI = require('../external-genieacs/devices-api');
-const deviceList = require('../device_list');
 const acsDeviceInfo = require('../acs_device_info.js');
 
 let meshHandlers = {};
@@ -348,7 +347,7 @@ meshHandlers.validateMeshMode = async function(device, targetMode,
   if (device.use_tr069) {
     let isDevOn = false;
     // tr069 time thresholds for device status.
-    let tr069Times = await deviceList.buildTr069Thresholds();
+    let tr069Times = await deviceHandlers.buildTr069Thresholds();
     if (device.last_contact >= tr069Times.recovery) {
       isDevOn = true;
     }

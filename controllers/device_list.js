@@ -147,45 +147,6 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-// getting values for inform configurations for tr069 from Config.
-const getOnlyTR069Configs = async function() {
-  let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
-    .lean().exec()
-    .catch((err) => err); // in case of error, return error in await.
-  // it's very unlikely that we will incur in any error but,
-  if (configsWithTr069.constructor === Error) { // if we returned an error.
-    // print error message.
-    console.log('Error when getting user config from database.'+
-      '\nUsing default values for tr069 config.');
-    return { // build a default configuration.
-      inform_interval: 10*60*1000,
-      offline_threshold: 1,
-      recovery_threshold: 3,
-    };
-  } else { // if no error.
-    return configsWithTr069.tr069; // get only tr069 config inside the document.
-  }
-};
-
-// returns an object containing the tr069 time threshold used when defining
-// device status (to give it a color). Will return an Error Object in case
-// of any error.
-deviceListController.buildTr069Thresholds = async function (currentTimestamp) {
-  // in some places this function is called, the current time was not taken.
-  currentTimestamp = currentTimestamp || Date.now();
-
-  // getting user configured tr069 parameters.
-  let tr069Config = await getOnlyTR069Configs();
-  return { // thresholds for tr069 status classification.
-    // time when devices are considered in recovery for tr069.
-    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
-      tr069Config.recovery_threshold)),
-    // time when devices are considered offline for tr069.
-    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
-      tr069Config.offline_threshold)),
-  };
-}
-
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -509,7 +470,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
       currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      tr069Times = tr069Times || await deviceListController.buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times || await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -728,7 +689,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let lastHour = new Date(currentTimestamp -3600000);
 
   // time threshold for tr069 status (status color).
-  let tr069Times = await deviceListController.buildTr069Thresholds(currentTimestamp);
+  let tr069Times = await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
@@ -1336,8 +1297,8 @@ deviceListController.getDeviceReg = function(req, res) {
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
       // tr069 time thresholds for device status.
-      let tr069Times = await deviceListController.buildTr069Thresholds();
-      // // classifying device status.
+      let tr069Times = await deviceHandlers.buildTr069Thresholds();
+      // classifying device status.
       if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
         deviceColor = 'green';
