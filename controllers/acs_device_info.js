@@ -1091,10 +1091,10 @@ const fetchMeshBSSID = function(acsID, meshMode) {
     let query = {_id: acsID};
     let projection = '';
     if (meshMode === 2 || meshMode === 4) {
-      projection += `${fields.mesh2.bssid}`;
+      projection += `${fields.mesh2.bssid},`;
     }
     if (meshMode === 3 || meshMode === 4) {
-      projection += `${fields.mesh5.bssid}`;
+      projection += `${fields.mesh5.bssid},`;
     }
     // Removing trailing comma from projection
     projection = projection.slice(0, -1);
