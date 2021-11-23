@@ -1470,7 +1470,8 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-acsDeviceInfoController.getMeshBSSID = async function(acsID, meshMode) {
+acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
+  acsID, meshMode) {
   let returnObj = {
     code: 200,
     msg: 'Success',

@@ -9,7 +9,6 @@ const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
-const deviceList = require('./device_list');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
@@ -333,8 +332,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
 
 diagAppAPIController.configureMeshMode = async function(req, res) {
   try {
-    // Make sure we have a mac to verify in database
-    if (!req.body.mac) {
+    if (!req.body.mac || !req.body.mesh_mode) {
       return res.status(500).json({'error': 'JSON invalid'});
     }
     // Fetch device from database - query depends on if it's ONU or not
@@ -347,127 +345,58 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     if (!device) {
       return res.status(404).json({'error': 'Device not found'});
     }
-    let targetMode = parseInt(req.body.mesh_mode);
-    if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
-      return res.status(403).json({'error': 'invalid targetMode'});
-    }
-    if (targetMode === 0 && device.mesh_slaves.length > 0) {
-      return res.status(500).json({
-        'error': 'Cannot disable mesh with registered slaves',
+    const targetMode = parseInt(req.body.mesh_mode);
+    const validateStatus = await meshHandlers.validateMeshMode(
+      device, targetMode);
+    if (validateStatus.code !== 200) {
+      return res.status(validateStatus.code).json({
+        'error': validateStatus.msg,
       });
     }
-
-    const wifiRadioState = 1;
-    const meshChannel = 7;
-    const meshChannel5GHz = 40; // Value has better results on some routers
-    let model = device.model;
-    let changes;
-    let acsID;
-    let splitID;
+    /*
+      For tr-069 CPEs we must wait until after device has been
+      updated via genie to save device in database.
+    */
     if (device.use_tr069) {
-      let isDevOn = false;
-      // tr069 time thresholds for device status.
-      let tr069Times = await deviceList.buildTr069Thresholds();
-      if (device.last_contact >= tr069Times.recovery) {
-        isDevOn = true;
-      }
-      // If CPE is tr-069 it must be online when configuring mesh mode
-      if (!isDevOn) {
-        return res.status(403).json({
-          message: 'CPE isn\'t online',
+      const preConfStatus = await meshHandlers.preConfTR069Mesh(
+        device, targetMode);
+      if (preConfStatus.code !== 200) {
+        return res.status(preConfStatus.code).json({
+          error: preConfStatus.msg,
         });
       }
-      acsID = device.acs_id;
-      splitID = acsID.split('-');
-      model = splitID.slice(1, splitID.length-1).join('-');
-    }
-    const permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      model,
-    );
-    const isMeshV1Compatible = permissions.grantMeshMode;
-    const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
-    if (!isMeshV1Compatible && !isMeshV2Compatible) {
-      return res.status(403).json({
-        'error': 'CPE isn\'t compatibe with mesh',
-      });
-    }
-    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
-    if (!isWifi5GHzCompatible && targetMode > 2) {
-      return res.status(403).json({
-        'error': 'CPE is not compatible with 5GHz mesh',
-      });
-    }
-    if (isMeshV2Compatible && device.use_tr069) {
-      const hasMeshVAPObject = permissions.grantMeshVAPObject;
-      /*
-        If device doesn't have SSID Object by default, then
-        we need to check if it has been created already.
-        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
-        IMPORTANT: even if target mode is 1 (cable) we must create these
-        objects because, in that case, we disable the virtual APs. If the
-        objects don't exist yet this will cause an error!
-      */
-      let populateVAPObjects = false;
-      if (!hasMeshVAPObject && targetMode > 0) {
-        const VAPObj = await acsDeviceInfo.coordVAPObjects(acsID);
-        if (VAPObj.code !== 200) {
-          return res.status(VAPObj.code).json({'error': VAPObj.msg});
-        }
-        populateVAPObjects = VAPObj.populate;
-      }
-      changes = meshHandlers.buildTR069Changes(device, targetMode,
-        wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
-    }
-    // Assure radios are enabled and correct channels are set
-    if (targetMode === 2 || targetMode === 4) {
-      device.wifi_channel = meshChannel;
-      device.wifi_state = wifiRadioState;
-    }
-    if (targetMode === 3 || targetMode === 4) {
-      // For best performance and avoiding DFS issues
-      // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = meshChannel5GHz;
-      device.wifi_state_5ghz = wifiRadioState;
-    }
-    device.mesh_mode = targetMode;
-    // Apply changes to database and update device
-    device.do_update_parameters = true;
-    meshHandlers.syncSlaves(device);
-    if (device.use_tr069) {
+      const changes = preConfStatus.changes;
       // tr-069 device, call acs
-      const updated = await acsDeviceInfo.updateInfo(device, changes, true);
+      const updated = await acsDeviceInfo.updateInfo(
+        device, changes, true);
       if (!updated) {
-        return res.status(500).json({'error': 'Internal error'});
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao atualizar CPE TR-069',
+        });
       }
-      /*
-        Some devices have an invalid BSSID until the AP is enabled
-        If the device doesn't have the bssid yet we have to fetch it
-      */
-      if ((!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
-        (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))) {
-        const bssidsObj = await acsDeviceInfo.getMeshBSSID(acsID, targetMode);
-        if (bssidsObj.code !== 200) {
-          return res.status(bssidsObj.code).json({'error': bssidsObj.msg});
-        }
-        if (targetMode === 2 || targetMode === 4) {
-          device.bssid_mesh2 = bssidsObj.bssid_mesh2;
-        }
-        if (targetMode === 3 || targetMode === 4) {
-          device.bssid_mesh5 = bssidsObj.bssid_mesh5;
-        }
+      const postConfStatus = await meshHandlers.postConfTR069Mesh(
+        device, targetMode);
+      if (postConfStatus.code !== 200) {
+        return res.status(postConfStatus.code).json({
+          'error': postConfStatus.msg,
+        });
+      } else {
+        device = postConfStatus.device;
       }
-      await device.save();
-    } else {
-      await device.save();
+    }
+    device = meshHandlers.setMeshMode(device, targetMode);
+    device.do_update_parameters = true;
+    await device.save();
+    meshHandlers.syncSlaves(device);
+    if (!device.use_tr069) {
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
     }
     return res.status(200).json({'success': true});
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error': err.msg});
   }
 };
 

@@ -1,9 +1,12 @@
 const DeviceModel = require('../../models/device');
+const DeviceVersion = require('../../models/device_version');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
 const DevicesAPI = require('../external-genieacs/devices-api');
+const deviceList = require('../device_list');
+const acsDeviceInfo = require('../acs_device_info.js');
 
 let meshHandlers = {};
 
@@ -309,6 +312,186 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
     changes.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WiFi.Radio.2';
   }
   return changes;
+};
+
+// this function should be called before calling setMeshMode
+meshHandlers.validateMeshMode = async function(device, targetMode,
+  validateInterface = false) {
+  let errorMessages = [];
+  let returnObj = {
+    code: 200,
+    msg: 'Success',
+  };
+  if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
+    returnObj.code = 403;
+    returnObj.msg = 'Modo mesh inválido';
+    if (validateInterface) {
+      errorMessages.push(returnObj.msg);
+    } else {
+      return returnObj;
+    }
+  }
+  if (targetMode === 0 && device.mesh_slaves.length > 0) {
+    returnObj.code = 500;
+    returnObj.msg = 'Não é possível desabilitar o mesh com ' +
+      'secundários associados';
+    if (validateInterface) {
+      errorMessages.push(returnObj.msg);
+    } else {
+      return returnObj;
+    }
+  }
+
+  let model = device.model;
+  let acsID;
+  let splitID;
+  if (device.use_tr069) {
+    let isDevOn = false;
+    // tr069 time thresholds for device status.
+    let tr069Times = await deviceList.buildTr069Thresholds();
+    if (device.last_contact >= tr069Times.recovery) {
+      isDevOn = true;
+    }
+    // If CPE is tr-069 it must be online when configuring mesh mode
+    if (!isDevOn) {
+      returnObj.code = 403;
+      returnObj.msg = 'CPE TR-069 não está online';
+      if (validateInterface) {
+        errorMessages.push(returnObj.msg);
+      } else {
+        return returnObj;
+      }
+    }
+    acsID = device.acs_id;
+    splitID = acsID.split('-');
+    model = splitID.slice(1, splitID.length-1).join('-');
+  }
+  const permissions = DeviceVersion.findByVersion(
+    device.version,
+    device.wifi_is_5ghz_capable,
+    model,
+  );
+  const isMeshV1Compatible = permissions.grantMeshMode;
+  const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
+  if (!isMeshV1Compatible && !isMeshV2Compatible) {
+    returnObj.code = 403;
+    returnObj.msg = 'CPE não é compatível com o mesh';
+    if (validateInterface) {
+      errorMessages.push(returnObj.msg);
+    } else {
+      return returnObj;
+    }
+  }
+  const isWifi5GHzCompatible = permissions.grantWifi5ghz;
+  if (!isWifi5GHzCompatible && targetMode > 2) {
+    returnObj.code = 403;
+    returnObj.msg = 'CPE não é compatível com o mesh 5GHz';
+    if (validateInterface) {
+      errorMessages.push(returnObj.msg);
+    } else {
+      return returnObj;
+    }
+  }
+  if (validateInterface) {
+    return errorMessages;
+  } else {
+    return returnObj;
+  }
+};
+
+// Should be called after validating mesh configuration
+meshHandlers.preConfTR069Mesh = async function(device, targetMode) {
+  let returnObj = {
+    changes: undefined,
+    code: 200,
+    msg: 'Success',
+  };
+
+  const wifiRadioState = 1;
+  const meshChannel = 7;
+  const meshChannel5GHz = 40; // Value has better results on some routers
+  const acsID = device.acs_id;
+  const splitID = acsID.split('-');
+  const model = splitID.slice(1, splitID.length-1).join('-');
+
+  const hasMeshVAPObject = DeviceVersion.findByVersion(
+    device.version,
+    device.wifi_is_5ghz_capable,
+    model,
+  ).grantMeshVAPObject;
+  /*
+    If device doesn't have SSID Object by default, then
+    we need to check if it has been created already.
+    If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+    IMPORTANT: even if target mode is 1 (cable) we must create these
+    objects because, in that case, we disable the virtual APs. If the
+    objects don't exist yet this will cause an error!
+  */
+  let populateVAPObjects = false;
+  if (!hasMeshVAPObject && targetMode > 0) {
+    const VAPObj = await acsDeviceInfo.coordVAPObjects(acsID);
+    if (VAPObj.code !== 200) {
+      returnObj.code = VAPObj.code;
+      returnObj.msg = VAPObj.msg;
+      return returnObj;
+    }
+    populateVAPObjects = VAPObj.populate;
+  }
+  returnObj.changes = meshHandlers.buildTR069Changes(device, targetMode,
+    wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
+  return returnObj;
+};
+
+// Should be called after updating TR-069 CPE through ACS
+meshHandlers.postConfTR069Mesh = async function(device, targetMode) {
+  let returnObj = {
+    device: device,
+    code: 200,
+    msg: 'Success',
+  };
+  const acsID = device.acs_id;
+  /*
+    Some devices have an invalid BSSID until the AP is enabled
+    If the device doesn't have the bssid yet we have to fetch it
+  */
+  if ((!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
+    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))) {
+    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
+      acsID, targetMode);
+    if (bssidsObj.code !== 200) {
+      returnObj = bssidsObj;
+      return returnObj;
+    }
+    if (targetMode === 2 || targetMode === 4) {
+      device.bssid_mesh2 = bssidsObj.bssid_mesh2;
+    }
+    if (targetMode === 3 || targetMode === 4) {
+      device.bssid_mesh5 = bssidsObj.bssid_mesh5;
+    }
+  }
+  returnObj.device = device;
+  return returnObj;
+};
+
+// Final step in mesh configuration pipeline
+meshHandlers.setMeshMode = function(device, targetMode) {
+  const wifiRadioState = 1;
+  const meshChannel = 7;
+  const meshChannel5GHz = 40; // Value has better results on some routers
+
+  // Assure radios are enabled and correct channels are set
+  if (targetMode === 2 || targetMode === 4) {
+    device.wifi_channel = meshChannel;
+    device.wifi_state = wifiRadioState;
+  }
+  if (targetMode === 3 || targetMode === 4) {
+    // For best performance and avoiding DFS issues
+    // all APs must work on a single 5GHz non-DFS channel
+    device.wifi_channel_5ghz = meshChannel5GHz;
+    device.wifi_state_5ghz = wifiRadioState;
+  }
+  device.mesh_mode = targetMode;
+  return device;
 };
 
 /*
