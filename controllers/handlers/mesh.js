@@ -341,6 +341,11 @@ meshHandlers.validateMeshMode = async function(device, targetMode,
     }
   }
 
+  const isEnablingWifiMesh = (targetMode !== device.meshMode) &&
+    ((targetMode === 2 && device.mesh_mode !== 4) ||
+    (targetMode === 3 && device.mesh_mode !== 4) ||
+    (targetMode === 4));
+
   let model = device.model;
   let acsID;
   let splitID;
@@ -351,8 +356,8 @@ meshHandlers.validateMeshMode = async function(device, targetMode,
     if (device.last_contact >= tr069Times.recovery) {
       isDevOn = true;
     }
-    // If CPE is tr-069 it must be online when configuring mesh mode
-    if (!isDevOn) {
+    // If CPE is tr-069 it must be online when enabling wifi mesh mode
+    if (!isDevOn && isEnablingWifiMesh) {
       returnObj.code = 403;
       returnObj.msg = 'CPE TR-069 não está online';
       if (validateInterface) {
@@ -372,7 +377,7 @@ meshHandlers.validateMeshMode = async function(device, targetMode,
   );
   const isMeshV1Compatible = permissions.grantMeshMode;
   const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
-  if (!isMeshV1Compatible && !isMeshV2Compatible) {
+  if (!isMeshV1Compatible && !isMeshV2Compatible && targetMode > 0) {
     returnObj.code = 403;
     returnObj.msg = 'CPE não é compatível com o mesh';
     if (validateInterface) {
