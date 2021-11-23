@@ -826,7 +826,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         }
       }
     }
-    if (model == 'GONUAC001' || model == 'xPON') {
+    if (model == 'GONUAC001' || model == 'xPON' || model == 'IGD') {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin = config.tr069;
@@ -1184,68 +1184,71 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           // Push basic device information
           devices.push(device);
         });
-        // Change iface identifiers to use only numerical identifier
-        iface2 = iface2.split('.');
-        iface5 = iface5.split('.');
-        iface2 = iface2[iface2.length-1];
-        iface5 = iface5[iface5.length-1];
-        // Filter wlan interfaces
-        let interfaces = Object.keys(getFromNestedKey(data, assocField));
-        interfaces = interfaces.filter((i)=>i[0]!='_');
-        if (fields.devices.associated_5) {
-          interfaces.push('5');
-        }
-        interfaces.forEach((iface)=>{
-          // Get active indexes, filter metadata fields
-          assocField = fields.devices.associated.replace('*', iface);
-          let assocIndexes = getFromNestedKey(data, assocField);
-          if (assocIndexes) {
-            assocIndexes = Object.keys(assocIndexes);
-          } else {
-            assocIndexes = [];
+
+        if (fields.devices.host_rssi || fields.devices.host_snr) {
+          // Change iface identifiers to use only numerical identifier
+          iface2 = iface2.split('.');
+          iface5 = iface5.split('.');
+          iface2 = iface2[iface2.length-1];
+          iface5 = iface5[iface5.length-1];
+          // Filter wlan interfaces
+          let interfaces = Object.keys(getFromNestedKey(data, assocField));
+          interfaces = interfaces.filter((i)=>i[0]!='_');
+          if (fields.devices.associated_5) {
+            interfaces.push('5');
           }
-          assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
-          assocIndexes.forEach((index)=>{
-            // Collect associated mac
-            let macKey = fields.devices.assoc_mac;
-            macKey = macKey.replace('*', iface).replace('*', index);
-            let macVal = getFromNestedKey(data, macKey+'._value');
-            if (typeof macVal === 'string') {
-              macVal = macVal.toUpperCase();
+          interfaces.forEach((iface)=>{
+            // Get active indexes, filter metadata fields
+            assocField = fields.devices.associated.replace('*', iface);
+            let assocIndexes = getFromNestedKey(data, assocField);
+            if (assocIndexes) {
+              assocIndexes = Object.keys(assocIndexes);
             } else {
-              // MAC is mandatory
-              return;
+              assocIndexes = [];
             }
-            let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
-            if (!device) return;
-            // Mark device as a wifi device
-            device.wifi = true;
-            if (iface == iface2) {
-              device.wifi_freq = 2.4;
-            } else if (iface == iface5) {
-              device.wifi_freq = 5;
-            }
-            // Collect rssi, if available
-            if (fields.devices.host_rssi) {
-              let rssiKey = fields.devices.host_rssi;
-              rssiKey = rssiKey.replace('*', iface).replace('*', index);
-              device.rssi = getFromNestedKey(data, rssiKey+'._value');
-            }
-            // Collect snr, if available
-            if (fields.devices.host_snr) {
-              let snrKey = fields.devices.host_snr;
-              snrKey = snrKey.replace('*', iface).replace('*', index);
-              device.snr = getFromNestedKey(data, snrKey+'._value');
-            }
-            // Collect connection speed, if available
-            if (fields.devices.host_rate) {
-              let rateKey = fields.devices.host_rate;
-              rateKey = rateKey.replace('*', iface).replace('*', index);
-              device.rate = getFromNestedKey(data, rateKey+'._value');
-              device.rate = convertWifiRate(model, device.rate);
-            }
+            assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
+            assocIndexes.forEach((index)=>{
+              // Collect associated mac
+              let macKey = fields.devices.assoc_mac;
+              macKey = macKey.replace('*', iface).replace('*', index);
+              let macVal = getFromNestedKey(data, macKey+'._value');
+              if (typeof macVal === 'string') {
+                macVal = macVal.toUpperCase();
+              } else {
+                // MAC is mandatory
+                return;
+              }
+              let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
+              if (!device) return;
+              // Mark device as a wifi device
+              device.wifi = true;
+              if (iface == iface2) {
+                device.wifi_freq = 2.4;
+              } else if (iface == iface5) {
+                device.wifi_freq = 5;
+              }
+              // Collect rssi, if available
+              if (fields.devices.host_rssi) {
+                let rssiKey = fields.devices.host_rssi;
+                rssiKey = rssiKey.replace('*', iface).replace('*', index);
+                device.rssi = getFromNestedKey(data, rssiKey+'._value');
+              }
+              // Collect snr, if available
+              if (fields.devices.host_snr) {
+                let snrKey = fields.devices.host_snr;
+                snrKey = snrKey.replace('*', iface).replace('*', index);
+                device.snr = getFromNestedKey(data, snrKey+'._value');
+              }
+              // Collect connection speed, if available
+              if (fields.devices.host_rate) {
+                let rateKey = fields.devices.host_rate;
+                rateKey = rateKey.replace('*', iface).replace('*', index);
+                device.rate = getFromNestedKey(data, rateKey+'._value');
+                device.rate = convertWifiRate(model, device.rate);
+              }
+            });
           });
-        });
+        }
         await saveDeviceData(mac, devices);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);
