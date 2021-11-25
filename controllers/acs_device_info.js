@@ -23,10 +23,8 @@ const checkForNestedKey = function(data, key) {
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current[splitKey[i]] && current[splitKey[i]] != 0) return false;
-
+    if (!current.hasOwnProperty(splitKey[i])) return false;
     current = current[splitKey[i]];
-    console.log(current);
   }
   return true;
 };
@@ -36,7 +34,7 @@ const getFromNestedKey = function(data, key) {
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current[splitKey[i]]) return undefined;
+    if (!current.hasOwnProperty(splitKey[i])) return undefined;
     current = current[splitKey[i]];
   }
   return current;
@@ -911,7 +909,21 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 };
 
 // TR069 Speedtest and latency test ============================================
-acsDeviceInfoController.doSpeedTest = function(device) {
+acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
+  var data = req.body.data;
+  if (!data || !data.common || !data.common.mac.value) {
+    return res.status(500).json({
+      success: false,
+      message: 'Missing mac field',
+    });
+  }
+  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  .catch((err) => {
+    return res.status(500).json({success: false,
+                                 message: 'Error finding Config in database'});
+  });
+
+  let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
@@ -919,148 +931,209 @@ acsDeviceInfoController.doSpeedTest = function(device) {
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let diagnStateField = fields.diagnostics.speedtest.diag_state;
-  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
-  let diagnURLField = fields.diagnostics.speedtest.download_url;
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [diagnStateField, diagnNumConnField, diagnURLField],
-  };
-  // o que é isso de associated_5 ?
-  if (fields.devices.associated_5) {
-    task.parameterNames.push(fields.devices.associated_5);
-  }
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) {
-      console.log("MANDOU FAZER O TESTE");
-      // acsDeviceInfoController.fireSpeedTestDiagnose(mac, acsID);
-      acsDeviceInfoController.firePingDiagnose(mac, acsID);
+
+  let success = false;
+  var parameters = [];
+  var projection = '';
+  let diag_necessary_keys = {
+    speedtest: {
+      diag_state: '',
+      num_of_conn: '',
+      download_url: '',
+      bgn_time: '',
+      end_time: '',
+      total_bytes_rec: ''
+    },
+    ping: {
+      diag_state: '',
+      num_of_rep: '',
+      host: '',
+      avg_resp_time: '',
+      max_resp_time: '',
+      min_resp_time: '',
     }
-    // verifico atraves de uma projection os dados na arvore do tr069
-    // faço o teste caso tenha uma chave
-      // 
-    // não faço o teste por não ter chave, retorno algo indicando isso
-
-  });
-};
-
-acsDeviceInfoController.fireSpeedTestDiagnose = function(mac, acsID) {
-  console.log("MANDOU FAZER O TESTE 2");
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-  let diagnStateField = fields.diagnostics.speedtest.diag_state;
-  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
-  let diagnURLField = fields.diagnostics.speedtest.download_url;
-  let query = {_id: acsID};
-  let projection = diagnStateField + ',' +
-                   diagnNumConnField + ',' + diagnURLField;
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
   };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    // let wanBytes = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
-      let success = false;
-      if (success) {
-        // DISPARA O TESTE
-        console.log("DISPARA O TESTE");
-        let number_of_conn = 3;
-        let speedtest_url = 'http://18.229.105.162:25752/measure/file1.bin';
-        task = {
-          name: 'setParameterValues',
-          parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                            [diagnNumConnField, number_of_conn, 'xsd:integer'],
-                            [diagnURLField, speedtest_url, 'xsd:string']],
-        };
-        result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-        if (!result || !result.finished ||
-            result.task.name !== 'setParameterValues') {
-          console.log('Error: failed to fire Speedtest');
-          return;
-        }
+
+  for (var type in diag_necessary_keys) {
+    let necessary_diagn = diag_necessary_keys[type];
+    let from_genie_diagn = fields.diagnostics[type];
+    for (var field in necessary_diagn) {
+      if (from_genie_diagn.hasOwnProperty(field)) {
+        parameters.push(from_genie_diagn[field]);
+        projection += from_genie_diagn[field] + ',';
       }
+    }
+  }
+
+  try {
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: parameters
+    };
+    const result = await TasksAPI.addTask(acsID, task, true);
+    if (!result || !result.finished ||
+        result.task.name !== 'getParameterValues') {
+      console.log('Failed: genie diagnostics can\'t be updated');
+    }
+    else {
+      console.log('Success: genie diagnostics updated');
+      success = true;
+    }
+  } catch (e) {
+    console.log('Failed: genie diagnostics can\'t be updated');
+  }
+
+  if (success) {
+    let query = {_id: acsID};
+    let path = '/devices/?query='+JSON.stringify(query)+
+               '&projection='+projection.slice(0, -1);
+    let options = {
+      protocol: 'http:',
+      method: 'GET',
+      hostname: 'localhost',
+      port: 7557,
+      path: encodeURI(path),
+    };
+
+    let request = http.request(options, function (response) {
+      let chunks = [];
+
+      response.on("data", async function (chunk) {
+        chunks.push(chunk);
+      });
+
+      response.on("end", async function (chunk) {
+        const speedtestStateField = fields.diagnostics.speedtest.diag_state;
+        const pingStateField = fields.diagnostics.ping.diag_state;
+        let body = Buffer.concat(chunks);
+        var data = JSON.parse(body)[0];
+
+        for (var field in diag_necessary_keys.speedtest) {
+          if (fields.diagnostics.speedtest.hasOwnProperty(field)) {
+            if (checkForNestedKey(data,
+                              fields.diagnostics.speedtest[field]+'._value')) {
+              diag_necessary_keys.speedtest[field] = getFromNestedKey(data,
+                                 fields.diagnostics.speedtest[field]+'._value');
+            }
+          }
+        }
+
+        for (var field in diag_necessary_keys.ping) {
+          if (fields.diagnostics.ping.hasOwnProperty(field)) {
+            if (checkForNestedKey(data,
+                              fields.diagnostics.ping[field]+'._value')) {
+              diag_necessary_keys.ping[field] = getFromNestedKey(data,
+                                      fields.diagnostics.ping[field]+'._value');
+            }
+          }
+        }
+      });
+
+      response.on("error", function (error) {
+        console.error(error);
+      });
     });
-  });
-  req.end();
+
+    request.end();
+
+    // TODO: checar se a gente consegue localizar notificacoes em aberto para
+    // ter certeza de qual teste está sendo feito. pode acontecer de o speedtest
+    // mas o que a gente quer é o ping
+
+    // isso acontece porque foi verificado que é impossivel alterar o campo
+    // DiagnosticsState
+    if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
+      // use anlixSendSpeedTestNotifications(mac, testdata) with formated 
+      // testdata patterns
+    }
+
+    if (diag_necessary_keys.ping.diag_state == 'Complete') {
+      // use anlixSendPingTestNotifications(mac, pingdata) with formated
+      // pingdata patterns
+    }
+
+    if (sio.anlixSendPingTestNotifications(mac, null)) {
+      return res.status(500).json({
+        success: true,
+        message: 'Error',
+      });
+    }
+  }
 }
 
-// TODO: essa funcao so precisa executar as coisas abaixo do "DISPARA O TESTE"
-acsDeviceInfoController.firePingDiagnose = function(mac, acsID) {
-  console.log("MANDOU FAZER O TESTE ");
+acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+
+  let diagnStateField = fields.diagnostics.speedtest.diag_state;
+  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
+  let diagnURLField = fields.diagnostics.speedtest.download_url;
+  
+  // TODO: setar estes parametros pelo flashman
+  let number_of_conn = 4;
+  let speedtest_url = 'http://18.229.105.162:25752/measure/file1.bin';
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
+                      [diagnNumConnField, number_of_conn, 'xsd:unsignedInt'],
+                      [diagnURLField, speedtest_url, 'xsd:string']],
+  };
+  result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'setParameterValues') {
+    console.log('Error: failed to fire Speedtest');
+    return;
+  } else {
+    console.log('Success: TR-069 speedtest fired');
+  }
+};
+
+acsDeviceInfoController.firePingDiagnose = async function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let mac = device._id;
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
-  let query = {_id: acsID};
-  let projection = diagnStateField + ',' + diagnNumRepField + ',' +
-                   diagnURLField + ',' + diagnTimeoutField;
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    // let wanBytes = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
-      let success = false;
+  
+  // TODO: setar estes parametros pelo flashman
+  let number_of_rep = 1;
+  let ping_host_url = '8.8.8.8';
+  let timeout = 1000;
 
-      if (checkForNestedKey(data, diagnStateField+'._value') &&
-          checkForNestedKey(data, diagnNumRepField+'._value') &&
-          checkForNestedKey(data, diagnURLField+'._value') &&
-          checkForNestedKey(data, diagnTimeoutField+'._value')) {
-        success = true;
-        diagnostics = {
-          diagnStateField: getFromNestedKey(data, diagnStateField+'._value'),
-          diagnNumRepField: getFromNestedKey(data, diagnNumRepField+'._value'),
-          diagnURLField: getFromNestedKey(data, diagnURLField+'._value'),
-          diagnTimeoutField: getFromNestedKey(data, diagnTimeoutField+'._value')
-        };
-        console.log(diagnostics);
-      } else {
-        console.log("NÃO PASSOU DO CHECK");
-        console.log('Error: device is not able to do ping measure');
-      }
-      if (success) {
-        // DISPARA O TESTE
-        console.log("DISPARA O TESTE");
-        let number_of_rep = 3;
-        let ping_host_url = '8.8.8.8';
-        task = {
-          name: 'setParameterValues',
-          parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                            [diagnNumRepField, number_of_rep, 'xsd:integer'],
-                            [diagnURLField, ping_host_url, 'xsd:string']],
-        };
-        result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-        if (!result || !result.finished ||
-            result.task.name !== 'setParameterValues') {
-          console.log('Error: failed to fire ping measure');
-          return;
-        }
-      }
-    });
-  });
-  req.end();
-}
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
+                      [diagnNumRepField, number_of_rep, 'xsd:unsignedInt'],
+                      [diagnURLField, ping_host_url, 'xsd:string'],
+                      [diagnTimeoutField, timeout, 'xsd:unsignedInt']]
+  };
+  try {
+    result = await TasksAPI.addTask(acsID, task, true);
+    if (!result || !result.finished) {
+      console.log('Error: failed to fire ping measure');
+      return sio.anlixSendPingTestNotifications(mac, null);
+    } else {
+      console.log('Success: TR-069 ping measure fired');
+    }
+  } catch (e) {
+    console.log('[!] -> '+e.message+' in '+acsID);
+    return sio.anlixSendPingTestNotifications(mac, null);
+  }
+};
+
 //==============================================================================
 
 // TODO: Move this function to external-genieacs?

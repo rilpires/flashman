@@ -40,39 +40,30 @@ const updateConfiguration = function(fields) {
   return result;
 };
 
-log('============================================== \n DIAGNOSTIC COMPLETE \n ==============================================');
+log('============================================== \n DIAGNOSTIC COMPLETE \
+    \n ==============================================');
+
 
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-
-log('Provision speedtest for device ' + genieID + ' started at ' + now.toString());
-
 let args = {oui: oui, model: modelClass, acs_id: genieID};
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
-log(JSON.stringify(result));
 
 if (!result.success || !result.fields) {
-  log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
+  log('Provision sync fields for device ' +
+      genieID + ' failed: ' + result.message);
   log('OUI identified: ' + oui);
   log('Model identified: ' + modelClass);
   return;
 }
-if (!result.measure) {
-  return;
-}
 
-// log ('Provision collecting data for device ' + genieID + '...');
+log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
-log(fields);
-let data = {
-  diagnostics: {
-    ping: updateConfiguration(fields.diagnostics.ping),
-    speedtest: updateConfiguration(fields.diagnostics.speedtest),
-  },
-};
+let data = {common: updateConfiguration(fields.common)};
+
 args = {acs_id: genieID, data: data};
-result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+result = ext('devices-api', 'syncDeviceDiagnostics', JSON.stringify(args));
 if (!result.success) {
-  log('Provision sync for device ' + genieID + ' failed: ' + result.message);
+  log('Diagnostics provision sync for device ' + genieID); 
 }

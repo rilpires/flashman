@@ -1125,15 +1125,21 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
-        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-          return map[req.params.id.toUpperCase()];
-        });
-        if (device && !isDevOn) {
-          return res.status(200).json({success: false,
-                                     message: 'CPE não esta online!'});
+        if (device && !device.use_tr069) {
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[req.params.id.toUpperCase()];
+          });
+          if (device && !isDevOn) {
+            return res.status(200).json({success: false,
+                                       message: 'CPE não esta online!'});
+          }
         }
         if (msgtype === 'speedtest') {
-          return deviceListController.doSpeedTest(req, res);
+          if (device && device.use_tr069) {
+            acsDeviceInfo.fireSpeedTestDiagnose(device);
+          } else {
+            deviceListController.doSpeedTest(req, res);
+          }
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
@@ -1174,8 +1180,11 @@ deviceListController.sendMqttMsg = function(req, res) {
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase());
           }
-          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
-          //TODO: em caso de tr69 chamar o acs.firepingdiagnose ou algo do tipo
+          if (device && device.use_tr069) {
+            acsDeviceInfo.firePingDiagnose(device);
+          } else {
+            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -2886,9 +2895,6 @@ deviceListController.doSpeedTest = function(req, res) {
         success: false,
         message: 'CPE não encontrado',
       });
-    }
-    if (matchedDevice.use_tr069) {
-      acsDeviceInfo.doSpeedTest(matchedDevice);
     }
     if (!isDevOn) {
       return res.status(200).json({

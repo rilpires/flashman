@@ -278,7 +278,7 @@ const getDefaultFields = function() {
         num_of_rep: 'InternetGatewayDevice.IPPingDiagnostics.NumberOfRepetitions',
         avg_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.AverageResponseTime',
         max_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MaximumResponseTime',
-        min_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime ',
+        min_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime',
         timeout: 'InternetGatewayDevice.IPPingDiagnostics.Timeout',
       },
       speedtest: {
@@ -634,9 +634,27 @@ const syncDeviceData = async function(args, callback) {
   callback(null, result);
 };
 
+const syncDeviceDiagnostics = async function(args, callback) {
+  let params = JSON.parse(args[0]);
+  if (!params || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+  // removi o await pra ver se a provision para de ciclar
+  // a gente tem que esperar mesmo o flashman notificar o sio
+  // que o teste terminou, no final das esse await fora
+  // vai impactar tando assim?
+  let result = sendFlashmanRequest('/device/receive/diagnostic',
+                                         params, callback);
+  callback(null, result);
+};
+
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
+exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
