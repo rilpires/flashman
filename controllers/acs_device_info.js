@@ -827,7 +827,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (model == 'GONUAC001' || model == 'xPON') {
       // Trigger xml config syncing for
       // web admin user and password
-      device.web_admin = config.tr069;
+      device.web_admin_user = config.tr069.web_login;
+      device.web_admin_password = config.tr069.web_password;
       targets.push('web-admin');
       configFileEditing(device, targets);
     } else {
@@ -839,6 +840,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
           data.common.web_admin_password.value === '') {
         let passChange = {common: {}};
         passChange.common.web_admin_password = config.tr069.web_password;
+        device.web_admin_password = config.tr069.web_password;
         acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
