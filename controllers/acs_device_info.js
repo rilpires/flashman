@@ -793,13 +793,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.acs_sync_loops = 0;
     }
   }
-  device.last_contact = Date.now();
-  device.last_tr069_sync = Date.now();
+  let now = Date.now();
+  device.last_contact = now;
+  device.last_tr069_sync = now;
   // daily data fetching
-  if (!device.last_contact_daily) {
-    device.last_contact_daily = Date.now();
-  } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
-    device.last_contact_daily = Date.now();
+  let previous = device.last_contact_daily;
+  if (!previous || (now - previous) > 24*60*60*1000) {
+    device.last_contact_daily = now;
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
