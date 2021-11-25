@@ -457,6 +457,7 @@ const getStavixFields = function(model) {
 
 const getIgdFields = function() {
   let fields = getDefaultFields();
+  fields.common.alt_uid = fields.common.mac;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
