@@ -5,5 +5,7 @@ let router = express.Router();
 
 router.route('/device/inform').post(genieDeviceInfoController.informDevice);
 router.route('/device/syn').post(genieDeviceInfoController.syncDevice);
+router.route('/device/receive/diagnostic').post(
+	genieDeviceInfoController.fetchDiagnosticsFromGenie);
 
 module.exports = router;
