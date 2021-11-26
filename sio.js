@@ -73,6 +73,7 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   })) {
     sio.anlixNotifications[sessionId].push(notification);
   }
+  console.log(sio.anlixNotifications);
 };
 
 const emitNotification = function(type, macaddr, data, removeMeKey=null) {
@@ -247,6 +248,7 @@ sio.anlixWaitDeviceStatusNotification = function(session) {
 };
 
 sio.anlixWaitForPingTestNotification = function(session, macaddr) {
+  console.log(session, macaddr);
   if (!session) {
     debug('ERROR: SIO: ' +
                 'Try to add ping notification with an invalid session!');
@@ -263,8 +265,9 @@ sio.anlixWaitForPingTestNotification = function(session, macaddr) {
 };
 
 sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
+  console.log(pingdata);
   if (!macaddr) {
-    debug('ERROR: SIO: ' +
+    console.log('ERROR: SIO: ' +
                 'Try to send ping test results notification ' +
                 'to an invalid mac address!');
     return false;
@@ -272,9 +275,11 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   let found = emitNotification(SIO_NOTIFICATION_PING_TEST,
                                macaddr, pingdata, macaddr);
   if (!found) {
-    debug('SIO: NO Session found for ' +
+    console.log('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
+
+  console.log('OKEY');
   return found;
 };
 

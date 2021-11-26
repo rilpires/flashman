@@ -1177,10 +1177,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            console.log('IF DE CIMA');
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase());
           }
           if (device && device.use_tr069) {
+            console.log(req.sessionID, req.params.id.toUpperCase());
             acsDeviceInfo.firePingDiagnose(device);
           } else {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());

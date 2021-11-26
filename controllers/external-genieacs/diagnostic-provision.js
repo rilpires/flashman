@@ -22,7 +22,7 @@ curl -i 'http://localhost:7557/presets/inform' -X PUT --data \\
 \"mynewprovision\"}]}'
 
 Command to update provision on genie:
-  curl -X PUT -i 'http://localhost:7557/provisions/speedtest' --data "$(cat controllers/external-genieacs/speedtest-provision.js)"
+  curl -X PUT -i 'http://localhost:7557/provisions/diagnostic' --data "$(cat controllers/external-genieacs/diagnostic-provision.js)"
 */
 
 const now = Date.now();
@@ -45,6 +45,8 @@ log('============================================== \n DIAGNOSTIC COMPLETE \
 
 
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
+// TODO: eliminar o resto abaixo e usar o DeviceModel.findByMacOrSerial para
+// achar o device só pelo genieID. assim, poderá passar o mac sem passar o comon
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 let args = {oui: oui, model: modelClass, acs_id: genieID};
