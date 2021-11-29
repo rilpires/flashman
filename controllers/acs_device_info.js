@@ -793,13 +793,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.acs_sync_loops = 0;
     }
   }
-  device.last_contact = Date.now();
-  device.last_tr069_sync = Date.now();
+  let now = Date.now();
+  device.last_contact = now;
+  device.last_tr069_sync = now;
   // daily data fetching
-  if (!device.last_contact_daily) {
-    device.last_contact_daily = Date.now();
-  } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
-    device.last_contact_daily = Date.now();
+  let previous = device.last_contact_daily;
+  if (!previous || (now - previous) > 24*60*60*1000) {
+    device.last_contact_daily = now;
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
@@ -827,7 +827,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (model == 'GONUAC001' || model == 'xPON') {
       // Trigger xml config syncing for
       // web admin user and password
-      device.web_admin = config.tr069;
+      device.web_admin_user = config.tr069.web_login;
+      device.web_admin_password = config.tr069.web_password;
       targets.push('web-admin');
       configFileEditing(device, targets);
     } else {
@@ -839,6 +840,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
           data.common.web_admin_password.value === '') {
         let passChange = {common: {}};
         passChange.common.web_admin_password = config.tr069.web_password;
+        device.web_admin_password = config.tr069.web_password;
         acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
@@ -890,7 +892,9 @@ const fetchLogFromGenie = function(success, mac, acsID) {
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
         data = 'Log não disponível!';
@@ -934,7 +938,9 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
     let wanBytes = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (checkForNestedKey(data, recvField+'._value') &&
           checkForNestedKey(data, sentField+'._value')) {
@@ -991,7 +997,9 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     let wanUpTime = 0;
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let successSys = false;
       let successWan = false;
       if (checkForNestedKey(data, fields.common.uptime+'._value')) {
@@ -1032,6 +1040,50 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   req.end();
 };
 
+const checkMeshObjsCreated = function(acsID) {
+  return new Promise((resolve, reject) => {
+    let splitID = acsID.split('-');
+    let model = splitID.slice(1, splitID.length-1).join('-');
+    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let query = {_id: acsID};
+    let projection = `${fields.mesh2.ssid}, ${fields.mesh5.ssid}`;
+    let path =
+      `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let result = {
+      mesh2: false,
+      mesh5: false,
+      success: true,
+    };
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('data', (chunk)=>data+=chunk);
+      resp.on('end', async ()=>{
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          result.success = false;
+          resolve(result);
+        }
+        if (checkForNestedKey(data, `${fields.mesh2.ssid}._value`)) {
+          result.mesh2 = true;
+        }
+        if (checkForNestedKey(data, `${fields.mesh5.ssid}._value`)) {
+          result.mesh5 = true;
+        }
+        resolve(result);
+      });
+    });
+    req.end();
+  });
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let splitID = acsID.split('-');
@@ -1054,7 +1106,9 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = false;
       if (checkForNestedKey(data, rxPowerField+'._value') &&
           checkForNestedKey(data, txPowerField+'._value')) {
@@ -1110,7 +1164,9 @@ const fetchDevicesFromGenie = function(mac, acsID) {
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
-      data = JSON.parse(data)[0];
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
       let success = true;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
@@ -1347,6 +1403,158 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
+acsDeviceInfoController.coordVAPObjects = async function(acsID) {
+  let populateVAPObjects = false;
+  let returnObj = {
+    code: 200,
+    msg: 'Success',
+    populate: populateVAPObjects,
+  };
+  const splitID = acsID.split('-');
+  const model = splitID.slice(1, splitID.length-1).join('-');
+  // We have to check if the virtual AP object has been created already
+  const meshField = DevicesAPI.getModelFields(splitID[0], model)
+    .fields.mesh2.ssid.replace('.SSID', '');
+  const meshField5 = DevicesAPI.getModelFields(splitID[0], model)
+    .fields.mesh5.ssid.replace('.SSID', '');
+  const getObjTask = {
+    name: 'getParameterValues',
+    parameterNames: [
+      meshField,
+      meshField5,
+    ],
+  };
+  let meshObjsStatus;
+  try {
+    let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+    if (!ret || !ret.finished ||
+      ret.task.name !== 'getParameterValues') {
+      throw new Error('task error');
+    }
+    if (ret.finished) {
+      meshObjsStatus = await checkMeshObjsCreated(acsID);
+      if (!meshObjsStatus.success) {
+        throw new Error('invalid data');
+      }
+    }
+  } catch (e) {
+    const msg = `[!] -> ${e.message} in ${acsID}`;
+    console.log(msg);
+    returnObj.code = 500;
+    returnObj.msg = msg;
+    returnObj.populate = populateVAPObjects;
+    return returnObj;
+  }
+  let deleteMesh5VAP = false;
+  let createMesh2VAP = false;
+  let createMesh5VAP = false;
+  /*
+    If the 2.4GHz virtual AP object hasn't been created
+    we must create it. Since the objects are created in order we
+    must delete the 5GHz virtual AP object if it exists and then
+    recreate it.
+  */
+  if (!meshObjsStatus.mesh2) {
+    populateVAPObjects = true;
+    createMesh2VAP = true;
+    createMesh5VAP = true;
+    if (meshObjsStatus.mesh5) {
+      deleteMesh5VAP = true;
+    }
+  } else {
+    /*
+      2.4GHz virtual AP object is created. Here we treat only the
+      5GHz case.
+    */
+    if (!meshObjsStatus.mesh5) {
+      populateVAPObjects = true;
+      createMesh5VAP = true;
+    }
+  }
+  /*
+    We never delete the 2.4GHz VAP object,
+    only the 5GHz one in specific cases
+  */
+  if (deleteMesh5VAP) {
+    let delObjTask = {
+      name: 'deleteObject',
+      objectName: meshField5,
+    };
+    try {
+      let ret = await TasksAPI.addTask(acsID, delObjTask, true,
+        3000, [5000, 10000]);
+      if (!ret || !ret.finished||
+        ret.task.name !== 'deleteObject') {
+        throw new Error('delObject task error');
+      }
+    } catch (e) {
+      const msg = `[!] -> ${e.message} in ${acsID}`;
+      console.log(msg);
+      returnObj.code = 500;
+      returnObj.msg = msg;
+      returnObj.populate = populateVAPObjects;
+      return returnObj;
+    }
+  }
+  /*
+    Virtual APs objects haven't been created yet.
+    We must do that
+  */
+  if (createMesh2VAP || createMesh5VAP) {
+    let addObjTask = {
+      name: 'addObject',
+      // Removes index of the WLANConfiguration field name.
+      // Will work only if 2.4GHz VAP WLANConfiguration index is lower than 10
+      objectName: meshField.slice(0, -2),
+    };
+    /*
+      Regardless of which mesh mode is being set we create both
+      virtual AP objects. If 2.4GHz virtual AP object is already OK
+      then we only create the 5GHz virtual AP object.
+    */
+    let numObjsToCreate;
+    createMesh2VAP ? numObjsToCreate = 2 : numObjsToCreate = 1;
+
+    for (let i = 0; i < numObjsToCreate; i++) {
+      try {
+        let ret = await TasksAPI.addTask(acsID, addObjTask, true,
+          3000, [5000, 10000]);
+        if (!ret || !ret.finished||
+          ret.task.name !== 'addObject') {
+          throw new Error('task error');
+        }
+      } catch (e) {
+        const msg = `[!] -> ${e.message} in ${acsID}`;
+        console.log(msg);
+        returnObj.code = 500;
+        returnObj.msg = msg;
+        returnObj.populate = populateVAPObjects;
+        return returnObj;
+      }
+
+      // A getParameterValues call forces the whole object to be created
+      try {
+        let ret = await TasksAPI.addTask(
+          acsID, getObjTask, true, 10000, []);
+        if (!ret || !ret.finished||
+          ret.task.name !== 'getParameterValues') {
+          throw new Error('task error');
+        }
+      } catch (e) {
+        const msg = `[!] -> ${e.message} in ${acsID}`;
+        console.log(msg);
+        returnObj.code = 500;
+        returnObj.msg = msg;
+        returnObj.populate = populateVAPObjects;
+        return returnObj;
+      }
+    }
+  }
+  // Success
+  returnObj.populate = populateVAPObjects;
+  return returnObj;
+};
+
 acsDeviceInfoController.updateInfo = async function(device, changes) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -1571,7 +1779,9 @@ const configFileEditing = async function(device, target) {
     let rawConfigFile = '';
     resp.on('data', (chunk)=>rawConfigFile+=chunk);
     resp.on('end', async ()=>{
-      rawConfigFile = JSON.parse(rawConfigFile)[0];
+      if (rawConfigFile.length > 0) {
+        rawConfigFile = JSON.parse(rawConfigFile)[0];
+      }
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
         rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
@@ -1639,7 +1849,9 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       let i;
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
-        data = JSON.parse(data)[0];
+        if (data.length > 0) {
+          data = JSON.parse(data)[0];
+        }
         let isDiff = false;
         let template = '';
         if (checkForNestedKey(data, projection1)) {
@@ -1695,7 +1907,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.external_port_end != '') {
+            if (fields.port_mapping_fields.external_port_end) {
               let portMapExtEnd = iterateTemplate +
                 fields.port_mapping_fields.external_port_end[0];
               if (checkForNestedKey(data, portMapExtEnd)) {
@@ -1715,7 +1927,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.internal_port_end != '') {
+            if (fields.port_mapping_fields.internal_port_end) {
               let portMapIntEnd = iterateTemplate +
                 fields.port_mapping_fields.internal_port_end[0];
               if (checkForNestedKey(data, portMapIntEnd)) {

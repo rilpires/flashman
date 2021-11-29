@@ -13,6 +13,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
@@ -28,6 +29,11 @@ const convertDiagnostic = function(diagnostic) {
     dns: (diagnostic && diagnostic.dns === 0),
     anlix: (diagnostic && diagnostic.anlix === 0),
     flashman: (diagnostic && diagnostic.flashman === 0),
+    speedtest: (diagnostic && diagnostic.speedtest === 0),
+    speedValue: (diagnostic && 'speedValue' in diagnostic) ?
+                  diagnostic.speedValue : null,
+    speedTestLimit: (diagnostic && 'speedTestLimit' in diagnostic) ?
+                  diagnostic.speedTestLimit : null,
   };
 };
 
@@ -92,6 +98,7 @@ const pushCertification = (arr, c, finished) => {
     mesh: convertMesh(c.mesh),
     didConfigureContract: c.didContract || false,
     didConfigureObservation: c.didObservation || false,
+    didSpeedTest: c.didSpeedTest || false,
     contract: c.contract || '',
     observations: c.observations || '',
     cancelReason: c.reason || '',
@@ -350,11 +357,16 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'Cannot disable mesh with registered slaves',
       });
     }
+    const wifiRadioState = 1;
+    const meshChannel = 7;
+    const meshChannel5GHz = 40; // Value has better results on some routers
     let model = device.model;
     let changes;
+    let acsID;
+    let splitID;
     if (device.use_tr069) {
-      let acsID = device.acs_id;
-      let splitID = acsID.split('-');
+      acsID = device.acs_id;
+      splitID = acsID.split('-');
       model = splitID.slice(1, splitID.length-1).join('-');
     }
     const permissions = DeviceVersion.findByVersion(
@@ -362,8 +374,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       device.wifi_is_5ghz_capable,
       model,
     );
-    const wifiRadioState = 1;
-    const mesh5GhzChannel = 40; // Value has better results on some routers
     const isMeshV1Compatible = permissions.grantMeshMode;
     const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
@@ -371,32 +381,42 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'CPE isn\'t compatibe with mesh',
       });
     }
+    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
+    if (!isWifi5GHzCompatible && targetMode > 2) {
+      return res.status(403).json({
+        'error': 'CPE is not compatible with 5GHz mesh',
+      });
+    }
     if (isMeshV2Compatible && device.use_tr069) {
-      changes = meshHandlers.buildTR069Changes(device, targetMode);
-      if (targetMode === 2 || targetMode === 4) {
-        changes.wifi2 = {};
-        // When enabling Wi-Fi set beacon type
-        changes.wifi2.enable = wifiRadioState;
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      const hasMeshVAPObject = permissions.grantMeshVAPObject;
+      /*
+        If device doesn't have SSID Object by default, then
+        we need to check if it has been created already.
+        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+        IMPORTANT: even if target mode is 1 (cable) we must create these
+        objects because, in that case, we disable the virtual APs. If the
+        objects don't exist yet this will cause an error!
+      */
+      let populateVAPObjects = false;
+      if (!hasMeshVAPObject && targetMode > 0) {
+        const returnObj = await acsDeviceInfo.coordVAPObjects(acsID);
+        if (returnObj.code !== 200) {
+          return res.status(returnObj.code).json({'error': returnObj.msg});
+        }
+        populateVAPObjects = returnObj.populate;
       }
-      if (targetMode === 3 || targetMode === 4) {
-        changes.wifi5 = {};
-        // For best performance and avoiding DFS issues
-        // all APs must work on a single 5GHz non-DFS channel
-        changes.wifi5.channel = mesh5GhzChannel;
-        // When enabling Wi-Fi set beacon type
-        changes.wifi5.enable = wifiRadioState;
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
-      }
+      changes = meshHandlers.buildTR069Changes(device, targetMode,
+        wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
     }
     // Assure radios are enabled and correct channels are set
     if (targetMode === 2 || targetMode === 4) {
+      device.wifi_channel = meshChannel;
       device.wifi_state = wifiRadioState;
     }
     if (targetMode === 3 || targetMode === 4) {
       // For best performance and avoiding DFS issues
       // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = mesh5GhzChannel;
+      device.wifi_channel_5ghz = meshChannel5GHz;
       device.wifi_state_5ghz = wifiRadioState;
     }
     device.mesh_mode = targetMode;
@@ -549,6 +569,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             ssidPrefix: true,
             isSsidPrefixEnabled: true,
             personalizationHash: true,
+            measureServerIP: true,
             licenseApiSecret: true,
             company: true,
           },
@@ -567,6 +588,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         requiredIpv6: false,
         requiredDns: true,
         requiredFlashman: true,
+        requiredSpeedTest: false,
       };
       if (config.certification) {
         certification.requiredWan = config.certification.wan_step_required;
@@ -617,6 +639,12 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.wifi_is_5ghz_capable,
         device.model,
       );
+
+      if (config.certification.speedtest_step_required) {
+        if (config && config.measureServerIP) {
+          certification.requiredSpeedTest = permissions.grantSpeedTest;
+        }
+      }
 
       if (req.body.isOnu) {
         // Save passwords sent from app
@@ -1091,5 +1119,104 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   if (fieldValue instanceof Date) fieldValue = fieldValue.getTime();
   return res.status(200).json({fieldValue: fieldValue});
 };
+
+
+// ==========================================
+// Implementation of speed test routes methods on flashman.
+diagAppAPIController.getSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+
+    let config;
+    try {
+      config = await ConfigModel.findOne({is_default: true}).lean();
+      if (!config) throw new Error('Config not found');
+    } catch (err) {
+      console.log(err);
+    }
+
+    let reply = {'speedtest': {}};
+    if (config && config.measureServerIP) {
+      reply.speedtest.server = config.measureServerIP;
+    }
+    let previous = matchedDevice.speedtest_results;
+    reply.speedtest.previous = previous;
+    if (previous.length > 0) {
+      reply.last_uid = previous[previous.length - 1]._id;
+    } else {
+      reply.last_uid = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      reply.last_error_uid = matchedDevice.last_speedtest_error.unique_id;
+      reply.last_error = matchedDevice.last_speedtest_error.error;
+    } else {
+      reply.last_error_uid = '';
+      reply.last_error = '';
+    }
+
+    return res.status(200).json(reply);
+  });
+};
+
+diagAppAPIController.doSpeedTest = function(req, res) {
+  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+    if (err) {
+      return res.status(500).json({message: 'Erro interno'});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({message: 'CPE não encontrado'});
+    }
+
+    // Send reply first, then send mqtt message
+    let lastMeasureID;
+    let lastErrorID;
+    let previous = matchedDevice.speedtest_results;
+    if (previous.length > 0) {
+      lastMeasureID = previous[previous.length - 1]._id;
+    } else {
+      lastMeasureID = '';
+    }
+    if (matchedDevice.last_speedtest_error) {
+      lastErrorID = matchedDevice.last_speedtest_error.unique_id;
+    } else {
+      lastErrorID = '';
+    }
+
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.body.mac.toUpperCase()];
+    });
+
+    res.status(200).json({
+      has_access: isDevOn,
+      last_uid: lastMeasureID,
+      last_error_uid: lastErrorID,
+    });
+
+    // Wait for a few seconds so the app can receive the reply
+    // We need to do this because the measurement blocks all traffic
+    setTimeout(async () => {
+      let config;
+      try {
+        config = await ConfigModel.findOne({is_default: true}).lean();
+        if (!config) throw {error: 'Config not found'};
+      } catch (err) {
+        console.log(err);
+      }
+
+      if (config && config.measureServerIP) {
+        // Send mqtt message to perform speedtest
+        let url = config.measureServerIP + ':' + config.measureServerPort;
+        mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
+                                         {name: req.user.name});
+      }
+    }, 1.5*1000);
+  });
+};
+// ==========================================
 
 module.exports = diagAppAPIController;

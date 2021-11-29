@@ -44,6 +44,9 @@ let userSchema = new mongoose.Schema({
       dns: {type: Boolean, default: false},
       anlix: {type: Boolean, default: false},
       flashman: {type: Boolean, default: false},
+      speedtest: {type: Boolean, default: false},
+      speedValue: {type: Number, default: -1},
+      speedTestLimit: {type: Number, default: -1},
     },
     didConfigureTR069: {type: Boolean, default: false},
     didConfigureWan: {type: Boolean, default: false},
@@ -83,6 +86,7 @@ let userSchema = new mongoose.Schema({
     cancelReason: {type: String, required: false},
     latitude: {type: Number, default: 0},
     longitude: {type: Number, default: 0},
+    didSpeedTest: {type: Boolean, default: false},
   }]
 });
 

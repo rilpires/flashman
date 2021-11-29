@@ -499,6 +499,7 @@ updateController.getAutoConfig = function(req, res) {
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
+        speedTestStepRequired: matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
@@ -722,6 +723,7 @@ updateController.setAutoConfig = async function(req, res) {
 
     let wanStepRequired = req.body['wan-step-required'] === 'true';
     let ipv4StepRequired = req.body['ipv4-step-required'] === 'true';
+    let speedTestStepRequired = req.body['speedtest-step-required'] === 'true';
     let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
     let dnsStepRequired = req.body['dns-step-required'] === 'true';
     let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
@@ -730,6 +732,9 @@ updateController.setAutoConfig = async function(req, res) {
     }
     if (typeof ipv4StepRequired === 'boolean') {
       config.certification.ipv4_step_required = ipv4StepRequired;
+    }
+    if (typeof speedTestStepRequired === 'boolean') {
+      config.certification.speedtest_step_required = speedTestStepRequired;
     }
     if (typeof ipv6StepRequired === 'boolean') {
       config.certification.ipv6_step_required = ipv6StepRequired;
