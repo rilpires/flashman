@@ -162,6 +162,11 @@ $(document).ready(function() {
         $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe)
                                   .siblings('label').addClass('active');
       }
+      if (typeof resp.bypassMqttSecretCheck !== 'undefined') {
+        $('select[name=bypass-mqtt-secret-check] option[value=' +
+          resp.bypassMqttSecretCheck + ']')
+        .attr('selected', 'selected');
+      }
       if (resp.measureServerIP) {
         $('#measure-server-ip').val(resp.measureServerIP)
                                .siblings('label').addClass('active');

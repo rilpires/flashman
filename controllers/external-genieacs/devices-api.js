@@ -56,43 +56,59 @@ const convertWifiMode = function(mode, oui, model) {
   switch (mode) {
     case '11g':
       if (ouiModelStr === 'IGD') return 'g';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'g';
-      else if (ouiModelStr === 'F670L') return 'b,g';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'g';
+      } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
-      else if (ouiModelStr === 'G-140W-C') return 'b,g';
-      else if (ouiModelStr === 'GONUAC001') return 'bg';
+      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+        return 'b,g';
+      } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
-      else if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'n';
+      } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
-      else if (ouiModelStr === 'G-140W-C') return 'b,g,n';
-      else if (ouiModelStr === 'GONUAC001') return 'bgn';
+      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+        return 'b,g,n';
+      } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
-      else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'n';
+      } else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
-      else if (ouiModelStr === 'G-140W-C') return 'a,n';
-      else if (ouiModelStr === 'GONUAC001') return 'an';
+      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+        return 'a,n';
+      } else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'ac';
-      else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'ac';
+      } else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
-      else if (ouiModelStr === 'G-140W-C') return 'a,n,ac';
-      else if (ouiModelStr === 'GONUAC001') return 'anac';
+      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+        return 'a,n,ac';
+      } else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
     default:
       return '';
@@ -486,6 +502,8 @@ const getModelFields = function(oui, model) {
       break;
     case 'G-140W-C': // Nokia G-140W-C
     case 'G%2D140W%2DC': // URI encoded
+    case 'G-140W-CS': // Nokia G-140W-CS
+    case 'G%2D140W%2DCS': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
@@ -515,6 +533,8 @@ const getBeaconTypeByModel = function(model) {
   switch (model) {
     case 'G-140W-C': // Nokia G-140W-C
     case 'G%2D140W%2DC': // URI encoded
+    case 'G-140W-CS': // Nokia G-140W-CS
+    case 'G%2D140W%2DCS': // URI encoded
       ret = 'WPA/WPA2';
       break;
     case 'GONUAC001': // Greatek Stavix G421R
