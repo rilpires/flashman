@@ -25,46 +25,9 @@ Command to update provision on genie:
   curl -X PUT -i 'http://localhost:7557/provisions/diagnostic' --data "$(cat controllers/external-genieacs/diagnostic-provision.js)"
 */
 
-const now = Date.now();
-
-const updateConfiguration = function(fields) {
-  // Request field updates from the CPE
-  let result = {};
-  Object.keys(fields).forEach((key)=>{
-    let resp = declare(fields[key], {value: now, writable: now});
-    if (resp.value) {
-      let value = resp.value[0];
-      result[key] = {value: value, writable: resp.writable};
-    }
-  });
-  return result;
-};
-
-log('============================================== \n DIAGNOSTIC COMPLETE \
-    \n ==============================================');
-
-
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
-// TODO: eliminar o resto abaixo e usar o DeviceModel.findByMacOrSerial para
-// achar o device só pelo genieID. assim, poderá passar o mac sem passar o comon
-let oui = declare('DeviceID.OUI', {value: 1}).value[0];
-let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let args = {oui: oui, model: modelClass, acs_id: genieID};
-let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 
-if (!result.success || !result.fields) {
-  log('Provision sync fields for device ' +
-      genieID + ' failed: ' + result.message);
-  log('OUI identified: ' + oui);
-  log('Model identified: ' + modelClass);
-  return;
-}
-
-log ('Provision collecting data for device ' + genieID + '...');
-let fields = result.fields;
-let data = {common: updateConfiguration(fields.common)};
-
-args = {acs_id: genieID, data: data};
+args = {acs_id: genieID};
 result = ext('devices-api', 'syncDeviceDiagnostics', JSON.stringify(args));
 if (!result.success) {
   log('Diagnostics provision sync for device ' + genieID); 

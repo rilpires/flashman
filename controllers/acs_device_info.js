@@ -911,34 +911,35 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 // TR069 Speedtest and latency test ============================================
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   // TODO: mudar para não receber o common, usando DeviceModel.findByMacOrSerial
-  var data = req.body.data;
-  if (!data || !data.common || !data.common.mac.value) {
-    return res.status(500).json({
-      success: false,
-      message: 'Missing mac field',
-    });
-  }
-  // TODO: não preciso do config
-  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
-  .catch((err) => {
-    return res.status(500).json({success: false,
-                                 message: 'Error finding Config in database'});
-  });
-
-  let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
-  // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
-  let acsID = device.acs_id;
+  let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+
+  let device;
+  let error;
+  try {
+    device = await DeviceModel.findByMacOrSerial(splitID[splitID.length-1], true);
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(500).json({success: false,
+                                   message: 'Dispositivo não encontrado'});
+    }
+  } catch (e) {
+    error = e;
+  }
+  if (error || !device || !device.use_tr069 || !device.acs_id) {
+    return res.status(500).json({success: false,
+      message: 'Erro ao encontrar dispositivo'});
+  }
+
+  let mac = device._id;
 
   let success = false;
   var parameters = [];
   var projection = '';
   let diag_necessary_keys = {
-    speedtest: {
+    speedtest: { 
       diag_state: '',
       num_of_conn: '',
       download_url: '',
@@ -957,6 +958,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       min_resp_time: '',
     }
   };
+
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
 
   for (var type in diag_necessary_keys) {
     let necessary_diagn = diag_necessary_keys[type];
@@ -988,6 +991,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   }
 
   if (success) {
+    success = false;
     let query = {_id: acsID};
     let path = '/devices/?query='+JSON.stringify(query)+
                '&projection='+projection.slice(0, -1);
@@ -1012,126 +1016,86 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         let body = Buffer.concat(chunks);
         var data = JSON.parse(body)[0];
 
-        // TODO: generalizar estes for em uma função aos moldes do que esta
-        // na speedtest-provision
-        for (var field in diag_necessary_keys.speedtest) {
-          if (fields.diagnostics.speedtest.hasOwnProperty(field)) {
-            if (checkForNestedKey(data,
-                              fields.diagnostics.speedtest[field]+'._value')) {
-              diag_necessary_keys.speedtest[field] = getFromNestedKey(data,
-                                 fields.diagnostics.speedtest[field]+'._value');
-            }
-          }
-        }
+        diag_necessary_keys.speedtest = 
+                            acsDeviceInfoController.getMultipleNestedKeys(data,
+                                                  diag_necessary_keys.speedtest,
+                                                  fields.diagnostics.speedtest);
 
-        for (var field in diag_necessary_keys.ping) {
-          if (fields.diagnostics.ping.hasOwnProperty(field)) {
-            if (checkForNestedKey(data,
-                              fields.diagnostics.ping[field]+'._value')) {
-              diag_necessary_keys.ping[field] = getFromNestedKey(data,
-                                      fields.diagnostics.ping[field]+'._value');
-            }
-          }
-        }
-
-        // TODO: mudar o fluxo para verificar um por um speedtest e ping
+        diag_necessary_keys.ping = 
+                            acsDeviceInfoController.getMultipleNestedKeys(data,
+                                                      diag_necessary_keys.ping,
+                                                      fields.diagnostics.ping);
+        
         // TODO: criar uma função para calcular os dignosticos e enviar para
         // cada um dos dois diags. Basicamente, essa funçao FetchDiags só vai
         // atualizar os dados que vem do genie e repassar esses dados para  cada
         // uma das funções que calculam e enviam
-        
-        // If both diagnostics are marked as Completed, we have to compare the
-        // timestamps to get the most updated diagnostic. This diagnostic is the
-        // one that we're concerned about
-        if (diag_necessary_keys.speedtest.diag_state == 'Complete' &&
-                            diag_necessary_keys.ping.diag_state == 'Complete') {
-          let speedtest_timestamp;
-          let ping_timestamp;
-          if (checkForNestedKey(data,
-                       fields.diagnostics.speedtest.diag_state+'._timestamp')) {
-            speedtest_timestamp = new Date(getFromNestedKey(data,
-                        fields.diagnostics.speedtest.diag_state+'._timestamp'));
-          }
-          if (checkForNestedKey(data,
-                            fields.diagnostics.ping.diag_state+'._timestamp')) {
-            ping_timestamp = new Date(getFromNestedKey(data,
-                             fields.diagnostics.ping.diag_state+'._timestamp'));
-          }
-          if (speedtest_timestamp.valueOf() > ping_timestamp.valueOf()) {
 
-          } else if (speedtest_timestamp.valueOf() < ping_timestamp.valueOf()) {
-            let result = {};
-            result[diag_necessary_keys.ping.host] = {
-              lat: diag_necessary_keys.ping.avg_resp_time.toString(),
-              loss: (diag_necessary_keys.ping.failure_count /
-                     diag_necessary_keys.ping.num_of_rep).toString(),
-            }
-            if (sio.anlixSendPingTestNotifications(mac.toUpperCase(),
-                                                   {results: result})) {
-              return res.status(200).json({success: true});
-            }
-          }
-        } else {
-          if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
-            // use anlixSendSpeedTestNotifications(acsID, testdata) with formated 
-            // testdata patterns
-          } else if (diag_necessary_keys.ping.diag_state == 'Complete') {
-            // use anlixSendPingTestNotifications(acsID, pingdata) with formated
-            // pingdata patterns
-            let result = {};
-            result[diag_necessary_keys.ping.host] = {
-              lat: diag_necessary_keys.ping.avg_resp_time.toString(),
-              loss: (diag_necessary_keys.ping.failure_count /
-                     diag_necessary_keys.ping.num_of_rep).toString(),
-            }
-            if (sio.anlixSendPingTestNotifications(mac.toUpperCase(),
-                                                   {results: result})) {
-              return res.status(200).json({success: true});
-            }
-          }
+        // if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
+        //   let speedtest_timestamp;
+        //   let last_speedtest_timestamp;
+        //   if (checkForNestedKey(data,
+        //                fields.diagnostics.speedtest.diag_state+'._timestamp')) {
+        //     speedtest_timestamp = new Date(getFromNestedKey(data,
+        //                 fields.diagnostics.speedtest.diag_state+'._timestamp'));
+        //   }
+        //   last_speedtest_timestamp =
+        //                            new Date(device.speedtest_results.timestamp);
+        //   if (speedtest_timestamp.valueOf() >
+        //       last_speedtest_timestamp.valueOf()) {
+        //     // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+        //     if (false) {
+        //       success = true;
+        //     }
+        //   }
+        // }
+        if (diag_necessary_keys.ping.diag_state == 'Complete' && 
+                     acsDeviceInfoController.calculatePingDiagnostic(mac,
+                     diag_necessary_keys)) {
+          success = true;
         }
       });
 
       response.on("error", function (error) {
         console.error(error);
+        success = false;
       });
     });
 
     request.end();
-
-
-    // TODO: checar se a gente consegue localizar notificacoes em aberto para
-    // ter certeza de qual teste está sendo feito. pode acontecer de o speedtest
-    // mas o que a gente quer é o ping
-
-    // isso acontece porque foi verificado que é impossivel alterar o campo
-    // DiagnosticsState
-    /*if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
-      // use anlixSendSpeedTestNotifications(mac, testdata) with formated 
-      // testdata patterns
-    }*/
-
-    /*if (diag_necessary_keys.ping.diag_state == 'Complete') {
-      // use anlixSendPingTestNotifications(mac, pingdata) with formated
-      // pingdata patterns
-      sio.anlixSendPingTestNotifications(mac, {
-        results: {
-          diag_necessary_keys.ping.host: {
-            lat: diag_necessary_keys.ping.avg_resp_time,
-            loss: (diag_necessary_keys.ping.failure_count /
-                   diag_necessary_keys.ping.num_of_rep),
-          }
-        }
-      });
-    }*/
-
-    /*if (sio.anlixSendPingTestNotifications(mac, null)) {
-      return res.status(500).json({
-        success: false,
-        message: 'Error',
-      });
-    }*/
   }
+
+  if (success) {
+    return res.status(200).json({success: true});
+  } else {
+    return res.status(500).json({
+      success: false,
+      message: "Erro no recebimento dos dados de diagnóstico."
+    });
+  }
+}
+
+acsDeviceInfoController.getMultipleNestedKeys = function(data, wanted_fields,
+                                                         genie_keys) {
+  let result = {};
+  Object.keys(wanted_fields).forEach((key)=>{
+    if (wanted_fields.hasOwnProperty(key)) {
+      if (checkForNestedKey(data, genie_keys[key]+'._value')) {
+        result[key] = getFromNestedKey(data, genie_keys[key]+'._value');
+      }
+    }
+  });
+  return result;
+}
+
+acsDeviceInfoController.calculatePingDiagnostic = function(mac, diagnostics) {
+  let result = {};
+  result[diagnostics.ping.host] = {
+    lat: diagnostics.ping.avg_resp_time.toString(),
+    loss: (diagnostics.ping.failure_count /
+           diagnostics.ping.num_of_rep).toString(),
+  }
+  return sio.anlixSendPingTestNotifications(mac, {results: result});
 }
 
 acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
@@ -1167,10 +1131,9 @@ acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
   }
 };
 
-acsDeviceInfoController.firePingDiagnose = async function(device) {
+acsDeviceInfoController.firePingDiagnose = async function(device, res) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  console.log(device.ping_hosts);
   let mac = device._id;
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
@@ -1183,9 +1146,9 @@ acsDeviceInfoController.firePingDiagnose = async function(device) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
   
   // TODO: setar estes parametros pelo flashman
-  let number_of_rep = 100;
+  let number_of_rep = 15;
   let ping_host_url = device.ping_hosts[0];
-  let timeout = 100;
+  let timeout = 1000;
 
   let task = {
     name: 'setParameterValues',
@@ -1198,18 +1161,43 @@ acsDeviceInfoController.firePingDiagnose = async function(device) {
   for (var host in device.ping_hosts) {
     failure.results[host] = {lat: '-', loss: '100'}
   }
+  let result;
   try {
     result = await TasksAPI.addTask(acsID, task, true);
     if (!result || !result.finished) {
       console.log('Error: failed to fire ping measure');
-      return sio.anlixSendPingTestNotifications(mac, failure);
+      if (sio.anlixSendPingTestNotifications(mac, failure)) {
+        result = {
+                  success: false,
+                  message: 'Error: failed to fire ping measure'
+                };
+        return res.status(200).json(result);
+      }
     } else {
       console.log('Success: TR-069 ping measure fired');
+      // Wait for a few seconds so the app can receive the reply
+      // We need to do this because the measurement blocks all traffic
+      setTimeout(() => {
+        console.log('[!] -> timeout at ping measure in '+acsID);
+        if (sio.anlixSendPingTestNotifications(mac, failure)) {
+          result = {
+                    success: false,
+                    message: 'Timeout at ping measure in '+acsID
+                  };
+          return res.status(200).json(result);
+        }
+      }, 30*1000);
     }
-  } catch (e) {
-    console.log('[!] -> '+e.message+' in '+acsID);
-    return sio.anlixSendPingTestNotifications(mac, failure);
-  }
+  } catch (err) {
+    console.log('[!] -> '+err.message+' in '+acsID);
+    if (sio.anlixSendPingTestNotifications(mac, failure)) {
+      result = {
+                success: false,
+                message: err.message+' in '+acsID
+              };
+      return res.status(200).json(result);
+    }
+  }  
 };
 
 //==============================================================================
