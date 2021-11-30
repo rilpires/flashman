@@ -1047,7 +1047,6 @@ deviceListController.factoryResetDevice = function(req, res) {
 // TODO: adaptar o comando de ping e speedtest para lidar com dispositivos tr69
 // este isDevOn precisa ser encapsulado num if (!usetr69)
 deviceListController.sendMqttMsg = function(req, res) {
-  console.log(req, res);
   let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(

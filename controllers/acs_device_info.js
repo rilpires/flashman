@@ -910,7 +910,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 
 // TR069 Speedtest and latency test ============================================
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
-  // TODO: mudar para não receber o common, usando DeviceModel.findByMacOrSerial
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -918,7 +917,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   let device;
   let error;
   try {
-    device = await DeviceModel.findByMacOrSerial(splitID[splitID.length-1], true);
+    device = await DeviceModel.findByMacOrSerial(splitID[splitID.length-1],
+                                                 true);
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
@@ -1025,30 +1025,26 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
                             acsDeviceInfoController.getMultipleNestedKeys(data,
                                                       diag_necessary_keys.ping,
                                                       fields.diagnostics.ping);
-        
-        // TODO: criar uma função para calcular os dignosticos e enviar para
-        // cada um dos dois diags. Basicamente, essa funçao FetchDiags só vai
-        // atualizar os dados que vem do genie e repassar esses dados para  cada
-        // uma das funções que calculam e enviam
-
-        // if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
-        //   let speedtest_timestamp;
-        //   let last_speedtest_timestamp;
-        //   if (checkForNestedKey(data,
-        //                fields.diagnostics.speedtest.diag_state+'._timestamp')) {
-        //     speedtest_timestamp = new Date(getFromNestedKey(data,
-        //                 fields.diagnostics.speedtest.diag_state+'._timestamp'));
-        //   }
-        //   last_speedtest_timestamp =
-        //                            new Date(device.speedtest_results.timestamp);
-        //   if (speedtest_timestamp.valueOf() >
-        //       last_speedtest_timestamp.valueOf()) {
-        //     // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
-        //     if (false) {
-        //       success = true;
-        //     }
-        //   }
-        // }
+        /*
+        if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
+          let speedtest_timestamp;
+          let last_speedtest_timestamp;
+          if (checkForNestedKey(data,
+                       fields.diagnostics.speedtest.diag_state+'._timestamp')) {
+            speedtest_timestamp = new Date(getFromNestedKey(data,
+                        fields.diagnostics.speedtest.diag_state+'._timestamp'));
+          }
+          last_speedtest_timestamp =
+                                   new Date(device.speedtest_results.timestamp);
+          if (speedtest_timestamp.valueOf() >
+              last_speedtest_timestamp.valueOf()) {
+            // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+            if (false) {
+              success = true;
+            }
+          }
+        }
+        */
         if (diag_necessary_keys.ping.diag_state == 'Complete' && 
                      acsDeviceInfoController.calculatePingDiagnostic(mac,
                      diag_necessary_keys)) {
