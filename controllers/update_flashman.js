@@ -477,6 +477,7 @@ updateController.getAutoConfig = function(req, res) {
       return res.status(200).json({
         auto: matchedConfig.autoUpdate,
         minlengthpasspppoe: matchedConfig.pppoePassLength,
+        bypassMqttSecretCheck: matchedConfig.mqtt_secret_bypass,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
         tr069ServerURL: matchedConfig.tr069.server_url,
@@ -499,7 +500,8 @@ updateController.getAutoConfig = function(req, res) {
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
-        speedTestStepRequired: matchedConfig.certification.speedtest_step_required,
+        speedTestStepRequired:
+          matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
@@ -559,6 +561,10 @@ updateController.setAutoConfig = async function(req, res) {
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
+    let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
+    if (typeof bypassMqttSecretCheck === 'boolean') {
+      config.mqtt_secret_bypass = bypassMqttSecretCheck;
+    }
     let measureServerIP = req.body['measure-server-ip'];
     let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     if (measureServerIP && !measureServerIP.match(ipRegex)) {
@@ -659,7 +665,8 @@ updateController.setAutoConfig = async function(req, res) {
         message: 'Erro validando os campos',
       });
     }
-    config.tr069.pon_signal_threshold_critical_high = ponSignalThresholdCriticalHigh;
+    config.tr069.pon_signal_threshold_critical_high =
+      ponSignalThresholdCriticalHigh;
     let message = 'Salvo com sucesso!';
 
     // checking tr069 configuration fields.
