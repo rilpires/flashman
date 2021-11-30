@@ -449,9 +449,7 @@ meshHandlers.preConfTR069Mesh = async function(device, targetMode) {
 // Should be called after updating TR-069 CPE through ACS
 meshHandlers.postConfTR069Mesh = async function(device, targetMode) {
   let returnObj = {
-    device: device,
     code: 200,
-    msg: 'Success',
   };
   const acsID = device.acs_id;
   /*
@@ -473,7 +471,6 @@ meshHandlers.postConfTR069Mesh = async function(device, targetMode) {
       device.bssid_mesh5 = bssidsObj.bssid_mesh5;
     }
   }
-  returnObj.device = device;
   return returnObj;
 };
 

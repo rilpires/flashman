@@ -382,7 +382,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
           'error': postConfStatus.msg,
         });
       }
-      device = postConfStatus.device;
     }
     device = meshHandlers.setMeshMode(device, targetMode);
     device.do_update_parameters = true;

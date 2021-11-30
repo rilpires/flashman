@@ -1912,7 +1912,6 @@ deviceListController.setDeviceReg = async function(req, res) {
                   message: postConfStatus.msg,
                 });
               }
-              matchedDevice = postConfStatus.device;
               // Only after all checks are made do we update database
               matchedDevice = meshHandlers.setMeshMode(
                 matchedDevice, meshMode);
