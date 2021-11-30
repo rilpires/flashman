@@ -794,13 +794,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.acs_sync_loops = 0;
     }
   }
-  device.last_contact = Date.now();
-  device.last_tr069_sync = Date.now();
+  let now = Date.now();
+  device.last_contact = now;
+  device.last_tr069_sync = now;
   // daily data fetching
-  if (!device.last_contact_daily) {
-    device.last_contact_daily = Date.now();
-  } else if (Date.now() - device.last_contact_daily > 24*60*60*1000) {
-    device.last_contact_daily = Date.now();
+  let previous = device.last_contact_daily;
+  if (!previous || (now - previous) > 24*60*60*1000) {
+    device.last_contact_daily = now;
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
@@ -828,7 +828,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (model == 'GONUAC001' || model == 'xPON') {
       // Trigger xml config syncing for
       // web admin user and password
-      device.web_admin = config.tr069;
+      device.web_admin_user = config.tr069.web_login;
+      device.web_admin_password = config.tr069.web_password;
       targets.push('web-admin');
       configFileEditing(device, targets);
     } else {
@@ -840,6 +841,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
           data.common.web_admin_password.value === '') {
         let passChange = {common: {}};
         passChange.common.web_admin_password = config.tr069.web_password;
+        device.web_admin_password = config.tr069.web_password;
         acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
@@ -2043,7 +2045,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.external_port_end != '') {
+            if (fields.port_mapping_fields.external_port_end) {
               let portMapExtEnd = iterateTemplate +
                 fields.port_mapping_fields.external_port_end[0];
               if (checkForNestedKey(data, portMapExtEnd)) {
@@ -2063,7 +2065,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
-            if (fields.port_mapping_fields.internal_port_end != '') {
+            if (fields.port_mapping_fields.internal_port_end) {
               let portMapIntEnd = iterateTemplate +
                 fields.port_mapping_fields.internal_port_end[0];
               if (checkForNestedKey(data, portMapIntEnd)) {

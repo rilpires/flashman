@@ -190,10 +190,8 @@ const getDefaultFields = function() {
     port_mapping_fields: {
       external_port_start: ['ExternalPort', 'external_port_start',
         'xsd:unsignedInt'],
-      // external_port_end: ['', 'external_port_end', 'xsd:unsignedInt'],
       internal_port_start: ['InternalPort', 'internal_port_start',
         'xsd:unsignedInt'],
-      // internal_port_end: ['', 'internal_port_start', 'xsd:unsignedInt'],
       client: ['InternalClient', 'ip', 'xsd:string'],
     },
     port_mapping_values: {
