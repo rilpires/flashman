@@ -38,6 +38,12 @@ block content
                     required
                   )
                   .invalid-feedback Insira um número entre 1 e 64
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Ignorar aviso de alteração de firmwares Flashbox
+                    select.browser-default.md-select(name="bypass-mqtt-secret-check")
+                      option(value="false") Não
+                      option(value="true") Sim
                 .custom-control.custom-checkbox.mb-2
                   input#autoupdate.custom-control-input(
                     name="autoupdate",

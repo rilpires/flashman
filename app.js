@@ -27,7 +27,7 @@ let Config = require('./models/config');
 let User = require('./models/user');
 let Role = require('./models/role');
 let Device = require('./models/device');
-let DeviceModel = require('./models/device_version');
+let DeviceVersion = require('./models/device_version');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 
@@ -223,7 +223,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
         */
         if (devices[idx].use_tr069 &&
           (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
-          let meshBSSIDs = DeviceModel.getMeshBSSIDs(
+          let meshBSSIDs = DeviceVersion.getMeshBSSIDs(
             devices[idx].model, devices[idx]._id);
           devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
           devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;

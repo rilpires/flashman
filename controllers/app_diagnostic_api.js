@@ -13,6 +13,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
@@ -356,11 +357,16 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'Cannot disable mesh with registered slaves',
       });
     }
+    const wifiRadioState = 1;
+    const meshChannel = 7;
+    const meshChannel5GHz = 40; // Value has better results on some routers
     let model = device.model;
     let changes;
+    let acsID;
+    let splitID;
     if (device.use_tr069) {
-      let acsID = device.acs_id;
-      let splitID = acsID.split('-');
+      acsID = device.acs_id;
+      splitID = acsID.split('-');
       model = splitID.slice(1, splitID.length-1).join('-');
     }
     const permissions = DeviceVersion.findByVersion(
@@ -368,8 +374,6 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       device.wifi_is_5ghz_capable,
       model,
     );
-    const wifiRadioState = 1;
-    const mesh5GhzChannel = 40; // Value has better results on some routers
     const isMeshV1Compatible = permissions.grantMeshMode;
     const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
     if (!isMeshV1Compatible && !isMeshV2Compatible) {
@@ -377,32 +381,42 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         'error': 'CPE isn\'t compatibe with mesh',
       });
     }
+    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
+    if (!isWifi5GHzCompatible && targetMode > 2) {
+      return res.status(403).json({
+        'error': 'CPE is not compatible with 5GHz mesh',
+      });
+    }
     if (isMeshV2Compatible && device.use_tr069) {
-      changes = meshHandlers.buildTR069Changes(device, targetMode);
-      if (targetMode === 2 || targetMode === 4) {
-        changes.wifi2 = {};
-        // When enabling Wi-Fi set beacon type
-        changes.wifi2.enable = wifiRadioState;
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+      const hasMeshVAPObject = permissions.grantMeshVAPObject;
+      /*
+        If device doesn't have SSID Object by default, then
+        we need to check if it has been created already.
+        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+        IMPORTANT: even if target mode is 1 (cable) we must create these
+        objects because, in that case, we disable the virtual APs. If the
+        objects don't exist yet this will cause an error!
+      */
+      let populateVAPObjects = false;
+      if (!hasMeshVAPObject && targetMode > 0) {
+        const returnObj = await acsDeviceInfo.coordVAPObjects(acsID);
+        if (returnObj.code !== 200) {
+          return res.status(returnObj.code).json({'error': returnObj.msg});
+        }
+        populateVAPObjects = returnObj.populate;
       }
-      if (targetMode === 3 || targetMode === 4) {
-        changes.wifi5 = {};
-        // For best performance and avoiding DFS issues
-        // all APs must work on a single 5GHz non-DFS channel
-        changes.wifi5.channel = mesh5GhzChannel;
-        // When enabling Wi-Fi set beacon type
-        changes.wifi5.enable = wifiRadioState;
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
-      }
+      changes = meshHandlers.buildTR069Changes(device, targetMode,
+        wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
     }
     // Assure radios are enabled and correct channels are set
     if (targetMode === 2 || targetMode === 4) {
+      device.wifi_channel = meshChannel;
       device.wifi_state = wifiRadioState;
     }
     if (targetMode === 3 || targetMode === 4) {
       // For best performance and avoiding DFS issues
       // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = mesh5GhzChannel;
+      device.wifi_channel_5ghz = meshChannel5GHz;
       device.wifi_state_5ghz = wifiRadioState;
     }
     device.mesh_mode = targetMode;
