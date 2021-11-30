@@ -609,7 +609,7 @@ $(document).ready(function() {
       slaves.forEach((slave)=>{
         if (!slaveHasRelease) return;
         if (!slave.releases.find((r)=>r.id===release.id)) {
-          // slaveHasRelease = false;
+          slaveHasRelease = false;
         }
       });
       if (!slaveHasRelease) continue;
@@ -1595,8 +1595,11 @@ $(document).ready(function() {
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
-                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
-                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>'+
+                  (grantWifi5ghz ?
+                    '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
+                    '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>' :
+                    ''
+                  )+
                 '</select>'+
               '</div>'+
             '</div>'+
