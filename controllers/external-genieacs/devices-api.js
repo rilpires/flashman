@@ -56,8 +56,11 @@ const convertWifiMode = function(mode, oui, model) {
   switch (mode) {
     case '11g':
       if (ouiModelStr === 'IGD') return 'g';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'g';
-      else if (ouiModelStr === 'F670L') return 'b,g';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'g';
+      } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
@@ -67,8 +70,11 @@ const convertWifiMode = function(mode, oui, model) {
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD') return 'n';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
-      else if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'n';
+      } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
@@ -78,8 +84,11 @@ const convertWifiMode = function(mode, oui, model) {
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD') return 'n';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'n';
-      else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'n';
+      } else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
@@ -89,8 +98,11 @@ const convertWifiMode = function(mode, oui, model) {
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD') return 'ac';
-      else if (ouiModelStr === 'G%2D140W%2DC') return 'ac';
-      else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (
+        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+      ) {
+        return 'ac';
+      } else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
