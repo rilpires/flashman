@@ -108,6 +108,7 @@ let configSchema = new mongoose.Schema({
   ssidPrefix: {type: String},
   licenseApiSecret: {type: String, default: ''},
   company: {type: String, default: ''},
+  mqtt_secret_bypass: {type: Boolean, default: false},
 });
 
 let config = mongoose.model('config', configSchema);
