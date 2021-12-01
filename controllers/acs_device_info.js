@@ -1570,6 +1570,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
+  let rebootAfterUpdate = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
@@ -1622,6 +1623,11 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
+        /* In IGD aka FW323DAC, need reboot when change
+         2.4GHz wifi settings */
+        if (masterKey === 'wifi2' && model === 'IGD') {
+          rebootAfterUpdate = true;
+        }
       }
       if (key === 'web_admin_password') {
         // Validate if matches 8 char minimum, 16 char maximum, has upper case,
@@ -1649,6 +1655,10 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   if (!hasChanges) return; // No need to sync data with genie
   TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
+    if (result.task.name !== 'setParameterValues') return;
+    if (result.finished && rebootAfterUpdate) {
+      acsDeviceInfoController.rebootDevice(device);
+    }
   });
 };
 
