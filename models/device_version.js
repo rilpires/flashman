@@ -204,7 +204,7 @@ const tr069Devices = {
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
-    wifi2_extended_channels_support: false,
+    wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
