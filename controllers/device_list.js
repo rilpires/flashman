@@ -796,7 +796,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             the table anim the 'right' model */
           if (device.model === 'IGD' &&
             device.version === 'V2.0.08-191129') {
-            device.model = 'FW323DAC';
+            device.model_alias = 'FW323DAC';
           }
         } else {
           devReleases = devReleases.filter(
@@ -3060,7 +3060,6 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-
     res.status(200).json({success: true});
     TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
