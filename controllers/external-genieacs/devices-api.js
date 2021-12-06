@@ -646,9 +646,15 @@ const syncDeviceDiagnostics = async function(args, callback) {
   // a gente tem que esperar mesmo o flashman notificar o sio
   // que o teste terminou, no final das esse await fora
   // vai impactar tando assim?
-  let result = sendFlashmanRequest('/device/receive/diagnostic',
-                                         params, callback);
-  callback(null, result);
+  sendFlashmanRequest('receive/diagnostic', params, callback);
+  return {
+    success: true,
+    message: 'Diagnostics received',
+  };
+  // sendFlashmanRequest('receive/diagnostic', params, callback);
+  
+  
+  // callback(null, result);
 };
 
 exports.convertField = convertField;
@@ -658,3 +664,5 @@ exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+
+// 

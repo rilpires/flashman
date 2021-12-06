@@ -28,7 +28,8 @@ Command to update provision on genie:
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 
 args = {acs_id: genieID};
-result = ext('devices-api', 'syncDeviceDiagnostics', JSON.stringify(args));
-if (!result.success) {
-  log('Diagnostics provision sync for device ' + genieID); 
-}
+// result = 
+ext('devices-api', 'syncDeviceDiagnostics', JSON.stringify(args));
+// if (!result.success) {
+//   log('Diagnostics provision sync for device ' + genieID + ' failed'); 
+// }

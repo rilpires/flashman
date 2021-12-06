@@ -246,4 +246,54 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   return prefixObj;
 };
 
+deviceHandlers.sendPingToTraps = function(device, results) {
+  console.log('device:', device);
+  console.log('results:', results);
+  // sio.anlixSendPingTestNotifications(device._id, results);
+  sio.anlixSendPingTestNotifications(mac, {results: result});
+  
+  console.log('Ping results for device ' +
+    id + ' received successfully.');
+
+  // No await needed
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+      concole.log('matchedConfig:', matchedConfig);
+      // Send ping results if device traps are activated
+      if (matchedConfig.traps_callbacks &&
+          matchedConfig.traps_callbacks.device_crud) {
+        let requestOptions = {};
+        let callbackUrl =
+        matchedConfig.traps_callbacks.device_crud.url;
+        let callbackAuthUser =
+        matchedConfig.traps_callbacks.device_crud.user;
+        let callbackAuthSecret =
+        matchedConfig.traps_callbacks.device_crud.secret;
+        if (callbackUrl) {
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': matchedDevice._id,
+            'type': 'device',
+            'changes': {ping_results: results},
+          };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          request(requestOptions).then((resp) => {
+            // Ignore API response
+            return;
+          }, (err) => {
+            // Ignore API endpoint errors
+            return;
+          });
+        }
+      }
+    }
+  });
+};
+
 module.exports = deviceHandlers;

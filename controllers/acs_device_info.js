@@ -939,14 +939,14 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   var parameters = [];
   var projection = '';
   let diag_necessary_keys = {
-    speedtest: { 
-      diag_state: '',
-      num_of_conn: '',
-      download_url: '',
-      bgn_time: '',
-      end_time: '',
-      total_bytes_rec: ''
-    },
+    // speedtest: { 
+    //   diag_state: '',
+    //   num_of_conn: '',
+    //   download_url: '',
+    //   bgn_time: '',
+    //   end_time: '',
+    //   total_bytes_rec: ''
+    // },
     ping: {
       diag_state: '',
       num_of_rep: '',
@@ -988,77 +988,130 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     }
   } catch (e) {
     console.log('Failed: genie diagnostics can\'t be updated');
+    console.log(e);
   }
 
   if (success) {
     success = false;
     let query = {_id: acsID};
-    let path = '/devices/?query='+JSON.stringify(query)+
-               '&projection='+projection.slice(0, -1);
+    let path = ('/devices/?query='+JSON.stringify(query)+
+                '&projection='+projection.slice(0, -1));
     let options = {
-      protocol: 'http:',
       method: 'GET',
       hostname: 'localhost',
       port: 7557,
       path: encodeURI(path),
     };
-
-    let request = http.request(options, function (response) {
-      let chunks = [];
-
-      response.on("data", async function (chunk) {
-        chunks.push(chunk);
-      });
-
-      response.on("end", async function (chunk) {
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      resp.on('data', (chunk)=>data+=chunk);
+      resp.on('end', async ()=>{
         const speedtestStateField = fields.diagnostics.speedtest.diag_state;
         const pingStateField = fields.diagnostics.ping.diag_state;
         let body = Buffer.concat(chunks);
-        var data = JSON.parse(body)[0];
-
+        // var data = JSON.parse(body)[0];
+        data = JSON.parse(data)[0];
         diag_necessary_keys.speedtest = 
                             acsDeviceInfoController.getMultipleNestedKeys(data,
                                                   diag_necessary_keys.speedtest,
                                                   fields.diagnostics.speedtest);
-
         diag_necessary_keys.ping = 
                             acsDeviceInfoController.getMultipleNestedKeys(data,
                                                       diag_necessary_keys.ping,
                                                       fields.diagnostics.ping);
-        /*
-        if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
-          let speedtest_timestamp;
-          let last_speedtest_timestamp;
-          if (checkForNestedKey(data,
-                       fields.diagnostics.speedtest.diag_state+'._timestamp')) {
-            speedtest_timestamp = new Date(getFromNestedKey(data,
-                        fields.diagnostics.speedtest.diag_state+'._timestamp'));
-          }
-          last_speedtest_timestamp =
-                                   new Date(device.speedtest_results.timestamp);
-          if (speedtest_timestamp.valueOf() >
-              last_speedtest_timestamp.valueOf()) {
-            // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
-            if (false) {
-              success = true;
-            }
-          }
-        }
-        */
+        
+        // TODO: criar uma função para calcular os dignosticos e enviar para
+        // cada um dos dois diags. Basicamente, essa funçao FetchDiags só vai
+        // atualizar os dados que vem do genie e repassar esses dados para  cada
+        // uma das funções que calculam e enviam
+
+        // if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
+        //   let speedtest_timestamp;
+        //   let last_speedtest_timestamp;
+        //   if (checkForNestedKey(data,
+        //                fields.diagnostics.speedtest.diag_state+'._timestamp')) {
+        //     speedtest_timestamp = new Date(getFromNestedKey(data,
+        //                 fields.diagnostics.speedtest.diag_state+'._timestamp'));
+        //   }
+        //   last_speedtest_timestamp =
+        //                            new Date(device.speedtest_results.timestamp);
+        //   if (speedtest_timestamp.valueOf() >
+        //       last_speedtest_timestamp.valueOf()) {
+        //     // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+        //     if (false) {
+        //       success = true;
+        //     }
+        //   }
+        // }
         if (diag_necessary_keys.ping.diag_state == 'Complete' && 
                      acsDeviceInfoController.calculatePingDiagnostic(mac,
                      diag_necessary_keys)) {
           success = true;
         }
       });
-
-      response.on("error", function (error) {
-        console.error(error);
-        success = false;
-      });
     });
+    req.end();
 
-    request.end();
+    // let request = http.request(options, function (response) {
+    //   let chunks = [];
+
+    //   response.on("data", async function (chunk) {
+    //     chunks.push(chunk);
+    //   });
+
+    //   response.on("end", async function (chunk) {
+    //     const speedtestStateField = fields.diagnostics.speedtest.diag_state;
+    //     const pingStateField = fields.diagnostics.ping.diag_state;
+    //     let body = Buffer.concat(chunks);
+    //     var data = JSON.parse(body)[0];
+
+    //     diag_necessary_keys.speedtest = 
+    //                         acsDeviceInfoController.getMultipleNestedKeys(data,
+    //                                               diag_necessary_keys.speedtest,
+    //                                               fields.diagnostics.speedtest);
+
+    //     diag_necessary_keys.ping = 
+    //                         acsDeviceInfoController.getMultipleNestedKeys(data,
+    //                                                   diag_necessary_keys.ping,
+    //                                                   fields.diagnostics.ping);
+        
+    //     // TODO: criar uma função para calcular os dignosticos e enviar para
+    //     // cada um dos dois diags. Basicamente, essa funçao FetchDiags só vai
+    //     // atualizar os dados que vem do genie e repassar esses dados para  cada
+    //     // uma das funções que calculam e enviam
+
+    //     // if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
+    //     //   let speedtest_timestamp;
+    //     //   let last_speedtest_timestamp;
+    //     //   if (checkForNestedKey(data,
+    //     //                fields.diagnostics.speedtest.diag_state+'._timestamp')) {
+    //     //     speedtest_timestamp = new Date(getFromNestedKey(data,
+    //     //                 fields.diagnostics.speedtest.diag_state+'._timestamp'));
+    //     //   }
+    //     //   last_speedtest_timestamp =
+    //     //                            new Date(device.speedtest_results.timestamp);
+    //     //   if (speedtest_timestamp.valueOf() >
+    //     //       last_speedtest_timestamp.valueOf()) {
+    //     //     // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+    //     //     if (false) {
+    //     //       success = true;
+    //     //     }
+    //     //   }
+    //     // }
+    //     if (diag_necessary_keys.ping.diag_state == 'Complete' && 
+    //                  acsDeviceInfoController.calculatePingDiagnostic(mac,
+    //                  diag_necessary_keys)) {
+    //       success = true;
+    //     }
+    //   });
+
+    //   response.on("error", function (error) {
+    //     console.error(error);
+    //     success = false;
+    //   });
+    // });
+
+    // request.end();
   }
 
   if (success) {
@@ -1094,43 +1147,57 @@ acsDeviceInfoController.calculatePingDiagnostic = function(mac, diagnostics) {
   return sio.anlixSendPingTestNotifications(mac, {results: result});
 }
 
-acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
-  // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
-  let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+// acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
+//   // Make sure we only work with TR-069 devices with a valid ID
+//   if (!device || !device.use_tr069 || !device.acs_id) return;
+//   let mac = device._id;
+//   let acsID = device.acs_id;
+//   let splitID = acsID.split('-');
+//   let model = splitID.slice(1, splitID.length-1).join('-');
+//   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
 
-  let diagnStateField = fields.diagnostics.speedtest.diag_state;
-  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
-  let diagnURLField = fields.diagnostics.speedtest.download_url;
+//   let diagnStateField = fields.diagnostics.speedtest.diag_state;
+//   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
+//   let diagnURLField = fields.diagnostics.speedtest.download_url;
   
-  // TODO: setar estes parametros pelo flashman
-  let number_of_conn = 4;
-  let speedtest_url = 'http://18.229.105.162:25752/measure/file1.bin';
+//   // TODO: setar estes parametros pelo flashman
+//   let number_of_conn = 4;
+//   let speedtest_url = 'http://18.229.105.162:25752/measure/file1.bin';
 
-  let task = {
-    name: 'setParameterValues',
-    parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                      [diagnNumConnField, number_of_conn, 'xsd:unsignedInt'],
-                      [diagnURLField, speedtest_url, 'xsd:string']],
-  };
-  result = await TasksAPI.addTask(acsID, task, true, 3000, []);
-  if (!result || !result.finished ||
-      result.task.name !== 'setParameterValues') {
-    console.log('Error: failed to fire Speedtest');
-    return;
-  } else {
-    console.log('Success: TR-069 speedtest fired');
+//   let task = {
+//     name: 'setParameterValues',
+//     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
+//                       [diagnNumConnField, number_of_conn, 'xsd:unsignedInt'],
+//                       [diagnURLField, speedtest_url, 'xsd:string']],
+//   };
+//   result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+//   if (!result || !result.finished ||
+//       result.task.name !== 'setParameterValues') {
+//     console.log('Error: failed to fire Speedtest');
+//     return;
+//   } else {
+//     console.log('Success: TR-069 speedtest fired');
+//   }
+// };
+
+acsDeviceInfoController.firePingDiagnose = async function(mac) {
+  let device;
+  let error;
+  try {
+    device = await DeviceModel.findById(mac, (matchedDevice)=>{
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        return matchedDevice[0];
+      } else {
+        return;
+      }
+    });
+  } catch (e) {
+    error = e;
   }
-};
-
-acsDeviceInfoController.firePingDiagnose = async function(device, res) {
-  // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
+  if (error || !device || !device.use_tr069 || !device.acs_id) {
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
+  }
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1142,9 +1209,9 @@ acsDeviceInfoController.firePingDiagnose = async function(device, res) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
   
   // TODO: setar estes parametros pelo flashman
-  let number_of_rep = 15;
-  let ping_host_url = device.ping_hosts[0];
-  let timeout = 1000;
+  let number_of_rep = 10;
+  let ping_host_url = '8.8.8.8';//device.ping_hosts[0];
+  let timeout = 100;
 
   let task = {
     name: 'setParameterValues',
@@ -1153,47 +1220,25 @@ acsDeviceInfoController.firePingDiagnose = async function(device, res) {
                       [diagnURLField, ping_host_url, 'xsd:string'],
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']]
   };
-  const failure = {results: {}}
-  for (var host in device.ping_hosts) {
-    failure.results[host] = {lat: '-', loss: '100'}
-  }
-  let result;
+  // const failure = {results: {}}
+  // for (var host in device.ping_hosts) {
+  //   failure.results[device.ping_hosts[host]] = {lat: '-', loss: '100'}
+  // }
   try {
-    result = await TasksAPI.addTask(acsID, task, true);
-    if (!result || !result.finished) {
-      console.log('Error: failed to fire ping measure');
-      if (sio.anlixSendPingTestNotifications(mac, failure)) {
-        result = {
-                  success: false,
-                  message: 'Error: failed to fire ping measure'
-                };
-        return res.status(200).json(result);
+    return await TasksAPI.addTask(acsID, task, true, 3000, [], (result)=>{
+      if (!result || !result.finished) {
+        return {success: false,
+                message: 'Error: Could not fire TR-069 ping measure'};
+      } else {
+        console.log('Success: TR-069 ping measure fired');
+        return {success: true,
+                message: 'Success: TR-069 ping measure fired'};
       }
-    } else {
-      console.log('Success: TR-069 ping measure fired');
-      // Wait for a few seconds so the app can receive the reply
-      // We need to do this because the measurement blocks all traffic
-      setTimeout(() => {
-        console.log('[!] -> timeout at ping measure in '+acsID);
-        if (sio.anlixSendPingTestNotifications(mac, failure)) {
-          result = {
-                    success: false,
-                    message: 'Timeout at ping measure in '+acsID
-                  };
-          return res.status(200).json(result);
-        }
-      }, 30*1000);
-    }
+    });
   } catch (err) {
-    console.log('[!] -> '+err.message+' in '+acsID);
-    if (sio.anlixSendPingTestNotifications(mac, failure)) {
-      result = {
-                success: false,
-                message: err.message+' in '+acsID
-              };
-      return res.status(200).json(result);
-    }
-  }  
+      return {success: false,
+              message: err.message+' in '+acsID};
+  }
 };
 
 //==============================================================================

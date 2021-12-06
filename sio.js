@@ -73,7 +73,6 @@ const registerNotification = function(sessionId, type, macaddr=null) {
   })) {
     sio.anlixNotifications[sessionId].push(notification);
   }
-  console.log(sio.anlixNotifications);
 };
 
 const emitNotification = function(type, macaddr, data, removeMeKey=null) {
@@ -248,7 +247,6 @@ sio.anlixWaitDeviceStatusNotification = function(session) {
 };
 
 sio.anlixWaitForPingTestNotification = function(session, macaddr) {
-  console.log(session, macaddr);
   if (!session) {
     debug('ERROR: SIO: ' +
                 'Try to add ping notification with an invalid session!');

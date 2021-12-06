@@ -1678,8 +1678,8 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    // TODO
-    // =============== encapsular dentro de um handler em devices.js. aproveitar 
+    // TODO replicar a rota que chama esse metodo para acs (feito)
+    // =============== encapsular dentro de um handler em handlers/devices.js. aproveitar 
     // este codigo vai ser reaproveitado tanto pra cpe quanto pra tr69 =========
     sio.anlixSendPingTestNotifications(id, req.body);
     console.log('Ping results for device ' +

@@ -1181,7 +1181,7 @@ deviceListController.sendMqttMsg = function(req, res) {
               req.sessionID, req.params.id.toUpperCase());
           }
           if (device && device.use_tr069) {
-            await acsDeviceInfo.firePingDiagnose(device, res);
+            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
           } else {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
           }
