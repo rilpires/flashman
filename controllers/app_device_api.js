@@ -1441,7 +1441,7 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     ).exec().catch((err) => err);
     let lastContact = device.last_contact;
     let now = Date.now();
-    if (now - lastContact <= 2*config.tr069.inform_interval) {
+    if (now - lastContact <= config.tr069.inform_interval) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
         success: true, isRegister: true, isOnline: true,
