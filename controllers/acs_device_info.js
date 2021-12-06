@@ -1025,10 +1025,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
                             acsDeviceInfoController.getMultipleNestedKeys(data,
                                                       diag_necessary_keys.ping,
                                                       fields.diagnostics.ping);
-        // TODO: criar uma função para calcular os dignosticos e enviar para
-        // cada um dos dois diags. Basicamente, essa funçao FetchDiags só vai
-        // atualizar os dados que vem do genie e repassar esses dados para  cada
-        // uma das funções que calculam e enviam
+
+        // Refatorar mais ainda?
 
         /*
         if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
