@@ -642,19 +642,9 @@ const syncDeviceDiagnostics = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  // removi o await pra ver se a provision para de ciclar
-  // a gente tem que esperar mesmo o flashman notificar o sio
-  // que o teste terminou, no final das esse await fora
-  // vai impactar tando assim?
-  sendFlashmanRequest('receive/diagnostic', params, callback);
-  return {
-    success: true,
-    message: 'Diagnostics received',
-  };
-  // sendFlashmanRequest('receive/diagnostic', params, callback);
-  
-  
-  // callback(null, result);
+  let result = await sendFlashmanRequest('receive/diagnostic', params,
+                                         callback);
+  callback(null, result);
 };
 
 exports.convertField = convertField;
@@ -665,4 +655,3 @@ exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 
-// 

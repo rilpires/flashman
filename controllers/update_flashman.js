@@ -193,6 +193,58 @@ const updateGenieACS = function(upgrades) {
   });
 };
 
+const updateDiagnostics = function() {
+  return new Promise((resolve, reject) => {
+    // Get config from database
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
+        console.log('Error reading configs from database in update GenieACS!');
+        return reject();
+      }
+      // Update diagnostic provision script
+      let waitForProvision;
+      try {
+        let provisionScript = fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
+        );
+        console.log('Updating GenieACS provision...');
+        waitForProvision = tasksApi.putDiagnosticsProvision(provisionScript);
+      } catch (e) {
+        waitForProvision = Promise.reject();
+      }
+
+      // Update preset json if needed
+      let waitForPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-preset.json',
+        ));
+        console.log('Updating Genie diagnostic-preset...');
+        waitForPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPreset = Promise.reject();
+      }
+
+      // Wait for all promises and check results
+      let promises = [waitForProvision, waitForPreset];
+      Promise.allSettled(promises).then((values)=>{
+        if (values[0].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-provision script!');
+        }
+        if (values[1].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-preset json!');
+        }
+        if (values.some((v) => v.status !== 'fulfilled')) {
+          return reject();
+        } else {
+          console.log('GenieACS updated successfully!');
+          return resolve();
+        }
+      });
+    });
+  });
+};
+
 const isRunningUserOwnerOfDirectory = function() {
   return new Promise((resolve, reject) => {
     // Check if running user is the same on current directory
@@ -278,6 +330,7 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
   });
 };
 
+
 updateController.rebootGenie = function(instances) {
   // Treat bugged case where pm2 may fail to provide the number of instances
   // correctly - it may be 0 or undefined, and we must then rely on both the
@@ -307,6 +360,11 @@ updateController.rebootGenie = function(instances) {
       let sedExpr = 's/' + replace + '/' + newText + '/';
       let targetFile = 'controllers/external-genieacs/devices-api.js';
       let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+      // Update genieACS diagnostic's script and preset
+      console.log('Updating genieACS diacnostic\'s script and preset');
+      updateDiagnostics();
+
       exec(sedCommand, (err, stdout, stderr)=>{
         exec('pm2 start genieacs-cwmp');
       });

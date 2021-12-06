@@ -263,9 +263,8 @@ sio.anlixWaitForPingTestNotification = function(session, macaddr) {
 };
 
 sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
-  console.log(pingdata);
   if (!macaddr) {
-    console.log('ERROR: SIO: ' +
+    debug('ERROR: SIO: ' +
                 'Try to send ping test results notification ' +
                 'to an invalid mac address!');
     return false;
@@ -273,11 +272,9 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   let found = emitNotification(SIO_NOTIFICATION_PING_TEST,
                                macaddr, pingdata, macaddr);
   if (!found) {
-    console.log('SIO: NO Session found for ' +
+    debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
   }
-
-  console.log('OKEY');
   return found;
 };
 

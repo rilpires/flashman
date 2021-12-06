@@ -7,7 +7,4 @@ router.route('/device/inform').post(genieDeviceInfoController.informDevice);
 router.route('/device/syn').post(genieDeviceInfoController.syncDevice);
 router.route('/receive/diagnostic').post(
 	genieDeviceInfoController.fetchDiagnosticsFromGenie);
-// router.route('/receive/pingresult').post(
-//   	genieDeviceInfoController.receivePingResult);
-
 module.exports = router;

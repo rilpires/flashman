@@ -1,6 +1,7 @@
 const Config = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const sio = require('../../sio');
 const util = require('./util');
 
 let deviceHandlers = {};
@@ -246,19 +247,14 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   return prefixObj;
 };
 
-deviceHandlers.sendPingToTraps = function(device, results) {
-  console.log('device:', device);
-  console.log('results:', results);
-  // sio.anlixSendPingTestNotifications(device._id, results);
-  sio.anlixSendPingTestNotifications(mac, {results: result});
-  
+deviceHandlers.sendPingToTraps = function(id, results) {
+  sio.anlixSendPingTestNotifications(id, results);
   console.log('Ping results for device ' +
     id + ' received successfully.');
 
   // No await needed
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (!err && matchedConfig) {
-      concole.log('matchedConfig:', matchedConfig);
       // Send ping results if device traps are activated
       if (matchedConfig.traps_callbacks &&
           matchedConfig.traps_callbacks.device_crud) {
@@ -285,9 +281,11 @@ deviceHandlers.sendPingToTraps = function(device, results) {
           }
           request(requestOptions).then((resp) => {
             // Ignore API response
+            console.log(resp);
             return;
           }, (err) => {
             // Ignore API endpoint errors
+            console.log(err);
             return;
           });
         }

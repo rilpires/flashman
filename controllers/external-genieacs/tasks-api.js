@@ -226,6 +226,21 @@ genie.putPreset = async function(preset) {
   }, presetjson);
 };
 
+/* sends a put request with the diagnostics-provision to genieacs and returns
+ the genie json response parsed to javascript object. may throw unhandled
+ errors */
+genie.putDiagnosticsProvision = async function(script) {
+  script = script.slice(0, -1); // Remove EOF
+  return genie.request({
+    method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
+    path: '/provisions/diagnostic',
+    headers: {
+      'Content-Type': 'application/javascript',
+      'Content-Length': Buffer.byteLength(script),
+    },
+  }, script);
+};
+
 /* simple request to send a new task to GenieACS and get a promise the resolves
  to the request response or rejects to request error. Will throw an uncaught
  error if task can't be stringifyed to json. */

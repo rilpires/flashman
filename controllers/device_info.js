@@ -1678,9 +1678,13 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    // TODO replicar a rota que chama esse metodo para acs (feito)
-    // =============== encapsular dentro de um handler em handlers/devices.js. aproveitar 
-    // este codigo vai ser reaproveitado tanto pra cpe quanto pra tr69 =========
+    /*
+    TODO: testar se essa replicação abaixo funciona bem com os roteadores 
+          firmware. Se funcionar, eliminar tudo abaixo de sendPingToTraps
+          até o return res.status
+    */
+    // deviceHandlers.sendPingToTraps(id, req.body.results);
+
     sio.anlixSendPingTestNotifications(id, req.body);
     console.log('Ping results for device ' +
       id + ' received successfully.');
@@ -1723,7 +1727,6 @@ deviceInfoController.receivePingResult = function(req, res) {
         }
       }
     });
-    // =========================================================================
 
     // We don't need to wait
     return res.status(200).json({processed: 1});
