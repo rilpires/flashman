@@ -1045,7 +1045,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
 
 deviceInfoController.registerMqtt = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         console.log('Attempt to register MQTT secret for device ' +
           req.body.id + ' failed: Cant get device profile.');
@@ -1056,7 +1056,16 @@ deviceInfoController.registerMqtt = function(req, res) {
           req.body.id + ' failed: No device found.');
         return res.status(404).json({is_registered: 0});
       }
-      if (!matchedDevice.mqtt_secret) {
+      let config = await Config.findOne({is_default: true}).catch(
+        (err) => {
+          console.log('Error fetch config from database');
+        },
+      );
+      if (!matchedDevice.mqtt_secret ||
+          process.env.FLM_BYPASS_MQTTS_PASSWD ||
+          matchedDevice.mqtt_secret_bypass ||
+          (config && config.mqtt_secret_bypass)
+      ) {
         matchedDevice.mqtt_secret = req.body.mqttsecret;
         matchedDevice.save();
         console.log('Device ' +

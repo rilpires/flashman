@@ -3,6 +3,7 @@ const aedes = require('aedes');
 const sio = require('./sio');
 const DeviceModel = require('./models/device');
 const Notification = require('./models/notification');
+const Config = require('./models/config');
 const debug = require('debug')('MQTT');
 
 let mqtts = null;
@@ -182,7 +183,7 @@ mqtts.authenticate = function(client, username, password, cb) {
       error.returnCode = 2;
       cb(error, null);
     } else {
-      DeviceModel.findById(username, function(err, matchedDevice) {
+      DeviceModel.findById(username, async function(err, matchedDevice) {
         if (err) {
           debug('MQTT AUTH ERROR: Device ' + username +
                       ' internal error: ' + err);
@@ -199,8 +200,14 @@ mqtts.authenticate = function(client, username, password, cb) {
               debug('MQTT AUTH OK: id ' + username);
               cb(null, true);
             } else {
+              let config = await Config.findOne({is_default: true}).catch(
+                (err) => {
+                  debug('MQTT AUTH ERROR: Config not found!');
+                },
+              );
               if (process.env.FLM_BYPASS_MQTTS_PASSWD ||
-                  matchedDevice.mqtt_secret_bypass) {
+                  matchedDevice.mqtt_secret_bypass ||
+                  (config && config.mqtt_secret_bypass)) {
                 debug('MQTT AUTH WARNING: Device ' + username +
                             ' wrong password! Bypass allowed...');
                 matchedDevice.mqtt_secret_bypass = false;
