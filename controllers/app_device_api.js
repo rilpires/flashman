@@ -1239,7 +1239,8 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   }
   let query = req.body.content.mac;
   let projection = {
-    _id: 1, pending_app_secret:1, serial_tr069: 1, apps: 1, app_password: 1
+    _id: 1, pending_app_secret: 1, serial_tr069: 1, apps: 1, app_password: 1,
+    alt_uid_tr069: 1,
   };
   DeviceModel.findById(query, projection, function(err, matchedDevice) {
     if (err) {
@@ -1252,7 +1253,8 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
         matchedDevice.pending_app_secret !== req.body.content.secret) {
       return res.status(403).json({'message': 'Secret inválido'});
     }
-    if (matchedDevice.serial_tr069 !== req.body.content.serial) {
+    if (matchedDevice.serial_tr069 !== req.body.content.serial &&
+        matchedDevice.alt_uid_tr069 !== req.body.content.serial) {
       return res.status(403).json({'message': 'Serial inválido'});
     }
     let appObj = matchedDevice.apps.filter((app) => app.id === req.body.app_id);

@@ -906,7 +906,8 @@ $(document).ready(function() {
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.model+'">'+
+          'disabled value="'+(device.model_alias?
+            device.model_alias:device.model)+'">'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
