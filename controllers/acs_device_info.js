@@ -1479,20 +1479,14 @@ const getSsidPrefixCheck = async function(device) {
 };
 
 acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
-  acsID, meshMode) {
-  let returnObj = {
-    code: 200,
-    msg: 'Success',
-    bssid_mesh2: '',
-    bssid_mesh5: '',
-  };
+  acsID, meshMode,
+) {
   const splitID = acsID.split('-');
   const model = splitID.slice(1, splitID.length-1).join('-');
   // We have to check if the virtual AP object has been created already
-  const bssidField2 = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh2.bssid;
-  const bssidField5 = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh5.bssid;
+  const fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  const bssidField2 = fields.mesh2.bssid;
+  const bssidField5 = fields.mesh5.bssid;
   const getObjTask = {
     name: 'getParameterValues',
     parameterNames: [],
@@ -1504,7 +1498,7 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
     getObjTask.parameterNames.push(bssidField5);
   }
   let bssidsStatus;
-  await new Promise(r => setTimeout(r, 4000));
+  await new Promise((r)=>setTimeout(r, 4000));
   try {
     let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
     if (!ret || !ret.finished ||
@@ -1520,15 +1514,13 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
     console.log(msg);
-    returnObj.code = 500;
-    returnObj.msg = msg;
-    returnObj.bssid_mesh2 = bssidsStatus.mesh2;
-    returnObj.bssid_mesh5 = bssidsStatus.mesh5;
-    return returnObj;
+    return {success: false};
   }
-  returnObj.bssid_mesh2 = bssidsStatus.mesh2.toUpperCase();
-  returnObj.bssid_mesh5 = bssidsStatus.mesh5.toUpperCase();
-  return returnObj;
+  return {
+    success: true,
+    bssid_mesh2: bssidsStatus.mesh2.toUpperCase(),
+    bssid_mesh5: bssidsStatus.mesh5.toUpperCase(),
+  };
 };
 
 acsDeviceInfoController.coordVAPObjects = async function(acsID) {
