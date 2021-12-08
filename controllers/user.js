@@ -917,4 +917,16 @@ userController.settings = function(req, res) {
   });
 };
 
+userController.certificateSearch = (req, res) => {
+  const firstDate;
+  const secondDate;
+  const name;
+  const searchField;
+
+  return res.status(500).json({
+    success: false,
+    error: 'Not implemented'
+  });
+};
+
 module.exports = userController;
