@@ -1006,10 +1006,14 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     response.on('data', async (chunk)=>chunks.push(chunk));
     response.on('end', async (chunk)=>{
       let body = Buffer.concat(chunks);
-      let data = JSON.parse(body)[0];
-      acsDeviceInfoController.calculatePingDiagnostic(
-        mac, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
-      );
+      try {
+        let data = JSON.parse(body)[0];
+        acsDeviceInfoController.calculatePingDiagnostic(
+          mac, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+        );
+      } catch (e) {
+        console.log('Failed: genie response was not valid');
+      }
     });
   });
   request.end();
