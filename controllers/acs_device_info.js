@@ -1034,7 +1034,7 @@ acsDeviceInfoController.getAllNestedKeysFromObject = function(
 acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let device;
   try {
-    device = await DeviceModel.findById(mac);
+    device = await DeviceModel.findById(mac).lean();
   } catch (e) {
     console.log(e);
     return {success: false,
@@ -1071,7 +1071,6 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
       return {success: false,
               message: 'Error: Could not fire TR-069 ping measure'};
     } else {
-      console.log('Success: TR-069 ping measure fired');
       return {success: true,
               message: 'Success: TR-069 ping measure fired'};
     }
