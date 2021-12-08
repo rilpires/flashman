@@ -1133,11 +1133,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          if (device && device.use_tr069) {
-          //   acsDeviceInfo.fireSpeedTestDiagnose(device);
-          } else {
-            return deviceListController.doSpeedTest(req, res);
-          }
+          deviceListController.doSpeedTest(req, res);
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
@@ -1176,11 +1172,12 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID, req.params.id.toUpperCase(),
+            );
           }
           if (device && device.use_tr069) {
             acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
-          } else {
+          } else if (device) {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
           }
         } else if (msgtype === 'upstatus') {

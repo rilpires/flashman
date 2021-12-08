@@ -353,7 +353,7 @@ updateController.rebootGenie = function(instances) {
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
     // issues with CPEs connections since exceptions lead to buggy exp. backoff
-    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    exec('pm2 stop genieacs-cwmp', async (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
       let newText = 'const INSTANCES_COUNT = ' + instances + ';';
@@ -363,7 +363,7 @@ updateController.rebootGenie = function(instances) {
 
       // Update genieACS diagnostic's script and preset
       console.log('Updating genieACS diacnostic\'s script and preset');
-      updateDiagnostics();
+      await updateDiagnostics();
 
       exec(sedCommand, (err, stdout, stderr)=>{
         exec('pm2 start genieacs-cwmp');
@@ -557,7 +557,8 @@ updateController.getAutoConfig = function(req, res) {
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
-        speedTestStepRequired: matchedConfig.certification.speedtest_step_required,
+        speedTestStepRequired:
+          matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,

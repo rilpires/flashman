@@ -907,28 +907,29 @@ const fetchLogFromGenie = function(success, mac, acsID) {
   req.end();
 };
 
-// TR069 Speedtest and latency test ============================================
+// TR069 latency test ============================================
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
+  let serial = splitID[splitID.length-1];
 
   let device;
-  let error;
   try {
-    device = await DeviceModel.findByMacOrSerial(splitID[splitID.length-1],
-                                                 true);
+    device = await DeviceModel.findByMacOrSerial(serial, true);
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
-      return res.status(500).json({success: false,
-                                   message: 'Dispositivo não encontrado'});
+      return res.status(500).json({
+        success: false,
+        message: 'Dispositivo não encontrado'
+      });
     }
   } catch (e) {
     return res.status(500).json({success: false,
       message: 'Erro ao encontrar dispositivo'});
   }
-  if (error || !device || !device.use_tr069 || !device.acs_id) {
+  if (!device || !device.use_tr069 || !device.acs_id) {
     return res.status(500).json({success: false,
       message: 'Erro ao encontrar dispositivo'});
   }
@@ -938,17 +939,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
 
   let mac = device._id;
   let success = false;
-  var parameters = [];
-  var projection = '';
-  let diag_necessary_keys = {
-    // speedtest: {
-    //   diag_state: '',
-    //   num_of_conn: '',
-    //   download_url: '',
-    //   bgn_time: '',
-    //   end_time: '',
-    //   total_bytes_rec: ''
-    // },
+  let parameters = [];
+  let diagNecessaryKeys = {
     ping: {
       diag_state: '',
       num_of_rep: '',
@@ -958,18 +950,20 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       avg_resp_time: '',
       max_resp_time: '',
       min_resp_time: '',
-    }
+    },
   };
 
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
 
-  for (var type in diag_necessary_keys) {
-    let necessary_diagn = diag_necessary_keys[type];
-    let from_genie_diagn = fields.diagnostics[type];
-    for (var field in necessary_diagn) {
-      if (from_genie_diagn.hasOwnProperty(field)) {
-        parameters.push(from_genie_diagn[field]);
-        projection += from_genie_diagn[field] + ',';
+  for (let type in diagNecessaryKeys) {
+    if (diagNecessaryKeys.hasOwnProperty(type) &&
+        fields.diagnostics.hasOwnProperty(type)) {
+      let necessaryDiagn = diagNecessaryKeys[type];
+      let fromGenieDiagn = fields.diagnostics[type];
+      for (let field in necessaryDiagn) {
+        if (fromGenieDiagn.hasOwnProperty(field)) {
+          parameters.push(fromGenieDiagn[field]);
+        }
       }
     }
   }
@@ -978,14 +972,13 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   try {
     let task = {
       name: 'getParameterValues',
-      parameterNames: parameters
+      parameterNames: parameters,
     };
     const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
     if (!result || !result.finished ||
         result.task.name !== 'getParameterValues') {
       console.log('Failed: genie diagnostics can\'t be updated');
-    }
-    else {
+    } else {
       console.log('Success: genie diagnostics updated');
       success = true;
     }
@@ -993,137 +986,57 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     console.log('Failed: genie diagnostics can\'t be updated');
     console.log(e);
   }
-
-  if (success) {
-    success = false;
-    let query = {_id: acsID};
-    let path = ('/devices/?query='+JSON.stringify(query)+
-                '&projection='+projection.slice(0, -1));
-    let options = {
-      protocol: 'http:',
-      method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
-      path: encodeURI(path),
-    };
-    let request = http.request(options, (response)=>{
-      let chunks = [];
-      response.on("error", (error) => console.log(error));
-      response.on('data', async (chunk)=>chunks.push(chunk));
-      response.on('end', async (chunk)=>{
-        const speedtestStateField = fields.diagnostics.speedtest.diag_state;
-        const pingStateField = fields.diagnostics.ping.diag_state;
-        let body = Buffer.concat(chunks);
-        var data = JSON.parse(body)[0];
-        /*
-        diag_necessary_keys.speedtest =
-                            acsDeviceInfoController.getMultipleNestedKeys(data,
-                                                  diag_necessary_keys.speedtest,
-                                                  fields.diagnostics.speedtest);
-        */
-        diag_necessary_keys.ping =
-                            acsDeviceInfoController.getMultipleNestedKeys(data,
-                                                      diag_necessary_keys.ping,
-                                                      fields.diagnostics.ping);
-
-        // Refatorar mais ainda?
-
-        /*
-        if (diag_necessary_keys.speedtest.diag_state == 'Complete') {
-          let speedtest_timestamp;
-          let last_speedtest_timestamp;
-          if (checkForNestedKey(data,
-                       fields.diagnostics.speedtest.diag_state+'._timestamp')) {
-            speedtest_timestamp = new Date(getFromNestedKey(data,
-                        fields.diagnostics.speedtest.diag_state+'._timestamp'));
-          }
-          last_speedtest_timestamp =
-                                   new Date(device.speedtest_results.timestamp);
-          if (speedtest_timestamp.valueOf() >
-              last_speedtest_timestamp.valueOf()) {
-            // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
-            if (false) {
-              success = true;
-            }
-          }
-        }
-        */
-        if (diag_necessary_keys.ping.diag_state == 'Complete') {
-          let result = {};
-          result[diag_necessary_keys.ping.host] = {
-            lat: diag_necessary_keys.ping.avg_resp_time.toString(),
-            loss: (diag_necessary_keys.ping.failure_count /
-                   diag_necessary_keys.ping.num_of_rep).toString(),
-          };
-          deviceHandlers.sendPingToTraps(mac, {results: result});
-        }
-      });
+  if (!success) return;
+  success = false;
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+              '&projection='+parameters.join(',');
+  let options = {
+    protocol: 'http:',
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let request = http.request(options, (response)=>{
+    let chunks = [];
+    response.on('error', (error) => console.log(error));
+    response.on('data', async (chunk)=>chunks.push(chunk));
+    response.on('end', async (chunk)=>{
+      let body = Buffer.concat(chunks);
+      let data = JSON.parse(body)[0];
+      acsDeviceInfoController.calculatePingDiagnostic(
+        mac, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+      );
     });
-    request.end();
-  }
-}
+  });
+  request.end();
+};
 
-acsDeviceInfoController.getMultipleNestedKeys = function(data, wanted_fields,
-                                                         genie_keys) {
+acsDeviceInfoController.getMultipleNestedKeys = function(
+  data, wantedFields, genieKeys,
+) {
   let result = {};
-  Object.keys(wanted_fields).forEach((key)=>{
-    if (wanted_fields.hasOwnProperty(key)) {
-      if (checkForNestedKey(data, genie_keys[key]+'._value')) {
-        result[key] = getFromNestedKey(data, genie_keys[key]+'._value');
+  Object.keys(wantedFields).forEach((key)=>{
+    if (wantedFields.hasOwnProperty(key)) {
+      if (checkForNestedKey(data, genieKeys[key]+'._value')) {
+        result[key] = getFromNestedKey(data, genieKeys[key]+'._value');
       }
     }
   });
   return result;
-}
-
-// acsDeviceInfoController.fireSpeedTestDiagnose = async function(device) {
-//   // Make sure we only work with TR-069 devices with a valid ID
-//   if (!device || !device.use_tr069 || !device.acs_id) return;
-//   let mac = device._id;
-//   let acsID = device.acs_id;
-//   let splitID = acsID.split('-');
-//   let model = splitID.slice(1, splitID.length-1).join('-');
-//   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
-
-//   let diagnStateField = fields.diagnostics.speedtest.diag_state;
-//   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
-//   let diagnURLField = fields.diagnostics.speedtest.download_url;
-
-//   // TODO: setar estes parametros pelo flashman
-//   let number_of_conn = 4;
-//   let speedtest_url = 'http://18.229.105.162:25752/measure/file1.bin';
-
-//   let task = {
-//     name: 'setParameterValues',
-//     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-//                       [diagnNumConnField, number_of_conn, 'xsd:unsignedInt'],
-//                       [diagnURLField, speedtest_url, 'xsd:string']],
-//   };
-//   result = await TasksAPI.addTask(acsID, task, true, 3000, []);
-//   if (!result || !result.finished ||
-//       result.task.name !== 'setParameterValues') {
-//     console.log('Error: failed to fire Speedtest');
-//     return;
-//   } else {
-//     console.log('Success: TR-069 speedtest fired');
-//   }
-// };
+};
 
 acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let device;
-  let error;
   try {
-    device = await DeviceModel.findById(mac, (matchedDevice)=>{
-      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-        return matchedDevice[0];
-      } else {
-        return;
-      }
-    });
+    device = await DeviceModel.findById(mac);
   } catch (e) {
-    error = e;
+    console.log(e);
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
   }
-  if (error || !device || !device.use_tr069 || !device.acs_id) {
+  if (!device || !device.use_tr069 || !device.acs_id) {
     return {success: false,
             message: 'Erro ao encontrar dispositivo'};
   }
@@ -1137,16 +1050,16 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let diagnURLField = fields.diagnostics.ping.host;
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
-  let number_of_rep = 10;
-  let ping_host_url = device.ping_hosts[0];
+  let numberOfRep = 10;
+  let pingHostUrl = device.ping_hosts[0];
   let timeout = 1000;
 
   let task = {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                      [diagnNumRepField, number_of_rep, 'xsd:unsignedInt'],
-                      [diagnURLField, ping_host_url, 'xsd:string'],
-                      [diagnTimeoutField, timeout, 'xsd:unsignedInt']]
+                      [diagnNumRepField, numberOfRep, 'xsd:unsignedInt'],
+                      [diagnURLField, pingHostUrl, 'xsd:string'],
+                      [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
   try {
     const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
@@ -1164,7 +1077,23 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
 };
 
-//==============================================================================
+acsDeviceInfoController.calculatePingDiagnostic = function(mac, data, pingKeys,
+                                                           pingFields) {
+  pingKeys = acsDeviceInfoController.getMultipleNestedKeys(
+    data, pingKeys, pingFields,
+  );
+  if (pingKeys.diag_state == 'Complete') {
+    let result = {};
+    result[pingKeys.host] = {
+      lat: pingKeys.avg_resp_time.toString(),
+      loss: (pingKeys.failure_count /
+             pingKeys.num_of_rep).toString(),
+    };
+    deviceHandlers.sendPingToTraps(mac, {results: result});
+  }
+};
+
+// =============================================================================
 
 // TODO: Move this function to external-genieacs?
 const fetchWanBytesFromGenie = function(mac, acsID) {
