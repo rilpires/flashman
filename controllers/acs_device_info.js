@@ -1019,15 +1019,13 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   request.end();
 };
 
-acsDeviceInfoController.getMultipleNestedKeys = function(
-  data, wantedFields, genieKeys,
+acsDeviceInfoController.getAllNestedKeysFromObject = function(
+  data, target, genieFields,
 ) {
   let result = {};
-  Object.keys(wantedFields).forEach((key)=>{
-    if (wantedFields.hasOwnProperty(key)) {
-      if (checkForNestedKey(data, genieKeys[key]+'._value')) {
-        result[key] = getFromNestedKey(data, genieKeys[key]+'._value');
-      }
+  Object.keys(target).forEach((key)=>{
+    if (checkForNestedKey(data, genieFields[key]+'._value')) {
+      result[key] = getFromNestedKey(data, genieFields[key]+'._value');
     }
   });
   return result;
@@ -1085,7 +1083,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
 
 acsDeviceInfoController.calculatePingDiagnostic = function(mac, data, pingKeys,
                                                            pingFields) {
-  pingKeys = acsDeviceInfoController.getMultipleNestedKeys(
+  pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, pingKeys, pingFields,
   );
   if (pingKeys.diag_state == 'Complete') {
