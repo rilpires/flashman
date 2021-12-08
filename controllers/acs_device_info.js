@@ -286,16 +286,21 @@ const createRegistry = async function(req, permissions) {
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
-  let meshBSSIDs = {};
+  let meshBSSIDs = {mesh2: '', mesh5: ''};
   if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
       data.mesh2.bssid && data.mesh2.bssid.value !== '00:00:00:00:00:00'
   ) {
-    meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
-    if (data.mesh5 && data.mesh5.bssid &&
-      data.mesh5.bssid.value !== '00:00:00:00:00:00') {
+    if (
+      data.mesh2 && data.mesh2.bssid &&
+      data.mesh2.bssid.value !== '00:00:00:00:00:00'
+    ) {
+      meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
+    }
+    if (
+      data.mesh5 && data.mesh5.bssid &&
+      data.mesh5.bssid.value !== '00:00:00:00:00:00'
+    ) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
-    } else {
-      meshBSSIDs.mesh5 = '';
     }
   } else {
     meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
