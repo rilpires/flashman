@@ -1119,7 +1119,7 @@ const fetchMeshBSSID = function(acsID, meshMode) {
     let result = {
       mesh2: '',
       mesh5: '',
-      success: true,
+      success: false,
     };
     let req = http.request(options, (resp)=>{
       resp.setEncoding('utf8');
@@ -1129,29 +1129,24 @@ const fetchMeshBSSID = function(acsID, meshMode) {
         try {
           data = JSON.parse(data)[0];
         } catch (e) {
-          result.success = false;
-          resolve(result);
+          console.log('Error parsing bssid data from genie');
+          return resolve(result);
         }
         if (meshMode === 2 || meshMode === 4) {
           if (checkForNestedKey(data, `${fields.mesh2.bssid}._value`)) {
-            result.mesh2 = getFromNestedKey(
-              data, `${fields.mesh2.bssid}._value`);
-            if (!result.mesh2 || result.mesh2 === '00:00:00:00:00:00') {
-              result.success = false;
+            let mesh2 = getFromNestedKey(data, `${fields.mesh2.bssid}._value`);
+            if (mesh2 && mesh2 !== '00:00:00:00:00:00') {
+              result.mesh2 = mesh2;
+              result.success = true;
             }
-          } else {
-            result.success = false;
           }
         }
         if (meshMode === 3 || meshMode === 4) {
           if (checkForNestedKey(data, `${fields.mesh5.bssid}._value`)) {
-            result.mesh5 = getFromNestedKey(
-              data, `${fields.mesh5.bssid}._value`);
-            if (!result.mesh5 || result.mesh5 === '00:00:00:00:00:00') {
-              result.success = false;
+            let mesh5 = getFromNestedKey(data, `${fields.mesh5.bssid}._value`);
+            if (mesh5 && result.mesh5 !== '00:00:00:00:00:00') {
+              result.success = true;
             }
-          } else {
-            result.success = false;
           }
         }
         resolve(result);
