@@ -922,7 +922,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     } else {
       return res.status(500).json({
         success: false,
-        message: 'Dispositivo não encontrado'
+        message: 'Dispositivo não encontrado',
       });
     }
   } catch (e) {
@@ -975,16 +975,16 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       parameterNames: parameters,
     };
     const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
-    if (!result || !result.finished ||
-        result.task.name !== 'getParameterValues') {
+    if (
+      !result || !result.finished || result.task.name !== 'getParameterValues'
+    ) {
       console.log('Failed: genie diagnostics can\'t be updated');
     } else {
-      console.log('Success: genie diagnostics updated');
       success = true;
     }
   } catch (e) {
-    console.log('Failed: genie diagnostics can\'t be updated');
     console.log(e);
+    console.log('Failed: genie diagnostics can\'t be updated');
   }
   if (!success) return;
   success = false;
