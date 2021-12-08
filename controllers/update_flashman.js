@@ -199,7 +199,7 @@ const updateDiagnostics = function() {
     Config.findOne({is_default: true}).then((config)=>{
       if (!config) {
         console.log('Error reading configs from database in update GenieACS!');
-        return reject();
+        return resolve();
       }
       // Update diagnostic provision script
       let waitForProvision;
@@ -235,7 +235,7 @@ const updateDiagnostics = function() {
           console.log('Error updating Genie diagnostic-preset json!');
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
-          return reject();
+          return resolve();
         } else {
           console.log('GenieACS updated successfully!');
           return resolve();
