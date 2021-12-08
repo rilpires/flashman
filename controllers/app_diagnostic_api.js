@@ -332,7 +332,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
 
 diagAppAPIController.configureMeshMode = async function(req, res) {
   try {
-    if (!req.body.mac || !req.body.mesh_mode) {
+    // Make sure we have a mac to verify in database
+    if (!req.body.mac) {
       return res.status(500).json({'error': 'JSON invalid'});
     }
     // Fetch device from database - query depends on if it's ONU or not
