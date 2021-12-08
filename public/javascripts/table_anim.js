@@ -609,7 +609,7 @@ $(document).ready(function() {
       slaves.forEach((slave)=>{
         if (!slaveHasRelease) return;
         if (!slave.releases.find((r)=>r.id===release.id)) {
-          // slaveHasRelease = false;
+          slaveHasRelease = false;
         }
       });
       if (!slaveHasRelease) continue;
@@ -766,11 +766,12 @@ $(document).ready(function() {
     '</button>';
   };
 
-  const buildFormSubmit = function(mesh=false) {
+  const buildFormSubmit = function(index, mesh) {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
-    return '<div class="row">'+
+    return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+meshClass+'" type="submit">'+
+        '<button class="btn btn-primary mx-0 '+
+          meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
         '</button>'+
       '</div>'+
@@ -905,7 +906,8 @@ $(document).ready(function() {
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.model+'">'+
+          'disabled value="'+(device.model_alias?
+            device.model_alias:device.model)+'">'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
@@ -1594,8 +1596,11 @@ $(document).ready(function() {
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
-                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
-                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>'+
+                  (grantWifi5ghz ?
+                    '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
+                    '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>' :
+                    ''
+                  )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -2295,7 +2300,7 @@ $(document).ready(function() {
             formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', removeDevice);
           }
           if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
-            let editButtonRow = buildFormSubmit();
+            let editButtonRow = buildFormSubmit(index, false);
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', editButtonRow);
           } else {
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', '');
@@ -2355,7 +2360,7 @@ $(document).ready(function() {
               }
               slaveIdx++;
             });
-            let editButtonRow = buildFormSubmit(true);
+            let editButtonRow = buildFormSubmit(index, true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
               '<td class="grey lighten-5" colspan="13">'+

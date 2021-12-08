@@ -3,6 +3,7 @@ import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
 
 let renderEditErrors = function(errors) {
+  let allMessages = '';
   for (let key in errors) {
     if (errors[key].messages.length > 0) {
       let message = '';
@@ -12,8 +13,10 @@ let renderEditErrors = function(errors) {
       $(errors[key].field).closest('.input-entry')
                           .find('.invalid-feedback').html(message);
       $(errors[key].field)[0].setCustomValidity(message);
+      allMessages += message;
     }
   }
+  return allMessages;
 };
 
 const validateEditDeviceMesh = function(event) {
@@ -23,6 +26,35 @@ const validateEditDeviceMesh = function(event) {
     row = row.prev();
   }
   row.find('form').submit();
+};
+
+const openErrorSwal = function() {
+  swal({
+    type: 'error',
+    title: 'Erro',
+    text: 'Alguns campos do formulário da CPE estão mal preenchidos',
+    confirmButtonColor: '#4db6ac',
+    confirmButtonText: 'OK',
+  });
+};
+
+// disable an make loading icon appear on submit button
+const switchSubmitButton = function(i) {
+  let row = $('.edit-button-'+i);
+  let iconButtonSubmit;
+  if (row.find('.btn-primary').prop('disabled')) {
+    row.find('.btn-primary').prop('disabled', false);
+    iconButtonSubmit = row.find('.fa-spinner');
+    iconButtonSubmit.addClass('fa-check');
+    iconButtonSubmit.removeClass('fa-spinner');
+    iconButtonSubmit.removeClass('fa-pulse');
+  } else {
+    row.find('.btn-primary').prop('disabled', true);
+    iconButtonSubmit = row.find('.fa-check');
+    iconButtonSubmit.removeClass('fa-check');
+    iconButtonSubmit.addClass('fa-spinner');
+    iconButtonSubmit.addClass('fa-pulse');
+  }
 };
 
 let validateEditDevice = function(event) {
@@ -36,6 +68,7 @@ let validateEditDevice = function(event) {
   let row = $(event.target).parents('tr');
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
+  switchSubmitButton(index);
 
   // Get form values
   let mac = row.data('deviceid');
@@ -283,6 +316,7 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             addClass('d-none');
         }
+        switchSubmitButton(index);
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -309,12 +343,16 @@ let validateEditDevice = function(event) {
             keyToError[key].messages.push(pair[key]);
           });
           renderEditErrors(errors);
+          openErrorSwal();
+          switchSubmitButton(index);
         }
       },
     });
   } else {
     // Else, render errors on form
     renderEditErrors(errors);
+    openErrorSwal();
+    switchSubmitButton(index);
   }
   editFormObj.addClass('was-validated');
   return false;
