@@ -1307,7 +1307,10 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
         device.pending_app_secret !== req.body.content.secret) {
       return res.status(403).json({'message': 'Secret inválido'});
     }
-    if (device.serial_tr069 !== req.body.content.serial) {
+    if (
+      device.serial_tr069 !== req.body.content.serial &&
+      device.alt_uid_tr069 !== req.body.content.serial
+    ) {
       return res.status(403).json({'message': 'Serial inválido'});
     }
     let appObj = device.apps.filter((app) => app.id === req.body.app_id);
