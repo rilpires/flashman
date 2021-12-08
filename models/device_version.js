@@ -253,7 +253,35 @@ const tr069Devices = {
   'G-140W-C': {
     vendor: 'Nokia',
     versions_upgrade: {
+      '3FE46343AFIA57': [],
       '3FE46343AFIA89': [],
+      '3FE46343AFIA94': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x4'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x1', '0x0', '0x0'],
+    mesh_ssid_object_exists: true,
+  },
+  'G-140W-CS': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE46343AFIA94': [],
     },
     feature_support: {
       port_forward: false,
