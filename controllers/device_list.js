@@ -750,6 +750,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+
+          /* Due to the misleading value of model as IGD
+            in the FastWireless FW323DAC model, check if is
+            IGD, if have that firmware version and send to
+            the table anim the 'right' model */
+          if (device.model === 'IGD' &&
+            device.version === 'V2.0.08-191129') {
+            device.model_alias = 'FW323DAC';
+          }
         } else {
           devReleases = devReleases.filter(
             (release) => {
@@ -3029,7 +3038,6 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-
     res.status(200).json({success: true});
     TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
