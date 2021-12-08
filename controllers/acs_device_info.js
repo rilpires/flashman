@@ -955,14 +955,16 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
 
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
 
-  for (let type in diagNecessaryKeys) {
-    if (diagNecessaryKeys.hasOwnProperty(type) &&
-        fields.diagnostics.hasOwnProperty(type)) {
-      let necessaryDiagn = diagNecessaryKeys[type];
-      let fromGenieDiagn = fields.diagnostics[type];
-      for (let field in necessaryDiagn) {
-        if (fromGenieDiagn.hasOwnProperty(field)) {
-          parameters.push(fromGenieDiagn[field]);
+  for (let masterKey in diagNecessaryKeys) {
+    if (
+      diagNecessaryKeys.hasOwnProperty(masterKey) &&
+      fields.diagnostics.hasOwnProperty(masterKey)
+    ) {
+      let keys = diagNecessaryKeys[masterKey];
+      let genieFields = fields.diagnostics[masterKey];
+      for (let key in keys) {
+        if (genieFields.hasOwnProperty(key)) {
+          parameters.push(genieFields[key]);
         }
       }
     }
