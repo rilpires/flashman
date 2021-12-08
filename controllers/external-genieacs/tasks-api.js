@@ -200,11 +200,11 @@ const checkPreset = function(preset) {
 
 /* sends a put request with a given 'provision' to genieacs and returns the
  genie json response parsed to javascript object. may throw unhandled errors */
-genie.putProvision = async function(script) {
+genie.putProvision = async function(script, provisionName) {
   script = script.slice(0, -1); // Remove EOF
   return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/provisions/flashman',
+    path: '/provisions/'+provisionName,
     headers: {
       'Content-Type': 'application/javascript',
       'Content-Length': Buffer.byteLength(script),
@@ -224,21 +224,6 @@ genie.putPreset = async function(preset) {
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(presetjson)},
   }, presetjson);
-};
-
-/* sends a put request with the diagnostics-provision to genieacs and returns
- the genie json response parsed to javascript object. may throw unhandled
- errors */
-genie.putDiagnosticsProvision = async function(script) {
-  script = script.slice(0, -1); // Remove EOF
-  return genie.request({
-    method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/provisions/diagnostic',
-    headers: {
-      'Content-Type': 'application/javascript',
-      'Content-Length': Buffer.byteLength(script),
-    },
-  }, script);
 };
 
 /* simple request to send a new task to GenieACS and get a promise the resolves

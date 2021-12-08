@@ -1133,7 +1133,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          deviceListController.doSpeedTest(req, res);
+          return deviceListController.doSpeedTest(req, res);
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request

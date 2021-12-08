@@ -144,7 +144,7 @@ const updateGenieACS = function(upgrades) {
             './controllers/external-genieacs/provision.js', 'utf8',
           );
           console.log('Updating GenieACS provision...');
-          waitForProvision = tasksApi.putProvision(provisionScript);
+          waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
         } catch (e) {
           waitForProvision = Promise.reject();
         }
@@ -208,7 +208,7 @@ const updateDiagnostics = function() {
           './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
         );
         console.log('Updating GenieACS provision...');
-        waitForProvision = tasksApi.putDiagnosticsProvision(provisionScript);
+        waitForProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
       } catch (e) {
         waitForProvision = Promise.reject();
       }
