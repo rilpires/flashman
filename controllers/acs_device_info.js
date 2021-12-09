@@ -1606,17 +1606,22 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           hasChanges = true;
         }
       }
-      /*
-        Verify if is to append prefix right before
-        of send changes to genie;
-        Because device_list, app_diagnostic_api
-        and here call updateInfo, and is more clean
-        to check on the edge;
-      */
-      if (key === 'ssid' &
-      (masterKey === 'wifi2' || masterKey === 'wifi5')) {
+      if (key === 'ssid' && (masterKey === 'wifi2' || masterKey === 'wifi5')) {
+        // Append ssid prefix here before sending changes to genie - doing it
+        // here saves replicating this logic all over flashman (device_list,
+        // app_diagnostic_api, etc)
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
+        }
+        // Some Nokia models have a bug where changing the SSID without changing
+        // the password as well makes the password reset to default value, so we
+        // force the password to be updated as well
+        if (model === 'G-140W-C' || model === 'G-140W-C') {
+          if (masterKey === 'wifi2') {
+            changes[masterKey]['password'] = device.wifi_ssid;
+          } else if (masterKey === 'wifi5') {
+            changes[masterKey]['password'] = device.wifi_ssid_5ghz;
+          }
         }
       }
       if (key === 'web_admin_password') {
