@@ -1192,11 +1192,17 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   // Query database for devices with matching SSID/BSSID
   let targetSSID = req.body.content.ssid;
   let targetBSSID = req.body.content.bssid.toUpperCase();
+  let ssidPrefix = (config.ssidPrefix) ? config.ssidPrefix : '';
+  let noPrefixTargetSSID = deviceHandlers.cleanAndCheckSsid(
+    ssidPrefix, targetSSID,
+  ).ssid;
   let query = {
     use_tr069: true,
     '$or': [
       {wifi_ssid: targetSSID},
+      {wifi_ssid: noPrefixTargetSSID},
       {wifi_ssid_5ghz: targetSSID},
+      {wifi_ssid_5ghz: noPrefixTargetSSID},
       {wifi_bssid: targetBSSID},
       {wifi_bssid_5ghz: targetBSSID},
     ],
