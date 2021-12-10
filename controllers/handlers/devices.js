@@ -269,7 +269,7 @@ const getOnlyTR069Configs = async function() {
 // returns an object containing the tr069 time threshold used when defining
 // device status (to give it a color). Will return an Error Object in case
 // of any error.
-deviceHandlers.buildTr069Thresholds = async function (currentTimestamp) {
+deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
   // in some places this function is called, the current time was not taken.
   currentTimestamp = currentTimestamp || Date.now();
 

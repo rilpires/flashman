@@ -314,8 +314,9 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
 };
 
 // this function should be called before calling setMeshMode
-meshHandlers.validateMeshMode = async function(device, targetMode,
-  validateInterface = false) {
+meshHandlers.validateMeshMode = async function(
+  device, targetMode, validateInterface = false,
+) {
   let errorMessages = [];
   let returnObj = {
     code: 200,

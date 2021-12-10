@@ -348,7 +348,8 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     }
     const targetMode = parseInt(req.body.mesh_mode);
     const validateStatus = await meshHandlers.validateMeshMode(
-      device, targetMode);
+      device, targetMode,
+    );
     if (validateStatus.code !== 200) {
       return res.status(validateStatus.code).json({
         'error': validateStatus.msg,
@@ -369,7 +370,8 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       const changes = preConfStatus.changes;
       // tr-069 device, call acs
       const updated = await acsDeviceInfo.updateInfo(
-        device, changes, true);
+        device, changes, true,
+      );
       if (!updated) {
         return res.status(500).json({
           success: false,
@@ -377,7 +379,8 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         });
       }
       const postConfStatus = await meshHandlers.postConfTR069Mesh(
-        device, targetMode);
+        device, targetMode,
+      );
       if (postConfStatus.code !== 200) {
         return res.status(postConfStatus.code).json({
           'error': postConfStatus.msg,

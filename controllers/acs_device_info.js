@@ -1682,7 +1682,8 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
 };
 
 acsDeviceInfoController.updateInfo = async function(
-  device, changes, awaitUpdate = false) {
+  device, changes, awaitUpdate = false,
+) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
