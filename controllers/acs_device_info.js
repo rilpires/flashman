@@ -1118,11 +1118,6 @@ const fetchMeshBSSID = function(acsID, meshMode) {
       port: 7557,
       path: encodeURI(path),
     };
-    let result = {
-      mesh2: '',
-      mesh5: '',
-      success: false,
-    };
     let req = http.request(options, (resp)=>{
       resp.setEncoding('utf8');
       let data = '';
@@ -1132,26 +1127,35 @@ const fetchMeshBSSID = function(acsID, meshMode) {
           data = JSON.parse(data)[0];
         } catch (e) {
           console.log('Error parsing bssid data from genie');
-          return resolve(result);
+          return resolve({success: false});
         }
+        let bssid2 = '';
+        let bssid5 = '';
+        // Mesh modes that use 2.4GHz radio
         if (meshMode === 2 || meshMode === 4) {
-          if (checkForNestedKey(data, `${fields.mesh2.bssid}._value`)) {
-            let mesh2 = getFromNestedKey(data, `${fields.mesh2.bssid}._value`);
-            if (mesh2 && mesh2 !== '00:00:00:00:00:00') {
-              result.mesh2 = mesh2;
-              result.success = true;
-            }
+          // Check if field exists and collect it from genie
+          let field = `${fields.mesh2.bssid}._value`;
+          if (checkForNestedKey(data, field)) {
+            bssid2 = getFromNestedKey(data, field);
+          }
+          // We need to make sure bssid2 is not empty and different than 0
+          if (!bssid2 || bssid2 === '00:00:00:00:00:00') {
+            return {success: false};
           }
         }
+        // Mesh modes that use 5Hz radio
         if (meshMode === 3 || meshMode === 4) {
-          if (checkForNestedKey(data, `${fields.mesh5.bssid}._value`)) {
-            let mesh5 = getFromNestedKey(data, `${fields.mesh5.bssid}._value`);
-            if (mesh5 && result.mesh5 !== '00:00:00:00:00:00') {
-              result.success = true;
-            }
+          // Check if field exists and collect it from genie
+          let field = `${fields.mesh5.bssid}._value`;
+          if (checkForNestedKey(data, field)) {
+            bssid5 = getFromNestedKey(data, field);
+          }
+          // We need to make sure bssid5 is not empty and different than 0
+          if (!bssid5 || bssid5 === '00:00:00:00:00:00') {
+            return {success: false};
           }
         }
-        resolve(result);
+        resolve({sucess: true, mesh2: bssid2, mesh5: bssid5});
       });
     });
     req.end();
