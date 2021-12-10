@@ -287,17 +287,15 @@ const createRegistry = async function(req, permissions) {
   let newMeshKey = meshHandlers.genMeshKey();
 
   let meshBSSIDs = {mesh2: '', mesh5: ''};
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid && data.mesh2.bssid.value !== '00:00:00:00:00:00'
-  ) {
+  if (!permissions.grantMeshV2HardcodedBssid) {
     if (
-      data.mesh2 && data.mesh2.bssid &&
+      data.mesh2 && data.mesh2.bssid && data.mesh2.bssid.value &&
       data.mesh2.bssid.value !== '00:00:00:00:00:00'
     ) {
       meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
     }
     if (
-      data.mesh5 && data.mesh5.bssid &&
+      data.mesh5 && data.mesh5.bssid && data.mesh5.bssid.value &&
       data.mesh5.bssid.value !== '00:00:00:00:00:00'
     ) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
@@ -633,8 +631,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.band = device.wifi_band;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid && data.mesh2.bssid.value !== '00:00:00:00:00:00'
+  if (
+    !permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+    data.mesh2.bssid && data.mesh2.bssid.value &&
+    data.mesh2.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid2 = data.mesh2.bssid.value;
     if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
@@ -686,8 +686,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi5.band = device.wifi_band_5ghz;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
-      data.mesh5.bssid && data.mesh5.bssid.value !== '00:00:00:00:00:00'
+  if (
+    !permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
+    data.mesh5.bssid && data.mesh5.bssid.value &&
+    data.mesh5.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid5 = data.mesh5.bssid.value;
     if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
