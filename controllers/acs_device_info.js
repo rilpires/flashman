@@ -1504,7 +1504,6 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
     getObjTask.parameterNames.push(bssidField5);
   }
   let bssidsStatus;
-  await new Promise((r)=>setTimeout(r, 4000));
   try {
     let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
     if (!ret || !ret.finished ||
@@ -1520,7 +1519,7 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
     console.log(msg);
-    return {success: false};
+    return {success: false, msg: msg};
   }
   return {
     success: true,
@@ -1529,26 +1528,16 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
   };
 };
 
-acsDeviceInfoController.coordVAPObjects = async function(acsID) {
-  let populateVAPObjects = false;
-  let returnObj = {
-    code: 200,
-    msg: 'Success',
-    populate: populateVAPObjects,
-  };
+acsDeviceInfoController.createVirtualAPObjects = async function(acsID) {
   const splitID = acsID.split('-');
   const model = splitID.slice(1, splitID.length-1).join('-');
   // We have to check if the virtual AP object has been created already
-  const meshField = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh2.ssid.replace('.SSID', '');
-  const meshField5 = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh5.ssid.replace('.SSID', '');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  const meshField = fields.mesh2.ssid.replace('.SSID', '');
+  const meshField5 = fields.mesh5.ssid.replace('.SSID', '');
   const getObjTask = {
     name: 'getParameterValues',
-    parameterNames: [
-      meshField,
-      meshField5,
-    ],
+    parameterNames: [meshField, meshField5],
   };
   let meshObjsStatus;
   try {
@@ -1566,66 +1555,43 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
     console.log(msg);
-    returnObj.code = 500;
-    returnObj.msg = msg;
-    returnObj.populate = populateVAPObjects;
-    return returnObj;
+    return {success: false, msg: msg};
   }
   let deleteMesh5VAP = false;
   let createMesh2VAP = false;
   let createMesh5VAP = false;
   /*
-    If the 2.4GHz virtual AP object hasn't been created
-    we must create it. Since the objects are created in order we
-    must delete the 5GHz virtual AP object if it exists and then
-    recreate it.
+    If the 2.4GHz virtual AP object hasn't been created we must create it.
+    Since the objects are created in order we must delete the 5GHz virtual AP
+    object if it exists and then recreate it. We never delete the 2.4GHz VAP
+    object, only the 5GHz one in specific cases
   */
   if (!meshObjsStatus.mesh2) {
-    populateVAPObjects = true;
     createMesh2VAP = true;
     createMesh5VAP = true;
     if (meshObjsStatus.mesh5) {
       deleteMesh5VAP = true;
     }
-  } else {
-    /*
-      2.4GHz virtual AP object is created. Here we treat only the
-      5GHz case.
-    */
-    if (!meshObjsStatus.mesh5) {
-      populateVAPObjects = true;
-      createMesh5VAP = true;
-    }
+  } else if (!meshObjsStatus.mesh5) {
+    // 2.4GHz virtual AP object is created. Here we treat only the 5GHz case.
+    createMesh5VAP = true;
   }
-  /*
-    We never delete the 2.4GHz VAP object,
-    only the 5GHz one in specific cases
-  */
   if (deleteMesh5VAP) {
-    let delObjTask = {
-      name: 'deleteObject',
-      objectName: meshField5,
-    };
+    let delObjTask = {name: 'deleteObject', objectName: meshField5};
     try {
-      let ret = await TasksAPI.addTask(acsID, delObjTask, true,
-        3000, [5000, 10000]);
-      if (!ret || !ret.finished||
-        ret.task.name !== 'deleteObject') {
+      let ret = await TasksAPI.addTask(
+        acsID, delObjTask, true, 3000, [5000, 10000],
+      );
+      if (!ret || !ret.finished || ret.task.name !== 'deleteObject') {
         throw new Error('delObject task error');
       }
     } catch (e) {
       const msg = `[!] -> ${e.message} in ${acsID}`;
       console.log(msg);
-      returnObj.code = 500;
-      returnObj.msg = msg;
-      returnObj.populate = populateVAPObjects;
-      return returnObj;
+      return {sucess: false, msg: msg};
     }
   }
-  /*
-    Virtual APs objects haven't been created yet.
-    We must do that
-  */
+  // Virtual APs objects haven't been created yet - do so now
   if (createMesh2VAP || createMesh5VAP) {
     let addObjTask = {
       name: 'addObject',
@@ -1633,52 +1599,35 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
       // Will work only if 2.4GHz VAP WLANConfiguration index is lower than 10
       objectName: meshField.slice(0, -2),
     };
-    /*
-      Regardless of which mesh mode is being set we create both
-      virtual AP objects. If 2.4GHz virtual AP object is already OK
-      then we only create the 5GHz virtual AP object.
-    */
-    let numObjsToCreate;
-    createMesh2VAP ? numObjsToCreate = 2 : numObjsToCreate = 1;
-
+    let numObjsToCreate = createMesh2VAP + createMesh5VAP; // cast bool to int
     for (let i = 0; i < numObjsToCreate; i++) {
       try {
-        let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-          3000, [5000, 10000]);
-        if (!ret || !ret.finished||
-          ret.task.name !== 'addObject') {
+        let ret = await TasksAPI.addTask(
+          acsID, addObjTask, true, 3000, [5000, 10000],
+        );
+        if (!ret || !ret.finished || ret.task.name !== 'addObject') {
           throw new Error('task error');
         }
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
         console.log(msg);
-        returnObj.code = 500;
-        returnObj.msg = msg;
-        returnObj.populate = populateVAPObjects;
-        return returnObj;
+        return {success: false, msg: msg};
       }
-
       // A getParameterValues call forces the whole object to be created
       try {
-        let ret = await TasksAPI.addTask(
-          acsID, getObjTask, true, 10000, []);
-        if (!ret || !ret.finished||
-          ret.task.name !== 'getParameterValues') {
+        let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+        if (!ret || !ret.finished || ret.task.name !== 'getParameterValues') {
           throw new Error('task error');
         }
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
         console.log(msg);
-        returnObj.code = 500;
-        returnObj.msg = msg;
-        returnObj.populate = populateVAPObjects;
-        return returnObj;
+        return {success: false, msg: msg};
       }
     }
   }
-  // Success
-  returnObj.populate = populateVAPObjects;
-  return returnObj;
+  // We must populate the newly created fields, signal that to next function
+  return {success: true, populate: (createMesh2VAP || createMesh5VAP)};
 };
 
 acsDeviceInfoController.updateInfo = async function(

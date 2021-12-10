@@ -1338,7 +1338,7 @@ deviceListController.getDeviceReg = function(req, res) {
   });
 };
 
-deviceListController.setDeviceReg = async function(req, res) {
+deviceListController.setDeviceReg = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
     if (err) {
@@ -1511,10 +1511,11 @@ deviceListController.setDeviceReg = async function(req, res) {
           errors.push({'mesh_mode': 'Para configurar esse tipo de Mesh é ' +
                                     'necessário habilitar todos os Wi-Fi'});
         }
-        const meshErrorMessages = await meshHandlers.validateMeshMode(
-          matchedDevice, meshMode, true);
-        if (meshErrorMessages.length > 0) {
-          meshErrorMessages.forEach((msg)=>{
+        const validateOk = await meshHandlers.validateMeshMode(
+          matchedDevice, meshMode, false,
+        );
+        if (!validateOk.success) {
+          validateOk.errors.forEach((msg)=>{
             errors.push({'mesh_mode': msg});
           });
         }
@@ -1858,30 +1859,52 @@ deviceListController.setDeviceReg = async function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if (content.hasOwnProperty('mesh_mode')) {
+            if (content.hasOwnProperty('mesh_mode') &&
+                meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
                 /*
                   For tr-069 CPEs we must wait until after device has been
                   updated via genie to save device in database.
                 */
                 if (matchedDevice.use_tr069) {
-                  const preConfStatus = await meshHandlers.preConfTR069Mesh(
-                    matchedDevice, meshMode);
-                  if (preConfStatus.code !== 200) {
-                    return res.status(preConfStatus.code).json({
+                  const configOk = await meshHandlers.configTR069VirtualAP(
+                    matchedDevice, meshMode,
+                  );
+                  if (!configOk.success) {
+                    return res.status(500).json({
                       success: false,
                       type: 'danger',
-                      message: preConfStatus.msg,
+                      message: configOk.msg,
                     });
                   }
-                  const auxChanges = preConfStatus.changes;
-                  changes.mesh2 = auxChanges.mesh2;
-                  changes.mesh5 = auxChanges.mesh5;
-                  changes.wifi2 = {...changes.wifi2, ...auxChanges.wifi2};
-                  changes.wifi5 = {...changes.wifi5, ...auxChanges.wifi5};
+                  const collectOk = await meshHandlers.ensureBssidCollected(
+                    matchedDevice, meshMode,
+                  );
+                  if (!collectOk.success) {
+                    return res.status(500).json({
+                      success: false,
+                      type: 'danger',
+                      message: collectOk.msg,
+                    });
+                  }
+                  // If user changed Wi-Fi 2.4GHz channel and we are configuring
+                  // a 2.4GHz mesh network, discard user channel update
+                  if (
+                    changes.wifi2.channel && (meshMode === 2 || meshMode === 4)
+                  ) {
+                    delete changes.wifi2.channel;
+                  }
+                  // If user changed Wi-Fi 5GHz channel and we are configuring
+                  // a 5GHz mesh network, discard user channel update
+                  if (
+                    changes.wifi5.channel && (meshMode === 3 || meshMode === 4)
+                  ) {
+                    delete changes.wifi5.channel;
+                  }
                 } else {
-                  matchedDevice = meshHandlers.setMeshMode(
-                    matchedDevice, meshMode);
+                  meshHandlers.setMeshMode(
+                    matchedDevice, meshMode,
+                  );
                 }
                 updateParameters = true;
               } else {
@@ -1895,35 +1918,6 @@ deviceListController.setDeviceReg = async function(req, res) {
                 message: 'Permissão insuficiente para alterar ' +
                          'campos requisitados',
               });
-            }
-            /*
-              We update TR-069 devices before saving device
-              For some configurations there are checks that have to be made
-              after updating TR-069 CPE
-            */
-            if (matchedDevice.use_tr069) {
-              // tr-069 device, call acs
-              const updated = await acsDeviceInfo.updateInfo(
-                matchedDevice, changes, true);
-              if (!updated) {
-                return res.status(500).json({
-                  success: false,
-                  type: 'danger',
-                  message: 'Erro ao atualizar CPE TR-069',
-                });
-              }
-              const postConfStatus = await meshHandlers.postConfTR069Mesh(
-                matchedDevice, meshMode);
-              if (postConfStatus.code !== 200) {
-                return res.status(postConfStatus.code).json({
-                  success: false,
-                  type: 'danger',
-                  message: postConfStatus.msg,
-                });
-              }
-              // Only after all checks are made do we update database
-              matchedDevice = meshHandlers.setMeshMode(
-                matchedDevice, meshMode);
             }
             if (updateParameters) {
               matchedDevice.do_update_parameters = true;
@@ -1939,6 +1933,9 @@ deviceListController.setDeviceReg = async function(req, res) {
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+              } else {
+                // tr-069 device, call acs
+                acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
               meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
 

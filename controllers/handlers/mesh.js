@@ -219,8 +219,28 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
   });
 };
 
-meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
-  meshChannel, meshChannel5GHz, populateSSIDObjects) {
+const buildMeshChanges = function(device, meshChannel, beaconType, is5GHz) {
+  let changes = {};
+  changes.ssid = device.mesh_id;
+  changes.password = device.mesh_key;
+  changes.channel = meshChannel;
+  changes.mode = (is5GHz) ? device.wifi_mode_5ghz : device.wifi_mode;
+  changes.advertise = false;
+  changes.encryption = 'AESEncryption';
+  changes.beacon_type = beaconType;
+  changes.auto = false;
+  changes.enable = true;
+  return changes;
+};
+
+const buildTR069Changes = function(
+  device,
+  targetMode,
+  wifiRadioState,
+  meshChannel,
+  meshChannel5,
+  populateSSIDObjects,
+) {
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -233,15 +253,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
       changes.mesh5.enable = false;
       break;
     case 2:
-      changes.mesh2.ssid = device.mesh_id;
-      changes.mesh2.password = device.mesh_key;
-      changes.mesh2.channel = meshChannel;
-      changes.mesh2.mode = device.wifi_mode;
-      changes.mesh2.advertise = false;
-      changes.mesh2.encryption = 'AESEncryption';
-      changes.mesh2.beacon_type = beaconType;
-      changes.mesh2.auto = false;
-      changes.mesh2.enable = true;
+      changes.mesh2 = buildMeshChanges(device, meshChannel, beaconType, false);
       changes.mesh5.enable = false;
 
       // When enabling Wi-Fi set beacon type
@@ -251,15 +263,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
       changes.wifi2.channel = meshChannel;
       break;
     case 3:
-      changes.mesh5.ssid = device.mesh_id;
-      changes.mesh5.password = device.mesh_key;
-      changes.mesh5.channel = meshChannel5GHz;
-      changes.mesh5.mode = device.wifi_mode_5ghz;
-      changes.mesh5.advertise = false;
-      changes.mesh5.encryption = 'AESEncryption';
-      changes.mesh5.beacon_type = beaconType;
-      changes.mesh5.auto = false;
-      changes.mesh5.enable = true;
+      changes.mesh5 = buildMeshChanges(device, meshChannel5, beaconType, true);
       changes.mesh2.enable = false;
 
       // When enabling Wi-Fi set beacon type
@@ -267,27 +271,11 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
       changes.wifi5.beacon_type = beaconType;
       // For best performance and avoiding DFS issues
       // all APs must work on a single 5GHz non-DFS channel
-      changes.wifi5.channel = meshChannel5GHz;
+      changes.wifi5.channel = meshChannel5;
       break;
     case 4:
-      changes.mesh2.ssid = device.mesh_id;
-      changes.mesh2.password = device.mesh_key;
-      changes.mesh2.channel = meshChannel;
-      changes.mesh2.mode = device.wifi_mode;
-      changes.mesh2.enable = true;
-      changes.mesh2.advertise = false;
-      changes.mesh2.encryption = 'AESEncryption';
-      changes.mesh2.beacon_type = beaconType;
-      changes.mesh2.auto = false;
-      changes.mesh5.ssid = device.mesh_id;
-      changes.mesh5.password = device.mesh_key;
-      changes.mesh5.channel = meshChannel5GHz;
-      changes.mesh5.mode = device.wifi_mode_5ghz;
-      changes.mesh5.advertise = false;
-      changes.mesh5.encryption = 'AESEncryption';
-      changes.mesh5.beacon_type = beaconType;
-      changes.mesh5.auto = false;
-      changes.mesh5.enable = true;
+      changes.mesh2 = buildMeshChanges(device, meshChannel, beaconType, false);
+      changes.mesh5 = buildMeshChanges(device, meshChannel5, beaconType, true);
 
       // When enabling Wi-Fi set beacon type
       changes.wifi5.enable = wifiRadioState;
@@ -296,7 +284,7 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
       changes.wifi2.beacon_type = beaconType;
       // For best performance and avoiding DFS issues
       // all APs must work on a single 5GHz non-DFS channel
-      changes.wifi5.channel = meshChannel5GHz;
+      changes.wifi5.channel = meshChannel5;
       // Fix channel to avoid channel jumps
       changes.wifi2.channel = meshChannel;
       break;
@@ -315,41 +303,31 @@ meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
 
 // this function should be called before calling setMeshMode
 meshHandlers.validateMeshMode = async function(
-  device, targetMode, validateInterface = false,
+  device, targetMode, abortOnError = true,
 ) {
-  let errorMessages = [];
-  let returnObj = {
-    code: 200,
-    msg: 'Success',
-  };
+  let errors = [];
   if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
-    returnObj.code = 403;
-    returnObj.msg = 'Modo mesh inválido';
-    if (validateInterface) {
-      errorMessages.push(returnObj.msg);
-    } else {
-      return returnObj;
+    errors.push('Modo mesh inválido');
+    if (abortOnError) {
+      return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
   if (targetMode === 0 && device.mesh_slaves.length > 0) {
-    returnObj.code = 500;
-    returnObj.msg = 'Não é possível desabilitar o mesh com ' +
-      'secundários associados';
-    if (validateInterface) {
-      errorMessages.push(returnObj.msg);
-    } else {
-      return returnObj;
+    errors.push('Não é possível desabilitar o mesh com secundários associados');
+    if (abortOnError) {
+      return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
 
-  const isEnablingWifiMesh = (targetMode !== device.meshMode) &&
-    ((targetMode === 2 && device.mesh_mode !== 4) ||
-    (targetMode === 3 && device.mesh_mode !== 4) ||
-    (targetMode === 4));
+  const isEnablingWifiMesh = (
+    (targetMode !== device.meshMode) &&
+    (
+      (targetMode === 4) || // Enabling at least one Wi-Fi
+      (targetMode === 2 && device.mesh_mode !== 4) || // Enabling 2.4GHz Wi-Fi
+      (targetMode === 3 && device.mesh_mode !== 4) // Enagling 5GHz Wi-Fi
+    )
+  );
 
-  let model = device.model;
-  let acsID;
-  let splitID;
   if (device.use_tr069) {
     let isDevOn = false;
     // tr069 time thresholds for device status.
@@ -359,70 +337,50 @@ meshHandlers.validateMeshMode = async function(
     }
     // If CPE is tr-069 it must be online when enabling wifi mesh mode
     if (!isDevOn && isEnablingWifiMesh) {
-      returnObj.code = 403;
-      returnObj.msg = 'CPE TR-069 não está online';
-      if (validateInterface) {
-        errorMessages.push(returnObj.msg);
-      } else {
-        return returnObj;
+      errors.push('CPE TR-069 não está online');
+      if (abortOnError) {
+        return {success: false, msg: errors.slice(-1)[0], errors: errors};
       }
     }
-    acsID = device.acs_id;
-    splitID = acsID.split('-');
-    model = splitID.slice(1, splitID.length-1).join('-');
   }
+
   const permissions = DeviceVersion.findByVersion(
     device.version,
     device.wifi_is_5ghz_capable,
-    model,
+    device.model,
   );
   const isMeshV1Compatible = permissions.grantMeshMode;
   const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
+
   if (!isMeshV1Compatible && !isMeshV2Compatible && targetMode > 0) {
-    returnObj.code = 403;
-    returnObj.msg = 'CPE não é compatível com o mesh';
-    if (validateInterface) {
-      errorMessages.push(returnObj.msg);
-    } else {
-      return returnObj;
+    errors.push('CPE não é compatível com o mesh');
+    if (abortOnError) {
+      return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
+
   const isWifi5GHzCompatible = permissions.grantWifi5ghz;
   if (!isWifi5GHzCompatible && targetMode > 2) {
-    returnObj.code = 403;
-    returnObj.msg = 'CPE não é compatível com o mesh 5GHz';
-    if (validateInterface) {
-      errorMessages.push(returnObj.msg);
-    } else {
-      return returnObj;
+    errors.push('CPE não é compatível com o mesh 5GHz');
+    if (abortOnError) {
+      return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
-  if (validateInterface) {
-    return errorMessages;
-  } else {
-    return returnObj;
-  }
+  return {
+    success: errors.length === 0, msg: 'Ver campo "errors"', errors: errors,
+  };
 };
 
 // Should be called after validating mesh configuration
-meshHandlers.preConfTR069Mesh = async function(device, targetMode) {
-  let returnObj = {
-    changes: undefined,
-    code: 200,
-    msg: 'Success',
-  };
-
+meshHandlers.configTR069VirtualAP = async function(device, targetMode) {
   const wifiRadioState = 1;
   const meshChannel = 7;
   const meshChannel5GHz = 40; // Value has better results on some routers
-  const acsID = device.acs_id;
-  const splitID = acsID.split('-');
-  const model = splitID.slice(1, splitID.length-1).join('-');
 
   const hasMeshVAPObject = DeviceVersion.findByVersion(
     device.version,
     device.wifi_is_5ghz_capable,
-    model,
+    device.model,
   ).grantMeshVAPObject;
   /*
     If device doesn't have SSID Object by default, then
@@ -432,38 +390,50 @@ meshHandlers.preConfTR069Mesh = async function(device, targetMode) {
     objects because, in that case, we disable the virtual APs. If the
     objects don't exist yet this will cause an error!
   */
-  let populateVAPObjects = false;
+  let createOk = {populate: false};
   if (!hasMeshVAPObject && targetMode > 0) {
-    const VAPObj = await acsDeviceInfo.coordVAPObjects(acsID);
-    if (VAPObj.code !== 200) {
-      returnObj.code = VAPObj.code;
-      returnObj.msg = VAPObj.msg;
-      return returnObj;
+    createOk = await acsDeviceInfo.createVirtualAPObjects(device.acs_id);
+    if (!createOk.success) {
+      return {success: false, msg: createOk.msg};
     }
-    populateVAPObjects = VAPObj.populate;
   }
-  returnObj.changes = meshHandlers.buildTR069Changes(device, targetMode,
-    wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
-  return returnObj;
+  // Set the mesh parameters on the TR-069 fields
+  let changes = buildTR069Changes(
+    device,
+    targetMode,
+    wifiRadioState,
+    meshChannel,
+    meshChannel5GHz,
+    createOk.populate,
+  );
+  const updated = await acsDeviceInfo.updateInfo(device, changes, true);
+  if (!updated) {
+    return {success: false, msg: 'Erro ao enviar parâmetros mesh para a CPE'};
+  }
+  return {success: true};
 };
 
 // Should be called after updating TR-069 CPE through ACS
-meshHandlers.postConfTR069Mesh = async function(device, targetMode) {
-  let returnObj = {
-    code: 200,
-  };
-  const acsID = device.acs_id;
+meshHandlers.ensureBssidCollected = async function(device, targetMode) {
   /*
     Some devices have an invalid BSSID until the AP is enabled
     If the device doesn't have the bssid yet we have to fetch it
   */
-  if ((!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
-    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))) {
+  if (
+    // If we dont have 2.4GHz bssid and mesh mode requires 2.4GHz network
+    (!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
+    // If we dont have 5GHz bssid and mesh mode requires 5GHz network
+    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))
+  ) {
+    // It might take some time for some CPEs to enable their Wi-Fi interface
+    // after the command is sent. Since the BSSID is only available after the
+    // interface is up, we need to wait here to ensure we get a valid read
+    await new Promise((r)=>setTimeout(r, 4000));
     const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
-      acsID, targetMode);
-    if (bssidsObj.code !== 200) {
-      returnObj = bssidsObj;
-      return returnObj;
+      device.acs_id, targetMode,
+    );
+    if (!bssidsObj.success) {
+      return bssidsObj;
     }
     if (targetMode === 2 || targetMode === 4) {
       device.bssid_mesh2 = bssidsObj.bssid_mesh2;
@@ -472,7 +442,7 @@ meshHandlers.postConfTR069Mesh = async function(device, targetMode) {
       device.bssid_mesh5 = bssidsObj.bssid_mesh5;
     }
   }
-  return returnObj;
+  return {success: true};
 };
 
 // Final step in mesh configuration pipeline
@@ -493,7 +463,6 @@ meshHandlers.setMeshMode = function(device, targetMode) {
     device.wifi_state_5ghz = wifiRadioState;
   }
   device.mesh_mode = targetMode;
-  return device;
 };
 
 /*

@@ -350,44 +350,30 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     const validateStatus = await meshHandlers.validateMeshMode(
       device, targetMode,
     );
-    if (validateStatus.code !== 200) {
-      return res.status(validateStatus.code).json({
-        'error': validateStatus.msg,
-      });
+    if (!validateStatus.success) {
+      return res.status(500).json({'error': validateStatus.msg});
     }
     /*
       For tr-069 CPEs we must wait until after device has been
       updated via genie to save device in database.
     */
     if (device.use_tr069) {
-      const preConfStatus = await meshHandlers.preConfTR069Mesh(
-        device, targetMode);
-      if (preConfStatus.code !== 200) {
-        return res.status(preConfStatus.code).json({
-          error: preConfStatus.msg,
-        });
-      }
-      const changes = preConfStatus.changes;
-      // tr-069 device, call acs
-      const updated = await acsDeviceInfo.updateInfo(
-        device, changes, true,
-      );
-      if (!updated) {
-        return res.status(500).json({
-          success: false,
-          message: 'Erro ao atualizar CPE TR-069',
-        });
-      }
-      const postConfStatus = await meshHandlers.postConfTR069Mesh(
+      let configOk = await meshHandlers.configTR069VirtualAP(
         device, targetMode,
       );
-      if (postConfStatus.code !== 200) {
-        return res.status(postConfStatus.code).json({
-          'error': postConfStatus.msg,
+      if (!configOk.success) {
+        return res.status(500).json({success: false, message: configOk.msg});
+      }
+      const collectOk = await meshHandlers.ensureBssidCollected(
+        device, targetMode,
+      );
+      if (!collectOk.success) {
+        return res.status(500).json({
+          'error': collectOk.msg,
         });
       }
     }
-    device = meshHandlers.setMeshMode(device, targetMode);
+    meshHandlers.setMeshMode(device, targetMode);
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);

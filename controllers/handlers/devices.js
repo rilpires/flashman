@@ -257,7 +257,7 @@ const getOnlyTR069Configs = async function() {
     console.log('Error when getting user config from database.'+
       '\nUsing default values for tr069 config.');
     return { // build a default configuration.
-      inform_interval: 10*60*1000,
+      inform_interval: 5*60*1000,
       offline_threshold: 1,
       recovery_threshold: 3,
     };
