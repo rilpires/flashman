@@ -55,7 +55,7 @@ router.route('/settings').get(
 router.route('/certificates/search').post(
   authController.ensureLogin(),
   userController.certificateSearch,
-);
+)
 
 // ** DEPRECATED **
                          .put(

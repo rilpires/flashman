@@ -3,6 +3,7 @@ const Role = require('../models/role');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
+const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 
 let userController = {};
 
@@ -917,15 +918,120 @@ userController.settings = function(req, res) {
   });
 };
 
-userController.certificateSearch = (req, res) => {
-  const firstDate;
-  const secondDate;
-  const name;
-  const searchField;
+userController.certificateSearch = async (req, res) => {
+  const firstDate = new Date(parseInt(req.body.first_date));
+  const secondDate = new Date(parseInt(req.body.second_date));
+  const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
+  const details = req.body.details === 'undefined' ?
+    '' :
+    req.body.details;
+  const deviceId = typeof req.body.mac === 'undefined' ? '' : req.body.mac;
+  const csv = typeof req.body.csv === 'undefined' ? false : true;
+
+
+  let query = {};
+  if (name.length >= 1) {
+    query.name = name;
+  };
+  if (details.length >= 1) {
+    query.details = details;
+  };
+  if (deviceId.length >= 1) {
+    query.mac = deviceId;
+  };
+  if (isNaN(firstDate.getTime()) || isNaN(secondDate.getTime())) {
+    query.deviceCertifications = {
+      timestamp: {
+        $gte: firstDate,
+        $lt: secondDate,
+      }
+    }
+  };
+
+  const users = await User
+    .find(query)
+    .lean()
+    .catch(console.log);
+
+  const deviceCertifications = users.map((value) => value.deviceCertifications);
+
+  if (csv && deviceCertifications.length >= 1) {
+    const fields = [
+      {label: 'Terminado', value: 'finished', default: ''},
+      {label: 'Endereço MAC', value: 'mac', default: ''},
+      {label: 'Endereço MAC da ONU', value: 'onuMac', default: ''},
+      {label: 'É onu?', value: 'isOnu', default: ''},
+      {label: 'Modelo', value: 'routerModel', default: ''},
+      {label: 'Versão do roteador', value: 'routerVersion', default: ''},
+      {label: 'Release do roteador', value: 'routerRelease', default: ''},
+      {value: 'timestamp', default: ''},
+      {value: 'localEpochTimestamp', default: ''},
+      {label: "Foi diagnosticado", value: 'didDiagnose', default: ''},
+      {label: 'Diagnostico da WAN', value: 'diagnostic.want', default: ''},
+      {value: 'diagnostic.tr069', default: ''},
+      {value: 'diagnostic.pon', default: ''},
+      {value: 'diagnostic.rxpower', default: ''},
+      {value: 'diagnostic.ipv4', default: ''},
+      {value: 'diagnostic.ipv6', default: ''},
+      {value: 'diagnostic.dns', default: ''},
+      {value: 'diagnostic.anlix', default: ''},
+      {value: 'diagnostic.flashman', default: ''},
+      {value: 'diagnostic.speedtest', default: ''},
+      {value: 'diagnostic.speedValue', default: ''},
+      {value: 'diagnostic.speedTestLimit', default: ''},
+      {label: 'TR069 foi configurado', value: 'didConfigureTR069', default: ''},
+      {label: 'WAN foi configurado', value: 'didConfigureWan', default: ''},
+      {value: 'wanConfigOnu', default: ''},
+      {value: 'routerConnType', default: ''},
+      {label: 'Usuario PPOE', value: 'pppoeUser', default: ''},
+      {label: 'Endereço de IP da bridge', value: 'bridgeIP', default: ''},
+      {value: 'bridgeGateway', default: ''},
+      {value: 'bridgeDNS', default: ''},
+      {value: 'bridgeSwitch', default: ''},
+      {value: 'didConfigureWifi', default: ''},
+      {value: 'wifiConfig.hasFive', default: ''},
+      {value: 'wifiConfig.two.ssid', default: ''},
+      {value: 'wifiConfig.two.band', default: ''},
+      {value: 'wifiConfig.two.mode', default: ''},
+      {value: 'wifiConfig.two.channel', default: ''},
+      {value: 'wifiConfig.five.ssid', default: ''},
+      {value: 'wifiConfig.five.band', default: ''},
+      {value: 'wifiConfig.five.mode', default: ''},
+      {value: 'wifiConfig.five.channel', default: ''},
+      {value: 'didConfigureMesh', default: ''},
+      {value: 'mesh.mode', default: ''},
+      {value: 'mesh.updateSlaves', default: ''},
+      {value: 'mesh.originalSlaves', default: ''},
+      {value: 'didConfigureContract', default: ''},
+      {value: 'didConfigureObservation', default: ''},
+      {value: 'contract', default: ''},
+      {value: 'observations', default: ''},
+      {value: 'cancelReason', default: ''},
+      {value: 'latitude', default: ''},
+      {value: 'longitude', default: ''},
+      {value: 'didSpeedTest', default: ''}
+    ];
+    const transforms = [
+      unwind({
+        paths: ['mesh.updateSlaves', 'mesh.originalSlaves'],
+      })
+    ];
+    const json2csvParser = new Parser({fields, transforms});
+    const certificationsCsv = json2csvParser.parse(deviceCertifications);
+    return res
+      .set('Content-Type', 'text/csv')
+      .status(200)
+      .send(certificationsCsv);
+  } else if (deviceCertifications.length >= 1) {
+    return res.status(200).json({
+      success: true,
+      deviceCertifications: deviceCertifications,
+    });
+  }
 
   return res.status(500).json({
     success: false,
-    error: 'Not implemented'
+    error: 'Error on query user certifications'
   });
 };
 
