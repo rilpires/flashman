@@ -1011,17 +1011,21 @@ userController.certificateSearch = async (req, res) => {
       {value: 'longitude', default: ''},
       {value: 'didSpeedTest', default: ''}
     ];
+
     const transforms = [
       unwind({
         paths: ['mesh.updateSlaves', 'mesh.originalSlaves'],
       })
     ];
+
     const json2csvParser = new Parser({fields, transforms});
     const certificationsCsv = json2csvParser.parse(deviceCertifications);
+
     return res
       .set('Content-Type', 'text/csv')
       .status(200)
       .send(certificationsCsv);
+
   } else if (deviceCertifications.length >= 1) {
     return res.status(200).json({
       success: true,
