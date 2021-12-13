@@ -966,7 +966,7 @@ userController.certificateSearch = async (req, res) => {
       {label: 'Release do roteador', value: 'routerRelease', default: ''},
       {value: 'timestamp', default: ''},
       {value: 'localEpochTimestamp', default: ''},
-      {label: "Foi diagnosticado", value: 'didDiagnose', default: ''},
+      {label: 'Foi diagnosticado', value: 'didDiagnose', default: ''},
       {label: 'Diagnostico da WAN', value: 'diagnostic.want', default: ''},
       {value: 'diagnostic.tr069', default: ''},
       {value: 'diagnostic.pon', default: ''},
