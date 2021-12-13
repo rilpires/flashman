@@ -1616,12 +1616,10 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         // Some Nokia models have a bug where changing the SSID without changing
         // the password as well makes the password reset to default value, so we
         // force the password to be updated as well
-        if (model === 'G-140W-C' || model === 'G-140W-C') {
-          if (masterKey === 'wifi2') {
-            changes[masterKey]['password'] = device.wifi_ssid;
-          } else if (masterKey === 'wifi5') {
-            changes[masterKey]['password'] = device.wifi_ssid_5ghz;
-          }
+        if (masterKey === 'wifi2') {
+          changes[masterKey]['password'] = device.wifi_password;
+        } else if (masterKey === 'wifi5') {
+          changes[masterKey]['password'] = device.wifi_password_5ghz;
         }
       }
       if (key === 'web_admin_password') {
