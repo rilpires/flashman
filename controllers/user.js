@@ -922,12 +922,13 @@ userController.certificateSearch = async (req, res) => {
   const firstDate = new Date(parseInt(req.body.first_date));
   const secondDate = new Date(parseInt(req.body.second_date));
   const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
-  const details = req.body.details === 'undefined' ?
+  const details = typeof req.body.details === 'undefined' ?
     '' :
     req.body.details;
   const deviceId = typeof req.body.mac === 'undefined' ? '' : req.body.mac;
-  const csv = typeof req.body.csv === 'undefined' ? false : true;
-
+  const csv = typeof req.body.csv === 'undefined' ?
+    false :
+    req.body.csv === 'true' ? true : false;
 
   let query = {};
   if (name.length >= 1) {
@@ -939,19 +940,26 @@ userController.certificateSearch = async (req, res) => {
   if (deviceId.length >= 1) {
     query.mac = deviceId;
   };
-  if (isNaN(firstDate.getTime()) || isNaN(secondDate.getTime())) {
-    query.deviceCertifications = {
-      timestamp: {
-        $gte: firstDate,
-        $lt: secondDate,
+  if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
+    Object.assign(query, {
+        'deviceCertifications.timestamp': {
+          $gte: firstDate,
+          $lte: secondDate,
+        }
       }
-    }
+    );
   };
 
   const users = await User
     .find(query)
     .lean()
-    .catch(console.log);
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to query users',
+      })
+    });
 
   const deviceCertifications = users.map((value) => value.deviceCertifications);
 
