@@ -1022,7 +1022,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       try {
         let data = JSON.parse(body)[0];
         acsDeviceInfoController.calculatePingDiagnostic(
-          mac, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+          mac, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
         );
       } catch (e) {
         console.log('Failed: genie response was not valid');
@@ -1093,18 +1093,23 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
 };
 
-acsDeviceInfoController.calculatePingDiagnostic = function(mac, data, pingKeys,
+acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
+                                                           pingKeys,
                                                            pingFields) {
   pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, pingKeys, pingFields,
   );
-  if (pingKeys.diag_state == 'Complete') {
+  if (pingKeys.diag_state != 'Requested') {
     let result = {};
     result[pingKeys.host] = {
       lat: pingKeys.avg_resp_time.toString(),
-      loss: (pingKeys.failure_count /
-             pingKeys.num_of_rep).toString(),
+      loss: (pingKeys.failure_count * 100 /
+             (pingKeys.success_count + pingKeys.failure_count)).toString(),
     };
+    if (model === 'HG8245Q2' || model === 'EG8145V5') {
+      if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
+      else result[pingKeys.host]['loss'] = '100';
+    }
     deviceHandlers.sendPingToTraps(mac, {results: result});
   }
 };
