@@ -1569,6 +1569,16 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
+  // Some Nokia models have a bug where changing the SSID without changing the
+  // password as well makes the password reset to default value, so we force the
+  // password to be updated as well - this also takes care of any possible wifi
+  // password resets
+  if (changes.wifi2.ssid) {
+    changes.wifi2.password = device.wifi_password;
+  }
+  if (changes.wifi5.ssid) {
+    changes.wifi5.password = device.wifi_password_5ghz;
+  }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -1612,14 +1622,6 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         // app_diagnostic_api, etc)
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
-        }
-        // Some Nokia models have a bug where changing the SSID without changing
-        // the password as well makes the password reset to default value, so we
-        // force the password to be updated as well
-        if (masterKey === 'wifi2') {
-          changes[masterKey]['password'] = device.wifi_password;
-        } else if (masterKey === 'wifi5') {
-          changes[masterKey]['password'] = device.wifi_password_5ghz;
         }
       }
       if (key === 'web_admin_password') {
