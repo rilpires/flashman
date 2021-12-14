@@ -1700,6 +1700,9 @@ deviceInfoController.receivePingResult = function(req, res) {
   });
 };
 
+
+// TODO: replicar o comportamento dessa funcao para o teste de velocidade
+// TR069
 deviceInfoController.receiveSpeedtestResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
