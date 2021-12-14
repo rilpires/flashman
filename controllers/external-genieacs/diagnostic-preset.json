@@ -1,0 +1,14 @@
+{
+    "_id": "diagnostic_event",
+    "channel": "Events",
+    "weight": 0,
+    "events": {
+        "8 DIAGNOSTICS COMPLETE": true
+    },
+    "precondition": "",
+    "configurations": [{
+        "type": "provision",
+        "name": "diagnostic",
+        "args": null
+    }]
+}
