@@ -160,7 +160,7 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
   Function to validate ssid and remove prefix
   if it already in the start of ssid
 */
-const cleanAndCheckSsid = function(prefix, ssid) {
+deviceHandlers.cleanAndCheckSsid = function(prefix, ssid) {
   let strPrefix = '';
   if (typeof prefix !== 'undefined') {
     strPrefix = prefix;
@@ -228,8 +228,8 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
     prefix: '',
   };
   // clean and check the ssid regardless the flags
-  let valObj2 = cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
-  let valObj5 = cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
+  let valObj2 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
+  let valObj5 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
   // set the cleaned ssid to be returned
   prefixObj.ssid2 = valObj2.ssid;
   prefixObj.ssid5 = valObj5.ssid;

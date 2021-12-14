@@ -1197,7 +1197,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
     ssidPrefix, targetSSID,
   ).ssid;
   let query = {
-    use_tr069: true,
+    'use_tr069': true,
     '$or': [
       {wifi_ssid: targetSSID},
       {wifi_ssid: noPrefixTargetSSID},
@@ -1207,7 +1207,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       {wifi_bssid_5ghz: targetBSSID},
     ],
   };
-  let projection = {_id: 1, model: 1, version: 1, pending_app_secret:1};
+  let projection = {_id: 1, model: 1, version: 1, pending_app_secret: 1};
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
@@ -1243,23 +1243,21 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
-  let query = req.body.content.mac;
+  let query = {serial_tr069: req.body.content.serial};
   let projection = {
-    _id: 1, pending_app_secret:1, serial_tr069: 1, apps: 1, app_password: 1
+    _id: 1, pending_app_secret: 1, serial_tr069: 1, apps: 1, app_password: 1,
   };
-  DeviceModel.findById(query, projection, function(err, matchedDevice) {
+  DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
     }
-    if (!matchedDevice) {
+    if (!matchedDevices || matchedDevices.length === 0) {
       return res.status(404).json({'message': 'CPE não encontrado'});
     }
+    let matchedDevice = matchedDevices[0];
     if (matchedDevice.pending_app_secret === '' ||
         matchedDevice.pending_app_secret !== req.body.content.secret) {
       return res.status(403).json({'message': 'Secret inválido'});
-    }
-    if (matchedDevice.serial_tr069 !== req.body.content.serial) {
-      return res.status(403).json({'message': 'Serial inválido'});
     }
     let appObj = matchedDevice.apps.filter((app) => app.id === req.body.app_id);
     let newEntry = {
