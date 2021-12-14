@@ -1569,6 +1569,16 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
+  // Some Nokia models have a bug where changing the SSID without changing the
+  // password as well makes the password reset to default value, so we force the
+  // password to be updated as well - this also takes care of any possible wifi
+  // password resets
+  if (changes.wifi2.ssid) {
+    changes.wifi2.password = device.wifi_password;
+  }
+  if (changes.wifi5.ssid) {
+    changes.wifi5.password = device.wifi_password_5ghz;
+  }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -1606,15 +1616,10 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           hasChanges = true;
         }
       }
-      /*
-        Verify if is to append prefix right before
-        of send changes to genie;
-        Because device_list, app_diagnostic_api
-        and here call updateInfo, and is more clean
-        to check on the edge;
-      */
-      if (key === 'ssid' &
-      (masterKey === 'wifi2' || masterKey === 'wifi5')) {
+      if (key === 'ssid' && (masterKey === 'wifi2' || masterKey === 'wifi5')) {
+        // Append ssid prefix here before sending changes to genie - doing it
+        // here saves replicating this logic all over flashman (device_list,
+        // app_diagnostic_api, etc)
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
