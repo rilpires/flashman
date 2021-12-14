@@ -1789,6 +1789,9 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
+                // Since we changed the prefix, this implies a change to SSIDs
+                changes.wifi2.ssid = matchedDevice.wifi_ssid;
+                changes.wifi5.ssid = matchedDevice.wifi_ssid_5ghz;
               } else {
                 hasPermissionError = true;
               }
