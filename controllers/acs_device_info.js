@@ -1103,7 +1103,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
     let result = {};
     result[pingKeys.host] = {
       lat: pingKeys.avg_resp_time.toString(),
-      loss: (pingKeys.failure_count * 100 /
+      loss: parseInt(pingKeys.failure_count * 100 /
              (pingKeys.success_count + pingKeys.failure_count)).toString(),
     };
     if (model === 'HG8245Q2' || model === 'EG8145V5') {
