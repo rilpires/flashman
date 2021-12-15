@@ -14,7 +14,7 @@
       "GENIEACS_EXT_DIR": "../flashman/controllers/external-genieacs",
       "GENIEACS_EXT_TIMEOUT": 30000,
       "GENIEACS_RETRY_DELAY": 15,
-      "GENIEACS_MAX_COMMIT_ITERATIONS": 1024,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
       "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
     }
   },
