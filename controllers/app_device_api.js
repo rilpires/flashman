@@ -1251,16 +1251,22 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   // Query database for devices with matching SSID/BSSID
   let targetSSID = req.body.content.ssid;
   let targetBSSID = req.body.content.bssid.toUpperCase();
+  let ssidPrefix = (config.ssidPrefix) ? config.ssidPrefix : '';
+  let noPrefixTargetSSID = deviceHandlers.cleanAndCheckSsid(
+    ssidPrefix, targetSSID,
+  ).ssid;
   let query = {
-    use_tr069: true,
+    'use_tr069': true,
     '$or': [
       {wifi_ssid: targetSSID},
+      {wifi_ssid: noPrefixTargetSSID},
       {wifi_ssid_5ghz: targetSSID},
+      {wifi_ssid_5ghz: noPrefixTargetSSID},
       {wifi_bssid: targetBSSID},
       {wifi_bssid_5ghz: targetBSSID},
     ],
   };
-  let projection = {_id: 1, model: 1, version: 1, pending_app_secret:1};
+  let projection = {_id: 1, model: 1, version: 1, pending_app_secret: 1};
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
@@ -1296,22 +1302,24 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
-  DeviceModel.findById(req.body.content.mac, async function(err, device) {
+  let serial = req.body.content.serial;
+  let query = {
+    '$or': [
+      {serial_tr069: serial},
+      {alt_uid_tr069: serial},
+    ],
+  };
+  DeviceModel.find(query).exec(async function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
     }
-    if (!device) {
+    if (!matchedDevices || matchedDevices.length === 0) {
       return res.status(404).json({'message': 'CPE não encontrado'});
     }
+    let device = matchedDevices[0];
     if (device.pending_app_secret === '' ||
         device.pending_app_secret !== req.body.content.secret) {
       return res.status(403).json({'message': 'Secret inválido'});
-    }
-    if (
-      device.serial_tr069 !== req.body.content.serial &&
-      device.alt_uid_tr069 !== req.body.content.serial
-    ) {
-      return res.status(403).json({'message': 'Serial inválido'});
     }
     let appObj = device.apps.filter((app) => app.id === req.body.app_id);
     let newEntry = {

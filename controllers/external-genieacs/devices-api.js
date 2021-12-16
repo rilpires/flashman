@@ -285,6 +285,28 @@ const getDefaultFields = function() {
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
+    diagnostics: {
+      ping : {
+        diag_state: 'InternetGatewayDevice.IPPingDiagnostics.DiagnosticsState',
+        failure_count: 'InternetGatewayDevice.IPPingDiagnostics.FailureCount',
+        success_count: 'InternetGatewayDevice.IPPingDiagnostics.SuccessCount',
+        host: 'InternetGatewayDevice.IPPingDiagnostics.Host',
+        num_of_rep: 'InternetGatewayDevice.IPPingDiagnostics.NumberOfRepetitions',
+        avg_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.AverageResponseTime',
+        max_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MaximumResponseTime',
+        min_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime',
+        timeout: 'InternetGatewayDevice.IPPingDiagnostics.Timeout',
+      },
+      speedtest: {
+        diag_state: 'InternetGatewayDevice.DownloadDiagnostics.DiagnosticsState',
+        num_of_conn: 'InternetGatewayDevice.DownloadDiagnostics.NumberOfConnections',
+        download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
+        bgn_time: 'InternetGatewayDevice.DownloadDiagnostics.BOMTime',
+        end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
+        total_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TotalBytesReceived',
+        down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
+      },
+    },
   };
 };
 
@@ -716,9 +738,24 @@ const syncDeviceData = async function(args, callback) {
   callback(null, result);
 };
 
+const syncDeviceDiagnostics = async function(args, callback) {
+  let params = JSON.parse(args[0]);
+  if (!params || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+  let result = await sendFlashmanRequest('receive/diagnostic', params,
+                                         callback);
+  callback(null, result);
+};
+
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
+exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+

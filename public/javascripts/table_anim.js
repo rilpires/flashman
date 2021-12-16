@@ -1330,7 +1330,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += portForwardTr069Action;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && grantPingTest) {
+          if (grantPingTest) {
             sideMenu[idxMenu] += pingTestAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
