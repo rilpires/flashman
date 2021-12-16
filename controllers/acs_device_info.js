@@ -1071,6 +1071,31 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let pingHostUrl = device.ping_hosts[0];
   let timeout = 1000;
 
+  // We need to update the parameter values before we fire the ping test
+  let success = false;
+  try {
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [diagnStateField, diagnNumRepField,
+                       diagnURLField, diagnTimeoutField],
+    };
+    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    if (
+      !result || !result.finished || result.task.name !== 'getParameterValues'
+    ) {
+      console.log('Failed: genie diagnostic fields can\'t be updated');
+    } else {
+      success = true;
+    }
+  } catch (e) {
+    console.log(e);
+    console.log('Failed: genie diagnostic fields can\'t be updated');
+  }
+  if (!success) {
+    return {success: false,
+            message: 'Error: Could not fire TR-069 ping measure'};
+  }
+
   let task = {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
