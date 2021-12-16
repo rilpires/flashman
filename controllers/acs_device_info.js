@@ -1062,6 +1062,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
 
+  let diagnIPPingDiagnostics = fields.diagnostics.ping.root;
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
@@ -1076,8 +1077,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   try {
     let task = {
       name: 'getParameterValues',
-      parameterNames: [diagnStateField, diagnNumRepField,
-                       diagnURLField, diagnTimeoutField],
+      parameterNames: [diagnIPPingDiagnostics],
     };
     const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
     if (
