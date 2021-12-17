@@ -923,45 +923,35 @@ userController.certificateSearch = async (req, res) => {
   const secondDate = new Date(parseInt(req.body.second_date));
   const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
   const details = typeof req.body.details === 'undefined' ?
-    '' :
-    req.body.details;
-  const deviceId = typeof req.body.mac === 'undefined' ? '' : req.body.mac;
+    '' : req.body.details;
+  const deviceId = typeof req.body.device_id === 'undefined' ?
+    '' : req.body.device_id;
   const csv = typeof req.body.csv === 'undefined' ?
-    false :
-    req.body.csv === 'true' ? true : false;
+    false : req.body.csv === 'true' ? true : false;
 
   let query = {};
   if (name.length >= 1) {
-    query.name = name;
-  };
-  if (details.length >= 1) {
-    query.details = details;
+    query['name'] = name;
   };
   if (deviceId.length >= 1) {
-    query.mac = deviceId;
-  };
+    query['deviceCertifications.mac'] = deviceId
+  }
   if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
-    Object.assign(query, {
-        'deviceCertifications.timestamp': {
-          $gte: firstDate,
-          $lte: secondDate,
-        }
-      }
-    );
-  };
+    query['deviceCertifications.timestamp'] = new Date('1/1/2021');
+  }
 
-  const users = await User
-    .find(query)
+  console.log(query);
+
+  const deviceCertifications = await User
+    .find(query, { deviceCertifications: 1, name: 1 })
     .lean()
     .catch((err) => {
       console.log(err);
       return res.status(500).json({
         success: false,
         error: 'Failed to query users',
-      })
+      });
     });
-
-  const deviceCertifications = users.map((value) => value.deviceCertifications);
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
@@ -1038,6 +1028,11 @@ userController.certificateSearch = async (req, res) => {
     return res.status(200).json({
       success: true,
       deviceCertifications: deviceCertifications,
+    });
+  } else if (deviceCertifications.length <= 0) {
+    return res.status(404).json({
+      success: true,
+      deviceCertifications: 'No certifications found!',
     });
   }
 
