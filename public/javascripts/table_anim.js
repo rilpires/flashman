@@ -1342,7 +1342,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += siteSurveyAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (grantDeviceSpeedTest) {
+          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             sideMenu[idxMenu] += measureAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
