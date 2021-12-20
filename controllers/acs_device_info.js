@@ -11,6 +11,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
+const utilHandlers = require('./handlers/util')
 
 const pako = require('pako');
 const http = require('http');
@@ -929,7 +930,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
 
   let device;
   try {
-    device = await DeviceModel.findByMacOrSerial(serial, true);
+    device = await DeviceModel.findByMacOrSerial(serial);
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
@@ -963,6 +964,15 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       avg_resp_time: '',
       max_resp_time: '',
       min_resp_time: '',
+    },
+    speedtest: {
+      diag_state: '',
+      num_of_conn: '',
+      download_url: '',
+      bgn_time: '',
+      end_time: '',
+      test_bytes_rec: '',
+      down_transports: '',
     },
   };
 
@@ -1021,11 +1031,15 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        acsDeviceInfoController.calculatePingDiagnostic(
+        await acsDeviceInfoController.calculatePingDiagnostic(
           mac, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
         );
+        await acsDeviceInfoController.calculateSpeedDiagnostic(device, data,
+                                                  diagNecessaryKeys.speedtest,
+                                                  fields.diagnostics.speedtest);
       } catch (e) {
         console.log('Failed: genie response was not valid');
+        console.log(e);
       }
     });
   });
@@ -1070,7 +1084,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
 
   let numberOfRep = 10;
   let pingHostUrl = device.ping_hosts[0];
-  let timeout = 1000;
+  let timeout = 100;
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1162,8 +1176,8 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
-  let numberOfCon = 4;
-  let SpeedtestHostUrl = 'http://18.229.105.162:25752/measure/file1.bin';
+  let numberOfCon = 1;
+  let SpeedtestHostUrl = 'http://18.229.105.162:25752/measure/file3.bin';
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1201,6 +1215,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
       return {success: false,
               message: 'Error: Could not fire TR-069 speedtest'};
     } else {
+      console.log('Success: TR-069 speedtest fired');
       return {success: true,
               message: 'Success: TR-069 speedtest fired'};
     }
@@ -1213,23 +1228,31 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
 acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
                                                             speedKeys,
                                                             speedFields) {
-  speedKeys = acsDeviceInfoController.getMultipleNestedKeys(
+  speedKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, speedKeys, speedFields,
   );
-  if (speedKeys.diag_state == 'Complete') {
-    let speedtestTimestamp;
-    let lastSpeedtestTimestamp;
-    if (checkForNestedKey(
-      data, speedFields.diag_state+'._timestamp',
-    )) {
-      speedtestTimestamp = new Date(getFromNestedKey(
-        data, speedFields.diag_state+'._timestamp'),
-      );
-    }
-    lastSpeedtestTimestamp = new Date(device.speedtest_results.timestamp);
-    if (speedtestTimestamp.valueOf() >
-        lastSpeedtestTimestamp.valueOf()) {
-      // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+  if (speedKeys.diag_state == 'Completed') {
+    console.log(JSON.stringify(device.current_speedtest));
+    console.log(JSON.stringify(device.speedtest_results));
+    let rqstTime = device.current_speedtest.timestamp;
+    let lastTime = utilHandlers.parseDate(
+      device.speedtest_results[device.speedtest_results.length-1].timestamp
+    );
+    console.log(rqstTime, lastTime);
+    console.log(rqstTime.valueOf, lastTime.valueOf);
+    if (!device.current_speedtest.timestamp || 
+        (rqstTime.valueOf() > lastTime.valueOf())) {
+      let beginTime = new Date(speedKeys.bgn_time);
+      let endTime = new Date(speedKeys.end_time);
+      let speedValue = speedKeys.test_bytes_rec /
+                (endTime.valueOf()-beginTime.valueOf());
+      console.log(speedValue);
+      console.log(parseInt(speedValue*(8/1024)));
+      let result = {
+        downSpeed: parseInt(speedValue*(8/1024)).toString() + ' Mbps',
+        user: device.current_speedtest.user,
+      };
+      deviceHandlers.storeSpeedtestResult(device, result);
     }
   }
 };

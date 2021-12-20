@@ -1142,9 +1142,10 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          if (device && device.use_tr069) {
+          /*if (device && device.use_tr069) {
             acsDeviceInfo.fireSpeedDiagnose(req.params.id.toUpperCase());
-          } else if (device) {
+          } else*/
+          if (device) {
             return deviceListController.doSpeedTest(req, res);
           }
         } else if (msgtype === 'boot') {
@@ -2907,7 +2908,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não encontrado',
       });
     }
-    if (!isDevOn) {
+    if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
         message: 'CPE não está online!',
@@ -2924,7 +2925,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não suporta este comando',
       });
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -2942,7 +2943,14 @@ deviceListController.doSpeedTest = function(req, res) {
       if (req.sessionID && sio.anlixConnections[req.sessionID]) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
-      mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      if (matchedDevice.use_tr069) {
+        matchedDevice.current_speedtest.timestamp = new Date();
+        matchedDevice.current_speedtest.user = req.user.name;
+        await matchedDevice.save();
+        acsDeviceInfo.fireSpeedDiagnose(mac);
+      } else {
+        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      }
       return res.status(200).json({
         success: true,
       });

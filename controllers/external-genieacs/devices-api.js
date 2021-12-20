@@ -303,7 +303,7 @@ const getDefaultFields = function() {
         download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
         bgn_time: 'InternetGatewayDevice.DownloadDiagnostics.BOMTime',
         end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
-        total_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TotalBytesReceived',
+        test_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TestBytesReceived',
         down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
       },
     },
