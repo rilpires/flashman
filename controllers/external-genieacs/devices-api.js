@@ -284,7 +284,8 @@ const getDefaultFields = function() {
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
     diagnostics: {
-      ping : {
+      ping: {
+        root: 'InternetGatewayDevice.IPPingDiagnostics',
         diag_state: 'InternetGatewayDevice.IPPingDiagnostics.DiagnosticsState',
         failure_count: 'InternetGatewayDevice.IPPingDiagnostics.FailureCount',
         success_count: 'InternetGatewayDevice.IPPingDiagnostics.SuccessCount',
@@ -296,6 +297,7 @@ const getDefaultFields = function() {
         timeout: 'InternetGatewayDevice.IPPingDiagnostics.Timeout',
       },
       speedtest: {
+        root: 'InternetGatewayDevice.DownloadDiagnostics',
         diag_state: 'InternetGatewayDevice.DownloadDiagnostics.DiagnosticsState',
         num_of_conn: 'InternetGatewayDevice.DownloadDiagnostics.NumberOfConnections',
         download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
