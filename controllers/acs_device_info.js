@@ -1139,6 +1139,101 @@ acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
   }
 };
 
+acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
+  let device;
+  try {
+    device = await DeviceModel.findById(mac).lean();
+  } catch (e) {
+    console.log(e);
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
+  }
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
+  }
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+
+  let diagnSpeedtestDiagnostics = fields.diagnostics.speedtest.root;
+  let diagnStateField = fields.diagnostics.speedtest.diag_state;
+  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
+  let diagnURLField = fields.diagnostics.speedtest.download_url;
+
+  let numberOfCon = 4;
+  let SpeedtestHostUrl = 'http://18.229.105.162:25752/measure/file1.bin';
+
+  // We need to update the parameter values before we fire the ping test
+  let success = false;
+  try {
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [diagnSpeedtestDiagnostics],
+    };
+    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    if (
+      !result || !result.finished || result.task.name !== 'getParameterValues'
+    ) {
+      console.log('Failed: genie diagnostic fields can\'t be updated');
+    } else {
+      success = true;
+    }
+  } catch (e) {
+    console.log(e);
+    console.log('Failed: genie diagnostic fields can\'t be updated');
+  }
+  if (!success) {
+    return {success: false,
+            message: 'Error: Could not fire TR-069 ping measure'};
+  }
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
+                      [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
+                      [diagnURLField, SpeedtestHostUrl, 'xsd:string']],
+  };
+  try {
+    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    if (!result || !result.finished) {
+      return {success: false,
+              message: 'Error: Could not fire TR-069 speedtest'};
+    } else {
+      return {success: true,
+              message: 'Success: TR-069 speedtest fired'};
+    }
+  } catch (err) {
+      return {success: false,
+              message: err.message+' in '+acsID};
+  }
+};
+
+acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
+                                                            speedKeys,
+                                                            speedFields) {
+  speedKeys = acsDeviceInfoController.getMultipleNestedKeys(
+    data, speedKeys, speedFields,
+  );
+  if (speedKeys.diag_state == 'Complete') {
+    let speedtestTimestamp;
+    let lastSpeedtestTimestamp;
+    if (checkForNestedKey(
+      data, speedFields.diag_state+'._timestamp',
+    )) {
+      speedtestTimestamp = new Date(getFromNestedKey(
+        data, speedFields.diag_state+'._timestamp'),
+      );
+    }
+    lastSpeedtestTimestamp = new Date(device.speedtest_results.timestamp);
+    if (speedtestTimestamp.valueOf() >
+        lastSpeedtestTimestamp.valueOf()) {
+      // TODO: use deviceInfoController.receiveSpeedtestResult(req, res)?
+    }
+  }
+};
+
 // =============================================================================
 
 // TODO: Move this function to external-genieacs?
