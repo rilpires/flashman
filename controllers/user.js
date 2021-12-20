@@ -929,29 +929,48 @@ userController.certificateSearch = async (req, res) => {
   const csv = typeof req.body.csv === 'undefined' ?
     false : req.body.csv === 'true' ? true : false;
 
-  let query = {};
+  let query = [];
   if (name.length >= 1) {
-    query['name'] = name;
+    query.push({ $match: name });
   };
   if (deviceId.length >= 1) {
-    query['deviceCertifications.mac'] = deviceId
+    query.push(
+      {
+        $redact: {
+          $cond: {
+            if: { $eq: ['$deviceCertifications.mac', deviceId] },
+            then: '$$KEEP',
+            else: '$$PRUNE'
+          }
+        }
+      },
+    );
   }
   if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
-    query['deviceCertifications.timestamp'] = new Date('1/1/2021');
+    query.deviceCertifications.timestamp = new Date('1/1/2021');
   }
 
-  console.log(query);
+  console.log(JSON.stringify(query, null, 2));
 
   const deviceCertifications = await User
-    .find(query, { deviceCertifications: 1, name: 1 })
-    .lean()
+    .aggregate(query)
     .catch((err) => {
       console.log(err);
       return res.status(500).json({
         success: false,
         error: 'Failed to query users',
       });
-    });
+    })
+  /*
+    .then((users) =>
+      users.map((certifications) => {
+        return {
+          name: certifications.name,
+          certifications: certifications.deviceCertifications,
+        }
+      }).flat());
+      */
+  console.log(deviceCertifications);
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
