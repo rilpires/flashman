@@ -929,31 +929,103 @@ userController.certificateSearch = async (req, res) => {
   const csv = typeof req.body.csv === 'undefined' ?
     false : req.body.csv === 'true' ? true : false;
 
-  let query = [];
+  let query = {};
+  query.deviceCertifications = {};
   if (name.length >= 1) {
-    query.push({ $match: name });
-  };
+    query.name = name;
+  } else {
+    query.name = '';
+  }
   if (deviceId.length >= 1) {
-    query.push(
+    query.mac = deviceId;
+  } else {
+    query.mac = '';
+  }
+  if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
+    query.emptyDate = false;
+  } else {
+    query.emptyDate = true;
+  }
+
+  const deviceCertifications = await User
+    .aggregate([
+      {
+        $unwind: '$deviceCertifications',
+      },
       {
         $redact: {
           $cond: {
-            if: { $eq: ['$deviceCertifications.mac', deviceId] },
+            if: {
+              $or: [
+                {
+                  $eq: [
+                    '$name',
+                    query.name,
+                  ]
+                },
+                query.name.length === 0
+              ]
+            },
             then: '$$KEEP',
             else: '$$PRUNE'
           }
         }
       },
-    );
-  }
-  if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
-    query.deviceCertifications.timestamp = new Date('1/1/2021');
-  }
-
-  console.log(JSON.stringify(query, null, 2));
-
-  const deviceCertifications = await User
-    .aggregate(query)
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $or: [
+                {
+                  $eq: [
+                    '$deviceCertifications.mac',
+                    query.mac
+                  ]
+                },
+                query.mac.length === 0
+              ]
+            },
+            then: '$$KEEP',
+            else: '$$PRUNE'
+          }
+        }
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $or: [
+                {
+                  $and: [
+                    {
+                      $gte: [
+                        '$deviceCertifications.timestamp',
+                        firstDate
+                      ]
+                    },
+                    {
+                      $lte: [
+                        '$deviceCertifications.timestamp',
+                        secondDate
+                      ]
+                    }
+                  ]
+                },
+                query.emptyDate
+              ]
+            },
+            then: '$$KEEP',
+            else: '$$PRUNE',
+          }
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          deviceCertifications: 1,
+        }
+      }
+    ])
     .catch((err) => {
       console.log(err);
       return res.status(500).json({
@@ -961,7 +1033,6 @@ userController.certificateSearch = async (req, res) => {
         error: 'Failed to query users',
       });
     })
-  /*
     .then((users) =>
       users.map((certifications) => {
         return {
@@ -969,8 +1040,8 @@ userController.certificateSearch = async (req, res) => {
           certifications: certifications.deviceCertifications,
         }
       }).flat());
-      */
-  console.log(deviceCertifications);
+
+  console.log(JSON.stringify(deviceCertifications, null, 2))
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
@@ -1036,7 +1107,11 @@ userController.certificateSearch = async (req, res) => {
     ];
 
     const json2csvParser = new Parser({fields, transforms});
-    const certificationsCsv = json2csvParser.parse(deviceCertifications);
+    const certificationsCsv = json2csvParser.parse(
+      deviceCertifications.map(
+        (value) => value.certifications
+      )
+    );
 
     return res
       .set('Content-Type', 'text/csv')
