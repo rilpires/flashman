@@ -9,6 +9,7 @@ const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
+const deviceList = require('./device_list.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
@@ -358,13 +359,13 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       updated via genie to save device in database.
     */
     if (device.use_tr069) {
-      let configOk = await meshHandlers.configTR069VirtualAP(
+      let configOk = await acsDeviceInfo.configTR069VirtualAP(
         device, targetMode,
       );
       if (!configOk.success) {
         return res.status(500).json({success: false, message: configOk.msg});
       }
-      const collectOk = await meshHandlers.ensureBssidCollected(
+      const collectOk = await deviceList.ensureBssidCollected(
         device, targetMode,
       );
       if (!collectOk.success) {

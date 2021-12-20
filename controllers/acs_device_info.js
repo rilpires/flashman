@@ -2211,4 +2211,49 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
   return {success: true, message: response};
 };
 
+// Should be called after validating mesh configuration
+acsDeviceInfoController.configTR069VirtualAP = async function(
+  device, targetMode) {
+  const wifiRadioState = 1;
+  const meshChannel = 7;
+  const meshChannel5GHz = 40; // Value has better results on some routers
+
+  const hasMeshVAPObject = DeviceVersion.findByVersion(
+    device.version,
+    device.wifi_is_5ghz_capable,
+    device.model,
+  ).grantMeshVAPObject;
+  /*
+    If device doesn't have SSID Object by default, then
+    we need to check if it has been created already.
+    If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+    IMPORTANT: even if target mode is 1 (cable) we must create these
+    objects because, in that case, we disable the virtual APs. If the
+    objects don't exist yet this will cause an error!
+  */
+  let createOk = {populate: false};
+  if (!hasMeshVAPObject && targetMode > 0) {
+    createOk =
+      await acsDeviceInfoController.createVirtualAPObjects(device.acs_id);
+    if (!createOk.success) {
+      return {success: false, msg: createOk.msg};
+    }
+  }
+  // Set the mesh parameters on the TR-069 fields
+  let changes = meshHandlers.buildTR069Changes(
+    device,
+    targetMode,
+    wifiRadioState,
+    meshChannel,
+    meshChannel5GHz,
+    createOk.populate,
+  );
+  const updated =
+    await acsDeviceInfoController.updateInfo(device, changes, true);
+  if (!updated) {
+    return {success: false, msg: 'Erro ao enviar parâmetros mesh para a CPE'};
+  }
+  return {success: true};
+};
+
 module.exports = acsDeviceInfoController;

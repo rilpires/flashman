@@ -5,7 +5,6 @@ const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
 const DevicesAPI = require('../external-genieacs/devices-api');
-const acsDeviceInfo = require('../acs_device_info.js');
 
 let meshHandlers = {};
 
@@ -219,7 +218,8 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
   });
 };
 
-const buildMeshChanges = function(device, meshChannel, beaconType, is5GHz) {
+meshHandlers.buildMeshChanges = function(
+  device, meshChannel, beaconType, is5GHz) {
   let changes = {};
   changes.ssid = device.mesh_id;
   changes.password = device.mesh_key;
@@ -233,7 +233,7 @@ const buildMeshChanges = function(device, meshChannel, beaconType, is5GHz) {
   return changes;
 };
 
-const buildTR069Changes = function(
+meshHandlers.buildTR069Changes = function(
   device,
   targetMode,
   wifiRadioState,
@@ -253,7 +253,8 @@ const buildTR069Changes = function(
       changes.mesh5.enable = false;
       break;
     case 2:
-      changes.mesh2 = buildMeshChanges(device, meshChannel, beaconType, false);
+      changes.mesh2 =
+        meshHandlers.buildMeshChanges(device, meshChannel, beaconType, false);
       changes.mesh5.enable = false;
 
       // When enabling Wi-Fi set beacon type
@@ -263,7 +264,8 @@ const buildTR069Changes = function(
       changes.wifi2.channel = meshChannel;
       break;
     case 3:
-      changes.mesh5 = buildMeshChanges(device, meshChannel5, beaconType, true);
+      changes.mesh5 =
+        meshHandlers.buildMeshChanges(device, meshChannel5, beaconType, true);
       changes.mesh2.enable = false;
 
       // When enabling Wi-Fi set beacon type
@@ -274,8 +276,10 @@ const buildTR069Changes = function(
       changes.wifi5.channel = meshChannel5;
       break;
     case 4:
-      changes.mesh2 = buildMeshChanges(device, meshChannel, beaconType, false);
-      changes.mesh5 = buildMeshChanges(device, meshChannel5, beaconType, true);
+      changes.mesh2 =
+        meshHandlers.buildMeshChanges(device, meshChannel, beaconType, false);
+      changes.mesh5 =
+        meshHandlers.buildMeshChanges(device, meshChannel5, beaconType, true);
 
       // When enabling Wi-Fi set beacon type
       changes.wifi5.enable = wifiRadioState;
@@ -369,80 +373,6 @@ meshHandlers.validateMeshMode = async function(
   return {
     success: errors.length === 0, msg: 'Ver campo "errors"', errors: errors,
   };
-};
-
-// Should be called after validating mesh configuration
-meshHandlers.configTR069VirtualAP = async function(device, targetMode) {
-  const wifiRadioState = 1;
-  const meshChannel = 7;
-  const meshChannel5GHz = 40; // Value has better results on some routers
-
-  const hasMeshVAPObject = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  ).grantMeshVAPObject;
-  /*
-    If device doesn't have SSID Object by default, then
-    we need to check if it has been created already.
-    If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
-    IMPORTANT: even if target mode is 1 (cable) we must create these
-    objects because, in that case, we disable the virtual APs. If the
-    objects don't exist yet this will cause an error!
-  */
-  let createOk = {populate: false};
-  if (!hasMeshVAPObject && targetMode > 0) {
-    createOk = await acsDeviceInfo.createVirtualAPObjects(device.acs_id);
-    if (!createOk.success) {
-      return {success: false, msg: createOk.msg};
-    }
-  }
-  // Set the mesh parameters on the TR-069 fields
-  let changes = buildTR069Changes(
-    device,
-    targetMode,
-    wifiRadioState,
-    meshChannel,
-    meshChannel5GHz,
-    createOk.populate,
-  );
-  const updated = await acsDeviceInfo.updateInfo(device, changes, true);
-  if (!updated) {
-    return {success: false, msg: 'Erro ao enviar parâmetros mesh para a CPE'};
-  }
-  return {success: true};
-};
-
-// Should be called after updating TR-069 CPE through ACS
-meshHandlers.ensureBssidCollected = async function(device, targetMode) {
-  /*
-    Some devices have an invalid BSSID until the AP is enabled
-    If the device doesn't have the bssid yet we have to fetch it
-  */
-  if (
-    // If we dont have 2.4GHz bssid and mesh mode requires 2.4GHz network
-    (!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
-    // If we dont have 5GHz bssid and mesh mode requires 5GHz network
-    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))
-  ) {
-    // It might take some time for some CPEs to enable their Wi-Fi interface
-    // after the command is sent. Since the BSSID is only available after the
-    // interface is up, we need to wait here to ensure we get a valid read
-    await new Promise((r)=>setTimeout(r, 4000));
-    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
-      device.acs_id, targetMode,
-    );
-    if (!bssidsObj.success) {
-      return bssidsObj;
-    }
-    if (targetMode === 2 || targetMode === 4) {
-      device.bssid_mesh2 = bssidsObj.bssid_mesh2;
-    }
-    if (targetMode === 3 || targetMode === 4) {
-      device.bssid_mesh5 = bssidsObj.bssid_mesh5;
-    }
-  }
-  return {success: true};
 };
 
 // Final step in mesh configuration pipeline

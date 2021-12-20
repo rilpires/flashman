@@ -1274,6 +1274,39 @@ deviceListController.getLastBootLog = function(req, res) {
   });
 };
 
+// Should be called after updating TR-069 CPE through ACS
+deviceListController.ensureBssidCollected = async function(
+  device, targetMode) {
+  /*
+    Some devices have an invalid BSSID until the AP is enabled
+    If the device doesn't have the bssid yet we have to fetch it
+  */
+  if (
+    // If we dont have 2.4GHz bssid and mesh mode requires 2.4GHz network
+    (!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
+    // If we dont have 5GHz bssid and mesh mode requires 5GHz network
+    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))
+  ) {
+    // It might take some time for some CPEs to enable their Wi-Fi interface
+    // after the command is sent. Since the BSSID is only available after the
+    // interface is up, we need to wait here to ensure we get a valid read
+    await new Promise((r)=>setTimeout(r, 4000));
+    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
+      device.acs_id, targetMode,
+    );
+    if (!bssidsObj.success) {
+      return bssidsObj;
+    }
+    if (targetMode === 2 || targetMode === 4) {
+      device.bssid_mesh2 = bssidsObj.bssid_mesh2;
+    }
+    if (targetMode === 3 || targetMode === 4) {
+      device.bssid_mesh5 = bssidsObj.bssid_mesh5;
+    }
+  }
+  return {success: true};
+};
+
 deviceListController.getDeviceReg = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase(), true).exec(
   async function(err, matchedDevice) {
@@ -1867,7 +1900,7 @@ deviceListController.setDeviceReg = function(req, res) {
                   updated via genie to save device in database.
                 */
                 if (matchedDevice.use_tr069) {
-                  const configOk = await meshHandlers.configTR069VirtualAP(
+                  const configOk = await acsDeviceInfo.configTR069VirtualAP(
                     matchedDevice, meshMode,
                   );
                   if (!configOk.success) {
@@ -1877,9 +1910,8 @@ deviceListController.setDeviceReg = function(req, res) {
                       message: configOk.msg,
                     });
                   }
-                  const collectOk = await meshHandlers.ensureBssidCollected(
-                    matchedDevice, meshMode,
-                  );
+                  const collectOk = await deviceListController
+                    .ensureBssidCollected(matchedDevice, meshMode);
                   if (!collectOk.success) {
                     return res.status(500).json({
                       success: false,
