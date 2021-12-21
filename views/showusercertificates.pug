@@ -10,6 +10,23 @@ block content
     .card-body
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
+    .mt-4.input-group
+      button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
+        type="button",
+        data-toggle="dropdown"
+      )
+        span#new_ext_ref_type_selected.selected CPF
+      .ext-ref-type.dropdown-menu
+        a.dropdown-item.text-center.primary-color.active Nome
+        a.dropdown-item.text-center MAC/Serial
+      input#certificates-search-input.form-control.tags-input(
+          type="tags",
+          name="content",
+          placeholder="Buscar..."
+        )
+      .input-group-btn
+        button.my-0.btn.btn-primary(type="submit")
+          .fas.fa-search.fa-lg
       #users-table-wrapper.table-responsive(style="display: none;")
         table#users-table.table
           thead

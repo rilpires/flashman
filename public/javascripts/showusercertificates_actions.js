@@ -362,12 +362,11 @@ $(document).ready(function() {
     'destroy': true,
     'paging': true,
     'info': false,
+    'searching': false,
     'pagingType': 'numbers',
     'language': {
       'zeroRecords': 'Nenhuma certificação encontrada',
       'infoEmpty': 'Nenhuma certificação encontrada',
-      'search': '',
-      'searchPlaceholder': 'Buscar...',
       'lengthMenu': 'Exibir _MENU_',
     },
     'order': [[1+hasTrashButton, 'asc'], [2+hasTrashButton, 'desc']],
