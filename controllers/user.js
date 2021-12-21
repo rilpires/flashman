@@ -1038,66 +1038,98 @@ userController.certificateSearch = async (req, res) => {
         return {
           name: certifications.name,
           certifications: certifications.deviceCertifications,
-        }
-      }).flat());
-
-  console.log(JSON.stringify(deviceCertifications, null, 2))
+        };
+      })
+      .flat());
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
-      {label: 'Terminado', value: 'finished', default: ''},
-      {label: 'Endereço MAC', value: 'mac', default: ''},
-      {label: 'Endereço MAC da ONU', value: 'onuMac', default: ''},
-      {label: 'É onu?', value: 'isOnu', default: ''},
-      {label: 'Modelo', value: 'routerModel', default: ''},
-      {label: 'Versão do roteador', value: 'routerVersion', default: ''},
-      {label: 'Release do roteador', value: 'routerRelease', default: ''},
-      {value: 'timestamp', default: ''},
-      {value: 'localEpochTimestamp', default: ''},
-      {label: 'Foi diagnosticado', value: 'didDiagnose', default: ''},
-      {label: 'Diagnostico da WAN', value: 'diagnostic.want', default: ''},
-      {value: 'diagnostic.tr069', default: ''},
-      {value: 'diagnostic.pon', default: ''},
-      {value: 'diagnostic.rxpower', default: ''},
-      {value: 'diagnostic.ipv4', default: ''},
-      {value: 'diagnostic.ipv6', default: ''},
-      {value: 'diagnostic.dns', default: ''},
-      {value: 'diagnostic.anlix', default: ''},
-      {value: 'diagnostic.flashman', default: ''},
-      {value: 'diagnostic.speedtest', default: ''},
-      {value: 'diagnostic.speedValue', default: ''},
-      {value: 'diagnostic.speedTestLimit', default: ''},
-      {label: 'TR069 foi configurado', value: 'didConfigureTR069', default: ''},
-      {label: 'WAN foi configurado', value: 'didConfigureWan', default: ''},
-      {value: 'wanConfigOnu', default: ''},
-      {value: 'routerConnType', default: ''},
-      {label: 'Usuario PPOE', value: 'pppoeUser', default: ''},
-      {label: 'Endereço de IP da bridge', value: 'bridgeIP', default: ''},
-      {value: 'bridgeGateway', default: ''},
-      {value: 'bridgeDNS', default: ''},
-      {value: 'bridgeSwitch', default: ''},
-      {value: 'didConfigureWifi', default: ''},
-      {value: 'wifiConfig.hasFive', default: ''},
-      {value: 'wifiConfig.two.ssid', default: ''},
-      {value: 'wifiConfig.two.band', default: ''},
-      {value: 'wifiConfig.two.mode', default: ''},
-      {value: 'wifiConfig.two.channel', default: ''},
-      {value: 'wifiConfig.five.ssid', default: ''},
-      {value: 'wifiConfig.five.band', default: ''},
-      {value: 'wifiConfig.five.mode', default: ''},
-      {value: 'wifiConfig.five.channel', default: ''},
-      {value: 'didConfigureMesh', default: ''},
-      {value: 'mesh.mode', default: ''},
-      {value: 'mesh.updateSlaves', default: ''},
-      {value: 'mesh.originalSlaves', default: ''},
-      {value: 'didConfigureContract', default: ''},
-      {value: 'didConfigureObservation', default: ''},
-      {value: 'contract', default: ''},
-      {value: 'observations', default: ''},
-      {value: 'cancelReason', default: ''},
-      {value: 'latitude', default: ''},
-      {value: 'longitude', default: ''},
-      {value: 'didSpeedTest', default: ''}
+      {label: 'Nome', value: 'name', default: ''},
+      {label: 'Terminado', value: 'certifications.finished', default: ''},
+      {label: 'Endereço MAC', value: 'certifications.mac', default: ''},
+      {
+        label: 'Endereço MAC da ONU',
+        value: 'certifications.onuMac',
+        default: ''
+      },
+      {label: 'É onu?', value: 'certifications.isOnu', default: ''},
+      {label: 'Modelo', value: 'certifications.routerModel', default: ''},
+      {
+        label: 'Versão do roteador',
+        value: 'certifications.routerVersion',
+        default: ''
+      },
+      {
+        label: 'Release do roteador',
+        value: 'certifications.routerRelease',
+        default: ''
+      },
+      {value: 'certifications.timestamp', default: ''},
+      {value: 'certifications.localEpochTimestamp', default: ''},
+      {
+        label: 'Foi diagnosticado',
+        value: 'certifications.didDiagnose',
+        default: ''
+      },
+      {
+        label: 'Diagnostico da WAN',
+        value: 'certifications.diagnostic.want',
+        default: ''
+      },
+      {value: 'certifications.diagnostic.tr069', default: ''},
+      {value: 'certifications.diagnostic.pon', default: ''},
+      {value: 'certifications.diagnostic.rxpower', default: ''},
+      {value: 'certifications.diagnostic.ipv4', default: ''},
+      {value: 'certifications.diagnostic.ipv6', default: ''},
+      {value: 'certifications.diagnostic.dns', default: ''},
+      {value: 'certifications.diagnostic.anlix', default: ''},
+      {value: 'certifications.diagnostic.flashman', default: ''},
+      {value: 'certifications.diagnostic.speedtest', default: ''},
+      {value: 'certifications.diagnostic.speedValue', default: ''},
+      {value: 'certifications.diagnostic.speedTestLimit', default: ''},
+      {
+        label: 'TR069 foi configurado',
+        value: 'certifications.didConfigureTR069',
+        default: ''
+      },
+      {
+        label: 'WAN foi configurado',
+        value: 'certifications.didConfigureWan',
+        default: ''
+      },
+      {value: 'certifications.wanConfigOnu', default: ''},
+      {value: 'certifications.routerConnType', default: ''},
+      {label: 'Usuario PPOE', value: 'certifications.pppoeUser', default: ''},
+      {
+        label: 'Endereço de IP da bridge',
+        value: 'certifications.bridgeIP',
+        default: ''
+      },
+      {value: 'certifications.bridgeGateway', default: ''},
+      {value: 'certifications.bridgeDNS', default: ''},
+      {value: 'certifications.bridgeSwitch', default: ''},
+      {value: 'certifications.didConfigureWifi', default: ''},
+      {value: 'certifications.wifiConfig.hasFive', default: ''},
+      {value: 'certifications.wifiConfig.two.ssid', default: ''},
+      {value: 'certifications.wifiConfig.two.band', default: ''},
+      {value: 'certifications.wifiConfig.two.mode', default: ''},
+      {value: 'certifications.wifiConfig.two.channel', default: ''},
+      {value: 'certifications.wifiConfig.five.ssid', default: ''},
+      {value: 'certifications.wifiConfig.five.band', default: ''},
+      {value: 'certifications.wifiConfig.five.mode', default: ''},
+      {value: 'certifications.wifiConfig.five.channel', default: ''},
+      {value: 'certifications.didConfigureMesh', default: ''},
+      {value: 'certifications.mesh.mode', default: ''},
+      {value: 'certifications.mesh.updateSlaves', default: ''},
+      {value: 'certifications.mesh.originalSlaves', default: ''},
+      {value: 'certifications.didConfigureContract', default: ''},
+      {value: 'certifications.didConfigureObservation', default: ''},
+      {value: 'certifications.contract', default: ''},
+      {value: 'certifications.observations', default: ''},
+      {value: 'certifications.cancelReason', default: ''},
+      {value: 'certifications.latitude', default: ''},
+      {value: 'certifications.longitude', default: ''},
+      {value: 'certifications.didSpeedTest', default: ''}
     ];
 
     const transforms = [
@@ -1107,11 +1139,7 @@ userController.certificateSearch = async (req, res) => {
     ];
 
     const json2csvParser = new Parser({fields, transforms});
-    const certificationsCsv = json2csvParser.parse(
-      deviceCertifications.map(
-        (value) => value.certifications
-      )
-    );
+    const certificationsCsv = json2csvParser.parse(deviceCertifications);
 
     return res
       .set('Content-Type', 'text/csv')
