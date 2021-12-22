@@ -922,8 +922,6 @@ userController.certificateSearch = async (req, res) => {
   const firstDate = new Date(parseInt(req.body.first_date));
   const secondDate = new Date(parseInt(req.body.second_date));
   const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
-  const details = typeof req.body.details === 'undefined' ?
-    '' : req.body.details;
   const deviceId = typeof req.body.device_id === 'undefined' ?
     '' : req.body.device_id;
   const csv = typeof req.body.csv === 'undefined' ?
