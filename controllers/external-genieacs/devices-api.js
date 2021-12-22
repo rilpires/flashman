@@ -305,6 +305,8 @@ const getDefaultFields = function() {
         end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
         test_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TestBytesReceived',
         down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
+        full_load_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TestBytesReceivedUnderFullLoading',
+        full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.PeriodOfFullLoading',
       },
     },
   };

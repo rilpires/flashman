@@ -134,7 +134,7 @@ $(document).ready(function() {
               .removeClass((i, c)=>c.match(/fa\-.*/))
               .addClass('fa-3x fa-times');
               $('.btn-start-speed-test').prop('disabled', false);
-            }, 50*1000);
+            }, 10000000*1000);
           } else {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);

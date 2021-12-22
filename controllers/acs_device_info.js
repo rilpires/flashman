@@ -973,6 +973,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       end_time: '',
       test_bytes_rec: '',
       down_transports: '',
+      full_load_bytes_rec: '',
+      full_load_period: '',
     },
   };
 
@@ -1176,8 +1178,8 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
-  let numberOfCon = 1;
-  let SpeedtestHostUrl = 'http://18.229.105.162:25752/measure/file3.bin';
+  let numberOfCon = 3;
+  let SpeedtestHostUrl = 'http://10.42.0.1:25752/measure/file3.bin';
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1244,12 +1246,14 @@ acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
         (rqstTime.valueOf() > lastTime.valueOf())) {
       let beginTime = new Date(speedKeys.bgn_time);
       let endTime = new Date(speedKeys.end_time);
-      let speedValue = speedKeys.test_bytes_rec /
+      let speedValue = (speedKeys.test_bytes_rec * (8 / 1024)) /
                 (endTime.valueOf()-beginTime.valueOf());
+      let speedValue2 = ((speedKeys.full_load_bytes_rec * 8 * (10**6)) /
+                         (speedKeys.full_load_period * (1024**2)));
       console.log(speedValue);
-      console.log(parseInt(speedValue*(8/1024)));
+      console.log(speedValue2);
       let result = {
-        downSpeed: parseInt(speedValue*(8/1024)).toString() + ' Mbps',
+        downSpeed: parseInt(speedValue2).toString() + ' Mbps',
         user: device.current_speedtest.user,
       };
       deviceHandlers.storeSpeedtestResult(device, result);

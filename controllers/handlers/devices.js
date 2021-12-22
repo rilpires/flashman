@@ -294,7 +294,7 @@ deviceHandlers.sendPingToTraps = function(id, results) {
   });
 };
 
-deviceHandlers.storeSpeedtestResult = function(device, result) {
+deviceHandlers.storeSpeedtestResult = async function(device, result) {
   let randomString = parseInt(Math.random()*10000000).toString();
   let now = new Date();
   let formattedDate = '' + now.getDate();
@@ -332,7 +332,7 @@ deviceHandlers.storeSpeedtestResult = function(device, result) {
     device.last_speedtest_error.error = 'Error';
   }
 
-  device.save();
+  await device.save();
   sio.anlixSendSpeedTestNotifications(device._id, result);
   console.log('Speedtest results for device ' +
     device._id + ' received successfully.');
