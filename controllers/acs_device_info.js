@@ -1227,7 +1227,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
   let numberOfCon = 3;
-  let SpeedtestHostUrl = 'http://10.42.0.1:25752/measure/file3.bin';
+  let SpeedtestHostUrl = 'http://192.168.88.150:25752/measure/file3.bin';
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1282,14 +1282,14 @@ acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
     data, speedKeys, speedFields,
   );
   if (speedKeys.diag_state == 'Completed') {
-    console.log(JSON.stringify(device.current_speedtest));
-    console.log(JSON.stringify(device.speedtest_results));
     let rqstTime = device.current_speedtest.timestamp;
-    let lastTime = utilHandlers.parseDate(
-      device.speedtest_results[device.speedtest_results.length-1].timestamp
-    );
-    console.log(rqstTime, lastTime);
-    console.log(rqstTime.valueOf, lastTime.valueOf);
+
+    let lastTime = new Date(1970, 0, 1);
+    if (device.speedtest_results.length > 0) {
+      lastTime = utilHandlers.parseDate(
+        device.speedtest_results[device.speedtest_results.length-1].timestamp
+      );
+    }
     if (!device.current_speedtest.timestamp || 
         (rqstTime.valueOf() > lastTime.valueOf())) {
       let beginTime = new Date(speedKeys.bgn_time);
@@ -1306,6 +1306,17 @@ acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
       };
       deviceHandlers.storeSpeedtestResult(device, result);
     }
+  } else if (speedKeys.diag_state == 'Error_InitConnectionFailed') {
+    let result = {
+      downSpeed: '503 Server',
+      user: device.current_speedtest.user,
+    };
+    deviceHandlers.storeSpeedtestResult(device, result);
+  } else {
+    let result = {
+      user: device.current_speedtest.user,
+    };
+    deviceHandlers.storeSpeedtestResult(device, result);
   }
 };
 
