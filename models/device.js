@@ -16,6 +16,8 @@ let deviceSchema = new Schema({
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   last_tr069_sync: Date,
+  // Used to signal inform to sync all data after recovering from hard reset
+  recovering_tr069_reset: {type: Boolean, default: false},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -37,6 +39,8 @@ let deviceSchema = new Schema({
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
+  wan_vlan_id: Number,
+  wan_mtu: Number,
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,

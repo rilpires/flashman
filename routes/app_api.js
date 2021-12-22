@@ -14,6 +14,8 @@ router.route('/refreshinfo').post(appAPIController.refreshInfo);
 router.route('/speedtest').post(appAPIController.doSpeedtest);
 router.route('/wps').post(appAPIController.activateWpsButton);
 router.route('/validateserial').post(appAPIController.validateDeviceSerial);
+router.route('/backupreset').post(appAPIController.fetchBackupForAppReset);
+router.route('/signalresetrecover').post(appAPIController.signalResetRecover);
 router.route('/get/logininfo').post(appAPIController.appGetLoginInfo);
 router.route('/get/devices').post(appAPIController.appGetDevices);
 router.route('/get/version').post(appAPIController.appGetVersion);

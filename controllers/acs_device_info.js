@@ -314,6 +314,8 @@ const createRegistry = async function(req, permissions) {
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user.value : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
+    wan_vlan_id: (data.wan.vlan) ? data.wan.vlan.value : undefined,
+    wan_mtu: (hasPPPoE) ? data.wan.mtu_ppp.value : data.wan.mtu.value,
     wifi_ssid: ssid,
     wifi_bssid:
       (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
@@ -423,7 +425,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   }
   // Devices updating need to return immediately
   // Devices with no last sync need to sync immediately
-  if (device.do_update || !device.last_tr069_sync) {
+  // Devices recovering from hard reset need to sync immediately
+  if (
+    device.do_update || !device.last_tr069_sync || device.recovering_tr069_reset
+  ) {
     return res.status(200).json({success: true, measure: true});
   }
   let config = await Config.findOne({is_default: true}).catch((err)=>{
@@ -550,11 +555,24 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (data.wan.uptime_ppp.value) {
       device.wan_up_time = data.wan.uptime_ppp.value;
     }
+    if (data.wan.mtu_ppp && data.wan.mtu_ppp.value) {
+      let mtu = data.wan.mtu_ppp.value;
+      device.wan_mtu = mtu;
+    }
   } else {
     if (data.wan.wan_ip.value) device.wan_ip = data.wan.wan_ip.value;
     if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
     device.pppoe_user = '';
     device.pppoe_password = '';
+    if (data.wan.mtu && data.wan.mtu.value) {
+      let mtu = data.wan.mtu.value;
+      device.wan_mtu = mtu;
+    }
+  }
+
+  if (data.wan.vlan && data.wan.vlan.value) {
+    let vlan = data.wan.vlan.value;
+    device.wan_vlan_id = vlan;
   }
 
   if (data.wifi2.enable && typeof data.wifi2.enable.value !== 'undefined') {
@@ -593,6 +611,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.ssid = device.wifi_ssid.trim();
       hasChanges = true;
     }
+  }
+  // Force a wifi password sync after a hard reset
+  if (device.recovering_tr069_reset) {
+    changes.wifi2.password = device.wifi_password.trim();
+    hasChanges = true;
   }
   if (data.wifi2.bssid) {
     let bssid2 = data.wifi2.bssid.value;
@@ -646,6 +669,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi5.ssid = device.wifi_ssid_5ghz.trim();
       hasChanges = true;
     }
+  }
+  // Force a wifi password sync after a hard reset
+  if (device.recovering_tr069_reset) {
+    changes.wifi5.password = device.wifi_password_5ghz.trim();
+    hasChanges = true;
   }
   if (data.wifi5.bssid) {
     let bssid5 = data.wifi5.bssid.value;
@@ -751,6 +779,22 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
     device.web_admin_password = data.common.web_admin_password.value;
   }
+  if (
+    device.recovering_tr069_reset &&
+    data.common.web_admin_username &&
+    data.common.web_admin_username.writable
+  ) {
+    changes.common.web_admin_username = config.tr069.web_login;
+    hasChanges = true;
+  }
+  if (
+    device.recovering_tr069_reset &&
+    data.common.web_admin_password &&
+    data.common.web_admin_password.writable
+  ) {
+    changes.common.web_admin_password = config.tr069.web_password;
+    hasChanges = true;
+  }
   if (data.common.version &&
       data.common.version.value !== device.installed_release) {
     device.installed_release = data.common.version.value;
@@ -781,9 +825,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       console.log(
         'Device '+device.acs_id+' has entered a sync loop: '+serialChanges,
       );
-    } else if (device.acs_sync_loops <= syncLimit) {
+    } else if (
+      device.recovering_tr069_reset || device.acs_sync_loops <= syncLimit
+    ) {
       // Guard against looping syncs - do not force changes if over limit
       // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+      // Bypass if recovering from hard reset
       let acceptLocalChanges = false;
       if (!acceptLocalChanges) {
         if (hasChanges) {
@@ -798,6 +845,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.acs_sync_loops = 0;
     }
   }
+  device.recovering_tr069_reset = false;
   let now = Date.now();
   device.last_contact = now;
   device.last_tr069_sync = now;
@@ -1923,10 +1971,10 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   Object.keys(changes).forEach((masterKey)=>{

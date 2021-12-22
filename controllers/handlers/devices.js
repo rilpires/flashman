@@ -269,7 +269,7 @@ deviceHandlers.sendPingToTraps = function(id, results) {
           requestOptions.url = callbackUrl;
           requestOptions.method = 'PUT';
           requestOptions.json = {
-            'id': matchedDevice._id,
+            'id': id,
             'type': 'device',
             'changes': {ping_results: results},
           };
