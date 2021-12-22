@@ -1849,10 +1849,10 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   Object.keys(changes).forEach((masterKey)=>{
