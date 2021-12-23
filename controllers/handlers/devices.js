@@ -3,6 +3,7 @@ const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
 const sio = require('../../sio');
 const util = require('./util');
+const request = require('request-promise-native');
 
 let deviceHandlers = {};
 
