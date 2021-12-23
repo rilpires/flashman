@@ -1084,11 +1084,10 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         await acsDeviceInfoController.calculatePingDiagnostic(
           mac, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
         );
-        if (device.current_speedtest.stage != 0) {
-          await acsDeviceInfoController.calculateSpeedDiagnostic(device, data,
-                                                  diagNecessaryKeys.speedtest,
-                                                  fields.diagnostics.speedtest);
-        }
+        await acsDeviceInfoController.calculateSpeedDiagnostic(
+          device, data, diagNecessaryKeys.speedtest,
+          fields.diagnostics.speedtest,
+        );
       } catch (e) {
         console.log('Failed: genie response was not valid');
         console.log(e);
