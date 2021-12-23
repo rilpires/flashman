@@ -14,6 +14,11 @@ const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const crypto = require('crypto');
 
+const Mutex = require('async-mutex').Mutex;
+
+let mutex = new Mutex();
+let mutexRelease = null;
+
 let deviceInfoController = {};
 
 const genericValidate = function(field, func, key, minlength, errors) {
@@ -1288,7 +1293,7 @@ deviceInfoController.getPortForward = function(req, res) {
   }
 };
 
-deviceInfoController.receiveDevices = function(req, res) {
+deviceInfoController.receiveDevices = async function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
@@ -1299,7 +1304,7 @@ deviceInfoController.receiveDevices = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Cant get device profile.');
@@ -1321,8 +1326,29 @@ deviceInfoController.receiveDevices = function(req, res) {
     let outData = [];
     let routersData = undefined;
 
+    const permissions = DeviceVersion.findByVersion(
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model,
+    );
+
+    // In mesh v2 there is a new layout of the flashbox response
+    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+      permissions.grantMeshV2SecondaryMode);
+
     if ('mesh_routers' in req.body) {
       routersData = req.body.mesh_routers;
+      if (meshV2) {
+        // in the new layout devices only send their mesh father info
+        const meshFatherBssid = Object.keys(routersData)[0];
+        let fatherMac = meshHandlers.convertBSSIDToId(
+          matchedDevice, meshFatherBssid,
+        );
+        if (fatherMac === '') {
+          return res.status(500).json({processed: 0});
+        }
+        matchedDevice.mesh_father = fatherMac;
+      }
     }
 
     for (let connDeviceMac in devsData) {
@@ -1432,20 +1458,36 @@ deviceInfoController.receiveDevices = function(req, res) {
       }
     }
 
+    // used for mesh networks
+    let willSignalMeshTopology = false;
+    let matchedMaster;
     if (routersData) {
       // Erasing existing data of previous mesh routers
       matchedDevice.mesh_routers = [];
 
       for (let connRouter in routersData) {
         if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
-          let upConnRouterMac = connRouter.toLowerCase();
+          let upConnRouterMac;
+          if (meshV2) {
+            // in new response the keys are in uppercase
+            upConnRouterMac = connRouter.toUpperCase();
+          } else {
+            // in legacy response the keys are in lowercase
+            upConnRouterMac = connRouter.toLowerCase();
+          }
           let upConnRouter = routersData[upConnRouterMac];
           // Skip if not lowercase
           if (!upConnRouter) continue;
 
-          if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
+          if (upConnRouter.rx_bit && typeof upConnRouter.rx_bit === 'number') {
             upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
+          } else {
+            upConnRouter.rx_bit = 0;
+          }
+          if (upConnRouter.tx_bit && typeof upConnRouter.tx_bit === 'number') {
             upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
+          } else {
+            upConnRouter.tx_bit = 0;
           }
           if (upConnRouter.signal) {
             upConnRouter.signal = parseFloat(upConnRouter.signal);
@@ -1484,15 +1526,60 @@ deviceInfoController.receiveDevices = function(req, res) {
           });
         }
       }
+      /*
+        This region should not have two parellel executions because fields
+        of the same device are read and written. A random timeout is set between
+        accesses to the mutex
+      */
+      let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+      await new Promise((resolve) => setTimeout(resolve, interval));
+      mutexRelease = await mutex.acquire();
+      let devicesRemaining;
+
+      try {
+        if (matchedDevice.mesh_master) {
+          // Is a slave device
+          let masterMac = matchedDevice.mesh_master;
+          let matchedMaster = await DeviceModel.findById(masterMac);
+          if (!matchedMaster) {
+            throw new Error('Did not find mesh master in database');
+          }
+        } else {
+          matchedMaster = matchedDevice;
+        }
+        // Update number of device remaining to send this info
+        devicesRemaining = matchedMaster.onlinedevs_remaining;
+        if (devicesRemaining) {
+          devicesRemaining -= 1;
+          matchedMaster.onlinedevs_remaining = devicesRemaining;
+        }
+        if (devicesRemaining === 0) {
+          matchedMaster.do_update_status = 30;
+          // Last mesh device to report topology should trigger mesh topology
+          // done to scheduler and mesh handler
+          willSignalMeshTopology = true;
+        }
+        await matchedMaster.save();
+      } catch (err) {
+        console.log(err);
+        mutexRelease();
+        return res.status(500).json({processed: 0});
+      }
+      mutexRelease();
     }
 
     matchedDevice.last_devices_refresh = Date.now();
-    matchedDevice.save();
+    await matchedDevice.save();
 
     // if someone is waiting for this message, send the information
     sio.anlixSendOnlineDevNotifications(id, outData);
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
+
+    if (willSignalMeshTopology) {
+      updateScheduler.successTopology(matchedMaster._id);
+      meshHandlers.validateMeshTopology(matchedMaster._id);
+    }
 
     return res.status(200).json({processed: 1});
   });

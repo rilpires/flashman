@@ -390,9 +390,47 @@ meshHandlers.beginMeshUpdate = async function(res, masterDevice) {
   await masterDevice.save();
   masterDevice.mesh_update_remaining.forEach((mac)=>{
     mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
-    deviceHandlers.timeoutUpdateAck(mac.toUpperCase(), 'onlinedevs');
   });
+  deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
   res.status(200).json({'success': true});
+};
+
+meshHandlers.convertBSSIDToId = async function(device, bssid) {
+  try {
+    let masterMac = device.mesh_master;
+    const matchedMaster = await DeviceModel.findById(
+      masterMac, 'bssid_mesh2 bssid_mesh5 mesh_slaves',
+    ).lean();
+    if (!matchedMaster) {
+      return '';
+    }
+    if (
+      matchedMaster.bssid_mesh2 === bssid ||
+      matchedMaster.bssid_mesh5 === bssid
+    ) {
+      return masterMac;
+    }
+    for (let i = 0; i < matchedMaster.mesh_slaves.length; i++) {
+      const slaveMac = matchedMaster.mesh_slaves[i];
+      // skip current device
+      if (slaveMac === device._id) continue;
+      const matchedSlave = await DeviceModel.findById(
+        slaveMac, 'bssid_mesh2 bssid_mesh5',
+      ).lean();
+      if (!matchedSlave) {
+        return '';
+      }
+      if (
+        matchedSlave.bssid_mesh2 === bssid ||
+        matchedSlave.bssid_mesh5 === bssid
+      ) {
+        return slaveMac;
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    return '';
+  }
 };
 
 // meshHandlers.getNextToUpdateRec = function(meshSons, newMac, devicesToUpdate) {
