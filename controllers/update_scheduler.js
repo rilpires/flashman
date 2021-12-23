@@ -289,7 +289,7 @@ const markNextForUpdate = async function() {
     messaging.sendUpdateMessage(device);
     mqtt.anlixMessageRouterUpdate(device._id);
     // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(device._id);
+    deviceHandlers.timeoutUpdateAck(device._id, 'update');
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};

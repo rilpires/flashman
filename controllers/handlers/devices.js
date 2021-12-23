@@ -101,15 +101,39 @@ const syncUpdateScheduler = async function(mac) {
   }
 };
 
-deviceHandlers.timeoutUpdateAck = function(mac) {
-  // Default timeout is 3 minutes, enough time to download 16MB over a 1Mbps
-  // connection, with enough breathing room
-  let timeout = 3*60*1000;
-  if (process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) {
-    timeout = parseInt(process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) * 1000;
-    if (isNaN(timeout)) {
-      timeout = 3*60*1000; // just in case someone messes up the parameter
+deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
+  let timeout;
+  let targetStatus; // waiting status
+  let errStatus; // timeout status
+  let timeoutMsg;
+  if (timeoutType === 'update') {
+    // Default timeout is 3 minutes, enough time to download 16MB over a 1Mbps
+    // connection, with enough breathing room
+    timeout = 3*60*1000;
+    targetStatus = 0;
+    errStatus = 5;
+    timeoutMsg = 'UPDATE: Did not receive update ack for MAC ' + mac;
+    if (process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) {
+      timeout = parseInt(process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) * 1000;
+      if (isNaN(timeout)) {
+        timeout = 3*60*1000; // just in case someone messes up the parameter
+      }
     }
+  } else if (timeoutType === 'onlinedev') {
+    // Default timeout is 25 seconds
+    timeout = 25*1000;
+    targetStatus = 20;
+    errStatus = 6;
+    timeoutMsg = 'UPDATE: Did not receive topology info for MAC ' + mac;
+    if (process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) {
+      timeout = parseInt(process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) * 1000;
+      if (isNaN(timeout)) {
+        timeout = 25*1000; // just in case someone messes up the parameter
+      }
+    }
+  } else {
+    console.log('Invalid timeout type');
+    return;
   }
   setTimeout(()=>{
     DeviceModel.findById(mac, function(err, matchedDevice) {
@@ -119,10 +143,11 @@ deviceHandlers.timeoutUpdateAck = function(mac) {
         matchedDevice.wifi_is_5ghz_capable,
         matchedDevice.model,
       );
-      if (permissions.grantUpdateAck && matchedDevice.do_update_status === 0) {
+      if (timeoutType === 'update' && !permissions.grantUpdateAck) return;
+      if (matchedDevice.do_update_status === targetStatus) {
         // Ack expected but not received after timeout - assume error and cancel
-        console.log('UPDATE: Device '+mac+' did not send ack, aborting update');
-        matchedDevice.do_update_status = 5; // ack not received
+        console.log(timeoutMsg);
+        matchedDevice.do_update_status = errStatus; // ack not received
         matchedDevice.save();
         // Sync with update scheduler to signal error for that update
         // TODO: Find a way to use the function in update_scheduler.js instead

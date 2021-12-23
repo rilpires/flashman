@@ -338,21 +338,21 @@ deviceListController.changeUpdate = async function(req, res) {
                'deve ser feita a partir do CPE principal dessa rede',
     });
   }
-  matchedDevice.do_update = doUpdate;
   if (doUpdate) {
-    matchedDevice.do_update_status = 0; // waiting
     matchedDevice.release = req.params.release.trim();
-    messaging.sendUpdateMessage(matchedDevice);
-    // Set mesh master's remaining updates field to keep track of network
-    // update progress. This is only a helper value for the frontend.
     if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
-      let slaveCount = matchedDevice.mesh_slaves.length;
-      matchedDevice.do_update_mesh_remaining = slaveCount + 1;
+      return meshHandlers.beginMeshUpdate(res, matchedDevice);
     }
+    matchedDevice.do_update_status = 0; // waiting
+    messaging.sendUpdateMessage(matchedDevice);
   } else {
     matchedDevice.do_update_status = 1; // success
+    // Reset mesh fields as well, in case this is a mesh network
+    matchedDevice.mesh_next_to_update = '';
+    matchedDevice.mesh_update_remaining = [];
     meshHandlers.syncUpdateCancel(matchedDevice);
   }
+  matchedDevice.do_update = doUpdate;
   try {
     await matchedDevice.save();
   } catch (e) {
@@ -367,13 +367,12 @@ deviceListController.changeUpdate = async function(req, res) {
     } else {
       return res.status(500).json(response);
     }
-  } else {
+  } else if (doUpdate) {
     mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+    // Start ack timeout
+    deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
   }
   res.status(200).json({'success': true});
-
-  // Start ack timeout
-  deviceHandlers.timeoutUpdateAck(matchedDevice._id);
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {
@@ -415,7 +414,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
       res.status(200).json({'success': true});
 
       // Start ack timeout
-      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
+      deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
     });
   });
 };
@@ -1015,7 +1014,7 @@ deviceListController.factoryResetDevice = function(req, res) {
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
     // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(device._id);
+    deviceHandlers.timeoutUpdateAck(device._id, 'update');
   });
 };
 
