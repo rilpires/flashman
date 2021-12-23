@@ -55,7 +55,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'IGD') return 'g';
+      if (ouiModelStr === 'IGD') return 'b,g';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -69,7 +69,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
-      if (ouiModelStr === 'IGD') return 'n';
+      if (ouiModelStr === 'IGD') return 'b,g,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -83,7 +83,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
-      if (ouiModelStr === 'IGD') return 'n';
+      if (ouiModelStr === 'IGD') return 'a,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -97,7 +97,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
-      if (ouiModelStr === 'IGD') return 'ac';
+      if (ouiModelStr === 'IGD') return 'ac,n,a';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -188,6 +188,8 @@ const getDefaultFields = function() {
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
+      mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.MaxMTUSize',
+      mtu_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
       port_mapping_entries_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
@@ -283,6 +285,30 @@ const getDefaultFields = function() {
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
+    diagnostics: {
+      ping: {
+        root: 'InternetGatewayDevice.IPPingDiagnostics',
+        diag_state: 'InternetGatewayDevice.IPPingDiagnostics.DiagnosticsState',
+        failure_count: 'InternetGatewayDevice.IPPingDiagnostics.FailureCount',
+        success_count: 'InternetGatewayDevice.IPPingDiagnostics.SuccessCount',
+        host: 'InternetGatewayDevice.IPPingDiagnostics.Host',
+        num_of_rep: 'InternetGatewayDevice.IPPingDiagnostics.NumberOfRepetitions',
+        avg_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.AverageResponseTime',
+        max_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MaximumResponseTime',
+        min_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime',
+        timeout: 'InternetGatewayDevice.IPPingDiagnostics.Timeout',
+      },
+      speedtest: {
+        root: 'InternetGatewayDevice.DownloadDiagnostics',
+        diag_state: 'InternetGatewayDevice.DownloadDiagnostics.DiagnosticsState',
+        num_of_conn: 'InternetGatewayDevice.DownloadDiagnostics.NumberOfConnections',
+        download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
+        bgn_time: 'InternetGatewayDevice.DownloadDiagnostics.BOMTime',
+        end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
+        total_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TotalBytesReceived',
+        down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
+      },
+    },
   };
 };
 
@@ -297,6 +323,7 @@ const getHuaweiFields = function(model) {
       fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
       fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt'];
@@ -390,6 +417,7 @@ const getZTEFields = function(model) {
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
@@ -416,6 +444,9 @@ const getNokiaFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
+  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
   return fields;
 };
 
@@ -430,15 +461,21 @@ const getStavixFields = function(model) {
       administration, its easily could consume up to 100MB/min of bandwidth
       fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
       ConfigFile'; */
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
       break;
     case 'xPON':
       fields.common.alt_uid = fields.common.mac;
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       break;
   }
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid.replace(/5/g, '6');
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.bssid = fields.wifi5.bssid.replace(/5/g, '6');
@@ -480,6 +517,60 @@ const getStavixFields = function(model) {
   return fields;
 };
 
+const getIgdFields = function() {
+  let fields = getDefaultFields();
+  fields.common.alt_uid = fields.common.mac;
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wifi2.ssid = fields.wifi5.ssid;
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
+  fields.wifi2.bssid = fields.wifi5.bssid;
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '1');
+  fields.wifi2.password = fields.wifi5.password;
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '1');
+  fields.wifi2.channel = fields.wifi5.channel;
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '1');
+  fields.wifi2.auto = fields.wifi5.auto;
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '1');
+  fields.wifi2.mode = fields.wifi5.mode;
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '1');
+  fields.wifi2.enable = fields.wifi5.enable;
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '1');
+  fields.wifi2.band = fields.wifi5.band;
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '1');
+  fields.wifi2.beacon_type = fields.wifi5.beacon_type;
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '1');
+  /*
+  fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '7');
+  fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '2');
+  fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '7');
+  fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '2');
+  fields.mesh2.password = fields.mesh5.password.replace(/6/g, '7');
+  fields.mesh5.password = fields.mesh5.password.replace(/6/g, '2');
+  fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '7');
+  fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '2');
+  fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '7');
+  fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '2');
+  fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '7');
+  fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '2');
+  fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '7');
+  fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '2');
+  fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '7');
+  fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '2');
+  fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '7');
+  fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '2');
+  fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '7');
+  fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '2');
+  */
+  return fields;
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -515,6 +606,10 @@ const getModelFields = function(oui, model) {
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
+      break;
+    case 'IGD':
+      message = '';
+      fields = getIgdFields();
       break;
     default:
       success = false;
@@ -645,9 +740,24 @@ const syncDeviceData = async function(args, callback) {
   callback(null, result);
 };
 
+const syncDeviceDiagnostics = async function(args, callback) {
+  let params = JSON.parse(args[0]);
+  if (!params || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+  let result = await sendFlashmanRequest('receive/diagnostic', params,
+                                         callback);
+  callback(null, result);
+};
+
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
+exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+

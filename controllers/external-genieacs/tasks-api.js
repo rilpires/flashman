@@ -200,11 +200,11 @@ const checkPreset = function(preset) {
 
 /* sends a put request with a given 'provision' to genieacs and returns the
  genie json response parsed to javascript object. may throw unhandled errors */
-genie.putProvision = async function(script) {
+genie.putProvision = async function(script, provisionName) {
   script = script.slice(0, -1); // Remove EOF
   return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/provisions/flashman',
+    path: '/provisions/'+provisionName,
     headers: {
       'Content-Type': 'application/javascript',
       'Content-Length': Buffer.byteLength(script),
@@ -574,8 +574,15 @@ const sendTasks = async function(deviceid, tasks, timeout,
        message: `Device ${deviceid} doesn't exist.`};
     }
 
-    let task = JSON.parse(response.data); // parse task to javascript object.
-    if (response.statusCode !== 200) {/* if Genie didn't respond with
+    let task;
+    try {
+      task = JSON.parse(response.data); // parse task to javascript object.
+    } catch (e) {
+      task = '';
+      console.log('Wrong task at '+deviceid+ ' as '+response.data);
+    }
+    if (task != '' && response.statusCode !== 200) {
+      /* if Genie didn't respond with
       code 200, it scheduled the task for latter. */
       if (shouldRequestConnection) pendingTasks.push(task);
       /* if we are waiting for genie acs to connect with the device we add
