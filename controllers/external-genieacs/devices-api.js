@@ -656,7 +656,7 @@ const getDeviceFields = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let flashRes = await sendFlashmanRequest('device/inform', params, callback);
+  let flashRes = await sendFlashmanRequest('device/inform', params);
   if (!flashRes['success'] ||
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
@@ -672,10 +672,10 @@ const getDeviceFields = async function(args, callback) {
   });
 };
 
-const computeFlashmanUrl = function() {
+const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
-  if (numInstances > 1) {
+  if (shareLoad && numInstances > 1) {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn
     // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
@@ -689,9 +689,9 @@ const computeFlashmanUrl = function() {
   return url;
 };
 
-const sendFlashmanRequest = function(route, params) {
+const sendFlashmanRequest = function(route, params, shareLoad=true) {
   return new Promise((resolve, reject)=>{
-    let url = computeFlashmanUrl();
+    let url = computeFlashmanUrl(shareLoad);
     request({
       url: url + route,
       method: 'POST',
@@ -736,7 +736,7 @@ const syncDeviceData = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let result = await sendFlashmanRequest('device/syn', params, callback);
+  let result = await sendFlashmanRequest('device/syn', params);
   callback(null, result);
 };
 
@@ -748,8 +748,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let result = await sendFlashmanRequest('receive/diagnostic', params,
-                                         callback);
+  let result = await sendFlashmanRequest('receive/diagnostic', params, false);
   callback(null, result);
 };
 
