@@ -66,27 +66,28 @@ meshHandlers.syncSlaveCustomConfig = function(slave, config) {
 };
 
 meshHandlers.syncSlaves = function(master, slaveCustomConfig=null) {
-  for (let i = 0; i < master.mesh_slaves.length; i++) {
-    let slaveMac = master.mesh_slaves[i];
-    DeviceModel.findById(slaveMac, function(err, slaveDevice) {
-      if (err) {
-        console.log('Attempt to modify mesh slave '+ slaveMac +' from master ' +
-          master._id + ' failed: cant get slave device.');
-      } else if (!slaveDevice) {
-        console.log('Attempt to modify mesh slave '+ slaveMac +' from master ' +
-          master._id + ' failed: cant get slave device.');
-      } else {
-        meshHandlers.syncSlaveWifi(master, slaveDevice);
+  if (master.mesh_slaves && master.mesh_slaves.length) {
+    for (let i = 0; i < master.mesh_slaves.length; i++) {
+      let slaveMac = master.mesh_slaves[i];
+      DeviceModel.findById(slaveMac, function(err, slaveDevice) {
+        if (err || !slaveDevice) {
+          console.log(`Attempt to modify mesh slave ${slaveMac} from master `+
+            `${master._id} failed: can't get slave device.`);
+        } else {
+          meshHandlers.syncSlaveWifi(master, slaveDevice);
 
-        if (slaveCustomConfig && slaveCustomConfig[i]) {
-          meshHandlers.syncSlaveCustomConfig(slaveDevice, slaveCustomConfig[i]);
+          if (slaveCustomConfig && slaveCustomConfig[i]) {
+            meshHandlers.syncSlaveCustomConfig(
+              slaveDevice, slaveCustomConfig[i],
+            );
+          }
+          slaveDevice.save();
+
+          // Push updates to the Slave
+          mqtt.anlixMessageRouterUpdate(slaveMac);
         }
-        slaveDevice.save();
-
-        // Push updates to the Slave
-        mqtt.anlixMessageRouterUpdate(slaveMac);
-      }
-    });
+      });
+    }
   }
 };
 
