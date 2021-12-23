@@ -188,6 +188,8 @@ const getDefaultFields = function() {
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime',
+      mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.MaxMTUSize',
+      mtu_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize',
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.Stats.BytesSent',
       port_mapping_entries_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
@@ -283,6 +285,30 @@ const getDefaultFields = function() {
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
+    diagnostics: {
+      ping: {
+        root: 'InternetGatewayDevice.IPPingDiagnostics',
+        diag_state: 'InternetGatewayDevice.IPPingDiagnostics.DiagnosticsState',
+        failure_count: 'InternetGatewayDevice.IPPingDiagnostics.FailureCount',
+        success_count: 'InternetGatewayDevice.IPPingDiagnostics.SuccessCount',
+        host: 'InternetGatewayDevice.IPPingDiagnostics.Host',
+        num_of_rep: 'InternetGatewayDevice.IPPingDiagnostics.NumberOfRepetitions',
+        avg_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.AverageResponseTime',
+        max_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MaximumResponseTime',
+        min_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime',
+        timeout: 'InternetGatewayDevice.IPPingDiagnostics.Timeout',
+      },
+      speedtest: {
+        root: 'InternetGatewayDevice.DownloadDiagnostics',
+        diag_state: 'InternetGatewayDevice.DownloadDiagnostics.DiagnosticsState',
+        num_of_conn: 'InternetGatewayDevice.DownloadDiagnostics.NumberOfConnections',
+        download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
+        bgn_time: 'InternetGatewayDevice.DownloadDiagnostics.BOMTime',
+        end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
+        total_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TotalBytesReceived',
+        down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
+      },
+    },
   };
 };
 
@@ -297,6 +323,7 @@ const getHuaweiFields = function(model) {
       fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
       fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt'];
@@ -390,6 +417,7 @@ const getZTEFields = function(model) {
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminPassword';
       fields.wan.recv_bytes = fields.wan.recv_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
       fields.wan.sent_bytes = fields.wan.sent_bytes.replace(/WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig');
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
       fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
@@ -416,6 +444,9 @@ const getNokiaFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
+  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
   return fields;
 };
 
@@ -430,9 +461,11 @@ const getStavixFields = function(model) {
       administration, its easily could consume up to 100MB/min of bandwidth
       fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
       ConfigFile'; */
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
       break;
     case 'xPON':
       fields.common.alt_uid = fields.common.mac;
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       break;
   }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -623,7 +656,7 @@ const getDeviceFields = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let flashRes = await sendFlashmanRequest('device/inform', params, callback);
+  let flashRes = await sendFlashmanRequest('device/inform', params);
   if (!flashRes['success'] ||
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
@@ -639,10 +672,10 @@ const getDeviceFields = async function(args, callback) {
   });
 };
 
-const computeFlashmanUrl = function() {
+const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
-  if (numInstances > 1) {
+  if (shareLoad && numInstances > 1) {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn
     // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
@@ -656,9 +689,9 @@ const computeFlashmanUrl = function() {
   return url;
 };
 
-const sendFlashmanRequest = function(route, params) {
+const sendFlashmanRequest = function(route, params, shareLoad=true) {
   return new Promise((resolve, reject)=>{
-    let url = computeFlashmanUrl();
+    let url = computeFlashmanUrl(shareLoad);
     request({
       url: url + route,
       method: 'POST',
@@ -703,7 +736,19 @@ const syncDeviceData = async function(args, callback) {
       message: 'Incomplete arguments',
     });
   }
-  let result = await sendFlashmanRequest('device/syn', params, callback);
+  let result = await sendFlashmanRequest('device/syn', params);
+  callback(null, result);
+};
+
+const syncDeviceDiagnostics = async function(args, callback) {
+  let params = JSON.parse(args[0]);
+  if (!params || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+  let result = await sendFlashmanRequest('receive/diagnostic', params, false);
   callback(null, result);
 };
 
@@ -713,3 +758,5 @@ exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
+exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+

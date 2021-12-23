@@ -1093,12 +1093,14 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
-        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-          return map[req.params.id.toUpperCase()];
-        });
-        if (device && !device.use_tr069 && !isDevOn) {
-          return res.status(200).json({success: false,
-                                     message: 'CPE não esta online!'});
+        if (device && !device.use_tr069) {
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[req.params.id.toUpperCase()];
+          });
+          if (device && !isDevOn) {
+            return res.status(200).json({success: false,
+                                       message: 'CPE não esta online!'});
+          }
         }
         if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
@@ -1140,9 +1142,14 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID, req.params.id.toUpperCase(),
+            );
           }
-          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          if (device && device.use_tr069) {
+            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
+          } else if (device) {
+            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1787,6 +1794,9 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
+                // Since we changed the prefix, this implies a change to SSIDs
+                changes.wifi2.ssid = matchedDevice.wifi_ssid;
+                changes.wifi5.ssid = matchedDevice.wifi_ssid_5ghz;
               } else {
                 hasPermissionError = true;
               }

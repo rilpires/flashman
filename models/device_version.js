@@ -52,6 +52,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -82,6 +83,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -113,6 +115,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -139,6 +142,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -169,6 +173,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -197,6 +202,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -227,6 +233,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -262,6 +269,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -288,6 +296,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -317,6 +326,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -348,6 +358,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -374,6 +385,7 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -394,6 +406,7 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -1880,7 +1893,7 @@ const grantWifiExtendedChannels = function(version, model) {
 
 const grantPingTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return false;
+    return tr069Devices[model].feature_support.ping_test;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
