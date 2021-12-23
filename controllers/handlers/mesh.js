@@ -1,4 +1,5 @@
 const DeviceModel = require('../../models/device');
+const DeviceVersion = require('../../models/device_version');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
@@ -374,6 +375,176 @@ meshHandlers.generateBSSIDLists = async function(device) {
     mesh2: bssids2,
     mesh5: bssids5,
   };
+};
+
+meshHandlers.getNextToUpdateRec = function(meshSons, newMac, devicesToUpdate) {
+  let nextDevice;
+  if (meshSons[newMac] && meshSons[newMac].length) {
+    for (let i=0; i<meshSons[newMac].length; i++) {
+      const auxDevice = meshHandlers.getNextToUpdateRec(
+        meshSons, meshSons[newMac][i], devicesToUpdate);
+      // Only choose a device that hasn't been updated yet
+      if (devicesToUpdate.includes(auxDevice)) {
+        nextDevice = auxDevice;
+        break;
+      } else {
+        continue;
+      }
+    }
+    // If all devices below newMac have already updated then newMac is next
+    if (!nextDevice) {
+      nextDevice = newMac;
+    }
+  } else {
+    // If device doesn't have sons then we return it as next to update
+    nextDevice = newMac;
+  }
+  return nextDevice;
+};
+
+// Used for mesh v1 update
+const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
+  const numAnnouncedDevices = meshRouters[masterMac].length;
+  if (numAnnouncedDevices < slaves.length) {
+    // If master doesn't see all the slaves immediately return.
+    // Update won't be allowed.
+    return;
+  }
+  // If below this threshold do not add edge to topology
+  const signalThreshold = -65;
+  for (let i=0; i<numAnnouncedDevices; i++) {
+    const meshRouter = meshRouters[masterMac][i];
+    if (meshRouter.signal < signalThreshold) {
+      // If master doesn't see all the slaves immediately return.
+      // Update won't be allowed.
+      return;
+    }
+  }
+  // this will be used for controlling update order
+  // hash map where father is the key and value is list of sons
+  return {masterMac: slaves};
+};
+
+// Used for mesh v2 update
+const getExactMeshTopology = async function(meshFathers, masterMac) {
+  // this will be used for controlling update order
+  let meshSons = {};
+  let errorOccurred = false;
+  const macs = Object.keys(meshFathers);
+  for (let i=0; i<macs.length; i++) {
+    if (errorOccurred) return;
+    const macKey = macs[i];
+    // We only analyse edges from the perspective of the slaves
+    if (macKey === masterMac) return;
+    const fatherMac = meshFathers[macKey].toUpperCase();
+    // hash map where father is the key and value is list of sons
+    if (!meshSons[fatherMac]) {
+      meshSons[fatherMac] = [macKey];
+    } else {
+      meshSons[fatherMac].push(macKey);
+    }
+  }
+  if (errorOccurred) return;
+  return meshSons;
+};
+
+/*
+  The topology we get uses bssids instead of mac addresses and flashman does
+  not have access to the bssids of devices in mesh v1, therefore, only mesh
+  networks that have a star topology, in mesh v1, are allowed to upgrade.
+  Devices in mesh v2 announce their mesh father. This allows the exact topology
+  to be discovered. We use that topology to choose the next device to upgrade.
+*/
+meshHandlers.getMeshSons = async function(
+  meshRouters, meshFathers, master) {
+  let hasFullTopologyInfo = true;
+  for (let i=0; i<Object.keys(meshRouters).length; i++) {
+    const mac = Object.keys(meshRouters)[i].toUpperCase();
+    if (mac === master._id) continue;
+    if (!meshFathers[mac]) {
+      // all slaves in mesh v2 should have mesh father info
+      hasFullTopologyInfo = false;
+      break;
+    }
+  }
+  let meshSons;
+  if (hasFullTopologyInfo) {
+    // Devices in mesh v2
+    meshSons = await getExactMeshTopology(meshFathers, master._id);
+  } else {
+    // Devices in mesh v1
+    meshSons =
+      getPossibleMeshTopology(meshRouters, master._id, master.mesh_slaves);
+    if (!meshSons) {
+      // incompatible topology
+      master.do_update_status = 7;
+      console.log(`UPDATE: Mesh network of primary device ${master._id} `+
+      'doesn\'t have star topology');
+      await deviceHandlers.syncUpdateScheduler(master._id);
+    }
+  }
+  return meshSons;
+};
+
+// checks if master in mesh v1 is compatible with being master in mesh v2
+// and if all slaves in mesh v1 are compatible with being slaves in mesh v2
+meshHandlers.allowMeshV1ToV2 = async function(device) {
+  const permissions = DeviceVersion.findByVersion(device.version,
+    device.wifi_is_5ghz_capable, device.model);
+  if (!permissions.grantMeshV2PrimaryModeUpgrade) {
+    // primary device in mesh v1 must have support to be primary in mesh v2
+    return false;
+  }
+  for (let i=0; i<device.mesh_slaves.length; i++) {
+    const matchedSlave = await DeviceModel.findById(device.mesh_slaves[i],
+    'version is5ghzCapable model').lean()
+    .catch((err) => {
+      console.log('DB access error');
+      return false;
+    });
+    if (!matchedSlave) {
+      return false;
+    }
+    const slavePermissions = DeviceVersion.findByVersion(
+      matchedSlave.version, matchedSlave.wifi_is_5ghz_capable,
+      matchedSlave.model);
+    if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
+      // secondary device in mesh v1 must have support
+      // to be secondary in mesh v2
+      return false;
+    }
+  }
+  return true;
+};
+
+meshHandlers.allowMeshUpgrade = async function(device, nextVersion) {
+  if (device.mesh_master) {
+    // Only master devices must call this function
+    return false;
+  }
+  if (device.mesh_slaves && device.mesh_slaves.length) {
+    // find out what kind of upgrade this is
+    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+      device.version, nextVersion);
+    if (typeUpgrade.current && typeUpgrade.upgrade) {
+      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
+        // no mesh v2 -> v1 downgrade if in active mesh network
+        return false;
+      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
+        // mesh v1 -> v2
+        return await meshHandlers.allowMeshV1ToV2(device);
+      } else {
+        // allow mesh v1 -> v1 or mesh v2 -> v2
+        return true;
+      }
+    } else {
+      // allow development version
+      return true;
+    }
+  } else {
+    // Only restrictions are in active mesh networks
+    return true;
+  }
 };
 
 module.exports = meshHandlers;
