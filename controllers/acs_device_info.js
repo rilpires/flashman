@@ -1296,9 +1296,11 @@ acsDeviceInfoController.calculateSpeedDiagnostic = function(device, data,
       let endTime = new Date(speedKeys.end_time);
       let speedValue = (speedKeys.test_bytes_rec * (8 / 1024)) /
                 (endTime.valueOf()-beginTime.valueOf());
+      console.log('media bytes/delta_t', speedValue);
       if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
         speedValue = ((speedKeys.full_load_bytes_rec * 8 * (10**6)) /
                           (speedKeys.full_load_period * (1024**2)));
+        console.log('full-load', speedValue);
       }
       let result = {
         downSpeed: parseInt(speedValue).toString() + ' Mbps',

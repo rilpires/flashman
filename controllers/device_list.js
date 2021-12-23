@@ -1142,9 +1142,6 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          /*if (device && device.use_tr069) {
-            acsDeviceInfo.fireSpeedDiagnose(req.params.id.toUpperCase());
-          } else*/
           if (device) {
             return deviceListController.doSpeedTest(req, res);
           }
