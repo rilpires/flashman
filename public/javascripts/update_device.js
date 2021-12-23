@@ -33,9 +33,7 @@ let updateDevice = function(event) {
       let dropdownBtn = selBtnGroup.find('.dropdown-toggle');
       dropdownBtn.attr('disabled', true);
       // Submit update
-      let row = $(event.target).closest('tr');
       let id = row.prop('id');
-      let slaveCount = row.data('slave-count');
       $.ajax({
         url: '/devicelist/update/' + id + '/' + selRelease,
         type: 'post',
