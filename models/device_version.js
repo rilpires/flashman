@@ -2097,7 +2097,9 @@ const grantMeshV1Mode = function(version, model) {
   }
 };
 
-const grantMeshV2PrimaryMode = function(version, model) {
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 primary device
+const grantMeshV2PrimaryModeUpgrade = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.mesh_v2_primary_support;
   }
@@ -2110,14 +2112,24 @@ const grantMeshV2PrimaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+    return true;
   } else {
     // Development version, enable everything by default
     return true;
   }
 };
 
-const grantMeshV2SecondaryMode = function(version, model) {
+const grantMeshV2PrimaryMode = function(version, model) {
+  if (grantMeshV2PrimaryModeUpgrade(version, model)) {
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    return false;
+  }
+};
+
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 secondary device
+const grantMeshV2SecondaryModeUpgrade = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.mesh_v2_secondary_support;
   }
@@ -2130,10 +2142,18 @@ const grantMeshV2SecondaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
-    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+    return true;
   } else {
     // Development version, enable everything by default
     return true;
+  }
+};
+
+const grantMeshV2SecondaryMode = function(version, model) {
+  if (grantMeshV2SecondaryModeUpgrade(version, model)) {
+    return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    return false;
   }
 };
 
@@ -2215,7 +2235,11 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(model);
   result.grantMeshMode = grantMeshV1Mode(version, model);
+  result.grantMeshV2PrimaryModeUpgrade =
+    grantMeshV2PrimaryModeUpgrade(version, model);
   result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2SecondaryModeUpgrade =
+    grantMeshV2SecondaryModeUpgrade(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
   result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(model);
   result.grantMeshVAPObject = grantMeshVAPObject(model);
@@ -2307,32 +2331,24 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   return versions;
 };
 
-/*
-  Flashbox devices with firmware version before 0.32.0 only
-  had mesh v1 capabilities. If these models are in mesh mode (not on cable, > 1)
-  with associated slaves they can't be allowed to upgrade to a mesh v2
-  compatible release because mesh v2 is not compatible with mesh v1
-  (slaves will lose connection).
-  Analogously, mesh v2 devices cannot upgrade to mesh v1 under same conditions
-*/
-DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
-  meshMode, slaves, curVersion, nextVersion) {
-  if (curVersion.match(versionRegex)) {
-    if (meshMode > 1 && slaves && slaves.length > 0) {
-      if (!nextVersion) {
-        return false;
-      } else if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0);
-      } else {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') >= 0);
-      }
+DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
+  let result = {development: false, current: 0, upgrade: 0};
+  if (curVersion.match(versionRegex) && nextVersion.match(versionRegex)) {
+    if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
+      result.current = 1;
     } else {
-      return true;
+      result.current = 2;
+    }
+    if (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0) {
+      result.upgrade = 1;
+    } else {
+      result.upgrade = 2;
     }
   } else {
-    // development version, allow everything
-    return true;
+    // either current or target release are development version
+    return {development: true};
   }
+  return result;
 };
 
 DeviceVersion.isUpgradeSupport = function(model) {
