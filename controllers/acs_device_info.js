@@ -1224,8 +1224,10 @@ acsDeviceInfoController.getSpeedtestFile = function (device) {
         return 'http://192.168.88.150:25752/measure/file_192000KB.bin';
       } else if (device.current_speedtest.band_estimative <= 500) {
         return 'http://192.168.88.150:25752/measure/file_320000KB.bin';
-      } else {
-        return 'http://192.168.88.150:25752/measure/file_320000KB.bin';
+      } else if (device.current_speedtest.band_estimative <= 700) {
+        return 'http://192.168.88.150:25752/measure/file_448000KB.bin';
+      } else if (device.current_speedtest.band_estimative > 700) {
+        return 'http://192.168.88.150:25752/measure/file_640000KB.bin';
       }
     }
   }
@@ -1327,7 +1329,8 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
       speedValue = (speedKeys.test_bytes_rec * (8 / 1024)) /
                 (endTime.valueOf()-beginTime.valueOf());
       console.log('media bytes/delta_t', speedValue);
-      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period &&
+          device.current_speedtest.stage !== 'estimative') {
         speedValue = ((speedKeys.full_load_bytes_rec * 8 * (10**6)) /
                           (speedKeys.full_load_period * (1024**2)));
         console.log('full-load', speedValue);
