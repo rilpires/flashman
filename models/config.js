@@ -72,17 +72,28 @@ let configSchema = new mongoose.Schema({
       }],
       in_progress_devices: [{
         mac: {type: String, required: true},
-        state: {type: String, enum: ['downloading', 'updating', 'slave']},
+        state: {
+          type: String, enum: ['topology', 'downloading', 'updating', 'slave'],
+        },
         slave_count: {type: Number, default: 0},
+        // legacy name that we can't change, it's just number of devices
+        // reamining
         slave_updates_remaining: {type: Number, default: 0},
         retry_count: {type: Number, default: 0},
       }],
       done_devices: [{
         mac: {type: String, required: true},
         slave_count: {type: Number, default: 0},
+        // legacy name that we can't change, it's just number of devices
+        // reamining
         slave_updates_remaining: {type: Number, default: 0},
-        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off',
-          'aborted_down', 'aborted_update', 'aborted_slave']},
+        state: {
+          type: String,
+          enum: [
+            'ok', 'error', 'aborted', 'aborted_off', 'aborted_down',
+            'aborted_update', 'aborted_slave', 'aborted_topology',
+          ],
+        },
       }],
     },
   },
