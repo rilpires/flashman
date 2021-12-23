@@ -420,36 +420,6 @@ deviceListController.changeUpdateMesh = function(req, res) {
   });
 };
 
-deviceListController.changeAllUpdates = function(req, res) {
-  let form = JSON.parse(req.body.content);
-  DeviceModel.find({'_id': {'$in': Object.keys(form.ids)}},
-  function(err, matchedDevices) {
-    if (err) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.render('error', indexContent);
-    }
-
-    let scheduledDevices = [];
-    for (let idx = 0; idx < matchedDevices.length; idx++) {
-      matchedDevices[idx].do_update = form.do_update;
-      if (form.do_update) {
-        matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
-        matchedDevices[idx].do_update_status = 0; // waiting
-        messaging.sendUpdateMessage(matchedDevices[idx]);
-      } else {
-        matchedDevices[idx].do_update_status = 1; // success
-      }
-      matchedDevices[idx].save();
-      mqtt.anlixMessageRouterUpdate(matchedDevices[idx]._id);
-      scheduledDevices.push(matchedDevices[idx]._id);
-    }
-
-    return res.status(200).json({'success': true, 'devices': scheduledDevices});
-  });
-};
-
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
   let queryContentNoCase = new RegExp('^' + escapeRegExp(queryContents[0]) +
