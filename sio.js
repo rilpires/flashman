@@ -11,6 +11,7 @@ const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
+const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
 const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
 const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
@@ -359,6 +360,7 @@ sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
   }
 
   registerNotification(session, SIO_NOTIFICATION_SPEED_TEST, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_SPEED_ESTIMATIVE, macaddr);
   return true;
 };
 
@@ -369,8 +371,16 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
                 'to an invalid mac address!');
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
+  let found;
+  if (testdata.stage && testdata.stage == 'estimative_finished') {
+    console.log('ESTIMATIVE FINISHED');
+    found = emitNotification(SIO_NOTIFICATION_SPEED_ESTIMATIVE,
                                macaddr, testdata, macaddr);
+  }
+  else {
+    found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
+                               macaddr, testdata, macaddr);
+  }
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');

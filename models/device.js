@@ -230,6 +230,8 @@ let deviceSchema = new Schema({
   current_speedtest: {
     user: String,
     timestamp: Date,
+    stage: {type: String, default: ''},
+    band_estimative: {type: Number, default: 0},
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},

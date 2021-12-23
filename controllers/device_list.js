@@ -2943,6 +2943,7 @@ deviceListController.doSpeedTest = function(req, res) {
       if (matchedDevice.use_tr069) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
+        matchedDevice.current_speedtest.stage = 'estimative';
         await matchedDevice.save();
         acsDeviceInfo.fireSpeedDiagnose(mac);
       } else {
