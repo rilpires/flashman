@@ -389,7 +389,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
     if (typeof req.body.do_update === 'string') {
       doUpdate = (req.body.do_update === 'true');
     }
-    // Reject update cancel command to mesh slave, use above function instead
+    // Reject update cancel command to mesh slave, use changeUpdate instead
     if (!doUpdate) {
       return res.status(500).json({
         success: false,
@@ -753,10 +753,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
           }
         } else {
           devReleases = devReleases.filter(
-            (release) => {
-              return DeviceVersion.testFirmwareUpgradeMeshLegacy(
-                device.mesh_mode, device.mesh_slaves,
-                device.version, release.flashbox_version);
+            async (release) => {
+              return await meshHandlers.allowMeshUpgrade(
+                device, release.flashbox_version);
             },
           );
           device.isUpgradeEnabled = true;
