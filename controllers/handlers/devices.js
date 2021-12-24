@@ -119,7 +119,7 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
         timeout = 3*60*1000; // just in case someone messes up the parameter
       }
     }
-  } else if (timeoutType === 'onlinedev') {
+  } else if (timeoutType === 'onlinedevs') {
     // Default timeout is 25 seconds
     timeout = 25*1000;
     targetStatus = 20;
