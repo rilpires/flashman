@@ -376,7 +376,7 @@ deviceListController.changeUpdate = async function(req, res) {
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {
-  DeviceModel.findById(req.params.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.params.id, async function(err, matchedDevice) {
     if (err || !matchedDevice) {
       let indexContent = {};
       indexContent.type = 'danger';
@@ -397,25 +397,9 @@ deviceListController.changeUpdateMesh = function(req, res) {
           'atualizar, não para cancelar a atualização',
       });
     }
-    matchedDevice.do_update = true;
-    matchedDevice.do_update_status = 0; // waiting
-    matchedDevice.release = req.params.release.trim();
-    messaging.sendUpdateMessage(matchedDevice);
-    matchedDevice.save(function(err) {
-      if (err) {
-        let indexContent = {};
-        indexContent.type = 'danger';
-        indexContent.message = err.message;
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao registrar atualização'});
-      }
-
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-      res.status(200).json({'success': true});
-
-      // Start ack timeout
-      deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
-    });
+    await meshHandlers.updateMeshDevice(
+      matchedDevice, req.params.release.trim(),
+    );
   });
 };
 

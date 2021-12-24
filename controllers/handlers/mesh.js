@@ -647,6 +647,17 @@ const markNextDeviceToUpdate = async function(master) {
   return {success: true};
 };
 
+meshHandlers.updateMeshDevice = async function(device, release) {
+  device.do_update = true;
+  device.do_update_status = 0; // waiting
+  device.release = release;
+  messaging.sendUpdateMessage(device);
+  await device.save();
+  mqtt.anlixMessageRouterUpdate(device._id);
+  // Start ack timeout
+  deviceHandlers.timeoutUpdateAck(device._id, 'update');
+};
+
 meshHandlers.validateMeshTopology = async function(masterMac) {
   let matchedMaster;
   try {
@@ -676,7 +687,7 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
   // Before beginning the update process the next release is saved to master
   const release = matchedMaster.release;
   // Update next device
-  deviceHandlers.updateDevice(matchedMaster.next_to_update, release);
+  meshHandlers.updateMeshDevice(matchedMaster.next_to_update, release);
 };
 
 module.exports = meshHandlers;
