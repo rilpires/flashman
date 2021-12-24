@@ -185,7 +185,7 @@ let deviceSchema = new Schema({
     4, // error, update aborted manually
     5, // error, update ack not received in time
     6, // error, topology info not received in time
-    7, // error, incompatible topology
+    7, // error, invalid topology
     10, // ack received
     20, // waiting for topology info
     30, // topology received
