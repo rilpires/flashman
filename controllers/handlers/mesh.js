@@ -690,4 +690,85 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
   meshHandlers.updateMeshDevice(matchedMaster.next_to_update, release);
 };
 
+const propagateUpdate = async function(
+  masterDevice, macOfUpdated, release, setQuery=undefined) {
+  const meshUpdateRemaining =
+    masterDevice.update_remaining.filter( (mac) => mac !== macOfUpdated);
+  // Update which devices are left to update
+  masterDevice.update_remaining = meshUpdateRemaining;
+  if (meshUpdateRemaining.length === 0) {
+    // All devices in mesh network have finished updating
+    // We only need to check setQuery here because the flow where mesh master
+    // calls this function always ends here
+    if (setQuery) {
+      setQuery.update_remaining = [];
+      setQuery.next_to_update = '';
+    } else {
+      masterDevice.next_to_update = '';
+      await masterDevice.save();
+    }
+    return;
+  }
+  // At least one device left to update
+  if (DeviceVersion.versionCompare(masterDevice.version, '0.32') >= 0) {
+    // If it's a mesh v2 network we need the topology in every iteration
+    masterDevice.onlinedevs_remaining = masterDevice.mesh_slaves.length + 1;
+    // waiting for topology
+    masterDevice.do_update_status = 20;
+    await masterDevice.save();
+
+    const slaves = masterDevice.mesh_slaves;
+    mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
+    // Set timeout for reception of onlinedevs
+    deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
+    slaves.forEach((slave)=>{
+      mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+      // Set timeout for reception of onlinedevs for slaves
+      deviceHandlers.timeoutUpdateAck(slave.toUpperCase(), 'onlinedevs');
+    });
+  } else {
+    // If it's a mesh v1 network we only need the topology in first iteration
+    let nextDeviceToUpdate;
+    if (meshUpdateRemaining.length > 1) {
+      // if there is more than one device left to update choose one of the
+      // remaining slaves
+      nextDeviceToUpdate = meshUpdateRemaining.filter((device)=>{
+        return masterDevice.mesh_slaves.includes(device);
+      })[0];
+    } else {
+      // If all slaves have updated next to update is master (always the last)
+      nextDeviceToUpdate = masterDevice._id;
+    }
+    masterDevice.next_to_update = nextDeviceToUpdate;
+    await masterDevice.save();
+    await meshHandlers.updateMeshDevice(masterDevice.next_to_update, release);
+  }
+};
+
+meshHandlers.syncUpdate = async function(device, setQuery, release) {
+  // Only change information if device has slaves or a master
+  if ((!device.mesh_slaves || device.mesh_slaves.length === 0) &&
+    !device.mesh_master) {
+    return;
+  }
+  if (device.mesh_master) {
+    // Device is a slave
+    DeviceModel.findById(device.mesh_master, async function(err, masterDevice) {
+      if (err) {
+        console.log('Attempt to access mesh master '+ device.mesh_master +
+                    ' failed: database error.');
+      } else if (!masterDevice) {
+        console.log('Attempt to access mesh master '+ device.mesh_master +
+                    ' failed: device not found.');
+      } else {
+        await propagateUpdate(masterDevice, device._id, release);
+      }
+    });
+  } else {
+    // Device is master with at lease one slave
+    // Master is ALWAYS last device to update
+    await propagateUpdate(device, device._id, release, setQuery);
+  }
+};
+
 module.exports = meshHandlers;

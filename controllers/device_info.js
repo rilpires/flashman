@@ -11,6 +11,7 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
+const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
 
@@ -758,7 +759,21 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               updateScheduler.successUpdate(matchedDevice._id);
             }
             messaging.sendUpdateDoneMessage(matchedDevice);
-            meshHandlers.syncUpdate(matchedDevice, deviceSetQuery, sentRelease);
+            const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+              matchedDevice.version, sentVersion);
+            if ((typeUpgrade.current !== 1 || typeUpgrade.upgrade !== 2) ||
+              matchedDevice.mesh_mode < 2 ||
+              ((!matchedDevice.mesh_slaves ||
+              matchedDevice.mesh_slaves.length === 0)
+              && !matchedDevice.mesh_master)) {
+              /*
+                This isn't a mesh v1 -> mesh v2 update with an active mesh
+                network. So, the next device in the mesh network is updating
+                on reception of the previous device's syn
+              */
+              await meshHandlers.syncUpdate(
+                matchedDevice, deviceSetQuery, sentRelease);
+            }
             deviceSetQuery.do_update = false;
             matchedDevice.do_update = false; // Used in device response
             deviceSetQuery.do_update_status = 1; // success
@@ -978,7 +993,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
 // Receive device firmware upgrade confirmation
 deviceInfoController.confirmDeviceUpdate = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device: ' + err);
       return res.status(500).json({proceed: 0});
@@ -991,7 +1006,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
-          matchedDevice.save();
+          await matchedDevice.save();
           return res.status(500).json({proceed: 0});
         }
         let proceed = 0;
@@ -1009,6 +1024,26 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             matchedDevice.do_update_status = 1; // success
           } else {
             matchedDevice.do_update_status = 10; // ack received
+            await matchedDevice.save();
+            const firmware = await Firmware.findOne(
+              {release: matchedDevice.release}).lean();
+            if (firmware) {
+              const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+                matchedDevice.version, firmware.flashbox_version);
+              if ((typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) &&
+                matchedDevice.mesh_mode > 1 &&
+                ((matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length)
+                || matchedDevice.mesh_master)) {
+                /*
+                  In a mesh network where there is an upgrade from mesh v1 -> v2
+                  the next device in the mesh network won't wait for the
+                  previous to finish upgrade. When the ack is received the next
+                  device starts upgrade.
+                */
+                await meshHandlers.syncUpdate(
+                  matchedDevice, null, matchedDevice.release);
+              }
+            }
           }
           proceed = 1;
         } else if (upgStatus == '0') {
