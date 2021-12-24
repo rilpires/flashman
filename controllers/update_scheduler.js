@@ -686,9 +686,11 @@ scheduleController.getDevicesReleases = async function(req, res) {
       let totalCount = 0;
       let releaseInfo = [];
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
-      meshHandler.enhanceSearchResult(matchedDevices).then((extraDevices) => {
+      meshHandler.enhanceSearchResult(matchedDevices)
+        .then(async (extraDevices) => {
         matchedDevices = matchedDevices.concat(extraDevices);
-        matchedDevices.forEach((device)=>{
+        for (let i=0; i<matchedDevices.length; i++) {
+          let device = matchedDevices[i];
           totalCount += 1;
           let model = device.model.replace('N/', '');
           if (device.use_tr069) {
@@ -706,6 +708,10 @@ scheduleController.getDevicesReleases = async function(req, res) {
             const meshVersion =
               DeviceVersion.versionCompare(device.version, '0.32.0') < 0 ?
               1 : 2;
+            let allowV1ToV2Upgrade;
+            if (meshVersion === 1) {
+              allowV1ToV2Upgrade = await meshHandler.allowMeshV1ToV2(device);
+            }
             let models = [];
             models.push(model);
             for (let i = 0; i < device.mesh_slaves.length; i++) {
@@ -721,37 +727,54 @@ scheduleController.getDevicesReleases = async function(req, res) {
               deviceCount: 1 + device.mesh_slaves.length,
               version: meshVersion,
               models: models,
+              allowMeshV2: (meshVersion === 1 ? allowV1ToV2Upgrade : true),
             });
           }
-        });
+        }
         releasesAvailable.forEach((release)=>{
           let count = 0;
           let meshIncompatibles = 0;
+          let meshRolesIncompatibles = 0;
           let missingModels = [];
           const validModels = release.model;
-          Object.keys(devicesByModel).forEach(function eachKey(model) {
-            if (validModels.includes(model)) {
-              count += devicesByModel[model];
-            } else {
-              missingModels.push(model);
-            }
-          });
+          if (devicesByModel && Object.keys(devicesByModel).length) {
+            Object.keys(devicesByModel).forEach(function eachKey(model) {
+              if (validModels.includes(model)) {
+                count += devicesByModel[model];
+              } else {
+                missingModels.push(model);
+              }
+            });
+          }
           const releaseMeshVersion =
             DeviceVersion.versionCompare(release.flashbox_version, '0.32.0')
             < 0 ? 1 : 2;
           meshNetworks.forEach((mesh)=>{
-            if (mesh.version !== releaseMeshVersion) {
+            if (mesh.version > releaseMeshVersion) {
+              // mesh v2 -> v1
               meshIncompatibles += mesh.deviceCount;
               return;
             }
+            if (mesh.version < releaseMeshVersion) {
+              // mesh v1 -> v2
+              if (!mesh.allowMeshV2) {
+                /*
+                  we only allow mesh v1 -> v2 upgrade if mesh v1 master
+                  is compatible as master in v2 and all slaves in mesh v1
+                  are compatible as slaves in v2
+                */
+                meshRolesIncompatibles += mesh.deviceCount;
+                return;
+              }
+            }
             let allModelsOK = true;
-            for (let model in mesh.models) {
-              if (!validModels.includes(model)) {
+            for (let i=0; i<mesh.models.length; i++) {
+              if (!validModels.includes(mesh.models[i])) {
                 // if one of the slaves can't upgrade then none of the devices
                 // in the mesh network will be allowed to upgrade
                 allModelsOK = false;
-                if (!missingModels.includes(model)) {
-                  missingModels.push(model);
+                if (!missingModels.includes(mesh.models[i])) {
+                  missingModels.push(mesh.models[i]);
                 }
                 break;
               }
@@ -762,6 +785,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
             id: release.id,
             count: count,
             meshIncompatibles: meshIncompatibles,
+            meshRolesIncompatibles: meshRolesIncompatibles,
             missingModels: missingModels,
           });
         });
@@ -889,32 +913,52 @@ scheduleController.startSchedule = async function(req, res) {
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
+      const matchedDevicesReference = [...matchedDevices];
       matchedDevices = matchedDevices.concat(extraDevices);
-      matchedDevices = matchedDevices.filter((device)=>{
-        if (device.use_tr069) return false; // Discard TR-069 devices
-        if (device.mesh_master) return false; // Discard mesh slaves
+      for (let i=matchedDevices.length-1; i>-1; i--) {
+        let device = matchedDevices[i];
+        if (device.use_tr069) {
+          // Discard TR-069 devices
+          matchedDevices.splice(i, 1);
+          continue;
+        }
+        if (device.mesh_master) {
+          // Discard slaves
+          matchedDevices.splice(i, 1);
+          continue;
+        }
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
           // Discard master if any slave has incompatible model
           let valid = true;
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
-            let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+            let slaveDevice =
+              matchedDevicesReference.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
           });
-          if (!valid) return false;
+          if (!valid) {
+            matchedDevices.splice(i, 1);
+            continue;
+          }
         }
-        const valid = DeviceVersion.testFirmwareUpgradeMeshLegacy(
-          device.mesh_mode, device.mesh_slaves,
-          device.version, release.flashbox_version);
-        if (!valid) return false;
+        const allowMeshUpgrade = await meshHandler.allowMeshUpgrade(
+          device, release.flashbox_version);
+        if (!allowMeshUpgrade) {
+          matchedDevices.splice(i, 1);
+          continue;
+        }
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of
            both model name and version. */
-        return modelsAvailable.some(
+        const isModelInArray = modelsAvailable.some(
           (modelAndVersion) => modelAndVersion.includes(model));
-      });
+        if (!isModelInArray) {
+          matchedDevices.splice(i, 1);
+          continue;
+        }
+      }
       if (matchedDevices.length === 0) {
         return res.status(500).json({
           success: false,
