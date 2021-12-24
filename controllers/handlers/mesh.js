@@ -433,118 +433,6 @@ meshHandlers.convertBSSIDToId = async function(device, bssid) {
   }
 };
 
-// meshHandlers.getNextToUpdateRec = function(meshSons, newMac, devicesToUpdate) {
-//   let nextDevice;
-//   if (meshSons[newMac] && meshSons[newMac].length) {
-//     for (let i=0; i<meshSons[newMac].length; i++) {
-//       const auxDevice = meshHandlers.getNextToUpdateRec(
-//         meshSons, meshSons[newMac][i], devicesToUpdate);
-//       // Only choose a device that hasn't been updated yet
-//       if (devicesToUpdate.includes(auxDevice)) {
-//         nextDevice = auxDevice;
-//         break;
-//       } else {
-//         continue;
-//       }
-//     }
-//     // If all devices below newMac have already updated then newMac is next
-//     if (!nextDevice) {
-//       nextDevice = newMac;
-//     }
-//   } else {
-//     // If device doesn't have sons then we return it as next to update
-//     nextDevice = newMac;
-//   }
-//   return nextDevice;
-// };
-
-// // Used for mesh v1 update
-// const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
-//   const numAnnouncedDevices = meshRouters[masterMac].length;
-//   if (numAnnouncedDevices < slaves.length) {
-//     // If master doesn't see all the slaves immediately return.
-//     // Update won't be allowed.
-//     return;
-//   }
-//   // If below this threshold do not add edge to topology
-//   const signalThreshold = -65;
-//   for (let i=0; i<numAnnouncedDevices; i++) {
-//     const meshRouter = meshRouters[masterMac][i];
-//     if (meshRouter.signal < signalThreshold) {
-//       // If master doesn't see all the slaves immediately return.
-//       // Update won't be allowed.
-//       return;
-//     }
-//   }
-//   // this will be used for controlling update order
-//   // hash map where father is the key and value is list of sons
-//   return {masterMac: slaves};
-// };
-
-// // Used for mesh v2 update
-// const getExactMeshTopology = async function(meshFathers, masterMac) {
-//   // this will be used for controlling update order
-//   let meshSons = {};
-//   let errorOccurred = false;
-//   const macs = Object.keys(meshFathers);
-//   for (let i = 0; i < macs.length; i++) {
-//     if (errorOccurred) return;
-//     const macKey = macs[i];
-//     // We only analyse edges from the perspective of the slaves
-//     if (macKey === masterMac) return;
-//     const fatherMac = meshFathers[macKey].toUpperCase();
-//     // hash map where father is the key and value is list of sons
-//     if (!meshSons[fatherMac]) {
-//       meshSons[fatherMac] = [macKey];
-//     } else {
-//       meshSons[fatherMac].push(macKey);
-//     }
-//   }
-//   if (errorOccurred) return;
-//   return meshSons;
-// };
-
-// /*
-//   The topology we get uses bssids instead of mac addresses and flashman does
-//   not have access to the bssids of devices in mesh v1, therefore, only mesh
-//   networks that have a star topology, in mesh v1, are allowed to upgrade.
-//   Devices in mesh v2 announce their mesh father. This allows the exact topology
-//   to be discovered. We use that topology to choose the next device to upgrade.
-// */
-// meshHandlers.getMeshTopology = async function(
-//   meshRouters, meshFathers, master,
-// ) {
-//   let hasFullTopologyInfo = true;
-//   for (let i = 0; i < Object.keys(meshRouters).length; i++) {
-//     const mac = Object.keys(meshRouters)[i].toUpperCase();
-//     if (mac === master._id) continue;
-//     if (!meshFathers[mac]) {
-//       // all slaves in mesh v2 should have mesh father info
-//       hasFullTopologyInfo = false;
-//       break;
-//     }
-//   }
-//   let meshTopology;
-//   if (hasFullTopologyInfo) {
-//     // Devices in mesh v2
-//     meshTopology = await getExactMeshTopology(meshFathers, master._id);
-//   } else {
-//     // Devices in mesh v1
-//     meshTopology = getPossibleMeshTopology(
-//       meshRouters, master._id, master.mesh_slaves,
-//     );
-//     if (!meshTopology) {
-//       // incompatible topology
-//       master.do_update_status = 7;
-//       console.log(`UPDATE: Mesh network of primary device ${master._id} `+
-//       'doesn\'t have star topology');
-//       // deviceHandlers.syncUpdateScheduler(master._id);
-//       await master.save();
-//     }
-//   }
-//   return meshTopology;
-// };
-
 // checks if master in mesh v1 is compatible with being master in mesh v2
 // and if all slaves in mesh v1 are compatible with being slaves in mesh v2
 meshHandlers.allowMeshV1ToV2 = async function(device) {
@@ -610,6 +498,185 @@ meshHandlers.allowMeshUpgrade = async function(device, nextVersion) {
     // Only restrictions are in active mesh networks
     return true;
   }
+};
+
+const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
+  let nextDevice;
+  if (meshTopology[newMac] && meshTopology[newMac].length) {
+    for (let i=0; i<meshTopology[newMac].length; i++) {
+      const auxDevice = meshHandlers.getNextToUpdateRec(
+        meshTopology, meshTopology[newMac][i], devicesToUpdate);
+      // Only choose a device that hasn't been updated yet
+      if (devicesToUpdate.includes(auxDevice)) {
+        nextDevice = auxDevice;
+        break;
+      } else {
+        continue;
+      }
+    }
+    // If all devices below newMac have already updated then newMac is next
+    if (!nextDevice) {
+      nextDevice = newMac;
+    }
+  } else {
+    // If device doesn't have sons then we return it as next to update
+    nextDevice = newMac;
+  }
+  return nextDevice;
+};
+
+// Used for mesh v1 update
+const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
+  const numAnnouncedDevices = meshRouters[masterMac].length;
+  if (numAnnouncedDevices < slaves.length) {
+    // If master doesn't see all the slaves immediately return.
+    // Update won't be allowed.
+    return {};
+  }
+  // If below this threshold do not add edge to topology
+  const signalThreshold = -65;
+  for (let i=0; i<numAnnouncedDevices; i++) {
+    const meshRouter = meshRouters[masterMac][i];
+    if (meshRouter.signal < signalThreshold) {
+      // If master doesn't see all the slaves immediately return.
+      // Update won't be allowed.
+      return {};
+    }
+  }
+  // this will be used for controlling update order
+  // hash map where father is the key and value is list of sons
+  return {masterMac: slaves};
+};
+
+// Used for mesh v2 update
+const getExactMeshTopology = async function(meshFathers, masterMac) {
+  // this will be used for controlling update order. Key is father and value is
+  // list of sons
+  let meshTopology = {};
+  const macs = Object.keys(meshFathers);
+  for (let i = 0; i < macs.length; i++) {
+    const macKey = macs[i];
+    // We only analyse edges from the perspective of the slaves
+    if (macKey === masterMac) continue;
+    const fatherMac = meshFathers[macKey].toUpperCase();
+    // hash map where father is the key and value is list of sons
+    if (!meshTopology[fatherMac]) {
+      meshTopology[fatherMac] = [macKey];
+    } else {
+      meshTopology[fatherMac].push(macKey);
+    }
+  }
+  return meshTopology;
+};
+
+/*
+  The topology we get uses bssids instead of mac addresses and flashman does
+  not have access to the bssids of devices in mesh v1, therefore, only mesh
+  networks that have a star topology, in mesh v1, are allowed to upgrade.
+  Devices in mesh v2 announce their mesh father. This allows the exact topology
+  to be discovered. We use that topology to choose the next device to upgrade.
+*/
+const getMeshTopology = async function(
+  meshRoutersData, meshFathers, master,
+) {
+  let hasFullTopologyInfo = true;
+  // validate that all data is present for mesh v2
+  for (let i = 0; i < Object.keys(meshRoutersData).length; i++) {
+    const mac = Object.keys(meshRoutersData)[i].toUpperCase();
+    if (mac === master._id) continue;
+    if (!meshFathers[mac]) {
+      // all slaves in mesh v2 should have mesh father info
+      hasFullTopologyInfo = false;
+      break;
+    }
+  }
+  let meshTopology;
+  if (hasFullTopologyInfo) {
+    // Devices in mesh v2
+    meshTopology = await getExactMeshTopology(meshFathers, master._id);
+  } else {
+    // Devices in mesh v1
+    meshTopology = getPossibleMeshTopology(
+      meshRoutersData, master._id, master.mesh_slaves,
+    );
+    if (!meshTopology || Object.keys(meshTopology).length === 0) {
+      console.log(`UPDATE: Mesh network of primary device ${master._id} `+
+      'doesn\'t have star topology');
+      deviceHandlers.syncUpdateScheduler(master._id);
+    }
+  }
+  return meshTopology;
+};
+
+const markNextDeviceToUpdate = async function(master) {
+  let meshRoutersData = {};
+  let meshFathers = {};
+  // Gathers information from primary and secondary CPEs in the network
+  meshRoutersData[master._id] = master.mesh_routers;
+  try {
+    for (let i = 0; i < master.mesh_slaves.length; i++) {
+      const slaveMac = master.mesh_slaves[i].toUpperCase();
+      let matchedSlave = await DeviceModel.findById(slaveMac);
+      if (matchedSlave == null) {
+        return {
+          success: false,
+          message: 'CPE secundário não encontrado',
+        };
+      }
+      meshRoutersData[slaveMac] = matchedSlave.mesh_routers;
+      if (matchedSlave.mesh_father) {
+        // Store mesh father info
+        meshFathers[slaveMac] = matchedSlave.mesh_father;
+      }
+    }
+  } catch (err) {
+    return {success: false, message: err};
+  }
+  const meshTopology = await getMeshTopology(
+    meshRoutersData, meshFathers, master);
+  if (!meshTopology) {
+    return {
+      success: false,
+      message: 'Erro na obtenção da topologia mesh',
+    };
+  }
+  const meshNextToUpdate = getNextToUpdateRec(
+    meshTopology, master._id, master.update_remaining);
+  master.next_to_update = meshNextToUpdate;
+  await master.save();
+  return {success: true};
+};
+
+meshHandlers.validateMeshTopology = async function(masterMac) {
+  let matchedMaster;
+  try {
+    matchedMaster = await DeviceModel.findById(masterMac);
+    if (!matchedMaster) {
+      console.log('Did not find master device in database');
+      return;
+    }
+  } catch (err) {
+    console.log(err);
+    return;
+  }
+  if (matchedMaster.mesh_update_remaining.length <= 0) {
+    return;
+  }
+  // There is an ongoing mesh update
+  // Save the next device to update to the master device
+  const meshInfoStatus = await markNextDeviceToUpdate(matchedMaster);
+  if (!meshInfoStatus.success) {
+    // reset master update parameters
+    matchedMaster.next_to_update = '';
+    matchedMaster.update_remaining = [];
+    // error validating topology
+    matchedMaster.do_update_status = 7;
+    await matchedMaster.save();
+  }
+  // Before beginning the update process the next release is saved to master
+  const release = matchedMaster.release;
+  // Update next device
+  deviceHandlers.updateDevice(matchedMaster.next_to_update, release);
 };
 
 module.exports = meshHandlers;
