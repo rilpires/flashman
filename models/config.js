@@ -72,6 +72,8 @@ let configSchema = new mongoose.Schema({
       }],
       in_progress_devices: [{
         mac: {type: String, required: true},
+        // slave state is legacy, can't be changed, simply means that the first
+        // device has already updated
         state: {
           type: String, enum: ['topology', 'downloading', 'updating', 'slave'],
         },
