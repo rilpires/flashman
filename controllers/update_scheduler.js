@@ -257,41 +257,66 @@ const markNextForUpdate = async function() {
     return {success: true, marked: false};
   }
   try {
-    await configQuery(
-      null,
-      // Remove from to do state
-      {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
-      // Add to in progress, status downloading
-      {
-        'device_update_schedule.rule.in_progress_devices': {
-          'mac': nextDevice.mac,
-          'state': 'downloading',
-          'retry_count': nextDevice.retry_count,
-          'slave_count': nextDevice.slave_count,
-          'slave_updates_remaining': nextDevice.slave_count,
-        },
-      },
-    );
-    mutexRelease();
-    console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
-  } catch (err) {
-    console.log(err);
-    mutexRelease();
-    return {success: false, error: 'Erro alterando base de dados'};
-  }
-  try {
-    // Mark device for update
     let device = await getDevice(nextDevice.mac);
-    device.do_update = true;
-    device.do_update_status = 0;
     device.release = config.device_update_schedule.rule.release;
-    await device.save();
-    messaging.sendUpdateMessage(device);
-    mqtt.anlixMessageRouterUpdate(device._id);
-    // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(device._id, 'update');
+    if (nextDevice.slave_count) {
+      // If this is a mesh network we need the topology
+      await configQuery(
+        null,
+        // Remove from to do state
+        {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
+        // Add to in progress, status topology
+        {
+          'device_update_schedule.rule.in_progress_devices': {
+            'mac': nextDevice.mac,
+            'state': 'topology',
+            'retry_count': nextDevice.retry_count,
+            'slave_count': nextDevice.slave_count,
+            'slave_updates_remaining': nextDevice.slave_count + 1,
+          },
+        },
+      );
+      mutexRelease();
+      console.log(
+        'Scheduler: agendado update da rede mesh de MAC ' + nextDevice.mac,
+      );
+      const meshUpdateStatus = await meshHandler.beginMeshUpdate(
+        device,
+      );
+      if (!meshUpdateStatus.success) {
+        throw new Error('Falha em iniciar o update da rede mesh');
+      }
+    } else {
+      // If this is just a regular device we don't need the topology
+      await configQuery(
+        null,
+        // Remove from to do state
+        {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
+        // Add to in progress, status downloading
+        {
+          'device_update_schedule.rule.in_progress_devices': {
+            'mac': nextDevice.mac,
+            'state': 'downloading',
+            'retry_count': nextDevice.retry_count,
+            'slave_count': nextDevice.slave_count,
+            'slave_updates_remaining': 1,
+          },
+        },
+      );
+      mutexRelease();
+      console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
+      // Mark device for update
+      device.do_update = true;
+      device.do_update_status = 0;
+      await device.save();
+      messaging.sendUpdateMessage(device);
+      mqtt.anlixMessageRouterUpdate(device._id);
+      // Start ack timeout
+      deviceHandlers.timeoutUpdateAck(device._id, 'update');
+    }
   } catch (err) {
     console.log(err);
+    mutexRelease();
     return {success: false, error: 'Erro alterando base de dados'};
   }
   return {success: true, marked: true};
@@ -334,6 +359,49 @@ scheduleController.initialize = async function(macList, slaveCountPerMac) {
   return {success: true};
 };
 
+
+scheduleController.successTopology = async function(mac) {
+  // This function should not have 2 running instances at the same time, since
+  // async database access can lead to no longer valid reads after one instance
+  // writes. This is necessary because mongo does not implement "table locks",
+  // so we may end up marking the same device to update twice, as 2 reads before
+  // the first write will yield the same device as a result of this function.
+  // And so, we use a mutex to lock instances outside database access scope.
+  // In addition, we add a random sleep to spread out requests a bit.
+  let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+  await new Promise((resolve) => setTimeout(resolve, interval));
+  mutexRelease = await mutex.acquire();
+
+  let config = await getConfig();
+  if (!config) return {success: false, error: 'Não há um agendamento ativo'};
+  let rule = config.device_update_schedule.rule;
+  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
+  if (!device) return {success: false, error: 'MAC não encontrado'};
+  if (config.device_update_schedule.is_aborted)
+    return {success: false, error: 'Agendamento já abortado'};
+  // Change from status updating to ok
+  try {
+    // Last device in the mesh network has sent topology info. Just update
+    // state machine, firmware download will begin automatically
+    await Config.updateOne({
+      'is_default': true,
+      'device_update_schedule.rule.in_progress_devices.mac': mac,
+    }, {
+      '$set': {
+        'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
+        'device_update_schedule.rule.in_progress_devices.$.state':
+          'downloading',
+      },
+    });
+    mutexRelease();
+  } catch (err) {
+    mutexRelease();
+    console.log(err);
+    return {success: false, error: 'Erro alterando base de dados'};
+  }
+  return {success: true};
+};
+
 scheduleController.successDownload = async function(mac) {
   let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
@@ -371,8 +439,9 @@ scheduleController.successUpdate = async function(mac) {
   // Change from status updating to ok
   try {
     if (device.slave_updates_remaining > 0 && device.state !== 'slave') {
-      // This is a mesh master, simply update status to "slave" and reset retry
-      // Mesh handler will properly propagate update to next slave
+      // This is the first device in the mesh network to finish update, simply
+      // update status to "slave" and reset retry. Mesh handler will properly
+      // propagate update to next device
       await Config.updateOne({
         'is_default': true,
         'device_update_schedule.rule.in_progress_devices.mac': mac,
@@ -383,8 +452,9 @@ scheduleController.successUpdate = async function(mac) {
         },
       });
     } else if (device.slave_updates_remaining > 1) {
-      // This is a mesh slave, and not the last slave in the network.
-      // Decrement remain counter and reset retry count, mesh handler propagates
+      // This is a device in a mesh network but there are still more remaining.
+      // Decrement remain counter and reset retry count. Mesh handler will
+      // properly propagate update to next device
       let remain = device.slave_updates_remaining - 1;
       await Config.updateOne({
         'is_default': true,
@@ -396,7 +466,7 @@ scheduleController.successUpdate = async function(mac) {
         },
       });
     } else {
-      // This is either a regular router or the last slave in a mesh network
+      // This is either a regular router or the last device in a mesh network
       // Move from in progress to done, with status ok
       await configQuery(
         // Make schedule inactive if this is last device to enter done state
@@ -414,43 +484,6 @@ scheduleController.successUpdate = async function(mac) {
         },
       );
     }
-  } catch (err) {
-    console.log(err);
-    return {success: false, error: 'Erro alterando base de dados'};
-  }
-  if (rule.done_devices.length+1 === count) {
-    // This was last device to enter done state, schedule is done
-    removeOfflineWatchdog();
-  }
-  return {success: true};
-};
-
-scheduleController.failedDownloadAck = async function(mac) {
-  let config = await getConfig();
-  if (!config) return {success: false, error: 'Não há um agendamento ativo'};
-  let count = config.device_update_schedule.device_count;
-  let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) return {success: false, error: 'MAC não encontrado'};
-  if (config.device_update_schedule.is_aborted)
-    return {success: false, error: 'Agendamento já abortado'};
-  try {
-    // Move from in progress to done, with status error
-    await configQuery(
-      // Make schedule inactive if this is last device to enter done state
-      {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
-      // Remove from in progress state
-      {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
-      // Add to done, status error
-      {
-        'device_update_schedule.rule.done_devices': {
-          'mac': mac,
-          'state': 'error',
-          'slave_count': device.slave_count,
-          'slave_updates_remaining': device.slave_updates_remaining,
-        },
-      },
-    );
   } catch (err) {
     console.log(err);
     return {success: false, error: 'Erro alterando base de dados'};
@@ -488,12 +521,6 @@ scheduleController.failedDownload = async function(mac, slave='') {
         'device_update_schedule.rule.in_progress_devices': {'mac': mac},
       };
     }
-    // Remove from in progress state only if not a slave
-    if (slave === '') {
-      pullQuery = {
-        'device_update_schedule.rule.in_progress_devices': {'mac': mac},
-      };
-    }
     let pushQuery = null;
     if (device.retry_count >= maxRetries) {
       // Too many retries, add to done, status error
@@ -519,8 +546,7 @@ scheduleController.failedDownload = async function(mac, slave='') {
           },
         };
       }
-    } else if (slave !== '') {
-      // Is a mesh slave, will retry immediately
+    } else {
       let retry = device.retry_count + 1;
       await Config.updateOne({
         'is_default': true,
@@ -530,17 +556,12 @@ scheduleController.failedDownload = async function(mac, slave='') {
           'device_update_schedule.rule.in_progress_devices.$.retry_count': retry,
         },
       });
-      meshHandler.propagateUpdate(slave, rule.release);
+      if (slave) {
+        meshHandler.updateMeshDevice(slave, rule.release);
+      } else {
+        meshHandler.updateMeshDevice(mac, rule.release);
+      }
       return {success: true};
-    } else {
-      // Will retry, add to to_do, status retry
-      pushQuery = {
-        'device_update_schedule.rule.to_do_devices': {
-          'mac': mac,
-          'state': 'retry',
-          'retry_count': device.retry_count + 1,
-        },
-      };
     }
     await configQuery(setQuery, pullQuery, pushQuery);
   } catch (err) {
@@ -572,7 +593,9 @@ scheduleController.abortSchedule = async function(req, res) {
     });
     rule.in_progress_devices.forEach((d)=>{
       let stateSuffix = '_update';
-      if (d.state === 'downloading') {
+      if (d.state === 'topology') {
+        stateSuffix = '_topology';
+      } else if (d.state === 'downloading') {
         stateSuffix = '_down';
       } else if (d.state === 'slave') {
         stateSuffix = '_slave';
@@ -605,11 +628,14 @@ scheduleController.abortSchedule = async function(req, res) {
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
-    // Remove do_update from in_progress devices
     rule.in_progress_devices.forEach(async (d) => {
       let device = await getDevice(d.mac);
+      // Remove do_update from in_progress devices
       device.do_update = false;
       device.do_update_status = 4;
+      // reset update parameters
+      device.next_to_update = '';
+      device.update_remaining = [];
       await device.save();
       meshHandler.syncUpdateCancel(d, 4);
     });
@@ -1094,16 +1120,18 @@ const translateState = function(state) {
   if (state === 'update') return 'Aguardando atualização';
   if (state === 'retry') return 'Aguardando atualização';
   if (state === 'offline') return 'CPE offline';
+  if (state === 'topology') return 'Buscando topologia';
   if (state === 'downloading') return 'Baixando firmware';
-  if (state === 'updating') return 'Atualizando firmware';
+  if (state === 'updating') return 'Atualizando CPE';
   if (state === 'slave') return 'Atualizando CPE secundário';
   if (state === 'ok') return 'Atualizado com sucesso';
   if (state === 'error') return 'Ocorreu um erro na atualização';
   if (state === 'aborted') return 'Atualização abortada';
   if (state === 'aborted_off') return 'Atualização abortada - CPE estava offline';
+  if (state === 'aborted_topology') return 'Atualização abortada - CPE estava buscando topologia';
   if (state === 'aborted_down') return 'Atualização abortada - CPE estava baixando firmware';
-  if (state === 'aborted_update') return 'Atualização abortada - CPE estava instalando firmware';
-  if (state === 'aborted_slave') return 'Atualização abortada - atualizando CPE secundário';
+  if (state === 'aborted_update') return 'Atualização abortada - atualizando CPE';
+  if (state === 'aborted_slave') return 'Atualização abortada - atualizando CPE da rede mesh';
   return 'Status desconhecido';
 };
 
@@ -1121,23 +1149,23 @@ scheduleController.scheduleResult = async function(req, res) {
   });
   rule.in_progress_devices.forEach((d)=>{
     let state = translateState(d.state);
-    if (d.slave_count > 0 && d.state === 'slave') {
-      let current = d.slave_count - d.slave_updates_remaining + 1;
-      state += ' ' + current + ' de ' + d.slave_count;
+    if (d.slave_count > 0 && (d.state === 'updating' || d.state === 'slave')) {
+      let current = d.slave_count + 1 - d.slave_updates_remaining;
+      state += ` ${current} de ${d.slave_count + 1}`;
     }
-    csvData += d.mac + ',' + state + '\n';
+    csvData += `${d.mac},${state}\n`;
   });
   rule.done_devices.forEach((d)=>{
     let state = translateState(d.state);
     if (d.slave_count > 0) {
       let current = d.slave_count - d.slave_updates_remaining + 1;
       if (d.state === 'error') {
-        state += ' do CPE secundário ' + current + ' de ' + d.slave_count;
-      } else if (d.state === 'aborted_slave') {
-        state += ' ' + current + ' de ' + d.slave_count;
+        state += ` do CPE ${current} de ${d.slave_count + 1}`;
+      } else if (d.state === 'aborted_update' || d.state === 'aborted_slave') {
+        state += ` ${current} de ${d.slave_count + 1}`;
       }
     }
-    csvData += d.mac + ',' + state + '\n';
+    csvData += `${d.mac},${state}\n`;
   });
   res.set('Content-Disposition', 'attachment; filename=agendamento.csv');
   res.set('Content-Type', 'text/csv');
