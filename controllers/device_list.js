@@ -3071,7 +3071,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
         acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
