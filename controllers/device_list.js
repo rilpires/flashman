@@ -341,7 +341,12 @@ deviceListController.changeUpdate = async function(req, res) {
   if (doUpdate) {
     matchedDevice.release = req.params.release.trim();
     if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
-      return meshHandlers.beginMeshUpdate(res, matchedDevice);
+      const meshUpdateStatus = await meshHandlers.beginMeshUpdate(
+        matchedDevice,
+      );
+      if (meshUpdateStatus.success) {
+        return res.status(200).json({success: true});
+      }
     }
     matchedDevice.do_update_status = 0; // waiting
     messaging.sendUpdateMessage(matchedDevice);

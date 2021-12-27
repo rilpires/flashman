@@ -313,7 +313,7 @@ meshHandlers.generateBSSIDLists = async function(device) {
   };
 };
 
-meshHandlers.beginMeshUpdate = async function(res, masterDevice) {
+meshHandlers.beginMeshUpdate = async function(masterDevice) {
   // Remaining devices are needed to differentiate between the first
   // time a device is updated the other times, as well as to rule out
   // which devices mustn't update in the future.
@@ -328,7 +328,7 @@ meshHandlers.beginMeshUpdate = async function(res, masterDevice) {
     mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
   });
   deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
-  res.status(200).json({'success': true});
+  return {'success': true};
 };
 
 meshHandlers.convertBSSIDToId = async function(device, bssid) {
