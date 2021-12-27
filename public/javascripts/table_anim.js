@@ -500,7 +500,7 @@ $(document).ready(function() {
           slaveCount-1,
           res.do_update,
           res.do_update_status,
-          res.do_update_mesh_remaining,
+          res.mesh_update_remaining,
           deviceId,
         );
       },
@@ -639,25 +639,38 @@ $(document).ready(function() {
         '</span>'+
       '</div>'+
     '</td>';
+    let meshCount = 1;
+    const slaveCount = slaves.length;
+    let currentDevice = device._id;
     let inProgress = device.do_update;
     let status = device.do_update_status;
-    let meshCount = device.do_update_mesh_remaining;
-    let slaveCount = slaves.length;
-    let currentSlave = device._id;
-    let currentSlaveNum = 0;
+    let currentDeviceNum = slaveCount + 1;
     let tooltipMsg = 'Atualizando CPE...';
-    if (slaveCount > 0) {
-      slaves.forEach((slave)=>{
-        if (inProgress) return;
-        inProgress = slave.do_update;
-        status = slave.do_update_status;
-        currentSlave = slave._id;
-      });
-      if (meshCount === slaveCount+1) {
-        tooltipMsg = 'Atualizando CPE principal...';
+    if (slaveCount) {
+      if (device.mesh_next_to_update) {
+        // get next device to update in mesh network
+        currentDevice = device.mesh_next_to_update;
+        if (currentDevice !== device._id) {
+          // If currentDevice isn't master, look at slaves
+          let currentSlave;
+          for (let i=0; i<slaves.length; i++) {
+            if (slaves[i]._id === currentDevice) {
+              currentSlave = slaves[i];
+              break;
+            }
+          }
+          inProgress = currentSlave.do_update;
+          status = currentSlave.do_update_status;
+        }
+        if (device.mesh_update_remaining && device.mesh_update_remaining.length
+        ) {
+          meshCount = device.update_remaining.length;
+        }
+        currentDeviceNum = slaveCount + 1 - meshCount;
+        tooltipMsg =
+          `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
       } else {
-        currentSlaveNum = slaveCount - meshCount + 1;
-        tooltipMsg = 'Atualizando CPE secundário '+currentSlaveNum+' de '+slaveCount+'...';
+        inProgress = false;
       }
     }
     if (inProgress) {
@@ -665,7 +678,7 @@ $(document).ready(function() {
       upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
-      if (status == 0 || status == 10) {
+      if (status == 0 || status == 10 || status == 20 || status == 30) {
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -683,7 +696,8 @@ $(document).ready(function() {
         upgradeCol = upgradeCol.replace('$STATUS_2', '');
         upgradeCol = upgradeCol.replace('$TOOLTIP', '');
         if (slaveCount > 0) {
-          let meshParams = 'data-progress="'+currentSlaveNum+'" data-mac="'+currentSlave+'"';
+          let meshParams =
+          `data-progress="${currentDeviceNum}" data-mac="${currentDevice}"`;
           upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
         } else {
           upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
