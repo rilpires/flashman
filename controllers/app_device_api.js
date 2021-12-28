@@ -962,13 +962,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     prefixObj.name = checkResponse.prefix;
     prefixObj.grant = checkResponse.enablePrefix;
 
-    let resetBackup = {};
-    if (config.tr069) {
-      let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-      resetBackup = makeDeviceBackupData(matchedDevice, config, certFile);
-    }
-
-    return res.status(200).json({
+    let response = {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
@@ -982,8 +976,21 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       has_access: isDevOn,
       use_tr069: matchedDevice.use_tr069,
       mesh_mode: matchedDevice.mesh_mode,
-      resetBackup: resetBackup,
-    });
+    };
+
+    try {
+      // Only send bakcup for tr069 devices and valid config
+      if (matchedDevice.use_tr069 && config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(
+          matchedDevice, config, certFile,
+        );
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+
+    return res.status(200).json(response);
   });
 };
 
@@ -1345,16 +1352,19 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     let config = await Config.findOne(
       {is_default: true}, 'tr069',
     ).exec().catch((err) => err);
-    let resetBackup = {};
-    if (config.tr069) {
-      let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-      resetBackup = makeDeviceBackupData(device, config, certFile);
-    }
-    return res.status(200).json({
+    let response = {
       serialOk: true,
       hasPassword: (device.app_password) ? true : false, // cast to bool
-      resetBackup: resetBackup,
-    });
+    };
+    try {
+      if (config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(device, config, certFile);
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+    return res.status(200).json(response);
   });
 };
 
