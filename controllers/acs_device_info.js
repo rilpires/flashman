@@ -1037,7 +1037,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       name: 'getParameterValues',
       parameterNames: parameters,
     };
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (
       !result || !result.finished || result.task.name !== 'getParameterValues'
     ) {
@@ -1127,7 +1127,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
       name: 'getParameterValues',
       parameterNames: [diagnIPPingDiagnostics],
     };
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (
       !result || !result.finished || result.task.name !== 'getParameterValues'
     ) {
@@ -1152,7 +1152,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
   try {
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (!result || !result.finished) {
       return {success: false,
               message: 'Error: Could not fire TR-069 ping measure'};
@@ -1659,7 +1659,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
   }
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchDevicesFromGenie(mac, acsID);
   });
@@ -1758,7 +1758,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
     };
     try {
       let ret = await TasksAPI.addTask(acsID, delObjTask, true,
-        3000, [5000, 10000]);
+        10000, [5000, 10000]);
       if (!ret || !ret.finished||
         ret.task.name !== 'deleteObject') {
         throw new Error('delObject task error');
@@ -1794,7 +1794,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
     for (let i = 0; i < numObjsToCreate; i++) {
       try {
         let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished||
           ret.task.name !== 'addObject') {
           throw new Error('task error');
@@ -1929,7 +1929,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
     if (result.task.name !== 'setParameterValues') return;
     if (result.finished && rebootAfterUpdate) {
@@ -1993,7 +1993,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished) {
           return;
         }
@@ -2007,7 +2007,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
     for (i = 0; i < rulesDiffLength; i++) {
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished) {
           return;
         }
@@ -2034,7 +2034,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
     TasksAPI.addTask(acsID, updateTasks,
-        true, 3000, [5000, 10000]).catch((e) => {
+        true, 10000, [5000, 10000]).catch((e) => {
           console.error('[!] -> '+e.message+' in '+acsID);
         });
   }
