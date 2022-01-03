@@ -634,8 +634,8 @@ scheduleController.abortSchedule = async function(req, res) {
       device.do_update = false;
       device.do_update_status = 4;
       // reset update parameters
-      device.next_to_update = '';
-      device.update_remaining = [];
+      device.mesh_next_to_update = '';
+      device.mesh_update_remaining = [];
       await device.save();
       meshHandler.syncUpdateCancel(d, 4);
     });

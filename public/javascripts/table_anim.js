@@ -662,7 +662,7 @@ $(document).ready(function() {
         }
         if (device.mesh_update_remaining && device.mesh_update_remaining.length
         ) {
-          meshCount = device.update_remaining.length;
+          meshCount = device.mesh_update_remaining.length;
         }
         currentDeviceNum = slaveCount + 1 - meshCount;
         tooltipMsg =

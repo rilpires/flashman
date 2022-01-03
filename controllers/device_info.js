@@ -1575,7 +1575,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
         if (matchedDevice.mesh_master) {
           // Is a slave device
           let masterMac = matchedDevice.mesh_master;
-          let matchedMaster = await DeviceModel.findById(masterMac);
+          matchedMaster = await DeviceModel.findById(masterMac);
           if (!matchedMaster) {
             throw new Error('Did not find mesh master in database');
           }
@@ -1583,10 +1583,10 @@ deviceInfoController.receiveDevices = async function(req, res) {
           matchedMaster = matchedDevice;
         }
         // Update number of device remaining to send this info
-        devicesRemaining = matchedMaster.onlinedevs_remaining;
+        devicesRemaining = matchedMaster.mesh_onlinedevs_remaining;
         if (devicesRemaining) {
           devicesRemaining -= 1;
-          matchedMaster.onlinedevs_remaining = devicesRemaining;
+          matchedMaster.mesh_onlinedevs_remaining = devicesRemaining;
         }
         if (devicesRemaining === 0) {
           matchedMaster.do_update_status = 30;

@@ -577,8 +577,8 @@ const markNextDeviceToUpdate = async function(master) {
     };
   }
   const meshNextToUpdate = getNextToUpdateRec(
-    meshTopology, master._id, master.update_remaining);
-  master.next_to_update = meshNextToUpdate;
+    meshTopology, master._id, master.mesh_update_remaining);
+  master.mesh_next_to_update = meshNextToUpdate;
   await master.save();
   return {success: true};
 };
@@ -614,8 +614,8 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
   const meshInfoStatus = await markNextDeviceToUpdate(matchedMaster);
   if (!meshInfoStatus.success) {
     // reset master update parameters
-    matchedMaster.next_to_update = '';
-    matchedMaster.update_remaining = [];
+    matchedMaster.mesh_next_to_update = '';
+    matchedMaster.mesh_update_remaining = [];
     // error validating topology
     matchedMaster.do_update_status = 7;
     await matchedMaster.save();
@@ -623,24 +623,24 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
   // Before beginning the update process the next release is saved to master
   const release = matchedMaster.release;
   // Update next device
-  meshHandlers.updateMeshDevice(matchedMaster.next_to_update, release);
+  meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update, release);
 };
 
 const propagateUpdate = async function(
   masterDevice, macOfUpdated, release, setQuery=undefined) {
   const meshUpdateRemaining =
-    masterDevice.update_remaining.filter( (mac) => mac !== macOfUpdated);
+    masterDevice.mesh_update_remaining.filter( (mac) => mac !== macOfUpdated);
   // Update which devices are left to update
-  masterDevice.update_remaining = meshUpdateRemaining;
+  masterDevice.mesh_update_remaining = meshUpdateRemaining;
   if (meshUpdateRemaining.length === 0) {
     // All devices in mesh network have finished updating
     // We only need to check setQuery here because the flow where mesh master
     // calls this function always ends here
     if (setQuery) {
-      setQuery.update_remaining = [];
-      setQuery.next_to_update = '';
+      setQuery.mesh_update_remaining = [];
+      setQuery.mesh_next_to_update = '';
     } else {
-      masterDevice.next_to_update = '';
+      masterDevice.mesh_next_to_update = '';
       await masterDevice.save();
     }
     return;
@@ -648,7 +648,7 @@ const propagateUpdate = async function(
   // At least one device left to update
   if (DeviceVersion.versionCompare(masterDevice.version, '0.32') >= 0) {
     // If it's a mesh v2 network we need the topology in every iteration
-    masterDevice.onlinedevs_remaining = masterDevice.mesh_slaves.length + 1;
+    masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length+1;
     // waiting for topology
     masterDevice.do_update_status = 20;
     await masterDevice.save();
@@ -675,9 +675,11 @@ const propagateUpdate = async function(
       // If all slaves have updated next to update is master (always the last)
       nextDeviceToUpdate = masterDevice._id;
     }
-    masterDevice.next_to_update = nextDeviceToUpdate;
+    masterDevice.mesh_next_to_update = nextDeviceToUpdate;
     await masterDevice.save();
-    await meshHandlers.updateMeshDevice(masterDevice.next_to_update, release);
+    await meshHandlers.updateMeshDevice(
+      masterDevice.mesh_next_to_update, release
+    );
   }
 };
 
