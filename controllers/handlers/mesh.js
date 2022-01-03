@@ -440,8 +440,9 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
   let nextDevice;
   if (meshTopology[newMac] && meshTopology[newMac].length) {
     for (let i=0; i<meshTopology[newMac].length; i++) {
-      const auxDevice = meshHandlers.getNextToUpdateRec(
-        meshTopology, meshTopology[newMac][i], devicesToUpdate);
+      const auxDevice = getNextToUpdateRec(
+        meshTopology, meshTopology[newMac][i], devicesToUpdate
+      );
       // Only choose a device that hasn't been updated yet
       if (devicesToUpdate.includes(auxDevice)) {
         nextDevice = auxDevice;
@@ -481,7 +482,9 @@ const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
   }
   // this will be used for controlling update order
   // hash map where father is the key and value is list of sons
-  return {masterMac: slaves};
+  let retObj = {};
+  retObj[masterMac] = slaves;
+  return retObj;
 };
 
 // Used for mesh v2 update
