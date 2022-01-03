@@ -394,16 +394,14 @@ $(document).ready(function() {
         upgradeStatus.find('.status-waiting').addClass('d-none');
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
-        if (status == 0 || status == 10) {
+        if (status == 0 || status == 10 || status == 20 || status == 30) {
           upgradeStatus.find('.status-waiting').removeClass('d-none');
           let slaveCount = row.data('slave-count');
           let tooltip = 'Atualizando CPE...';
-          if (remain === slaveCount+1) {
-            tooltip = 'Atualizando CPE principal...';
-          } else if (remain > 0) {
-            let current = slaveCount - remain + 1;
-            tooltip = 'Atualizando CPE secundário '+
-              current+' de '+slaveCount+'...';
+          if (slaveCount) {
+            const currentDeviceNum = slaveCount + 2 - remain;
+            tooltip =
+          `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
           }
           upgradeStatus.find('.status-waiting').attr('title', tooltip);
         } else if (status == 1) {
