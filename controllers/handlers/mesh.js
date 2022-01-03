@@ -583,15 +583,26 @@ const markNextDeviceToUpdate = async function(master) {
   return {success: true};
 };
 
-meshHandlers.updateMeshDevice = async function(device, release) {
-  device.do_update = true;
-  device.do_update_status = 0; // waiting
-  device.release = release;
-  messaging.sendUpdateMessage(device);
-  await device.save();
-  mqtt.anlixMessageRouterUpdate(device._id);
+meshHandlers.updateMeshDevice = async function(deviceMac, release) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(deviceMac);
+    if (!matchedDevice) {
+      console.log('Did not find master device in database');
+      return;
+    }
+  } catch (err) {
+    console.log(err);
+    return;
+  }
+  matchedDevice.do_update = true;
+  matchedDevice.do_update_status = 0; // waiting
+  matchedDevice.release = release;
+  messaging.sendUpdateMessage(matchedDevice);
+  await matchedDevice.save();
+  mqtt.anlixMessageRouterUpdate(deviceMac);
   // Start ack timeout
-  deviceHandlers.timeoutUpdateAck(device._id, 'update');
+  deviceHandlers.timeoutUpdateAck(deviceMac, 'update');
 };
 
 meshHandlers.validateMeshTopology = async function(masterMac) {
@@ -678,7 +689,7 @@ const propagateUpdate = async function(
     masterDevice.mesh_next_to_update = nextDeviceToUpdate;
     await masterDevice.save();
     await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release
+      masterDevice.mesh_next_to_update, release,
     );
   }
 };

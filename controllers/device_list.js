@@ -403,7 +403,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
       });
     }
     await meshHandlers.updateMeshDevice(
-      matchedDevice, req.params.release.trim(),
+      matchedDevice._id, req.params.release.trim(),
     );
   });
 };
