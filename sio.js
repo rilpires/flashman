@@ -373,11 +373,9 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   }
   let found;
   if (testdata.stage && testdata.stage == 'estimative_finished') {
-    console.log('ESTIMATIVE FINISHED');
     found = emitNotification(SIO_NOTIFICATION_SPEED_ESTIMATIVE,
                                macaddr, testdata, macaddr);
-  }
-  else {
+  } else {
     found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
                                macaddr, testdata, macaddr);
   }
@@ -395,7 +393,7 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
     return false;
   }
   if (!deviceid) {
-    debug('ERROR: SIO: Tried to add genie task ' 
+    debug('ERROR: SIO: Tried to add genie task '
       +'notification with an invalid deviceid!');
     return false;
   }
@@ -406,7 +404,7 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
 
 sio.anlixSendGenieAcsTaskNotifications = function(deviceid, taskInfo) {
   if (!deviceid) {
-    debug('ERROR: SIO: Tried to send genie task notification ' 
+    debug('ERROR: SIO: Tried to send genie task notification '
       +`to an invalid deviceid! ${deviceid}`);
     return false;
   }

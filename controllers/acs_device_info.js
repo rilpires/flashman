@@ -11,7 +11,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
-const utilHandlers = require('./handlers/util')
+const utilHandlers = require('./handlers/util');
 
 const pako = require('pako');
 const http = require('http');
@@ -969,7 +969,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
   req.end();
 };
 
-// TR069 latency test ============================================
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
@@ -1058,7 +1057,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       success = true;
     }
   } catch (e) {
-    console.log(e);
+    console.log('Error:', e);
     console.log('Failed: genie diagnostics can\'t be updated');
   }
   if (!success) return;
@@ -1090,7 +1089,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         );
       } catch (e) {
         console.log('Failed: genie response was not valid');
-        console.log(e);
+        console.log('Error:', e);
       }
     });
   });
@@ -1114,7 +1113,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   try {
     device = await DeviceModel.findById(mac).lean();
   } catch (e) {
-    console.log(e);
+    console.log('Error:', e);
     return {success: false,
             message: 'Erro ao encontrar dispositivo'};
   }
@@ -1153,8 +1152,8 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
       success = true;
     }
   } catch (e) {
-    console.log(e);
     console.log('Failed: genie diagnostic fields can\'t be updated');
+    console.log('Error:', e);
   }
   if (!success) {
     return {success: false,
@@ -1204,33 +1203,48 @@ acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
   }
 };
 
-acsDeviceInfoController.getSpeedtestFile = function (device) {
-  if (device.current_speedtest.stage) {
-    if (device.current_speedtest.stage == 'estimative') {
-      return 'http://192.168.88.150:25752/measure/file.bin';
+acsDeviceInfoController.getSpeedtestFile = async function(device) {
+  let matchedConfig = await Config.findOne({is_default: true}).catch(
+    function(err) {
+      console.error('Error creating entry: ' + err);
+      return '';
+    },
+  );
+  if (!matchedConfig) {
+    console.error('Error creating entry. Config does not exists.');
+    return '';
+  }
+  let stage = device.current_speedtest.stage;
+  let band = device.current_speedtest.band_estimative;
+  let url = 'http://' + matchedConfig.measureServerIP + ':' +
+                  matchedConfig.measureServerPort + '/measure/tr069/';
+  if (stage) {
+    if (stage == 'estimative') {
+      return url + 'file_512KB.bin';
     }
-    if (device.current_speedtest.stage == 'measure') {
-      if (device.current_speedtest.band_estimative <= 3) {
-        return 'http://192.168.88.150:25752/measure/file_1920KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 10) {
-        return 'http://192.168.88.150:25752/measure/file_6400KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 30) {
-        return 'http://192.168.88.150:25752/measure/file_19200KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 50) {
-        return 'http://192.168.88.150:25752/measure/file_32000KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 100) {
-        return 'http://192.168.88.150:25752/measure/file_64000KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 300) {
-        return 'http://192.168.88.150:25752/measure/file_192000KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 500) {
-        return 'http://192.168.88.150:25752/measure/file_320000KB.bin';
-      } else if (device.current_speedtest.band_estimative <= 700) {
-        return 'http://192.168.88.150:25752/measure/file_448000KB.bin';
-      } else if (device.current_speedtest.band_estimative > 700) {
-        return 'http://192.168.88.150:25752/measure/file_640000KB.bin';
+    if (stage == 'measure') {
+      if (band >= 700) {
+        return url + 'file_640000KB.bin';
+      } else if (band >= 500) {
+        return url + 'file_448000KB.bin';
+      } else if (band >= 300) {
+        return url + 'file_320000KB.bin';
+      } else if (band >= 100) {
+        return url + 'file_192000KB.bin';
+      } else if (band >= 50) {
+        return url + 'file_64000KB.bin';
+      } else if (band >= 30) {
+        return url + 'file_32000KB.bin';
+      } else if (band >= 10) {
+        return url + 'file_19200KB.bin';
+      } else if (band >= 3) {
+        return url + 'file_6400KB.bin';
+      } else if (band < 3) {
+        return url + 'file_1920KB.bin';
       }
     }
   }
+  return '';
 };
 
 acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
@@ -1238,7 +1252,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   try {
     device = await DeviceModel.findById(mac).lean();
   } catch (e) {
-    console.log(e);
+    console.log('Error:', e);
     return {success: false,
             message: 'Erro ao encontrar dispositivo'};
   }
@@ -1256,8 +1270,13 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
-  let numberOfCon = 3;
-  let SpeedtestHostUrl = acsDeviceInfoController.getSpeedtestFile(device);
+  let numberOfCon = 2;
+  let speedtestHostUrl = await acsDeviceInfoController.getSpeedtestFile(device);
+
+  if (!speedtestHostUrl || speedtestHostUrl === '') {
+    return {success: false,
+            message: 'Error: Could not get speedtest measure file'};
+  }
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1275,8 +1294,8 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
       success = true;
     }
   } catch (e) {
-    console.log(e);
     console.log('Failed: genie diagnostic fields can\'t be updated');
+    console.log('Error:', e);
   }
   if (!success) {
     return {success: false,
@@ -1287,7 +1306,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
-                      [diagnURLField, SpeedtestHostUrl, 'xsd:string']],
+                      [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
   try {
     const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
@@ -1306,8 +1325,8 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
 };
 
 acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
-                                                            speedKeys,
-                                                            speedFields) {
+                                                                  speedKeys,
+                                                                  speedFields) {
   speedKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, speedKeys, speedFields,
   );
@@ -1319,27 +1338,26 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
     let lastTime = new Date(1970, 0, 1);
     if (device.speedtest_results.length > 0) {
       lastTime = utilHandlers.parseDate(
-        device.speedtest_results[device.speedtest_results.length-1].timestamp
+        device.speedtest_results[device.speedtest_results.length-1].timestamp,
       );
     }
-    if (!device.current_speedtest.timestamp || 
+    if (!device.current_speedtest.timestamp ||
         (rqstTime.valueOf() > lastTime.valueOf())) {
       let beginTime = new Date(speedKeys.bgn_time);
       let endTime = new Date(speedKeys.end_time);
       speedValue = (speedKeys.test_bytes_rec * (8 / 1024)) /
                 (endTime.valueOf()-beginTime.valueOf());
-      console.log('media bytes/delta_t', speedValue);
       if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period &&
           device.current_speedtest.stage !== 'estimative') {
         speedValue = ((speedKeys.full_load_bytes_rec * 8 * (10**6)) /
                           (speedKeys.full_load_period * (1024**2)));
-        console.log('full-load', speedValue);
       }
       result = {
         downSpeed: parseInt(speedValue).toString() + ' Mbps',
         user: device.current_speedtest.user,
       };
     }
+  // Error treatment
   } else if (speedKeys.diag_state == 'Error_InitConnectionFailed') {
     result = {
       downSpeed: '503 Server',
@@ -1350,22 +1368,21 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
       user: device.current_speedtest.user,
     };
   }
+  // Speedtest's estimative step
   if (device.current_speedtest.stage == 'estimative') {
     device.current_speedtest.band_estimative = speedValue;
-    console.log('estimative finished:', speedValue, ' Mbps');
+    device.current_speedtest.stage = 'measure';
+    await device.save();
     await sio.anlixSendSpeedTestNotifications(device._id, {
       stage: 'estimative_finished',
       user: device.current_speedtest.user,
     });
-    device.current_speedtest.stage = 'measure';
-    await device.save();
     acsDeviceInfoController.fireSpeedDiagnose(device._id);
+  // Speedtest's real measure step
   } else if (device.current_speedtest.stage == 'measure') {
     deviceHandlers.storeSpeedtestResult(device, result);
   }
 };
-
-// =============================================================================
 
 // TODO: Move this function to external-genieacs?
 const fetchWanBytesFromGenie = function(mac, acsID) {
