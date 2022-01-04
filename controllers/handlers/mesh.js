@@ -436,6 +436,7 @@ meshHandlers.allowMeshUpgrade = async function(device, nextVersion) {
   }
 };
 
+// Function does a DFS to get the next device to update
 const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
   let nextDevice;
   if (meshTopology[newMac] && meshTopology[newMac].length) {
@@ -551,6 +552,8 @@ const markNextDeviceToUpdate = async function(master) {
   let meshRoutersData = {};
   let meshFathers = {};
   // Gathers information from primary and secondary CPEs in the network
+  // meshRoutersData is an object, where the key is the device's MAC and the
+  // value is a list of objects, showing info of routers in the mesh network
   meshRoutersData[master._id] = master.mesh_routers;
   try {
     for (let i = 0; i < master.mesh_slaves.length; i++) {
@@ -571,6 +574,9 @@ const markNextDeviceToUpdate = async function(master) {
   } catch (err) {
     return {success: false, message: err};
   }
+  // Converts the two structures obtained previously to get a new topology
+  // structure, where the key is the device MAC and the value is a list of it's
+  // mesh sons.
   const meshTopology = await getMeshTopology(
     meshRoutersData, meshFathers, master);
   if (!meshTopology) {
