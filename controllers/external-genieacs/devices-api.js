@@ -62,6 +62,7 @@ const convertWifiMode = function(mode, oui, model) {
         return 'g';
       } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
+      else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
@@ -77,6 +78,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'b,g,n';
@@ -91,6 +93,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n';
@@ -105,6 +108,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n,ac';
@@ -411,6 +415,7 @@ const getZTEFields = function(model) {
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
       break;
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
@@ -586,6 +591,7 @@ const getModelFields = function(oui, model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
     case 'ZXHN%20H199A': // URI encoded
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
       message = '';
@@ -635,6 +641,7 @@ const getBeaconTypeByModel = function(model) {
     case 'GONUAC001': // Greatek Stavix G421R
       ret = 'WPA2';
       break;
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2

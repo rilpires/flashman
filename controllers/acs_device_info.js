@@ -103,6 +103,7 @@ const convertWifiMode = function(mode, is5ghz) {
 const convertToDbm = function(model, rxPower) {
   switch (model) {
     case 'IGD':
+    case 'F660':
     case 'F670L':
     case 'F680':
     case 'G-140W-C':
@@ -133,6 +134,7 @@ const convertWifiBand = function(band, mode) {
 
 const convertWifiRate = function(model, rate) {
   switch (model) {
+    case 'F660':
     case 'F670L':
     case 'F680':
       return rate = parseInt(rate) / 1000;
