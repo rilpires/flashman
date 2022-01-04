@@ -730,7 +730,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     }
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
-      let enrichDevice = function(device) {
+      let enrichDevice = async function(device) {
         const model = device.model.replace('N/', '');
         let devReleases = releases.filter(
           (release) => release.model === model);
@@ -757,13 +757,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
             device.model_alias = 'FW323DAC';
           }
         } else {
-          devReleases = devReleases.filter(
-            async (release) => {
-              return await meshHandlers.allowMeshUpgrade(
-                device, release.flashbox_version);
-            },
-          );
+          let filteredDevReleases = [];
+          for (let i = 0; i < devReleases.length; i++) {
+            const isAllowed = await meshHandlers.allowMeshUpgrade(
+              device, devReleases[i].flashbox_version,
+            );
+            if (isAllowed) filteredDevReleases.push(devReleases[i]);
+          }
           device.isUpgradeEnabled = true;
+          devReleases = filteredDevReleases;
         }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
