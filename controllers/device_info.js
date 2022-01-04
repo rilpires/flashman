@@ -761,11 +761,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
               matchedDevice.version, sentVersion);
-            if ((typeUpgrade.current !== 1 || typeUpgrade.upgrade !== 2) ||
-              matchedDevice.mesh_mode < 2 ||
-              ((!matchedDevice.mesh_slaves ||
-              matchedDevice.mesh_slaves.length === 0)
-              && !matchedDevice.mesh_master)) {
+            const isV1ToV2 = (typeUpgrade.current === 1 &&
+              typeUpgrade.upgrade === 2);
+            const isWifiMesh = (matchedDevice.mesh_mode > 1);
+            const isActiveNetwork = ((matchedDevice.mesh_slaves &&
+              matchedDevice.mesh_slaves.length > 0)
+              || matchedDevice.mesh_master);
+            if (!isV1ToV2 || !isWifiMesh || !isActiveNetwork) {
               /*
                 This isn't a mesh v1 -> mesh v2 update with an active mesh
                 network. So, the next device in the mesh network is updating
@@ -1030,10 +1032,13 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             if (firmware) {
               const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
                 matchedDevice.version, firmware.flashbox_version);
-              if ((typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) &&
-                matchedDevice.mesh_mode > 1 &&
-                ((matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length)
-                || matchedDevice.mesh_master)) {
+              const isV1ToV2 = (typeUpgrade.current === 1 &&
+                typeUpgrade.upgrade === 2);
+              const isWifiMesh = (matchedDevice.mesh_mode > 1);
+              const isActiveNetwork = ((matchedDevice.mesh_slaves &&
+                matchedDevice.mesh_slaves.length > 0)
+                || matchedDevice.mesh_master);
+              if (isV1ToV2 && isWifiMesh && isActiveNetwork) {
                 /*
                   In a mesh network where there is an upgrade from mesh v1 -> v2
                   the next device in the mesh network won't wait for the
