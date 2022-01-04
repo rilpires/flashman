@@ -665,14 +665,36 @@ const propagateUpdate = async function(
     }
     return;
   }
-  // At least one device left to update
-  if (DeviceVersion.versionCompare(masterDevice.version, '0.32') >= 0) {
-    // If it's a mesh v2 network we need the topology in every iteration
+  if (meshUpdateRemaining.length === 1) {
+    // Only one device left to update, it will always be the master, regardless
+    // of being mesh v1 or v2 network.
+    masterDevice.mesh_next_to_update = masterDevice._id;
+    await masterDevice.save();
+    await meshHandlers.updateMeshDevice(
+      masterDevice.mesh_next_to_update, release,
+    );
+  } else if (meshUpdateRemaining.length === 2 ||
+    DeviceVersion.versionCompare(masterDevice.version, '0.32') < 0) {
+    // Only two devices left to update or this is a mesh v1 network
+    // If there are only two devices left to update just mark the slave
+    // that hasn't updated. If it's a mesh v1 network we only need the
+    // topology in the first iteration. After that just mark the slaves
+    // that haven't updated in any order.
+    const nextDeviceToUpdate = meshUpdateRemaining.find((device)=>{
+      return masterDevice.mesh_slaves.includes(device);
+    });
+    masterDevice.mesh_next_to_update = nextDeviceToUpdate;
+    await masterDevice.save();
+    await meshHandlers.updateMeshDevice(
+      masterDevice.mesh_next_to_update, release,
+    );
+  } else {
+    // At least three devices left to update in mesh v2 network
+    // In a mesh v2 network we need the topology in every iteration
     masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length+1;
     // waiting for topology
     masterDevice.do_update_status = 20;
     await masterDevice.save();
-
     const slaves = masterDevice.mesh_slaves;
     mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
     // Set timeout for reception of onlinedevs
@@ -682,24 +704,6 @@ const propagateUpdate = async function(
       // Set timeout for reception of onlinedevs for slaves
       deviceHandlers.timeoutUpdateAck(slave.toUpperCase(), 'onlinedevs');
     });
-  } else {
-    // If it's a mesh v1 network we only need the topology in first iteration
-    let nextDeviceToUpdate;
-    if (meshUpdateRemaining.length > 1) {
-      // if there is more than one device left to update choose one of the
-      // remaining slaves
-      nextDeviceToUpdate = meshUpdateRemaining.filter((device)=>{
-        return masterDevice.mesh_slaves.includes(device);
-      })[0];
-    } else {
-      // If all slaves have updated next to update is master (always the last)
-      nextDeviceToUpdate = masterDevice._id;
-    }
-    masterDevice.mesh_next_to_update = nextDeviceToUpdate;
-    await masterDevice.save();
-    await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release,
-    );
   }
 };
 
