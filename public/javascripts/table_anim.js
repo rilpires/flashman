@@ -642,6 +642,7 @@ $(document).ready(function() {
     let currentDevice = device._id;
     let inProgress = device.do_update;
     let status = device.do_update_status;
+    const masterStatus = device.do_update_status;
     let currentDeviceNum = slaveCount + 1;
     let tooltipMsg = 'Atualizando CPE...';
     if (slaveCount) {
@@ -676,7 +677,7 @@ $(document).ready(function() {
       upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
-      if (status == 0 || status == 10 || status == 20 || status == 30) {
+      if (status == 0 || status == 10 || status == 20 || masterStatus == 30) {
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -688,7 +689,7 @@ $(document).ready(function() {
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
         upgradeCol = upgradeCol.replace('$TOOLTIP', '');
         upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
-      } else if (status >= 2) {
+      } else if (status >= 2 || masterStatus == 6) {
         upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', '');
@@ -696,6 +697,12 @@ $(document).ready(function() {
         if (slaveCount > 0) {
           let meshParams =
           `data-progress="${currentDeviceNum}" data-mac="${currentDevice}"`;
+          // Error status 6 is only saved on master device
+          if (masterStatus == 6) {
+            meshParams += ` data-status="${masterStatus}"`;
+          } else {
+            meshParams += ` data-status="${status}"`;
+          }
           upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
         } else {
           upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
