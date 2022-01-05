@@ -124,7 +124,8 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
     timeout = 25*1000;
     targetStatus = 20;
     errStatus = 6;
-    timeoutMsg = 'UPDATE: Did not receive topology info for MAC ' + mac;
+    timeoutMsg = 'UPDATE: Did not receive topology info for all devices in '+
+    'mesh network of master with MAC ' + mac;
     if (process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) {
       timeout = parseInt(process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) * 1000;
       if (isNaN(timeout)) {
