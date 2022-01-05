@@ -132,39 +132,52 @@ $(function() {
     let slaveCount = row.data('slave-count');
     if (slaveCount > 0) {
       let errorAnchor = $(event.target).closest('.status-error');
-      let progress = errorAnchor.data('progress');
-      let errorMac = errorAnchor.data('mac');
-      let routerType = (progress > 0) ? 'slave' : 'mestre';
-      swal({
-        type: 'error',
-        title: 'Erro',
-        text: 'Houve um erro ao realizar a transferência do firmware do '+
-          'CPE '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
-          'novamente ou cancele o procedimento.',
-        confirmButtonText: 'Tentar novamente',
-        confirmButtonColor: '#4db6ac',
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#f2ab63',
-        showCancelButton: true,
-      }).then((result)=>{
-        if (result.value) {
-          // Send update message to backend and refresh row
-          let selBtnGroup = row.find('.dropdown-menu.refresh-selected').parent();
-          let release = selBtnGroup.find('.dropdown-toggle .selected').text();
-          $.ajax({
-            url: '/devicelist/updatemesh/' + errorMac + '/' + release,
-            type: 'post',
-            traditional: true,
-            data: {do_update: true},
-            complete: function() {
-              row.find('.device-row-refresher').trigger('click');
-            }
-          });
-        } else if (result.dismiss === 'cancel') {
-          // Trigger cancel button
-          row.find('.btn-cancel-update').trigger('click');
-        }
-      });
+      let errorStatus = errorAnchor.data('status');
+      if (errorStatus == 6) {
+        // Topology timeout
+        swal({
+          type: 'error',
+          title: 'Erro',
+          text: 'Houve um erro ao coletar a topologia dos dispositivos. ' +
+          'Cancele o procedimento e tente novamente.',
+          confirmButtonText: 'Ok',
+          confirmButtonColor: '#4db6ac',
+        });
+      } else {
+        let progress = errorAnchor.data('progress');
+        let errorMac = errorAnchor.data('mac');
+        let routerType = (progress > 0) ? 'slave' : 'mestre';
+        swal({
+          type: 'error',
+          title: 'Erro',
+          text: 'Houve um erro ao realizar a transferência do firmware do '+
+            'CPE '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
+            'novamente ou cancele o procedimento.',
+          confirmButtonText: 'Tentar novamente',
+          confirmButtonColor: '#4db6ac',
+          cancelButtonText: 'Cancelar',
+          cancelButtonColor: '#f2ab63',
+          showCancelButton: true,
+        }).then((result)=>{
+          if (result.value) {
+            // Send update message to backend and refresh row
+            let selBtnGroup = row.find('.dropdown-menu.refresh-selected').parent();
+            let release = selBtnGroup.find('.dropdown-toggle .selected').text();
+            $.ajax({
+              url: '/devicelist/updatemesh/' + errorMac + '/' + release,
+              type: 'post',
+              traditional: true,
+              data: {do_update: true},
+              complete: function() {
+                row.find('.device-row-refresher').trigger('click');
+              }
+            });
+          } else if (result.dismiss === 'cancel') {
+            // Trigger cancel button
+            row.find('.btn-cancel-update').trigger('click');
+          }
+        });
+      }
     } else {
       swal({
         type: 'error',
