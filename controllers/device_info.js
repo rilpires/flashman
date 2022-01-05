@@ -1344,6 +1344,15 @@ deviceInfoController.receiveDevices = async function(req, res) {
     }
   }
 
+  /*
+    This region should not have two parellel executions because fields
+    of the same device are read and written. A random timeout is set between
+    accesses to the mutex
+  */
+  let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+  await new Promise((resolve) => setTimeout(resolve, interval));
+  mutexRelease = await mutex.acquire();
+
   DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Devices Receiving for device ' +
@@ -1566,14 +1575,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
           });
         }
       }
-      /*
-        This region should not have two parellel executions because fields
-        of the same device are read and written. A random timeout is set between
-        accesses to the mutex
-      */
-      let interval = Math.random() * 500; // scale to seconds, cap at 500ms
-      await new Promise((resolve) => setTimeout(resolve, interval));
-      mutexRelease = await mutex.acquire();
       let devicesRemaining;
 
       try {
@@ -1605,11 +1606,15 @@ deviceInfoController.receiveDevices = async function(req, res) {
         mutexRelease();
         return res.status(500).json({processed: 0});
       }
-      mutexRelease();
     }
 
     matchedDevice.last_devices_refresh = Date.now();
     await matchedDevice.save();
+
+    // We only release here. This way even if the master device was executing
+    // the critical region will allow it to block the execution until it
+    // finishes saving.
+    mutexRelease();
 
     // if someone is waiting for this message, send the information
     sio.anlixSendOnlineDevNotifications(id, outData);
