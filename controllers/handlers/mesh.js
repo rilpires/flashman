@@ -780,13 +780,11 @@ const propagateUpdate = async function(
     await masterDevice.save();
     const slaves = masterDevice.mesh_slaves;
     mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
-    // Set timeout for reception of onlinedevs
-    deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
     slaves.forEach((slave)=>{
       mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-      // Set timeout for reception of onlinedevs for slaves
-      deviceHandlers.timeoutUpdateAck(slave.toUpperCase(), 'onlinedevs');
     });
+    // Set timeout for reception of onlinedevs
+    deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
   }
 };
 
