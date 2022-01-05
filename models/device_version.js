@@ -36,12 +36,13 @@ const tr069Devices = {
     vendor: 'Multilaser',
     versions_upgrade: {
       'V7.1.10P1T1': [],
-      'V7.1.10P1T2': [],
+      'V7.1.10P1T2': ['V7.1.10P1N8'],
       'V7.1.10P1N8': [],
     },
     port_forward_opts: {
       'V7.1.10P1T1': portForwardNoRanges,
       'V7.1.10P1T2': portForwardNoRanges,
+      'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
@@ -52,7 +53,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       pon_signal: true,
-      firmware_upgrade: false,
+      firmware_upgrade: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
