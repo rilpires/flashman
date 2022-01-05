@@ -399,7 +399,7 @@ $(document).ready(function() {
           let slaveCount = row.data('slave-count');
           let tooltip = 'Atualizando CPE...';
           if (slaveCount) {
-            const currentDeviceNum = slaveCount + 2 - remain;
+            const currentDeviceNum = slaveCount + 1 - (remain + 1);
             tooltip =
           `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
           }
