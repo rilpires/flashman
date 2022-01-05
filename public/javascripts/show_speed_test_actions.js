@@ -191,9 +191,7 @@ $(document).ready(function() {
     }
   });
 
-  console.log('Test');
   socket.on('SPEEDESTIMATIVE', function(macaddr, data) {
-    console.log('Estimative');
     // only do this if timeout has not happened yet
     if (socketIoTimeout) return;
     socketIoResponse = true;
