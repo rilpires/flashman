@@ -370,10 +370,15 @@ $(document).ready(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  const updateSlavesRecursively = function(row, iter, update,
-                                           status, remain, mac='') {
+  const updateSlavesRecursively = function(
+    row, iter, update, status, remain, mac='', masterStatus,
+  ) {
     if (iter < 0) {
-      if (!update) {
+      if (!update && masterStatus != 6 && masterStatus != 7 &&
+        masterStatus != 20 && masterStatus != 30
+      ) {
+        // status 6 and 7 are special statuses that can happen before do_update
+        // is activated
         // Activate dropdown
         row.find('.device-update .dropdown-toggle .selected').text('Escolher');
         row.find('.device-update .dropdown-toggle').attr('disabled', false);
@@ -394,26 +399,38 @@ $(document).ready(function() {
         upgradeStatus.find('.status-waiting').addClass('d-none');
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
-        if (status == 0 || status == 10 || status == 20 || status == 30) {
-          upgradeStatus.find('.status-waiting').removeClass('d-none');
-          let slaveCount = row.data('slave-count');
-          let tooltip = 'Atualizando CPE...';
-          if (slaveCount) {
-            const currentDeviceNum = slaveCount + 1 - (remain + 1);
-            tooltip =
-          `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
-          }
-          upgradeStatus.find('.status-waiting').attr('title', tooltip);
-        } else if (status == 1) {
-          upgradeStatus.find('.status-ok').removeClass('d-none');
-        } else if (status >= 2) {
+        if ((status >= 2 && status <= 5) || masterStatus == 6 ||
+          masterStatus == 7
+        ) {
+          // error statuses
           let slaveCount = row.data('slave-count');
           let progress = (remain === slaveCount+1) ? 0
             : slaveCount - remain + 1;
           let errorAnchor = upgradeStatus.find('.status-error');
           errorAnchor.attr('data-progress', progress);
           errorAnchor.attr('data-mac', mac);
+          if (masterStatus == 6 || masterStatus == 7) {
+            errorAnchor.attr('data-status', masterStatus);
+          }
           errorAnchor.removeClass('d-none');
+        } else if (status == 0 || status == 10 || masterStatus == 20 ||
+          masterStatus == 30
+        ) {
+          upgradeStatus.find('.status-waiting').removeClass('d-none');
+          let slaveCount = row.data('slave-count');
+          let tooltip = 'Atualizando CPE...';
+          if (slaveCount) {
+            if (masterStatus == 30 || masterStatus == 20) {
+              tooltip = 'Coletando e processando topologia';
+            } else {
+              const currentDeviceNum = slaveCount + 1 - remain + 1;
+              tooltip =
+                `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
+            }
+          }
+          upgradeStatus.find('.status-waiting').attr('title', tooltip);
+        } else if (status == 1) {
+          upgradeStatus.find('.status-ok').removeClass('d-none');
         }
         // Activate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', false);
@@ -444,7 +461,7 @@ $(document).ready(function() {
           localMac = res._id;
         }
         updateSlavesRecursively(row, iter-1, localUpdate,
-          localStatus, remain, localMac);
+          localStatus, remain, localMac, masterStatus);
       },
     });
   };
@@ -500,6 +517,7 @@ $(document).ready(function() {
           res.do_update_status,
           res.mesh_update_remaining,
           deviceId,
+          res.do_update_status,
         );
       },
       complete: function(xhr, status) {
@@ -665,19 +683,55 @@ $(document).ready(function() {
         ) {
           meshCount = device.mesh_update_remaining.length;
         }
-        currentDeviceNum = slaveCount + 1 - meshCount;
+        currentDeviceNum = slaveCount + 1 - meshCount + 1;
         tooltipMsg =
           `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
       } else {
         inProgress = false;
       }
     }
-    if (inProgress) {
+    if (masterStatus == 6 || masterStatus == 7) {
+      // Error status 6 and 7 are only saved on master device
+      upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_2', '');
+      upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+      let meshParams = `data-progress="${currentDeviceNum}" 
+        data-mac="${currentDevice}" data-status="${masterStatus}"`;
+      upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
+    } else if (!inProgress && (masterStatus == 20 || masterStatus == 30)) {
+      // Status 20 and 30 are only saved on master
+      tooltipMsg = 'Coletando e processando topologia';
+      upgradeCol = upgradeCol.replace('$STATUS_0', '');
+      upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
+      upgradeCol = upgradeCol.replace('$TOOLTIP', tooltipMsg);
+      upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+    } else if (inProgress) {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
       upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
-      if (status == 0 || status == 10 || status == 20 || masterStatus == 30) {
+      if ( status >= 2 && status <= 5) {
+        // error statuses
+        upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
+        upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+        upgradeCol = upgradeCol.replace('$STATUS_2', '');
+        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+        if (slaveCount > 0) {
+          let meshParams =
+          `data-progress="${currentDeviceNum}" data-mac="${currentDevice}"`;
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
+        } else {
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+        }
+      } else if (status == 0 || status == 10 || masterStatus == 20 ||
+        masterStatus == 30
+      ) {
+        // Status 20 and 30 are only saved on master
+        if (masterStatus == 30 || masterStatus == 20) {
+          tooltipMsg = 'Coletando e processando topologia';
+        }
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -689,24 +743,6 @@ $(document).ready(function() {
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
         upgradeCol = upgradeCol.replace('$TOOLTIP', '');
         upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
-      } else if (status >= 2 || masterStatus == 6) {
-        upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
-        upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
-        upgradeCol = upgradeCol.replace('$STATUS_2', '');
-        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
-        if (slaveCount > 0) {
-          let meshParams =
-          `data-progress="${currentDeviceNum}" data-mac="${currentDevice}"`;
-          // Error status 6 is only saved on master device
-          if (masterStatus == 6) {
-            meshParams += ` data-status="${masterStatus}"`;
-          } else {
-            meshParams += ` data-status="${status}"`;
-          }
-          upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
-        } else {
-          upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
-        }
       }
     } else {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');

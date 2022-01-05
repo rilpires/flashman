@@ -47,7 +47,7 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             if (slaveCount > 0) {
               upgradeStatus.find('.status-waiting').attr('title',
-                `Atualizando CPE 1 de ${slaveCount+1}...`);
+                `Coletando e processando topologia`);
             } else {
               upgradeStatus.find('.status-waiting').attr('title',
                 'Atualizando CPE...');
@@ -133,15 +133,26 @@ $(function() {
     if (slaveCount > 0) {
       let errorAnchor = $(event.target).closest('.status-error');
       let errorStatus = errorAnchor.data('status');
-      if (errorStatus == 6) {
-        // Topology timeout
+      console.log(`DEBUG errorStatus: ${errorStatus}`);
+      if (errorStatus == 6 || errorStatus == 7) {
+        // Topology errors
+        let msg;
+        if (errorStatus == 6) {
+          msg = 'Houve um erro ao coletar a topologia dos dispositivos. ';
+        } else {
+          msg = 'Houve um erro ao validar a topologia dos dispositivos. ';
+        }
         swal({
           type: 'error',
           title: 'Erro',
-          text: 'Houve um erro ao coletar a topologia dos dispositivos. ' +
-          'Cancele o procedimento e tente novamente.',
-          confirmButtonText: 'Ok',
+          text: msg + 'Cancele o procedimento e tente novamente.',
+          confirmButtonText: 'Cancelar',
           confirmButtonColor: '#4db6ac',
+        }).then((result)=>{
+          if (result.value) {
+            // Trigger cancel button
+            row.find('.btn-cancel-update').trigger('click');
+          }
         });
       } else {
         let progress = errorAnchor.data('progress');
