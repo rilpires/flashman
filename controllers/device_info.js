@@ -1702,7 +1702,6 @@ deviceInfoController.receivePingResult = function(req, res) {
 
 
 deviceInfoController.receiveSpeedtestResult = function(req, res) {
-  console.log(req, res);
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 

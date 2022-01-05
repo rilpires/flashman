@@ -303,31 +303,29 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
   formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
 
-  if (!result.downSpeed) {
-    result.downSpeed = 'Error';
-    device.last_speedtest_error.unique_id = randomString;
-    device.last_speedtest_error.error = 'Error';
-  } else if (result.downSpeed.includes('503 Server')) {
-    result.downSpeed = 'Unavailable';
-    device.last_speedtest_error.unique_id = randomString;
-    device.last_speedtest_error.error = 'Unavailable';
-  } else if (result.downSpeed.includes('Mbps')) {
-    device.speedtest_results.push({
-      down_speed: result.downSpeed,
-      user: result.user,
-      timestamp: formattedDate,
-    });
-    if (device.speedtest_results.length > 5) {
-      device.speedtest_results.shift();
+  if (result && result.downSpeed) {
+    if (result.downSpeed.includes('503 Server')) {
+      result.downSpeed = 'Unavailable';
+      device.last_speedtest_error.unique_id = randomString;
+      device.last_speedtest_error.error = 'Unavailable';
+    } else if (result.downSpeed.includes('Mbps')) {
+      device.speedtest_results.push({
+        down_speed: result.downSpeed,
+        user: result.user,
+        timestamp: formattedDate,
+      });
+      if (device.speedtest_results.length > 5) {
+        device.speedtest_results.shift();
+      }
+      let permissions = DeviceVersion.findByVersion(
+        device.version,
+        device.wifi_is_5ghz_capable,
+        device.model,
+      );
+      result.limit = permissions.grantSpeedTestLimit;
     }
-    let permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
-    result.limit = permissions.grantSpeedTestLimit;
   } else {
-    result.downSpeed = 'Error';
+    result = {downSpeed: 'Error'};
     device.last_speedtest_error.unique_id = randomString;
     device.last_speedtest_error.error = 'Error';
   }

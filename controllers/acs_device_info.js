@@ -1134,7 +1134,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
 
   let numberOfRep = 10;
   let pingHostUrl = device.ping_hosts[0];
-  let timeout = 100;
+  let timeout = 1000;
 
   // We need to update the parameter values before we fire the ping test
   let success = false;
@@ -1143,7 +1143,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
       name: 'getParameterValues',
       parameterNames: [diagnIPPingDiagnostics],
     };
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (
       !result || !result.finished || result.task.name !== 'getParameterValues'
     ) {
@@ -1168,7 +1168,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
   try {
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (!result || !result.finished) {
       return {success: false,
               message: 'Error: Could not fire TR-069 ping measure'};
@@ -1237,10 +1237,12 @@ acsDeviceInfoController.getSpeedtestFile = async function(device) {
         return url + 'file_32000KB.bin';
       } else if (band >= 10) {
         return url + 'file_19200KB.bin';
-      } else if (band >= 3) {
+      } else if (band >= 5) {
         return url + 'file_6400KB.bin';
-      } else if (band < 3) {
+      } else if (band >= 3) {
         return url + 'file_1920KB.bin';
+      } else if (band < 3) {
+        return url + 'file_512KB.bin';
       }
     }
   }
@@ -1270,7 +1272,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
-  let numberOfCon = 2;
+  let numberOfCon = 1; // Flashman stays unstable if more than 1 connection
   let speedtestHostUrl = await acsDeviceInfoController.getSpeedtestFile(device);
 
   if (!speedtestHostUrl || speedtestHostUrl === '') {
@@ -1285,7 +1287,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
       name: 'getParameterValues',
       parameterNames: [diagnSpeedtestDiagnostics],
     };
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (
       !result || !result.finished || result.task.name !== 'getParameterValues'
     ) {
@@ -1299,7 +1301,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   }
   if (!success) {
     return {success: false,
-            message: 'Error: Could not fire TR-069 ping measure'};
+            message: 'Error: Could not fire TR-069 speedtest'};
   }
 
   let task = {
@@ -1309,7 +1311,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
   try {
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (!result || !result.finished) {
       return {success: false,
               message: 'Error: Could not fire TR-069 speedtest'};
@@ -1330,57 +1332,80 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   speedKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, speedKeys, speedFields,
   );
-  let speedValue;
   let result;
-  if (speedKeys.diag_state == 'Completed') {
-    let rqstTime = device.current_speedtest.timestamp;
+  let speedValueBasic;
+  let speedValueFullLoad;
 
-    let lastTime = new Date(1970, 0, 1);
+  if (speedKeys.diag_state == 'Completed') {
+    let rqstTime = device.current_speedtest.timestamp.valueOf();
+    let lastTime = (new Date(1970, 0, 1)).valueOf();
     if (device.speedtest_results.length > 0) {
       lastTime = utilHandlers.parseDate(
         device.speedtest_results[device.speedtest_results.length-1].timestamp,
       );
     }
-    if (!device.current_speedtest.timestamp ||
-        (rqstTime.valueOf() > lastTime.valueOf())) {
-      let beginTime = new Date(speedKeys.bgn_time);
-      let endTime = new Date(speedKeys.end_time);
-      speedValue = (speedKeys.test_bytes_rec * (8 / 1024)) /
-                (endTime.valueOf()-beginTime.valueOf());
-      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period &&
-          device.current_speedtest.stage !== 'estimative') {
-        speedValue = ((speedKeys.full_load_bytes_rec * 8 * (10**6)) /
-                          (speedKeys.full_load_period * (1024**2)));
+
+    if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
+      let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
+      let endTime = (new Date(speedKeys.end_time)).valueOf();
+      // 10**3 => seconds to miliseconds (because of valueOf() notation)
+      let deltaTime = (endTime - beginTime) / (10**3);
+
+      // 8 => byte to bit
+      // 1024**2 => bit to megabit
+      speedValueBasic = (8/(1024**2))*(speedKeys.test_bytes_rec/deltaTime);
+
+      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+        // 10**6 => microsecond to second
+        // 8 => byte to bit
+        // 1024**2 => bit to megabit
+        speedValueFullLoad = ((8*(10**6))/(1024**2)) *
+                    (speedKeys.full_load_bytes_rec/speedKeys.full_load_period);
       }
+    }
+
+    // Speedtest's estimative / real measure step
+    if (device.current_speedtest.stage == 'estimative') {
+      device.current_speedtest.band_estimative = speedValueBasic;
+      device.current_speedtest.stage = 'measure';
+      await device.save();
+      await sio.anlixSendSpeedTestNotifications(device._id, {
+        stage: 'estimative_finished',
+        user: device.current_speedtest.user,
+      });
+      acsDeviceInfoController.fireSpeedDiagnose(device._id);
+      return;
+    } else if (device.current_speedtest.stage == 'measure') {
       result = {
-        downSpeed: parseInt(speedValue).toString() + ' Mbps',
+        downSpeed: '',
         user: device.current_speedtest.user,
       };
+      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+        result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+      } else {
+        result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+      }
+      deviceHandlers.storeSpeedtestResult(device, result);
+      return;
     }
-  // Error treatment
-  } else if (speedKeys.diag_state == 'Error_InitConnectionFailed') {
-    result = {
-      downSpeed: '503 Server',
-      user: device.current_speedtest.user,
-    };
   } else {
-    result = {
-      user: device.current_speedtest.user,
-    };
-  }
-  // Speedtest's estimative step
-  if (device.current_speedtest.stage == 'estimative') {
-    device.current_speedtest.band_estimative = speedValue;
-    device.current_speedtest.stage = 'measure';
-    await device.save();
-    await sio.anlixSendSpeedTestNotifications(device._id, {
-      stage: 'estimative_finished',
-      user: device.current_speedtest.user,
-    });
-    acsDeviceInfoController.fireSpeedDiagnose(device._id);
-  // Speedtest's real measure step
-  } else if (device.current_speedtest.stage == 'measure') {
+    // Error treatment (switch-case for future error handling)
+    switch (speedKeys.diag_state) {
+      case ('Error_InitConnectionFailed' || 'Error_NoResponse'):
+      console.log('Error: Failure at TR-069 speedtest -', speedKeys.diag_state);
+      result = {
+        downSpeed: '503 Server',
+        user: device.current_speedtest.user,
+      };
+      break;
+      default:
+      result = {
+        user: device.current_speedtest.user,
+      };
+      break;
+    }
     deviceHandlers.storeSpeedtestResult(device, result);
+    return;
   }
 };
 
