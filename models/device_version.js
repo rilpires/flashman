@@ -2100,9 +2100,6 @@ const grantMeshV1Mode = function(version, model) {
 // No need to check version, just used to check if device in correct release
 // could be a mesh v2 primary device
 const grantMeshV2PrimaryModeUpgrade = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support.mesh_v2_primary_support;
-  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -2120,6 +2117,9 @@ const grantMeshV2PrimaryModeUpgrade = function(version, model) {
 };
 
 const grantMeshV2PrimaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
+  }
   if (grantMeshV2PrimaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
@@ -2130,9 +2130,6 @@ const grantMeshV2PrimaryMode = function(version, model) {
 // No need to check version, just used to check if device in correct release
 // could be a mesh v2 secondary device
 const grantMeshV2SecondaryModeUpgrade = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support.mesh_v2_secondary_support;
-  }
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -2150,6 +2147,9 @@ const grantMeshV2SecondaryModeUpgrade = function(version, model) {
 };
 
 const grantMeshV2SecondaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_secondary_support;
+  }
   if (grantMeshV2SecondaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
