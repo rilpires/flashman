@@ -184,6 +184,27 @@ const fetchCertification = function(id, name, timestamp) {
           let diagTR069 = (cert.diagnostic.tr069) ? 'OK' : 'Erro';
           let diagPon = cert.diagnostic.pon;
           let diagRxPower = cert.diagnostic.rxpower;
+
+          $('#diagnostic-onu-speedtest-status-element').hide();
+          $('#diagnostic-onu-speedtest-value-element').hide();
+          if (cert.didSpeedTest === true &&
+              cert.diagnostic.speedtest === true) {
+            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            $('#diagnostic-onu-speedtest-status').html('&nbsp;'+spdTstStts);
+            $('#diagnostic-onu-speedtest-status-element').show();
+
+            if (cert.diagnostic.speedValue !== null) {
+              let spdTstVal;
+              if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
+                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
+              } else {
+                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
+              }
+              $('#diagnostic-onu-speedtest-value').html('&nbsp;'+spdTstVal);
+              $('#diagnostic-onu-speedtest-value-element').show();
+            }
+          }
+
           $('#diagnostic-onu-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-onu-tr069').html('&nbsp;'+diagTR069);
           $('#diagnostic-onu-anlix').html('&nbsp;'+diagAnlix);
@@ -212,27 +233,27 @@ const fetchCertification = function(id, name, timestamp) {
           let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
           let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
           let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
-          if (cert.didSpeedTest) {
-            let diagSpeedtest = (cert.diagnostic.speedtest) ? 'OK' : 'Erro';
-            let diagSpeedValue;
-            $('#diagnostic-router-speedtest').html('&nbsp;'+diagSpeedtest);
-            $('#diagnostic-speedtest').show();
-            if (cert.diagnostic.speedValue != null) {
+
+          $('#diagnostic-router-speedtest-status-element').hide();
+          $('#diagnostic-router-speedtest-value-element').hide();
+          if (cert.didSpeedTest === true &&
+              cert.diagnostic.speedtest === true) {
+            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            $('#diagnostic-router-speedtest-status').html('&nbsp;'+spdTstStts);
+            $('#diagnostic-router-speedtest-status-element').show();
+
+            if (cert.diagnostic.speedValue !== null) {
+              let spdTstVal;
               if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
-                diagSpeedValue = cert.diagnostic.speedTestLimit + '+ Mpbs';
+                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
               } else {
-                diagSpeedValue = cert.diagnostic.speedValue + ' Mpbs';
+                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
               }
-              $('#diagnostic-router-speedValue').html('&nbsp;'+diagSpeedValue);
-              $('#diagnostic-speedValue').show();
-            } else {
-              $('#diagnostic-router-speedtest').html('&nbsp;'+'Erro');
-              $('#diagnostic-speedValue').hide();
+              $('#diagnostic-router-speedtest-value').html('&nbsp;'+spdTstVal);
+              $('#diagnostic-router-speedtest-value-element').show();
             }
-          } else {
-            $('#diagnostic-speedtest').hide();
-            $('#diagnostic-speedValue').hide();
           }
+
           $('#diagnostic-router-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-router-ip4').html('&nbsp;'+diagIp4);
           $('#diagnostic-router-ip6').html('&nbsp;'+diagIp6);
