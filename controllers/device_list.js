@@ -789,6 +789,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+
+          /* Due to the misleading value of model as IGD
+            in the FastWireless FW323DAC model, check if is
+            IGD, if have that firmware version and send to
+            the table anim the 'right' model */
+          if (device.model === 'IGD' &&
+            device.version === 'V2.0.08-191129') {
+            device.model_alias = 'FW323DAC';
+          }
         } else {
           devReleases = devReleases.filter(
             (release) => {
@@ -1123,12 +1132,14 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
-        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-          return map[req.params.id.toUpperCase()];
-        });
-        if (device && !device.use_tr069 && !isDevOn) {
-          return res.status(200).json({success: false,
-                                     message: 'CPE não esta online!'});
+        if (device && !device.use_tr069) {
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[req.params.id.toUpperCase()];
+          });
+          if (device && !isDevOn) {
+            return res.status(200).json({success: false,
+                                       message: 'CPE não esta online!'});
+          }
         }
         if (msgtype === 'speedtest') {
           return deviceListController.doSpeedTest(req, res);
@@ -1170,9 +1181,14 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID, req.params.id.toUpperCase(),
+            );
           }
-          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          if (device && device.use_tr069) {
+            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
+          } else if (device) {
+            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1780,6 +1796,9 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
+                // Since we changed the prefix, this implies a change to SSIDs
+                changes.wifi2.ssid = matchedDevice.wifi_ssid;
+                changes.wifi5.ssid = matchedDevice.wifi_ssid_5ghz;
               } else {
                 hasPermissionError = true;
               }
@@ -3051,9 +3070,8 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
         acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);

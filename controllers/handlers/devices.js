@@ -1,7 +1,9 @@
 const Config = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const sio = require('../../sio');
 const util = require('./util');
+const request = require('request-promise-native');
 
 let deviceHandlers = {};
 
@@ -160,7 +162,7 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
   Function to validate ssid and remove prefix
   if it already in the start of ssid
 */
-const cleanAndCheckSsid = function(prefix, ssid) {
+deviceHandlers.cleanAndCheckSsid = function(prefix, ssid) {
   let strPrefix = '';
   if (typeof prefix !== 'undefined') {
     strPrefix = prefix;
@@ -228,8 +230,8 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
     prefix: '',
   };
   // clean and check the ssid regardless the flags
-  let valObj2 = cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
-  let valObj5 = cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
+  let valObj2 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
+  let valObj5 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
   // set the cleaned ssid to be returned
   prefixObj.ssid2 = valObj2.ssid;
   prefixObj.ssid5 = valObj5.ssid;
@@ -244,6 +246,53 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
     prefixObj.prefix = prefixObj.enablePrefix ? config.ssidPrefix : '';
   }
   return prefixObj;
+};
+
+deviceHandlers.sendPingToTraps = function(id, results) {
+  sio.anlixSendPingTestNotifications(id, results);
+  console.log('Ping results for device ' +
+    id + ' received successfully.');
+
+  // No await needed
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+      // Send ping results if device traps are activated
+      if (matchedConfig.traps_callbacks &&
+          matchedConfig.traps_callbacks.device_crud) {
+        let requestOptions = {};
+        let callbackUrl =
+        matchedConfig.traps_callbacks.device_crud.url;
+        let callbackAuthUser =
+        matchedConfig.traps_callbacks.device_crud.user;
+        let callbackAuthSecret =
+        matchedConfig.traps_callbacks.device_crud.secret;
+        if (callbackUrl) {
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': id,
+            'type': 'device',
+            'changes': {ping_results: results},
+          };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          request(requestOptions).then((resp) => {
+            // Ignore API response
+            console.log(resp);
+            return;
+          }, (err) => {
+            // Ignore API endpoint errors
+            console.log(err);
+            return;
+          });
+        }
+      }
+    }
+  });
 };
 
 module.exports = deviceHandlers;

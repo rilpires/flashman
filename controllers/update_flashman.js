@@ -144,7 +144,7 @@ const updateGenieACS = function(upgrades) {
             './controllers/external-genieacs/provision.js', 'utf8',
           );
           console.log('Updating GenieACS provision...');
-          waitForProvision = tasksApi.putProvision(provisionScript);
+          waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
         } catch (e) {
           waitForProvision = Promise.reject();
         }
@@ -184,6 +184,58 @@ const updateGenieACS = function(upgrades) {
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
           return reject();
+        } else {
+          console.log('GenieACS updated successfully!');
+          return resolve();
+        }
+      });
+    });
+  });
+};
+
+const updateDiagnostics = function() {
+  return new Promise((resolve, reject) => {
+    // Get config from database
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
+        console.log('Error reading configs from database in update GenieACS!');
+        return resolve();
+      }
+      // Update diagnostic provision script
+      let waitForProvision;
+      try {
+        let provisionScript = fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
+        );
+        console.log('Updating GenieACS provision...');
+        waitForProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
+      } catch (e) {
+        waitForProvision = Promise.reject();
+      }
+
+      // Update preset json if needed
+      let waitForPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-preset.json',
+        ));
+        console.log('Updating Genie diagnostic-preset...');
+        waitForPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPreset = Promise.reject();
+      }
+
+      // Wait for all promises and check results
+      let promises = [waitForProvision, waitForPreset];
+      Promise.allSettled(promises).then((values)=>{
+        if (values[0].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-provision script!');
+        }
+        if (values[1].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-preset json!');
+        }
+        if (values.some((v) => v.status !== 'fulfilled')) {
+          return resolve();
         } else {
           console.log('GenieACS updated successfully!');
           return resolve();
@@ -278,6 +330,7 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
   });
 };
 
+
 updateController.rebootGenie = function(instances) {
   // Treat bugged case where pm2 may fail to provide the number of instances
   // correctly - it may be 0 or undefined, and we must then rely on both the
@@ -300,13 +353,18 @@ updateController.rebootGenie = function(instances) {
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
     // issues with CPEs connections since exceptions lead to buggy exp. backoff
-    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    exec('pm2 stop genieacs-cwmp', async (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
       let newText = 'const INSTANCES_COUNT = ' + instances + ';';
       let sedExpr = 's/' + replace + '/' + newText + '/';
       let targetFile = 'controllers/external-genieacs/devices-api.js';
       let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+      // Update genieACS diagnostic's script and preset
+      console.log('Updating genieACS diacnostic\'s script and preset');
+      await updateDiagnostics();
+
       exec(sedCommand, (err, stdout, stderr)=>{
         exec('pm2 start genieacs-cwmp');
       });

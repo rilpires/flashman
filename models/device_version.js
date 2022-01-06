@@ -52,6 +52,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -82,6 +83,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -113,6 +115,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -139,6 +142,7 @@ const tr069Devices = {
       port_forward: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -169,6 +173,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -185,6 +190,34 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
     mesh_ssid_object_exists: true,
   },
+  'IGD': {
+    vendor: 'Realtek',
+    versions_upgrade: {
+      'V2.0.08-191129': [],
+    },
+    port_forward_opts: {
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x5'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+  },
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
@@ -200,6 +233,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -235,6 +269,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -261,6 +296,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -290,6 +326,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -321,6 +358,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -347,6 +385,7 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -367,6 +406,7 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
+      ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
@@ -1853,7 +1893,7 @@ const grantWifiExtendedChannels = function(version, model) {
 
 const grantPingTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return false;
+    return tr069Devices[model].feature_support.ping_test;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
