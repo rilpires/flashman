@@ -146,6 +146,7 @@ const configSearchType = () => {
     $('#certificates-search-type-button').html(searchType);
   });
 }
+
 const getSearchType = () => {
   const type = $('#certificates-search-type-button').text();
   console.log(type)
