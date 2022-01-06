@@ -66,7 +66,17 @@ const fetchUsers = function(usersTable, hasTrash, getAll) {
     }, 'json');
   } else {
     if (searchType === 'no') {
-      displayAlertMsg({ type: 'danger', message: 'Selecione um tipo de pesquisa!' })
+      displayAlertMsg({
+        type: 'danger',
+        message: 'Selecione um tipo de pesquisa!'
+      });
+      return;
+    }
+    if (isNaN(secondDate)) {
+      displayAlertMsg({
+        type: 'danger',
+        message: 'Selecione a segunda data'
+      });
       return;
     }
     usersTable.clear().draw();

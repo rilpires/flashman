@@ -62679,6 +62679,14 @@ var fetchUsers = function fetchUsers(usersTable, hasTrash, getAll) {
       return;
     }
 
+    if (isNaN(secondDate)) {
+      (0,_common_actions_js__WEBPACK_IMPORTED_MODULE_0__.displayAlertMsg)({
+        type: 'danger',
+        message: 'Selecione a segunda data'
+      });
+      return;
+    }
+
     usersTable.clear().draw();
     $.post('/user/certificates/search', {
       first_date: firstDate,
