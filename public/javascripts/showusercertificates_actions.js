@@ -9,7 +9,7 @@ const check = function(input) {
   }
 };
 
-const fetchUsers = function(usersTable, hasTrash, getAll) {
+const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
   const name = getSearchField();
   const mac = getSearchField();
@@ -65,21 +65,6 @@ const fetchUsers = function(usersTable, hasTrash, getAll) {
       }
     }, 'json');
   } else {
-    if (searchType === 'no') {
-      displayAlertMsg({
-        type: 'danger',
-        message: 'Selecione um tipo de pesquisa!'
-      });
-      return;
-    }
-    if (isNaN(secondDate)) {
-      displayAlertMsg({
-        type: 'danger',
-        message: 'Selecione a segunda data'
-      });
-      return;
-    }
-    usersTable.clear().draw();
     $.post(
       '/user/certificates/search',
       {
@@ -89,10 +74,31 @@ const fetchUsers = function(usersTable, hasTrash, getAll) {
           '' : (searchType === 'name') ? name : '',
         device_id: (searchType === 'no') ?
           '' : (searchType === 'mac') ? mac : '',
-        csv: 'false'
+        csv: csv,
       },
       (res) => {
+        if (csv) {
+          console.log(res);
+          const csvFile = new Blob([res]);
+          let downloadElement = document.createElement('a');
+          downloadElement.href = URL.createObjectURL(
+            csvFile,
+            {type: 'text/plain'},
+          );
+          if (!isNaN(firstDate)) {
+            downloadElement.download = `csvfile-${firstDate}.csv`;
+          } else if (!isNaN(secondDate)) {
+            downloadElement.download = `csvfile-${secondDate}.csv`;
+          } else if (!isNaN(firstDate) && !isNaN(secondDate)) {
+            downloadElement.download = `csvfile-${firstDate}-${secondDate}.csv`;
+          } else {
+            downloadElement.download = `csvfile.csv`;
+          }
+          downloadElement.style.display = 'none';
+          downloadElement.click();
+        }
         if (res.success === true) {
+          usersTable.clear().draw();
           $('#loading-users').hide();
           $('#users-table-wrapper').show();
           res.deviceCertifications.map((unwrappedCert) => {    
@@ -131,7 +137,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll) {
             usersTable.row.add(certRow);
           });
           usersTable.draw();
-        } else {
+        } else if (!csv) {
           displayAlertMsg(res);
         }
       }
@@ -149,7 +155,6 @@ const configSearchType = () => {
 
 const getSearchType = () => {
   const type = $('#certificates-search-type-button').text();
-  console.log(type)
   if (type === "Nome") {
     return 'name';
   } else if (type === 'MAC/Serial') {
@@ -164,11 +169,23 @@ const getSearchField = () => {
 }
 
 const getFirstDate = () => {
-  return new Date($('#certificates-firstdatepicker-input').val()).valueOf();
+  const date = new Date($('#certificates-firstdatepicker-input')
+    .val())
+    .valueOf();
+  if (isNaN(date)) {
+    return '';
+  }
+  return date;
 }
 
 const getSecondDate = () => {
-  return new Date($('#certificates-seconddatepicker-input').val()).valueOf();
+  const date = new Date($('#certificates-seconddatepicker-input')
+    .val())
+    .valueOf();
+  if (isNaN(date)) {
+    return '';
+  }
+  return date;
 }
 
 const fetchCertification = function(id, name, timestamp) {
@@ -503,6 +520,7 @@ $(document).ready(function() {
       )
     );
   }
+
   fetchUsers(usersTable, hasTrashButton, true);
 
   $(document).on('change', '.checkbox', function(event) {
@@ -553,6 +571,10 @@ $(document).ready(function() {
     $('#details-placeholder').show();
     $('#show-certificate').modal();
     fetchCertification(id, name, timestamp);
+  });
+
+  $(document).on('click', '#certificates-csv-export', (event) => {
+    fetchUsers(usersTable, hasTrashButton, false, true);
   });
 
   $(document).on('click', '#certificates-search-button', (event) => {

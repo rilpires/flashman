@@ -10,7 +10,7 @@ block content
     .card-body
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
-    .mt-4.col-10.mx-auto
+    .my-4.col-10.mx-auto
       .input-group.d-flex.align-items-center
         button#certificates-search-type-button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
           type="button",
@@ -37,7 +37,7 @@ block content
         .input-group-btn
           button#certificates-search-button.my-0.btn.btn-primary(type="submit")
             .fas.fa-search.fa-lg
-    #users-table-wrapper.table-responsive(style="display: none;")
+    #users-table-wrapper.table-responsive.mx-2(style="display: none;")
       table#users-table.table
         thead
           tr
@@ -49,6 +49,9 @@ block content
             th.text-center Data do Atendimento
             th.text-center Técnico
             th.text-center
+    .col-12.my-2
+      button#certificates-csv-export.my-0.btn.btn-primary
+        | Exportar CSV
 
 block scripts
   script(src='/dist/showusercertificates.bundle.js')
