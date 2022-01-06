@@ -691,7 +691,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   // Force a wifi password sync after a hard reset
-  if (device.recovering_tr069_reset) {
+  if (device.recovering_tr069_reset && device.wifi_is_5ghz_capable) {
     changes.wifi5.password = device.wifi_password_5ghz.trim();
     hasChanges = true;
   }
