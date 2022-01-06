@@ -1081,7 +1081,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       try {
         let data = JSON.parse(body)[0];
         await acsDeviceInfoController.calculatePingDiagnostic(
-          mac, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+          device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
         );
         await acsDeviceInfoController.calculateSpeedDiagnostic(
           device, data, diagNecessaryKeys.speedtest,
@@ -1182,24 +1182,35 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
 };
 
-acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
+acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
                                                            pingKeys,
                                                            pingFields) {
   pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, pingKeys, pingFields,
   );
-  if (pingKeys.diag_state != 'Requested') {
+  if (pingKeys.diag_state !== 'Requested' &&
+             pingKeys.diag_state !== 'None') {
     let result = {};
-    result[pingKeys.host] = {
-      lat: pingKeys.avg_resp_time.toString(),
-      loss: parseInt(pingKeys.failure_count * 100 /
-             (pingKeys.success_count + pingKeys.failure_count)).toString(),
-    };
-    if (model === 'HG8245Q2' || model === 'EG8145V5') {
-      if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
-      else result[pingKeys.host]['loss'] = '100';
+    device.ping_hosts.forEach((host) => {
+      if (host) {
+        result[host] = {
+          lat: '---',
+          loss: '--- ',
+        };
+      }
+    });
+    if (pingKeys.diag_state === 'Complete') {
+      result[pingKeys.host] = {
+        lat: pingKeys.avg_resp_time.toString(),
+        loss: parseInt(pingKeys.failure_count * 100 /
+               (pingKeys.success_count + pingKeys.failure_count)).toString(),
+      };
+      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+        if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
+        else result[pingKeys.host]['loss'] = '100';
+      }
     }
-    deviceHandlers.sendPingToTraps(mac, {results: result});
+    deviceHandlers.sendPingToTraps(device._id, {results: result});
   }
 };
 
@@ -1272,7 +1283,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
-  let numberOfCon = 1; // Flashman stays unstable if more than 1 connection
+  let numberOfCon = 3;
   let speedtestHostUrl = await acsDeviceInfoController.getSpeedtestFile(device);
 
   if (!speedtestHostUrl || speedtestHostUrl === '') {
@@ -1391,7 +1402,9 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   } else {
     // Error treatment (switch-case for future error handling)
     switch (speedKeys.diag_state) {
-      case ('Error_InitConnectionFailed' || 'Error_NoResponse'):
+      case ('Error_InitConnectionFailed' ||
+            'Error_NoResponse' ||
+            'Error_Other'):
       console.log('Error: Failure at TR-069 speedtest -', speedKeys.diag_state);
       result = {
         downSpeed: '503 Server',
