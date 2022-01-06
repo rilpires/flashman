@@ -1378,10 +1378,10 @@ deviceInfoController.receiveDevices = async function(req, res) {
 
     if ('mesh_routers' in req.body) {
       routersData = req.body.mesh_routers;
-      if (meshV2) {
-        // in the new layout devices only send their mesh father info
+      if (meshV2 && matchedDevice.mesh_master) {
+        // in the new layout mesh slaves only send their mesh father info
         const meshFatherBssid = Object.keys(routersData)[0];
-        let fatherMac = meshHandlers.convertBSSIDToId(
+        let fatherMac = await meshHandlers.convertBSSIDToId(
           matchedDevice, meshFatherBssid,
         );
         if (fatherMac === '') {
