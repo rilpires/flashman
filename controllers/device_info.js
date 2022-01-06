@@ -1344,15 +1344,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
     }
   }
 
-  /*
-    This region should not have two parellel executions because fields
-    of the same device are read and written. A random timeout is set between
-    accesses to the mutex
-  */
-  let interval = Math.random() * 500; // scale to seconds, cap at 500ms
-  await new Promise((resolve) => setTimeout(resolve, interval));
-  mutexRelease = await mutex.acquire();
-
   DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Devices Receiving for device ' +
@@ -1588,12 +1579,36 @@ deviceInfoController.receiveDevices = async function(req, res) {
         } else {
           matchedMaster = matchedDevice;
         }
-        // Update number of device remaining to send this info
-        devicesRemaining = matchedMaster.mesh_onlinedevs_remaining;
-        if (devicesRemaining) {
-          devicesRemaining -= 1;
-          matchedMaster.mesh_onlinedevs_remaining = devicesRemaining;
-        }
+        /*
+          This region should not have two parellel executions because fields
+          of the same device are read and written. A random timeout is set
+          between accesses to the mutex
+        */
+        let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+        await new Promise((resolve) => setTimeout(resolve, interval));
+        mutexRelease = await mutex.acquire();
+        await DeviceModel.update({
+          '_id': matchedMaster._id,
+        },
+        [
+          {
+            '$set': {
+              'mesh_onlinedevs_remaining': {
+                '$subtract': [
+                  '$mesh_onlinedevs_remaining',
+                  1,
+                ],
+              },
+            },
+          },
+        ]);
+        let devicesRemaining = await DeviceModel.find(
+          {'_id': matchedMaster._id},
+          {'mesh_onlinedevs_remaining': 1},
+        ).lean();
+        // end of critical region
+        mutexRelease();
+        devicesRemaining = devicesRemaining[0].mesh_onlinedevs_remaining;
         if (devicesRemaining === 0) {
           matchedMaster.do_update_status = 30;
           // Last mesh device to report topology should trigger mesh topology
@@ -1603,18 +1618,12 @@ deviceInfoController.receiveDevices = async function(req, res) {
         await matchedMaster.save();
       } catch (err) {
         console.log(err);
-        mutexRelease();
         return res.status(500).json({processed: 0});
       }
     }
 
     matchedDevice.last_devices_refresh = Date.now();
     await matchedDevice.save();
-
-    // We only release here. This way even if the master device was executing
-    // the critical region will allow it to block the execution until it
-    // finishes saving.
-    mutexRelease();
 
     // if someone is waiting for this message, send the information
     sio.anlixSendOnlineDevNotifications(id, outData);
