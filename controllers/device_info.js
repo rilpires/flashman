@@ -1498,6 +1498,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
       }
     }
 
+    // used to control if response was sent early or not
+    let sentResponseEarly = false;
+
     // used for mesh networks
     let willSignalMeshTopology = false;
     let matchedMaster;
@@ -1566,7 +1569,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
           });
         }
       }
-      let devicesRemaining;
 
       try {
         if (matchedDevice.mesh_master) {
@@ -1579,6 +1581,15 @@ deviceInfoController.receiveDevices = async function(req, res) {
         } else {
           matchedMaster = matchedDevice;
         }
+
+        // in order not to block the socket this is done before the critical
+        // region
+        sio.anlixSendOnlineDevNotifications(id, outData);
+        console.log('Devices Receiving for device ' +
+        id + ' successfully.');
+        res.send({processed: 1});
+        sentResponseEarly = true;
+
         /*
           This region should not have two parellel executions because fields
           of the same device are read and written. A random timeout is set
@@ -1608,6 +1619,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
         ).lean();
         // end of critical region
         mutexRelease();
+
         devicesRemaining = devicesRemaining[0].mesh_onlinedevs_remaining;
         if (devicesRemaining === 0) {
           matchedMaster.do_update_status = 30;
@@ -1625,17 +1637,19 @@ deviceInfoController.receiveDevices = async function(req, res) {
     matchedDevice.last_devices_refresh = Date.now();
     await matchedDevice.save();
 
-    // if someone is waiting for this message, send the information
-    sio.anlixSendOnlineDevNotifications(id, outData);
-    console.log('Devices Receiving for device ' +
-      id + ' successfully.');
-
     if (willSignalMeshTopology) {
       updateScheduler.successTopology(matchedMaster._id);
       meshHandlers.validateMeshTopology(matchedMaster._id);
     }
 
-    return res.status(200).json({processed: 1});
+    if (!sentResponseEarly) {
+      // if someone is waiting for this message, send the information
+      sio.anlixSendOnlineDevNotifications(id, outData);
+      console.log('Devices Receiving for device ' +
+        id + ' successfully.');
+
+      return res.status(200).json({processed: 1});
+    }
   });
 };
 
