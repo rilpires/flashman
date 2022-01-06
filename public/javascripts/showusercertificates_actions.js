@@ -9,55 +9,156 @@ const check = function(input) {
   }
 };
 
-const fetchUsers = function(usersTable, hasTrash) {
-  usersTable.clear().draw();
-  $.get('/user/get/all', function(res) {
-    if (res.type == 'success') {
-      $('#loading-users').hide();
-      $('#users-table-wrapper').show();
+const fetchUsers = function(usersTable, hasTrash, getAll) {
+  const searchType = getSearchType();
+  const name = getSearchField();
+  const mac = getSearchField();
+  const firstDate = getFirstDate();
+  const secondDate = getSecondDate();
 
-      res.users.forEach(function(userObj) {
-        if (!userObj.deviceCertifications) return;
-        userObj.deviceCertifications.forEach(function(cert) {
-          let certRow = $('<tr>');
-          if (hasTrash) {
-            certRow.append($('<td>').addClass('col-xs-1').append(
-              $('<input>').addClass('checkbox item-checkbox')
-              .attr('type', 'checkbox')
-              .attr('data-userid', userObj._id)
-              .attr('data-timestamp', cert.localEpochTimestamp)
-            ));
-          }
-          certRow.append(
-            $('<td>').html(
-              (cert.finished) ?
-              '<div class="fas fa-check-circle fa-2x green-text"></div>' :
-              '<div class="fas fa-times-circle fa-2x red-text"></div>'
-            ),
-            $('<td>').html(cert.mac),
-            $('<td>').html(
-              new Date(cert.localEpochTimestamp).toLocaleString('pt-BR')
-            ),
-            $('<td>').html(userObj.name),
-            $('<td class="btn-detail">').append(
-              $('<button>').append(
-                $('<div>').addClass('fas fa-info-circle'),
-                $('<span>').html('&nbsp Detalhes')
-              ).addClass('btn btn-sm btn-primary my-0')
-              .attr('type', 'button')
-            ).attr('data-userid', userObj._id)
-            .attr('data-username', userObj.name)
-            .attr('data-timestamp', cert.localEpochTimestamp),
-          );
-          usersTable.row.add(certRow);
+  if (getAll) {
+    $.get('/user/get/all', function(res) {
+      usersTable.clear().draw();
+      if (res.type == 'success') {
+        $('#loading-users').hide();
+        $('#users-table-wrapper').show();
+
+        res.users.forEach(function(userObj) {
+          if (!userObj.deviceCertifications) return;
+          userObj.deviceCertifications.forEach(function(cert) {
+            let certRow = $('<tr>');
+            if (hasTrash) {
+              certRow.append($('<td>').addClass('col-xs-1').append(
+                $('<input>').addClass('checkbox item-checkbox')
+                .attr('type', 'checkbox')
+                .attr('data-userid', userObj._id)
+                .attr('data-timestamp', cert.localEpochTimestamp)
+              ));
+            }
+            certRow.append(
+              $('<td>').html(
+                (cert.finished) ?
+                '<div class="fas fa-check-circle fa-2x green-text"></div>' :
+                '<div class="fas fa-times-circle fa-2x red-text"></div>'
+              ),
+              $('<td>').html(cert.mac),
+              $('<td>').html(
+                new Date(cert.localEpochTimestamp).toLocaleString('pt-BR')
+              ),
+              $('<td>').html(userObj.name),
+              $('<td class="btn-detail">').append(
+                $('<button>').append(
+                  $('<div>').addClass('fas fa-info-circle'),
+                  $('<span>').html('&nbsp Detalhes')
+                ).addClass('btn btn-sm btn-primary my-0')
+                .attr('type', 'button')
+              ).attr('data-userid', userObj._id)
+              .attr('data-username', userObj.name)
+              .attr('data-timestamp', cert.localEpochTimestamp),
+            );
+            usersTable.row.add(certRow);
+          });
         });
-      });
-      usersTable.draw();
-    } else {
-      displayAlertMsg(res);
+        usersTable.draw();
+      } else {
+        displayAlertMsg(res);
+      }
+    }, 'json');
+  } else {
+    if (searchType === 'no') {
+      displayAlertMsg({ type: 'danger', message: 'Selecione um tipo de pesquisa!' })
+      return;
     }
-  }, 'json');
+    usersTable.clear().draw();
+    $.post(
+      '/user/certificates/search',
+      {
+        first_date: firstDate,
+        second_date: secondDate,
+        name: (searchType === 'no') ?
+          '' : (searchType === 'name') ? name : '',
+        device_id: (searchType === 'no') ?
+          '' : (searchType === 'mac') ? mac : '',
+        csv: 'false'
+      },
+      (res) => {
+        if (res.success === true) {
+          $('#loading-users').hide();
+          $('#users-table-wrapper').show();
+          res.deviceCertifications.map((unwrappedCert) => {    
+            const certification = unwrappedCert.certifications;
+            let certRow = $('<tr>');
+            if (hasTrash) {
+              certRow.append($('<td>').addClass('col-xs-1').append(
+                $('<input>').addClass('checkbox item-checkbox')
+                .attr('type', 'checkbox')
+                .attr('data-userid', certification._id)
+                .attr('data-timestamp', certification.localEpochTimestamp)
+              ));
+            }
+            certRow.append(
+              $('<td>').html(
+                (certification.finished) ?
+                '<div class="fas fa-check-circle fa-2x green-text"></div>' :
+                '<div class="fas fa-times-circle fa-2x red-text"></div>'
+              ),
+              $('<td>').html(certification.mac),
+              $('<td>').html(
+                new Date(certification.localEpochTimestamp)
+                  .toLocaleString('pt-BR')
+              ),
+              $('<td>').html(unwrappedCert.name),
+              $('<td class="btn-detail">').append(
+                $('<button>').append(
+                  $('<div>').addClass('fas fa-info-circle'),
+                  $('<span>').html('&nbsp Detalhes')
+                ).addClass('btn btn-sm btn-primary my-0')
+                .attr('type', 'button')
+              ).attr('data-userid', certification._id)
+              .attr('data-username', unwrappedCert.name)
+              .attr('data-timestamp', certification.localEpochTimestamp),
+            );
+            usersTable.row.add(certRow);
+          });
+          usersTable.draw();
+        } else {
+          displayAlertMsg(res);
+        }
+      }
+    );
+  }
 };
+
+const configSearchType = () => {
+  $('#certificates-search-type' + ' a').click((event) => {
+    event.preventDefault();
+    const searchType = event.originalEvent.target.text;
+    $('#certificates-search-type-button').html(searchType);
+  });
+}
+const getSearchType = () => {
+  const type = $('#certificates-search-type-button').text();
+  console.log(type)
+  if (type === "Nome") {
+    return 'name';
+  } else if (type === 'MAC/Serial') {
+    return 'mac';
+  } else {
+    return 'no';
+  }
+}
+
+const getSearchField = () => {
+  return $('#certificates-search-input').val();
+}
+
+const getFirstDate = () => {
+  return new Date($('#certificates-firstdatepicker-input').val()).valueOf();
+}
+
+const getSecondDate = () => {
+  return new Date($('#certificates-seconddatepicker-input').val()).valueOf();
+}
 
 const fetchCertification = function(id, name, timestamp) {
   $.get('/user/get/one/'+id, function(res) {
@@ -358,6 +459,8 @@ $(document).ready(function() {
 
   let hasTrashButton = $('#checkboxHeader').length > 0;
 
+  configSearchType();
+
   let usersTable = $('#users-table').DataTable({
     'destroy': true,
     'paging': true,
@@ -389,7 +492,7 @@ $(document).ready(function() {
       )
     );
   }
-  fetchUsers(usersTable, hasTrashButton);
+  fetchUsers(usersTable, hasTrashButton, true);
 
   $(document).on('change', '.checkbox', function(event) {
     let itemId = $(this).prop('id');
@@ -423,7 +526,7 @@ $(document).ready(function() {
       success: function(res) {
         displayAlertMsg(res);
         if (res.type == 'success') {
-          fetchUsers(usersTable, hasTrashButton);
+          fetchUsers(usersTable, hasTrashButton, true);
         }
       },
     });
@@ -439,5 +542,9 @@ $(document).ready(function() {
     $('#details-placeholder').show();
     $('#show-certificate').modal();
     fetchCertification(id, name, timestamp);
+  });
+
+  $(document).on('click', '#certificates-search-button', (event) => {
+    fetchUsers(usersTable, hasTrashButton, false);
   });
 });
