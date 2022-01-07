@@ -5,6 +5,7 @@ const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
 const DevicesAPI = require('../external-genieacs/devices-api');
+const util = require('./util');
 
 let meshHandlers = {};
 
