@@ -749,7 +749,7 @@ const markNextDeviceToUpdate = async function(master) {
   // mesh sons.
   const meshTopology = await getMeshTopology(
     meshRoutersData, meshFathers, master);
-  if (!meshTopology) {
+  if (!meshTopology || Object.keys(meshTopology).length === 0) {
     return {
       success: false,
       message: 'Erro na obtenção da topologia mesh',
