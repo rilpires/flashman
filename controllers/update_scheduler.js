@@ -397,18 +397,21 @@ scheduleController.successTopology = async function(mac) {
     return {success: false, error: 'Agendamento já abortado'};
   // Change from status updating to ok
   try {
-    // Last device in the mesh network has sent topology info. Just update
-    // state machine, firmware download will begin automatically
-    await Config.updateOne({
-      'is_default': true,
-      'device_update_schedule.rule.in_progress_devices.mac': mac,
-    }, {
-      '$set': {
-        'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
-        'device_update_schedule.rule.in_progress_devices.$.state':
-          'downloading',
-      },
-    });
+    const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
+    if (!isV1ToV2) {
+      // Last device in the mesh network has sent topology info. Just update
+      // state machine, firmware download will begin automatically
+      await Config.updateOne({
+        'is_default': true,
+        'device_update_schedule.rule.in_progress_devices.mac': mac,
+      }, {
+        '$set': {
+          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
+          'device_update_schedule.rule.in_progress_devices.$.state':
+            'downloading',
+        },
+      });
+    }
     mutexRelease();
   } catch (err) {
     mutexRelease();
@@ -428,7 +431,8 @@ scheduleController.successDownload = async function(mac) {
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status downloading to updating
   try {
-    if (device.mesh_current !== 1 || device.mesh_upgrade !== 2) {
+    const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
+    if (!isV1ToV2) {
       // If it's an upgrade from mesh v1 to v2 we do nothing, otherwise,
       // change to updating state
       await Config.updateOne({
@@ -460,8 +464,9 @@ scheduleController.successUpdate = async function(mac) {
   try {
     const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
     let remain = device.slave_updates_remaining - 1;
-    if ((device.mesh_current === 1 || remain === 2 || remain === 1) &&
-      !isV1ToV2) {
+    if (
+      (device.mesh_current === 1 || remain === 2 || remain === 1) && !isV1ToV2
+    ) {
       // In the case that this is a mesh v1 network or there are one or two
       // devices left to update, if this is not a mesh v1 to v2 upgrade, go
       // directly to download state.
