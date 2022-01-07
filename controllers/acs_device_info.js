@@ -1346,17 +1346,17 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
+  let rqstTime = device.current_speedtest.timestamp.valueOf();
+  let lastTime = (new Date(1970, 0, 1)).valueOf();
 
-  if (speedKeys.diag_state == 'Completed') {
-    let rqstTime = device.current_speedtest.timestamp.valueOf();
-    let lastTime = (new Date(1970, 0, 1)).valueOf();
-    if (device.speedtest_results.length > 0) {
-      lastTime = utilHandlers.parseDate(
-        device.speedtest_results[device.speedtest_results.length-1].timestamp,
-      );
-    }
+  if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
+    if (speedKeys.diag_state == 'Completed') {
+      if (device.speedtest_results.length > 0) {
+        lastTime = utilHandlers.parseDate(
+          device.speedtest_results[device.speedtest_results.length-1].timestamp,
+        );
+      }
 
-    if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
       let endTime = (new Date(speedKeys.end_time)).valueOf();
       // 10**3 => seconds to miliseconds (because of valueOf() notation)
@@ -1373,52 +1373,52 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
         speedValueFullLoad = ((8*(10**6))/(1024**2)) *
                     (speedKeys.full_load_bytes_rec/speedKeys.full_load_period);
       }
-    }
 
-    // Speedtest's estimative / real measure step
-    if (device.current_speedtest.stage == 'estimative') {
-      device.current_speedtest.band_estimative = speedValueBasic;
-      device.current_speedtest.stage = 'measure';
-      await device.save();
-      await sio.anlixSendSpeedTestNotifications(device._id, {
-        stage: 'estimative_finished',
-        user: device.current_speedtest.user,
-      });
-      acsDeviceInfoController.fireSpeedDiagnose(device._id);
-      return;
-    } else if (device.current_speedtest.stage == 'measure') {
-      result = {
-        downSpeed: '',
-        user: device.current_speedtest.user,
-      };
-      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
-        result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
-      } else {
-        result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+      // Speedtest's estimative / real measure step
+      if (device.current_speedtest.stage == 'estimative') {
+        device.current_speedtest.band_estimative = speedValueBasic;
+        device.current_speedtest.stage = 'measure';
+        await device.save();
+        await sio.anlixSendSpeedTestNotifications(device._id, {
+          stage: 'estimative_finished',
+          user: device.current_speedtest.user,
+        });
+        acsDeviceInfoController.fireSpeedDiagnose(device._id);
+        return;
+      } else if (device.current_speedtest.stage == 'measure') {
+        result = {
+          downSpeed: '',
+          user: device.current_speedtest.user,
+        };
+        if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+          result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+        } else {
+          result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+        }
+        deviceHandlers.storeSpeedtestResult(device, result);
+        return;
+      }
+    } else {
+      // Error treatment (switch-case for future error handling)
+      switch (speedKeys.diag_state) {
+        case ('Error_InitConnectionFailed' ||
+              'Error_NoResponse' ||
+              'Error_Other'):
+        console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
+        result = {
+          downSpeed: '503 Server',
+          user: device.current_speedtest.user,
+        };
+        break;
+        default:
+        result = {
+          user: device.current_speedtest.user,
+        };
+        break;
       }
       deviceHandlers.storeSpeedtestResult(device, result);
       return;
     }
-  } else {
-    // Error treatment (switch-case for future error handling)
-    switch (speedKeys.diag_state) {
-      case ('Error_InitConnectionFailed' ||
-            'Error_NoResponse' ||
-            'Error_Other'):
-      console.log('Error: Failure at TR-069 speedtest -', speedKeys.diag_state);
-      result = {
-        downSpeed: '503 Server',
-        user: device.current_speedtest.user,
-      };
-      break;
-      default:
-      result = {
-        user: device.current_speedtest.user,
-      };
-      break;
-    }
-    deviceHandlers.storeSpeedtestResult(device, result);
-    return;
   }
 };
 
