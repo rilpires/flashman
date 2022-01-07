@@ -473,7 +473,7 @@ meshHandlers.isMasterInV1CompatibleInV2 = function(master) {
     master.wifi_is_5ghz_capable,
     master.model,
   );
-  if (!masterPermissions.grantMeshV2SecondaryModeUpgrade) {
+  if (!masterPermissions.grantMeshV2PrimaryModeUpgrade) {
     return false;
   }
   return true;
