@@ -77,6 +77,10 @@ deviceHandlers.syncUpdateScheduler = async function(mac) {
     let device = rule.in_progress_devices.find((d)=>d.mac === mac);
     let doneLength = rule.done_devices.length;
     if (!device) return;
+    let nextState = 'error';
+    if (device.state === 'topology') {
+      nextState = 'error_topology';
+    }
     // Move from in progress to done, with status error
     let query = {
       '$set': {
@@ -88,7 +92,7 @@ deviceHandlers.syncUpdateScheduler = async function(mac) {
       '$push': {
         'device_update_schedule.rule.done_devices': {
           'mac': mac,
-          'state': 'error',
+          'state': nextState,
           'slave_count': device.slave_count,
           'slave_updates_remaining': device.slave_updates_remaining,
         },

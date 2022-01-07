@@ -1153,6 +1153,7 @@ const translateState = function(state) {
   if (state === 'updating') return 'Atualizando CPE';
   if (state === 'ok') return 'Atualizado com sucesso';
   if (state === 'error') return 'Ocorreu um erro na atualização';
+  if (state === 'error_topology') return 'Ocorreu um erro na validação da topologia';
   if (state === 'aborted') return 'Atualização abortada';
   if (state === 'aborted_off') return 'Atualização abortada - CPE estava offline';
   if (state === 'aborted_topology') return 'Atualização abortada - CPE estava buscando topologia';

@@ -100,9 +100,9 @@ let configSchema = new mongoose.Schema({
         state: {
           type: String,
           enum: [
-            'ok', 'error', 'aborted', 'aborted_off', 'aborted_down',
-            'aborted_update', 'aborted_slave', 'aborted_topology',
-            'aborted_v1tov2',
+            'ok', 'error', 'error_topology', 'aborted', 'aborted_off',
+            'aborted_down', 'aborted_update', 'aborted_slave',
+            'aborted_topology', 'aborted_v1tov2',
           ],
         },
         mesh_current: {type: Number, default: 1},

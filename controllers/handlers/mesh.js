@@ -808,6 +808,7 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
     matchedMaster.mesh_update_remaining = [];
     // error validating topology
     matchedMaster.do_update_status = 7;
+    deviceHandlers.syncUpdateScheduler(matchedMaster._id);
     await matchedMaster.save();
   } else {
     // Before beginning the update process the next release is saved to master
