@@ -65,7 +65,7 @@ deviceHandlers.isApTooOld = function(dateLastSeen) {
   return isTooOld(dateLastSeen, 60);
 };
 
-const syncUpdateScheduler = async function(mac) {
+deviceHandlers.syncUpdateScheduler = async function(mac) {
   try {
     let config = await Config.findOne({is_default: true}).lean();
     if (!config || !config.device_update_schedule ||
@@ -155,9 +155,9 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
         //       We have to use a local one here because of circular dependency
         if (matchedDevice.mesh_master) {
           // Slave routers call the function with their master's mac
-          syncUpdateScheduler(matchedDevice.mesh_master);
+          deviceHandlers.syncUpdateScheduler(matchedDevice.mesh_master);
         } else {
-          syncUpdateScheduler(mac);
+          deviceHandlers.syncUpdateScheduler(mac);
         }
       }
     });
