@@ -1727,7 +1727,7 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
     }
 
     deviceHandlers.storeSpeedtestResult(matchedDevice, req.body);
-    
+
     // We don't need to wait
     return res.status(200).json({processed: 1});
   });

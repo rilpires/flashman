@@ -275,6 +275,9 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
+  } else {
+    console.log('Ping results for device ' +
+    macaddr + ' received successfully.');
   }
   return found;
 };
@@ -382,6 +385,9 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
+  } else {
+    console.log('Speedtest results for device ' +
+    macaddr + ' received successfully.');
   }
   return found;
 };

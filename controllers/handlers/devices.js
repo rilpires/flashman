@@ -356,9 +356,6 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   if (mutex.isLocked()) mutexRelease();
 
   sio.anlixSendSpeedTestNotifications(device._id, result);
-  console.log('Speedtest results for device ' +
-    device._id + ' received successfully.');
-
   return {success: true, processed: 1};
 };
 
