@@ -809,11 +809,12 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
     // error validating topology
     matchedMaster.do_update_status = 7;
     await matchedMaster.save();
+  } else {
+    // Before beginning the update process the next release is saved to master
+    const release = matchedMaster.release;
+    // Update next device
+    meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update, release);
   }
-  // Before beginning the update process the next release is saved to master
-  const release = matchedMaster.release;
-  // Update next device
-  meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update, release);
 };
 
 const propagateUpdate = async function(
