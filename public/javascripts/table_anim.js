@@ -687,7 +687,25 @@ $(document).ready(function() {
         tooltipMsg =
           `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
       } else {
-        inProgress = false;
+        // Could be a normal update that has finished or could be mesh v1 -> v2
+        // after all devices have begun download.
+        let differentStatus = false;
+        for (let i=0; i<slaves.length; i++) {
+          if (slaves[i]._id === currentDevice) {
+            if (slaves[i].do_update_status !== 1) {
+              status = slaves[i].do_update_status;
+              differentStatus = true;
+              break;
+            }
+          }
+        }
+        if (differentStatus || masterStatus !== 1) {
+          // this is a mesh v1 -> v2 update
+          inProgress = true;
+          tooltipMsg = 'Esperando dispositivos ficarem online';
+        } else {
+          inProgress = false;
+        }
       }
     }
     if (masterStatus == 6 || masterStatus == 7) {
