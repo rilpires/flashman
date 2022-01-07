@@ -515,7 +515,7 @@ $(document).ready(function() {
           slaveCount-1,
           res.do_update,
           res.do_update_status,
-          res.mesh_update_remaining,
+          res.mesh_update_remaining.length,
           deviceId,
           res.do_update_status,
         );
