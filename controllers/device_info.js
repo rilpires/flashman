@@ -1600,7 +1600,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
           {'_id': masterMac},
           {'mesh_onlinedevs_remaining': 1,
           'do_update_status': 1},
-        ).lean();
+        );
         // end of critical region
         mutexRelease();
 
