@@ -642,13 +642,87 @@ const getMeshTopology = async function(
   return meshTopology;
 };
 
+const getMeshRouters = async function(device) {
+  let onlyOldMeshRoutersEntries = true;
+  let enrichedMeshRouters = util.deepCopyObject(device.mesh_routers)
+  .filter((meshRouter) => {
+    // Remove entries related to wireless connection if cabled mesh only mode
+    if (device.mesh_mode === 1 && meshRouter.iface !== 1) {
+      return false;
+    } else {
+      return true;
+    }
+  })
+  .map((meshRouter) => {
+    meshRouter.is_old = deviceHandlers.isApTooOld(meshRouter.last_seen);
+    // There is at least one updated entry
+    if (!meshRouter.is_old) {
+      onlyOldMeshRoutersEntries = false;
+    }
+    return meshRouter;
+  });
+  // If mesh routers list is empty or old and there are routers in mesh then
+  // let's check if it's possible to populate mesh routers list by cabled
+  // connections
+  if (onlyOldMeshRoutersEntries || (device.mesh_mode === 1)) {
+    let meshEntry = {
+      mac: '',
+      last_seen: Date.now(),
+      conn_time: 0,
+      rx_bytes: 0,
+      tx_bytes: 0,
+      signal: 0,
+      rx_bit: 0,
+      tx_bit: 0,
+      latency: 0,
+      iface: 1,
+      n_conn_dev: 0,
+    };
+    if (device.mesh_master) { // Slave router
+      let masterId = device.mesh_master.toUpperCase();
+      let matchedMaster = await DeviceModel.findById(
+        masterId,
+        {last_contact: true,
+          _id: true,
+          wan_negociated_speed: true,
+        }).lean();
+      // If there is recent comm assume there is a cabled connection
+      if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
+        meshEntry.mac = matchedMaster._id;
+        meshEntry.rx_bit = matchedMaster.wan_negociated_speed;
+        meshEntry.tx_bit = matchedMaster.wan_negociated_speed;
+        enrichedMeshRouters.push(meshEntry);
+      }
+    } else if (device.mesh_slaves) { // Master router
+      for (let slaveMac of device.mesh_slaves) {
+        let slaveId = slaveMac.toUpperCase();
+        let matchedSlave = await DeviceModel.findById(
+          slaveId,
+          {last_contact: true,
+            _id: true,
+            wan_negociated_speed: true,
+          }).lean();
+        // If there is recent comm assume there is a cabled connection
+        if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
+          meshEntry.mac = matchedSlave._id;
+          meshEntry.rx_bit = matchedSlave.wan_negociated_speed;
+          meshEntry.tx_bit = matchedSlave.wan_negociated_speed;
+          enrichedMeshRouters.push(meshEntry);
+        }
+      }
+    }
+  }
+  return enrichedMeshRouters;
+};
+
 const markNextDeviceToUpdate = async function(master) {
   let meshRoutersData = {};
   let meshFathers = {};
   // Gathers information from primary and secondary CPEs in the network
   // meshRoutersData is an object, where the key is the device's MAC and the
   // value is a list of objects, showing info of routers in the mesh network
-  meshRoutersData[master._id] = master.mesh_routers;
+  let enrichedMeshRouters = await getMeshRouters(master);
+  meshRoutersData[master._id] = enrichedMeshRouters;
   try {
     for (let i = 0; i < master.mesh_slaves.length; i++) {
       const slaveMac = master.mesh_slaves[i].toUpperCase();
@@ -659,7 +733,8 @@ const markNextDeviceToUpdate = async function(master) {
           message: 'CPE secundário não encontrado',
         };
       }
-      meshRoutersData[slaveMac] = matchedSlave.mesh_routers;
+      enrichedMeshRouters = await getMeshRouters(matchedSlave);
+      meshRoutersData[slaveMac] = enrichedMeshRouters;
       if (matchedSlave.mesh_father) {
         // Store mesh father info
         meshFathers[slaveMac] = matchedSlave.mesh_father;
