@@ -1498,12 +1498,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
       }
     }
 
-    // used to control if response was sent early or not
-    let sentResponseEarly = false;
-
     // used for mesh networks
     let willSignalMeshTopology = false;
-    let matchedMaster;
+    let masterMac;
     if (routersData) {
       // Erasing existing data of previous mesh routers
       matchedDevice.mesh_routers = [];
@@ -1571,24 +1568,10 @@ deviceInfoController.receiveDevices = async function(req, res) {
       }
 
       try {
+        masterMac = matchedDevice._id;
         if (matchedDevice.mesh_master) {
-          // Is a slave device
-          let masterMac = matchedDevice.mesh_master;
-          matchedMaster = await DeviceModel.findById(masterMac);
-          if (!matchedMaster) {
-            throw new Error('Did not find mesh master in database');
-          }
-        } else {
-          matchedMaster = matchedDevice;
+          masterMac = matchedDevice.mesh_master;
         }
-
-        // in order not to block the socket this is done before the critical
-        // region
-        sio.anlixSendOnlineDevNotifications(id, outData);
-        console.log('Devices Receiving for device ' +
-        id + ' successfully.');
-        res.send({processed: 1});
-        sentResponseEarly = true;
 
         /*
           This region should not have two parellel executions because fields
@@ -1599,7 +1582,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
         await new Promise((resolve) => setTimeout(resolve, interval));
         mutexRelease = await mutex.acquire();
         await DeviceModel.update({
-          '_id': matchedMaster._id,
+          '_id': masterMac,
         },
         [
           {
@@ -1613,21 +1596,22 @@ deviceInfoController.receiveDevices = async function(req, res) {
             },
           },
         ]);
-        let devicesRemaining = await DeviceModel.find(
-          {'_id': matchedMaster._id},
-          {'mesh_onlinedevs_remaining': 1},
+        let masterDevice = await DeviceModel.findOne(
+          {'_id': masterMac},
+          {'mesh_onlinedevs_remaining': 1,
+          'do_update_status': 1},
         ).lean();
         // end of critical region
         mutexRelease();
 
-        devicesRemaining = devicesRemaining[0].mesh_onlinedevs_remaining;
+        const devicesRemaining = masterDevice.mesh_onlinedevs_remaining;
         if (devicesRemaining === 0) {
-          matchedMaster.do_update_status = 30;
+          masterDevice.do_update_status = 30;
           // Last mesh device to report topology should trigger mesh topology
           // done to scheduler and mesh handler
           willSignalMeshTopology = true;
         }
-        await matchedMaster.save();
+        await masterDevice.save();
       } catch (err) {
         console.log(err);
         return res.status(500).json({processed: 0});
@@ -1638,18 +1622,16 @@ deviceInfoController.receiveDevices = async function(req, res) {
     await matchedDevice.save();
 
     if (willSignalMeshTopology) {
-      updateScheduler.successTopology(matchedMaster._id);
-      meshHandlers.validateMeshTopology(matchedMaster._id);
+      updateScheduler.successTopology(masterMac);
+      meshHandlers.validateMeshTopology(masterMac);
     }
 
-    if (!sentResponseEarly) {
-      // if someone is waiting for this message, send the information
-      sio.anlixSendOnlineDevNotifications(id, outData);
-      console.log('Devices Receiving for device ' +
-        id + ' successfully.');
+    // if someone is waiting for this message, send the information
+    sio.anlixSendOnlineDevNotifications(id, outData);
+    console.log('Devices Receiving for device ' +
+      id + ' successfully.');
 
-      return res.status(200).json({processed: 1});
-    }
+    return res.status(200).json({processed: 1});
   });
 };
 
