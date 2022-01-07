@@ -452,34 +452,48 @@ meshHandlers.convertBSSIDToId = async function(device, bssid) {
   }
 };
 
+// secondary device in mesh v1 must have support to be secondary in mesh v2
+meshHandlers.isSlaveInV1CompatibleInV2 = function(slave) {
+  const slavePermissions = DeviceVersion.findByVersion(
+    slave.version,
+    slave.wifi_is_5ghz_capable,
+    slave.model,
+  );
+  if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
+// primary device in mesh v1 must have support to be primary in mesh v2
+meshHandlers.isMasterInV1CompatibleInV2 = function(master) {
+  const masterPermissions = DeviceVersion.findByVersion(
+    master.version,
+    master.wifi_is_5ghz_capable,
+    master.model,
+  );
+  if (!masterPermissions.grantMeshV2SecondaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
 // checks if master in mesh v1 is compatible with being master in mesh v2
 // and if all slaves in mesh v1 are compatible with being slaves in mesh v2
-meshHandlers.allowMeshV1ToV2 = async function(device) {
+meshHandlers.allowMeshV1ToV2 = function(device) {
   try {
-    const permissions = DeviceVersion.findByVersion(
-      device.version, device.wifi_is_5ghz_capable, device.model,
-    );
-    if (!permissions.grantMeshV2PrimaryModeUpgrade) {
-      // primary device in mesh v1 must have support to be primary in mesh v2
+    if (device.mesh_slaves && device.mesh_slaves.length) {
+      // is a master
+      if (!(meshHandlers.isMasterInV1CompatibleInV2(device))) {
+        return false;
+      }
+    } else if (device.mesh_master) {
+      // is a slave
+      if (!(meshHandlers.isSlaveInV1CompatibleInV2(device))) {
+        return false;
+      }
+    } else {
       return false;
-    }
-    for (let i = 0; i < device.mesh_slaves.length; i++) {
-      const matchedSlave = await DeviceModel.findById(
-        device.mesh_slaves[i], 'version is5ghzCapable model',
-      ).lean();
-      if (!matchedSlave) {
-        return false;
-      }
-      const slavePermissions = DeviceVersion.findByVersion(
-        matchedSlave.version,
-        matchedSlave.wifi_is_5ghz_capable,
-        matchedSlave.model,
-      );
-      if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
-        // secondary device in mesh v1 must have support
-        // to be secondary in mesh v2
-        return false;
-      }
     }
     return true;
   } catch (err) {
@@ -488,12 +502,9 @@ meshHandlers.allowMeshV1ToV2 = async function(device) {
   }
 };
 
-meshHandlers.allowMeshUpgrade = async function(device, nextVersion) {
-  if (device.mesh_master) {
-    // Only master devices must call this function
-    return false;
-  }
-  if (device.mesh_slaves && device.mesh_slaves.length) {
+meshHandlers.allowMeshUpgrade = function(device, nextVersion) {
+  if ((device.mesh_slaves && device.mesh_slaves.length) ||
+    device.mesh_master) {
     // find out what kind of upgrade this is
     const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
       device.version, nextVersion,
@@ -504,7 +515,7 @@ meshHandlers.allowMeshUpgrade = async function(device, nextVersion) {
         return false;
       } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
         // mesh v1 -> v2
-        return await meshHandlers.allowMeshV1ToV2(device);
+        return meshHandlers.allowMeshV1ToV2(device);
       } else {
         // allow mesh v1 -> v1 or mesh v2 -> v2
         return true;
@@ -733,6 +744,8 @@ const propagateUpdate = async function(
   masterDevice, macOfUpdated, release, setQuery=undefined) {
   const meshUpdateRemaining =
     masterDevice.mesh_update_remaining.filter( (mac) => mac !== macOfUpdated);
+  const isMeshV1 =
+    (DeviceVersion.versionCompare(masterDevice.version, '0.32') < 0);
   // Update which devices are left to update
   masterDevice.mesh_update_remaining = meshUpdateRemaining;
   if (meshUpdateRemaining.length === 0) {
@@ -756,8 +769,7 @@ const propagateUpdate = async function(
     await meshHandlers.updateMeshDevice(
       masterDevice.mesh_next_to_update, release,
     );
-  } else if (meshUpdateRemaining.length === 2 ||
-    DeviceVersion.versionCompare(masterDevice.version, '0.32') < 0) {
+  } else if (meshUpdateRemaining.length === 2 || isMeshV1) {
     // Only two devices left to update or this is a mesh v1 network
     // If there are only two devices left to update just mark the slave
     // that hasn't updated. If it's a mesh v1 network we only need the
