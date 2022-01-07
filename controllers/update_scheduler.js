@@ -989,6 +989,9 @@ scheduleController.startSchedule = async function(req, res) {
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
+            const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
+              slaveDevice, release.flashbox_version);
+            if (!allowMeshUpgrade) valid = false;
           });
           if (!valid) return false;
         }
