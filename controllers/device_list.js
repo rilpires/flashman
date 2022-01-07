@@ -691,7 +691,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     }
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
-      let enrichDevice = async function(device) {
+      let enrichDevice = function(device) {
         const model = device.model.replace('N/', '');
         let devReleases = releases.filter(
           (release) => release.model === model);
@@ -720,7 +720,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         } else {
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
-            const isAllowed = await meshHandlers.allowMeshUpgrade(
+            const isAllowed = meshHandlers.allowMeshUpgrade(
               device, devReleases[i].flashbox_version,
             );
             if (isAllowed) filteredDevReleases.push(devReleases[i]);
