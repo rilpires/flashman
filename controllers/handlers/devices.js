@@ -3,7 +3,10 @@ const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
 const sio = require('../../sio');
 const util = require('./util');
+const Mutex = require('async-mutex').Mutex;
 
+let mutex = new Mutex();
+let mutexRelease = null;
 let deviceHandlers = {};
 
 deviceHandlers.diffDateUntilNowInSeconds = function(pastDate) {
@@ -249,9 +252,6 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
 
 deviceHandlers.sendPingToTraps = function(id, results) {
   sio.anlixSendPingTestNotifications(id, results);
-  console.log('Ping results for device ' +
-    id + ' received successfully.');
-
   // No await needed
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (!err && matchedConfig) {
@@ -303,6 +303,28 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
   formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
 
+  // This function should not have 2 running instances at the same time, since
+  // async database access can lead to no longer valid reads after one instance
+  // writes. This is necessary because mongo does not implement "table locks",
+  // so we may end up marking the same device to update the speedresult array at
+  // the same time.
+  // And so, we use a mutex to lock instances outside database access scope.
+  // In addition, we add a random sleep to spread out requests a bit.
+  let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+  await new Promise((resolve) => setTimeout(resolve, interval));
+  mutexRelease = await mutex.acquire();
+
+  try {
+    device = await DeviceModel.findById(device._id);
+  } catch (e) {
+    console.log('Error:', e);
+    if (mutex.isLocked()) mutexRelease();
+    return {success: false, processed: 0};
+  }
+  if (!device) {
+    return {success: false, processed: 0};
+  }
+
   if (result && result.downSpeed) {
     if (result.downSpeed.includes('503 Server')) {
       result.downSpeed = 'Unavailable';
@@ -331,6 +353,8 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   }
 
   await device.save();
+  if (mutex.isLocked()) mutexRelease();
+
   sio.anlixSendSpeedTestNotifications(device._id, result);
   console.log('Speedtest results for device ' +
     device._id + ' received successfully.');
