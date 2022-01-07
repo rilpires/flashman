@@ -939,52 +939,31 @@ scheduleController.startSchedule = async function(req, res) {
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
-      const matchedDevicesReference = [...matchedDevices];
       matchedDevices = matchedDevices.concat(extraDevices);
-      for (let i=matchedDevices.length-1; i>-1; i--) {
-        let device = matchedDevices[i];
-        if (device.use_tr069) {
-          // Discard TR-069 devices
-          matchedDevices.splice(i, 1);
-          continue;
-        }
-        if (device.mesh_master) {
-          // Discard slaves
-          matchedDevices.splice(i, 1);
-          continue;
-        }
+      matchedDevices = matchedDevices.filter((device)=>{
+        if (device.use_tr069) return false; // Discard TR-069 devices
+        if (device.mesh_master) return false; // Discard mesh slaves
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
           // Discard master if any slave has incompatible model
           let valid = true;
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
-            let slaveDevice =
-              matchedDevicesReference.find((d)=>d._id===slave);
+            let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
           });
-          if (!valid) {
-            matchedDevices.splice(i, 1);
-            continue;
-          }
+          if (!valid) return false;
         }
-        const allowMeshUpgrade = await meshHandler.allowMeshUpgrade(
+        const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
           device, release.flashbox_version);
-        if (!allowMeshUpgrade) {
-          matchedDevices.splice(i, 1);
-          continue;
-        }
+        if (!allowMeshUpgrade) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of
            both model name and version. */
-        const isModelInArray = modelsAvailable.some(
+        return modelsAvailable.some(
           (modelAndVersion) => modelAndVersion.includes(model));
-        if (!isModelInArray) {
-          matchedDevices.splice(i, 1);
-          continue;
-        }
-      }
+      });
       if (matchedDevices.length === 0) {
         return res.status(500).json({
           success: false,
