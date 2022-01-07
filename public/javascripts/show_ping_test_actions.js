@@ -89,6 +89,11 @@ $(document).ready(function() {
   $(document).on('click', '.btn-ping-test-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    if (row.data('is-tr069')) {
+      $('#ping-test-tr069-spam').show();
+    } else {
+      $('#ping-test-tr069-spam').hide();
+    }
 
     $.ajax({
       type: 'GET',

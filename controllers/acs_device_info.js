@@ -970,6 +970,7 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 };
 
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
+  console.log(req.body);
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -1080,13 +1081,26 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        await acsDeviceInfoController.calculatePingDiagnostic(
-          device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+        permissions = DeviceVersion.findByVersion(
+          device.version,
+          device.wifi_is_5ghz_capable,
+          device.model,
         );
-        await acsDeviceInfoController.calculateSpeedDiagnostic(
-          device, data, diagNecessaryKeys.speedtest,
-          fields.diagnostics.speedtest,
-        );
+        if (permissions) {
+          if (permissions.grantPingTest) {
+            await acsDeviceInfoController.calculatePingDiagnostic(
+              device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+            );
+          }
+          if (permissions.grantSpeedTest) {
+            await acsDeviceInfoController.calculateSpeedDiagnostic(
+              device, data, diagNecessaryKeys.speedtest,
+              fields.diagnostics.speedtest,
+            );
+          }
+        } else {
+          console.log('Failed: genie can\'t check device permissions');
+        }
       } catch (e) {
         console.log('Failed: genie response was not valid');
         console.log('Error:', e);
@@ -1346,8 +1360,13 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
-  let rqstTime = device.current_speedtest.timestamp.valueOf();
+  let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
+
+  if ('current_speedtest' in device &&
+      'timestamp' in device.current_speedtest) {
+    rqstTime = device.current_speedtest.timestamp.valueOf();
+  }
 
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
     if (speedKeys.diag_state == 'Completed') {
