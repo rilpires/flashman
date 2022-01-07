@@ -133,7 +133,6 @@ $(function() {
     if (slaveCount > 0) {
       let errorAnchor = $(event.target).closest('.status-error');
       let errorStatus = errorAnchor.data('status');
-      console.log(`DEBUG errorStatus: ${errorStatus}`);
       if (errorStatus == 6 || errorStatus == 7) {
         // Topology errors
         let msg;
