@@ -1610,10 +1610,11 @@ deviceInfoController.receiveDevices = async function(req, res) {
           // Last mesh device to report topology should trigger mesh topology
           // done to scheduler and mesh handler
           willSignalMeshTopology = true;
+          await masterDevice.save();
         }
-        await masterDevice.save();
       } catch (err) {
         console.log(err);
+        mutexRelease();
         return res.status(500).json({processed: 0});
       }
     }
