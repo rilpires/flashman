@@ -1,14 +1,6 @@
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
-const check = function(input) {
-  if (input.value != document.getElementById('new_pass').value) {
-    input.setCustomValidity('As senhas estão diferentes');
-  } else {
-    input.setCustomValidity('');
-  }
-};
-
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
   const name = getSearchField();
@@ -137,7 +129,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
       if (jqXHR.status === 404) {
         displayAlertMsg({
           type: 'danger',
-          message: 'Nenhuma certificação foi encontrado com esses parametros!',
+          message: 'Nenhuma certificação foi encontrada com esses parâmetros!',
         })
         return;
       }
