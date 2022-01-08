@@ -25,26 +25,26 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 $('<input>').addClass('checkbox item-checkbox')
                 .attr('type', 'checkbox')
                 .attr('data-userid', userObj._id)
-                .attr('data-timestamp', cert.localEpochTimestamp)
+                .attr('data-timestamp', cert.localEpochTimestamp),
               ));
             }
             certRow.append(
               $('<td>').html(
                 (cert.finished) ?
                 '<div class="fas fa-check-circle fa-2x green-text"></div>' :
-                '<div class="fas fa-times-circle fa-2x red-text"></div>'
+                '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(cert.mac),
               $('<td>').html(
-                new Date(cert.localEpochTimestamp).toLocaleString('pt-BR')
+                new Date(cert.localEpochTimestamp).toLocaleString('pt-BR'),
               ),
               $('<td>').html(userObj.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes')
+                  $('<span>').html('&nbsp Detalhes'),
                 ).addClass('btn btn-sm btn-primary my-0')
-                .attr('type', 'button')
+                .attr('type', 'button'),
               ).attr('data-userid', userObj._id)
               .attr('data-username', userObj.name)
               .attr('data-timestamp', cert.localEpochTimestamp),
@@ -85,7 +85,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
           usersTable.clear().draw();
           $('#loading-users').hide();
           $('#users-table-wrapper').show();
-          res.deviceCertifications.map((unwrappedCert) => {    
+          res.deviceCertifications.map((unwrappedCert) => {
             const certification = unwrappedCert.certifications;
             let certRow = $('<tr>');
             if (hasTrash) {
@@ -93,27 +93,27 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 $('<input>').addClass('checkbox item-checkbox')
                 .attr('type', 'checkbox')
                 .attr('data-userid', certification._id)
-                .attr('data-timestamp', certification.localEpochTimestamp)
+                .attr('data-timestamp', certification.localEpochTimestamp),
               ));
             }
             certRow.append(
               $('<td>').html(
                 (certification.finished) ?
                 '<div class="fas fa-check-circle fa-2x green-text"></div>' :
-                '<div class="fas fa-times-circle fa-2x red-text"></div>'
+                '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(certification.mac),
               $('<td>').html(
                 new Date(certification.localEpochTimestamp)
-                  .toLocaleString('pt-BR')
+                  .toLocaleString('pt-BR'),
               ),
               $('<td>').html(unwrappedCert.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes')
+                  $('<span>').html('&nbsp Detalhes'),
                 ).addClass('btn btn-sm btn-primary my-0')
-                .attr('type', 'button')
+                .attr('type', 'button'),
               ).attr('data-userid', certification._id)
               .attr('data-username', unwrappedCert.name)
               .attr('data-timestamp', certification.localEpochTimestamp),
@@ -124,13 +124,13 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
         } else if (!csv) {
           displayAlertMsg(res);
         }
-      }
+      },
     ).fail((jqXHR, textStatus, errorThrown) => {
       if (jqXHR.status === 404) {
         displayAlertMsg({
           type: 'danger',
           message: 'Nenhuma certificação foi encontrada com esses parâmetros!',
-        })
+        });
         return;
       }
     });
@@ -142,7 +142,7 @@ const configSearchType = () => {
     const searchType = event.originalEvent.target.text;
     $('#certificates-search-type-button').html(searchType);
   });
-}
+};
 
 const getSearchType = () => {
   const type = $('#certificates-search-type-button').text();
@@ -153,11 +153,11 @@ const getSearchType = () => {
   } else {
     return 'no';
   }
-}
+};
 
 const getSearchField = () => {
   return $('#certificates-search-input').val();
-}
+};
 
 const getFirstDate = () => {
   const date = new Date($('#certificates-firstdatepicker-input')
@@ -167,7 +167,7 @@ const getFirstDate = () => {
     return '';
   }
   return date;
-}
+};
 
 const getSecondDate = () => {
   const date = new Date($('#certificates-seconddatepicker-input')
@@ -177,13 +177,13 @@ const getSecondDate = () => {
     return '';
   }
   return date;
-}
+};
 
 const fetchCertification = function(id, name, timestamp) {
   $.get('/user/get/one/'+id, function(res) {
     if (res.type == 'success') {
       let cert = res.user.deviceCertifications.find(
-        (c)=>c.localEpochTimestamp === parseInt(timestamp)
+        (c)=>c.localEpochTimestamp === parseInt(timestamp),
       );
       // Change header icon and text
       $('#done-icon').removeClass('fa-check-circle');
@@ -240,7 +240,7 @@ const fetchCertification = function(id, name, timestamp) {
             $('<span></span>').html('&nbsp;'+cert.routerConnType),
           ),
         );
-        if (cert.routerConnType === "PPPoE") {
+        if (cert.routerConnType === 'PPPoE') {
           if (cert.isOnu && cert.wanConfigOnu) {
             let params = JSON.parse(cert.wanConfigOnu);
             if (params.user) {
@@ -376,7 +376,7 @@ const fetchCertification = function(id, name, timestamp) {
       // Change mesh info
       if (cert.didConfigureMesh && cert.mesh && cert.mesh.mode) {
         let modeStr = '';
-        switch(cert.mesh.mode){
+        switch (cert.mesh.mode) {
           case 0:
             modeStr = 'Desativado';
             break;
@@ -455,7 +455,7 @@ const fetchCertification = function(id, name, timestamp) {
       }
       // Change observation info
       if (cert.observations) {
-        let observations = cert.observations.replace(/\n/g,'<br />');
+        let observations = cert.observations.replace(/\n/g, '<br />');
         $('#observations-field').html(observations);
         $('#observations-none').hide();
         $('#observations-done').show();
@@ -507,8 +507,8 @@ $(document).ready(function() {
     $('.dt-users-table-btns').append(
       $('<div></div>').addClass('btn-group').attr('role', 'group').append(
         $('<button></button>').addClass('btn btn-danger btn-trash').append(
-          $('<div></div>').addClass('fas fa-trash fa-lg'))
-      )
+          $('<div></div>').addClass('fas fa-trash fa-lg')),
+      ),
     );
   }
 
@@ -523,7 +523,7 @@ $(document).ready(function() {
       let timestamp = $(this).attr('data-timestamp');
       let data = {user: userId, timestamp: timestamp};
       let itemIdx = selectedItens.findIndex(
-        (s)=>(s.user===userId && s.timestamp===timestamp)
+        (s)=>(s.user===userId && s.timestamp===timestamp),
       );
       if ($(this).is(':checked')) {
         if (itemIdx == -1) {
