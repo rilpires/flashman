@@ -11,6 +11,7 @@ const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
+const utilHandlers = require('./handlers/util');
 
 const pako = require('pako');
 const http = require('http');
@@ -989,7 +990,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
   req.end();
 };
 
-// TR069 latency test ============================================
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
@@ -998,7 +998,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
 
   let device;
   try {
-    device = await DeviceModel.findByMacOrSerial(serial, true);
+    device = await DeviceModel.findByMacOrSerial(serial);
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
@@ -1032,6 +1032,17 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       avg_resp_time: '',
       max_resp_time: '',
       min_resp_time: '',
+    },
+    speedtest: {
+      diag_state: '',
+      num_of_conn: '',
+      download_url: '',
+      bgn_time: '',
+      end_time: '',
+      test_bytes_rec: '',
+      down_transports: '',
+      full_load_bytes_rec: '',
+      full_load_period: '',
     },
   };
 
@@ -1067,7 +1078,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       success = true;
     }
   } catch (e) {
-    console.log(e);
+    console.log('Error:', e);
     console.log('Failed: genie diagnostics can\'t be updated');
   }
   if (!success) return;
@@ -1090,11 +1101,29 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        acsDeviceInfoController.calculatePingDiagnostic(
-          mac, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+        permissions = DeviceVersion.findByVersion(
+          device.version,
+          device.wifi_is_5ghz_capable,
+          device.model,
         );
+        if (permissions) {
+          if (permissions.grantPingTest) {
+            await acsDeviceInfoController.calculatePingDiagnostic(
+              device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+            );
+          }
+          if (permissions.grantSpeedTest) {
+            await acsDeviceInfoController.calculateSpeedDiagnostic(
+              device, data, diagNecessaryKeys.speedtest,
+              fields.diagnostics.speedtest,
+            );
+          }
+        } else {
+          console.log('Failed: genie can\'t check device permissions');
+        }
       } catch (e) {
         console.log('Failed: genie response was not valid');
+        console.log('Error:', e);
       }
     });
   });
@@ -1118,7 +1147,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   try {
     device = await DeviceModel.findById(mac).lean();
   } catch (e) {
-    console.log(e);
+    console.log('Error:', e);
     return {success: false,
             message: 'Erro ao encontrar dispositivo'};
   }
@@ -1157,8 +1186,8 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
       success = true;
     }
   } catch (e) {
-    console.log(e);
     console.log('Failed: genie diagnostic fields can\'t be updated');
+    console.log('Error:', e);
   }
   if (!success) {
     return {success: false,
@@ -1187,28 +1216,250 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
 };
 
-acsDeviceInfoController.calculatePingDiagnostic = function(mac, model, data,
+acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
                                                            pingKeys,
                                                            pingFields) {
   pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, pingKeys, pingFields,
   );
-  if (pingKeys.diag_state != 'Requested') {
+  if (pingKeys.diag_state !== 'Requested' &&
+             pingKeys.diag_state !== 'None') {
     let result = {};
-    result[pingKeys.host] = {
-      lat: pingKeys.avg_resp_time.toString(),
-      loss: parseInt(pingKeys.failure_count * 100 /
-             (pingKeys.success_count + pingKeys.failure_count)).toString(),
-    };
-    if (model === 'HG8245Q2' || model === 'EG8145V5') {
-      if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
-      else result[pingKeys.host]['loss'] = '100';
+    device.ping_hosts.forEach((host) => {
+      if (host) {
+        result[host] = {
+          lat: '---',
+          loss: '--- ',
+        };
+      }
+    });
+    if (pingKeys.diag_state === 'Complete') {
+      result[pingKeys.host] = {
+        lat: pingKeys.avg_resp_time.toString(),
+        loss: parseInt(pingKeys.failure_count * 100 /
+               (pingKeys.success_count + pingKeys.failure_count)).toString(),
+      };
+      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+        if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
+        else result[pingKeys.host]['loss'] = '100';
+      }
     }
-    deviceHandlers.sendPingToTraps(mac, {results: result});
+    deviceHandlers.sendPingToTraps(device._id, {results: result});
   }
 };
 
-// =============================================================================
+acsDeviceInfoController.getSpeedtestFile = async function(device) {
+  let matchedConfig = await Config.findOne({is_default: true}).catch(
+    function(err) {
+      console.error('Error creating entry: ' + err);
+      return '';
+    },
+  );
+  if (!matchedConfig) {
+    console.error('Error creating entry. Config does not exists.');
+    return '';
+  }
+  let stage = device.current_speedtest.stage;
+  let band = device.current_speedtest.band_estimative;
+  let url = 'http://' + matchedConfig.measureServerIP + ':' +
+                  matchedConfig.measureServerPort + '/measure/tr069/';
+  if (stage) {
+    if (stage == 'estimative') {
+      return url + 'file_512KB.bin';
+    }
+    if (stage == 'measure') {
+      if (band >= 700) {
+        return url + 'file_640000KB.bin';
+      } else if (band >= 500) {
+        return url + 'file_448000KB.bin';
+      } else if (band >= 300) {
+        return url + 'file_320000KB.bin';
+      } else if (band >= 100) {
+        return url + 'file_192000KB.bin';
+      } else if (band >= 50) {
+        return url + 'file_64000KB.bin';
+      } else if (band >= 30) {
+        return url + 'file_32000KB.bin';
+      } else if (band >= 10) {
+        return url + 'file_19200KB.bin';
+      } else if (band >= 5) {
+        return url + 'file_6400KB.bin';
+      } else if (band >= 3) {
+        return url + 'file_1920KB.bin';
+      } else if (band < 3) {
+        return url + 'file_512KB.bin';
+      }
+    }
+  }
+  return '';
+};
+
+acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
+  let device;
+  try {
+    device = await DeviceModel.findById(mac).lean();
+  } catch (e) {
+    console.log('Error:', e);
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
+  }
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return {success: false,
+            message: 'Erro ao encontrar dispositivo'};
+  }
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+
+  let diagnSpeedtestDiagnostics = fields.diagnostics.speedtest.root;
+  let diagnStateField = fields.diagnostics.speedtest.diag_state;
+  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
+  let diagnURLField = fields.diagnostics.speedtest.download_url;
+
+  let numberOfCon = 3;
+  let speedtestHostUrl = await acsDeviceInfoController.getSpeedtestFile(device);
+
+  if (!speedtestHostUrl || speedtestHostUrl === '') {
+    return {success: false,
+            message: 'Error: Could not get speedtest measure file'};
+  }
+
+  // We need to update the parameter values before we fire the ping test
+  let success = false;
+  try {
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [diagnSpeedtestDiagnostics],
+    };
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+    if (
+      !result || !result.finished || result.task.name !== 'getParameterValues'
+    ) {
+      console.log('Failed: genie diagnostic fields can\'t be updated');
+    } else {
+      success = true;
+    }
+  } catch (e) {
+    console.log('Failed: genie diagnostic fields can\'t be updated');
+    console.log('Error:', e);
+  }
+  if (!success) {
+    return {success: false,
+            message: 'Error: Could not fire TR-069 speedtest'};
+  }
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
+                      [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
+                      [diagnURLField, speedtestHostUrl, 'xsd:string']],
+  };
+  try {
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+    if (!result || !result.finished) {
+      return {success: false,
+              message: 'Error: Could not fire TR-069 speedtest'};
+    } else {
+      console.log('Success: TR-069 speedtest fired');
+      return {success: true,
+              message: 'Success: TR-069 speedtest fired'};
+    }
+  } catch (err) {
+      return {success: false,
+              message: err.message+' in '+acsID};
+  }
+};
+
+acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
+                                                                  speedKeys,
+                                                                  speedFields) {
+  speedKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
+    data, speedKeys, speedFields,
+  );
+  let result;
+  let speedValueBasic;
+  let speedValueFullLoad;
+  let rqstTime;
+  let lastTime = (new Date(1970, 0, 1)).valueOf();
+
+  if ('current_speedtest' in device &&
+      'timestamp' in device.current_speedtest) {
+    rqstTime = device.current_speedtest.timestamp.valueOf();
+  }
+
+  if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
+    if (speedKeys.diag_state == 'Completed') {
+      if (device.speedtest_results.length > 0) {
+        lastTime = utilHandlers.parseDate(
+          device.speedtest_results[device.speedtest_results.length-1].timestamp,
+        );
+      }
+
+      let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
+      let endTime = (new Date(speedKeys.end_time)).valueOf();
+      // 10**3 => seconds to miliseconds (because of valueOf() notation)
+      let deltaTime = (endTime - beginTime) / (10**3);
+
+      // 8 => byte to bit
+      // 1024**2 => bit to megabit
+      speedValueBasic = (8/(1024**2))*(speedKeys.test_bytes_rec/deltaTime);
+
+      if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+        // 10**6 => microsecond to second
+        // 8 => byte to bit
+        // 1024**2 => bit to megabit
+        speedValueFullLoad = ((8*(10**6))/(1024**2)) *
+                    (speedKeys.full_load_bytes_rec/speedKeys.full_load_period);
+      }
+
+      // Speedtest's estimative / real measure step
+      if (device.current_speedtest.stage == 'estimative') {
+        device.current_speedtest.band_estimative = speedValueBasic;
+        device.current_speedtest.stage = 'measure';
+        await device.save();
+        await sio.anlixSendSpeedTestNotifications(device._id, {
+          stage: 'estimative_finished',
+          user: device.current_speedtest.user,
+        });
+        acsDeviceInfoController.fireSpeedDiagnose(device._id);
+        return;
+      } else if (device.current_speedtest.stage == 'measure') {
+        result = {
+          downSpeed: '',
+          user: device.current_speedtest.user,
+        };
+        if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
+          result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+        } else {
+          result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+        }
+        deviceHandlers.storeSpeedtestResult(device, result);
+        return;
+      }
+    } else {
+      // Error treatment (switch-case for future error handling)
+      switch (speedKeys.diag_state) {
+        case ('Error_InitConnectionFailed' ||
+              'Error_NoResponse' ||
+              'Error_Other'):
+        console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
+        result = {
+          downSpeed: '503 Server',
+          user: device.current_speedtest.user,
+        };
+        break;
+        default:
+        result = {
+          user: device.current_speedtest.user,
+        };
+        break;
+      }
+      deviceHandlers.storeSpeedtestResult(device, result);
+      return;
+    }
+  }
+};
 
 // TODO: Move this function to external-genieacs?
 const fetchWanBytesFromGenie = function(mac, acsID) {
