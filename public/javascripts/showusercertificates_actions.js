@@ -10,7 +10,6 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
 
   if (getAll) {
     $.get('/user/get/all', function(res) {
-      console.log(res);
       usersTable.clear().draw();
       if (res.type == 'success') {
         $('#loading-users').hide();
@@ -496,19 +495,24 @@ $(document).ready(function() {
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0, hasTrashButton, 4+hasTrashButton]},
     ],
-    'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">  ' +
-           '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
+    'dom': '<"row" <"col-sm-12 col-md dt-certs-table-btns">> ' +
            '<"row" t>                                          ' +
            '<"row" <"col-6"l>                                  ' +
            '       <"col-6"p>                                 >',
   });
   // Load table content
-  if (hasTrashButton) {
-    $('.dt-users-table-btns').append(
-      $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-        $('<button></button>').addClass('btn btn-danger btn-trash').append(
-          $('<div></div>').addClass('fas fa-trash fa-lg')),
+  $('.dt-certs-table-btns').append(
+    $('<button>').attr('id', 'certificates-csv-export')
+                   .addClass('btn btn-primary mr-4')
+      .append(
+        $('<i>').addClass('fas fa-file-excel fa-lg'),
+        $('<span>').html('&nbsp; Exportar CSV'),
       ),
+  );
+  if (hasTrashButton) {
+    $('.dt-certs-table-btns').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg')),
     );
   }
 
