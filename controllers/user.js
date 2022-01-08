@@ -1043,100 +1043,230 @@ userController.certificateSearch = async (req, res) => {
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
-      {label: 'Nome', value: 'name', default: ''},
-      {label: 'Terminado', value: 'certifications.finished', default: ''},
-      {label: 'Endereço MAC', value: 'certifications.mac', default: ''},
+      {label: 'Técnico', value: 'name', default: ''},
+      {label: 'Concluído', value: 'certifications.finished', default: ''},
       {
-        label: 'Endereço MAC da ONU',
-        value: 'certifications.onuMac',
+        label: 'Motivo de interrupção na certificação',
+        value: 'certifications.cancelReason',
         default: '',
       },
-      {label: 'É onu?', value: 'certifications.isOnu', default: ''},
+      {label: 'Identificador único', value: 'certifications.mac', default: ''},
+      {label: 'CPE TR-069?', value: 'certifications.isOnu', default: ''},
       {label: 'Modelo', value: 'certifications.routerModel', default: ''},
       {
-        label: 'Versão do roteador',
+        label: 'Versão do firmware da CPE',
         value: 'certifications.routerVersion',
         default: '',
       },
       {
-        label: 'Release do roteador',
+        label: 'Release/Versão do hardware',
         value: 'certifications.routerRelease',
         default: '',
       },
-      {value: 'certifications.timestamp', default: ''},
-      {value: 'certifications.localEpochTimestamp', default: ''},
+      {
+        label: 'Data do atendimento',
+        value: 'certifications.localEpochTimestamp',
+        default: '',
+      },
       {
         label: 'Foi diagnosticado',
         value: 'certifications.didDiagnose',
         default: '',
       },
       {
-        label: 'Diagnostico da WAN',
-        value: 'certifications.diagnostic.want',
+        label: 'Nível de sinal recebido na CPE em dBm',
+        value: 'certifications.diagnostic.rxpower',
         default: '',
       },
-      {value: 'certifications.diagnostic.tr069', default: ''},
-      {value: 'certifications.diagnostic.pon', default: ''},
-      {value: 'certifications.diagnostic.rxpower', default: ''},
-      {value: 'certifications.diagnostic.ipv4', default: ''},
-      {value: 'certifications.diagnostic.ipv6', default: ''},
-      {value: 'certifications.diagnostic.dns', default: ''},
-      {value: 'certifications.diagnostic.anlix', default: ''},
-      {value: 'certifications.diagnostic.flashman', default: ''},
-      {value: 'certifications.diagnostic.speedtest', default: ''},
-      {value: 'certifications.diagnostic.speedValue', default: ''},
-      {value: 'certifications.diagnostic.speedTestLimit', default: ''},
       {
-        label: 'TR069 foi configurado',
+        label: 'Sinal recebido em dBm ok?',
+        value: 'certifications.diagnostic.pon',
+        default: '',
+      },
+      {
+        label: 'Diagnostico da WAN ok?',
+        value: 'certifications.diagnostic.wan',
+        default: '',
+      },
+      {
+        label: 'IPv4 ok?',
+        value: 'certifications.diagnostic.ipv4',
+        default: '',
+      },
+      {
+        label: 'IPv6 ok?',
+        value: 'certifications.diagnostic.ipv6',
+        default: '',
+      },
+      {
+        label: 'DNS ok?',
+        value: 'certifications.diagnostic.dns',
+        default: '',
+      },
+      {
+        label: 'Licenciamento ok?',
+        value: 'certifications.diagnostic.anlix',
+        default: '',
+      },
+      {
+        label: 'Registro no flashman ok?',
+        value: 'certifications.diagnostic.flashman',
+        default: '',
+      },
+      {
+        label: 'Configuração TR-069 foi aplicada?',
         value: 'certifications.didConfigureTR069',
         default: '',
       },
       {
-        label: 'WAN foi configurado',
-        value: 'certifications.didConfigureWan',
+        label: 'Configuração Wi-Fi foi alterada?',
+        value: 'certifications.didConfigureWifi',
         default: '',
       },
-      {value: 'certifications.wanConfigOnu', default: ''},
-      {value: 'certifications.routerConnType', default: ''},
-      {label: 'Usuario PPOE', value: 'certifications.pppoeUser', default: ''},
       {
-        label: 'Endereço de IP da bridge',
+        label: 'Teste de velocidade habilitado',
+        value: 'certifications.diagnostic.speedtest',
+        default: '',
+      },
+      {
+        label: 'Resultado do teste de velocidade (Mbps)',
+        value: 'certifications.diagnostic.speedValue',
+        default: '',
+      },
+      {
+        label: 'Valor limite do teste de velocidade (Mbps)',
+        value: 'certifications.diagnostic.speedTestLimit',
+        default: '',
+      },
+      {
+        label: 'Tipo de conexão na WAN',
+        value: 'certifications.routerConnType',
+        default: '',
+      },
+      {
+        label: 'Usuario PPPoE',
+        value: 'certifications.pppoeUser',
+        default: '',
+      },
+      {
+        label: 'Modo bridge: Endereço de IP',
         value: 'certifications.bridgeIP',
         default: '',
       },
-      {value: 'certifications.bridgeGateway', default: ''},
-      {value: 'certifications.bridgeDNS', default: ''},
-      {value: 'certifications.bridgeSwitch', default: ''},
-      {value: 'certifications.didConfigureWifi', default: ''},
-      {value: 'certifications.wifiConfig.hasFive', default: ''},
-      {value: 'certifications.wifiConfig.two.ssid', default: ''},
-      {value: 'certifications.wifiConfig.two.band', default: ''},
-      {value: 'certifications.wifiConfig.two.mode', default: ''},
-      {value: 'certifications.wifiConfig.two.channel', default: ''},
-      {value: 'certifications.wifiConfig.five.ssid', default: ''},
-      {value: 'certifications.wifiConfig.five.band', default: ''},
-      {value: 'certifications.wifiConfig.five.mode', default: ''},
-      {value: 'certifications.wifiConfig.five.channel', default: ''},
-      {value: 'certifications.didConfigureMesh', default: ''},
-      {value: 'certifications.mesh.mode', default: ''},
-      {value: 'certifications.mesh.updateSlaves', default: ''},
-      {value: 'certifications.mesh.originalSlaves', default: ''},
-      {value: 'certifications.didConfigureContract', default: ''},
-      {value: 'certifications.didConfigureObservation', default: ''},
-      {value: 'certifications.contract', default: ''},
-      {value: 'certifications.observations', default: ''},
-      {value: 'certifications.cancelReason', default: ''},
-      {value: 'certifications.latitude', default: ''},
-      {value: 'certifications.longitude', default: ''},
-      {value: 'certifications.didSpeedTest', default: ''},
-    ];
+      {
+        label: 'Modo bridge: Gateway',
+        value: 'certifications.bridgeGateway',
+        default: '',
+      },
+      {
+        label: 'Modo bridge: Endereço de DNS',
+        value: 'certifications.bridgeDNS',
+        default: '',
+      },
+      {
+        label: 'É dual band?',
+        value: 'certifications.wifiConfig.hasFive',
+        default: '',
+      },
+      {
+        label: 'SSID 2.4GHz',
+        value: 'certifications.wifiConfig.two.ssid',
+        default: '',
+      },
+      {
+        label: 'Canal 2.4GHz',
+        value: 'certifications.wifiConfig.two.channel',
+        default: '',
+      },
+      {
+        label: 'Largura de banda 2.4GHz',
+        value: 'certifications.wifiConfig.two.band',
+        default: '',
+      },
+      {
+        label: 'Modo de operação 2.4GHz',
+        value: 'certifications.wifiConfig.two.mode',
+        default: '',
+      },
+      {
+        label: 'SSID 5GHz',
+        value: 'certifications.wifiConfig.five.ssid',
+        default: '',
+      },
+      {
+        label: 'Canal 5GHz',
+        value: 'certifications.wifiConfig.five.channel',
+        default: '',
+      },
+      {
+        label: 'Largura de banda 5GHz',
+        value: 'certifications.wifiConfig.five.band',
+        default: '',
+      },
+      {
+        label: 'Modo de operação 5GHz',
+        value: 'certifications.wifiConfig.five.mode',
+        default: '',
+      },
+      {
+        label: 'Mesh foi configurado?',
+        value: 'certifications.didConfigureMesh',
+        default: '',
+      },
+      {
+        label: 'Modo mesh configurado',
+        value: 'certifications.mesh.mode',
+        default: '',
+      },
+      {
+        label: 'CPF/CNPJ/Número de contrato',
+        value: 'certifications.contract',
+        default: '',
+      },
+      {
+        label: 'Observações',
+        value: 'certifications.observations',
+        default: '',
+      },
 
-    const transforms = [
-      unwind({
-        paths: ['mesh.updateSlaves', 'mesh.originalSlaves'],
-      }),
+      {
+        label: 'Latitude no momento da certificação',
+        value: 'certifications.latitude',
+        default: '',
+      },
+      {
+        label: 'Longitude no momento da certificação',
+        value: 'certifications.longitude',
+        default: '',
+      },
     ];
-
+    const transforms = (item) => {
+      if (item.certifications.diagnostic) {
+        if (item.certifications.diagnostic.pon === -1) {
+          item.certifications.diagnostic.pon = '';
+        } else if (item.certifications.diagnostic.pon === 0) {
+          item.certifications.diagnostic.pon = 'ok';
+        } else if (item.certifications.diagnostic.pon >= 0) {
+          item.certifications.diagnostic.pon = 'erro';
+        }
+      }
+      if (item.certifications.mesh) {
+        if (item.certifications.mesh.mode === 0) {
+          item.certifications.mesh.mode = '';
+        } else if (item.certifications.mesh.mode === 1) {
+          item.certifications.mesh.mode = 'cabo';
+        } else if (item.certifications.mesh.mode === 2) {
+          item.certifications.mesh.mode = 'cabo e wi-fi 2.4';
+        } else if (item.certifications.mesh.mode === 3) {
+          item.certifications.mesh.mode = 'cabo e wi-fi 5.0';
+        } else if (item.certifications.mesh.mode === 4) {
+          item.certifications.mesh.mode = 'cabo e ambos wi-fi';
+        }
+      }
+      item.certifications.localEpochTimestamp =
+        new Date(item.certifications.localEpochTimestamp);
+      return item;
+    };
     const json2csvParser = new Parser({fields, transforms});
     const certificationsCsv = json2csvParser.parse(deviceCertifications);
 
