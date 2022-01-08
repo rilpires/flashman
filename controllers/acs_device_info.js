@@ -991,7 +991,6 @@ const fetchLogFromGenie = function(success, mac, acsID) {
 };
 
 acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
-  console.log(req.body);
   let acsID = req.body.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
