@@ -3,7 +3,7 @@ const Role = require('../models/role');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
-const {Parser, transforms: {unwind, flatten}} = require('json2csv');
+const {Parser, transforms: {unwind}} = require('json2csv');
 
 let userController = {};
 
@@ -171,7 +171,8 @@ userController.postRole = function(req, res) {
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
-    grantFirmwareRestrictedUpgrade: req.body['grant-firmware-restricted-upgrade'],
+    grantFirmwareRestrictedUpgrade:
+      req.body['grant-firmware-restricted-upgrade'],
   });
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
@@ -379,7 +380,8 @@ userController.editRole = function(req, res) {
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
-    role.grantFirmwareRestrictedUpgrade = req.body['grant-firmware-restricted-upgrade'];
+    role.grantFirmwareRestrictedUpgrade =
+      req.body['grant-firmware-restricted-upgrade'];
 
     if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');
@@ -919,8 +921,17 @@ userController.settings = function(req, res) {
 };
 
 userController.certificateSearch = async (req, res) => {
-  const firstDate = new Date(parseInt(req.body.first_date));
-  const secondDate = new Date(parseInt(req.body.second_date));
+  let firstDate = new Date(0); // 1/1/1970
+  let secondDate = new Date(); // Now
+  if (!isNaN(parseInt(req.body.first_date))) {
+    firstDate = new Date(parseInt(req.body.first_date));
+    firstDate.setUTCHours(0, 0, 0);
+  }
+  if (!isNaN(parseInt(req.body.second_date))) {
+    secondDate = new Date(parseInt(req.body.second_date));
+    secondDate.setUTCHours(23, 59, 59);
+  }
+
   const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
   const deviceId = typeof req.body.device_id === 'undefined' ?
     '' : req.body.device_id;
@@ -939,11 +950,6 @@ userController.certificateSearch = async (req, res) => {
   } else {
     query.mac = '';
   }
-  if (!isNaN(firstDate.getTime()) || !isNaN(secondDate.getTime())) {
-    query.emptyDate = false;
-  } else {
-    query.emptyDate = true;
-  }
 
   const deviceCertifications = await User
     .aggregate([
@@ -959,15 +965,15 @@ userController.certificateSearch = async (req, res) => {
                   $eq: [
                     '$name',
                     query.name,
-                  ]
+                  ],
                 },
-                query.name.length === 0
-              ]
+                query.name.length === 0,
+              ],
             },
             then: '$$KEEP',
-            else: '$$PRUNE'
-          }
-        }
+            else: '$$PRUNE',
+          },
+        },
       },
       {
         $redact: {
@@ -977,52 +983,47 @@ userController.certificateSearch = async (req, res) => {
                 {
                   $eq: [
                     '$deviceCertifications.mac',
-                    query.mac
-                  ]
+                    query.mac,
+                  ],
                 },
-                query.mac.length === 0
-              ]
+                query.mac.length === 0,
+              ],
             },
             then: '$$KEEP',
-            else: '$$PRUNE'
-          }
-        }
+            else: '$$PRUNE',
+          },
+        },
       },
       {
         $redact: {
           $cond: {
             if: {
-              $or: [
+              $and: [
                 {
-                  $and: [
-                    {
-                      $gte: [
-                        '$deviceCertifications.timestamp',
-                        firstDate
-                      ]
-                    },
-                    {
-                      $lte: [
-                        '$deviceCertifications.timestamp',
-                        secondDate
-                      ]
-                    }
-                  ]
+                  $gte: [
+                    '$deviceCertifications.localEpochTimestamp',
+                    firstDate.getTime(),
+                  ],
                 },
-                query.emptyDate
-              ]
+                {
+                  $lte: [
+                    '$deviceCertifications.localEpochTimestamp',
+                    secondDate.getTime(),
+                  ],
+                },
+              ],
             },
             then: '$$KEEP',
             else: '$$PRUNE',
-          }
-        }
+          },
+        },
       },
       {
         $project: {
           name: 1,
           deviceCertifications: 1,
-        }
-      }
+        },
+      },
     ])
     .catch((err) => {
       console.log(err);
@@ -1048,31 +1049,31 @@ userController.certificateSearch = async (req, res) => {
       {
         label: 'Endereço MAC da ONU',
         value: 'certifications.onuMac',
-        default: ''
+        default: '',
       },
       {label: 'É onu?', value: 'certifications.isOnu', default: ''},
       {label: 'Modelo', value: 'certifications.routerModel', default: ''},
       {
         label: 'Versão do roteador',
         value: 'certifications.routerVersion',
-        default: ''
+        default: '',
       },
       {
         label: 'Release do roteador',
         value: 'certifications.routerRelease',
-        default: ''
+        default: '',
       },
       {value: 'certifications.timestamp', default: ''},
       {value: 'certifications.localEpochTimestamp', default: ''},
       {
         label: 'Foi diagnosticado',
         value: 'certifications.didDiagnose',
-        default: ''
+        default: '',
       },
       {
         label: 'Diagnostico da WAN',
         value: 'certifications.diagnostic.want',
-        default: ''
+        default: '',
       },
       {value: 'certifications.diagnostic.tr069', default: ''},
       {value: 'certifications.diagnostic.pon', default: ''},
@@ -1088,12 +1089,12 @@ userController.certificateSearch = async (req, res) => {
       {
         label: 'TR069 foi configurado',
         value: 'certifications.didConfigureTR069',
-        default: ''
+        default: '',
       },
       {
         label: 'WAN foi configurado',
         value: 'certifications.didConfigureWan',
-        default: ''
+        default: '',
       },
       {value: 'certifications.wanConfigOnu', default: ''},
       {value: 'certifications.routerConnType', default: ''},
@@ -1101,7 +1102,7 @@ userController.certificateSearch = async (req, res) => {
       {
         label: 'Endereço de IP da bridge',
         value: 'certifications.bridgeIP',
-        default: ''
+        default: '',
       },
       {value: 'certifications.bridgeGateway', default: ''},
       {value: 'certifications.bridgeDNS', default: ''},
@@ -1127,13 +1128,13 @@ userController.certificateSearch = async (req, res) => {
       {value: 'certifications.cancelReason', default: ''},
       {value: 'certifications.latitude', default: ''},
       {value: 'certifications.longitude', default: ''},
-      {value: 'certifications.didSpeedTest', default: ''}
+      {value: 'certifications.didSpeedTest', default: ''},
     ];
 
     const transforms = [
       unwind({
         paths: ['mesh.updateSlaves', 'mesh.originalSlaves'],
-      })
+      }),
     ];
 
     const json2csvParser = new Parser({fields, transforms});
@@ -1143,7 +1144,6 @@ userController.certificateSearch = async (req, res) => {
       .set('Content-Type', 'text/csv')
       .status(200)
       .send(certificationsCsv);
-
   } else if (deviceCertifications.length >= 1) {
     return res.status(200).json({
       success: true,
@@ -1158,7 +1158,7 @@ userController.certificateSearch = async (req, res) => {
 
   return res.status(500).json({
     success: false,
-    error: 'Error on query user certifications'
+    error: 'Error on query user certifications',
   });
 };
 
