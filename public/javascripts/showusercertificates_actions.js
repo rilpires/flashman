@@ -139,7 +139,6 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
 
 const configSearchType = () => {
   $('#certificates-search-type' + ' a').click((event) => {
-    event.preventDefault();
     const searchType = event.originalEvent.target.text;
     $('#certificates-search-type-button').html(searchType);
   });
@@ -147,7 +146,7 @@ const configSearchType = () => {
 
 const getSearchType = () => {
   const type = $('#certificates-search-type-button').text();
-  if (type === "Nome") {
+  if (type === 'Técnico') {
     return 'name';
   } else if (type === 'MAC/Serial') {
     return 'mac';
