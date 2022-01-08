@@ -18,6 +18,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
 
   if (getAll) {
     $.get('/user/get/all', function(res) {
+      console.log(res);
       usersTable.clear().draw();
       if (res.type == 'success') {
         $('#loading-users').hide();
@@ -78,22 +79,13 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
       },
       (res) => {
         if (csv) {
-          console.log(res);
           const csvFile = new Blob([res]);
           let downloadElement = document.createElement('a');
           downloadElement.href = URL.createObjectURL(
             csvFile,
             {type: 'text/plain'},
           );
-          if (!isNaN(firstDate)) {
-            downloadElement.download = `csvfile-${firstDate}.csv`;
-          } else if (!isNaN(secondDate)) {
-            downloadElement.download = `csvfile-${secondDate}.csv`;
-          } else if (!isNaN(firstDate) && !isNaN(secondDate)) {
-            downloadElement.download = `csvfile-${firstDate}-${secondDate}.csv`;
-          } else {
-            downloadElement.download = `csvfile.csv`;
-          }
+          downloadElement.download = `csvfile.csv`;
           downloadElement.style.display = 'none';
           downloadElement.click();
         }
@@ -141,7 +133,15 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
           displayAlertMsg(res);
         }
       }
-    );
+    ).fail((jqXHR, textStatus, errorThrown) => {
+      if (jqXHR.status === 404) {
+        displayAlertMsg({
+          type: 'danger',
+          message: 'Nenhuma certificação foi encontrado com esses parametros!',
+        })
+        return;
+      }
+    });
   }
 };
 
