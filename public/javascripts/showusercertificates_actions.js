@@ -233,58 +233,58 @@ const fetchCertification = function(id, name, timestamp) {
       // Change wan info
       if (cert.didConfigureWan && cert.routerConnType) {
         $('#wan-config-list').html('');
-        let wanList = $('<ul class="list-inline"></ul>').append(
-          $('<li></li>').append(
-            $('<strong></strong>').html('Tipo de Conexão:'),
-            $('<span></span>').html('&nbsp;'+cert.routerConnType),
+        let wanList = $('<ul>').addClass('list-inline').append(
+          $('<li>').append(
+            $('<strong>').html('Tipo de Conexão:'),
+            $('<span>').html('&nbsp;'+cert.routerConnType),
           ),
         );
         if (cert.routerConnType === 'PPPoE') {
           if (cert.isOnu && cert.wanConfigOnu) {
             let params = JSON.parse(cert.wanConfigOnu);
             if (params.user) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('Usuário PPPoE:'),
-                $('<span></span>').html('&nbsp;'+params.user),
+              wanList.append($('<li>').append(
+                $('<strong>').html('Usuário PPPoE:'),
+                $('<span>').html('&nbsp;'+params.user),
               ));
             }
             if (params.vlan) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('VLAN ID:'),
-                $('<span></span>').html('&nbsp;'+params.vlan),
+              wanList.append($('<li>').append(
+                $('<strong>').html('VLAN ID:'),
+                $('<span>').html('&nbsp;'+params.vlan),
               ));
             }
             if (params.mtu) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('MTU:'),
-                $('<span></span>').html('&nbsp;'+params.mtu),
+              wanList.append($('<li>').append(
+                $('<strong>').html('MTU:'),
+                $('<span>').html('&nbsp;'+params.mtu),
               ));
             }
           } else {
-            wanList.append($('<li></li>').append(
-              $('<strong></strong>').html('Usuário PPPoE:'),
-              $('<span></span>').html('&nbsp;'+cert.pppoeUser),
+            wanList.append($('<li>').append(
+              $('<strong>').html('Usuário PPPoE:'),
+              $('<span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
         } else if (cert.routerConnType === 'Bridge (IP Fixo)') {
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP Fixo do CPE:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeIP),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP Fixo do CPE:'),
+            $('<span>').html('&nbsp;'+cert.bridgeIP),
           ));
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP do Gateway:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeGateway),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP do Gateway:'),
+            $('<span>').html('&nbsp;'+cert.bridgeGateway),
           ));
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP do DNS:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeDNS),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP do DNS:'),
+            $('<span>').html('&nbsp;'+cert.bridgeDNS),
           ));
         }
         if (cert.routerConnType.includes('Bridge')) {
           let paramSwitch = (cert.bridgeSwitch) ? 'Desabilitado' : 'Habilitado';
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('Switch da LAN:'),
-            $('<span></span>').html('&nbsp;'+paramSwitch),
+          wanList.append($('<li>').append(
+            $('<strong>').html('Switch da LAN:'),
+            $('<span>').html('&nbsp;'+paramSwitch),
           ));
         }
         $('#wan-config-list').append(wanList);
