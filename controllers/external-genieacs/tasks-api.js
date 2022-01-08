@@ -652,7 +652,7 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
 genie.addTask = async function(deviceid, task, shouldRequestConnection,
-  timeout=5000, watchTimes=[60000, 120000], callback=null) {
+  timeout=10000, watchTimes=[60000, 120000], callback=null) {
   // checking device id.
   if (!deviceid || deviceid.constructor !== String) {
     return {finished: false, task: task, source: 'request',

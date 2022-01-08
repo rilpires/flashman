@@ -104,6 +104,7 @@ const convertWifiMode = function(mode, is5ghz) {
 const convertToDbm = function(model, rxPower) {
   switch (model) {
     case 'IGD':
+    case 'F660':
     case 'F670L':
     case 'F680':
     case 'G-140W-C':
@@ -134,6 +135,7 @@ const convertWifiBand = function(band, mode) {
 
 const convertWifiRate = function(model, rate) {
   switch (model) {
+    case 'F660':
     case 'F670L':
     case 'F680':
       return rate = parseInt(rate) / 1000;
@@ -250,8 +252,15 @@ const createRegistry = async function(req, permissions) {
   }
   let macAddr = data.common.mac.value.toUpperCase();
   let model = (data.common.model) ? data.common.model.value : '';
+  let wifi5Capable = false;
+  if (data.wifi5.ssid && data.wifi5.ssid.value) {
+    wifi5Capable = true;
+  }
   let ssid = data.wifi2.ssid.value.trim();
-  let ssid5ghz = data.wifi5.ssid.value.trim();
+  let ssid5ghz = '';
+  if (wifi5Capable) {
+    ssid5ghz = data.wifi5.ssid.value.trim();
+  }
   let isSsidPrefixEnabled = false;
   let createPrefixErrNotification = false;
   // -> 'new registry' scenario
@@ -265,7 +274,9 @@ const createRegistry = async function(req, permissions) {
   isSsidPrefixEnabled = checkResponse.enablePrefix;
   // cleaned ssid
   ssid = checkResponse.ssid2;
-  ssid5ghz = checkResponse.ssid5;
+  if (wifi5Capable) {
+    ssid5ghz = checkResponse.ssid5;
+  }
 
   // Check for an alternative UID to replace serial field
   let altUid;
@@ -301,6 +312,16 @@ const createRegistry = async function(req, permissions) {
     meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
   }
 
+  // Get channel information here to avoid ternary mess
+  let wifi2Channel;
+  let wifi5Channel;
+  if (data.wifi2.channel && data.wifi2.auto) {
+    wifi2Channel = (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value;
+  }
+  if (wifi5Capable && data.wifi5.channel && data.wifi5.auto) {
+    wifi5Channel = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value;
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -319,22 +340,22 @@ const createRegistry = async function(req, permissions) {
     wifi_ssid: ssid,
     wifi_bssid:
       (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
-    wifi_channel: (data.wifi2.auto) ? 'auto' : data.wifi2.channel.value,
+    wifi_channel: wifi2Channel,
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
       convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) : undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
-    wifi_is_5ghz_capable: true,
+    wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
     wifi_bssid_5ghz:
       (data.wifi5.bssid) ? data.wifi5.bssid.value.toUpperCase() : undefined,
-    wifi_channel_5ghz: (data.wifi5.auto) ? 'auto' : data.wifi5.channel.value,
+    wifi_channel_5ghz: wifi5Channel,
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
       convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) : undefined,
-    wifi_state_5ghz: (data.wifi5.enable.value) ? 1 : 0,
+    wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
@@ -671,7 +692,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   // Force a wifi password sync after a hard reset
-  if (device.recovering_tr069_reset) {
+  if (device.recovering_tr069_reset && device.wifi_is_5ghz_capable) {
     changes.wifi5.password = device.wifi_password_5ghz.trim();
     hasChanges = true;
   }
@@ -1049,7 +1070,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       name: 'getParameterValues',
       parameterNames: parameters,
     };
-    const result = await TasksAPI.addTask(acsID, task, true, 3000, []);
+    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (
       !result || !result.finished || result.task.name !== 'getParameterValues'
     ) {
@@ -1911,7 +1932,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
   }
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchDevicesFromGenie(mac, acsID);
   });
@@ -2010,7 +2031,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
     };
     try {
       let ret = await TasksAPI.addTask(acsID, delObjTask, true,
-        3000, [5000, 10000]);
+        10000, [5000, 10000]);
       if (!ret || !ret.finished||
         ret.task.name !== 'deleteObject') {
         throw new Error('delObject task error');
@@ -2046,7 +2067,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
     for (let i = 0; i < numObjsToCreate; i++) {
       try {
         let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished||
           ret.task.name !== 'addObject') {
           throw new Error('task error');
@@ -2181,7 +2202,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
     // TODO: Do something with task complete?
     if (result.task.name !== 'setParameterValues') return;
     if (result.finished && rebootAfterUpdate) {
@@ -2245,7 +2266,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished) {
           return;
         }
@@ -2259,7 +2280,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
     for (i = 0; i < rulesDiffLength; i++) {
       try {
         ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          3000, [5000, 10000]);
+          10000, [5000, 10000]);
         if (!ret || !ret.finished) {
           return;
         }
@@ -2286,7 +2307,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
     TasksAPI.addTask(acsID, updateTasks,
-        true, 3000, [5000, 10000]).catch((e) => {
+        true, 10000, [5000, 10000]).catch((e) => {
           console.error('[!] -> '+e.message+' in '+acsID);
         });
   }

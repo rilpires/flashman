@@ -32,6 +32,40 @@ const portForwardFullSupport = {
 };
 
 const tr069Devices = {
+  'F660': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V7.1.10P1T1': [],
+      'V7.1.10P1T2': ['V7.1.10P1N8'],
+      'V7.1.10P1N8': [],
+    },
+    port_forward_opts: {
+      'V7.1.10P1T1': portForwardNoRanges,
+      'V7.1.10P1T2': portForwardNoRanges,
+      'V7.1.10P1N8': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      pon_signal: true,
+      firmware_upgrade: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh_ssid_object_exists: true,
+  },
   'F670L': {
     vendor: 'Multilaser',
     versions_upgrade: {

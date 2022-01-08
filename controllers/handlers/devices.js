@@ -4,6 +4,7 @@ const DeviceVersion = require('../../models/device_version');
 const sio = require('../../sio');
 const util = require('./util');
 const Mutex = require('async-mutex').Mutex;
+const request = require('request-promise-native');
 
 let mutex = new Mutex();
 let mutexRelease = null;
