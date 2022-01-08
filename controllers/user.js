@@ -1020,6 +1020,7 @@ userController.certificateSearch = async (req, res) => {
       },
       {
         $project: {
+          _id: 1,
           name: 1,
           deviceCertifications: 1,
         },
@@ -1035,6 +1036,7 @@ userController.certificateSearch = async (req, res) => {
     .then((users) =>
       users.map((certifications) => {
         return {
+          _id: certifications._id,
           name: certifications.name,
           certifications: certifications.deviceCertifications,
         };

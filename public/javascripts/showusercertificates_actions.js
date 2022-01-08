@@ -91,7 +91,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
               certRow.append($('<td>').addClass('col-xs-1').append(
                 $('<input>').addClass('checkbox item-checkbox')
                 .attr('type', 'checkbox')
-                .attr('data-userid', certification._id)
+                .attr('data-userid', unwrappedCert._id)
                 .attr('data-timestamp', certification.localEpochTimestamp),
               ));
             }
@@ -113,7 +113,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                   $('<span>').html('&nbsp Detalhes'),
                 ).addClass('btn btn-sm btn-primary my-0')
                 .attr('type', 'button'),
-              ).attr('data-userid', certification._id)
+              ).attr('data-userid', unwrappedCert._id)
               .attr('data-username', unwrappedCert.name)
               .attr('data-timestamp', certification.localEpochTimestamp),
             );
