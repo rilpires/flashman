@@ -55,7 +55,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'IGD') return 'b,g';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -70,7 +70,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
-      if (ouiModelStr === 'IGD') return 'b,g,n';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -85,7 +85,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
-      if (ouiModelStr === 'IGD') return 'a,n';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -100,7 +100,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
-      if (ouiModelStr === 'IGD') return 'ac,n,a';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -616,6 +616,7 @@ const getModelFields = function(oui, model) {
       fields = getDefaultFields();
       break;
     case 'IGD':
+    case 'FW323DAC':
       message = '';
       fields = getIgdFields();
       break;

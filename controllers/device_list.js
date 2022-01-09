@@ -794,8 +794,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
             in the FastWireless FW323DAC model, check if is
             IGD, if have that firmware version and send to
             the table anim the 'right' model */
-          if (device.model === 'IGD' &&
-            device.version === 'V2.0.08-191129') {
+          if ((device.model === 'IGD' && device.version === 'V2.0.08-191129') ||
+               device.model === 'FW323DAC') {
             device.model_alias = 'FW323DAC';
           }
         } else {

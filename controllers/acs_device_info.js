@@ -104,6 +104,7 @@ const convertWifiMode = function(mode, is5ghz) {
 const convertToDbm = function(model, rxPower) {
   switch (model) {
     case 'IGD':
+    case 'FW323DAC':
     case 'F660':
     case 'F670L':
     case 'F680':
