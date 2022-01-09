@@ -770,13 +770,21 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
     device.pon_rxpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_rxpower.value);
+  } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
+    device.pon_rxpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_rxpower_epon.value);
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
     device.pon_txpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_txpower.value);
+  } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
+    device.pon_txpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_txpower_epon.value);
   }
-  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value &&
-      data.wan.pon_txpower && data.wan.pon_txpower.value) {
+  if (((data.wan.pon_rxpower && data.wan.pon_rxpower.value) ||
+       (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value)) &&
+      ((data.wan.pon_txpower && data.wan.pon_txpower.value) ||
+       (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value))) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
       device.pon_rxpower,
@@ -1637,8 +1645,17 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
-  let query = {_id: acsID};
+  let rxPowerFieldEpon = '';
+  let txPowerFieldEpon = '';
   let projection = rxPowerField + ',' + txPowerField;
+
+  if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+    rxPowerFieldEpon = fields.wan.pon_rxpower_epon;
+    txPowerFieldEpon = fields.wan.pon_txpower_epon;
+    projection += ',' + rxPowerFieldEpon + ',' + txPowerFieldEpon;
+  }
+
+  let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1656,12 +1673,19 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
         data = JSON.parse(data)[0];
       }
       let success = false;
-      if (checkForNestedKey(data, rxPowerField+'._value') &&
-          checkForNestedKey(data, txPowerField+'._value')) {
+      if (checkForNestedKey(data, rxPowerField + '._value') &&
+          checkForNestedKey(data, txPowerField + '._value')) {
         success = true;
         ponSignal = {
-          rxpower: getFromNestedKey(data, rxPowerField+'._value'),
-          txpower: getFromNestedKey(data, txPowerField+'._value'),
+          rxpower: getFromNestedKey(data, rxPowerField + '._value'),
+          txpower: getFromNestedKey(data, txPowerField + '._value'),
+        };
+      } else if (checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
+                 checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+        success = true;
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerFieldEpon + '._value'),
+          txpower: getFromNestedKey(data, txPowerFieldEpon + '._value'),
         };
       }
       if (success) {
