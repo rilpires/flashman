@@ -559,7 +559,9 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
 };
 
 // Used for mesh v1 update
-const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
+const getPossibleMeshTopology = function(
+  meshRouters, masterMac, slaves, meshMode,
+) {
   const numAnnouncedDevices = meshRouters[masterMac].length;
   if (numAnnouncedDevices < slaves.length) {
     // If master doesn't see all the slaves immediately return.
@@ -570,8 +572,12 @@ const getPossibleMeshTopology = function(meshRouters, masterMac, slaves) {
   const signalThreshold = -65;
   for (let i=0; i<numAnnouncedDevices; i++) {
     const meshRouter = meshRouters[masterMac][i];
-    if (meshRouter.signal < signalThreshold) {
+    if (meshRouter.signal < signalThreshold ||
+      (meshMode > 1 && meshRouter.iface == 1)
+    ) {
       // If master doesn't see all the slaves immediately return.
+      // If this is a WiFi mesh (meshMode > 1) and there is at least one cabled
+      // connection (iface == 1) immediately return.
       // Update won't be allowed.
       return {};
     }
@@ -632,11 +638,11 @@ const getMeshTopology = async function(
   } else {
     // Devices in mesh v1
     meshTopology = getPossibleMeshTopology(
-      meshRoutersData, master._id, master.mesh_slaves,
+      meshRoutersData, master._id, master.mesh_slaves, master.mesh_mode,
     );
     if (!meshTopology || Object.keys(meshTopology).length === 0) {
       console.log(`UPDATE: Mesh network of primary device ${master._id} `+
-      'doesn\'t have star topology');
+      'is invalid');
       deviceHandlers.syncUpdateScheduler(master._id);
     }
   }
