@@ -3,6 +3,8 @@ Command to update provision on genie:
   curl -X PUT -i 'http://localhost:7557/provisions/diagnostic' --data "$(cat controllers/external-genieacs/diagnostic-provision.js)"
 */
 
+log('Success: Diagnostics completed.');
+
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 
 let result = ext('devices-api', 'syncDeviceDiagnostics',

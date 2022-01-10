@@ -134,7 +134,7 @@ $(document).ready(function() {
               .removeClass((i, c)=>c.match(/fa\-.*/))
               .addClass('fa-3x fa-times');
               $('.btn-start-speed-test').prop('disabled', false);
-            }, 20*1000);
+            }, 30*1000);
           } else {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);
@@ -188,6 +188,19 @@ $(document).ready(function() {
         }
         $('.btn-start-speed-test').prop('disabled', false);
       }
+    }
+  });
+
+  socket.on('SPEEDESTIMATIVE', function(macaddr, data) {
+    // only do this if timeout has not happened yet
+    if (socketIoTimeout) return;
+    socketIoResponse = true;
+    if (($('#speed-test').data('bs.modal') || {})._isShown) {
+      $('#speed-test-strong-text').empty();
+      $('#speed-test-shown-text').html('Aguardando resultado...');
+      $('#speed-test-shown-icon')
+      .removeClass((i, c)=>c.match(/fa\-.*/))
+      .addClass('fa-3x fa-spinner fa-pulse');
     }
   });
 

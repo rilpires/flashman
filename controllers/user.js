@@ -3,6 +3,7 @@ const Role = require('../models/role');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
+const {Parser, transforms: {unwind}} = require('json2csv');
 
 let userController = {};
 
@@ -170,7 +171,8 @@ userController.postRole = function(req, res) {
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
-    grantFirmwareRestrictedUpgrade: req.body['grant-firmware-restricted-upgrade'],
+    grantFirmwareRestrictedUpgrade:
+      req.body['grant-firmware-restricted-upgrade'],
   });
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
@@ -378,7 +380,8 @@ userController.editRole = function(req, res) {
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
-    role.grantFirmwareRestrictedUpgrade = req.body['grant-firmware-restricted-upgrade'];
+    role.grantFirmwareRestrictedUpgrade =
+      req.body['grant-firmware-restricted-upgrade'];
 
     if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');
@@ -914,6 +917,380 @@ userController.settings = function(req, res) {
         }
       });
     });
+  });
+};
+
+userController.certificateSearch = async (req, res) => {
+  let firstDate = new Date(0); // 1/1/1970
+  let secondDate = new Date(); // Now
+  if (!isNaN(parseInt(req.body.first_date))) {
+    firstDate = new Date(parseInt(req.body.first_date));
+    firstDate.setUTCHours(0, 0, 0);
+  }
+  if (!isNaN(parseInt(req.body.second_date))) {
+    secondDate = new Date(parseInt(req.body.second_date));
+    secondDate.setUTCHours(23, 59, 59);
+  }
+
+  const name = typeof req.body.name === 'undefined' ? '' : req.body.name;
+  const deviceId = typeof req.body.device_id === 'undefined' ?
+    '' : req.body.device_id;
+  const csv = typeof req.body.csv === 'undefined' ?
+    false : req.body.csv === 'true' ? true : false;
+
+  let query = {};
+  query.deviceCertifications = {};
+  if (name.length >= 1) {
+    query.name = name;
+  } else {
+    query.name = '';
+  }
+  if (deviceId.length >= 1) {
+    query.mac = deviceId;
+  } else {
+    query.mac = '';
+  }
+
+  const deviceCertifications = await User
+    .aggregate([
+      {
+        $unwind: '$deviceCertifications',
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $or: [
+                {
+                  $eq: [
+                    '$name',
+                    query.name,
+                  ],
+                },
+                query.name.length === 0,
+              ],
+            },
+            then: '$$KEEP',
+            else: '$$PRUNE',
+          },
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $or: [
+                {
+                  $eq: [
+                    '$deviceCertifications.mac',
+                    query.mac,
+                  ],
+                },
+                query.mac.length === 0,
+              ],
+            },
+            then: '$$KEEP',
+            else: '$$PRUNE',
+          },
+        },
+      },
+      {
+        $redact: {
+          $cond: {
+            if: {
+              $and: [
+                {
+                  $gte: [
+                    '$deviceCertifications.localEpochTimestamp',
+                    firstDate.getTime(),
+                  ],
+                },
+                {
+                  $lte: [
+                    '$deviceCertifications.localEpochTimestamp',
+                    secondDate.getTime(),
+                  ],
+                },
+              ],
+            },
+            then: '$$KEEP',
+            else: '$$PRUNE',
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          deviceCertifications: 1,
+        },
+      },
+    ])
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to query users',
+      });
+    })
+    .then((users) =>
+      users.map((certifications) => {
+        return {
+          _id: certifications._id,
+          name: certifications.name,
+          certifications: certifications.deviceCertifications,
+        };
+      })
+      .flat());
+
+  if (csv && deviceCertifications.length >= 1) {
+    const fields = [
+      {label: 'Técnico', value: 'name', default: ''},
+      {label: 'Concluído', value: 'certifications.finished', default: ''},
+      {
+        label: 'Motivo de interrupção na certificação',
+        value: 'certifications.cancelReason',
+        default: '',
+      },
+      {label: 'Identificador único', value: 'certifications.mac', default: ''},
+      {label: 'CPE TR-069?', value: 'certifications.isOnu', default: ''},
+      {label: 'Modelo', value: 'certifications.routerModel', default: ''},
+      {
+        label: 'Versão do firmware da CPE',
+        value: 'certifications.routerVersion',
+        default: '',
+      },
+      {
+        label: 'Release/Versão do hardware',
+        value: 'certifications.routerRelease',
+        default: '',
+      },
+      {
+        label: 'Data do atendimento',
+        value: 'certifications.localEpochTimestamp',
+        default: '',
+      },
+      {
+        label: 'Foi diagnosticado',
+        value: 'certifications.didDiagnose',
+        default: '',
+      },
+      {
+        label: 'Nível de sinal recebido na CPE em dBm',
+        value: 'certifications.diagnostic.rxpower',
+        default: '',
+      },
+      {
+        label: 'Sinal recebido em dBm ok?',
+        value: 'certifications.diagnostic.pon',
+        default: '',
+      },
+      {
+        label: 'Diagnostico da WAN ok?',
+        value: 'certifications.diagnostic.wan',
+        default: '',
+      },
+      {
+        label: 'IPv4 ok?',
+        value: 'certifications.diagnostic.ipv4',
+        default: '',
+      },
+      {
+        label: 'IPv6 ok?',
+        value: 'certifications.diagnostic.ipv6',
+        default: '',
+      },
+      {
+        label: 'DNS ok?',
+        value: 'certifications.diagnostic.dns',
+        default: '',
+      },
+      {
+        label: 'Licenciamento ok?',
+        value: 'certifications.diagnostic.anlix',
+        default: '',
+      },
+      {
+        label: 'Registro no flashman ok?',
+        value: 'certifications.diagnostic.flashman',
+        default: '',
+      },
+      {
+        label: 'Configuração TR-069 foi aplicada?',
+        value: 'certifications.didConfigureTR069',
+        default: '',
+      },
+      {
+        label: 'Configuração Wi-Fi foi alterada?',
+        value: 'certifications.didConfigureWifi',
+        default: '',
+      },
+      {
+        label: 'Teste de velocidade habilitado',
+        value: 'certifications.diagnostic.speedtest',
+        default: '',
+      },
+      {
+        label: 'Resultado do teste de velocidade (Mbps)',
+        value: 'certifications.diagnostic.speedValue',
+        default: '',
+      },
+      {
+        label: 'Valor limite do teste de velocidade (Mbps)',
+        value: 'certifications.diagnostic.speedTestLimit',
+        default: '',
+      },
+      {
+        label: 'Tipo de conexão na WAN',
+        value: 'certifications.routerConnType',
+        default: '',
+      },
+      {
+        label: 'Usuario PPPoE',
+        value: 'certifications.pppoeUser',
+        default: '',
+      },
+      {
+        label: 'Modo bridge: Endereço de IP',
+        value: 'certifications.bridgeIP',
+        default: '',
+      },
+      {
+        label: 'Modo bridge: Gateway',
+        value: 'certifications.bridgeGateway',
+        default: '',
+      },
+      {
+        label: 'Modo bridge: Endereço de DNS',
+        value: 'certifications.bridgeDNS',
+        default: '',
+      },
+      {
+        label: 'É dual band?',
+        value: 'certifications.wifiConfig.hasFive',
+        default: '',
+      },
+      {
+        label: 'SSID 2.4GHz',
+        value: 'certifications.wifiConfig.two.ssid',
+        default: '',
+      },
+      {
+        label: 'Canal 2.4GHz',
+        value: 'certifications.wifiConfig.two.channel',
+        default: '',
+      },
+      {
+        label: 'Largura de banda 2.4GHz',
+        value: 'certifications.wifiConfig.two.band',
+        default: '',
+      },
+      {
+        label: 'Modo de operação 2.4GHz',
+        value: 'certifications.wifiConfig.two.mode',
+        default: '',
+      },
+      {
+        label: 'SSID 5GHz',
+        value: 'certifications.wifiConfig.five.ssid',
+        default: '',
+      },
+      {
+        label: 'Canal 5GHz',
+        value: 'certifications.wifiConfig.five.channel',
+        default: '',
+      },
+      {
+        label: 'Largura de banda 5GHz',
+        value: 'certifications.wifiConfig.five.band',
+        default: '',
+      },
+      {
+        label: 'Modo de operação 5GHz',
+        value: 'certifications.wifiConfig.five.mode',
+        default: '',
+      },
+      {
+        label: 'Mesh foi configurado?',
+        value: 'certifications.didConfigureMesh',
+        default: '',
+      },
+      {
+        label: 'Modo mesh configurado',
+        value: 'certifications.mesh.mode',
+        default: '',
+      },
+      {
+        label: 'CPF/CNPJ/Número de contrato',
+        value: 'certifications.contract',
+        default: '',
+      },
+      {
+        label: 'Observações',
+        value: 'certifications.observations',
+        default: '',
+      },
+
+      {
+        label: 'Latitude no momento da certificação',
+        value: 'certifications.latitude',
+        default: '',
+      },
+      {
+        label: 'Longitude no momento da certificação',
+        value: 'certifications.longitude',
+        default: '',
+      },
+    ];
+    const transforms = (item) => {
+      if (item.certifications.diagnostic) {
+        if (item.certifications.diagnostic.pon === -1) {
+          item.certifications.diagnostic.pon = '';
+        } else if (item.certifications.diagnostic.pon === 0) {
+          item.certifications.diagnostic.pon = 'ok';
+        } else if (item.certifications.diagnostic.pon >= 0) {
+          item.certifications.diagnostic.pon = 'erro';
+        }
+      }
+      if (item.certifications.mesh) {
+        if (item.certifications.mesh.mode === 0) {
+          item.certifications.mesh.mode = '';
+        } else if (item.certifications.mesh.mode === 1) {
+          item.certifications.mesh.mode = 'cabo';
+        } else if (item.certifications.mesh.mode === 2) {
+          item.certifications.mesh.mode = 'cabo e wi-fi 2.4';
+        } else if (item.certifications.mesh.mode === 3) {
+          item.certifications.mesh.mode = 'cabo e wi-fi 5.0';
+        } else if (item.certifications.mesh.mode === 4) {
+          item.certifications.mesh.mode = 'cabo e ambos wi-fi';
+        }
+      }
+      item.certifications.localEpochTimestamp =
+        new Date(item.certifications.localEpochTimestamp);
+      return item;
+    };
+    const json2csvParser = new Parser({fields, transforms});
+    const certificationsCsv = json2csvParser.parse(deviceCertifications);
+
+    return res
+      .set('Content-Type', 'text/csv')
+      .status(200)
+      .send(certificationsCsv);
+  } else if (deviceCertifications.length >= 1) {
+    return res.status(200).json({
+      success: true,
+      deviceCertifications: deviceCertifications,
+    });
+  } else if (deviceCertifications.length <= 0) {
+    return res.status(404).json({
+      success: true,
+      deviceCertifications: 'No certifications found!',
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    error: 'Error on query user certifications',
   });
 };
 

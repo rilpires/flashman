@@ -724,7 +724,6 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       }
     }
 
-
     return res.status(200).json({
       has_access: isDevOn,
       devices_timestamp: matchedDevice.last_devices_refresh,
@@ -733,9 +732,16 @@ appDeviceAPIController.refreshInfo = function(req, res) {
 };
 
 appDeviceAPIController.doSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
+  DeviceModel.findByMacOrSerial(req.body.id).exec(
+  async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(404).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
@@ -787,10 +793,18 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       }
 
       if (config && config.measureServerIP) {
-        // Send mqtt message to perform speedtest
-        let url = config.measureServerIP + ':' + config.measureServerPort;
-        mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
-                                         {name: 'App_Cliente'});
+         if (matchedDevice.use_tr069) {
+          matchedDevice.current_speedtest.timestamp = new Date();
+          matchedDevice.current_speedtest.user = 'App_Cliente';
+          matchedDevice.current_speedtest.stage = 'estimative';
+          await matchedDevice.save();
+          acsController.fireSpeedDiagnose(matchedDevice._id);
+        } else {
+          // Send mqtt message to perform speedtest
+          let url = config.measureServerIP + ':' + config.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
+                                           {name: 'App_Cliente'});
+        }
       }
     }, 1.5*1000);
   });
@@ -962,13 +976,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     prefixObj.name = checkResponse.prefix;
     prefixObj.grant = checkResponse.enablePrefix;
 
-    let resetBackup = {};
-    if (config.tr069) {
-      let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-      resetBackup = makeDeviceBackupData(matchedDevice, config, certFile);
-    }
-
-    return res.status(200).json({
+    let response = {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
@@ -982,8 +990,21 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       has_access: isDevOn,
       use_tr069: matchedDevice.use_tr069,
       mesh_mode: matchedDevice.mesh_mode,
-      resetBackup: resetBackup,
-    });
+    };
+
+    try {
+      // Only send bakcup for tr069 devices and valid config
+      if (matchedDevice.use_tr069 && config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(
+          matchedDevice, config, certFile,
+        );
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+
+    return res.status(200).json(response);
   });
 };
 
@@ -1345,16 +1366,19 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     let config = await Config.findOne(
       {is_default: true}, 'tr069',
     ).exec().catch((err) => err);
-    let resetBackup = {};
-    if (config.tr069) {
-      let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-      resetBackup = makeDeviceBackupData(device, config, certFile);
-    }
-    return res.status(200).json({
+    let response = {
       serialOk: true,
       hasPassword: (device.app_password) ? true : false, // cast to bool
-      resetBackup: resetBackup,
-    });
+    };
+    try {
+      if (config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(device, config, certFile);
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+    return res.status(200).json(response);
   });
 };
 

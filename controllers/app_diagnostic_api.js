@@ -1077,12 +1077,19 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
 };
 
 
-// ==========================================
-// Implementation of speed test routes methods on flashman.
+// =============================================================================
+// Implementation of speedtest route methods on flashman.
 diagAppAPIController.getSpeedTest = function(req, res) {
-  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+  DeviceModel.findByMacOrSerial(req.body.mac).exec(
+  async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(404).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
@@ -1102,7 +1109,7 @@ diagAppAPIController.getSpeedTest = function(req, res) {
     }
     let previous = matchedDevice.speedtest_results;
     reply.speedtest.previous = previous;
-    if (previous.length > 0) {
+    if (previous && previous.length > 0) {
       reply.last_uid = previous[previous.length - 1]._id;
     } else {
       reply.last_uid = '';
@@ -1120,9 +1127,16 @@ diagAppAPIController.getSpeedTest = function(req, res) {
 };
 
 diagAppAPIController.doSpeedTest = function(req, res) {
-  DeviceModel.findById(req.body.mac).lean().exec(async (err, matchedDevice) => {
+  DeviceModel.findByMacOrSerial(req.body.mac).exec(
+  async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(404).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
@@ -1132,7 +1146,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
     let lastMeasureID;
     let lastErrorID;
     let previous = matchedDevice.speedtest_results;
-    if (previous.length > 0) {
+    if (previous && previous.length > 0) {
       lastMeasureID = previous[previous.length - 1]._id;
     } else {
       lastMeasureID = '';
@@ -1165,14 +1179,22 @@ diagAppAPIController.doSpeedTest = function(req, res) {
       }
 
       if (config && config.measureServerIP) {
-        // Send mqtt message to perform speedtest
-        let url = config.measureServerIP + ':' + config.measureServerPort;
-        mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
-                                         {name: req.user.name});
+        if (matchedDevice.use_tr069) {
+          matchedDevice.current_speedtest.timestamp = new Date();
+          matchedDevice.current_speedtest.user = req.user.name;
+          matchedDevice.current_speedtest.stage = 'estimative';
+          await matchedDevice.save();
+          acsDeviceInfo.fireSpeedDiagnose(matchedDevice._id);
+        } else {
+          // Send mqtt message to perform speedtest
+          let url = config.measureServerIP + ':' + config.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
+                                           {name: req.user.name});
+        }
       }
     }, 1.5*1000);
   });
 };
-// ==========================================
+// =============================================================================
 
 module.exports = diagAppAPIController;
