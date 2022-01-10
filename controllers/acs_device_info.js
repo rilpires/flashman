@@ -1120,7 +1120,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        permissions = DeviceVersion.findByVersion(
+        let permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
           device.model,
@@ -1128,7 +1128,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+              device, model, data, diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
