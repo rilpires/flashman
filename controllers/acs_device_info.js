@@ -2316,12 +2316,12 @@ acsDeviceInfoController.updateInfo = async function(
       // We need to wait for task to be completed before we can return - caller
       // expects a return "true" after task is done
       let result = await TasksAPI.addTask(
-        acsID, task, true, 3000, [5000, 10000],
+        acsID, task, true, 10000, [5000, 10000],
       );
       return taskCallback(result);
     } else {
       // Simply call addTask and free up this context
-      TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], taskCallback);
+      TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], taskCallback);
     }
   } catch (e) {
     return;
