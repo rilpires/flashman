@@ -455,11 +455,7 @@ $(document).ready(function() {
   $(document).on('click', '.device-row-refresher', function(event) {
     let row = $(event.target).parents('tr');
     let deviceId = row.data('deviceid');
-    let isTR069 = row.data('isTr069');
     let upstatusCmd = 'upstatus';
-    if (isTR069) {
-      upstatusCmd += 'tr069';
-    }
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
@@ -613,7 +609,7 @@ $(document).ready(function() {
       slaves.forEach((slave)=>{
         if (!slaveHasRelease) return;
         if (!slave.releases.find((r)=>r.id===release.id)) {
-          // slaveHasRelease = false;
+          slaveHasRelease = false;
         }
       });
       if (!slaveHasRelease) continue;
@@ -764,11 +760,18 @@ $(document).ready(function() {
     '</button>';
   };
 
-  const buildFormSubmit = function(mesh=false) {
+  const buildDisassociateSlave = function() {
+    return '<button class="btn btn-danger btn-sm btn-disassoc m-0" type="button">'+
+      '<i class="fas fa-minus-circle"></i><span>&nbsp Desassociar</span>'+
+    '</button>';
+  };
+
+  const buildFormSubmit = function(index, mesh) {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
-    return '<div class="row">'+
+    return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+meshClass+'" type="submit">'+
+        '<button class="btn btn-primary mx-0 '+
+          meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
         '</button>'+
       '</div>'+
@@ -784,14 +787,14 @@ $(document).ready(function() {
       createdDateStr = 'Não disponível';
     } else {
       let createdDate = new Date(device.created_at);
-      createdDateStr = createdDate.toLocaleDateString(navigator.language,
+      createdDateStr = createdDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     if (isNaN(Date.parse(device.last_hardreset))) {
       resetDateStr = 'Não disponível';
     } else {
       let resetDate = new Date(device.last_hardreset);
-      resetDateStr = resetDate.toLocaleDateString(navigator.language,
+      resetDateStr = resetDate.toLocaleDateString('pt-BR',
         {hour: '2-digit', minute: '2-digit'});
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
@@ -872,6 +875,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>'+
+          (device.permissions.grantWifi5ghz ?
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
@@ -883,10 +887,6 @@ $(document).ready(function() {
                   '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
                   '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
                   '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                  '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
-                  '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
-                  '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
-                  '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
                   '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
                   '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
                   '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
@@ -897,6 +897,8 @@ $(document).ready(function() {
             '</div>'+
           '</div>':
           ''
+          ):
+          ''
         )+
       '</div>'+
       '<div class="col-6">'+
@@ -904,7 +906,8 @@ $(document).ready(function() {
         '<div class="md-form input-entry pt-1">'+
           '<label class="active">Modelo</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.model+'">'+
+          'disabled value="'+(device.model_alias?
+            device.model_alias:device.model)+'">'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
@@ -930,6 +933,7 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>'+
+          (device.permissions.grantWifi5ghz ?
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
@@ -944,6 +948,8 @@ $(document).ready(function() {
               '</div>'+
             '</div>'+
           '</div>':
+          ''
+          ):
           ''
         )+
       '</div>'+
@@ -980,8 +986,10 @@ $(document).ready(function() {
     // Channel change only possible in cable only mesh mode
     if ((!isSuperuser && grantWifiInfo <= 1) || (device.mesh_mode !== 1)) {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
     } else {
       aboutTab = aboutTab.replace(/\$REPLACE_WIFI_EN/g, '');
+      aboutTab = aboutTab.replace(/\$REPLACE_WIFI5_EN/g, '');
     }
     if (!device.permissions.grantWifiPowerHiddenIpv6Box ||
        (!isSuperuser && grantWifiInfo <= 1)) {
@@ -1154,6 +1162,7 @@ $(document).ready(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
+          let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1321,7 +1330,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += portForwardTr069Action;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && grantPingTest) {
+          if (grantPingTest) {
             sideMenu[idxMenu] += pingTestAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -1333,7 +1342,7 @@ $(document).ready(function() {
             sideMenu[idxMenu] += siteSurveyAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && (isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
+          if ((isSuperuser || grantSpeedMeasure >= 1) && grantDeviceSpeedTest) {
             sideMenu[idxMenu] += measureAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -1587,8 +1596,11 @@ $(document).ready(function() {
                   '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
-                  '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
-                  '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>'+
+                  (grantWifi5ghz ?
+                    '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
+                    '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>' :
+                    ''
+                  )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1597,6 +1609,7 @@ $(document).ready(function() {
           let opmodeTab = '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
+                (!isTR069 ?
                 '<div class="md-form">'+
                   '<div class="input-group">'+
                     '<div class="md-selectfield form-control my-0">'+
@@ -1608,8 +1621,11 @@ $(document).ready(function() {
                       '</select>'+
                     '</div>'+
                   '</div>'+
-                '</div>'+
+                '</div>':
+                ''
+                )+
                 '$REPLACE_MESH_MODE'+
+                (!isTR069 ?
                 '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
                   '<div class="custom-control custom-checkbox pb-3">'+
                     '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
@@ -1632,8 +1648,11 @@ $(document).ready(function() {
                       'Flashbox na sua rede deve possuir um servidor DHCP tanto para IPv4 quanto para IPv6'+
                     '</span>'+
                   '</div>'+
-                '</div>'+
+                '</div>':
+                ''
+                )+
               '</div>'+
+              (!isTR069 ?
               '<div class="col-6">'+
                 '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
                   '<div class="md-form input-entry">'+
@@ -1668,7 +1687,9 @@ $(document).ready(function() {
                     '</span>'+
                   '</div>'+
                 '</div>'+
-              '</div>'+
+              '</div>':
+              ''
+              )+
             '</div>'+
           '</div>';
           if (!isSuperuser && !grantOpmodeEdit) {
@@ -1710,7 +1731,7 @@ $(document).ready(function() {
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          if (grantMeshMode) {
+          if (grantMeshMode || grantMeshV2PrimMode) {
             selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
             meshForm = meshForm.replace(selectTarget, 'selected="selected"');
             meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
@@ -1789,16 +1810,12 @@ $(document).ready(function() {
                         '<div class="md-selectfield form-control my-0">'+
                           '<label class="active">Canal do Wi-Fi</label>'+
                           '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
-                          '$REPLACE_WIFI5_EN>'+
+                          '$REPLACE_WIFI5_EN $REPLACE_WIFI5_CHANNEL_EN>'+
                             '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
                             '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
                             '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
                             '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
                             '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                            '<option value="52" $REPLACE_SELECTED_CHANNEL5_52$>52</option>'+
-                            '<option value="56" $REPLACE_SELECTED_CHANNEL5_56$>56</option>'+
-                            '<option value="60" $REPLACE_SELECTED_CHANNEL5_60$>60</option>'+
-                            '<option value="64" $REPLACE_SELECTED_CHANNEL5_64$>64</option>'+
                             '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
                             '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
                             '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
@@ -2060,6 +2077,12 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
           }
+          if (device.mesh_mode > 1 && grantMeshV2PrimMode) {
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g,
+                                      'disabled');
+          } else {
+            wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g, '');
+          }
           if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
@@ -2067,10 +2090,13 @@ $(document).ready(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
-          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
+              (device.mesh_mode > 1 && grantMeshV2PrimMode)
+          ) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
-            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN',
+                                      'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', '');
@@ -2252,7 +2278,7 @@ $(document).ready(function() {
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
           }
-          if (!isTR069 && grantOpmode) {
+          if (grantOpmode) {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', modeEdit);
           } else {
             formRow = formRow.replace('$REPLACE_MODE_EDIT', '');
@@ -2274,7 +2300,7 @@ $(document).ready(function() {
             formRow = formRow.replace('$REPLACE_DEVICE_REMOVE', removeDevice);
           }
           if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
-            let editButtonRow = buildFormSubmit();
+            let editButtonRow = buildFormSubmit(index, false);
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', editButtonRow);
           } else {
             formRow = formRow.replace('$REPLACE_EDIT_BUTTON', '');
@@ -2290,19 +2316,26 @@ $(document).ready(function() {
               let statusClasses = buildStatusClasses(slaveDev);
               let statusAttributes = buildStatusAttributes(slaveDev);
               let notifications = buildNotification();
-              let removeButton = '<td>'+buildRemoveDevice(true)+'</td>';
               let infoRow = buildTableRowInfo(slaveDev, false, true, index);
               infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
               infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
               infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
-              infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
               if (isSuperuser || grantNotificationPopups) {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
               } else {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
+              }
+              if (grantMeshV2PrimMode) {
+                let disassocSlaveButton = '<td>' +
+                                          buildDisassociateSlave() + '</td>';
+                infoRow = infoRow.replace('$REPLACE_UPGRADE',
+                                          disassocSlaveButton);
+              } else {
+                let removeButton = '<td>' + buildRemoveDevice(true) + '</td>';
+                infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
               }
               finalHtml += infoRow;
 
@@ -2327,7 +2360,7 @@ $(document).ready(function() {
               }
               slaveIdx++;
             });
-            let editButtonRow = buildFormSubmit(true);
+            let editButtonRow = buildFormSubmit(index, true);
             let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
             let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
               '<td class="grey lighten-5" colspan="13">'+
@@ -2477,24 +2510,6 @@ $(document).ready(function() {
         });
         // Important: include and initialize socket.io first using socket var
         socket.on('UPSTATUS', function(macaddr, data) {
-          let row = $('[id="' + macaddr + '"]');
-          if (data.sysuptime) {
-            row.find('.device-sys-up-time')
-            .removeClass('grey-text pending-update')
-            .html(
-              secondsTimeSpanToHMS(parseInt(data.sysuptime)),
-            );
-          }
-          if (data.wanuptime) {
-            row.find('.device-wan-up-time')
-            .removeClass('grey-text pending-update')
-            .html(
-              secondsTimeSpanToHMS(parseInt(data.wanuptime)),
-            );
-          }
-        });
-        // Important: include and initialize socket.io first using socket var
-        socket.on('UPSTATUSTR069', function(macaddr, data) {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
@@ -2674,6 +2689,54 @@ $(document).ready(function() {
               title: 'Um erro ocorreu',
               text: 'Não foi possível restaurar o CPE para o firmware de '+
                     'fábrica. Por favor tente novamente.',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '.btn-disassoc', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    swal({
+      type: 'warning',
+      title: 'Atenção!',
+      text: 'Tem certeza que deseja desassociar esse roteador do mesh?',
+      confirmButtonText: 'OK',
+      confirmButtonColor: '#4db6ac',
+      cancelButtonText: 'Cancelar',
+      cancelButtonColor: '#f2ab63',
+      showCancelButton: true,
+    }).then((result)=>{
+      if (result.value) {
+        $.ajax({
+          url: '/devicelist/disassociate',
+          type: 'post',
+          traditional: true,
+          data: {slave: id},
+          success: function(res) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: (res.success ? 'success':'error'),
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: 'OK',
+            });
+          },
+          error: function(xhr, status, error) {
+            let pageNum = parseInt($('#curr-page-link').html());
+            let filterList = $('#devices-search-input').val();
+            filterList += ',' + columnToSort + ',' + columnSortType;
+            loadDevicesTable(pageNum, filterList);
+            swal({
+              type: 'error',
+              title: 'Erro interno',
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });

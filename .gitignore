@@ -1,6 +1,7 @@
 # Created by https://www.gitignore.io/api/code,vim,node
 
 # Custom
+package-lock.json
 secret.json
 /public/firmwares
 /tmp
@@ -94,5 +95,8 @@ tags
 
 # jest files
 globalConfig.json
+
+# Flashman OpenAPI spec
+flashman_spec.json
 
 # End of https://www.gitignore.io/api/code,vim,node

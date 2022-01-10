@@ -3,6 +3,7 @@ const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
 const deviceHandlers = require('./devices');
+const DevicesAPI = require('../external-genieacs/devices-api');
 
 let meshHandlers = {};
 
@@ -214,6 +215,164 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
       }
     });
   });
+};
+
+meshHandlers.buildTR069Changes = function(device, targetMode, wifiRadioState,
+  meshChannel, meshChannel5GHz, populateSSIDObjects) {
+  let acsID = device.acs_id;
+  let splitID = acsID.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
+  const beaconType = DevicesAPI.getBeaconTypeByModel(model);
+  let changes = {mesh2: {}, mesh5: {}, wifi2: {}, wifi5: {}};
+  switch (targetMode) {
+    case 0:
+    case 1:
+      changes.mesh2.enable = false;
+      changes.mesh5.enable = false;
+      break;
+    case 2:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.channel = meshChannel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.beacon_type = beaconType;
+      changes.mesh2.auto = false;
+      changes.mesh2.enable = true;
+      changes.mesh5.enable = false;
+
+      // When enabling Wi-Fi set beacon type
+      changes.wifi2.enable = wifiRadioState;
+      changes.wifi2.beacon_type = beaconType;
+      // Fix channel to avoid channel jumps
+      changes.wifi2.channel = meshChannel;
+      break;
+    case 3:
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.channel = meshChannel5GHz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
+      changes.mesh5.auto = false;
+      changes.mesh5.enable = true;
+      changes.mesh2.enable = false;
+
+      // When enabling Wi-Fi set beacon type
+      changes.wifi5.enable = wifiRadioState;
+      changes.wifi5.beacon_type = beaconType;
+      // For best performance and avoiding DFS issues
+      // all APs must work on a single 5GHz non-DFS channel
+      changes.wifi5.channel = meshChannel5GHz;
+      break;
+    case 4:
+      changes.mesh2.ssid = device.mesh_id;
+      changes.mesh2.password = device.mesh_key;
+      changes.mesh2.channel = meshChannel;
+      changes.mesh2.mode = device.wifi_mode;
+      changes.mesh2.enable = true;
+      changes.mesh2.advertise = false;
+      changes.mesh2.encryption = 'AESEncryption';
+      changes.mesh2.beacon_type = beaconType;
+      changes.mesh2.auto = false;
+      changes.mesh5.ssid = device.mesh_id;
+      changes.mesh5.password = device.mesh_key;
+      changes.mesh5.channel = meshChannel5GHz;
+      changes.mesh5.mode = device.wifi_mode_5ghz;
+      changes.mesh5.advertise = false;
+      changes.mesh5.encryption = 'AESEncryption';
+      changes.mesh5.beacon_type = beaconType;
+      changes.mesh5.auto = false;
+      changes.mesh5.enable = true;
+
+      // When enabling Wi-Fi set beacon type
+      changes.wifi5.enable = wifiRadioState;
+      changes.wifi5.beacon_type = beaconType;
+      changes.wifi2.enable = wifiRadioState;
+      changes.wifi2.beacon_type = beaconType;
+      // For best performance and avoiding DFS issues
+      // all APs must work on a single 5GHz non-DFS channel
+      changes.wifi5.channel = meshChannel5GHz;
+      // Fix channel to avoid channel jumps
+      changes.wifi2.channel = meshChannel;
+      break;
+    default:
+  }
+  // New VAP object has been created, we must change the following fields
+  if (populateSSIDObjects) {
+    changes.mesh2.rates = '1,2,5.5,6,11,12,18,24,36,48,54';
+    changes.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WiFi.Radio.1';
+    changes.mesh5.rates = '36,40,44,48,52,56,60,64,100,104,'+
+    '108,112,116,120,124,128';
+    changes.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WiFi.Radio.2';
+  }
+  return changes;
+};
+
+/*
+  This returns the lists of BSSID of devices
+  in the mesh network
+*/
+meshHandlers.generateBSSIDLists = async function(device) {
+  let emptyBssidObj = {mesh2: [], mesh5: []};
+  if (!device.mesh_master && !device.mesh_slaves) {
+    // not in a mesh network
+    return emptyBssidObj;
+  }
+  let matchedMaster;
+  if (!device.mesh_master) {
+    matchedMaster = device;
+  } else {
+    let masterMacAddr = device.mesh_master.toUpperCase();
+    matchedMaster = await DeviceModel.findById(masterMacAddr,
+    'mesh_master mesh_slaves mesh_mode bssid_mesh2 bssid_mesh5')
+    .catch((err) => {
+      console.log('DB access error');
+      return emptyBssidObj;
+    });
+    if (!matchedMaster) {
+      return emptyBssidObj;
+    }
+  }
+  if (matchedMaster.mesh_mode === 0) {
+    return emptyBssidObj;
+  }
+  if (matchedMaster.mesh_master) {
+    return emptyBssidObj;
+  }
+  let bssids2 = [];
+  let bssids5 = [];
+  /*
+    if device is slave then we push master bssids
+    if not, we don't push anything
+  */
+  if (device.mesh_master) {
+    bssids2.push(matchedMaster.bssid_mesh2);
+    bssids5.push(matchedMaster.bssid_mesh5);
+  }
+  for (let i=0; i<matchedMaster.mesh_slaves.length; i++) {
+    const slaveMac = matchedMaster.mesh_slaves[i].toUpperCase();
+    // We don't want to add it's own mesh BSSIDs
+    if (slaveMac === device._id.toUpperCase()) {
+      continue;
+    }
+    let matchedSlave = await DeviceModel.findById(
+    slaveMac, 'bssid_mesh2 bssid_mesh5')
+    .catch((err) => {
+      console.log('DB access error');
+      return emptyBssidObj;
+    });
+    if (matchedSlave) {
+      bssids2.push(matchedSlave.bssid_mesh2);
+      bssids5.push(matchedSlave.bssid_mesh5);
+    }
+  }
+  return {
+    mesh2: bssids2,
+    mesh5: bssids5,
+  };
 };
 
 module.exports = meshHandlers;

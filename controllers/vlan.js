@@ -335,9 +335,15 @@ vlanController.removeVlanProfile = async function(req, res) {
     return res.json({success: false, type: 'danger', message: rej.message});
   });
   if (config) {
-    if (typeof req.body.ids === 'string') {
-      req.body.ids = [req.body.ids];
+    if (typeof req.body.ids === 'string' ||
+     typeof req.body.ids === 'number') {
+      req.body.ids = [req.body.ids.toString()];
+    } else if (!Array.isArray(req.body.ids)) {
+      return res.json({success: false, type: 'danger',
+        message: 'Formato errado'});
     }
+
+    req.body.ids = req.body.ids.map((i) => i.toString());
 
     config.vlans_profiles = config.vlans_profiles.filter(
       (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
@@ -376,7 +382,12 @@ vlanController.updateVlans = async function(req, res) {
   });
   if (device) {
     let is_vlans_valid = true;
-    req.body.vlans = JSON.parse(req.body.vlans);
+    if (util.isJsonString(req.body.vlans)) {
+      req.body.vlans = JSON.parse(req.body.vlans);
+    } else {
+      return res.json({success: false, type: 'danger',
+                       message: 'Formato de VLANs inválido!'});
+    }
 
     if (Array.isArray(req.body.vlans)) {
       for (let v of req.body.vlans) {
@@ -422,28 +433,43 @@ vlanController.updateVlans = async function(req, res) {
 
 vlanController.convertFlashmanVlan = function(model, vlanObj) {
   let digestedVlans = {};
-
-  if (typeof vlanObj === 'undefined') {
-    vlanObj = '';
-  } else {
-    try {
-      vlanObj = JSON.parse(vlanObj);
-    } catch(e) {
-      vlanObj = '';
-    }
-  }
-
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
 
   let lan_ports = deviceInfo['lan_ports'];
   let wan_port = deviceInfo['wan_port'];
   let cpu_port = deviceInfo['cpu_port'];
+  let max_vid = deviceInfo['max_vid'];
+  let qtd_ports = deviceInfo['num_usable_lan_ports'];
   let vlan_of_lan = '1';
   let vlan_of_wan = '2';
 
+  if (!vlanObj) {
+    vlanObj = '';
+  } else {
+    try {
+      vlanObj = JSON.parse(vlanObj);
+    } catch (e) {
+      vlanObj = '';
+    }
+  }
+  // sanity check of vlanObj
+  if (Array.isArray(vlanObj)) {
+    let isInShape = vlanObj.every((v) => {
+      let z = false;
+      let a = !!v.vlan_id && !!v.port;
+      let b = v.vlan_id <= max_vid;
+      let c = Number.isInteger(v.vlan_id);
+      let d = v.port <= qtd_ports;
+      let e = Number.isInteger(v.port);
+      z = a && b && c && d && e;
+      return z;
+    });
+    if (!isInShape) vlanObj = '';
+  } else vlanObj = '';
+
   // on well behavior object of vlan that needs to treat others vlans
   let aux_idx;
-  if ((typeof vlanObj !== 'undefined') && (vlanObj.length > 0)) {
+  if (vlanObj.length > 0) {
     // initialize keys values with empty string
     for (let i = 0; i < vlanObj.length; i++) {
       aux_idx = ((vlanObj[i].vlan_id == 1) ? vlan_of_lan : vlanObj[i].vlan_id);
@@ -476,7 +502,8 @@ vlanController.convertFlashmanVlan = function(model, vlanObj) {
       digestedVlans[key] += wan_port.toString()+'t';
     }
   }
-  digestedVlans[vlan_of_wan] = wan_port.toString() + ' ' + cpu_port.toString() + 't';
+  digestedVlans[vlan_of_wan] = wan_port.toString() +
+    ' ' + cpu_port.toString() + 't';
 
   return digestedVlans;
 };
@@ -499,7 +526,8 @@ vlanController.retrieveVlansToDevice = function(device) {
     hash: hashVlan,
   };
 };
-
+/* This function clean outcome vlan from router
+  that profile is no more recorded in flashman */
 vlanController.getValidVlan = async function(model, convertedVlan) {
   let lanVlan = 1;
   let filteredVlan = [];
@@ -520,6 +548,9 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
       } else {
         vlanParsed.vlan_id = parseInt(vlanParsed.vlan_id);
       }
+      if (!vlanParsed.port) {
+        vlanParsed.port = i+1;
+      }
       filteredVlan.push(JSON.stringify(vlanParsed));
     }
   } else {
@@ -533,8 +564,24 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
 };
 
 vlanController.convertDeviceVlan = function(model, vlanObj) {
-  let receivedVlan = JSON.parse(vlanObj);
+  let defaultVlan = ['{"port":1,"vlan_id":1}',
+    '{"port":2,"vlan_id":1}',
+    '{"port":3,"vlan_id":1}',
+    '{"port":4,"vlan_id":1}'];
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
+  let maxVid = deviceInfo['max_vid'];
+  let qtdPorts = deviceInfo['num_usable_lan_ports'];
+  let receivedVlan;
+  if (!vlanObj) {
+    return defaultVlan;
+  } else {
+    try {
+      receivedVlan = JSON.parse(vlanObj);
+    } catch (e) {
+      return defaultVlan;
+    }
+  }
+  if (!(receivedVlan instanceof Object)) return defaultVlan;
   let lanPorts = deviceInfo.lan_ports;
   let wanPort = deviceInfo.wan_port;
   let cpuPort = deviceInfo.cpu_port;
@@ -559,6 +606,7 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
       ports = ports.split(' ');
       if (ports.includes(lanPorts[i].toString())) {
         vid = parseInt(vids[j]);
+        if(!vid) vid = 1;
         break;
       }
     }

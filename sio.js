@@ -9,8 +9,9 @@ const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
-const SIO_NOTIFICATION_UP_STATUS_TR069 = 'UPSTATUSTR069';
+const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
+const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
 const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
 const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
@@ -274,6 +275,9 @@ sio.anlixSendPingTestNotifications = function(macaddr, pingdata) {
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
+  } else {
+    console.log('Ping results for device ' +
+    macaddr + ' received successfully.');
   }
   return found;
 };
@@ -298,22 +302,22 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   return found;
 };
 
-sio.anlixWaitForUpStatusTr069Notification = function(session, macaddr) {
+sio.anlixWaitForWanBytesNotification = function(session, macaddr) {
   if (!session) {
     return false;
   }
   if (!macaddr) {
     return false;
   }
-  registerNotification(session, SIO_NOTIFICATION_UP_STATUS_TR069, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_WAN_BYTES, macaddr);
   return true;
 };
 
-sio.anlixSendUpStatusTr069Notification = function(macaddr, upStatusData) {
+sio.anlixSendWanBytesNotification = function(macaddr, upStatusData) {
   if (!macaddr) {
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_UP_STATUS_TR069,
+  let found = emitNotification(SIO_NOTIFICATION_WAN_BYTES,
                                macaddr, upStatusData, macaddr);
   return found;
 };
@@ -359,6 +363,7 @@ sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
   }
 
   registerNotification(session, SIO_NOTIFICATION_SPEED_TEST, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_SPEED_ESTIMATIVE, macaddr);
   return true;
 };
 
@@ -369,11 +374,20 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
                 'to an invalid mac address!');
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
+  let found;
+  if (testdata.stage && testdata.stage == 'estimative_finished') {
+    found = emitNotification(SIO_NOTIFICATION_SPEED_ESTIMATIVE,
                                macaddr, testdata, macaddr);
+  } else {
+    found = emitNotification(SIO_NOTIFICATION_SPEED_TEST,
+                               macaddr, testdata, macaddr);
+  }
   if (!found) {
     debug('SIO: NO Session found for ' +
                 macaddr + '! Discarding message...');
+  } else {
+    console.log('Speedtest results for device ' +
+    macaddr + ' received successfully.');
   }
   return found;
 };
@@ -385,7 +399,7 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
     return false;
   }
   if (!deviceid) {
-    debug('ERROR: SIO: Tried to add genie task ' 
+    debug('ERROR: SIO: Tried to add genie task '
       +'notification with an invalid deviceid!');
     return false;
   }
@@ -396,7 +410,7 @@ sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
 
 sio.anlixSendGenieAcsTaskNotifications = function(deviceid, taskInfo) {
   if (!deviceid) {
-    debug('ERROR: SIO: Tried to send genie task notification ' 
+    debug('ERROR: SIO: Tried to send genie task notification '
       +`to an invalid deviceid! ${deviceid}`);
     return false;
   }

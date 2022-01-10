@@ -31,10 +31,10 @@ const updateConfiguration = function(fields) {
   // Request field updates from the CPE
   let result = {};
   Object.keys(fields).forEach((key)=>{
-    let resp = declare(fields[key], {value: now});
+    let resp = declare(fields[key], {value: now, writable: now});
     if (resp.value) {
       let value = resp.value[0];
-      result[key] = value;
+      result[key] = {value: value, writable: resp.writable};
     }
   });
   return result;
@@ -67,6 +67,8 @@ let data = {
   lan: updateConfiguration(fields.lan),
   wifi2: updateConfiguration(fields.wifi2),
   wifi5: updateConfiguration(fields.wifi5),
+  mesh2: updateConfiguration(fields.mesh2),
+  mesh5: updateConfiguration(fields.mesh5),
 };
 args = {acs_id: genieID, data: data};
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));

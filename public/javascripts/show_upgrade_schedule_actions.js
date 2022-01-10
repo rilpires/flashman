@@ -189,7 +189,7 @@ $(document).ready(function() {
           // Build options dropdown
           let dropdown = $('#releases-dropdown');
           dropdown.html('');
-          res.releases.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
+          res.releaseInfo.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
             // Skip stock firmwares from being listed
             if (release.id !== '9999-aix' && release.id !== 'STOCK') {
               dropdown.append(
@@ -203,51 +203,28 @@ $(document).ready(function() {
             $('#warning-releases').hide();
             $('#list-missing-models').hide();
             $('#list-onus').hide();
+            $('#list-mesh').hide();
             let release = event.originalEvent.target.text;
             $('#selected-release').html(release);
-            let missingModels = res.releases.find((r)=>r.id===release).models;
-            let intersections = res.intersections;
-            let missingCount = 0;
-            let onuCount = 0;
+            let missingModels = res.releaseInfo.find(
+              (r)=>(r.id === release),
+            ).missingModels;
+            let totalCount = res.totalCount;
+            let noUpgradeCount = totalCount - res.releaseInfo.find(
+              (r)=>(r.id === release),
+            ).count;
+            let onuCount = res.onuCount;
+            let meshIncompatibles = res.releaseInfo.find(
+              (r)=>(r.id === release),
+            ).meshIncompatibles;
             $('#warning-missing-models').html('');
             missingModels.forEach((model)=>{
-              console.log(model)
-              if (!model.isOnu) {
-                console.log('got here')
-                $('#warning-missing-models').append(
-                  $('<li>').html(model.model),
-                );
-              }
-              let count = model.count;
-              // Discount mesh intersections
-              intersections = intersections.filter((intersection)=>{
-                if (model.model in intersection) {
-                  Object.keys(intersection).forEach((imodel)=>{
-                    if (model.model === imodel) return; // discard same model
-                    if (!missingModels.find((m)=>m.model===imodel)) {
-                      // Only discard intersection models if the other model
-                      // is not in the missing models
-                      count += intersection[imodel];
-                    }
-                  });
-                  return false;
-                }
-                return true;
-              });
-              if (model.isOnu) onuCount += count;
-              else missingCount += count;
+              $('#warning-missing-models').append(
+                $('<li>').html(model),
+              );
             });
-            let totalCount;
-            if (useCsv) {
-              totalCount = $('#csv-result-count').html();
-            } else if (useAll) {
-              totalCount = $('#allDevicesLabel').html();
-            } else {
-              totalCount = $('#someDevicesLabel').html();
-            }
             $('#warning-prevTotal').html(totalCount);
-            console.log('onuCount', onuCount)
-            totalCount = parseInt(totalCount) - missingCount - onuCount;
+            totalCount = parseInt(totalCount) - noUpgradeCount;
             if (totalCount > 0) {
               $('#warning-newTotal').html(' somente ' + totalCount);
               $('#how-btn-next').prop('disabled', false);
@@ -255,14 +232,18 @@ $(document).ready(function() {
               $('#how-btn-next').prop('disabled', true);
               $('#warning-newTotal').html(' nenhum');
             }
-            if (missingCount + onuCount > 0) {
+            if (noUpgradeCount > 0) {
               $('#warning-releases').show();
-              if (missingCount > 0) {
+              if (noUpgradeCount - onuCount - meshIncompatibles > 0) {
                 $('#list-missing-models').show();
               }
               if (onuCount > 0) {
                 $('#onu-count').html(onuCount+' ');
                 $('#list-onus').show();
+              }
+              if (meshIncompatibles > 0) {
+                $('#mesh-count').html(meshIncompatibles+' ');
+                $('#list-mesh').show();
               }
             } else {
               $('#how-btn-next').prop('disabled', false);

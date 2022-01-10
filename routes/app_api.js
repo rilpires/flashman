@@ -14,6 +14,8 @@ router.route('/refreshinfo').post(appAPIController.refreshInfo);
 router.route('/speedtest').post(appAPIController.doSpeedtest);
 router.route('/wps').post(appAPIController.activateWpsButton);
 router.route('/validateserial').post(appAPIController.validateDeviceSerial);
+router.route('/backupreset').post(appAPIController.fetchBackupForAppReset);
+router.route('/signalresetrecover').post(appAPIController.signalResetRecover);
 router.route('/get/logininfo').post(appAPIController.appGetLoginInfo);
 router.route('/get/devices').post(appAPIController.appGetDevices);
 router.route('/get/version').post(appAPIController.appGetVersion);
@@ -30,6 +32,19 @@ router.route('/set/blacklist').post(appAPIController.appSetBlacklist);
 router.route('/set/whitelist').post(appAPIController.appSetWhitelist);
 router.route('/set/editdevice').post(appAPIController.appSetDeviceInfo);
 router.route('/set/portforward').post(appAPIController.appSetPortForward);
+
+
+router.route('/diagnostic/get/speedtest').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.getSpeedTest,
+);
+
+router.route('/diagnostic/speedtest').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.doSpeedTest,
+);
 
 router.route('/diagnostic/login').post(
   authController.ensureAPIAccess,
@@ -76,7 +91,7 @@ router.route('/diagnostic/meshstatus').post(
 router.route('/diagnostic/meshremove').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.removeMeshSlave,
+  diagAPIController.removeSlaveMeshV1,
 );
 
 router.route('/diagnostic/certificate').post(
@@ -91,10 +106,22 @@ router.route('/diagnostic/getConfig').post(
   diagAPIController.fetchOnuConfig,
 );
 
-router.route('/diagnostic/addslave').post(
+router.route('/diagnostic/assocslave').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.addSlave,
+  diagAPIController.associateSlaveMeshV2,
+);
+
+router.route('/diagnostic/poolflashmanfield').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.poolFlashmanField,
+);
+
+router.route('/diagnostic/disassocslave').post(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantDiagAppAccess'),
+  diagAPIController.disassociateSlaveMeshV2,
 );
 
 module.exports = router;

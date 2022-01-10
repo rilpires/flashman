@@ -7,7 +7,6 @@ const ConfigModel = require('../../models/config');
 const utils = require('../utils');
 
 describe('Technician App API', () => {
-
   test('Must fail if request has invalid body', async () => {
     // Request
     const bodyEmpty = {};
@@ -33,6 +32,7 @@ describe('Technician App API', () => {
       requiredIpv6: false,
       requiredDns: true,
       requiredFlashman: true,
+      requiredSpeedTest: false,
     }};
     // Mock return of DB
     const returnConfigMock = jest.fn().mockReturnValue({
@@ -69,6 +69,7 @@ describe('Technician App API', () => {
       requiredIpv6: false,
       requiredDns: true,
       requiredFlashman: true,
+      requiredSpeedTest: false,
     };
     // Mock return of DB
     const returnConfigMock = jest.fn().mockReturnValue({
@@ -106,6 +107,7 @@ describe('Technician App API', () => {
       requiredIpv6: false,
       requiredDns: true,
       requiredFlashman: true,
+      requiredSpeedTest: false,
     };
     // Mock return of DB
     const returnConfigMock = jest.fn().mockReturnValue({

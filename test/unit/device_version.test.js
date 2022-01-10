@@ -1,4 +1,3 @@
-const mongoose = require('mongoose');
 const DeviceVersion = require('../../models/device_version');
 
 const noRangePortForwawrdOpts = {
@@ -15,34 +14,14 @@ const noAsymRangePortForwawrdOpts = {
  rangeAsymmetric: false,
 };
 
+const fullSupportPortForwawrdOpts = {
+  simpleSymmetric: true,
+  simpleAsymmetric: true,
+  rangeSymmetric: true,
+  rangeAsymmetric: true,
+};
+
 describe('DeviceVersion API', () => {
-  beforeAll(async (done) => {
-    await mongoose.connect(
-      'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/flashman-tests',
-      {
-        useNewUrlParser: true,
-        serverSelectionTimeoutMS: 2 ** 31 - 1,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
-      },
-      (err) => {
-        if (err) {
-          console.error(err);
-          process.exit(1);
-        }
-      },
-    );
-    done();
-  });
-
-  afterAll(async (done) => {
-    await mongoose.connection.close();
-    done();
-  });
-
-  // Flashbox tests
-
   test('findByVersion on 0.30.0', () => {
     let permissions = DeviceVersion.findByVersion('0.30.0', true, 'ARCHERC5V4');
 
@@ -131,14 +110,15 @@ describe('DeviceVersion API', () => {
     );
 
     [permissions123].forEach((permission)=>{
-      expect(permission.grantPortForward).toStrictEqual(false);
+      expect(permission.grantPortForward).toStrictEqual(true);
       expect(permission.grantUpnp).toStrictEqual(false);
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(false);
       expect(permission.grantSpeedTestLimit).toStrictEqual(0);
       expect(permission.grantBlockDevices).toStrictEqual(false);
       expect(permission.grantPonSignalSupport).toStrictEqual(true);
-      expect(permission.grantPortForwardOpts).toStrictEqual(undefined);
+      expect(permission.grantPortForwardOpts).toStrictEqual(
+        fullSupportPortForwawrdOpts);
     });
   });
 
@@ -165,14 +145,15 @@ describe('DeviceVersion API', () => {
     );
 
     [permissionsV3].forEach((permission)=>{
-      expect(permission.grantPortForward).toStrictEqual(false);
+      expect(permission.grantPortForward).toStrictEqual(true);
       expect(permission.grantUpnp).toStrictEqual(false);
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(false);
       expect(permission.grantSpeedTestLimit).toStrictEqual(0);
       expect(permission.grantBlockDevices).toStrictEqual(false);
       expect(permission.grantPonSignalSupport).toStrictEqual(true);
-      expect(permission.grantPortForwardOpts).toStrictEqual(undefined);
+      expect(permission.grantPortForwardOpts).toStrictEqual(
+        noAsymRangePortForwawrdOpts);
     });
   });
 });

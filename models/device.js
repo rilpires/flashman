@@ -10,11 +10,14 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
-  serial_tr069: String,
-  alt_uid_tr069: String, // Used when serial is not reliable for crossing data
+  serial_tr069: {type: String, sparse: true},
+  // Used when serial is not reliable for crossing data
+  alt_uid_tr069: {type: String, sparse: true},
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   last_tr069_sync: Date,
+  // Used to signal inform to sync all data after recovering from hard reset
+  recovering_tr069_reset: {type: Boolean, default: false},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -36,6 +39,8 @@ let deviceSchema = new Schema({
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
+  wan_vlan_id: Number,
+  wan_mtu: Number,
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,
@@ -102,8 +107,10 @@ let deviceSchema = new Schema({
   }],
   port_mapping: [{
     ip: String,
-    external_port_start: {type: Number, required: true, min: 1, max: 65535, unique: true},
-    external_port_end: {type: Number, required: true, min: 1, max: 65535, unique: true},
+    external_port_start: {type: Number, required: true, min: 1,
+      max: 65535},
+    external_port_end: {type: Number, required: true, min: 1,
+      max: 65535},
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
@@ -130,6 +137,8 @@ let deviceSchema = new Schema({
   mesh_slaves: [String], // Used for master only (Slave is null)
   mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
   mesh_key: String, // Security key in mesh network (key for backhaul)
+  bssid_mesh2: String, // BSSID of 2.4GHz mesh Virtual AP
+  bssid_mesh5: String, // Same as above but for 5GHz
   mesh_routers: [{ // Info from a point of view of each AP connected to mesh
     mac: String,
     last_seen: {type: Date},
@@ -213,13 +222,25 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
+  // The object bellow is used to save the user that requested the speedtest 
+  // and to indicate what time the speedtest was requested. Te timestamp is
+  // used to compare which diagnostic was requested.
+  // If current_speedtest.timestamp > speedtest_results.timestamp, then the
+  // speedtest was requested, otherwise, the ping test was requested.
+  current_speedtest: {
+    user: String,
+    timestamp: Date,
+    stage: {type: String, default: ''},
+    band_estimative: {type: Number, default: 0},
+  },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  last_location_date: {type: Date},
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
   vlan: [{
-    port: {type: Number, required: true, min: 1, max: 32, unique: true},
+    port: {type: Number, required: true, min: 1, max: 32},
     // restricted to this range of value by the definition of 802.1q protocol
     vlan_id: {type: Number, required: true, min: 1, max: 4095, default: 1},
   }],
@@ -248,6 +269,34 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   return this.ap_survey.find(function(device, idx) {
     return device.mac == mac;
   });
+};
+
+deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
+  let query;
+  if (Array.isArray(id)) {
+    let regexList = [];
+    id.forEach((i) => {
+      let regex = new RegExp(i, 'i');
+      regexList.push(regex);
+    });
+    query = {'$in': regexList};
+  } else if (id !== undefined) {
+    let regex = new RegExp(id, 'i');
+    query = {'$regex': regex};
+  } else {
+    return [];
+  }
+  if (useLean) {
+    return this.find({$or: [
+      {'_id': query}, // mac address
+      {'serial_tr069': query}, // serial
+      {'alt_uid_tr069': query}]}).lean(); // mac address
+  } else {
+    return this.find({$or: [
+      {'_id': query}, // mac address
+      {'serial_tr069': query}, // serial
+      {'alt_uid_tr069': query}]}); // mac address
+  }
 };
 
 // Hooks for device traps notifications

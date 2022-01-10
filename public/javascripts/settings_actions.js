@@ -53,13 +53,23 @@ window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
   let validator = new Validator();
 
-  let validField = validator.
-    validateSSIDPrefix(ssidPrefixInput.value);
+  let validField = validator
+    .validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
 
   if (!validField.valid) {
     setSsidPrefixError();
   } else {
     resetSsidPrefixError();
+  }
+};
+
+window.changeSsidPrefixInputDisableness = function(value) {
+  let ssidPrefixBox = document.getElementById('ssid-prefix-box');
+  if (value.checked) {
+    ssidPrefixBox.style.display = 'block';
+  } else {
+    ssidPrefixBox.style.display = 'none';
   }
 };
 
@@ -96,7 +106,8 @@ let configFlashman = function(event) {
     allValid = false; // we won't send the configurations.
   }
   if (getConfigStorage('isClientPayingPersonalizationApp')) {
-    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value,
+      $('#is-ssid-prefix-enabled').is(':checked'));
     // check ssid prefix value
     if (ssidPrefixInput.validity.valid && !validField.valid) {
       setSsidPrefixError();
@@ -151,6 +162,11 @@ $(document).ready(function() {
         $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe)
                                   .siblings('label').addClass('active');
       }
+      if (typeof resp.bypassMqttSecretCheck !== 'undefined') {
+        $('select[name=bypass-mqtt-secret-check] option[value=' +
+          resp.bypassMqttSecretCheck + ']')
+        .attr('selected', 'selected');
+      }
       if (resp.measureServerIP) {
         $('#measure-server-ip').val(resp.measureServerIP)
                                .siblings('label').addClass('active');
@@ -187,6 +203,11 @@ $(document).ready(function() {
       if (typeof resp.wanStepRequired !== 'undefined') {
         $('select[name=wan-step-required] option[value=' +
           resp.wanStepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.speedTestStepRequired !== 'undefined') {
+        $('select[name=speedtest-step-required] option[value=' +
+          resp.speedTestStepRequired + ']')
         .attr('selected', 'selected');
       }
       if (typeof resp.ipv4StepRequired !== 'undefined') {

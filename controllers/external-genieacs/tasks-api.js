@@ -200,11 +200,11 @@ const checkPreset = function(preset) {
 
 /* sends a put request with a given 'provision' to genieacs and returns the
  genie json response parsed to javascript object. may throw unhandled errors */
-genie.putProvision = async function(script) {
+genie.putProvision = async function(script, provisionName) {
   script = script.slice(0, -1); // Remove EOF
   return genie.request({
     method: 'PUT', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/provisions/flashman',
+    path: '/provisions/'+provisionName,
     headers: {
       'Content-Type': 'application/javascript',
       'Content-Length': Buffer.byteLength(script),
@@ -441,7 +441,7 @@ const deleteOldTasks = async function(tasksToDelete, deviceid) {
         +` genieacs rest api, for device ${deviceid}.`);
     } else if (results[i].value.data === 'Task not found') { // if it resolved
     // to GenieACS saying task wasn't found.
-      throw new Error(`Task not foud when deleting an old task in genieAcs `
+      throw new Error(`Task not found when deleting an old task in genieAcs `
         +`rest api, for device ${deviceid}.`);
     }
     /* successful deletes don't need to be noted. they are expected to be
@@ -553,13 +553,15 @@ const sendTasks = async function(deviceid, tasks, timeout,
     if (results[i].reason) {
       // if this task is the last one, it means it is the brand new task.
       if (i === results.length-1) {
-        throw new Error(results[i].reason.code
-         + ` when adding new task in genieacs rest api, for device `
-         +`${deviceid}.`);
+        return {finished: false, task: task, source: 'request',
+          message: results[i].reason.code
+          + ` when adding new task in genieacs rest api, for device `
+          +`${deviceid}.`};
       } else {// if it's not the brand new task.
-        throw new Error(results[i].reason.code
-         + ` when adding a joined task, in substitution of older tasks, in `
-         +`genieacs rest api, for device ${deviceid}.`);
+        return {finished: false, task: task, source: 'request',
+          message: results[i].reason.code
+          + ` when adding a joined task, in substitution of older tasks, in `
+          +`genieacs rest api, for device ${deviceid}.`};
       }
     }
 
@@ -568,11 +570,19 @@ const sendTasks = async function(deviceid, tasks, timeout,
     //  response.statusMessage, response.data) // for debugging.
     if (response.statusMessage === 'No such device') {/* if Genie responded
     saying device doesn't exist. */
-      throw new Error(`Device ${deviceid} doesn't exist.`);
+      return {finished: false, task: task, source: 'request',
+       message: `Device ${deviceid} doesn't exist.`};
     }
 
-    let task = JSON.parse(response.data); // parse task to javascript object.
-    if (response.statusCode !== 200) {/* if Genie didn't respond with
+    let task;
+    try {
+      task = JSON.parse(response.data); // parse task to javascript object.
+    } catch (e) {
+      task = '';
+      console.log('Wrong task at '+deviceid+ ' as '+response.data);
+    }
+    if (task != '' && response.statusCode !== 200) {
+      /* if Genie didn't respond with
       code 200, it scheduled the task for latter. */
       if (shouldRequestConnection) pendingTasks.push(task);
       /* if we are waiting for genie acs to connect with the device we add
@@ -642,20 +652,25 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
 genie.addTask = async function(deviceid, task, shouldRequestConnection,
-  timeout=5000, watchTimes=[60000, 120000], callback=null) {
+  timeout=10000, watchTimes=[60000, 120000], callback=null) {
   // checking device id.
   if (!deviceid || deviceid.constructor !== String) {
-    throw new Error('device id not valid. Received:', deviceid);
+    return {finished: false, task: task, source: 'request',
+       message: 'device id not valid. Received:', deviceid};
   }
   // checking task format and data types.
-  if (!checkTask(task)) throw new Error('task not valid: '+JSON.stringify(task));
+  if (!checkTask(task)) {
+    return {finished: false, task: task, source: 'request',
+      message: 'task not valid: '+JSON.stringify(task)};
+  }
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
   let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
   /* rejected value will be error object in case of connection errors.*/
-    throw new Error(`${e.code} when getting old tasks from genieacs rest api, `
-     +`for device ${deviceid}.`); // return error code in error message.
+    return {finished: false, task: task, source: 'request',
+       message: `${e.code} when getting old tasks from genieacs rest api, `
+     +`for device ${deviceid}.`}; // return error code in error message.
   });
   // console.log("tasks found", tasks)
   // adding the new task as one more older task to tasks array.
@@ -680,13 +695,18 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
     if (Object.keys(tasksToDelete).length > 0) {
       // there will be tasks to be deleted.
-      await deleteOldTasks(tasksToDelete, deviceid);
+      try {
+        await deleteOldTasks(tasksToDelete, deviceid);
+      } catch (e) {
+        console.log('Warning (tasks-api): ' + e.message);
+      }
     }
   }
 
-  // console.log("sending tasks", tasks, ", timeout:", timeout,
-  // ", watchTimes:", watchTimes)
-  // sending the new task and the old tasks being substituted, then return result.
+  /* console.log("sending tasks", tasks, ", timeout:", timeout,
+   ", watchTimes:", watchTimes)
+   sending the new task and the old tasks being substituted,
+   then return result. */
   return sendTasks(deviceid, tasks, timeout, shouldRequestConnection,
    watchTimes, callback);
 };

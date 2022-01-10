@@ -5,7 +5,7 @@ let configSchema = new mongoose.Schema({
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   hasMajorUpdate: {type: Boolean, default: false},
-  pppoePassLength: {type: Number, default: 1},
+  pppoePassLength: {type: Number, default: 1, min: 1, max: 64},
   measureServerIP: {type: String},
   measureServerPort: {type: Number, default: 80},
   messaging_configs: {
@@ -39,6 +39,7 @@ let configSchema = new mongoose.Schema({
     // - CPE must be present at MQTT list of connected devices if it is a
     //   CPE using Flashbox firmware
     flashman_step_required: {type: Boolean, required: true, default: true},
+    speedtest_step_required: {type: Boolean, default: false},
   },
   data_collecting: {
     is_active: Boolean,
@@ -105,6 +106,9 @@ let configSchema = new mongoose.Schema({
   }],
   isSsidPrefixEnabled: {type: Boolean},
   ssidPrefix: {type: String},
+  licenseApiSecret: {type: String, default: ''},
+  company: {type: String, default: ''},
+  mqtt_secret_bypass: {type: Boolean, default: false},
 });
 
 let config = mongoose.model('config', configSchema);
