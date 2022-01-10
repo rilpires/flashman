@@ -375,7 +375,7 @@ $(document).ready(function() {
   ) {
     if (iter < 0) {
       if (!update && masterStatus != 6 && masterStatus != 7 &&
-        masterStatus != 20 && masterStatus != 30
+        masterStatus != 20
       ) {
         // status 6 and 7 are special statuses that can happen before do_update
         // is activated
@@ -413,17 +413,19 @@ $(document).ready(function() {
             errorAnchor.attr('data-status', masterStatus);
           }
           errorAnchor.removeClass('d-none');
-        } else if (status == 0 || status == 10 || masterStatus == 20 ||
-          masterStatus == 30
-        ) {
+        } else if (status == 0 || status == 10 || masterStatus == 20) {
           upgradeStatus.find('.status-waiting').removeClass('d-none');
           let slaveCount = row.data('slave-count');
           let tooltip = 'Atualizando CPE...';
           if (slaveCount) {
-            if (masterStatus == 30 || masterStatus == 20) {
-              tooltip = 'Coletando e processando topologia';
+            if (masterStatus == 20) {
+              tooltip = 'Coletando topologia';
             } else {
-              const currentDeviceNum = slaveCount + 1 - remain + 1;
+              if (remain === 0) {
+                // mesh v1 -> v2 update
+                tooltip = 'Esperando dispositivos ficarem online';
+              }
+              const currentDeviceNum = (slaveCount + 1 - remain) + 1;
               tooltip =
                 `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
             }
@@ -717,9 +719,9 @@ $(document).ready(function() {
       let meshParams = `data-progress="${currentDeviceNum}" 
         data-mac="${currentDevice}" data-status="${masterStatus}"`;
       upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
-    } else if (!inProgress && (masterStatus == 20 || masterStatus == 30)) {
-      // Status 20 and 30 are only saved on master
-      tooltipMsg = 'Coletando e processando topologia';
+    } else if (!inProgress && masterStatus == 20) {
+      // Status 20 is only saved on master
+      tooltipMsg = 'Coletando topologia';
       upgradeCol = upgradeCol.replace('$STATUS_0', '');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -743,12 +745,10 @@ $(document).ready(function() {
         } else {
           upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
         }
-      } else if (status == 0 || status == 10 || masterStatus == 20 ||
-        masterStatus == 30
-      ) {
-        // Status 20 and 30 are only saved on master
-        if (masterStatus == 30 || masterStatus == 20) {
-          tooltipMsg = 'Coletando e processando topologia';
+      } else if (status == 0 || status == 10 || masterStatus == 20) {
+        // Status 20 is only saved on master
+        if (masterStatus == 20) {
+          tooltipMsg = 'Coletando topologia';
         }
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
