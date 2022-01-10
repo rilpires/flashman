@@ -3074,9 +3074,14 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
+    let taskParameterNames = [rxPowerField, txPowerField];
+    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+      taskParameterNames.push(fields.wan.pon_rxpower_epon);
+      taskParameterNames.push(fields.wan.pon_txpower_epon);
+    }
     let task = {
       name: 'getParameterValues',
-      parameterNames: [rxPowerField, txPowerField],
+      parameterNames: taskParameterNames,
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
