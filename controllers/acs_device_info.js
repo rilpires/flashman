@@ -2300,14 +2300,17 @@ acsDeviceInfoController.updateInfo = async function(
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result) => {
-    // TODO: Do something with task complete?
-    if (result.task.name !== 'setParameterValues') return;
-    if (result.finished && rebootAfterUpdate) {
+  let taskCallback = (result)=>{
+    if (
+      !result || !result.finished || result.task.name !== 'setParametervalues'
+    ) {
+      return;
+    }
+    if (rebootAfterUpdate) {
       acsDeviceInfoController.rebootDevice(device);
     }
     return true;
-  });
+  };
   try {
     if (awaitUpdate) {
       // We need to wait for task to be completed before we can return - caller
