@@ -1726,48 +1726,9 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    let randomString = parseInt(Math.random()*10000000).toString();
-    let now = new Date();
-    let formattedDate = '' + now.getDate();
-    formattedDate += '/' + (now.getMonth()+1);
-    formattedDate += '/' + now.getFullYear();
-    formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
-    formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
+    deviceHandlers.storeSpeedtestResult(matchedDevice, req.body);
 
-    if (!req.body.downSpeed) {
-      req.body.downSpeed = 'Error';
-      matchedDevice.last_speedtest_error.unique_id = randomString;
-      matchedDevice.last_speedtest_error.error = 'Error';
-    } else if (req.body.downSpeed.includes('503 Server')) {
-      req.body.downSpeed = 'Unavailable';
-      matchedDevice.last_speedtest_error.unique_id = randomString;
-      matchedDevice.last_speedtest_error.error = 'Unavailable';
-    } else if (req.body.downSpeed.includes('Mbps')) {
-      matchedDevice.speedtest_results.push({
-        down_speed: req.body.downSpeed,
-        user: req.body.user,
-        timestamp: formattedDate,
-      });
-      if (matchedDevice.speedtest_results.length > 5) {
-        matchedDevice.speedtest_results.shift();
-      }
-      let permissions = DeviceVersion.findByVersion(
-        matchedDevice.version,
-        matchedDevice.wifi_is_5ghz_capable,
-        matchedDevice.model,
-      );
-      req.body.limit = permissions.grantSpeedTestLimit;
-    } else {
-      req.body.downSpeed = 'Error';
-      matchedDevice.last_speedtest_error.unique_id = randomString;
-      matchedDevice.last_speedtest_error.error = 'Error';
-    }
-
-    matchedDevice.save();
-    sio.anlixSendSpeedTestNotifications(id, req.body);
-    console.log('Speedtest results for device ' +
-      id + ' received successfully.');
-
+    // We don't need to wait
     return res.status(200).json({processed: 1});
   });
 };

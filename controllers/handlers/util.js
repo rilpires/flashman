@@ -89,4 +89,17 @@ utilHandlers.escapeRegExp = function(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+utilHandlers.parseDate = function(dateString) {
+  'dd/mm/aaaa hh:mm'
+  let dayAndTime = dateString.split(' ');
+  let dayMonthAndYear = dayAndTime[0].split('/');
+  let hourAndMinute = dayAndTime[1].split(':');
+  let day = parseInt(dayMonthAndYear[0], 10);
+  let month = parseInt(dayMonthAndYear[1], 10);
+  let year = parseInt(dayMonthAndYear[2], 10);
+  let hour = parseInt(hourAndMinute[0], 10);
+  let minute = parseInt(hourAndMinute[1], 10);
+  return new Date(year, month-1, day, hour, minute, 0, 0);
+}
+
 module.exports = utilHandlers;

@@ -794,8 +794,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
             in the FastWireless FW323DAC model, check if is
             IGD, if have that firmware version and send to
             the table anim the 'right' model */
-          if (device.model === 'IGD' &&
-            device.version === 'V2.0.08-191129') {
+          if ((device.model === 'IGD' && device.version === 'V2.0.08-191129') ||
+               device.model === 'FW323DAC') {
             device.model_alias = 'FW323DAC';
           }
         } else {
@@ -1142,7 +1142,9 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          return deviceListController.doSpeedTest(req, res);
+          if (device) {
+            return deviceListController.doSpeedTest(req, res);
+          }
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
@@ -2903,7 +2905,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não encontrado',
       });
     }
-    if (!isDevOn) {
+    if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
         message: 'CPE não está online!',
@@ -2920,7 +2922,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não suporta este comando',
       });
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -2938,7 +2940,15 @@ deviceListController.doSpeedTest = function(req, res) {
       if (req.sessionID && sio.anlixConnections[req.sessionID]) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
-      mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      if (matchedDevice.use_tr069) {
+        matchedDevice.current_speedtest.timestamp = new Date();
+        matchedDevice.current_speedtest.user = req.user.name;
+        matchedDevice.current_speedtest.stage = 'estimative';
+        await matchedDevice.save();
+        acsDeviceInfo.fireSpeedDiagnose(mac);
+      } else {
+        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      }
       return res.status(200).json({
         success: true,
       });
@@ -3064,9 +3074,14 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
+    let taskParameterNames = [rxPowerField, txPowerField];
+    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+      taskParameterNames.push(fields.wan.pon_rxpower_epon);
+      taskParameterNames.push(fields.wan.pon_txpower_epon);
+    }
     let task = {
       name: 'getParameterValues',
-      parameterNames: [rxPowerField, txPowerField],
+      parameterNames: taskParameterNames,
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);

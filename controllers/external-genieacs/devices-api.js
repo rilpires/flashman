@@ -55,13 +55,14 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'IGD') return 'b,g';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
         return 'g';
       } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
+      else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
@@ -69,7 +70,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
-      if (ouiModelStr === 'IGD') return 'b,g,n';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -77,13 +78,14 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'F670L') return 'b,g,n';
+      else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
-      if (ouiModelStr === 'IGD') return 'a,n';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -91,13 +93,14 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11na';
       else if (ouiModelStr === 'Huawei') return 'a/n';
       else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
-      if (ouiModelStr === 'IGD') return 'ac,n,a';
+      if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (
         ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
       ) {
@@ -105,6 +108,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11ac';
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
+      else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n,ac';
@@ -305,8 +309,10 @@ const getDefaultFields = function() {
         download_url: 'InternetGatewayDevice.DownloadDiagnostics.DownloadURL',
         bgn_time: 'InternetGatewayDevice.DownloadDiagnostics.BOMTime',
         end_time: 'InternetGatewayDevice.DownloadDiagnostics.EOMTime',
-        total_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TotalBytesReceived',
+        test_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TestBytesReceived',
         down_transports: 'InternetGatewayDevice.DownloadDiagnostics.DownloadTransports',
+        full_load_bytes_rec: 'InternetGatewayDevice.DownloadDiagnostics.TestBytesReceivedUnderFullLoading',
+        full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.PeriodOfFullLoading',
       },
     },
   };
@@ -411,6 +417,7 @@ const getZTEFields = function(model) {
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
       break;
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
       fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_ZTE-COM_WebUserInfo.AdminName';
@@ -526,8 +533,12 @@ const getIgdFields = function() {
     'WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_rxpower_epon = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_EponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wan.pon_txpower_epon = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_EponInterfaceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid;
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.bssid = fields.wifi5.bssid;
@@ -586,6 +597,7 @@ const getModelFields = function(oui, model) {
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
     case 'ZXHN%20H198A%20V3%2E0': // URI encoded
     case 'ZXHN%20H199A': // URI encoded
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
       message = '';
@@ -608,6 +620,7 @@ const getModelFields = function(oui, model) {
       fields = getDefaultFields();
       break;
     case 'IGD':
+    case 'FW323DAC':
       message = '';
       fields = getIgdFields();
       break;
@@ -635,6 +648,7 @@ const getBeaconTypeByModel = function(model) {
     case 'GONUAC001': // Greatek Stavix G421R
       ret = 'WPA2';
       break;
+    case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2
