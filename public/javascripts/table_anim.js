@@ -424,10 +424,11 @@ $(document).ready(function() {
               if (remain === 0) {
                 // mesh v1 -> v2 update
                 tooltip = 'Esperando dispositivos ficarem online';
+              } else {
+                const currentDeviceNum = (slaveCount + 1 - remain) + 1;
+                tooltip =
+                  `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
               }
-              const currentDeviceNum = (slaveCount + 1 - remain) + 1;
-              tooltip =
-                `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
             }
           }
           upgradeStatus.find('.status-waiting').attr('title', tooltip);
