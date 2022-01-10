@@ -767,24 +767,27 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       data.wan.sent_bytes.value,
     );
   }
+  let isPonRxValOk = false;
+  let isPonTxValOk = false;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
     device.pon_rxpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_rxpower.value);
+    isPonRxValOk = true;
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
     device.pon_rxpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_rxpower_epon.value);
+    isPonRxValOk = true;
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
     device.pon_txpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_txpower.value);
+    isPonTxValOk = true;
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
     device.pon_txpower = convertToDbm(data.common.model.value,
                                       data.wan.pon_txpower_epon.value);
+    isPonTxValOk = true;
   }
-  if (((data.wan.pon_rxpower && data.wan.pon_rxpower.value) ||
-       (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value)) &&
-      ((data.wan.pon_txpower && data.wan.pon_txpower.value) ||
-       (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value))) {
+  if (isPonRxValOk && isPonTxValOk) {
     device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
       device.pon_rxpower,
