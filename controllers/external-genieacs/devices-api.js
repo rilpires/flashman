@@ -68,6 +68,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
+      else if (ouiModelStr === 'Router') return 'g-only';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
@@ -83,6 +84,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
+      else if (ouiModelStr === 'Router') return 'b,g,n';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
@@ -98,6 +100,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
+      else if (ouiModelStr === 'Router') return 'a,n';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
@@ -113,6 +116,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
+      else if (ouiModelStr === 'Router') return 'ac,a,n';
       else return '11ac';
     default:
       return '';
@@ -582,6 +586,26 @@ const getIgdFields = function() {
   return fields;
 };
 
+const getDLinkields = function() {
+  let fields = getDefaultFields();
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '3');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '3');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '3');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '3');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '3');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '3');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '3');
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_DLINK_OperatingChannelBandwidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+  // fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
+  return fields;
+};
+
+
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -623,6 +647,11 @@ const getModelFields = function(oui, model) {
     case 'FW323DAC':
       message = '';
       fields = getIgdFields();
+      break;
+    case 'Router':
+    case 'DIR-842':
+      message = '';
+      fields = getDLinkields();
       break;
     default:
       success = false;
