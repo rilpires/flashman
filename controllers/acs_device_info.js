@@ -910,7 +910,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         }
       }
     }
-    if (model == 'GONUAC001' || model == 'xPON' || model == 'IGD') {
+    if (
+      model == 'GONUAC001' ||
+      model == 'xPON' ||
+      model == 'IGD' ||
+      model === 'MP_G421R'
+    ) {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin_user = config.tr069.web_login;
