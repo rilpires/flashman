@@ -210,13 +210,13 @@ userController.postRole = function(req, res) {
   });
 };
 
-userController.getUsers = function(req, res) {
-  User.find(function(err, users) {
-    if (err) {
-      return res.json({success: false, type: 'danger', message: err});
-    }
+userController.getUsers = async function(req, res) {
+  try {
+    let users = await User.find().lean().exec();
     return res.json({success: true, type: 'success', users: users});
-  });
+  } catch (err) {
+    return res.json({success: false, type: 'danger', message: err});
+  }
 };
 
 userController.getUserById = function(req, res) {
