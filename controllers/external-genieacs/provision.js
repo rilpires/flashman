@@ -42,11 +42,19 @@ const updateConfiguration = function(fields) {
 
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
+let modelName = declare('DeviceID.ModelName', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
+let firmwareVersion = declare('DeviceID.SoftwareVersion', {value: 1}).value[0];
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
-let args = {oui: oui, model: modelClass, acs_id: genieID};
+let args = {
+  oui: oui,
+  model: modelClass,
+  modelName: modelName,
+  firmwareVersion: firmwareVersion,
+  acs_id: genieID,
+};
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 
 if (!result.success || !result.fields) {

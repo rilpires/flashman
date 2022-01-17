@@ -954,7 +954,8 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchLogFromGenie = function(success, mac, acsID) {
+const fetchLogFromGenie = function(success, device, acsID) {
+  let mac = device._id;
   if (!success) {
     // Return with log unavailable
     let data = 'Log não disponível!';
@@ -962,9 +963,7 @@ const fetchLogFromGenie = function(success, mac, acsID) {
     sio.anlixSendLiveLogNotifications(mac, compressedLog);
     return;
   }
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
+  let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
   let options = {
@@ -1058,7 +1057,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     },
   };
 
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
 
   for (let masterKey in diagNecessaryKeys) {
     if (
@@ -1168,9 +1167,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
             message: 'Erro ao encontrar dispositivo'};
   }
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
 
   let diagnIPPingDiagnostics = fields.diagnostics.ping.root;
   let diagnStateField = fields.diagnostics.ping.diag_state;
@@ -1320,9 +1317,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
             message: 'Erro ao encontrar dispositivo'};
   }
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
 
   let diagnSpeedtestDiagnostics = fields.diagnostics.speedtest.root;
   let diagnStateField = fields.diagnostics.speedtest.diag_state;
@@ -1474,10 +1469,9 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchWanBytesFromGenie = function(mac, acsID) {
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+const fetchWanBytesFromGenie = function(device, acsID) {
+  let mac = device._id;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
@@ -1524,10 +1518,9 @@ const fetchWanBytesFromGenie = function(mac, acsID) {
   req.end();
 };
 
-const fetchUpStatusFromGenie = function(mac, acsID) {
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+const fetchUpStatusFromGenie = function(device, acsID) {
+  let mac = device._id;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let upTimeField = fields.wan.uptime.replace('*', 1);
   let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
@@ -1597,11 +1590,10 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   req.end();
 };
 
-const checkMeshObjsCreated = function(acsID) {
+const checkMeshObjsCreated = function(device) {
   return new Promise((resolve, reject) => {
-    let splitID = acsID.split('-');
-    let model = splitID.slice(1, splitID.length-1).join('-');
-    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let acsID = device.acs_id;
+    let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
     let query = {_id: acsID};
     let projection = `${fields.mesh2.ssid}, ${fields.mesh5.ssid}`;
     let path =
@@ -1642,10 +1634,9 @@ const checkMeshObjsCreated = function(acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
-acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
+  let mac = device._id;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let rxPowerFieldEpon = '';
@@ -1716,10 +1707,11 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(mac, acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchDevicesFromGenie = function(mac, acsID) {
+const fetchDevicesFromGenie = function(device, acsID) {
+  let mac = device._id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   assocField = assocField.split('.').slice(0, -2).join('.');
@@ -1879,16 +1871,14 @@ acsDeviceInfoController.requestLogs = function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let logField = DevicesAPI.getModelFields(splitID[0], model).fields.log;
+  let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
   let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
   };
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
-    fetchLogFromGenie(result.finished, mac, acsID);
+    fetchLogFromGenie(result.finished, device, acsID);
   });
 };
 
@@ -1897,9 +1887,7 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let task = {
@@ -1911,18 +1899,15 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   };
   TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchWanBytesFromGenie(mac, acsID);
+    if (result.finished) fetchWanBytesFromGenie(device, acsID);
   });
 };
 
 acsDeviceInfoController.requestUpStatus = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let task = {
     name: 'getParameterValues',
     parameterNames: [
@@ -1937,18 +1922,15 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchUpStatusFromGenie(mac, acsID);
+    if (result.finished) fetchUpStatusFromGenie(device, acsID);
   });
 };
 
 acsDeviceInfoController.requestConnectedDevices = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   let totalAssocField = fields.devices.assoc_total;
@@ -1961,7 +1943,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   }
   TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchDevicesFromGenie(mac, acsID);
+    if (result.finished) fetchDevicesFromGenie(device, acsID);
   });
 };
 
@@ -1979,7 +1961,8 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-acsDeviceInfoController.coordVAPObjects = async function(acsID) {
+acsDeviceInfoController.coordVAPObjects = async function(device) {
+  let acsID = device.acs_id;
   let populateVAPObjects = false;
   let returnObj = {
     code: 200,
@@ -1989,10 +1972,9 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
   const splitID = acsID.split('-');
   const model = splitID.slice(1, splitID.length-1).join('-');
   // We have to check if the virtual AP object has been created already
-  const meshField = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh2.ssid.replace('.SSID', '');
-  const meshField5 = DevicesAPI.getModelFields(splitID[0], model)
-    .fields.mesh5.ssid.replace('.SSID', '');
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  const meshField = fields.mesh2.ssid.replace('.SSID', '');
+  const meshField5 = fields.mesh5.ssid.replace('.SSID', '');
   const getObjTask = {
     name: 'getParameterValues',
     parameterNames: [
@@ -2008,7 +1990,7 @@ acsDeviceInfoController.coordVAPObjects = async function(acsID) {
       throw new Error('task error');
     }
     if (ret.finished) {
-      meshObjsStatus = await checkMeshObjsCreated(acsID);
+      meshObjsStatus = await checkMeshObjsCreated(device);
       if (!meshObjsStatus.success) {
         throw new Error('invalid data');
       }
@@ -2138,7 +2120,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let modelName = device.model;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let rebootAfterUpdate = false;
@@ -2199,9 +2182,8 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
-        /* In IGD aka FW323DAC, need reboot when change
-         2.4GHz wifi settings */
-        if (masterKey === 'wifi2' && model === 'IGD') {
+        // In IGD aka FW323DAC, need reboot when change 2.4GHz wifi settings
+        if (masterKey === 'wifi2' && model === 'IGD' && modelName === 'IGD') {
           rebootAfterUpdate = true;
         }
       }
@@ -2254,7 +2236,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
     configFileEditing(device, ['port-forward']);
     return;
   }
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
@@ -2404,9 +2386,7 @@ const configFileEditing = async function(device, target) {
 acsDeviceInfoController.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let task = {
     name: 'getParameterValues',
     parameterNames: [],
@@ -2567,9 +2547,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   // Issue a task for every offline device to try and force it to reconnect
   for (let i = 0; i < offlineDevices.length; i++) {
     let id = offlineDevices[i].acs_id;
-    let splitID = id.split('-');
-    let model = splitID.slice(1, splitID.length-1).join('-');
-    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
     let task = {
       name: 'getParameterValues',
       parameterNames: [fields.common.uptime],
