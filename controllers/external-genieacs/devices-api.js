@@ -535,7 +535,7 @@ const getStavixFields = function(model) {
   return fields;
 };
 
-const getIgdFields = function() {
+const getFastWirelessFields = function() {
   let fields = getDefaultFields();
   fields.common.alt_uid = fields.common.mac;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -611,12 +611,23 @@ const getDLinkields = function() {
   return fields;
 };
 
+const getModelFieldsFromDevice = function(device) {
+  let splitAcsID = device.acs_id.split('-');
+  let oui = splitAcsID[0];
+  let model = splitAcsID.slice(1, splitAcsID.length-1).join('-');
+  let modelName = device.model;
+  let firmwareVersion = device.version;
+  return getModelFields(oui, model, modelName, firmwareVersion);
+};
 
-
-const getModelFields = function(oui, model) {
-  let success = true;
+const getModelFields = function(oui, model, modelName, firmwareVersion) {
   let message = 'Unknown error';
   let fields = {};
+  const unknownModel = {
+    success: false,
+    message: 'Unknown Model',
+    fields: getDefaultFields(),
+  };
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
@@ -650,22 +661,33 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getDefaultFields();
       break;
-    case 'IGD':
     case 'FW323DAC':
       message = '';
-      fields = getIgdFields();
+      fields = getFastWirelessFields();
+      break;
+    case 'IGD':
+      switch(modelName) {
+        case 'IGD': // FastWireless FW323DAC
+          message = '';
+          fields = getFastWirelessFields();
+          break;
+        case 'Archer C6': // TP-Link Archer C6 v3.2
+          message = '';
+          fields = getDefaultFields();
+          break;
+        default:
+          return unknownModel;
+      }
       break;
     case 'DIR-842':
       message = '';
       fields = getDLinkields();
       break;
     default:
-      success = false;
-      message = 'Unknown Model';
-      fields = getDefaultFields();
+      return unknownModel;
   }
   return {
-    success: success,
+    success: true,
     message: message,
     fields: fields,
   };
@@ -710,7 +732,9 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  let fieldsResult = getModelFields(params.oui, params.model);
+  let fieldsResult = getModelFields(
+    params.oui, params.model, params.modelName, params.firmwareVersion,
+  );
   if (!fieldsResult['success']) {
     return callback(null, fieldsResult);
   }
@@ -803,6 +827,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
 
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
+exports.getModelFieldsFromDevice = getModelFieldsFromDevice;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
