@@ -110,6 +110,7 @@ const convertToDbm = function(model, rxPower) {
     case 'F680':
     case 'G-140W-C':
     case 'G-140W-CS':
+    case 'G-140W-UD':
       return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
     case 'GONUAC001':
     default:

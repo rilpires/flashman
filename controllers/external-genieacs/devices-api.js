@@ -57,7 +57,9 @@ const convertWifiMode = function(mode, oui, model) {
     case '11g':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'g';
       } else if (ouiModelStr === 'F670L') return 'b,g';
@@ -65,14 +67,20 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'n';
       } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
@@ -80,14 +88,20 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'n';
       } else if (ouiModelStr === 'HG8245Q2') return '11na';
@@ -95,14 +109,20 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'ac';
       } else if (ouiModelStr === 'HG8245Q2') return '11ac';
@@ -110,7 +130,11 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
       else return '11ac';
@@ -607,6 +631,8 @@ const getModelFields = function(oui, model) {
     case 'G%2D140W%2DC': // URI encoded
     case 'G-140W-CS': // Nokia G-140W-CS
     case 'G%2D140W%2DCS': // URI encoded
+    case 'G-140W-UD': // Nokia G-140W-UD
+    case 'G%2D140W%2DUD': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
@@ -643,6 +669,8 @@ const getBeaconTypeByModel = function(model) {
     case 'G%2D140W%2DC': // URI encoded
     case 'G-140W-CS': // Nokia G-140W-CS
     case 'G%2D140W%2DCS': // URI encoded
+    case 'G-140W-UD': // Nokia G-140W-UD
+    case 'G%2D140W%2DUD': // URI encoded
       ret = 'WPA/WPA2';
       break;
     case 'GONUAC001': // Greatek Stavix G421R
