@@ -1593,7 +1593,7 @@ $(document).ready(function() {
                 '<label class="active">Mesh</label>'+
                 '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
-                  '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
+                  '<option value="0" $REPLACE_MESH_DISABLED_OPT $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
                   (grantWifi5ghz ?
@@ -1701,9 +1701,13 @@ $(document).ready(function() {
           }
           // Disable mode if there are routers in mesh connected
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, 'disabled');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g,
+                                          'disabled');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g,
+                                        'disabled');
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, '');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
