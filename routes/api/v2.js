@@ -96,7 +96,7 @@ router.route('/device/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setDeviceCrudTrap);
 
-router.route('/device/traps/get').get(
+router.route('/device/traps/callback').get(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.getDeviceCrudTrap);
@@ -137,7 +137,7 @@ router.route('/user/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setUserCrudTrap);
 
-router.route('/user/traps/get').put(
+router.route('/user/traps/callback').get(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.getUserCrudTrap);
@@ -172,7 +172,7 @@ router.route('/role/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setRoleCrudTrap);
 
-router.route('/role/traps/get').get(
+router.route('/role/traps/callback').get(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.getRoleCrudTrap);
