@@ -10,10 +10,11 @@
       "GENIEACS_CWMP_SSL_CERT": "../../flashman/certs/onu-certs/onuCert.pem",
       "GENIEACS_CWMP_SSL_KEY": "../../flashman/certs/onu-certs/onuCert.key",
       "GENIEACS_CWMP_PORT": 7547,
+      "GENIEACS_CWMP_ACCESS_LOG_FILE": "/dev/null",
       "GENIEACS_EXT_DIR": "../flashman/controllers/external-genieacs",
       "GENIEACS_EXT_TIMEOUT": 30000,
       "GENIEACS_RETRY_DELAY": 15,
-      "GENIEACS_MAX_COMMIT_ITERATIONS": 1024,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
       "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
     }
   },
@@ -28,7 +29,7 @@
       "GENIEACS_EXT_DIR": "../flashman/controllers/external-genieacs",
       "GENIEACS_EXT_TIMEOUT": 30000,
       "GENIEACS_RETRY_DELAY": 15,
-      "GENIEACS_MAX_COMMIT_ITERATIONS": 1024,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
       "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
     }
   },
@@ -43,7 +44,7 @@
       "GENIEACS_EXT_DIR": "../flashman/controllers/external-genieacs",
       "GENIEACS_EXT_TIMEOUT": 30000,
       "GENIEACS_RETRY_DELAY": 15,
-      "GENIEACS_MAX_COMMIT_ITERATIONS": 1024,
+      "GENIEACS_MAX_COMMIT_ITERATIONS": 64,
       "GENIEACS_MAX_CONCURRENT_REQUESTS": 20000
     }
   }]
