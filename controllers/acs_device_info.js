@@ -234,9 +234,7 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP = processHostFromURL(data.common.ip.value);
   let splitID = req.body.acs_id.split('-');
@@ -483,6 +481,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     return res.status(500).json({success: false,
                                  message: 'Error finding Config in database'});
   });
+  // Convert mac field from - to : if necessary
+  if (data.common.mac.value.includes('-')) {
+    data.common.mac.value = data.common.mac.value.replace(/-/g, ':');
+  }
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
 
   // Fetch functionalities of CPE
@@ -523,9 +525,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP = processHostFromURL(data.common.ip.value);
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
@@ -1242,7 +1242,10 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         };
       }
     });
-    if (pingKeys.diag_state === 'Complete') {
+    if (
+      pingKeys.diag_state === 'Complete' ||
+      pingKeys.diag_state === 'Complete\n'
+    ) {
       result[pingKeys.host] = {
         lat: pingKeys.avg_resp_time.toString(),
         loss: parseInt(pingKeys.failure_count * 100 /
