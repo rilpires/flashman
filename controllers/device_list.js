@@ -3003,7 +3003,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
       });
     } else {
       const user = matchedConfig.traps_callbacks.device_crud.user;
-      const url = matchedConfig.traps_callbacks.device_crud.user;
+      const url = matchedConfig.traps_callbacks.device_crud.url;
       if (user === undefined || url === undefined) {
         return res.status(500).json({
           success: false,

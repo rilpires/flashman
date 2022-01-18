@@ -803,7 +803,7 @@ userController.getUserCrudTrap = function(req, res) {
       });
     } else {
       const user = matchedConfig.traps_callbacks.user_crud.user;
-      const url = matchedConfig.traps_callbacks.user_crud.user;
+      const url = matchedConfig.traps_callbacks.user_crud.url;
       if (user === undefined || url === undefined) {
         return res.status(500).json({
           success: false,
@@ -866,7 +866,7 @@ userController.getRoleCrudTrap = function(req, res) {
       });
     } else {
       const user = matchedConfig.traps_callbacks.role_crud.user;
-      const url = matchedConfig.traps_callbacks.role_crud.user;
+      const url = matchedConfig.traps_callbacks.role_crud.url;
       if (user === undefined || url === undefined) {
         return res.status(500).json({
           success: false,
