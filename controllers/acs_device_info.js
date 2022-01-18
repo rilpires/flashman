@@ -2383,7 +2383,7 @@ const configFileEditing = async function(device, target) {
         // modify xml config file
         rawConfigFile = getFromNestedKey(rawConfigFile, configField+'._value');
         let xmlConfigFile = acsHandlers
-          .digestXmlConfig(device, rawConfigFile, target);
+          .digestXmlConfig(device, rawConfigFile, target)
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
           task = {

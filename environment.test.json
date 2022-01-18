@@ -19,8 +19,7 @@
       "FLM_BYPASS_MQTTS_PASSWD": "true",
       "FLM_BYPASS_SECRET": "true",
       "FLM_DISABLE_AUTO_UPDATE": "true",
-      "FLM_COMPANY_SECRET": "test-secret",
-      "DEBUG": "*"
+      "FLM_COMPANY_SECRET": "test-secret"
     },
     "exec_mode": "cluster"
   }]

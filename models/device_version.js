@@ -233,7 +233,7 @@ const tr069Devices = {
       'V1.2.9': [],
     },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: false,
       upnp: false,
       speed_test: true,

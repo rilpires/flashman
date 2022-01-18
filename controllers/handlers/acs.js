@@ -132,6 +132,7 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
       +device.serial_tr069);
     return '';
   }
+  console.log(jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'])
   // set web login
   jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
    = device.web_admin.web_login;
@@ -144,8 +145,10 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
     return '';
   }
   // set web password
+  console.log(jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'])
   jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
    = device.web_admin.web_password;
+
   return jsonConfigFile;
 };
 
