@@ -194,6 +194,7 @@ $(document).ready(function() {
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
+  let grantSlaveDisassociate = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -226,6 +227,7 @@ $(document).ready(function() {
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
+    grantSlaveDisassociate = role.grantSlaveDisassociate;
   }
 
   // Default column to sort rows
@@ -1593,7 +1595,7 @@ $(document).ready(function() {
                 '<label class="active">Mesh</label>'+
                 '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
-                  '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
+                  '<option value="0" $REPLACE_MESH_DISABLED_OPT $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
                   (grantWifi5ghz ?
@@ -1701,9 +1703,13 @@ $(document).ready(function() {
           }
           // Disable mode if there are routers in mesh connected
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, 'disabled');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g,
+                                          'disabled');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g,
+                                        'disabled');
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, '');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
@@ -2329,8 +2335,11 @@ $(document).ready(function() {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
               }
               if (grantMeshV2PrimMode) {
-                let disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                let disassocSlaveButton = '<td></td>';
+                if (isSuperuser || grantSlaveDisassociate) {
+                  disassocSlaveButton = '<td>' +
+                                        buildDisassociateSlave() + '</td>';
+                }
                 infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                           disassocSlaveButton);
               } else {
@@ -2737,6 +2746,7 @@ $(document).ready(function() {
             swal({
               type: 'error',
               title: 'Erro interno',
+              text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });
