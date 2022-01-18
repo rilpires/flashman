@@ -793,6 +793,32 @@ userController.setUserCrudTrap = function(req, res) {
   });
 };
 
+userController.getUserCrudTrap = function(req, res) {
+  // get callback url and user
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      const user = matchedConfig.traps_callbacks.user_crud.user;
+      const url = matchedConfig.traps_callbacks.user_crud.user;
+      if (user === undefined || url === undefined) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao acessar parâmetros da trap',
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        user: user,
+        url: url,
+      });
+    }
+  });
+};
+
 userController.setRoleCrudTrap = function(req, res) {
   // Store callback URL for roles
   Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -826,6 +852,32 @@ userController.setRoleCrudTrap = function(req, res) {
           message: 'Formato invalido',
         });
       }
+    }
+  });
+};
+
+userController.getRoleCrudTrap = function(req, res) {
+  // get callback url and user
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      const user = matchedConfig.traps_callbacks.role_crud.user;
+      const url = matchedConfig.traps_callbacks.role_crud.user;
+      if (user === undefined || url === undefined) {
+        return res.status(500).json({
+          success: false,
+          message: 'Erro ao acessar parâmetros da trap',
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        user: user,
+        url: url,
+      });
     }
   });
 };

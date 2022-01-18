@@ -96,6 +96,11 @@ router.route('/device/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setDeviceCrudTrap);
 
+router.route('/device/traps/get').get(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.getDeviceCrudTrap);
+
 // Set LAN device block state
 router.route('/device/landevice/block').put(
   authController.ensureAPIAccess,
@@ -132,6 +137,11 @@ router.route('/user/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setUserCrudTrap);
 
+router.route('/user/traps/get').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.getUserCrudTrap);
+
 // *************
 // *** Roles ***
 // *************
@@ -161,5 +171,10 @@ router.route('/role/traps/callback').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.setRoleCrudTrap);
+
+router.route('/role/traps/get').get(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.getRoleCrudTrap);
 
 module.exports = router;
