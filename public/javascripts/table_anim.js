@@ -194,6 +194,7 @@ $(document).ready(function() {
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
+  let grantSlaveDisassociate = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -226,6 +227,7 @@ $(document).ready(function() {
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
+    grantSlaveDisassociate = role.grantSlaveDisassociate;
   }
 
   // Default column to sort rows
@@ -2333,8 +2335,11 @@ $(document).ready(function() {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
               }
               if (grantMeshV2PrimMode) {
-                let disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                let disassocSlaveButton = '<td></td>';
+                if (isSuperuser || grantSlaveDisassociate) {
+                  disassocSlaveButton = '<td>' +
+                                        buildDisassociateSlave() + '</td>';
+                }
                 infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                           disassocSlaveButton);
               } else {
@@ -2741,6 +2746,7 @@ $(document).ready(function() {
             swal({
               type: 'error',
               title: 'Erro interno',
+              text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });
