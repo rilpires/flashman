@@ -804,14 +804,15 @@ userController.getUserCrudTrap = function(req, res) {
     } else {
       const user = matchedConfig.traps_callbacks.user_crud.user;
       const url = matchedConfig.traps_callbacks.user_crud.url;
-      if (user === undefined || url === undefined) {
-        return res.status(500).json({
-          success: false,
-          message: 'Erro ao acessar parâmetros da trap',
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
         });
       }
       return res.status(200).json({
         success: true,
+        exists: true,
         user: user,
         url: url,
       });
@@ -867,14 +868,15 @@ userController.getRoleCrudTrap = function(req, res) {
     } else {
       const user = matchedConfig.traps_callbacks.role_crud.user;
       const url = matchedConfig.traps_callbacks.role_crud.url;
-      if (user === undefined || url === undefined) {
-        return res.status(500).json({
-          success: false,
-          message: 'Erro ao acessar parâmetros da trap',
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
         });
       }
       return res.status(200).json({
         success: true,
+        exists: true,
         user: user,
         url: url,
       });

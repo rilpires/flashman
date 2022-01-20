@@ -3004,14 +3004,15 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
     } else {
       const user = matchedConfig.traps_callbacks.device_crud.user;
       const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (user === undefined || url === undefined) {
-        return res.status(500).json({
-          success: false,
-          message: 'Erro ao acessar parâmetros da trap',
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
         });
       }
       return res.status(200).json({
         success: true,
+        exists: true,
         user: user,
         url: url,
       });
