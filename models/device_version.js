@@ -225,7 +225,7 @@ const tr069Devices = {
     mesh_ssid_object_exists: true,
   },
   'MP-G421R': {
-    vendor: 'Greatek',
+    vendor: 'Stavix',
     versions_upgrade: {
       'V1.2.9': [],
     },
