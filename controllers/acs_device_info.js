@@ -890,7 +890,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (model == 'GONUAC001' || model == 'xPON') {
+      if (model == 'GONUAC001' || model == 'xPON' || model === 'MP_G421R') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -921,6 +921,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       // web admin user and password
       device.web_admin_user = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
+      if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
+        // this model can't have two users as "admin", if this happens you
+        // can't access it anymore and will be only using normal user account
+        device.web_admin_user = 'root';
+      }
       targets.push('web-admin');
       configFileEditing(device, targets);
     } else {

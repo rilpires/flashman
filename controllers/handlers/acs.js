@@ -108,8 +108,10 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
     console.log(jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value'])
 
     // set web login
+    // this login can clash if the username is "admin"
+    // beware if you're having trouble to login on web interface
     jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
-      = device.web_admin_username;
+      = device.web_admin_user;
 
     // set web password 
     jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
@@ -135,7 +137,7 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
   console.log(jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'])
   // set web login
   jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin.web_login;
+   = device.web_admin_user;
 
   j = jsonConfigFile['Config']['Dir'][i]['Value']
   .findIndex((e) => e['@_Name'] == 'SUSER_PASSWORD');
@@ -147,7 +149,7 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
   // set web password
   console.log(jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value'])
   jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin.web_password;
+   = device.web_admin_password;
 
   return jsonConfigFile;
 };
