@@ -238,6 +238,7 @@ const tr069Devices = {
       upnp: false,
       speed_test: true,
       speed_test_limit: 300,
+      ping_test: true,
       block_devices: false,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
