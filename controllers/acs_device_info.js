@@ -192,6 +192,9 @@ const appendPonSignal = function(original, rxPower, txPower) {
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
   let doubleSlash = url.indexOf('//');
+  if (doubleSlash < 0) {
+    return url.split(':')[0];
+  }
   let pathStart = url.substring(doubleSlash+2).indexOf('/');
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
@@ -238,7 +241,16 @@ const createRegistry = async function(req, permissions) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
+  // Check for common.stun_udp_conn_req_addr to
+  // get public IP address from STUN discovery
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
   let splitID = req.body.acs_id.split('-');
 
   let matchedConfig = await Config.findOne({is_default: true}).catch(
@@ -387,8 +399,8 @@ const createRegistry = async function(req, permissions) {
     return false;
   }
   // Update SSID prefix on CPE if enabled
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   if (isSsidPrefixEnabled) {
-    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
     // Increment sync task loops
@@ -397,6 +409,23 @@ const createRegistry = async function(req, permissions) {
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
+    }
+  }
+
+  // If has STUN Support in the model
+  if (DeviceVersion.hasSTUNSupport(model)) {
+    // if STUN Enable flag is different from actual configuration
+    if (data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+      changes.common.stun_enable = matchedConfig.tr069.stun_enable;
+      changes.common.stun_address = matchedConfig.tr069.server_url;
+      changes.common.stun_port = 3478;
+      // Increment sync task loops
+      newDevice.acs_sync_loops += 1;
+      // Possibly TODO: Let acceptLocalChanges be configurable for the admin
+      let acceptLocalChanges = false;
+      if (!acceptLocalChanges) {
+        acsDeviceInfoController.updateInfo(newDevice, changes);
+      }
     }
   }
   if (createPrefixErrNotification) {
@@ -527,7 +556,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
   let hasChanges = false;
   let splitID = req.body.acs_id.split('-');
@@ -846,7 +882,16 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.sys_up_time = data.common.uptime.value;
   }
   if (cpeIP) device.ip = cpeIP;
-
+  // If has STUN Support in the model
+  if (DeviceVersion.hasSTUNSupport(model)) {
+    // STUN Enable flag is different from actual configuration
+    if (data.common.stun_enable.value !== config.tr069.stun_enable) {
+      hasChanges = true;
+      changes.common.stun_enable = config.tr069.stun_enable;
+      changes.common.stun_address = config.tr069.server_url;
+      changes.common.stun_port = 3478;
+    }
+  }
 
   if (hasChanges) {
     // Increment sync task loops
