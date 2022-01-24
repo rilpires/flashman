@@ -23,6 +23,7 @@ const getFieldType = function(masterKey, key) {
     case 'wifi5-channel':
     case 'mesh2-channel':
     case 'mesh5-channel':
+    case 'common-stun_port':
       return 'xsd:unsignedInt';
     case 'wifi2-enable':
     case 'wifi5-enable':
@@ -34,6 +35,7 @@ const getFieldType = function(masterKey, key) {
     case 'mesh5-auto':
     case 'mesh2-advertise':
     case 'mesh5-advertise':
+    case 'common-stun_enable':
       return 'xsd:boolean';
     default:
       return 'xsd:string';
@@ -407,6 +409,14 @@ const getZTEFields = function(model) {
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.common.stun_address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.common.stun_port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
       break;
     case 'ZXHN H199A':
     case 'ZXHN%20H199A': // URI encoded
@@ -416,6 +426,14 @@ const getZTEFields = function(model) {
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.common.stun_address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.common.stun_port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
