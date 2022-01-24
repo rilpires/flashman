@@ -293,6 +293,15 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
+                  .custom-control.custom-checkbox
+                    input#stun_enable.custom-control-input(
+                      name="stun_enable",
+                      type="checkbox"
+                    )
+                    label.custom-control-label.text-muted.mr-2(for="stun_enable")
+                      | Habilitar uso do Servidor STUN
+                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (poucos modelos com essa funcionalidade)")
+                    .invalid-feedback
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg
