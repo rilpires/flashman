@@ -263,6 +263,9 @@ $(document).ready(function() {
           .val(resp.tr069OfflineThreshold)
           .siblings('label').addClass('active');
       }
+      if (resp.tr069STUNEnable) {
+        $('#stun_enable').prop('checked', true).change();
+      }
     },
   });
 
