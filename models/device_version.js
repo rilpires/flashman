@@ -2471,4 +2471,12 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
   return meshBSSIDs;
 };
 
+DeviceVersion.hasSTUNSupport = function(model) {
+  let STUNEnable = false;
+  if (tr069Devices[model]) {
+    STUNEnable = tr069Devices[model].feature_support.stun;
+  }
+  return STUNEnable;
+};
+
 module.exports = DeviceVersion;
