@@ -1,0 +1,13 @@
+{
+  "apps": [{
+    "name": "stun-server",
+    "script": "../stunserver/server/stunserver --primaryinterface enp1s0 --verbosity 1 --reuseaddr",
+    "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+    "autorestart": true,
+    "env": {
+      "production": false,
+      "TZ": "America/Sao_Paulo",
+      "DEBUG": "*"
+    }
+  }]
+}
