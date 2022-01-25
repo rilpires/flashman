@@ -2189,6 +2189,12 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           task.parameterValues.push([
             fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
           ]);
+          task.parameterValues.push([
+            fields['lan']['ip_routers'], subnet, 'xsd:string',
+          ]);
+          task.parameterValues.push([
+            fields['lan']['dns_servers'], subnet, 'xsd:string',
+          ]);
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
         }
