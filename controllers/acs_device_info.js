@@ -413,7 +413,7 @@ const createRegistry = async function(req, permissions) {
   }
 
   // If has STUN Support in the model
-  if (DeviceVersion.hasSTUNSupport(model)) {
+  if (DeviceVersion.hasSTUNSupport(newDevice.model)) {
     // if STUN Enable flag is different from actual configuration
     if (data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
       changes.common.stun_enable = matchedConfig.tr069.stun_enable;
@@ -883,7 +883,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (cpeIP) device.ip = cpeIP;
   // If has STUN Support in the model
-  if (DeviceVersion.hasSTUNSupport(model)) {
+  if (DeviceVersion.hasSTUNSupport(device.model)) {
     // STUN Enable flag is different from actual configuration
     if (data.common.stun_enable.value !== config.tr069.stun_enable) {
       hasChanges = true;
