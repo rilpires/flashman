@@ -228,9 +228,11 @@ const tr069Devices = {
     vendor: 'Stavix',
     versions_upgrade: {
       'V1.2.9': [],
+      'V1.3.4': [],
     },
     port_forward_opts: {
-      'V1.2.9': [],
+      'V1.2.9': portForwardFullSupport,
+      'V1.3.4': portForwardFullSupport,
     },
     feature_support: {
       port_forward: true,
