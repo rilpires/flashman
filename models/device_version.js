@@ -71,9 +71,10 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
       'V1.1.20P1T18': ['V1.1.20P3N3'],
-      'V1.1.20P3N3': ['V1.1.20P3N4D'],
+      'V1.1.20P3N3': ['V1.1.20P3N4D', 'V1.1.20P3N6B'],
       'V1.1.20P3N4C': ['V1.1.20P3N4D'],
-      'V1.1.20P3N4D': [],
+      'V1.1.20P3N4D': ['V1.1.20P3N6B'],
+      'V1.1.20P3N6B': [],
     },
     port_forward_opts: {
       'V1.1.20P1T18': portForwardNoRanges,
@@ -81,6 +82,7 @@ const tr069Devices = {
       'V1.1.20P3N3': portForwardNoRanges,
       'V1.1.20P3N4C': portForwardNoRanges,
       'V1.1.20P3N4D': portForwardNoRanges,
+      'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
