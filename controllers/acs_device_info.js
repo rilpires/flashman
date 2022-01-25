@@ -245,7 +245,7 @@ const createRegistry = async function(req, permissions) {
   // get public IP address from STUN discovery
   let cpeIP;
   if (data.common.stun_udp_conn_req_addr &&
-      data.common.stun_udp_conn_req_addr.value === 'string' &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
       data.common.stun_udp_conn_req_addr.value !== '') {
     cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
   } else {
@@ -558,7 +558,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_udp_conn_req_addr &&
-      data.common.stun_udp_conn_req_addr.value === 'string' &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
       data.common.stun_udp_conn_req_addr.value !== '') {
     cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
   } else {
