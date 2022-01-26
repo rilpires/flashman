@@ -411,6 +411,7 @@ const getZTEFields = function(model) {
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
         'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
       fields.stun.address =
         'InternetGatewayDevice.ManagementServer.STUNServerAddress';
       fields.stun.port =
@@ -428,6 +429,7 @@ const getZTEFields = function(model) {
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
         'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
       fields.stun.address =
         'InternetGatewayDevice.ManagementServer.STUNServerAddress';
       fields.stun.port =

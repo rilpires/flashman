@@ -399,7 +399,7 @@ const createRegistry = async function(req, permissions) {
     return false;
   }
   // Update SSID prefix on CPE if enabled
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   if (isSsidPrefixEnabled) {
     changes.wifi2.ssid = ssid;
@@ -408,10 +408,11 @@ const createRegistry = async function(req, permissions) {
   }
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
-  if (permissions.grantSTUN && data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
     changes.common.stun_enable = matchedConfig.tr069.stun_enable;
     changes.stun.address = matchedConfig.tr069.server_url;
-    changes.stun.address = 3478;
+    changes.stun.port = 3478;
     doChanges = true;
   }
   if(doChanges) {
@@ -560,7 +561,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else {
     cpeIP = processHostFromURL(data.common.ip.value);
   }
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let hasChanges = false;
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -878,15 +879,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.sys_up_time = data.common.uptime.value;
   }
   if (cpeIP) device.ip = cpeIP;
-  // If has STUN Support in the model
-  if (permissions.grantSTUN) {
-    // STUN Enable flag is different from actual configuration
-    if (data.common.stun_enable.value !== config.tr069.stun_enable) {
-      hasChanges = true;
-      changes.common.stun_enable = config.tr069.stun_enable;
-      changes.common.stun_address = config.tr069.server_url;
-      changes.common.stun_port = 3478;
-    }
+  // If has STUN Support in the model and
+  // STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== config.tr069.stun_enable) {
+    hasChanges = true;
+    changes.common.stun_enable = config.tr069.stun_enable;
+    changes.stun.address = config.tr069.server_url;
+    changes.stun.port = 3478;
   }
 
   if (hasChanges) {
