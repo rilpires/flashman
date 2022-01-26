@@ -421,6 +421,7 @@ const createRegistry = async function(req, permissions) {
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
+    }
   }
 
   if (createPrefixErrNotification) {
