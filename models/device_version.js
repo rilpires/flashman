@@ -2256,6 +2256,14 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const hasSTUNSupport = function(model) {
+  let STUNEnable = false;
+  if (tr069Devices[model]) {
+    STUNEnable = tr069Devices[model].feature_support.stun;
+  }
+  return STUNEnable;
+};
+
 const grantMeshVAPObject = function(model) {
   if (Object.keys(tr069Devices).includes(model) &&
     tr069Devices[model].mesh_ssid_object_exists) {
@@ -2298,6 +2306,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshVAPObject = grantMeshVAPObject(model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  result.grantSTUN = hasSTUNSupport(model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);
@@ -2469,14 +2478,6 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
     meshBSSIDs.mesh5 = '';
   }
   return meshBSSIDs;
-};
-
-DeviceVersion.hasSTUNSupport = function(model) {
-  let STUNEnable = false;
-  if (tr069Devices[model]) {
-    STUNEnable = tr069Devices[model].feature_support.stun;
-  }
-  return STUNEnable;
 };
 
 module.exports = DeviceVersion;

@@ -400,34 +400,29 @@ const createRegistry = async function(req, permissions) {
   }
   // Update SSID prefix on CPE if enabled
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
+  let doChanges = false;
   if (isSsidPrefixEnabled) {
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
+    doChanges = true;
+  }
+  // If has STUN Support in the model and
+  // if STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN && data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+    changes.common.stun_enable = matchedConfig.tr069.stun_enable;
+    changes.stun.address = matchedConfig.tr069.server_url;
+    changes.stun.address = 3478;
+    doChanges = true;
+  }
+  if(doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
-    }
   }
 
-  // If has STUN Support in the model
-  if (DeviceVersion.hasSTUNSupport(newDevice.model)) {
-    // if STUN Enable flag is different from actual configuration
-    if (data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
-      changes.common.stun_enable = matchedConfig.tr069.stun_enable;
-      changes.common.stun_address = matchedConfig.tr069.server_url;
-      changes.common.stun_port = 3478;
-      // Increment sync task loops
-      newDevice.acs_sync_loops += 1;
-      // Possibly TODO: Let acceptLocalChanges be configurable for the admin
-      let acceptLocalChanges = false;
-      if (!acceptLocalChanges) {
-        acsDeviceInfoController.updateInfo(newDevice, changes);
-      }
-    }
-  }
   if (createPrefixErrNotification) {
     // Notify if ssid prefix was impossible to be assigned
     let matchedNotif = await Notification
@@ -883,7 +878,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (cpeIP) device.ip = cpeIP;
   // If has STUN Support in the model
-  if (DeviceVersion.hasSTUNSupport(device.model)) {
+  if (permissions.grantSTUN) {
     // STUN Enable flag is different from actual configuration
     if (data.common.stun_enable.value !== config.tr069.stun_enable) {
       hasChanges = true;

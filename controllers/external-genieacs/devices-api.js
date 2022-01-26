@@ -23,7 +23,7 @@ const getFieldType = function(masterKey, key) {
     case 'wifi5-channel':
     case 'mesh2-channel':
     case 'mesh5-channel':
-    case 'common-stun_port':
+    case 'stun-port':
       return 'xsd:unsignedInt';
     case 'wifi2-enable':
     case 'wifi5-enable':
@@ -411,9 +411,9 @@ const getZTEFields = function(model) {
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
         'InternetGatewayDevice.ManagementServer.STUNEnable';
-      fields.common.stun_address =
+      fields.stun.address =
         'InternetGatewayDevice.ManagementServer.STUNServerAddress';
-      fields.common.stun_port =
+      fields.stun.port =
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
@@ -428,9 +428,9 @@ const getZTEFields = function(model) {
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
         'InternetGatewayDevice.ManagementServer.STUNEnable';
-      fields.common.stun_address =
+      fields.stun.address =
         'InternetGatewayDevice.ManagementServer.STUNServerAddress';
-      fields.common.stun_port =
+      fields.stun.port =
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
