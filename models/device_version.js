@@ -231,11 +231,9 @@ const tr069Devices = {
       'V1.3.4': [],
     },
     port_forward_opts: {
-      'V1.2.9': portForwardFullSupport,
-      'V1.3.4': portForwardFullSupport,
     },
     feature_support: {
-      port_forward: true,
+      port_forward: false,
       pon_signal: false,
       upnp: false,
       speed_test: true,
