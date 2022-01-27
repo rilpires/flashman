@@ -1575,13 +1575,15 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let rxPowerField = fields.wan.pon_rxpower;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
       ',' + upTimeField +
       ',' + upTimePPPField1 +
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
-      ',' + PPPoEUser2;
+      ',' + PPPoEUser2 +
+      (rxPowerField) ? (',' + rxPowerField) : '';
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1594,6 +1596,8 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     let data = '';
     let sysUpTime = 0;
     let wanUpTime = 0;
+    let ponSignal = false;
+    let rxPower = 0;
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
@@ -1601,6 +1605,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
       }
       let successSys = false;
       let successWan = false;
+      let successRxPower = false;
       if (checkForNestedKey(data, fields.common.uptime+'._value')) {
         successSys = true;
         sysUpTime = getFromNestedKey(data, fields.common.uptime+'._value');
@@ -1623,16 +1628,33 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
             wanUpTime = getFromNestedKey(data, upTimeField+'._value');
           }
       }
-      if (successSys || successWan) {
+      if (checkForNestedKey(data, rxPowerField+'._value')) {
+        successRxPower = true;
+        rxPower = getFromNestedKey(data, rxPowerField+'._value');
+      }
+      if (successSys || successWan || successRxPower) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
+        let config = await Config.findOne({is_default: true});;
+        if (successRxPower) {
+          ponSignal = {
+            rxpower: rxPower,
+            threshold:
+              config.tr069.pon_signal_threshold,
+            thresholdCritical:
+              config.tr069.pon_signal_threshold_critical,
+            thresholdCriticalHigh:
+              config.tr069.pon_signal_threshold_critical_high,
+          };
+        }
         await deviceEdit.save();
       }
       sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
         wanuptime: wanUpTime,
+        ponsignal: ponSignal,
       });
     });
   });
@@ -1976,6 +1998,10 @@ acsDeviceInfoController.requestUpStatus = function(device) {
     task.parameterNames.push(fields.wan.pppoe_user);
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
+  }
+  if (DeviceVersion.findByVersion('', true, model)
+    .grantPonSignalSupport) {
+    task.parameterNames.push(fields.wan.pon_rxpower);
   }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
