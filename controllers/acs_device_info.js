@@ -1542,7 +1542,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
       ',' + PPPoEUser2 +
-      ',' + rxPowerField;
+      (rxPowerField) ? (',' + rxPowerField) : '';
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1600,11 +1600,11 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
         if (successRxPower) {
           ponSignal = {
             rxpower: rxPower,
-            Threshold:
+            threshold:
               config.tr069.pon_signal_threshold,
-            ThresholdCritical:
+            thresholdCritical:
               config.tr069.pon_signal_threshold_critical,
-            ThresholdCriticalHigh:
+            thresholdCriticalHigh:
               config.tr069.pon_signal_threshold_critical_high,
           };
         }

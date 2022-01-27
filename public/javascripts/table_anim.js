@@ -2545,15 +2545,15 @@ $(document).ready(function() {
               ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
               ponSignalRxPower = '';
             } else if (data.ponsignal.rxpower >=
-                data.ponsignal.ThresholdCriticalHigh) {
+                data.ponsignal.thresholdCriticalHigh) {
               ponSignalStatus =
               '<div class="badge bg-danger">Sinal Muito Alto</div>';
             } else if (data.ponsignal.rxpower >=
-                data.ponsignal.Threshold) {
+                data.ponsignal.threshold) {
               ponSignalStatus =
                 '<div class="badge bg-success">Sinal Bom</div>';
             } else if (data.ponsignal.rxpower >=
-              data.ponsignal.ThresholdCritical) {
+              data.ponsignal.thresholdCritical) {
               ponSignalStatus =
                 '<div class="badge bg-warning">Sinal Fraco</div>';
             } else {
