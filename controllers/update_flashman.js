@@ -547,6 +547,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
+        tr069STUNEnable: matchedConfig.tr069.stun_enable,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -747,6 +748,7 @@ updateController.setAutoConfig = async function(req, res) {
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
+    let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -777,6 +779,7 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold: ponSignalThreshold,
         pon_signal_threshold_critical: ponSignalThresholdCritical,
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
+        stun_enable: STUNEnable,
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.

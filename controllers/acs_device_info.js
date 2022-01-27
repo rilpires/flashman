@@ -193,6 +193,9 @@ const appendPonSignal = function(original, rxPower, txPower) {
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
   let doubleSlash = url.indexOf('//');
+  if (doubleSlash < 0) {
+    return url.split(':')[0];
+  }
   let pathStart = url.substring(doubleSlash+2).indexOf('/');
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
@@ -239,7 +242,16 @@ const createRegistry = async function(req, permissions) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
+  // Check for common.stun_udp_conn_req_addr to
+  // get public IP address from STUN discovery
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
   let splitID = req.body.acs_id.split('-');
 
   let matchedConfig = await Config.findOne({is_default: true}).catch(
@@ -388,10 +400,23 @@ const createRegistry = async function(req, permissions) {
     return false;
   }
   // Update SSID prefix on CPE if enabled
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
+  let doChanges = false;
   if (isSsidPrefixEnabled) {
-    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
+    doChanges = true;
+  }
+  // If has STUN Support in the model and
+  // if STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+    changes.common.stun_enable = matchedConfig.tr069.stun_enable;
+    changes.stun.address = matchedConfig.tr069.server_url;
+    changes.stun.port = 3478;
+    doChanges = true;
+  }
+  if(doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
@@ -400,6 +425,7 @@ const createRegistry = async function(req, permissions) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
     }
   }
+
   if (createPrefixErrNotification) {
     // Notify if ssid prefix was impossible to be assigned
     let matchedNotif = await Notification
@@ -528,8 +554,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let hasChanges = false;
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -847,7 +880,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.sys_up_time = data.common.uptime.value;
   }
   if (cpeIP) device.ip = cpeIP;
-
+  // If has STUN Support in the model and
+  // STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== config.tr069.stun_enable) {
+    hasChanges = true;
+    changes.common.stun_enable = config.tr069.stun_enable;
+    changes.stun.address = config.tr069.server_url;
+    changes.stun.port = 3478;
+  }
 
   if (hasChanges) {
     // Increment sync task loops
