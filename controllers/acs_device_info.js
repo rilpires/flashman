@@ -890,7 +890,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (model == 'GONUAC001' || model == 'xPON' || model === 'MP_G421R') {
+      if (model == 'GONUAC001' || model == 'xPON') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
