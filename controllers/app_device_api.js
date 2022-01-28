@@ -563,6 +563,12 @@ const makeDeviceBackupData = function(device, config, certFile) {
   };
 };
 
+const createBackupResetForApp = (device, config) => {
+  const certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+  return makeDeviceBackupData(device, config, certFile);
+}
+
+
 appDeviceAPIController.registerApp = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
@@ -1483,8 +1489,7 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
       });
     }
     // Build hard reset backup structure for client app
-    let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-    let resetBackup = makeDeviceBackupData(device, config, certFile);
+    const resetBackup = createBackupResetForApp(device, config);
     return res.status(200).json({
       success: true,
       isRegister: true,
