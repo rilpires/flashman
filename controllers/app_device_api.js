@@ -1518,6 +1518,18 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     ).exec().catch((err) => err);
     let lastContact = device.last_contact;
     let now = Date.now();
+
+    // do not send that this specific model is online to client app
+    if (device.model === "MP-G421R") {
+      device.recovering_tr069_reset = true;
+      device.save();
+      return res.status(200).json({
+        success: true,
+        isRegister: true,
+        isOnline: false,
+      });
+    }
+
     if (now - lastContact <= 2*config.tr069.inform_interval) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
