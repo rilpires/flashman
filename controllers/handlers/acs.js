@@ -78,73 +78,40 @@ acsHandlers.setXmlPortForward = function(jsonConfigFile, device) {
 };
 
 acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
-  if (device.model === 'MP-G421R') {
-    // find mib table
-    let mibIndex = jsonConfigFile['Config']['Dir']
-      .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
-    if (mibIndex < 0) {
-      console.log('Error: failed MIB_TABLE index finding at '
-        +device.serial_tr069);
-      return '';
-    }
-
-    let passwordIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
-      .findIndex((e) => e['@_Name'] === 'SUSER_PASSWORD');
-    if (passwordIndex < 0) {
-      console.log('Error: failed SUSER_PASSWORD index finding at '
-        +device.serial_tr069);
-      return '';
-    }
-
-    let nameIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
-      .findIndex((e) => e['@_Name'] === 'SUSER_NAME');
-    if (nameIndex < 0) {
-      console.log('Error: failed SUSER_NAME index finding at '
-        +device.serial_tr069);
-      return '';
-    }
-
-    // set web login
-    // this login can clash if the username is "admin"
-    // beware if you're having trouble to login on web interface
-    jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
-      = device.web_admin_user;
-
-    // set web password 
-    jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
-      = device.web_admin_password;
-
-    return jsonConfigFile;
-  }
   // find mib table
-  let i = jsonConfigFile['Config']['Dir']
+  let mibIndex = jsonConfigFile['Config']['Dir']
     .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
-  if (i < 0) {
+  if (mibIndex < 0) {
     console.log('Error: failed MIB_TABLE index finding at '
       +device.serial_tr069);
     return '';
   }
-  let j = jsonConfigFile['Config']['Dir'][i]['Value']
-    .findIndex((e) => e['@_Name'] == 'SUSER_NAME');
-  if (j < 0) {
-    console.log('Error: failed SUSER_NAME index finding at '
-      +device.serial_tr069);
-    return '';
-  }
-  // set web login
-  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin_user;
 
-  j = jsonConfigFile['Config']['Dir'][i]['Value']
-  .findIndex((e) => e['@_Name'] == 'SUSER_PASSWORD');
-  if (j < 0) {
+  let passwordIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
+    .findIndex((e) => e['@_Name'] === 'SUSER_PASSWORD');
+  if (passwordIndex < 0) {
     console.log('Error: failed SUSER_PASSWORD index finding at '
       +device.serial_tr069);
     return '';
   }
-  // set web password
-  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin_password;
+
+  let nameIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
+    .findIndex((e) => e['@_Name'] === 'SUSER_NAME');
+  if (nameIndex < 0) {
+    console.log('Error: failed SUSER_NAME index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+
+  // set web login
+  // this login can clash if the username is "admin"
+  // beware if you're having trouble to login on web interface
+  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
+    = device.web_admin_user;
+
+  // set web password 
+  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
+    = device.web_admin_password;
 
   return jsonConfigFile;
 };
