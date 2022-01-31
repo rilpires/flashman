@@ -54,6 +54,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -71,9 +72,10 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
       'V1.1.20P1T18': ['V1.1.20P3N3'],
-      'V1.1.20P3N3': ['V1.1.20P3N4D'],
+      'V1.1.20P3N3': ['V1.1.20P3N4D', 'V1.1.20P3N6B'],
       'V1.1.20P3N4C': ['V1.1.20P3N4D'],
-      'V1.1.20P3N4D': [],
+      'V1.1.20P3N4D': ['V1.1.20P3N6B'],
+      'V1.1.20P3N6B': [],
     },
     port_forward_opts: {
       'V1.1.20P1T18': portForwardNoRanges,
@@ -81,6 +83,7 @@ const tr069Devices = {
       'V1.1.20P3N3': portForwardNoRanges,
       'V1.1.20P3N4C': portForwardNoRanges,
       'V1.1.20P3N4D': portForwardNoRanges,
+      'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
@@ -92,6 +95,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -123,6 +127,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -155,6 +160,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -182,6 +188,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -212,6 +219,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -270,6 +278,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -298,6 +307,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -329,6 +339,7 @@ const tr069Devices = {
       speed_test_limit: 350,
       block_devices: false,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -365,6 +376,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -392,6 +404,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -449,6 +462,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -481,6 +495,7 @@ const tr069Devices = {
       speed_test_limit: 850,
       block_devices: false,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -508,6 +523,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -529,6 +545,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -2297,6 +2314,14 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const hasSTUNSupport = function(model) {
+  let STUNEnable = false;
+  if (tr069Devices[model]) {
+    STUNEnable = tr069Devices[model].feature_support.stun;
+  }
+  return STUNEnable;
+};
+
 const grantMeshVAPObject = function(model) {
   if (Object.keys(tr069Devices).includes(model) &&
     tr069Devices[model].mesh_ssid_object_exists) {
@@ -2339,6 +2364,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshVAPObject = grantMeshVAPObject(model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  result.grantSTUN = hasSTUNSupport(model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);
