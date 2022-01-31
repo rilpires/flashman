@@ -1,5 +1,7 @@
 let utilHandlers = {};
 
+utilHandlers.onlineAfterReset = ['MP-G421R'];
+
 utilHandlers.isJSONObject = function(val) {
   return val instanceof Object ? true : false;
 };
