@@ -1482,21 +1482,18 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     ).exec().catch((err) => err);
     let lastContact = device.last_contact;
     let now = Date.now();
-    if (now - lastContact <= config.tr069.inform_interval) {
-      if (device.model === 'MP-G421R') {
-        const resetBackup = createBackupResetForApp(device, config);
-        return res.status(200).json({
-          success: true,
-          isRegister: true,
-          isOnline: false,
-          resetBackup: resetBackup,
-        });
-      }
+    // do not send that this specific model is online to client app
+    // after reset this model still online on flashman because
+    // it configuration is not entirely reseted
+    let onlineReset = util.onlineAfterReset.includes(device.model);
+
+    if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
         success: true, isRegister: true, isOnline: true,
       });
     }
+
     // Build hard reset backup structure for client app
     const resetBackup = createBackupResetForApp(device, config);
     return res.status(200).json({
