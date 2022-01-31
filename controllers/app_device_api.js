@@ -4,6 +4,7 @@ const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
+const acsHandlers = require('./heandlers/acs');
 const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
@@ -1527,12 +1528,12 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = util.onlineAfterReset.includes(device.model);
+    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
 
-    if (now - lastContact <= 2*config.tr069.inform_interval) {
+    if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
-        success: true, isRegister: true, isOnline: !onlineReset,
+        success: true, isRegister: true, isOnline: true,
       });
     }
     // Set device hard reset flag so that it fully syncs on the next inform
