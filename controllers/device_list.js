@@ -585,7 +585,15 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
-      query.pon_rxpower = {$exists: false}
+      query.pon_rxpower = {$exists: false};
+    } else if (/^(ipv6) (?:on|off|unknown)$/.test(tag)) {
+      if (tag.includes('on')) {
+        query.ipv6_enabled = {$eq: 1};
+      } else if (tag.includes('off')) {
+        query.ipv6_enabled = {$eq: 0};
+      } else if (tag.includes('unknown')) {
+        query.ipv6_enabled = {$eq: 2};
+      }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // CPE TR-069 routers.
