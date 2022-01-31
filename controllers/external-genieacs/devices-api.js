@@ -581,8 +581,12 @@ const getIgdFields = function() {
     'WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_rxpower_epon = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_EponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wan.pon_txpower_epon = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CT-COM_EponInterfaceConfig.TXPower';
   fields.wifi2.ssid = fields.wifi5.ssid;
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '1');
   fields.wifi2.bssid = fields.wifi5.bssid;
