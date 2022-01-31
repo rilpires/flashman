@@ -521,7 +521,6 @@ const getStavixFields = function(model) {
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       break;
     case 'MP_G421R':
-      fields.wan.vlan = 'InternetGatewayDevice.Services.VoiceService.*.VoiceProfile.*.RTP.VLANIDMark';
       break;
   }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
