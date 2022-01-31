@@ -11,6 +11,8 @@ const fs = require('fs');
 
 let appDeviceAPIController = {};
 
+const onlineAfterReset = ['MP-G421R'];
+
 const getWifiConfig = function(matchedDevice) {
   let wifiConfig = {
     '2ghz': {
@@ -1518,22 +1520,15 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     ).exec().catch((err) => err);
     let lastContact = device.last_contact;
     let now = Date.now();
-
     // do not send that this specific model is online to client app
-    if (device.model === "MP-G421R") {
-      device.recovering_tr069_reset = true;
-      device.save();
-      return res.status(200).json({
-        success: true,
-        isRegister: true,
-        isOnline: false,
-      });
-    }
+    // after reset this model still online on flashman because
+    // it configuration is not entirely reseted
+    let onlineReset = onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= 2*config.tr069.inform_interval) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
-        success: true, isRegister: true, isOnline: true,
+        success: true, isRegister: true, isOnline: !onlineReset,
       });
     }
     // Set device hard reset flag so that it fully syncs on the next inform
