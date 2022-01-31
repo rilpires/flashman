@@ -2,6 +2,8 @@ const xml2js = require('fast-xml-parser');
 const XmlParser = require('fast-xml-parser').j2xParser;
 let acsHandlers = {};
 
+acsHandlers.onlineAfterReset = ['MP-G421R'];
+
 acsHandlers.createNewPortFwTbl = function(pm) {
   return {'@_Name': 'PORT_FW_TBL', 'Value': [{
         '@_Name': 'InstanceNum', '@_Value': '0',
