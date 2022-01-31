@@ -479,17 +479,17 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
-  'Router': {
+  'DIR-842': {
     vendor: 'DLink',
     versions_upgrade: {},
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: false,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: true,
-      speed_test_limit: 100000,
+      speed_test_limit: 1000,
       block_devices: false,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,

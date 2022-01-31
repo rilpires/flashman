@@ -121,12 +121,15 @@ const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
     case 'auto':
+    case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '20/40MHz':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '20/40/80MHz':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
     default:
