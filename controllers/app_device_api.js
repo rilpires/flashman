@@ -1483,6 +1483,15 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     let lastContact = device.last_contact;
     let now = Date.now();
     if (now - lastContact <= config.tr069.inform_interval) {
+      if (device.model === 'MP-G421R') {
+        const resetBackup = createBackupResetForApp(device, config);
+        return res.status(200).json({
+          success: true,
+          isRegister: true,
+          isOnline: false,
+          resetBackup: resetBackup,
+        });
+      }
       // Device is online, no need to reconfigure
       return res.status(200).json({
         success: true, isRegister: true, isOnline: true,
