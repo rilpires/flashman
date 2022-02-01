@@ -94,6 +94,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a,n,ac':
     case 'a/n/ac':
     case 'ac,n,a':
+    case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
     default:
@@ -240,7 +241,8 @@ const createRegistry = async function(req, permissions) {
   let data = req.body.data;
   let hasPPPoE = (data.wan.pppoe_user &&
                   typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+                  data.wan.pppoe_user.value !== '' &&
+                  data.wan.pppoe_user.value !== 'none');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -410,7 +412,7 @@ const createRegistry = async function(req, permissions) {
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+      data.common.stun_enable.value != matchedConfig.tr069.stun_enable) {
     changes.common.stun_enable = matchedConfig.tr069.stun_enable;
     changes.stun.address = matchedConfig.tr069.server_url;
     changes.stun.port = 3478;
@@ -552,7 +554,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   let hasPPPoE = (data.wan.pppoe_user &&
                   typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+                  data.wan.pppoe_user.value !== '' &&
+                  data.wan.pppoe_user.value !== 'none');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_udp_conn_req_addr &&
@@ -883,7 +886,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // If has STUN Support in the model and
   // STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value !== config.tr069.stun_enable) {
+      data.common.stun_enable.value != config.tr069.stun_enable) {
     hasChanges = true;
     changes.common.stun_enable = config.tr069.stun_enable;
     changes.stun.address = config.tr069.server_url;
@@ -1583,7 +1586,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
       ',' + PPPoEUser2 +
-      (rxPowerField) ? (',' + rxPowerField) : '';
+      ((rxPowerField) ? (',' + rxPowerField) : '');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1601,7 +1604,11 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          return;
+        }
       }
       let successSys = false;
       let successWan = false;
@@ -2230,9 +2237,15 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         // Special case since channel relates to 2 fields
         let channel = changes[masterKey][key];
         let auto = channel === 'auto';
-        task.parameterValues.push([
-          fields[masterKey]['auto'], auto, 'xsd:boolean',
-        ]);
+        if (model == 'AC10') {
+          task.parameterValues.push([
+            fields[masterKey]['auto'], (auto)?1:0, 'xsd:unsignedInt',
+          ]);
+        } else {
+          task.parameterValues.push([
+            fields[masterKey]['auto'], auto, 'xsd:boolean',
+          ]);
+        }
         if (!auto) {
           task.parameterValues.push([
             fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
