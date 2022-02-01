@@ -1394,7 +1394,8 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let lastTime = (new Date(1970, 0, 1)).valueOf();
 
   if ('current_speedtest' in device &&
-      'timestamp' in device.current_speedtest) {
+      'timestamp' in device.current_speedtest &&
+      device.current_speedtest.timestamp !== undefined) {
     rqstTime = device.current_speedtest.timestamp.valueOf();
   }
 

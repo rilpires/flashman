@@ -483,7 +483,7 @@ const tr069Devices = {
     vendor: 'DLink',
     versions_upgrade: {},
     feature_support: {
-      port_forward: true,
+      port_forward: false,
       pon_signal: false,
       upnp: false,
       wps: false,
