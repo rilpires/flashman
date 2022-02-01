@@ -17,14 +17,18 @@ const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
 
-const getFieldType = function(masterKey, key) {
+const getFieldType = function(masterKey, key, model) {
   switch (masterKey+'-'+key) {
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
     case 'mesh5-channel':
     case 'stun-port':
-      return 'xsd:unsignedInt';
+      if (model == 'AC10') {
+        return 'xsd:string';
+      } else {
+        return 'xsd:unsignedInt';
+      }
     case 'wifi2-enable':
     case 'wifi5-enable':
     case 'wifi2-auto':
@@ -36,7 +40,11 @@ const getFieldType = function(masterKey, key) {
     case 'mesh2-advertise':
     case 'mesh5-advertise':
     case 'common-stun_enable':
-      return 'xsd:boolean';
+      if (model == 'AC10') {
+        return 'xsd:string';
+      } else {
+        return 'xsd:boolean';
+      }
     default:
       return 'xsd:string';
   }
@@ -69,6 +77,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
+      else if (ouiModelStr === 'AC10') return 'bg';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -90,6 +99,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
+      else if (ouiModelStr === 'AC10') return 'bgn';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -111,6 +121,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -132,6 +143,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
+      else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -163,7 +175,7 @@ const convertWifiBand = function(band) {
 };
 
 const convertField = function(masterKey, key, oui, model, value) {
-  let result = {value: null, type: getFieldType(masterKey, key)};
+  let result = {value: null, type: getFieldType(masterKey, key, model)};
   switch (masterKey+'-'+key) {
     case 'lan-subnet_mask':
       result.value = convertSubnetIntToMask(value); // convert to ip subnet
@@ -628,6 +640,33 @@ const getIgdFields = function() {
   return fields;
 };
 
+const getTendaFields = function() {
+  let fields = getDefaultFields();
+  fields.common.model = 'InternetGatewayDevice.DeviceInfo.ProductClass';
+  fields.stun = {};
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun.address =
+    'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port =
+    'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+  // fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_CT-COM_ChannelWidth';
+  // fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.X_CT-COM_ChannelWidth';
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+  fields.mesh2 = {};
+  fields.mesh5 = {};
+  return fields;
+};
+
 const getModelFields = function(oui, model) {
   let success = true;
   let message = 'Unknown error';
@@ -672,6 +711,10 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getIgdFields();
       break;
+    case 'AC10':
+      message = '';
+      fields = getTendaFields();
+      break;
     default:
       success = false;
       message = 'Unknown Model';
@@ -703,6 +746,7 @@ const getBeaconTypeByModel = function(model) {
     case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'AC10': // Tenda AC10
       ret = 'WPAand11i';
       break;
     default:
