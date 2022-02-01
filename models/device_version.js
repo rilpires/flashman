@@ -242,7 +242,7 @@ const tr069Devices = {
     },
     feature_support: {
       port_forward: false,
-      pon_signal: true,
+      pon_signal: false,
       upnp: false,
       speed_test: true,
       speed_test_limit: 300,
