@@ -1583,7 +1583,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
       ',' + PPPoEUser2 +
-      (rxPowerField) ? (',' + rxPowerField) : '';
+      ((rxPowerField) ? (',' + rxPowerField) : '');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
