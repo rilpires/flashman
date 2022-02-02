@@ -2239,17 +2239,22 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         let auto = channel === 'auto';
         if (model == 'AC10') {
           task.parameterValues.push([
-            fields[masterKey]['auto'], (auto)?'1':'0', 'xsd:string',
+            fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
           ]);
+          if (!auto) {
+            task.parameterValues.push([
+              fields[masterKey][key], channel, 'xsd:string',
+            ]);
+          }
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
           ]);
-        }
-        if (!auto) {
-          task.parameterValues.push([
-            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
-          ]);
+          if (!auto) {
+            task.parameterValues.push([
+              fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+            ]);
+          }
         }
         hasChanges = true;
         return;
