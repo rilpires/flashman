@@ -5,6 +5,7 @@ const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const DeviceVersion = require('../models/device_version');
 const acsDeviceInfo = require('./acs_device_info.js');
+const i18next = require('./language.js').i18next
 
 const fs = require('fs');
 const fsPromises = fs.promises;

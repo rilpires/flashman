@@ -6,6 +6,7 @@ const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
 const Config = require('../models/config');
+const i18next = require('./language.js').i18next
 
 let dataCollectingController = {};
 
