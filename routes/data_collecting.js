@@ -1,21 +1,26 @@
-let express = require('express');
+const express = require('express');
+const dataCollectingController = require('../controllers/data_collecting');
+const i18nextMiddleware = require('./language.js').middleware
 
 let router = express.Router();
-const authController = require('../controllers/auth');
-let dataCollectingController = require('../controllers/data_collecting');
+
+router.use( // all paths will use these middlewares.
+  authController.ensureLogin(),
+  i18nextMiddleware
+);
 
 router.route('/service/parameters')
-.get(dataCollectingController.returnServiceParameters)
-.post(dataCollectingController.updateServiceParameters);
+  .get(dataCollectingController.returnServiceParameters)
+  .post(dataCollectingController.updateServiceParameters);
 
 router.route('/massupdate/parameters')
-.post(dataCollectingController.updateManyParameters);
+  .post(dataCollectingController.updateManyParameters);
 
 router.route('/:id/parameters')
-.get(dataCollectingController.returnDeviceParameters)
-.post(dataCollectingController.updateDeviceParameters);
+  .get(dataCollectingController.returnDeviceParameters)
+  .post(dataCollectingController.updateDeviceParameters);
 
 router.route('/config')
-.get(dataCollectingController.getConfig);
+  .get(dataCollectingController.getConfig);
 
 module.exports = router;

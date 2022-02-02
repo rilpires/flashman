@@ -2,25 +2,27 @@
 const express = require('express');
 const notificationController = require('../controllers/notification');
 const authController = require('../controllers/auth');
+const i18nextMiddleware = require('./language.js').middleware
 
 let router = express.Router();
 
+router.use( // all paths will use these middlewares.
+  authController.ensureLogin(),
+  i18nextMiddleware
+);
+
 // POST hook registration for device status updates
 router.route('/register/devicestatus').post(
-  authController.ensureLogin(),
   notificationController.registerStatusNotification);
 
 router.route('/fetch').post(
-  authController.ensureLogin(),
   notificationController.fetchNotifications);
 
 router.route('/del').post(
-  authController.ensureLogin(),
   notificationController.delNotification);
 
 
 router.route('/seen').post(
-  authController.ensureLogin(),
   notificationController.SeeNotification);
 
 module.exports = router;
