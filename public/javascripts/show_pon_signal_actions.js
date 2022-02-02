@@ -1,7 +1,7 @@
 import ApexCharts from 'apexcharts';
 import {socket} from './common_actions.js';
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let ponSignalRXId = '';
   let ponSignalTXId = '';
 

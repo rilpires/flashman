@@ -93,7 +93,7 @@ window.changeCpeForm = function(input) {
   }
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];

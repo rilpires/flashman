@@ -64,7 +64,7 @@ const configureDateDiv = function(i) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
   $('#when-error-msg').hide();
 

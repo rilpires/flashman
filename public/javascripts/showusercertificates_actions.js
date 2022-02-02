@@ -510,7 +510,7 @@ const fetchCertification = function(id, name, timestamp) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let hasTrashButton = $('#checkboxHeader').length > 0;

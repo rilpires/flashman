@@ -80,7 +80,7 @@ let fetchNotifications = function() {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   if (!window.location.href.includes('/login')) {
     fetchNotifications();
   }

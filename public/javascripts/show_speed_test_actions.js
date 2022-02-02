@@ -1,6 +1,6 @@
 import {displayAlertMsg, socket} from './common_actions.js';
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let socketIoTimeout = false;
   let socketIoResponse = false;
   let socketIoTimeoutTimerID = null;

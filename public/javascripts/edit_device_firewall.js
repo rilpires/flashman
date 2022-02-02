@@ -191,7 +191,7 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
   }
 });
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Init selectize fields
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);

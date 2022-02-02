@@ -148,7 +148,7 @@ let configFlashman = function(event) {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
 

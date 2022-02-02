@@ -55,7 +55,7 @@ const fetchUsers = function(usersTable) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let usersTable = $('#users-table').DataTable({

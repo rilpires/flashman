@@ -405,7 +405,7 @@ const rebootNetworkMesh = function(ids, index, results=[]) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('submit', '.edit-form', validateEditDevice);
   $(document).on('click', '.edit-form-mesh', validateEditDeviceMesh);
 

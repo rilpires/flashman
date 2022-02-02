@@ -82,7 +82,7 @@ socket.on('PINGTEST', function(macaddr, data) {
   }
 });
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Init selectize fields
   $('#hosts-list').selectize(selectizeOptionsHosts);
 

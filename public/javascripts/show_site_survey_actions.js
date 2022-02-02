@@ -1,6 +1,6 @@
 import {displayAlertMsg, socket} from './common_actions.js';
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let siteSurveyGlobalTimer;
 
   const refreshSiteSurvey = function(deviceId, isBridge, hasExtendedChannels) {

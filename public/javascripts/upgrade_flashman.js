@@ -99,7 +99,7 @@ let checkUpdateFlashman = function() {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.update', checkUpdateFlashman);
   $('.ip-mask-field').mask('099.099.099.099');
 

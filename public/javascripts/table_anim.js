@@ -160,7 +160,7 @@ let fetchNotificationsForDevice = function(deviceId) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets

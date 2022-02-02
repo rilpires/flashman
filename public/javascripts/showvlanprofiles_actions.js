@@ -84,7 +84,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let vlanProfilesTable = $('#vlan-profile-table').DataTable({

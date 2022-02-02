@@ -141,7 +141,7 @@ let validateNewDevice = function() {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('#deviceForm').submit(validateNewDevice);
   $('#new_external_reference').mask('000.000.000-009').keyup();
   $('#new_mac').mask('HH:HH:HH:HH:HH:HH', {
