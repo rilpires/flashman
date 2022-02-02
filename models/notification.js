@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 
 let notificationSchema = new mongoose.Schema({
-  created_at: {type: Date, default: new Date()},
+  created_at: {type: Date, default: Date.now},
   message: {
     type: String,
     required: [true, 'Ops! Insira a mensagem.'],
