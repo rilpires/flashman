@@ -418,7 +418,10 @@ const createRegistry = async function(req, permissions) {
     changes.stun.port = 3478;
     doChanges = true;
   }
-  if(doChanges) {
+  if (model == 'AC10') {
+    changes.lan.enable_config = '1';
+  }
+  if (doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
@@ -797,6 +800,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.lan.subnet_mask = device.lan_netmask;
     hasChanges = true;
   }
+  if (data.lan.enable_config.value == '0') {
+    changes.lan = {};
+    changes.lan.enable_config = '1';
+  }
   if (data.wan.recv_bytes && data.wan.recv_bytes.value &&
       data.wan.sent_bytes && data.wan.sent_bytes.value) {
     device.wan_bytes = appendBytesMeasure(
@@ -887,7 +894,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // If has STUN Support in the model and
   // STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value != config.tr069.stun_enable) {
+      data.common.stun_enable.value != config.tr069.stun_enable.toString()) {
     hasChanges = true;
     changes.common.stun_enable = config.tr069.stun_enable;
     changes.stun.address = config.tr069.server_url;
