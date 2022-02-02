@@ -64,7 +64,7 @@ router.route('/certificates/search').post(
 
 router.route('/get/all').get(
   authController.ensureLogin(),
-  userController.getUsers)
+  userController.getUsers);
 
 router.route('/get/one/:id').get(
   authController.ensureLogin(),

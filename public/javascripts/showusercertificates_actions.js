@@ -1,6 +1,18 @@
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
+const isActiveSearchBtnState = function(active = true) {
+  if (active) {
+    $('#certificates-search-button').prop('disabled', false);
+    $('#certificates-search-btn-icon').removeClass('fa-spinner fa-pulse');
+    $('#certificates-search-btn-icon').addClass('fa-search');
+  } else {
+    $('#certificates-search-button').prop('disabled', true);
+    $('#certificates-search-btn-icon').removeClass('fa-search');
+    $('#certificates-search-btn-icon').addClass('fa-spinner fa-pulse');
+  }
+}
+
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
   const name = getSearchField();
@@ -10,6 +22,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
 
   if (getAll) {
     $.get('/user/get/all', function(res) {
+      isActiveSearchBtnState(true);
       usersTable.clear().draw();
       if (res.type == 'success') {
         $('#loading-users').hide();
@@ -124,7 +137,8 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
           displayAlertMsg(res);
         }
       },
-    ).fail((jqXHR, textStatus, errorThrown) => {
+    )
+    .fail((jqXHR, textStatus, errorThrown) => {
       if (jqXHR.status === 404) {
         displayAlertMsg({
           type: 'danger',
@@ -132,6 +146,9 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
         });
         return;
       }
+    })
+    .always((jqXHR, textStatus, errorThrown) => {
+      isActiveSearchBtnState(true);
     });
   }
 };
@@ -594,6 +611,7 @@ $(document).ready(function() {
   });
 
   $(document).on('click', '#certificates-search-button', (event) => {
+    isActiveSearchBtnState(false);
     fetchUsers(usersTable, hasTrashButton, false);
   });
 });

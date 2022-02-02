@@ -23,6 +23,7 @@ const getFieldType = function(masterKey, key) {
     case 'wifi5-channel':
     case 'mesh2-channel':
     case 'mesh5-channel':
+    case 'stun-port':
       return 'xsd:unsignedInt';
     case 'wifi2-enable':
     case 'wifi5-enable':
@@ -34,6 +35,7 @@ const getFieldType = function(masterKey, key) {
     case 'mesh5-auto':
     case 'mesh2-advertise':
     case 'mesh5-advertise':
+    case 'common-stun_enable':
       return 'xsd:boolean';
     default:
       return 'xsd:string';
@@ -57,7 +59,9 @@ const convertWifiMode = function(mode, oui, model) {
     case '11g':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'g';
       } else if (ouiModelStr === 'F670L') return 'b,g';
@@ -65,7 +69,11 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
       else if (ouiModelStr === 'DIR-842') return 'g-only';
@@ -73,7 +81,9 @@ const convertWifiMode = function(mode, oui, model) {
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'n';
       } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
@@ -81,7 +91,11 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
       else if (ouiModelStr === 'DIR-842') return 'b,g,n';
@@ -89,7 +103,9 @@ const convertWifiMode = function(mode, oui, model) {
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'n';
       } else if (ouiModelStr === 'HG8245Q2') return '11na';
@@ -97,7 +113,11 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
       else if (ouiModelStr === 'DIR-842') return 'a,n';
@@ -105,7 +125,9 @@ const convertWifiMode = function(mode, oui, model) {
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (
-        ouiModelStr === 'G%2D140W%2DC' || ouiModelStr === 'G%2D140W%2DCS'
+        ouiModelStr === 'G%2D140W%2DC' ||
+        ouiModelStr === 'G%2D140W%2DCS' ||
+        ouiModelStr === 'G%2D140W%2DUD'
       ) {
         return 'ac';
       } else if (ouiModelStr === 'HG8245Q2') return '11ac';
@@ -113,7 +135,11 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
-      else if (ouiModelStr === 'G-140W-C' || ouiModelStr === 'G-140W-CS') {
+      else if (
+        ouiModelStr === 'G-140W-C' ||
+        ouiModelStr === 'G-140W-CS' ||
+        ouiModelStr === 'G-140W-UD'
+      ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
       else if (ouiModelStr === 'DIR-842') return 'ac,a,n';
@@ -239,6 +265,8 @@ const getDefaultFields = function() {
       subnet_mask: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceSubnetMask',
       lease_min_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MinAddress',
       lease_max_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MaxAddress',
+      ip_routers: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPRouters',
+      dns_servers: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.DNSServers',
     },
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
@@ -416,6 +444,15 @@ const getZTEFields = function(model) {
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
+      fields.stun.address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.stun.port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
       break;
     case 'ZXHN H199A':
     case 'ZXHN%20H199A': // URI encoded
@@ -425,6 +462,15 @@ const getZTEFields = function(model) {
       fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
+      fields.stun.address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.stun.port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
@@ -482,6 +528,8 @@ const getStavixFields = function(model) {
     case 'xPON':
       fields.common.alt_uid = fields.common.mac;
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
+      break;
+    case 'MP_G421R':
       break;
   }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -647,9 +695,12 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'G%2D140W%2DC': // URI encoded
     case 'G-140W-CS': // Nokia G-140W-CS
     case 'G%2D140W%2DCS': // URI encoded
+    case 'G-140W-UD': // Nokia G-140W-UD
+    case 'G%2D140W%2DUD': // URI encoded
       message = '';
       fields = getNokiaFields();
       break;
+    case 'MP_G421R': // Unee Stavix G412R
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
@@ -704,6 +755,8 @@ const getBeaconTypeByModel = function(model) {
     case 'G%2D140W%2DC': // URI encoded
     case 'G-140W-CS': // Nokia G-140W-CS
     case 'G%2D140W%2DCS': // URI encoded
+    case 'G-140W-UD': // Nokia G-140W-UD
+    case 'G%2D140W%2DUD': // URI encoded
       ret = 'WPA/WPA2';
       break;
     case 'GONUAC001': // Greatek Stavix G421R
