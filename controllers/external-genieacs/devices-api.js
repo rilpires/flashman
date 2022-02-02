@@ -536,6 +536,8 @@ const getStavixFields = function(model) {
       fields.common.alt_uid = fields.common.mac;
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       break;
+    case 'MP_G421R':
+      break;
   }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
@@ -701,6 +703,7 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getNokiaFields();
       break;
+    case 'MP_G421R': // Unee Stavix G412R
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';

@@ -256,7 +256,7 @@ const createRegistry = async function(req, permissions) {
   }
   let splitID = req.body.acs_id.split('-');
 
-  let matchedConfig = await Config.findOne({is_default: true}).catch(
+  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return false;
@@ -482,7 +482,8 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   ) {
     return res.status(200).json({success: true, measure: true});
   }
-  let config = await Config.findOne({is_default: true}).catch((err)=>{
+  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  .catch((err)=>{
     return res.status(500).json({success: false, message: 'Error in database'});
   });
   // Devices that havent synced in (config interval) need to sync immediately
@@ -955,11 +956,21 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         }
       }
     }
-    if (model == 'GONUAC001' || model == 'xPON' || model == 'IGD') {
+    if (
+      model == 'GONUAC001' ||
+      model == 'xPON' ||
+      model == 'IGD' ||
+      model === 'MP_G421R'
+    ) {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin_user = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
+      if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
+        // this model can't have two users as "admin", if this happens you
+        // can't access it anymore and will be only using normal user account
+        device.web_admin_user = 'root';
+      }
       targets.push('web-admin');
       configFileEditing(device, targets);
     } else {
