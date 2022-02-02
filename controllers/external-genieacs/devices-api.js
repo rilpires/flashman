@@ -186,7 +186,11 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'mesh5-enable':
     case 'mesh2-advertise':
     case 'mesh5-advertise':
-      result.value = (value > 0) ? true : false; // convert to boolean
+      if (model == 'AC10') {
+        result.value = (value > 0) ? '1' : '0';
+      } else {
+        result.value = (value > 0) ? true : false; // convert to boolean
+      }
       break;
     case 'wifi2-channel':
     case 'wifi5-channel':
