@@ -1403,6 +1403,17 @@ deviceListController.setDeviceReg = function(req, res) {
         message: 'CPE não encontrado', errors: []});
     }
 
+    if (matchedDevice.model == 'AC10' &&
+       (matchedDevice.wifi_state == 0) ||
+       (matchedDevice.wifi_state_5ghz == 0)) {
+      return res.status(500).json({
+        success: false,
+        message: 'No modelo AC10: para modificar algum campo de wifi,'+
+        ' o mesmo deve estar habilitado',
+        errors: [],
+      });
+    }
+
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
