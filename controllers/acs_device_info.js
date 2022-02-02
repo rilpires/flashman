@@ -2204,7 +2204,7 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
         if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+        masterKey, key, splitID[0], modelName, changes[masterKey][key],
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
