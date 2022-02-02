@@ -658,6 +658,10 @@ const getTendaFields = function() {
     'InternetGatewayDevice.ManagementServer.STUNServerPort';
   fields.common.stun_udp_conn_req_addr =
   'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.lan.subnet_mask = 'InternetGatewayDevice.LANDevice.1'+
+    '.LANHostConfigManagement.SubnetMask';
+  fields.lan.enable_config = 'InternetGatewayDevice.LANDevice.1.'+
+    'LANHostConfigManagement.DHCPServerConfigurable';
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
