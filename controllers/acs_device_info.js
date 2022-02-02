@@ -254,7 +254,7 @@ const createRegistry = async function(req, permissions) {
   }
   let splitID = req.body.acs_id.split('-');
 
-  let matchedConfig = await Config.findOne({is_default: true}).catch(
+  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return false;
@@ -480,7 +480,8 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   ) {
     return res.status(200).json({success: true, measure: true});
   }
-  let config = await Config.findOne({is_default: true}).catch((err)=>{
+  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  .catch((err)=>{
     return res.status(500).json({success: false, message: 'Error in database'});
   });
   // Devices that havent synced in (config interval) need to sync immediately
