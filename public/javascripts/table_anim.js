@@ -461,6 +461,7 @@ anlixDocumentReady.add(function() {
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
+    let ponSignal = row.find('.device-pon-signal');
     // Stop event from reaching tr element
     event.stopPropagation();
     // Block button until response has been received
@@ -468,7 +469,8 @@ anlixDocumentReady.add(function() {
     thisBtn.find('.icon-row-refresh').addClass('fa-spinner fa-pulse');
     // Dispatch update for wan and sys uptime only if not pending
     if (!sysUptime.hasClass('pending-update') &&
-        !wanUptime.hasClass('pending-update')) {
+        !wanUptime.hasClass('pending-update') &&
+        !ponSignal.hasClass('pending-update')) {
       $.ajax({
         url: '/devicelist/command/' + deviceId + '/' + upstatusCmd,
         type: 'post',
@@ -476,6 +478,7 @@ anlixDocumentReady.add(function() {
         success: function(res) {
           sysUptime.addClass('grey-text pending-update');
           wanUptime.addClass('grey-text pending-update');
+          ponSignal.addClass('grey-text pending-update');
         },
       });
     }
@@ -590,7 +593,7 @@ anlixDocumentReady.add(function() {
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
-        <div class="text-center align-items-center">
+        <div class="text-center align-items-center device-pon-signal">
           ${ponSignalRxPower}<br>
           ${ponSignalStatus} 
         </div>
@@ -2533,6 +2536,33 @@ anlixDocumentReady.add(function() {
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
+          }
+          if (data.ponsignal) {
+            // rebuild pon signal values
+            let ponSignalStatus;
+            let ponSignalRxPower = `<span>${data.ponsignal.rxpower}</span>`;
+            if (data.ponsignal.rxpower === undefined) {
+              ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+              ponSignalRxPower = '';
+            } else if (data.ponsignal.rxpower >=
+                data.ponsignal.thresholdCriticalHigh) {
+              ponSignalStatus =
+              '<div class="badge bg-danger">Sinal Muito Alto</div>';
+            } else if (data.ponsignal.rxpower >=
+                data.ponsignal.threshold) {
+              ponSignalStatus =
+                '<div class="badge bg-success">Sinal Bom</div>';
+            } else if (data.ponsignal.rxpower >=
+              data.ponsignal.thresholdCritical) {
+              ponSignalStatus =
+                '<div class="badge bg-warning">Sinal Fraco</div>';
+            } else {
+              ponSignalStatus =
+                '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+            }
+            row.find('.device-pon-signal')
+            .removeClass('grey-text pending-update')
+            .html(ponSignalRxPower+'<br>'+ponSignalStatus);
           }
         });
       },

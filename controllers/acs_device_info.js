@@ -193,6 +193,9 @@ const appendPonSignal = function(original, rxPower, txPower) {
 const processHostFromURL = function(url) {
   if (typeof url !== 'string') return '';
   let doubleSlash = url.indexOf('//');
+  if (doubleSlash < 0) {
+    return url.split(':')[0];
+  }
   let pathStart = url.substring(doubleSlash+2).indexOf('/');
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
@@ -239,7 +242,16 @@ const createRegistry = async function(req, permissions) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
+  // Check for common.stun_udp_conn_req_addr to
+  // get public IP address from STUN discovery
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
   let splitID = req.body.acs_id.split('-');
 
   let matchedConfig = await Config.findOne({is_default: true}).catch(
@@ -388,10 +400,23 @@ const createRegistry = async function(req, permissions) {
     return false;
   }
   // Update SSID prefix on CPE if enabled
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
+  let doChanges = false;
   if (isSsidPrefixEnabled) {
-    let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
+    doChanges = true;
+  }
+  // If has STUN Support in the model and
+  // if STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+    changes.common.stun_enable = matchedConfig.tr069.stun_enable;
+    changes.stun.address = matchedConfig.tr069.server_url;
+    changes.stun.port = 3478;
+    doChanges = true;
+  }
+  if(doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
@@ -400,6 +425,7 @@ const createRegistry = async function(req, permissions) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
     }
   }
+
   if (createPrefixErrNotification) {
     // Notify if ssid prefix was impossible to be assigned
     let matchedNotif = await Notification
@@ -528,8 +554,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
                   typeof data.wan.pppoe_user.value === 'string' &&
                   data.wan.pppoe_user.value !== '');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  let cpeIP = processHostFromURL(data.common.ip.value);
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}};
+  let cpeIP;
+  if (data.common.stun_udp_conn_req_addr &&
+      typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
+      data.common.stun_udp_conn_req_addr.value !== '') {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+  } else {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let hasChanges = false;
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -847,7 +880,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     device.sys_up_time = data.common.uptime.value;
   }
   if (cpeIP) device.ip = cpeIP;
-
+  // If has STUN Support in the model and
+  // STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable.value !== config.tr069.stun_enable) {
+    hasChanges = true;
+    changes.common.stun_enable = config.tr069.stun_enable;
+    changes.stun.address = config.tr069.server_url;
+    changes.stun.port = 3478;
+  }
 
   if (hasChanges) {
     // Increment sync task loops
@@ -1534,13 +1575,15 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let rxPowerField = fields.wan.pon_rxpower;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
       ',' + upTimeField +
       ',' + upTimePPPField1 +
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
-      ',' + PPPoEUser2;
+      ',' + PPPoEUser2 +
+      (rxPowerField) ? (',' + rxPowerField) : '';
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1553,6 +1596,8 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     let data = '';
     let sysUpTime = 0;
     let wanUpTime = 0;
+    let ponSignal = false;
+    let rxPower = 0;
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
@@ -1560,6 +1605,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
       }
       let successSys = false;
       let successWan = false;
+      let successRxPower = false;
       if (checkForNestedKey(data, fields.common.uptime+'._value')) {
         successSys = true;
         sysUpTime = getFromNestedKey(data, fields.common.uptime+'._value');
@@ -1582,16 +1628,33 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
             wanUpTime = getFromNestedKey(data, upTimeField+'._value');
           }
       }
-      if (successSys || successWan) {
+      if (checkForNestedKey(data, rxPowerField+'._value')) {
+        successRxPower = true;
+        rxPower = getFromNestedKey(data, rxPowerField+'._value');
+      }
+      if (successSys || successWan || successRxPower) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
+        let config = await Config.findOne({is_default: true});;
+        if (successRxPower) {
+          ponSignal = {
+            rxpower: rxPower,
+            threshold:
+              config.tr069.pon_signal_threshold,
+            thresholdCritical:
+              config.tr069.pon_signal_threshold_critical,
+            thresholdCriticalHigh:
+              config.tr069.pon_signal_threshold_critical_high,
+          };
+        }
         await deviceEdit.save();
       }
       sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
         wanuptime: wanUpTime,
+        ponsignal: ponSignal,
       });
     });
   });
@@ -1936,6 +1999,10 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
+  if (DeviceVersion.findByVersion('', true, model)
+    .grantPonSignalSupport) {
+    task.parameterNames.push(fields.wan.pon_rxpower);
+  }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;
     if (result.finished) fetchUpStatusFromGenie(mac, acsID);
@@ -2188,6 +2255,12 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
           ]);
           task.parameterValues.push([
             fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
+          ]);
+          task.parameterValues.push([
+            fields['lan']['ip_routers'], subnet, 'xsd:string',
+          ]);
+          task.parameterValues.push([
+            fields['lan']['dns_servers'], subnet, 'xsd:string',
           ]);
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
