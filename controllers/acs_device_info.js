@@ -1601,7 +1601,7 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
     rxPowerField = fields.wan.pon_rxpower;
     txPowerField = fields.wan.pon_txpower;
-    projection += rxPowerField + ',' + txPowerField;
+    projection += ',' + rxPowerField + ',' + txPowerField;
   }
 
   if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
