@@ -1677,13 +1677,6 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
           // covert rx and tx signal
           ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
           ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
-          // append to device data structure
-          ponSignal = appendPonSignal(
-            deviceEdit.pon_signal_measure,
-            ponSignal.rxpower,
-            ponSignal.txpower,
-          );
-          deviceEdit.pon_signal_measure = ponSignal;
           // send then
           let config = await Config.findOne({is_default: true});
           signalState = {
@@ -1695,6 +1688,13 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
             thresholdCriticalHigh:
               config.tr069.pon_signal_threshold_critical_high,
           };
+          // append to device data structure
+          ponSignal = appendPonSignal(
+            deviceEdit.pon_signal_measure,
+            ponSignal.rxpower,
+            ponSignal.txpower,
+          );
+          deviceEdit.pon_signal_measure = ponSignal;
         }
         await deviceEdit.save();
       }
