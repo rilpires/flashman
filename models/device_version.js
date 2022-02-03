@@ -558,11 +558,11 @@ const tr069Devices = {
       'V16.03.06.05_multi_BR01': [],
     },
     feature_support: {
-      port_forward: false,
+      port_forward: false, // Practical tests doesnt worked at all
       pon_signal: false,
       upnp: false,
       wps: false,
-      ping_test: false,
+      ping_test: false, // Practical tests doesnt worked properly
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
