@@ -157,7 +157,23 @@ const convertWifiMode = function(mode, oui, model) {
   }
 };
 
-const convertWifiBand = function(band) {
+const convertWifiBand = function(band, model) {
+  if (model === 'AC10') {
+    switch (band) {
+      case 'HT20':
+      case 'VHT20':
+        return '0';
+      case 'HT40':
+      case 'VHT40':
+        return '1';
+      case 'VHT80':
+        return '3';
+      case 'auto':
+        return '2';
+      default:
+        return '';
+    }
+  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -208,7 +224,8 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'wifi5-band':
     case 'mesh2-band':
     case 'mesh5-band':
-      result.value = convertWifiBand(value); // convert to TR-069 format
+      // convert to TR-069 format
+      result.value = convertWifiBand(value, model);
       break;
     default:
       result.value = value; // no transformation necessary
@@ -669,8 +686,8 @@ const getTendaFields = function() {
   fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
-  // fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_CT-COM_ChannelWidth';
-  // fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.X_CT-COM_ChannelWidth';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_CT-COM_ChannelWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.X_CT-COM_ChannelWidth';
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
   fields.mesh2 = {};
   fields.mesh5 = {};

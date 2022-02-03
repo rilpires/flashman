@@ -119,8 +119,22 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-const convertWifiBand = function(band, mode) {
+const convertWifiBand = function(band, mode, model) {
   let isAC = convertWifiMode(mode) === '11ac';
+  if (model === 'AC10') {
+    switch (band) {
+      case '0':
+        return (isAC) ? 'VHT20' : 'HT20';
+      case '1':
+        return (isAC) ? 'VHT40' : 'HT40';
+      case '2':
+        return 'auto';
+      case '3':
+        return (isAC) ? 'VHT80' : undefined;
+      default:
+        return undefined;
+    }
+  }
   switch (band) {
     case 'auto':
       return 'auto';
@@ -360,7 +374,8 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) : undefined,
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value, model) :
+       undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
@@ -370,7 +385,8 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) : undefined,
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value, model) :
+       undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
@@ -707,7 +723,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (data.wifi2.band) {
-    let band2 = convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value);
+    let band2 = convertWifiBand(data.wifi2.band.value,
+     data.wifi2.mode.value, model);
     if (data.wifi2.band.value && !device.wifi_band) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
@@ -765,7 +782,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (data.wifi5.band && data.wifi5.mode) {
-    let band5 = convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value);
+    let band5 = convertWifiBand(data.wifi5.band.value,
+     data.wifi5.mode.value, model);
     if (data.wifi5.band.value && !device.wifi_band_5ghz) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
