@@ -54,6 +54,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -71,9 +72,10 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
       'V1.1.20P1T18': ['V1.1.20P3N3'],
-      'V1.1.20P3N3': ['V1.1.20P3N4D'],
+      'V1.1.20P3N3': ['V1.1.20P3N4D', 'V1.1.20P3N6B'],
       'V1.1.20P3N4C': ['V1.1.20P3N4D'],
-      'V1.1.20P3N4D': [],
+      'V1.1.20P3N4D': ['V1.1.20P3N6B'],
+      'V1.1.20P3N6B': [],
     },
     port_forward_opts: {
       'V1.1.20P1T18': portForwardNoRanges,
@@ -81,6 +83,7 @@ const tr069Devices = {
       'V1.1.20P3N3': portForwardNoRanges,
       'V1.1.20P3N4C': portForwardNoRanges,
       'V1.1.20P3N4D': portForwardNoRanges,
+      'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
@@ -92,6 +95,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -123,6 +127,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: true,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -155,6 +160,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -182,6 +188,7 @@ const tr069Devices = {
       block_devices: false,
       pon_signal: false,
       firmware_upgrade: true,
+      stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -210,6 +217,36 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 250,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'MP-G421R': {
+    vendor: 'UNEE',
+    versions_upgrade: {
+      'V1.2.9': [],
+      'V1.3.4': [],
+    },
+    port_forward_opts: {
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 300,
+      ping_test: true,
       block_devices: false,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
@@ -241,6 +278,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -269,6 +307,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -300,6 +339,7 @@ const tr069Devices = {
       speed_test_limit: 350,
       block_devices: false,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -336,6 +376,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -349,6 +390,34 @@ const tr069Devices = {
     mesh_ssid_object_exists: true,
   },
   'G-140W-CS': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE46343AFIA94': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x4'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x1', '0x0', '0x0'],
+    mesh_ssid_object_exists: true,
+  },
+  'G-140W-UD': {
     vendor: 'Nokia',
     versions_upgrade: {
       '3FE46343AFIA94': [],
@@ -393,6 +462,7 @@ const tr069Devices = {
       speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -425,6 +495,7 @@ const tr069Devices = {
       speed_test_limit: 850,
       block_devices: false,
       firmware_upgrade: true,
+      stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
     },
@@ -452,6 +523,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -473,6 +545,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -2241,6 +2314,14 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const hasSTUNSupport = function(model) {
+  let STUNEnable = false;
+  if (tr069Devices[model]) {
+    STUNEnable = tr069Devices[model].feature_support.stun;
+  }
+  return STUNEnable;
+};
+
 const grantMeshVAPObject = function(model) {
   if (Object.keys(tr069Devices).includes(model) &&
     tr069Devices[model].mesh_ssid_object_exists) {
@@ -2283,6 +2364,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantMeshVAPObject = grantMeshVAPObject(model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
+  result.grantSTUN = hasSTUNSupport(model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);

@@ -194,6 +194,7 @@ $(document).ready(function() {
   let grantWanBytes = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
+  let grantSlaveDisassociate = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -226,6 +227,7 @@ $(document).ready(function() {
     grantWanBytes = role.grantWanBytesView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
+    grantSlaveDisassociate = role.grantSlaveDisassociate;
   }
 
   // Default column to sort rows
@@ -459,6 +461,7 @@ $(document).ready(function() {
     let thisBtn = $(this);
     let sysUptime = row.find('.device-sys-up-time');
     let wanUptime = row.find('.device-wan-up-time');
+    let ponSignal = row.find('.device-pon-signal');
     // Stop event from reaching tr element
     event.stopPropagation();
     // Block button until response has been received
@@ -466,7 +469,8 @@ $(document).ready(function() {
     thisBtn.find('.icon-row-refresh').addClass('fa-spinner fa-pulse');
     // Dispatch update for wan and sys uptime only if not pending
     if (!sysUptime.hasClass('pending-update') &&
-        !wanUptime.hasClass('pending-update')) {
+        !wanUptime.hasClass('pending-update') &&
+        !ponSignal.hasClass('pending-update')) {
       $.ajax({
         url: '/devicelist/command/' + deviceId + '/' + upstatusCmd,
         type: 'post',
@@ -474,6 +478,7 @@ $(document).ready(function() {
         success: function(res) {
           sysUptime.addClass('grey-text pending-update');
           wanUptime.addClass('grey-text pending-update');
+          ponSignal.addClass('grey-text pending-update');
         },
       });
     }
@@ -588,7 +593,7 @@ $(document).ready(function() {
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
-        <div class="text-center align-items-center">
+        <div class="text-center align-items-center device-pon-signal">
           ${ponSignalRxPower}<br>
           ${ponSignalStatus} 
         </div>
@@ -1593,7 +1598,7 @@ $(document).ready(function() {
                 '<label class="active">Mesh</label>'+
                 '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
                 'maxlength="15" $REPLACE_OPMODE_EN>'+
-                  '<option value="0" $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
+                  '<option value="0" $REPLACE_MESH_DISABLED_OPT $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
                   (grantWifi5ghz ?
@@ -1701,9 +1706,13 @@ $(document).ready(function() {
           }
           // Disable mode if there are routers in mesh connected
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, 'disabled');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g,
+                                          'disabled');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g,
+                                        'disabled');
           } else {
             opmodeTab = opmodeTab.replace(/\$REPLACE_MESH_OPMODE_EN/g, '');
+            meshForm = meshForm.replace(/\$REPLACE_MESH_DISABLED_OPT/g, '');
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
@@ -2329,8 +2338,11 @@ $(document).ready(function() {
                 infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
               }
               if (grantMeshV2PrimMode) {
-                let disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                let disassocSlaveButton = '<td></td>';
+                if (isSuperuser || grantSlaveDisassociate) {
+                  disassocSlaveButton = '<td>' +
+                                        buildDisassociateSlave() + '</td>';
+                }
                 infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                           disassocSlaveButton);
               } else {
@@ -2524,6 +2536,33 @@ $(document).ready(function() {
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
+          }
+          if (data.ponsignal) {
+            // rebuild pon signal values
+            let ponSignalStatus;
+            let ponSignalRxPower = `<span>${data.ponsignal.rxpower}</span>`;
+            if (data.ponsignal.rxpower === undefined) {
+              ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+              ponSignalRxPower = '';
+            } else if (data.ponsignal.rxpower >=
+                data.ponsignal.thresholdCriticalHigh) {
+              ponSignalStatus =
+              '<div class="badge bg-danger">Sinal Muito Alto</div>';
+            } else if (data.ponsignal.rxpower >=
+                data.ponsignal.threshold) {
+              ponSignalStatus =
+                '<div class="badge bg-success">Sinal Bom</div>';
+            } else if (data.ponsignal.rxpower >=
+              data.ponsignal.thresholdCritical) {
+              ponSignalStatus =
+                '<div class="badge bg-warning">Sinal Fraco</div>';
+            } else {
+              ponSignalStatus =
+                '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+            }
+            row.find('.device-pon-signal')
+            .removeClass('grey-text pending-update')
+            .html(ponSignalRxPower+'<br>'+ponSignalStatus);
           }
         });
       },
@@ -2737,6 +2776,7 @@ $(document).ready(function() {
             swal({
               type: 'error',
               title: 'Erro interno',
+              text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',
               confirmButtonText: 'OK',
             });
