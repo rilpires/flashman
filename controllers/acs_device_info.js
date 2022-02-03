@@ -2034,7 +2034,10 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
-  if (DeviceVersion.findByVersion('', true, model).grantPonSignalSupport) {
+  let permissions = DeviceVersion.findByVersion(
+    device.version, device.wifi_is_5ghz_capable, device.model,
+  );
+  if (permissions.grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
     task.parameterNames.push(fields.wan.pon_txpower);
     if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
