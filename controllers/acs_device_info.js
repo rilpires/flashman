@@ -1168,6 +1168,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
+        let permissions = null;
         permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
@@ -1176,7 +1177,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+              device, model, data,
+              diagNecessaryKeys.ping, fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
@@ -1999,7 +2001,7 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
-  if (DeviceVersion.findByVersion('', true, model)
+  if (DeviceVersion.findByVersion('', true, device.model)
     .grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
   }
