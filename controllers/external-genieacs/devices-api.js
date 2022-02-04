@@ -679,6 +679,25 @@ const getTendaFields = function() {
     '.LANHostConfigManagement.SubnetMask';
   fields.lan.enable_config = 'InternetGatewayDevice.LANDevice.1.'+
     'LANHostConfigManagement.DHCPServerConfigurable';
+
+  fields.port_mapping_fields.external_port_start =
+   ['ExternalPort', 'external_port_start', 'xsd:string'];
+  fields.port_mapping_fields.external_port_end =
+   ['ExternalPortEndRange', 'external_port_end', 'xsd:string'];
+  fields.port_mapping_fields.internal_port_start =
+   ['InternalPort', 'internal_port_start', 'xsd:string'];
+  fields.port_mapping_fields.client =
+   ['InternalClient', 'ip', 'xsd:string'];
+  fields.port_mapping_values.enable =
+   ['PortMappingEnabled', '1', 'xsd:string'];
+  fields.port_mapping_values.lease =
+   ['PortMappingLeaseDuration', '0', 'xsd:string'];
+  fields.port_mapping_values.protocol =
+   ['PortMappingProtocol', 'TCP AND UDP', 'xsd:string'];
+  fields.port_mapping_values.description =
+   ['PortMappingDescription', '0', 'xsd:string'];
+  fields.port_mapping_values.remote_host =
+   ['RemoteHost', '0', 'xsd:string'];
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');

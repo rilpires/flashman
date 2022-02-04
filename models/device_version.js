@@ -557,8 +557,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V16.03.06.05_multi_BR01': [],
     },
+    port_forward_opts: {
+      'V16.03.06.05_multi_BR01': portForwardNoRanges,
+    },
     feature_support: {
-      port_forward: false, // Practical tests doesnt worked at all
+      port_forward: true,
       pon_signal: false,
       upnp: false,
       wps: false,
