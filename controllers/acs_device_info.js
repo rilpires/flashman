@@ -334,6 +334,13 @@ const createRegistry = async function(req, permissions) {
     wifi5Channel = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value;
   }
 
+  // Remove DHCP uptime for Archer C6
+  let wanUptime = (hasPPPoE) ?
+    data.wan.uptime_ppp.value : data.wan.uptime.value;
+  if (!hasPPPoE && model == 'Archer C6') {
+    wanUptime = undefined;
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -376,7 +383,7 @@ const createRegistry = async function(req, permissions) {
     wan_negociated_duplex:
       (data.wan.duplex) ? data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
-    wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp.value : data.wan.uptime.value,
+    wan_up_time: wanUptime,
     created_at: Date.now(),
     last_contact: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
@@ -618,7 +625,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   } else {
     if (data.wan.wan_ip.value) device.wan_ip = data.wan.wan_ip.value;
-    if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
+    // Do not store DHCP uptime for Archer C6
+    if (data.wan.uptime.value && device.model != 'Archer C6') {
+      device.wan_up_time = data.wan.uptime.value;
+    }
     device.pppoe_user = '';
     device.pppoe_password = '';
     if (data.wan.mtu && data.wan.mtu.value) {
