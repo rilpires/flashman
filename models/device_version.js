@@ -233,7 +233,7 @@ const tr069Devices = {
     mesh_ssid_object_exists: true,
   },
   'MP-G421R': {
-    vendor: 'Stavix',
+    vendor: 'UNEE',
     versions_upgrade: {
       'V1.2.9': [],
       'V1.3.4': [],
