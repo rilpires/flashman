@@ -1594,15 +1594,29 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
-  let rxPowerField = fields.wan.pon_rxpower;
+  let rxPowerField;
+  let txPowerField;
+  let rxPowerFieldEpon;
+  let txPowerFieldEpon;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
       ',' + upTimeField +
       ',' + upTimePPPField1 +
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
-      ',' + PPPoEUser2 +
-      ((rxPowerField) ? (',' + rxPowerField) : '');
+      ',' + PPPoEUser2;
+
+  if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
+    rxPowerField = fields.wan.pon_rxpower;
+    txPowerField = fields.wan.pon_txpower;
+    projection += ',' + rxPowerField + ',' + txPowerField;
+  }
+
+  if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+    rxPowerFieldEpon = fields.wan.pon_rxpower_epon;
+    txPowerFieldEpon = fields.wan.pon_txpower_epon;
+    projection += ',' + rxPowerFieldEpon + ',' + txPowerFieldEpon;
+  }
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -1615,8 +1629,8 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
     let data = '';
     let sysUpTime = 0;
     let wanUpTime = 0;
-    let ponSignal = false;
-    let rxPower = 0;
+    let signalState = {};
+    let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
@@ -1647,19 +1661,34 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
             wanUpTime = getFromNestedKey(data, upTimeField+'._value');
           }
       }
-      if (checkForNestedKey(data, rxPowerField+'._value')) {
+      if (checkForNestedKey(data, rxPowerField + '._value') &&
+          checkForNestedKey(data, txPowerField + '._value')) {
         successRxPower = true;
-        rxPower = getFromNestedKey(data, rxPowerField+'._value');
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerField + '._value'),
+          txpower: getFromNestedKey(data, txPowerField + '._value'),
+        };
+      } else if (checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
+                 checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+        successRxPower = true;
+        ponSignal = {
+          rxpower: getFromNestedKey(data, rxPowerFieldEpon + '._value'),
+          txpower: getFromNestedKey(data, txPowerFieldEpon + '._value'),
+        };
       }
       if (successSys || successWan || successRxPower) {
         let deviceEdit = await DeviceModel.findById(mac);
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
-        let config = await Config.findOne({is_default: true});;
         if (successRxPower) {
-          ponSignal = {
-            rxpower: rxPower,
+          // covert rx and tx signal
+          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
+          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+          // send then
+          let config = await Config.findOne({is_default: true});
+          signalState = {
+            rxpower: ponSignal.rxpower,
             threshold:
               config.tr069.pon_signal_threshold,
             thresholdCritical:
@@ -1667,13 +1696,20 @@ const fetchUpStatusFromGenie = function(mac, acsID) {
             thresholdCriticalHigh:
               config.tr069.pon_signal_threshold_critical_high,
           };
+          // append to device data structure
+          ponSignal = appendPonSignal(
+            deviceEdit.pon_signal_measure,
+            ponSignal.rxpower,
+            ponSignal.txpower,
+          );
+          deviceEdit.pon_signal_measure = ponSignal;
         }
         await deviceEdit.save();
       }
       sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
         wanuptime: wanUpTime,
-        ponsignal: ponSignal,
+        ponsignal: signalState,
       });
     });
   });
@@ -2085,9 +2121,13 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
-  if (DeviceVersion.findByVersion('', true, model)
-    .grantPonSignalSupport) {
+  if (DeviceVersion.findByVersion('', true, model).grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
+    task.parameterNames.push(fields.wan.pon_txpower);
+    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+      task.parameterNames.push(fields.wan.pon_rxpower_epon);
+      task.parameterNames.push(fields.wan.pon_txpower_epon);
+    }
   }
   TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
     if (result.task.name !== 'getParameterValues') return;

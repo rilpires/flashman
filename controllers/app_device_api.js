@@ -1480,7 +1480,7 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = util.onlineAfterReset.includes(device.model);
+    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
