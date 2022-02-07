@@ -942,7 +942,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (model == 'GONUAC001' || model == 'xPON') {
+      if (device.model === 'GONUAC001' || device.model === '121AC') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -964,10 +964,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
     }
     if (
-      model == 'GONUAC001' ||
-      model == 'xPON' ||
-      model == 'IGD' ||
-      model === 'MP_G421R'
+      device.model === 'GONUAC001' ||
+      device.model === '121AC' ||
+      device.model === 'IGD' ||
+      device.model === 'MP_G421R'
     ) {
       // Trigger xml config syncing for
       // web admin user and password
@@ -1175,7 +1175,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        permissions = DeviceVersion.findByVersion(
+        let permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
           device.model,
