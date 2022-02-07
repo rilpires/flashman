@@ -554,7 +554,12 @@ const tr069Devices = {
   },
   'DIR-842': {
     vendor: 'DLink',
-    versions_upgrade: {},
+    versions_upgrade: {
+      '3.0.3': [],
+    },
+    // port_forward_opts: {
+    //   '3.0.3': portForwardFullSupport,
+    // },
     feature_support: {
       port_forward: false,
       pon_signal: false,
