@@ -2441,6 +2441,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
         device.port_mapping[i][v[1][1]], v[1][2]]);
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
+      if (v[0] == 'description') {
+        v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+      }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
     });
@@ -2587,6 +2590,17 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
             if (checkForNestedKey(data, portMapProtocolPath)) {
               if (getFromNestedKey(data,
                 portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+              ) {
+                isDiff = true;
+                break;
+              }
+            }
+            let portMapDescriptionPath = iterateTemplate +
+                                      fields.port_mapping_values.description[0];
+            if (checkForNestedKey(data, portMapDescriptionPath)) {
+              if (
+                getFromNestedKey(data, portMapDescriptionPath) !=
+                fields.port_mapping_values.description[1]
               ) {
                 isDiff = true;
                 break;
