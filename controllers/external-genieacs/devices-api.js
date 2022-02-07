@@ -652,8 +652,7 @@ const getDLinkields = function() {
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '3');
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_DLINK_OperatingChannelBandwidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
-  // fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
-  // fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
   // fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
   // delete fields.port_mapping_values.remote_host;
   // fields.port_mapping_values.protocol[1] = 'TCP/UDP';
