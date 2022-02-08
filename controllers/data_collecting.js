@@ -104,6 +104,7 @@ const checkNumericField = (v) => v.constructor === Number;
 const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
+// functions to check a field in a received json.
 const checkId = (obj) =>
   checkField(obj, 'id', util.isMacValid);
 const checkIsActive = (obj) =>
@@ -118,11 +119,11 @@ const checkPingFqdnToUnset = (obj) =>
   fieldExistenceForUnset(obj, 'ping_fqdn');
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets', checkNumericFieldInsideInterval(100, 100));
-const checkBurstLoss = (obj) =>
+const checkHasBurstLoss = (obj) =>
   checkField(obj, 'burst_loss', checkBooleanField);
-const checkConnPings = (obj) =>
+const checkHasConnPings = (obj) =>
   checkField(obj, 'conn_pings', checkBooleanField);
-const checkWifiDevices = (obj) =>
+const checkHasWifiDevices = (obj) =>
   checkField(obj, 'wifi_devices', checkBooleanField);
 
 
@@ -266,8 +267,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
-        checkPingFqdn, checkPingPackets, checkBurstLoss, checkConnPings,
-        checkWifiDevices],
+        checkPingFqdn, checkPingPackets, checkHasBurstLoss, checkHasConnPings,
+        checkHasWifiDevices],
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update)
@@ -284,7 +285,7 @@ dataCollectingController.updateManyDevices = async function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkBurstLoss, checkConnPings, checkWifiDevices],
+        checkHasBurstLoss, checkHasConnPings, checkHasWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
@@ -349,7 +350,7 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkBurstLoss, checkConnPings, checkWifiDevices],
+        checkHasBurstLoss, checkHasConnPings, checkHasWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
