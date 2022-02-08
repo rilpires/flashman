@@ -6,9 +6,9 @@ const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
 const Config = require('../models/config');
-const i18next = require('./language.js').i18next
 
 let dataCollectingController = {};
+const service = "data_collecting";
 
 // A function that treats body fields.
 // Executes a given validity function for 'fieldName's value, if 'fieldName'
@@ -17,11 +17,13 @@ let dataCollectingController = {};
 // 2nd: complete fieldName path for data_collecting fields in ConfigModel.
 // 3rd: the value for 'fieldName' in 'obj'.
 // 4th: error message for defined and invalid values. undefined is allowed.
-const checkField = (obj, fieldName, validityFunc) => {
+const checkField = (req, obj, fieldName, validityFunc) => {
   let v = obj[fieldName];
   let exists = v !== undefined;
   let error = undefined;
-  if (v !== undefined && !validityFunc(v)) error = fieldName+' inválido';
+  if (v !== undefined && !validityFunc(v)) {
+    error = req.t('fieldInvalid', {fieldName});
+  }
   fieldName = 'data_collecting.'+fieldName;
   return [exists, fieldName, v, error];
 };
@@ -48,20 +50,21 @@ const checkNumericField = (v) => v.constructor === Number;
 const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
-const checkIsActive = (obj) =>
-  checkField(obj, 'is_active', checkBooleanField);
-const checkHaslatency = (obj) =>
-  checkField(obj, 'has_latency', checkBooleanField);
-const checkAlarmFqdn = (obj) =>
-  checkField(obj, 'alarm_fqdn', util.isFqdnValid);
-const checkPingFqdn = (obj) =>
-  checkField(obj, 'ping_fqdn', util.isFqdnValid);
-const checkPingFqdnToUnset = (obj) =>
+const checkIsActive = (req, obj) =>
+  checkField(req, obj, 'is_active', checkBooleanField);
+const checkHaslatency = (req, obj) =>
+  checkField(req, obj, 'has_latency', checkBooleanField);
+const checkAlarmFqdn = (req, obj) =>
+  checkField(req, obj, 'alarm_fqdn', util.isFqdnValid);
+const checkPingFqdn = (req, obj) =>
+  checkField(req, obj, 'ping_fqdn', util.isFqdnValid);
+const checkPingFqdnToUnset = (req, obj) =>
   fieldExistenceForUnset(obj, 'ping_fqdn');
-const checkPingPackets = (obj) => // so far, only value=100 is allowed.
-  checkField(obj, 'ping_packets', checkNumericFieldInsideInterval(100, 100));
-const checkId = (obj) =>
-  checkField(obj, 'id', util.isMacValid);
+const checkPingPackets = (req, obj) => // so far, only value=100 is allowed.
+  checkField(req, obj, 'ping_packets', 
+    checkNumericFieldInsideInterval(100, 100));
+const checkId = (req, obj) =>
+  checkField(req, obj, 'id', util.isMacValid);
 
 // An Object class to be used as errors to be returned in responses.
 // Every router http handler will have a final catch that expects an object of
@@ -76,19 +79,19 @@ class HttpError {
 }
 
 // Throws errors found in given request body.
-const checkBody = function(body) {
-  if (body.constructor !== Object) {
-    throw new HttpError(400, 'Erro no JSON recebido.');
+const checkBody = function(req) {
+  if (req.body.constructor !== Object) {
+    throw new HttpError(400, req.t('receivedJsonError'));
   }
-  return body;
+  return req.body;
 };
 
-const checkIdUrlParameter = function(params) {
-  params.id = params.id.replace(/_/g, ':');
-  if (!util.isMacValid(params.id)) {
-    throw new HttpError(400, `Erro no ID recebido: '${params.id}'.`);
+const checkIdUrlParameter = function(req) {
+  req.params.id = req.params.id.replace(/_/g, ':');
+  if (!util.isMacValid(req.params.id)) {
+    throw new HttpError(400, req.t('receivedIdError', {id: req.params.id}));
   }
-  return params;
+  return req.params;
 };
 
 // For each field check function in given array ('fieldCheckFunctions'),
@@ -103,11 +106,12 @@ const checkIdUrlParameter = function(params) {
 // If at least one error is returned form any field check function, an
 // HttpError is thrown where message is an array with all the error messages
 // returned from field check functions.
-const checkDataCollectingFields = function(obj, fieldCheckFunctions) {
+const checkDataCollectingFields = function(req, obj, fieldCheckFunctions) {
   let errors = [];
   let fullFieldNames = {};
   for (let i = 0; i < fieldCheckFunctions.length; i++) {
-    let [exists, fullFieldName, value, error] = fieldCheckFunctions[i](obj);
+    let [exists, fullFieldName, value, error] = 
+      fieldCheckFunctions[i](req, obj);
     if (error !== undefined) errors.push(error);
     else if (exists) fullFieldNames[fullFieldName] = value;
   }
@@ -130,7 +134,7 @@ const checkDataCollectingFields = function(obj, fieldCheckFunctions) {
 */
 // returns an object having MongoDB's update structure, having $set and $unset
 // statements, if there was any set or unset received in a request.
-const readChangesAndBuildMongoDBUpdateObject = function(changes) {
+const readChangesAndBuildMongoDBUpdateObject = function(req, changes) {
   let noChange = true; // will be changed if request contains any value.
   let update = {};
   // eslint-disable-next-line guard-for-in
@@ -138,15 +142,15 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
     let change = changes[changeKey];
     if (change.obj !== undefined && change.obj.constructor === Object) {
       // getting and object where keys are full path field names and their 
-      // values to be set or unset
-      let fields = checkDataCollectingFields(change.obj, change.fieldChecks);
+      // values to be set or unset.
+      let fields = checkDataCollectingFields(req, change.obj, change.fieldChecks);
       if (Object.keys(fields).length > 0) { // if any existing and valid field.
         noChange = false; // at least one update will be made.
         update[changeKey] = fields; // build $set, or $unset, statement.
       }
     }
   }
-  if (noChange) throw new HttpError(400, 'Nenhuma alteração recebida.');
+  if (noChange) throw new HttpError(400, req.t('receivedNoAlterations'));
   return update;
 };
 
@@ -157,54 +161,68 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
 //   return updateQuery;
 // }
 
+// function to log an error and throw our custom built 'HttpError'.
 const throwsHttpError = function(e, httpCode, jsonErrorMessage) {
   console.log(jsonErrorMessage);
   console.log(e);
   throw new HttpError(httpCode, jsonErrorMessage);
 };
 
-const sendErrorResponse = (res, e) => Promise.resolve()
-  .then(() => res.status(e.code).json({message: e.message}))
+// function to be used to catch all errors in a handler and to send it 
+// in response.
+const sendErrorResponse = (e, req, res, obj) => Promise.resolve()
+  .then(() => {
+    if (e.constructor === HttpError) { // if error was built by us.
+      res.status(e.code).json({message: e.message}); // sends error.
+    } else { // if it's another error, we have a bug.
+      // prints error found to stderr.
+      console.error(`-- found a bug when handling ${req.method} `+
+        `'${req.originalUrl}' at ${req._startTime.toISOString()}\n`, e, '\n');
+      // sends generic error. Object sent can be passed at 4th argument.
+      res.status(500).json(obj || {message: req.t('internalError')});
+    }
+  })
   .catch((e) => console.log('Error when sending error message in data '+
-    'collecting response.\n', e));
+    'collecting response.\n', e)); // stdout debug message.
 
+// function to be used to send successful response and body (if it exists).
 const sendOkResponse = (res, json) => Promise.resolve()
   .then(() => json ? res.status(200).json(json) : res.status(200).end())
   .catch((e) => console.log('Error when sending ok for data collecting '+
-    'response.\n', e));
+    'response.\n', e)); // stdout debug message.
 
-
+// returns data_collecting object inside Config.
 dataCollectingController.returnServiceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkBody(req.body))
-  .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting').lean()
-    .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao buscar os '+
-      'parâmetros de coleta de dados.')))
+  .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting')
+    .lean().exec()
+    .catch((e) => throwsHttpError(e, 500, req.t('databaseConfigNotFound'))))
   .then((config) => sendOkResponse(res, config.data_collecting || {}))
-  .catch((e) => sendErrorResponse(res, e));
+  .catch((e) => sendErrorResponse(e, req, res));
 };
 
+// updates data_collecting object inside Config.
 dataCollectingController.updateServiceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkBody(req.body))
-  .then(() => readChangesAndBuildMongoDBUpdateObject({
+  .then(() => checkBody(req))
+  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
         checkPingFqdn, checkPingPackets],
     },
   }))
-  .then((update) => ConfigModel.updateOne({is_default: true}, update)
-    .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao salvar os '+
-      'parâmetros do serviço de coleta de dados.')))
+  .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
+    .catch((e) => throwsHttpError(e, 500, req.t('databaseConfigNotFound'))))
   .then((r) => sendOkResponse(res))
-  .catch((e) => sendErrorResponse(res, e));
+  .catch((e) => sendErrorResponse(e, req, res));
 };
 
+// updates data_collecting object inside selected devices.
 dataCollectingController.updateManyParameters = async function(req, res) {
   return Promise.resolve()
-  .then(() => checkBody(req.body))
-  .then(() => readChangesAndBuildMongoDBUpdateObject({
+  .then(() => checkBody(body))
+  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
@@ -217,14 +235,11 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   .then(async (update) => {
     let filterList = req.body.filter_list;
     if (filterList === undefined) {
-      throw new HttpError(400,
-      'Filtro de busca não forncedo na alteração em massa dos parâmetros de '+
-      'coleta de dados.');
-    }
-    if (filterList.constructor !== String) {
-      throw new HttpError(400,
-      'Filtro de busca não é uma string na alteração em massa dos parâmetros '+
-      'de coleta de dados.');
+      throw new HttpError(400, t('attributeNotGiven', 
+        {attribute: 'filter_list'}));
+    } else if (filterList.constructor !== String) {
+      throw new HttpError(400, t('attributeWrongType', 
+        {attribute: 'filter_list', type: 'String'}));
     }
     filterList = filterList.split(',');
     return deviceListController.complexSearchDeviceQuery(filterList)
@@ -232,27 +247,29 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   })
   // .then((query) => {console.log('query', query)}
   .then((query) => DeviceModel.updateMany(query.select, query.update)
-    .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao salvar os '+
-      'parâmetros de coleta de dados para vários dispositivos.')))
+    .exec().catch((e) => 
+      throwsHttpError(e, 500, req.t('databaseDeviceUpdateManyError'))))
   .then(() => sendOkResponse(res))
-  .catch((e) => sendErrorResponse(res, e));
+  .catch((e) => sendErrorResponse(e, req, res));
 };
 
+// returns data_collecting object of a given device.
 dataCollectingController.returnDeviceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkIdUrlParameter(req.params))
+  .then(() => checkIdUrlParameter(req))
   .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')
-    .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao buscar os '+
-      `parâmetros de coleta de dados do dispositivo ${req.params.id}.`)))
+    .exec().catch((e) => throwsHttpError(e, 500,
+      req.t('databaseDeviceNotFound', {id: req.params.id}))))
   .then((device) => sendOkResponse(res, device.data_collecting || {}))
-  .catch((e) => sendErrorResponse(res, e));
+  .catch((e) => sendErrorResponse(e, req, res));
 };
 
+// updates data_collecting object inside a given device.
 dataCollectingController.updateDeviceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkIdUrlParameter(req.params))
-  .then(() => checkBody(req.body))
-  .then(() => readChangesAndBuildMongoDBUpdateObject({
+  .then(() => checkIdUrlParameter(req))
+  .then(() => checkBody(req))
+  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
@@ -263,16 +280,17 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
     },
   }))
   .then((update) => DeviceModel.updateOne({_id: req.params.id}, update)
-    .exec().catch((e) => throwsHttpError(e, 500, 'Erro ao salvar os '+
-      `parâmetros de coleta de dados para o dispositivo ${req.params.id}.`)))
+    .exec().catch((e) => throwsHttpError(e, 500,
+      req.t('databaseDeviceUpdateError', {id: req.params.id}))))
   .then(() => sendOkResponse(res))
   .then(() => Promise.resolve()
     .then(() => mqtt.anlixMessageRouterUpdate(req.params.id))
-    .catch((e) => console.log('Error when forcing sync for device '
-      +`'${req.params.id}' after saving data its collecting parameters.\n`, e)))
-  .catch((e) => sendErrorResponse(res, e));
+    .catch((e) => console.log('Error when forcing mqtt sync for device '
+      +`'${req.params.id}' after saving its data_collecting parameters.\n`, e)))
+  .catch((e) => sendErrorResponse(e, req, res));
 };
 
+// returns data_collecting object inside Config in a format used by routers.
 dataCollectingController.getConfig = function(req, res) {
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (!err && matchedConfig) {
@@ -286,7 +304,7 @@ dataCollectingController.getConfig = function(req, res) {
     } else {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro ao obter parâmetros de coleta de dados',
+        message: req.t('databaseConfigNotFound'),
       });
     }
   });
