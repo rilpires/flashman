@@ -564,7 +564,7 @@ const tr069Devices = {
       wps: false,
       ping_test: true,
       speed_test: true,
-      speed_test_limit: 1000,
+      speed_test_limit: 250,
       block_devices: false,
       firmware_upgrade: false,
       stun: false,
