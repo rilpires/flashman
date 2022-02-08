@@ -3,7 +3,7 @@ const express = require('express');
 const deviceListController = require('../../controllers/device_list');
 const userController = require('../../controllers/user');
 const authController = require('../../controllers/auth');
-const i18nextMiddleware = require('./language.js').middleware
+const i18nextMiddleware = require('../../controllers/language.js').middleware
 
 let router = express.Router();
 

@@ -1,6 +1,7 @@
 const express = require('express');
+const authController = require('../controllers/auth');
+const i18nextMiddleware = require('../controllers/language.js').middleware
 const dataCollectingController = require('../controllers/data_collecting');
-const i18nextMiddleware = require('./language.js').middleware
 
 let router = express.Router();
 
