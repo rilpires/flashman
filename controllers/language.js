@@ -1,14 +1,15 @@
-const i18next = require('i18next')
-const i18nextFsBackend = require('i18next-fs-backend')
-const i18nextMiddleware = require('i18next-http-middleware')
+const i18next = require('i18next');
+const i18nextFsBackend = require('i18next-fs-backend');
+const i18nextMiddleware = require('i18next-http-middleware');
 
-
+// custom language detector to be added to 'i18next-http-middleware'.
 const anlixLanguageDetector = {
+  // this name is used to identify the detector in the detection order.
   name: 'anlixLanguageDetector',
 
   lookup: function(req, res, options) {
     // options -> are passed in options
-    return req.user && req.user.laguage
+    return req.user && req.user.language
   },
 
   cacheUserLanguage: function(req, res, lng, options) {
@@ -17,12 +18,12 @@ const anlixLanguageDetector = {
 
     // store it
     console.log("-- cacheUserLanguage. options:", options)
-  }
-}
+  },
+};
 
 
-let lngDetector = new i18nextMiddleware.LanguageDetector()
-lngDetector.addDetector(anlixLanguageDetector)
+let lngDetector = new i18nextMiddleware.LanguageDetector();
+lngDetector.addDetector(anlixLanguageDetector);
 
 i18next
   // backend options: https://github.com/i18next/i18next-http-backend#backend-options
@@ -37,8 +38,8 @@ i18next
     },
     initImmediate: false,
     backend: {
-      loadPath: './locales/{{lng}}/{{ns}}.json',
-      addPath: './locales/{{lng}}/{{ns}}.json',
+      loadPath: './public/dist/locales/{{lng}}/{{ns}}.json',
+      addPath: './public/dist/locales/{{lng}}/{{ns}}.json',
     },
     // preload: ['en', 'en-US', 'es', 'pt-BR', 'lsls'],
     ns: ['translation'],
@@ -54,8 +55,8 @@ i18next
     }
     // console.log('i18next:', i18next)
     // console.log('======== i18next', i18next)
-  })
+  });
 
-const middleware = i18nextMiddleware.handle(i18next)
+const middleware = i18nextMiddleware.handle(i18next);
 
-module.exports = { middleware, i18next }
+module.exports = { middleware, i18next };

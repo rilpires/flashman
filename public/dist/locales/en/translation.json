@@ -1,0 +1,14 @@
+{
+	"mykey": "enenenenenee",
+	"internalError": "Internal Error.",
+	"fieldInvalid": "Field '{{fieldName}}' is invalid.",
+	"receivedJsonError": "Error in received JSON.",
+	"receivedIdError": "Error in received ID: '{{id}}'.",
+	"receivedNoAlterations": "No alterations received.",
+	"attributeNotGiven": "Attribute '{{attribute}}' got given.",
+	"attributeWrongType": "Attribute '{{attribute}}' type isn't a '{{dataType}}'.",
+	"databaseConfigNotFound": "Error finding configurations.",
+	"databaseDeviceNotFound": "Error finding device '{{id}}'.",
+	"databaseDeviceUpdateError": "Error updating device '{{id}}'.",
+	"databaseDeviceUpdateManyError": "Error updating devices."
+}

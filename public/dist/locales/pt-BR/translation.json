@@ -1,0 +1,14 @@
+{
+	"mykey": "ptptptptpttpt",
+	"internalError": "Erro interno.",
+	"fieldInvalid": "Campo '{{fieldName}}' inválido.",
+	"receivedJsonError": "Erro no JSON recebido.",
+	"receivedIdError": "Erro no ID recebido: '{{id}}'.",
+	"receivedNoAlterations": "Nenhuma alteração recebida.",
+	"attributeNotGiven": "Atributo '{{attribute}}' não fornecido.",
+	"attributeWrongType": "Atributo '{{attribute}}' não é do tipo '{{dataType}}'.",
+	"databaseConfigNotFound": "Erro ao buscar configurações.",
+	"databaseDeviceNotFound": "Erro ao buscar o dispositivo '{{id}}'.",
+	"databaseDeviceUpdateError": "Error ao atualizar o dispositivo '{{id}}'.",
+	"databaseDeviceUpdateManyError": "Erro ao atualizar dispositivos."
+}
