@@ -567,6 +567,7 @@ const tr069Devices = {
       speed_test_limit: 1000,
       block_devices: false,
       firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
