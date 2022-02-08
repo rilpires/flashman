@@ -42,8 +42,8 @@ const updateConfiguration = function(fields) {
 
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
-let modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
+let modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
 let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());

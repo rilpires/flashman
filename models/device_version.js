@@ -557,9 +557,6 @@ const tr069Devices = {
     versions_upgrade: {
       '3.0.3': [],
     },
-    // port_forward_opts: {
-    //   '3.0.3': portForwardFullSupport,
-    // },
     feature_support: {
       port_forward: false,
       pon_signal: false,
@@ -570,6 +567,28 @@ const tr069Devices = {
       speed_test_limit: 1000,
       block_devices: false,
       firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'Archer C6': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '1.0.14 Build 20211118 rel.43110(5553)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },

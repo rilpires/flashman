@@ -90,6 +90,7 @@ const convertWifiMode = function(mode, is5ghz) {
       return (is5ghz) ? '11na' : '11n';
     case '11ac':
     case 'ac':
+    case 'nac':
     case 'anac':
     case 'a,n,ac':
     case 'a/n/ac':
@@ -241,9 +242,7 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -339,6 +338,13 @@ const createRegistry = async function(req, permissions) {
     wifi5Channel = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value;
   }
 
+  // Remove DHCP uptime for Archer C6
+  let wanUptime = (hasPPPoE) ?
+    data.wan.uptime_ppp.value : data.wan.uptime.value;
+  if (!hasPPPoE && model == 'Archer C6') {
+    wanUptime = undefined;
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -381,7 +387,7 @@ const createRegistry = async function(req, permissions) {
     wan_negociated_duplex:
       (data.wan.duplex) ? data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
-    wan_up_time: (hasPPPoE) ? data.wan.uptime_ppp.value : data.wan.uptime.value,
+    wan_up_time: wanUptime,
     created_at: Date.now(),
     last_contact: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
@@ -514,6 +520,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     return res.status(500).json({success: false,
                                  message: 'Error finding Config in database'});
   });
+  // Convert mac field from - to : if necessary
+  if (data.common.mac.value.includes('-')) {
+    data.common.mac.value = data.common.mac.value.replace(/-/g, ':');
+  }
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
 
   // Fetch functionalities of CPE
@@ -554,9 +564,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_udp_conn_req_addr &&
@@ -621,7 +629,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   } else {
     if (data.wan.wan_ip.value) device.wan_ip = data.wan.wan_ip.value;
-    if (data.wan.uptime.value) device.wan_up_time = data.wan.uptime.value;
+    // Do not store DHCP uptime for Archer C6
+    if (data.wan.uptime.value && device.model != 'Archer C6') {
+      device.wan_up_time = data.wan.uptime.value;
+    }
     device.pppoe_user = '';
     device.pppoe_password = '';
     if (data.wan.mtu && data.wan.mtu.value) {
@@ -935,7 +946,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (model == 'GONUAC001' || model == 'xPON') {
+      if (device.model === 'GONUAC001' || device.model === '121AC') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -957,10 +968,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
     }
     if (
-      model == 'GONUAC001' ||
-      model == 'xPON' ||
-      model == 'IGD' ||
-      model === 'MP_G421R'
+      device.model === 'GONUAC001' ||
+      device.model === '121AC' ||
+      device.model === 'IGD' ||
+      device.model === 'MP_G421R'
     ) {
       // Trigger xml config syncing for
       // web admin user and password
@@ -1168,8 +1179,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        let permissions = null;
-        permissions = DeviceVersion.findByVersion(
+        let permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
           device.model,
@@ -1300,7 +1310,10 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         };
       }
     });
-    if (pingKeys.diag_state === 'Complete') {
+    if (
+      pingKeys.diag_state === 'Complete' ||
+      pingKeys.diag_state === 'Complete\n'
+    ) {
       result[pingKeys.host] = {
         lat: pingKeys.avg_resp_time.toString(),
         loss: parseInt(pingKeys.failure_count * 100 /
@@ -2037,9 +2050,10 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
-  if (DeviceVersion.findByVersion(
-    '', true, device.model
-  ).grantPonSignalSupport) {
+  let permissions = DeviceVersion.findByVersion(
+    device.version, device.wifi_is_5ghz_capable, device.model,
+  );
+  if (permissions.grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
     task.parameterNames.push(fields.wan.pon_txpower);
     if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {

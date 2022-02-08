@@ -219,6 +219,7 @@ const getDefaultFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
+      pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable',
       pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Username',
       pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Password',
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate',
@@ -353,6 +354,24 @@ const getDefaultFields = function() {
       },
     },
   };
+};
+
+const getTPLinkFields = function(model) {
+  let fields = getDefaultFields();
+  fields.common.mac = 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MACAddress';
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'X_TP_Password');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'X_TP_Password');
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  return fields;
 };
 
 const getHuaweiFields = function(model) {
@@ -724,7 +743,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           break;
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
-          fields = getDefaultFields();
+          fields = getTPLinkFields();
           break;
         default:
           return unknownModel;
