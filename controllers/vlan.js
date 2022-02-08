@@ -8,7 +8,6 @@ const DeviceVersion = require('../models/device_version');
 const Role = require('../models/role');
 const crypto = require('crypto');
 const util = require('./handlers/util');
-const i18next = require('./language.js').i18next
 
 let vlanController = {};
 

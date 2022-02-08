@@ -7,7 +7,6 @@ const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
-const i18next = require('./language.js').i18next
 let Config = require('../models/config');
 let updateController = {};
 

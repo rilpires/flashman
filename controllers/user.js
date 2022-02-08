@@ -4,7 +4,6 @@ const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
 const {Parser, transforms: {unwind}} = require('json2csv');
-const i18next = require('./language.js').i18next
 
 let userController = {};
 

@@ -1,7 +1,6 @@
 const Notification = require('../models/notification');
 const sio = require('../sio');
 let TasksAPI = require('./external-genieacs/tasks-api');
-const i18next = require('./language.js').i18next
 
 let notificationController = {};
 

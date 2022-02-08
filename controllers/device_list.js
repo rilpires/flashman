@@ -18,7 +18,6 @@ const acsDeviceInfo = require('./acs_device_info.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
-const i18next = require('./language.js').i18next
 
 let deviceListController = {};
 
