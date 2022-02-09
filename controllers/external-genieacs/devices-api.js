@@ -665,6 +665,7 @@ const getIgdFields = function() {
 
 const getTendaFields = function() {
   let fields = getDefaultFields();
+  fields.common.alt_uid = fields.common.mac;
   fields.common.model = 'InternetGatewayDevice.DeviceInfo.ProductClass';
   fields.stun = {};
   fields.common.stun_enable =
