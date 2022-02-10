@@ -530,6 +530,11 @@ const makeDeviceBackupData = function(device, config, certFile) {
   let minutes = now.getMinutes();
   minutes = (minutes < 10) ? '0'+minutes : minutes;
   formattedNow += minutes;
+  let customFields = {};
+  let deviceCustomFields = device.custom_tr069_fields;
+  if (deviceCustomFields.intelbras_omci_mode) {
+    customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
+  }
   return {
     timestamp: formattedNow,
     model: device.model,
@@ -561,6 +566,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
         pass: config.tr069.web_password_user,
       },
     },
+    customFields: customFields,
   };
 };
 
