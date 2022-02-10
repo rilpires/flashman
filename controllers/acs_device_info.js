@@ -820,7 +820,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     changes.lan.subnet_mask = device.lan_netmask;
     hasChanges = true;
   }
-  if (data.lan.enable_config.value == '0') {
+  if (data.lan.enable_config &&
+   data.lan.enable_config.value == '0') {
     changes.lan = {};
     changes.lan.enable_config = '1';
   }
