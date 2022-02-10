@@ -706,9 +706,14 @@ const getTendaFields = function() {
   fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
-  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_CT-COM_ChannelWidth';
-  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.X_CT-COM_ChannelWidth';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
+    '.1.X_CT-COM_ChannelWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
+    '.2.X_CT-COM_ChannelWidth';
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+
+  fields.devices.associated = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.1.AssociatedDevice.*.X_CT-COM_RSSI';
   fields.mesh2 = {};
   fields.mesh5 = {};
   return fields;
