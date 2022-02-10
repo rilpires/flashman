@@ -577,7 +577,7 @@ updateController.getAutoConfig = function(req, res) {
 /* saving tr069 inform interval in genieacs for all devices. The errors thrown
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
-const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
+const updatePeriodicInformInGenieAcs = async function(req, tr069InformInterval) {
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
 
@@ -609,7 +609,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
     console.error(e);
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS.');
+    throw new Error(req.t('tasksApiInformIntervalWriteError'));
   });
 };
 
@@ -617,7 +617,7 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: 'Erro ao encontrar configuração base'};
+    if (!config) throw new {message: req.t('configNotFoudError')};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -642,7 +642,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: req.t('fieldsValidationError'),
       });
     }
     config.measureServerIP = measureServerIP;
@@ -657,7 +657,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: req.t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
@@ -672,7 +672,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: req.t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
@@ -685,7 +685,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Erro validando os campos',
+          message: req.t('fieldsValidationError'),
         });
       }
       /* check if ssid prefix was not empty and for some reason is coming
@@ -693,7 +693,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser vazio',
+          message: req.t('ssidPrefixEmptyError'),
         });
       // If prefix is disabled, do not allow changes in current prefix
       } else if (!isSsidPrefixEnabled &&
@@ -701,8 +701,7 @@ updateController.setAutoConfig = async function(req, res) {
                  config.ssidPrefix !== req.body['ssid-prefix']) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser ' +
-                   'alterado se estiver desabilitado',
+          message: req.t('ssidPrefixDisabledAlterationError'),
         });
       }
       config.ssidPrefix = req.body['ssid-prefix'];
@@ -721,12 +720,12 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: req.t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold_critical_high =
       ponSignalThresholdCriticalHigh;
-    let message = 'Salvo com sucesso!';
+    let message = req.t('writeSuccess');
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -764,7 +763,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (tr069InformInterval*1000 !== config.tr069.inform_interval
        && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS.
         // setting inform interval in genie for all devices and in preset.
-        await updatePeriodicInformInGenieAcs(tr069InformInterval);
+        await updatePeriodicInformInGenieAcs(req, tr069InformInterval);
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
@@ -785,7 +784,7 @@ updateController.setAutoConfig = async function(req, res) {
       // respond error without much explanation.
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos relacionados ao TR-069.',
+        message: req.t('tr069FieldsValidationError'),
       });
     }
 
@@ -823,7 +822,7 @@ updateController.setAutoConfig = async function(req, res) {
     console.log(err);
     return res.status(500).json({
       type: 'danger',
-      message: (err.message) ? err.message : 'Erro salvando configurações',
+      message: (err.message) ? err.message : req.t('configWriteError'),
     });
   }
 };

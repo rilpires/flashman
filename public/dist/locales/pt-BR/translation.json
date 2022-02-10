@@ -54,6 +54,21 @@
 	"requestError": "Erro na requisição",
 	"authenticationError": "Erro na autenticação",
 	"databaseFindError": "Erro buscar na base de dados",
-	"firmwareAddSuccess": "Firmware(s) adicionado(s) com sucesso!"
+	"firmwareAddSuccess": "Firmware(s) adicionado(s) com sucesso!",
+
+	"tasksApiInformIntervalWriteError": "Erro ao salvar intervalo de informs do TR-069 no ACS.",
+	"configNotFoudError": "Erro ao encontrar configuração base",
+	"fieldsValidationError": "Erro validando os campos",
+	"ssidPrefixEmptyError": "Prefixo de SSID não pode ser vazio",
+	"ssidPrefixDisabledAlterationError": "Prefixo de SSID não pode ser alterado se estiver desabilitado",
+	"writeSuccess": "Salvo com sucesso!",
+	"tr069FieldsValidationError": "Erro validando os campos relacionados ao TR-069.",
+	"configWriteError": "Erro salvando configurações",
+
+	"notificationFindError": "Erro ao buscar notificações",
+	"notificationStatusError": "Erro no registro de notificação de status",
+	"notificationRemoveError": "Entrada não pode ser removida",
+	"notificatioUpdateSeenError": "Não foi possível marcar notificação como vista para aparelho {{notificationId}}",
+
 	
 }
