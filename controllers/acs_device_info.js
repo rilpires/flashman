@@ -1868,7 +1868,11 @@ const fetchDevicesFromGenie = function(mac, acsID) {
   let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  if (model == 'AC10') {
+    assocField = assocField.split('.').slice(0, -4).join('.');
+  } else {
+    assocField = assocField.split('.').slice(0, -2).join('.');
+  }
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -1915,7 +1919,7 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = getFromNestedKey(data, macKey+'._value');
           if (typeof device.mac === 'string') {
-            device.mac = device.mac.toUpperCase();
+            device.mac = device.mac.toUpperCase().replace(/-/g, ':');
           } else {
             // MAC is a mandatory string
             return;
@@ -1958,11 +1962,20 @@ const fetchDevicesFromGenie = function(mac, acsID) {
           let interfaces = Object.keys(getFromNestedKey(data, assocField));
           interfaces = interfaces.filter((i)=>i[0]!='_');
           if (fields.devices.associated_5) {
-            interfaces.push('5');
+            if (model == 'AC10') {
+              interfaces.push('2');
+            } else {
+              interfaces.push('5');
+            }
           }
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
-            assocField = fields.devices.associated.replace('*', iface);
+            if (model == 'AC10') {
+              assocField = fields.devices.host_rssi.slice(0, -16);
+              assocField = assocField.replace('*', iface);
+            } else {
+              assocField = fields.devices.associated.replace('*', iface);
+            }
             let assocIndexes = getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
@@ -1995,12 +2008,15 @@ const fetchDevicesFromGenie = function(mac, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
+                device.rssi = device.rssi.replace('dBm', '');
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = getFromNestedKey(data, snrKey+'._value');
+              } else if (fields.devices.host_rssi) {
+                device.snr = parseInt(device.rssi)+95;
               }
               // Collect connection speed, if available
               if (fields.devices.host_rate) {
@@ -2008,6 +2024,12 @@ const fetchDevicesFromGenie = function(mac, acsID) {
                 rateKey = rateKey.replace('*', iface).replace('*', index);
                 device.rate = getFromNestedKey(data, rateKey+'._value');
                 device.rate = convertWifiRate(model, device.rate);
+              }
+              if (device.mac == device.name &&
+                fields.devices.alt_host_name) {
+                let nameKey = fields.devices.alt_host_name;
+                nameKey = nameKey.replace('*', iface).replace('*', index);
+                device.name = getFromNestedKey(data, nameKey+'._value');
               }
             });
           });
