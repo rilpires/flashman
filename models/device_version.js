@@ -232,6 +232,35 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
     mesh_ssid_object_exists: true,
   },
+  'MP-G421R': {
+    vendor: 'UNEE',
+    versions_upgrade: {
+      'V1.2.9': [],
+      'V1.3.4': [],
+    },
+    port_forward_opts: {
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 300,
+      ping_test: true,
+      block_devices: false,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
   'IGD': {
     vendor: 'Realtek',
     versions_upgrade: {
@@ -505,6 +534,28 @@ const tr069Devices = {
     vendor: 'Huawei',
     versions_upgrade: {
       '10.0.5.5(C947)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'Archer C6': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
       port_forward: false,
