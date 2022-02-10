@@ -1509,7 +1509,7 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   let query;
-  if (req.body.alt_uid) {
+  if (req.body.alt_uid || req.body.content.alt_uid) {
     query = {alt_uid_tr069: req.body.content.serial};
   } else {
     query = {serial_tr069: req.body.content.serial};
