@@ -3021,7 +3021,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
 };
 
 deviceListController.setLanDeviceBlockState = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar CPE'});
@@ -3036,16 +3036,24 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       }
     }
     if (devFound) {
-      matchedDevice.save(function(err) {
-        if (err) {
-          return res.status(500).json({
-            success: false,
-            message: 'Erro ao registrar atualização'});
-        }
-        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-        return res.status(200).json({'success': true});
-      });
+      if (matchedDevice.use_tr069) {
+        // TODO: pegar diffRulesAccessControl usando "oldDeviceRules" e
+        // "newDeviceRules"
+        let diffRulesAccessControl = 0;
+        await acsDeviceInfo.checkAccessControl(
+          matchedDevice, diffRulesAccessControl
+        );
+      } else {
+        matchedDevice.save(function(err) {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao registrar atualização'});
+          }
+          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+          return res.status(200).json({'success': true});
+        });
+      }
     } else {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar dispositivo'});

@@ -481,6 +481,11 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.mesh2 = fields.mesh2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.mesh5 = fields.mesh5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L

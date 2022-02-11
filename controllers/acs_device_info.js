@@ -1457,9 +1457,15 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
 
-  if ('current_speedtest' in device &&
-      'timestamp' in device.current_speedtest) {
-    rqstTime = device.current_speedtest.timestamp.valueOf();
+  try {
+    if ('current_speedtest' in device &&
+        'timestamp' in device.current_speedtest &&
+        device.current_speedtest.timestamp) {
+      rqstTime = device.current_speedtest.timestamp.valueOf();
+    }
+  } catch (e) {
+    console.log('Error at TR-069 speedtest:', e);
+    return;
   }
 
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
@@ -2462,6 +2468,225 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
           console.error('[!] -> '+e.message+' in '+acsID);
         });
   }
+};
+
+acsDeviceInfoController.checkAccessControl = async function(
+  device, rulesDiffLength
+) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let acsID = device.acs_id;
+  // Make sure that this device is abled to do access control
+  let permissions = DeviceVersion.findByVersion(
+    device.version, device.wifi_is_5ghz_capable, device.model,
+  );
+  if (!permissions || !permissions.grantBlockDevices) return;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  if (!fields) return;
+  // check if already exists add, delete, set sent tasks
+  // getting older tasks for this device id.
+  let query = {device: acsID}; // selecting all tasks for a given device id.
+  let tasks;
+  try {
+    tasks = await TasksAPI.getFromCollection('tasks', query);
+  } catch (e) {
+    console.log('(!) Error -> '+e.message+' in '+acsID);
+  }
+  if (!Array.isArray(tasks)) return;
+  // if find some task with name addObject or deleteObject
+  let hasAlreadySentTasks = tasks.some((t) => {
+    return t.name === 'addObject' ||
+    t.name === 'deleteObject';
+  });
+  // drop this call of changePortForwardRules
+  if (hasAlreadySentTasks) {
+    console.log('(#) -> DC in '+acsID);
+    return;
+  }
+  // getting devices that need to be blocked
+  let blockedDevices = [];
+  Object.entries(device.lan_devices).forEach((k) => {
+    if (k[1]['is_blocked']) blockedDevices.push(k[1]);
+  });
+  let acSubtreeRoots = {'wifi2': {}, 'wifi5': {}, 'mesh2': {}, 'mesh5': {}};
+  Object.entries(fields.access_control).forEach(async (v) => {
+    acSubtreeRoots[v[0]]['key'] = v[1];
+    acSubtreeRoots[v[0]]['object'] =
+      await updateAccessControl(device, v[1], blockedDevices, rulesDiffLength);
+  });
+};
+
+const getZTEAccessControlObject = function(acSubtreeRoot, data) {
+  let keys = acSubtreeRoot.split('.');
+  Object.entries(keys).forEach(key => {
+    data = data[key[1]];
+  });
+  let acObjects = [];
+  Object.entries(data).forEach((key, value) => {
+    if (!['_object', '_timestamp', '_writable'].includes(key[0])) {
+      acObjects.push({
+        'root': acSubtreeRoot+'.'+key[0],
+        'mac': acSubtreeRoot+'.'+key[0]+'.MACAddress',
+        'name': acSubtreeRoot+'.'+key[0]+'.Name'
+      });
+    }
+  });
+  return acObjects;
+};
+
+const addZTEAccessControlRule = async function(
+  device, acSubtreeRoot, numRulesToAdd
+) {
+  let acsID = device.acs_id;
+  let addObjTask = {
+    name: 'addObject',
+    objectName: acSubtreeRoot,
+  };
+  // adding TR-069 new access control rules
+  for (let i = 0; i < numRulesToAdd; i++) {
+    try {
+      let ret = await TasksAPI.addTask(acsID, addObjTask, true,
+        10000, []);
+      if (!ret || !ret.finished||
+        ret.task.name !== addObjTask.name) {
+        throw new Error('task error');
+      }
+    } catch (e) {
+      console.log('Error: failure creating new Access Control rule at '+acsID);
+      return false;
+    }
+  }
+  return true;
+};
+
+const deleteZTEAccessControlRule = async function(
+  device, acSubtreeRoot, numRulesToDelete
+) {
+  let acsID = device.acs_id;
+  // Get device access control subtree
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+acSubtreeRoot;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = await http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('error', (error) => console.log(error));
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+        try {
+          let acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
+          for (let i = 0; (i < acTreeObjects.length) &&
+                          (i < numRulesToDelete); i++) {
+            let deleteObjTask = {
+              name: 'deleteObject',
+              objectName: acTreeObjects[i]['root'],
+            };
+            try {
+              let ret = await TasksAPI.addTask(acsID, deleteObjTask, true,
+                10000, []);
+              if (!ret || !ret.finished||
+                ret.task.name !== deleteObjTask.name) {
+                throw new Error('task error');
+              }
+            } catch (e) {
+              console.log(
+                'Error: failure Access Control rule removal at '+acsID
+              );
+              return false;
+            }
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
+  });
+  req.end();
+  return true;
+};
+
+const getZTEAccessControlTask = async function(
+  blockedDevices, acSubtreeRoot, acTreeObjects
+) {
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [
+      [acSubtreeRoot+'Mode', 'Ban', 'xsd:string']
+    ],
+  };
+  for (let i = 0; i < blockedDevices.length; i++) {
+    let devOnFlashman = blockedDevices[i];
+    let devOnTree = acTreeObjects[i];
+    task.parameterValues.push(
+      [devOnTree['mac'], devOnFlashman['mac'], 'xsd:string']
+    );
+    task.parameterValues.push(
+      [devOnTree['name'], devOnFlashman['dhcp_name'], 'xsd:string']
+    );
+  }
+  return task;
+}
+
+const updateAccessControl = async function(
+  device, acSubtreeRoot, blockedDevices, numRulesToChange
+) {
+  let acsID = device.acs_id;
+  if (numRulesToChange > 0) {
+    await addZTEAccessControlRule(device, acSubtreeRoot, numRulesToChange);
+  } else if (numRulesToChange < 0) {
+    await deleteZTEAccessControlRule(device, acSubtreeRoot, -numRulesToChange);
+  }
+  // Get device access control subtree
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+acSubtreeRoot;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = await http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('error', (error) => console.log(error));
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+        try {
+          let acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
+          if (acTreeObjects.length == blockedDevices.length) {
+            let task = getZTEAccessControlTask(
+              blockedDevices, acSubtreeRoot, acTreeObjects
+            );
+            result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+            if (!result || !result.finished ||
+                result.task.name !== 'setParameterValues') {
+              console.log(
+                'Error: failed to configure new Access Control rule at '+
+                serial
+              );
+              return;
+            }
+          } else {
+            return;
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
+  });
+  req.end();
 };
 
 const configFileEditing = async function(device, target) {
