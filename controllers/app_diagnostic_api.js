@@ -399,7 +399,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       */
       let populateVAPObjects = false;
       if (!hasMeshVAPObject && targetMode > 0) {
-        const returnObj = await acsDeviceInfo.coordVAPObjects(acsID);
+        const returnObj = await acsDeviceInfo.coordVAPObjects(device);
         if (returnObj.code !== 200) {
           return res.status(returnObj.code).json({'error': returnObj.msg});
         }
