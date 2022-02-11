@@ -3104,9 +3104,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
-    let splitID = acsID.split('-');
-    let model = splitID.slice(1, splitID.length-1).join('-');
-    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let fields = DevicesAPI.getModelFieldsFromDevice(matchedDevice).fields;
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
     let taskParameterNames = [rxPowerField, txPowerField];
@@ -3124,7 +3122,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
-        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
+        acsDeviceInfo.fetchPonSignalFromGenie(matchedDevice, acsID);
       }
     });
   });
