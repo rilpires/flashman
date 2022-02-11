@@ -737,8 +737,6 @@ const getTendaFields = function() {
     '.WLANConfiguration.2.AssociatedDevice.*.X_CT-COM_RSSI';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
   '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_RSSI';
-  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_TxRate';
   fields.devices.alt_host_name = 'InternetGatewayDevice.LANDevice.1'+
     '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_DhcpName';
   fields.mesh2 = {};
