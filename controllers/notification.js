@@ -49,7 +49,7 @@ notificationController.SeeNotification = async function(req, res) {
   // sets 'seen' attribute to 'true'.
   let op = await Notification.updateOne({_id: req.body.id}, {seen: true})
     .catch((err) => err); // in case of error, return the error.
-  if (op.constructor === Error) { // if the update returned a error.
+  if (op instanceof Error) { // if the update returned a error.
     return res.status(500).json({success: false, message:
       req.t('notificatioUpdateSeenError', {notificationId: req.body.id})});
   }

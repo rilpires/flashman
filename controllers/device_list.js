@@ -153,7 +153,7 @@ const getOnlyTR069Configs = async function() {
     .lean().exec()
     .catch((err) => err); // in case of error, return error in await.
   // it's very unlikely that we will incur in any error but,
-  if (configsWithTr069.constructor === Error) { // if we returned an error.
+  if (configsWithTr069 instanceof Error) { // if it returned an error.
     // print error message.
     console.log('Error when getting user config from database.'+
       '\nUsing default values for tr069 config.');
