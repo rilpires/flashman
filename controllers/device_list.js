@@ -645,9 +645,15 @@ deviceListController.getDevices = async function(req, res) {
   }
 
   // building search query.
-  const userRole = await Role.findOne({
+  const [userRole, err] = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
-  });
+  }).exec().then((x) => [x, undefined], (e) => [undefined, e]);
+  if (err) {
+    return res.status(500).json({ // in case of error, returns message.
+      success: false,
+      message: req.t('databaseFindError', {errorline: __line}),
+    });
+  }
   let finalQuery;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
