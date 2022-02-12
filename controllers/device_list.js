@@ -316,14 +316,15 @@ deviceListController.changeUpdate = async function(req, res) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(500).json({success: false,
-                                   message: req.t('deviceNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
   } catch (e) {
     error = e;
   }
   if (error || !matchedDevice) {
     return res.status(500).json({success: false,
-      message: req.t('deviceFindError')});
+      message: req.t('databaseFindError', {errorline: __line})});
   }
   // Cast to boolean so that javascript works as intended
   let doUpdate = req.body.do_update;
@@ -356,7 +357,7 @@ deviceListController.changeUpdate = async function(req, res) {
     await matchedDevice.save();
   } catch (e) {
     return res.status(500).json({success: false,
-      message: req.t('deviceUpdateError')});
+      message: req.t('cpeSaveError', {errorline: __line})});
   }
 
   if (matchedDevice.use_tr069 && doUpdate) {
@@ -382,7 +383,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
       indexContent.type = 'danger';
       indexContent.message = err.message;
       return res.status(500).json({success: false,
-                                   message: req.t('deviceFindError')});
+                                   message: req.t('cpeFindError', {errorline: __line})});
     }
     // Cast to boolean so that javascript works as intended
     let doUpdate = req.body.do_update;
@@ -393,7 +394,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
     if (!doUpdate) {
       return res.status(500).json({
         success: false,
-        message: req.t('functionToSetSlaveToUpdate'),
+        message: req.t('functionToSetSlaveToUpdate', {errorline: __line}),
       });
     }
     matchedDevice.do_update = true;
@@ -406,7 +407,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
         indexContent.type = 'danger';
         indexContent.message = err.message;
         return res.status(500).json({success: false,
-                                     message: req.t('deviceUpdateError')});
+                                     message: req.t('cpeSaveError', {errorline: __line})});
       }
 
       mqtt.anlixMessageRouterUpdate(matchedDevice._id);
@@ -660,7 +661,7 @@ deviceListController.getDevices = async function(req, res) {
   .then((devices) => res.json(devices)) // responding with array as json.
   .catch((err) => res.status(500).json({ // in case of error, returns message.
     success: false,
-    message: req.t('devicesFindError'),
+    message: req.t('cpesFindError', {errorline: __line}),
   }));
 };
 
@@ -940,7 +941,7 @@ deviceListController.delDeviceReg = async function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: req.t('noDeviceFound'),
+        message: req.t('cpesNotFound', {errorline: __line}),
       });
     }
     for (let device of devices) {
@@ -949,14 +950,14 @@ deviceListController.delDeviceReg = async function(req, res) {
     return res.json({
       success: true,
       type: 'success',
-      message: req.t('deviceDeleteSuccess'),
+      message: req.t('operationSuccessful'),
     });
   } catch (err) {
     console.error('Erro na remoção: ' + err);
     return res.json({
       success: false,
       type: 'danger',
-      message: req.t('deviceDeleteError'),
+      message: req.t('operationUnuccessful', {errorline: __line}),
     });
   }
 };
@@ -1025,7 +1026,7 @@ deviceListController.factoryResetDevice = function(req, res) {
     if (err || !device) {
       return res.status(500).json({
         success: false,
-        message: req.t('cpeNotFoundInDB'),
+        message: req.t('cpeFindError'),
       });
     }
     const model = device.model.replace('N/', '');
@@ -1058,13 +1059,15 @@ deviceListController.sendMqttMsg = function(req, res) {
   async function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: req.t('serverError')});
+                                   message: req.t('databaseFindError',
+                                    {errorline: __line})});
     }
     if (Array.isArray(device) && device.length > 0) {
       device = device[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     let permissions = DeviceVersion.findByVersion(device.version,
                                                   device.wifi_is_5ghz_capable,
@@ -1082,7 +1085,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         if (!permissions.grantResetDevices) {
           return res.status(200).json({
             success: false,
-            message: req.t('cpeWithoutFunction'),
+            message: req.t('cpeWithoutFunction', {errorline: __line}),
           });
         } else if (device) {
           device.lan_devices = device.lan_devices.map((lanDevice) => {
@@ -1136,7 +1139,8 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
           if (device && !isDevOn) {
             return res.status(200).json({success: false,
-                                       message: req.t('cpeOffline')});
+                                         message: req.t('cpeOffline',
+                                           {errorlineL __line})});
           }
         }
         if (msgtype === 'speedtest') {
@@ -1245,14 +1249,15 @@ deviceListController.sendMqttMsg = function(req, res) {
           ) {
             return res.status(200).json({
               success: false,
-              message: req.t('requestError')});
+              message: req.t('fieldNameInvalid',
+                {name: 'activate', errorline: __line})});
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
         } else {
           return res.status(200).json({
             success: false,
-            message: req.t('commandNonExisting'),
+            message: req.t('commandNotFound', {errorline: __line}),
           });
         }
         break;
@@ -1261,7 +1266,8 @@ deviceListController.sendMqttMsg = function(req, res) {
         // Message not implemented
         console.log('REST API MQTT Message not recognized (' + msgtype + ')');
         return res.status(200).json({success: false,
-                                     message: req.t('commandNonExisting')});
+                                     message: req.t('commandNotFound',
+                                      {errorline: __line})});
     }
 
     return res.status(200).json({success: true});
@@ -1273,13 +1279,15 @@ deviceListController.getFirstBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: req.t('serverError')});
+                                   message: req.t('databaseFindError',
+                                    {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
 
     if (matchedDevice.firstboot_log) {
@@ -1299,13 +1307,15 @@ deviceListController.getLastBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: req.t('serverError')});
+                                   message: req.t('databaseFindError',
+                                    {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
 
     if (matchedDevice.lastboot_log) {
@@ -1326,13 +1336,15 @@ deviceListController.getDeviceReg = function(req, res) {
     if (err) {
       console.log(err);
       return res.status(500).json({success: false,
-                                   message: req.t('serverError')});
+                                   message: req.t('databaseFindError',
+                                    {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
 
     // hide secret from api
@@ -1390,7 +1402,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (err) {
       return res.status(500).json({
         success: false,
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
         errors: [],
       });
     }
@@ -1398,7 +1410,7 @@ deviceListController.setDeviceReg = function(req, res) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-        message: req.t('cpeNotFound'), errors: []});
+        message: req.t('cpeNotFound', {errorline: __line}), errors: []});
     }
 
     if (util.isJSONObject(req.body.content)) {
@@ -1463,7 +1475,7 @@ deviceListController.setDeviceReg = function(req, res) {
           console.log('Error returning default config');
           return res.status(500).json({
             success: false,
-            message: req.t('cpeNotFound'),
+            message: req.t('configFindError', {errorline: __line}),
             errors: [],
           });
         }
@@ -1959,7 +1971,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 console.log(err);
                 return res.status(500).json({
                   success: false,
-                  message: req.t('deviceUpdateErrorDB'),
+                  message: req.t('cpeSaveError', {errorline: __line}),
                 });
               }
               if (!matchedDevice.use_tr069) {
@@ -1978,7 +1990,7 @@ deviceListController.setDeviceReg = function(req, res) {
         } else {
           return res.status(500).json({
             success: false,
-            message: req.t('invalidFieldsCheckErrors'),
+            message: req.t('fieldsInvalidCheckErrors'),
             errors: errors,
           });
         }
@@ -1986,7 +1998,8 @@ deviceListController.setDeviceReg = function(req, res) {
     } else {
       return res.status(500).json({
         success: false,
-        message: message: req.t('jsonError'),
+        message: req.t('fieldNameInvalid',
+          {name: 'content',errorline: __line}),
         errors: [],
       });
     }
@@ -2028,7 +2041,7 @@ deviceListController.createDeviceReg = function(req, res) {
         console.log('Error searching default config');
         return res.status(500).json({
           success: false,
-          message: req.t('configNotFoudError'),
+          message: req.t('configFindError', {errorline: __line}),
         });
       }
 
@@ -2067,7 +2080,7 @@ deviceListController.createDeviceReg = function(req, res) {
         if (err) {
           return res.status(500).json({
             success: false,
-            message: req.t('serverError'),
+            message: req.t('databaseFindError', {errorline: __line}),
             errors: errors,
           });
         } else {
@@ -2100,7 +2113,7 @@ deviceListController.createDeviceReg = function(req, res) {
               if (err) {
                 return res.status(500).json({
                   success: false,
-                  message: req.t('deviceSaveError'),
+                  message: req.t('cpeSaveError', {errorline: __line}),
                   errors: errors,
                 });
               } else {
@@ -2110,7 +2123,7 @@ deviceListController.createDeviceReg = function(req, res) {
           } else {
             return res.status(500).json({
               success: false,
-              message: req.t('invalidFieldsCheckErrors'),
+              message: req.t('fieldsInvalidCheckErrors'),
               errors: errors,
             });
           }
@@ -2120,7 +2133,7 @@ deviceListController.createDeviceReg = function(req, res) {
   } else {
     return res.status(500).json({
       success: false,
-      message: req.t('jsonError'),
+      message: req.t('fieldNameInvalid', {name: 'content', errorline: __line}),
       errors: [],
     });
   }
@@ -2208,7 +2221,9 @@ deviceListController.checkIncompatibility = function(rules, compatibility) {
   return ret;
 };
 
-deviceListController.setPortForwardTr069 = async function(device, content) {
+deviceListController.setPortForwardTr069 = async function(
+  req, device, content
+) {
   let i;
   let j;
   let rules;
@@ -2230,7 +2245,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   } catch (e) {
     console.log(e.message);
     ret.success = false;
-    ret.message = req.t('notJson');
+    ret.message = req.t('jsonError', {errorline: __line});
     return ret;
   }
 
@@ -2248,7 +2263,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   }
   if (!isJsonInFormat) {
     ret.success = false;
-    ret.message = req.t('jsonFormatError');
+    ret.message = req.t('jsonInvalidFormat', {errorline: __line});
     return ret;
   }
   for (i = 0; i < rules.length; i++) {
@@ -2289,7 +2304,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     }
     if (!isPortsNumber) {
       ret.success = false;
-      ret.message = req.t('portsSouldBeNumberError', {number: rules[i].ip});
+      ret.message = req.t('portsSouldBeNumberError', {ip: rules[i].ip});
       return ret;
     }
     // verify if range is on same size and start/end order
@@ -2303,27 +2318,27 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     }
     if (!isPortsOnRange) {
       ret.success = false;
-      ret.message = req.t('portsSouldBeBetweenError', {number: rules[i].ip});
+      ret.message = req.t('portsSouldBeBetweenError', {ip: rules[i].ip});
       return ret;
     }
     if (!isPortsNotEmpty) {
       ret.success = false;
-      ret.message = req.t('fieldShouldBeFieldError', {number: rules[i].ip});
+      ret.message = req.t('fieldShouldBeFilledError', {ip: rules[i].ip});
       return ret;
     }
     if (!isRangeOfSameSize) {
       ret.success = false;
-      ret.message = req.t('portRangesAreDifferentError', {number: rules[i].ip});
+      ret.message = req.t('portRangesAreDifferentError', {ip: rules[i].ip});
       return ret;
     }
     if (!isRangeNegative) {
       ret.success = false;
-      ret.message = req.t('portRangesInvertedLimitsError', {number: rules[i].ip});
+      ret.message = req.t('portRangesInvertedLimitsError', {ip: rules[i].ip});
       return ret;
     }
     if (!isOnSubnetRange) {
       ret.success = false;
-      ret.message = req.t('outOfSubnetRangeError', {number: rules[i].ip});
+      ret.message = req.t('outOfSubnetRangeError', {ip: rules[i].ip});
       return ret;
     }
   }
@@ -2352,13 +2367,13 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   } catch (err) {
     console.log('Error Saving Port Forward: '+err);
     ret.success = false;
-    ret.message = req.t('deviceRulesWriteError');
+    ret.message = req.t('cpeSaveError', {errorline: __line});
     return ret;
   }
   // geniacs-api call
   acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
   ret.success = true;
-  ret.message = req.t('devicePortMappingSuccess', {deviceId: device.acs_id});
+  ret.message = req.t('operationSuccessful');
   return ret;
 };
 
@@ -2368,14 +2383,15 @@ deviceListController.setPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
@@ -2389,13 +2405,13 @@ deviceListController.setPortForward = function(req, res) {
     if (matchedDevice.bridge_mode_enabled) {
       return res.status(200).json({
         success: false,
-        message: req.t('cpeNotInBridgeCanOpenPorts'),
+        message: req.t('cpeNotInBridgeCantOpenPorts'),
       });
     }
     // tr-069 routers
     if (matchedDevice.use_tr069) {
       let result = await deviceListController.
-      setPortForwardTr069(matchedDevice,
+      setPortForwardTr069(req, matchedDevice,
         req.body.content);
       return res.status(200).json({
         success: result.success,
@@ -2545,7 +2561,7 @@ deviceListController.setPortForward = function(req, res) {
             console.log('Error Saving Port Forward: '+err);
             return res.status(200).json({
               success: false,
-              message: req.t('deviceRulesWriteError2'),
+              message: req.t('cpeSaveError', {errorline: __line}),
             });
           }
           mqtt.anlixMessageRouterUpdate(matchedDevice._id);
@@ -2558,7 +2574,8 @@ deviceListController.setPortForward = function(req, res) {
       } else {
         return res.status(200).json({
           success: false,
-          message: req.t('jsonError'),
+          message: req.t('fieldNameInvalid',
+            {name: 'content', errorline: __line}),
         });
       }
     }
@@ -2571,14 +2588,15 @@ deviceListController.getPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
@@ -2646,14 +2664,15 @@ deviceListController.getPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: 'Erro interno do servidor',
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     return res.status(200).json({
       success: true,
@@ -2668,14 +2687,15 @@ deviceListController.setPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
-                                   message: req.t('cpeNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
@@ -2692,7 +2712,7 @@ deviceListController.setPingHostsList = function(req, res) {
         if (err) {
           return res.status(200).json({
             success: false,
-            message: req.t('serverError'),
+            message: req.t('cpeSaveError', {errorline: __line}),
           });
         }
         return res.status(200).json({
@@ -2703,7 +2723,8 @@ deviceListController.setPingHostsList = function(req, res) {
     } else {
       return res.status(200).json({
         success: false,
-        message: req.t('jsonError'),
+        message: req.t('fieldNameInvalid',
+          {name: 'content', errorline: __line}),
       });
     }
   });
@@ -2715,7 +2736,7 @@ deviceListController.getLanDevices = async function(req, res) {
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: req.t('cpeNotFound'),
+        message: req.t('cpeNotFound', {errorline: __line}),
       });
     }
 
@@ -2806,7 +2827,7 @@ deviceListController.getLanDevices = async function(req, res) {
     console.error(err);
     return res.status(200).json({
       success: false,
-      message: req.t('serverError'),
+      message: req.t('serverError', {errorline: __line}),
     });
   }
 };
@@ -2817,13 +2838,13 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (matchedDevice == null) {
       return res.status(200).json({
         success: false,
-        message: req.t('cpeNotFound'),
+        message: req.t('cpeNotFound', {errorline: __line}),
       });
     }
 
@@ -2848,14 +2869,14 @@ deviceListController.getSpeedtestResults = function(req, res) {
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: req.t('serverError'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
       return res.status(404).json({
         success: false,
         type: 'danger',
-        message: req.t('cpeNotFound'),
+        message: req.t('cpeNotFound', {errorline: __line}),
       });
     }
 
@@ -2882,19 +2903,19 @@ deviceListController.doSpeedTest = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: req.t('serverErrorTryAgain'),
+        message: req.t('databaseFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
       return res.status(200).json({
         success: false,
-        message: req.t('cpeNotFound'),
+        message: req.t('cpeNotFound', {errorline: __line}),
       });
     }
     if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
-        message: req.t('cpeOffline'),
+        message: req.t('cpeOffline', {errorlineL __line}),
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -2912,7 +2933,7 @@ deviceListController.doSpeedTest = function(req, res) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
-          message: req.t('serverErrorTryAgain'),
+          message: req.t('configFindError', {errorline: __line}),
         });
       }
       if (!matchedConfig.measureServerIP) {
@@ -2948,7 +2969,7 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: req.t('databaseAccessError'),
+        message: req.t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -2961,18 +2982,18 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: req.t('databaseSaveError'),
+              message: req.t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
             success: true,
-            message: req.t('addressSaveSuccess'),
+            message: req.t('operationSuccessful'),
           });
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: req.t('invalidFormat'),
+          message: req.t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
     }
@@ -2985,7 +3006,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: req.t('databaseAccessError'),
+        message: req.t('configFindError', {errorline: __line}),
       });
     } else {
       const user = matchedConfig.traps_callbacks.device_crud.user;
@@ -3010,7 +3031,8 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   DeviceModel.findById(req.body.id, function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: req.t('cpeNotFoundError')});
+                                   message: req.t('cpeFindError',
+                                    {errorline: __line})});
     }
     let devFound = false;
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
@@ -3026,7 +3048,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
         if (err) {
           return res.status(500).json({
             success: false,
-            message: req.t('deviceUpdateError')});
+            message: req.t('cpeSaveError', {errorline: __line})});
         }
         mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
@@ -3034,7 +3056,8 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       });
     } else {
       return res.status(500).json({success: false,
-                                   message: req.t('deviceFindError')});
+                                   message: req.t('lanDeviceFindError',
+                                    {errorline: __line})});
     }
   });
 };
@@ -3044,7 +3067,8 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     let matchedDevice = await DeviceModel.findById(req.body.id);
     if (!matchedDevice) {
       return res.status(500).json({success: false,
-                                   message: req.t('cpeNotFoundError')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
     if (retObj.success) {
@@ -3061,7 +3085,8 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     }
   } catch (err) {
     return res.status(500).json({success: false,
-                                 message: req.t('externalRequestError')});
+                                 message: req.t('serverError',
+                                  {errorline: __line})});
   }
 };
 
@@ -3074,11 +3099,13 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     if (!matchedDevice) {
       return res.status(404).json({success: false,
-                                   message: req.t('onuNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     if (!matchedDevice.use_tr069) {
       return res.status(404).json({success: false,
-                                   message: req.t('onuNotFound')});
+                                   message: req.t('cpeNotFound',
+                                    {errorline: __line})});
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;

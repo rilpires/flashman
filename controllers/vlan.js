@@ -407,7 +407,7 @@ vlanController.updateVlans = async function(req, res) {
         return res.json({
           success: true,
           type: 'success',
-          message: req.t('deviceVlansUpdated', {deviceid: req.params.deviceid})});
+          message: req.t('deviceVlansUpdated', {deviceId: req.params.deviceid})});
       }).catch(function(rej) {
         return res.json({success: false, type: 'danger', message: rej.message});
       });

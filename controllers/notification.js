@@ -51,7 +51,7 @@ notificationController.SeeNotification = async function(req, res) {
     .catch((err) => err); // in case of error, return the error.
   if (op instanceof Error) { // if the update returned a error.
     return res.status(500).json({success: false, message:
-      req.t('notificatioUpdateSeenError', {notificationId: req.body.id})});
+      req.t('notificatioUpdateSeenError', {deviceId: req.body.id})});
   }
   return res.status(200).json({success: true});
 };

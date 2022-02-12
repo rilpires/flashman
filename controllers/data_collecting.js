@@ -22,7 +22,7 @@ const checkField = (req, obj, fieldName, validityFunc) => {
   let exists = v !== undefined;
   let error = undefined;
   if (v !== undefined && !validityFunc(v)) {
-    error = req.t('fieldInvalid', {fieldName});
+    error = req.t('fieldNameInvalid', {name: fieldName, errorline: __line});
   }
   fieldName = 'data_collecting.'+fieldName;
   return [exists, fieldName, v, error];
@@ -70,26 +70,28 @@ const checkId = (req, obj) =>
 // Every router http handler will have a final catch that expects an object of
 // this class as argument.
 // eslint-disable-next-line require-jsdoc
-class HttpError {
+class HttpError extends Error {
   // eslint-disable-next-line require-jsdoc
   constructor(code, message) {
+    super(message) // message will be sent in response's body json.
     this.code = code; // to set the responses code.
-    this.message = message; // to be sent in response's body json.
   }
 }
 
-// Throws errors found in given request body.
-const checkBody = function(req) {
+// Throws errors found in received request body.
+const checkBodyIsObject = function(req) {
   if (req.body.constructor !== Object) {
-    throw new HttpError(400, req.t('receivedJsonError'));
+    throw new HttpError(400, req.t('bodyNotObject',
+      {errorline: __line}));
   }
   return req.body;
 };
 
-const checkIdUrlParameter = function(req) {
-  req.params.id = req.params.id.replace(/_/g, ':');
-  if (!util.isMacValid(req.params.id)) {
-    throw new HttpError(400, req.t('receivedIdError', {id: req.params.id}));
+const checkIdUrlParameter = function (req) {
+  let mac = req.params.id.replace(/_/g, ':');
+  if (!util.isMacValid(mac)) {
+    throw new HttpError(400, req.t('idInvalidInUrlParams', {id: mac,
+      errorline: __line}));
   }
   return req.params;
 };
@@ -143,7 +145,8 @@ const readChangesAndBuildMongoDBUpdateObject = function(req, changes) {
     if (change.obj !== undefined && change.obj.constructor === Object) {
       // getting and object where keys are full path field names and their 
       // values to be set or unset.
-      let fields = checkDataCollectingFields(req, change.obj, change.fieldChecks);
+      let fields =
+        checkDataCollectingFields(req, change.obj, change.fieldChecks);
       if (Object.keys(fields).length > 0) { // if any existing and valid field.
         noChange = false; // at least one update will be made.
         update[changeKey] = fields; // build $set, or $unset, statement.
@@ -172,14 +175,15 @@ const throwsHttpError = function(e, httpCode, jsonErrorMessage) {
 // in response.
 const sendErrorResponse = (e, req, res, obj) => Promise.resolve()
   .then(() => {
-    if (e.constructor === HttpError) { // if error was built by us.
+    if (e instanceof HttpError) { // if error was built by us.
       res.status(e.code).json({message: e.message}); // sends error.
     } else { // if it's another error, we have a bug.
       // prints error found to stderr.
       console.error(`-- found a bug when handling ${req.method} `+
         `'${req.originalUrl}' at ${req._startTime.toISOString()}\n`, e, '\n');
       // sends generic error. Object sent can be passed at 4th argument.
-      res.status(500).json(obj || {message: req.t('internalError')});
+      res.status(500).json(obj || {message: req.t('serverError',
+        {errorline: __line})});
     }
   })
   .catch((e) => console.log('Error when sending error message in data '+
@@ -196,15 +200,17 @@ dataCollectingController.returnServiceParameters = function(req, res) {
   return Promise.resolve()
   .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting')
     .lean().exec()
-    .catch((e) => throwsHttpError(e, 500, req.t('databaseConfigNotFound'))))
-  .then((config) => sendOkResponse(res, config.data_collecting || {}))
+    .catch((e) => throwsHttpError(e, 500, req.t('databaseFindError',
+      {errorline: __line}))))
+  .then((config) => sendOkResponse(res,
+    (config && config.data_collecting) || {}))
   .catch((e) => sendErrorResponse(e, req, res));
 };
 
 // updates data_collecting object inside Config.
 dataCollectingController.updateServiceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkBody(req))
+  .then(() => checkBodyIsObject(req))
   .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body,
@@ -213,7 +219,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
-    .catch((e) => throwsHttpError(e, 500, req.t('databaseConfigNotFound'))))
+    .catch((e) => throwsHttpError(e, 500, req.t('databaseFindError',
+      {errorline: __line}))))
   .then((r) => sendOkResponse(res))
   .catch((e) => sendErrorResponse(e, req, res));
 };
@@ -221,7 +228,7 @@ dataCollectingController.updateServiceParameters = function(req, res) {
 // updates data_collecting object inside selected devices.
 dataCollectingController.updateManyParameters = async function(req, res) {
   return Promise.resolve()
-  .then(() => checkBody(body))
+  .then(() => checkBodyIsObject(body))
   .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body.$set,
@@ -232,23 +239,23 @@ dataCollectingController.updateManyParameters = async function(req, res) {
       fieldChecks: [checkPingFqdnToUnset],
     },
   }))
-  .then(async (update) => {
+  .then((update) => {
     let filterList = req.body.filter_list;
     if (filterList === undefined) {
-      throw new HttpError(400, t('attributeNotGiven', 
-        {attribute: 'filter_list'}));
+      throw new HttpError(400, req.t('fieldNameMissing',
+        {name: 'filter_list', errorline: __line}));
     } else if (filterList.constructor !== String) {
-      throw new HttpError(400, t('attributeWrongType', 
-        {attribute: 'filter_list', type: 'String'}));
+      throw new HttpError(400, req.t('fieldNameWrongType',
+        {name: 'filter_list', errorline: __line}));
     }
     filterList = filterList.split(',');
     return deviceListController.complexSearchDeviceQuery(filterList)
       .then((select) => ({select, update}));
   })
   // .then((query) => {console.log('query', query)}
-  .then((query) => DeviceModel.updateMany(query.select, query.update)
-    .exec().catch((e) => 
-      throwsHttpError(e, 500, req.t('databaseDeviceUpdateManyError'))))
+  .then((query) => DeviceModel.updateMany(query.select, query.update).exec()
+    .catch((e) => throwsHttpError(e, 500, req.t('cpeUpdateManyError',
+      {errorline: __line}))))
   .then(() => sendOkResponse(res))
   .catch((e) => sendErrorResponse(e, req, res));
 };
@@ -259,7 +266,7 @@ dataCollectingController.returnDeviceParameters = function(req, res) {
   .then(() => checkIdUrlParameter(req))
   .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')
     .exec().catch((e) => throwsHttpError(e, 500,
-      req.t('databaseDeviceNotFound', {id: req.params.id}))))
+      req.t('cpeIdNotFound', {id: req.params.id, errorline: __line}))))
   .then((device) => sendOkResponse(res, device.data_collecting || {}))
   .catch((e) => sendErrorResponse(e, req, res));
 };
@@ -268,7 +275,7 @@ dataCollectingController.returnDeviceParameters = function(req, res) {
 dataCollectingController.updateDeviceParameters = function(req, res) {
   return Promise.resolve()
   .then(() => checkIdUrlParameter(req))
-  .then(() => checkBody(req))
+  .then(() => checkBodyIsObject(req))
   .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
     $set: {
       obj: req.body.$set,
@@ -281,7 +288,7 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   }))
   .then((update) => DeviceModel.updateOne({_id: req.params.id}, update)
     .exec().catch((e) => throwsHttpError(e, 500,
-      req.t('databaseDeviceUpdateError', {id: req.params.id}))))
+      req.t('cpeUpdateError', {id: req.params.id, errorline: __line}))))
   .then(() => sendOkResponse(res))
   .then(() => Promise.resolve()
     .then(() => mqtt.anlixMessageRouterUpdate(req.params.id))
@@ -304,7 +311,7 @@ dataCollectingController.getConfig = function(req, res) {
     } else {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('databaseConfigNotFound'),
+        message: req.t('configFindError', {errorline: __line}),
       });
     }
   });
