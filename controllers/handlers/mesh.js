@@ -590,33 +590,24 @@ const getPossibleMeshTopology = function(
   // We are sorting the slaves by rssi
   // This comes from an heuristic to send the update commands 
   // in a proper order (weaker rssi first)
-  // Also, we consider both directions when calculating
-  // "rssiN" (mean value) 
+  // Also, we consider only the lower signal when reading
+  // from both directions
   retObj[masterMac].sort(function(mac1,mac2) {
-    // macN device read from master
-    let meshRouter1,meshRouter2;
-    // master device read from macN
-    let _meshRouter1,_meshRouter2; 
-    for( let i=0 ; i<meshRouters[masterMac].length ; i++ ){
-      if(meshRouters[masterMac][i].mac == mac1) {
-        meshRouter1 = meshRouters[masterMac][i];
-      }
-      if(meshRouters[masterMac][i].mac == mac2) {
-        meshRouter2 = meshRouters[masterMac][i];
-      }
-    }
-    for( let i=0 ; i<meshRouters[mac1].length ; i++ ){
-      if(meshRouters[mac1][i].mac==masterMac) {
-        _meshRouter1 = meshRouters[mac1][i];
-      }
-    }
-    for( let i=0 ; i<meshRouters[mac2].length ; i++ ){
-      if(meshRouters[mac2][i].mac==masterMac) {
-        _meshRouter2 = meshRouters[mac2][i];
-      }
-    }
-    let rssi1 = (meshRouter1.signal + _meshRouter1.signal)/2;
-    let rssi2 = (meshRouter2.signal + _meshRouter2.signal)/2; 
+
+    let masterReadingSlave1 =
+      meshRouters[masterMac].find((val)=>{val === mac1;}).signal;
+    let masterReadingSlave2 =
+      meshRouters[masterMac].find((val)=>{val === mac2;}).signal;
+    let slave1ReadingMaster =
+      meshRouters[mac1].find((val)=>{val === masterMac;}).signal;
+    let slave2ReadingMaster =
+      meshRouters[mac2].find((val)=>{val === masterMac;}).signal;
+    
+    let rssi1 = (masterReadingSlave1 > slave1ReadingMaster) ?
+      (slave1ReadingMaster) : (masterReadingSlave1);
+    let rssi2 = (masterReadingSlave2 > slave2ReadingMaster) ?
+      (slave2ReadingMaster) : (masterReadingSlave2); 
+
     return rssi1 > rssi2 ;
   });
 
