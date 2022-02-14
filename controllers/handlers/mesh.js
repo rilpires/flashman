@@ -586,6 +586,36 @@ const getPossibleMeshTopology = function(
   // hash map where father is the key and value is list of sons
   let retObj = {};
   retObj[masterMac] = slaves;
+  
+  // We are sorting the slaves by rssi
+  // This comes from an heuristic to send the update commands 
+  // in a proper order (weaker rssi first)
+  // Also, we consider both directions when calculating
+  // "rssiN" (mean value) 
+  retObj[masterMac].sort(function(mac1,mac2) {
+    // macN device read from master
+    let meshRouter1,meshRouter2;
+    // master device read from macN
+    let _meshRouter1,_meshRouter2; 
+    for( let i=0 ; i<meshRouters[masterMac].length ; i++ ){
+      if(meshRouters[masterMac][i].mac == mac1)
+        meshRouter1 = meshRouters[masterMac][i];
+      if(meshRouters[masterMac][i].mac == mac2)
+        meshRouter2 = meshRouters[masterMac][i];
+    }
+    for( let i=0 ; i<meshRouters[mac1].length ; i++ ){
+      if(meshRouters[mac1][i].mac==masterMac)
+        _meshRouter1 = meshRouters[mac1][i];
+    }
+    for( let i=0 ; i<meshRouters[mac2].length ; i++ ){
+      if(meshRouters[mac2][i].mac==masterMac)
+        _meshRouter2 = meshRouters[mac2][i];
+    }
+    let rssi1 = (meshRouter1.signal + _meshRouter1.signal)/2;
+    let rssi2 = (meshRouter2.signal + _meshRouter2.signal)/2; 
+    return rssi1 > rssi2 ;
+  });
+
   return retObj;
 };
 
