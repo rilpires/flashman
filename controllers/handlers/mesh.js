@@ -598,18 +598,22 @@ const getPossibleMeshTopology = function(
     // master device read from macN
     let _meshRouter1,_meshRouter2; 
     for( let i=0 ; i<meshRouters[masterMac].length ; i++ ){
-      if(meshRouters[masterMac][i].mac == mac1)
+      if(meshRouters[masterMac][i].mac == mac1) {
         meshRouter1 = meshRouters[masterMac][i];
-      if(meshRouters[masterMac][i].mac == mac2)
+      }
+      if(meshRouters[masterMac][i].mac == mac2) {
         meshRouter2 = meshRouters[masterMac][i];
+      }
     }
     for( let i=0 ; i<meshRouters[mac1].length ; i++ ){
-      if(meshRouters[mac1][i].mac==masterMac)
+      if(meshRouters[mac1][i].mac==masterMac) {
         _meshRouter1 = meshRouters[mac1][i];
+      }
     }
     for( let i=0 ; i<meshRouters[mac2].length ; i++ ){
-      if(meshRouters[mac2][i].mac==masterMac)
+      if(meshRouters[mac2][i].mac==masterMac) {
         _meshRouter2 = meshRouters[mac2][i];
+      }
     }
     let rssi1 = (meshRouter1.signal + _meshRouter1.signal)/2;
     let rssi2 = (meshRouter2.signal + _meshRouter2.signal)/2; 
