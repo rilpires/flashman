@@ -859,7 +859,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           );
           // eslint-disable-next-line guard-for-in
           for (let parameter in dc_res) {
-            console.log('parameter', parameter, dc_res[parameter])
+            // console.log('parameter', parameter, dc_res[parameter])
             resJson['data_collecting_'+parameter] = dc_res[parameter];
           }
 
