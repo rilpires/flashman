@@ -656,6 +656,8 @@ const getModelFields = function(oui, model) {
     case 'G-140W-CS': // Nokia G-140W-CS
     case 'G%2D140W%2DCS': // URI encoded
     case 'G-140W-UD': // Nokia G-140W-UD
+    case 'BEACON HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB':
     case 'G%2D140W%2DUD': // URI encoded
       message = '';
       fields = getNokiaFields();
