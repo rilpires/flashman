@@ -38,8 +38,8 @@ i18next
     },
     initImmediate: false,
     backend: {
-      loadPath: './public/dist/locales/{{lng}}/{{ns}}.json',
-      addPath: './public/dist/locales/{{lng}}/{{ns}}.json',
+      loadPath: './public/locales/{{lng}}/{{ns}}.json',
+      addPath: './public/locales/{{lng}}/{{ns}}.json',
     },
     // preload: ['en', 'en-US', 'es', 'pt-BR', 'lsls'],
     ns: ['translation'],

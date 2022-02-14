@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const CopyPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   entry: {
@@ -136,6 +137,11 @@ module.exports = {
       'swal': 'sweetalert2',
       'i18next': 'i18next',
       'i18nextHttpBackend': 'i18next-http-backend',
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: "public/locales", to: "locales" },
+      ],
     }),
   ],
 };
