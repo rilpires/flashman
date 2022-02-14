@@ -134,8 +134,8 @@ module.exports = {
       'moment': 'moment',
       'bsCustomFileInput': 'bs-custom-file-input',
       'swal': 'sweetalert2',
-      'i18next': 'i18next/dist/esm/i18next.js',
-      'i18nextHttpBackend': 'i18next-http-backend/esm/index.js',
+      'i18next': 'i18next',
+      'i18nextHttpBackend': 'i18next-http-backend',
     }),
   ],
 };
