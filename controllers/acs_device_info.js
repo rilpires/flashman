@@ -2470,12 +2470,13 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
-acsDeviceInfoController.checkAccessControl = async function(
+acsDeviceInfoController.changeAccessControl = async function(
   device, rulesDiffLength
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
+  let serial = device.serial_tr069;
   // Make sure that this device is abled to do access control
   let permissions = DeviceVersion.findByVersion(
     device.version, device.wifi_is_5ghz_capable, device.model,
@@ -2483,38 +2484,112 @@ acsDeviceInfoController.checkAccessControl = async function(
   if (!permissions || !permissions.grantBlockDevices) return;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   if (!fields) return;
-  // check if already exists add, delete, set sent tasks
-  // getting older tasks for this device id.
-  let query = {device: acsID}; // selecting all tasks for a given device id.
-  let tasks;
+  let acSubtreeRoots = [];
+  let blockedDevices = [];
   try {
-    tasks = await TasksAPI.getFromCollection('tasks', query);
+    // getting devices that need to be blocked
+    Object.entries(device.lan_devices).forEach((k) => {
+      if (k[1]['is_blocked']) blockedDevices.push(k[1]);
+    });
+    Object.entries(fields.access_control).forEach(async (v) => {
+      acSubtreeRoots.push(v[1]);
+      // TODO:
+      // Checar se tem mesh ativado, se não tiver, pular adição do mesh
+      // caso contrario adicinar o campo num array que necessita mudanças
+    });
   } catch (e) {
-    console.log('(!) Error -> '+e.message+' in '+acsID);
+    return {'success': false};
   }
-  if (!Array.isArray(tasks)) return;
-  // if find some task with name addObject or deleteObject
-  let hasAlreadySentTasks = tasks.some((t) => {
-    return t.name === 'addObject' ||
-    t.name === 'deleteObject';
-  });
-  // drop this call of changePortForwardRules
-  if (hasAlreadySentTasks) {
-    console.log('(#) -> DC in '+acsID);
+
+  // TODO:
+  // Mudar o fluxo para que:
+  // 1. Na necessidade de deletar:
+  //    Atualizar a arvore e pegar os campos existentes
+  //    Jogar os campos em um array inicial
+  //    Adicionar os campos a serem deletados em um array de delete
+  //    Executar o delete (separar numa função)
+  //    Fazer um diff entre o array inicial e o de delete para ter acesso aos
+  //    campos que foram mantidos
+  //    Editar os campos mantidos pelo array do diff (separar numa função)
+  // 2. Na necessidade de adicionar:
+  //    Fazer a adição na cabeça de cada subarvore (separar numa função)
+  //    Atualizar a arvore e pegar os campos existentes
+  //    Jogar os campos em um array
+  //    Editar os campos que estão nesse array (separar numa função)
+
+  // Update device tree
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: acSubtreeRoots,
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return;
   }
-  // getting devices that need to be blocked
-  let blockedDevices = [];
-  Object.entries(device.lan_devices).forEach((k) => {
-    if (k[1]['is_blocked']) blockedDevices.push(k[1]);
+  // Get device access control subtree
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+acSubtreeRoots.join(',');
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = await http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    resp.on('error', (error) => console.log(error));
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+        let acSubtreesToDelete = [];
+        let acSubtreeRootsToAdd = [];
+        try {
+          // Fill the array with the fields we want to delete from each subtree
+          for (i in acSubtreeRoots) {
+            let acSubtreeRoot = acSubtreeRoots[i]
+            acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
+            // We need to delete
+            if (rulesDiffLength < 0) {
+              let numRulesToDelete = -rulesDiffLength;
+              for (let j = 0; (j < acTreeObjects.length) &&
+                              (j < numRulesToDelete); j++) {
+                acSubtreesToDelete.push(acTreeObjects[j]['root']);
+              }
+            }
+            // We need to add
+            else if (rulesDiffLength > 0) {
+              let auxArray = Array(rulesDiffLength).fill(acSubtreeRoots[i]);
+              acSubtreeRootsToAdd = acSubtreeRootsToAdd.concat(auxArray);
+            }
+          }
+          let result = {'success': false};
+          if (acSubtreesToDelete.length) {
+            result =
+              await deleteZTEAccessControlRule(device, acSubtreesToDelete);
+          }
+          if (acSubtreeRootsToAdd.length) {
+            result = 
+              await addZTEAccessControlRule(device, acSubtreeRootsToAdd);
+          }
+          if (result.success) {
+            await acsDeviceInfoController.updateAccessControl(
+              device, acSubtreeRoots, blockedDevices
+            );
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
   });
-  let acSubtreeRoots = {'wifi2': {}, 'wifi5': {}, 'mesh2': {}, 'mesh5': {}};
-  Object.entries(fields.access_control).forEach(async (v) => {
-    acSubtreeRoots[v[0]]['key'] = v[1];
-    acSubtreeRoots[v[0]]['object'] =
-      await updateAccessControl(device, v[1], blockedDevices, rulesDiffLength);
-  });
+  req.end();
 };
+
 
 const getZTEAccessControlObject = function(acSubtreeRoot, data) {
   let keys = acSubtreeRoot.split('.');
@@ -2534,126 +2609,102 @@ const getZTEAccessControlObject = function(acSubtreeRoot, data) {
   return acObjects;
 };
 
-const addZTEAccessControlRule = async function(
-  device, acSubtreeRoot, numRulesToAdd
-) {
+const addZTEAccessControlRule = async function(device, acSubtreeRoot) {
   let acsID = device.acs_id;
-  let addObjTask = {
-    name: 'addObject',
-    objectName: acSubtreeRoot,
-  };
-  // adding TR-069 new access control rules
-  for (let i = 0; i < numRulesToAdd; i++) {
+  for (i in acSubtreeRoot) {
+    let addObjTask = {
+      name: 'addObject',
+      objectName: acSubtreeRoot[i],
+    };
+    // adding TR-069 new access control rules
     try {
       let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-        10000, []);
+        10000, [5000, 10000]);
       if (!ret || !ret.finished||
         ret.task.name !== addObjTask.name) {
+        acSubtreeRoot[i] = 'failure';
         throw new Error('task error');
-      }
+      } else acSubtreeRoot[i] = 'success';
     } catch (e) {
       console.log('Error: failure creating new Access Control rule at '+acsID);
-      return false;
     }
   }
-  return true;
+  if (acSubtreeRoot.includes('failure')) return {'success': false};
+  return {'success': true};
 };
 
-const deleteZTEAccessControlRule = async function(
-  device, acSubtreeRoot, numRulesToDelete
-) {
+const deleteZTEAccessControlRule = async function(device, acSubtreeRoot) {
   let acsID = device.acs_id;
-  // Get device access control subtree
-  let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+
-    '&projection='+acSubtreeRoot;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let req = await http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    resp.on('error', (error) => console.log(error));
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
-      if (data.length > 0) {
-        data = JSON.parse(data)[0];
-        try {
-          let acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
-          for (let i = 0; (i < acTreeObjects.length) &&
-                          (i < numRulesToDelete); i++) {
-            let deleteObjTask = {
-              name: 'deleteObject',
-              objectName: acTreeObjects[i]['root'],
-            };
-            try {
-              let ret = await TasksAPI.addTask(acsID, deleteObjTask, true,
-                10000, []);
-              if (!ret || !ret.finished||
-                ret.task.name !== deleteObjTask.name) {
-                throw new Error('task error');
-              }
-            } catch (e) {
-              console.log(
-                'Error: failure Access Control rule removal at '+acsID
-              );
-              return false;
-            }
-          }
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    });
-  });
-  req.end();
-  return true;
+  for (i in acSubtreeRoot) {
+    let deleteObjTask = {
+      name: 'deleteObject',
+      objectName: acSubtreeRoot[i],
+    };
+    try {
+      let ret = await TasksAPI.addTask(acsID, deleteObjTask, true,
+        10000, [5000, 10000]);
+      if (!ret || !ret.finished||
+        ret.task.name !== deleteObjTask.name) {
+        acSubtreeRoot[i] = 'failure';
+        throw new Error('task error');
+      } else acSubtreeRoot[i] = 'success';
+    } catch (e) {
+      console.log(
+        'Error: failure Access Control rule removal at '+acsID
+      );
+    }
+  }
+  if (acSubtreeRoot.includes('failure')) return {'success': false};
+  return {'success': true};
 };
 
-const getZTEAccessControlTask = async function(
+const getZTEAccessControlTask = function(
   blockedDevices, acSubtreeRoot, acTreeObjects
 ) {
-  let task = {
-    name: 'setParameterValues',
-    parameterValues: [
-      [acSubtreeRoot+'Mode', 'Ban', 'xsd:string']
-    ],
-  };
+  let parameterValues = [[acSubtreeRoot+'Mode', 'Ban', 'xsd:string']];
   for (let i = 0; i < blockedDevices.length; i++) {
     let devOnFlashman = blockedDevices[i];
     let devOnTree = acTreeObjects[i];
-    task.parameterValues.push(
-      [devOnTree['mac'], devOnFlashman['mac'], 'xsd:string']
-    );
-    task.parameterValues.push(
-      [devOnTree['name'], devOnFlashman['dhcp_name'], 'xsd:string']
-    );
+    parameterValues.push([
+      devOnTree['mac'], devOnFlashman['mac'], 'xsd:string'
+    ]);
+    parameterValues.push([
+      devOnTree['name'],
+      // This model only accepts 10 caracteres in the name field
+      devOnFlashman['dhcp_name'].substring(0,9),
+      'xsd:string'
+    ]);
   }
-  return task;
+  return parameterValues;
 }
 
-const updateAccessControl = async function(
-  device, acSubtreeRoot, blockedDevices, numRulesToChange
+acsDeviceInfoController.updateAccessControl = async function(
+  device, acSubtreeRoots, blockedDevices
 ) {
   let acsID = device.acs_id;
-  if (numRulesToChange > 0) {
-    await addZTEAccessControlRule(device, acSubtreeRoot, numRulesToChange);
-  } else if (numRulesToChange < 0) {
-    await deleteZTEAccessControlRule(device, acSubtreeRoot, -numRulesToChange);
+  let serial = device.serial_tr069;
+  // Update device tree
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: acSubtreeRoots,
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve Access Control Rules at '+serial);
+    return;
   }
   // Get device access control subtree
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+
-    '&projection='+acSubtreeRoot;
+    '&projection='+acSubtreeRoots.join(',');
   let options = {
     method: 'GET',
     hostname: 'localhost',
     port: 7557,
     path: encodeURI(path),
   };
+  // TODO: Transformar isso numa promise
   let req = await http.request(options, (resp)=>{
     resp.setEncoding('utf8');
     let data = '';
@@ -2663,25 +2714,43 @@ const updateAccessControl = async function(
       if (data.length > 0) {
         data = JSON.parse(data)[0];
         try {
-          let acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
-          if (acTreeObjects.length == blockedDevices.length) {
-            let task = getZTEAccessControlTask(
-              blockedDevices, acSubtreeRoot, acTreeObjects
+          let task = {
+            name: 'setParameterValues',
+            parameterValues: [],
+          };
+          for (i in acSubtreeRoots) {
+            let acTreeObjects = getZTEAccessControlObject(
+              acSubtreeRoots[i], data
             );
+            if (acTreeObjects.length == blockedDevices.length &&
+                acTreeObjects.length !== 0 && blockedDevices.length !== 0) {
+              let parameterValues = getZTEAccessControlTask(
+                blockedDevices, acSubtreeRoots[i], acTreeObjects
+              );
+              task.parameterValues =
+                task.parameterValues.concat(parameterValues);
+            } else {
+              // resolve({'success': true});
+            }
+          }
+          if (task.parameterValues.length) {
             result = await TasksAPI.addTask(acsID, task, true, 10000, []);
             if (!result || !result.finished ||
                 result.task.name !== 'setParameterValues') {
-              console.log(
-                'Error: failed to configure new Access Control rule at '+
-                serial
-              );
-              return;
+              // resolve({
+              //   'success': false,
+              //   'message': 'Error: failed to configure new Access Control '+
+              //              'rule at '+serial
+              // });
+            } else {
+              // resolve({'success': true});
             }
-          } else {
-            return;
           }
         } catch (e) {
-          console.log(e);
+          // resolve({
+          //   'success': false,
+          //   'message': 'Error at Access Control rules configuration: '+e
+          // });
         }
       }
     });

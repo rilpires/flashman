@@ -3027,8 +3027,17 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
                                    message: 'Erro ao encontrar CPE'});
     }
     let devFound = false;
+    let newDeviceRules = 0;
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
       if (matchedDevice.lan_devices[idx].mac === req.body.lanid) {
+        if (matchedDevice.lan_devices[idx].is_blocked === false &&
+            req.body.isblocked === 'true') {
+          newDeviceRules += 1;
+        }
+        else if (matchedDevice.lan_devices[idx].is_blocked === true &&
+                 req.body.isblocked === 'false') {
+          newDeviceRules -= 1;
+        }
         matchedDevice.lan_devices[idx].is_blocked = req.body.isblocked;
         matchedDevice.blocked_devices_index = Date.now();
         devFound = true;
@@ -3037,23 +3046,19 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        // TODO: pegar diffRulesAccessControl usando "oldDeviceRules" e
-        // "newDeviceRules"
-        let diffRulesAccessControl = 0;
-        await acsDeviceInfo.checkAccessControl(
-          matchedDevice, diffRulesAccessControl
-        );
-      } else {
-        matchedDevice.save(function(err) {
-          if (err) {
-            return res.status(500).json({
-              success: false,
-              message: 'Erro ao registrar atualização'});
-          }
-          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-          return res.status(200).json({'success': true});
-        });
+        await acsDeviceInfo.changeAccessControl(matchedDevice, newDeviceRules);
       }
+      matchedDevice.save(async function(err) {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao registrar atualização'});
+        }
+        if (matchedDevice.use_tr069) {
+          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+        }
+        return res.status(200).json({'success': true});
+      });
     } else {
       return res.status(500).json({success: false,
                                    message: 'Erro ao encontrar dispositivo'});
