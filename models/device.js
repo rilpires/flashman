@@ -247,6 +247,9 @@ let deviceSchema = new Schema({
   isSsidPrefixEnabled: {type: Boolean},
   web_admin_username: String,
   web_admin_password: String,
+  custom_tr069_fields: {
+    intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+  },
 });
 
 deviceSchema.set('autoIndex', false);
