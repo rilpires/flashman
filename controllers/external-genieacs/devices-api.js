@@ -487,8 +487,17 @@ const getZTEFields = function(model) {
   return fields;
 };
 
-const getNokiaFields = function() {
+const getNokiaFields = function(model) {
   let fields = getDefaultFields();
+  switch (model) {
+    case 'BEACON HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB':
+      fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_ALU_COM_ChannelBandWidthExtend';
+      fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_ALU_COM_ChannelBandWidthExtend';
+      break;
+    default:
+      break
+  }
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
   fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
