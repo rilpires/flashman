@@ -2470,6 +2470,106 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
+// TODO:
+// Mudar o fluxo para que:
+// 1. Na necessidade de deletar: [DONE]
+//    Atualizar a arvore e pegar os campos existentes
+//    Jogar os campos em um array inicial
+//    Adicionar os campos a serem deletados em um array de delete
+//    Executar o delete (separar numa função)
+//    Fazer um diff entre o array inicial e o de delete para ter acesso aos
+//    campos que foram mantidos
+//    Editar os campos mantidos pelo array do diff (separar numa função)
+// 2. Na necessidade de adicionar:
+//    Fazer a adição na cabeça de cada subarvore (separar numa função)
+//    Atualizar a arvore e pegar os campos existentes
+//    Jogar os campos em um array
+//    Editar os campos que estão nesse array (separar numa função)
+
+const newDelete = async function(device, acSubtreeRoots, blockedDevices) {
+  let acsID = device.acs_id;
+  let serial = device.serial_tr069;
+  // Update device tree
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: acSubtreeRoots,
+  };
+  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve Access Control Rules at '+serial);
+    return;
+  }
+  // Get device access control subtree
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+acSubtreeRoots.join(',');
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let allAcSubtreeRoots = [];
+  let acSubtreesToDelete = [];
+  let acSubtreesToEdit = [];
+  return new Promise(function(resolve, reject) {
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('error', (error) => {
+        console.log(error);
+        return reject(new Error('Error deleting an AC rule at '+serial));
+      });
+      resp.on('data', (chunk) => data+=chunk);
+      resp.on('end', async () => {
+        if (data.length > 0) {
+          try {
+            data = JSON.parse(data)[0];
+            // For every access control network subtree (ex: wifi2, ..., mesh5).
+            for (i in acSubtreeRoots) {
+              let acSubtreeRoot = acSubtreeRoots[i]
+              acTreeObjects = getZTEAccessControlObject(acSubtreeRoot, data);
+              // Fill the array with the root of each access control rule.
+              Object.entries(acTreeObjects).forEach(acTree => {
+                allAcSubtreeRoots.push(acTree[1]['root']);
+              });
+              // While we need to delete rules, fill the array with the root of
+              // each access control rule that we must delete.
+              let rulesDiffLen = acTreeObjects.length - blockedDevices.length;
+              if (rulesDiffLen > 0) {
+                for (let j = 0; (j < rulesDiffLen); j++) {
+                  acSubtreesToDelete.push(acTreeObjects[j]['root']);
+                }
+              }
+            }
+            let result = {'success': false};
+            // Delete AC rules in device tr-069 tree based on rules that were
+            // added to acSubtreesToDelete array.
+            if (acSubtreesToDelete.length) {
+              result =
+                await deleteZTEAccessControlRule(device, acSubtreesToDelete);
+            }
+            // If the "delete" was successfully completed, get the resulting
+            // array of rules that were kept in the tr-069 tree so they can be
+            // edited.
+            if (result.success) {
+              acSubtreesToEdit = allAcSubtreeRoots.filter(x => {
+                return !acSubtreesToDelete.includes(x);
+              });
+              return resolve({'success': true, 'response': acSubtreesToEdit});
+            }
+          } catch (e) {
+            return reject(new Error('Error deleting an AC rule at '+serial));
+          }
+          return resolve({'success': false});
+        }
+      });
+    });
+    req.end();
+  });
+}
+
 acsDeviceInfoController.changeAccessControl = async function(
   device, rulesDiffLength
 ) {
@@ -2503,7 +2603,7 @@ acsDeviceInfoController.changeAccessControl = async function(
 
   // TODO:
   // Mudar o fluxo para que:
-  // 1. Na necessidade de deletar:
+  // 1. Na necessidade de deletar: [DONE]
   //    Atualizar a arvore e pegar os campos existentes
   //    Jogar os campos em um array inicial
   //    Adicionar os campos a serem deletados em um array de delete
@@ -2569,8 +2669,7 @@ acsDeviceInfoController.changeAccessControl = async function(
           }
           let result = {'success': false};
           if (acSubtreesToDelete.length) {
-            result =
-              await deleteZTEAccessControlRule(device, acSubtreesToDelete);
+            result = await newDelete(device, acSubtreeRoots, blockedDevices);
           }
           if (acSubtreeRootsToAdd.length) {
             result = 
