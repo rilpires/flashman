@@ -104,6 +104,8 @@ const convertWifiMode = function(mode, is5ghz) {
 
 const convertToDbm = function(model, rxPower) {
   switch (model) {
+    case 'HG9':
+      return rxPower = parseFloat(rxPower.split(' ')[0]);
     case 'IGD':
     case 'FW323DAC':
     case 'F660':
@@ -943,7 +945,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (device.model === 'GONUAC001' || device.model === '121AC') {
+      if (device.model === 'GONUAC001' || device.model === '121AC' ||
+        device.model === 'HG9') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -968,7 +971,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.model === 'GONUAC001' ||
       device.model === '121AC' ||
       device.model === 'IGD' ||
-      device.model === 'MP_G421R'
+      device.model === 'MP_G421R' ||
+      device.model === 'HG9'
     ) {
       // Trigger xml config syncing for
       // web admin user and password
@@ -1588,7 +1592,8 @@ const fetchWanBytesFromGenie = function(device, acsID) {
 const fetchUpStatusFromGenie = function(device, acsID) {
   let mac = device._id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let upTimeField = fields.wan.uptime.replace('*', 1);
+  let upTimeField1 = fields.wan.uptime.replace('*', 1);
+  let upTimeField2 = fields.wan.uptime.replace('*', 2);
   let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
@@ -1599,7 +1604,8 @@ const fetchUpStatusFromGenie = function(device, acsID) {
   let txPowerFieldEpon;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
-      ',' + upTimeField +
+      ',' + upTimeField1 +
+      ',' + upTimeField2 +
       ',' + upTimePPPField1 +
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
@@ -1654,11 +1660,12 @@ const fetchUpStatusFromGenie = function(device, acsID) {
         if (hasPPPoE && checkForNestedKey(data, upTimePPPField2+'._value')) {
           wanUpTime = getFromNestedKey(data, upTimePPPField2+'._value');
         }
-      } else {
-          successWan = true;
-          if (checkForNestedKey(data, upTimeField+'._value')) {
-            wanUpTime = getFromNestedKey(data, upTimeField+'._value');
-          }
+      } else if (checkForNestedKey(data, upTimeField1+'._value')) {
+        successWan = true;
+        wanUpTime = getFromNestedKey(data, upTimeField1+'._value');
+      } else if (checkForNestedKey(data, upTimeField2+'._value')) {
+        successWan = true;
+        wanUpTime = getFromNestedKey(data, upTimeField2+'._value');
       }
       if (checkForNestedKey(data, rxPowerField + '._value') &&
           checkForNestedKey(data, txPowerField + '._value')) {
@@ -2374,7 +2381,8 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   // redirect to config file binding instead of setParametervalues
-  if (model == 'GONUAC001' || model == 'xPON') {
+  if (model == 'GONUAC001' || model == 'xPON' ||
+      model == 'HG9') {
     configFileEditing(device, ['port-forward']);
     return;
   }
