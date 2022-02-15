@@ -558,6 +558,23 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
   return nextDevice;
 };
 
+// This will return true if we infer that 'bssid' is
+// generated from a device with label address 'mac'
+// (specific driver related)
+const isMacCompatible = function( bssid , mac ) {
+  let bssidHex = parseInt(bssid.replace(/:/g,""),16);
+  let macHex = parseInt(mac.replace(/:/g,""),16);
+  let atherosMask = 0xE0FFFFFFF000;
+  let mediatekMask = 0xFDFFFFCC0000;
+  
+  if( (bssidHex&atherosMask)==(macHex&atherosMask) )
+    return true;
+  if( (bssidHex&mediatekMask)==(macHex&mediatekMask) )
+    return true;
+  
+    return false;
+}
+
 // Used for mesh v1 update
 const getPossibleMeshTopology = function(
   meshRouters, masterMac, slaves, meshMode,
@@ -586,29 +603,34 @@ const getPossibleMeshTopology = function(
   // hash map where father is the key and value is list of sons
   let retObj = {};
   retObj[masterMac] = slaves;
-  
   // We are sorting the slaves by rssi
   // This comes from an heuristic to send the update commands 
   // in a proper order (weaker rssi first)
   // Also, we consider only the lower signal when reading
   // from both directions
   retObj[masterMac].sort(function(mac1,mac2) {
-
     let masterReadingSlave1 =
-      meshRouters[masterMac].find((val)=>{val === mac1;}).signal;
+      meshRouters[masterMac].find((routerData)=>{
+        return isMacCompatible(routerData.mac,mac1);
+      }).signal;
     let masterReadingSlave2 =
-      meshRouters[masterMac].find((val)=>{val === mac2;}).signal;
+      meshRouters[masterMac].find((routerData)=>{
+        return isMacCompatible(routerData.mac,mac2);
+      }).signal;
     let slave1ReadingMaster =
-      meshRouters[mac1].find((val)=>{val === masterMac;}).signal;
+      meshRouters[mac1].find((routerData)=>{
+        return isMacCompatible(routerData.mac,masterMac);
+      }).signal;
     let slave2ReadingMaster =
-      meshRouters[mac2].find((val)=>{val === masterMac;}).signal;
+      meshRouters[mac2].find((routerData)=>{
+        return isMacCompatible(routerData.mac,masterMac);
+      }).signal;
     
     let rssi1 = (masterReadingSlave1 > slave1ReadingMaster) ?
       (slave1ReadingMaster) : (masterReadingSlave1);
     let rssi2 = (masterReadingSlave2 > slave2ReadingMaster) ?
       (slave2ReadingMaster) : (masterReadingSlave2); 
-
-    return rssi1 > rssi2 ;
+    return rssi1 - rssi2;
   });
 
   return retObj;
