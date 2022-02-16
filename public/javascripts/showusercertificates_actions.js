@@ -1,69 +1,205 @@
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
-const check = function(input) {
-  if (input.value != document.getElementById('new_pass').value) {
-    input.setCustomValidity('As senhas estão diferentes');
+const isActiveSearchBtnState = function(active = true) {
+  if (active) {
+    $('#certificates-search-button').prop('disabled', false);
+    $('#certificates-search-btn-icon').removeClass('fa-spinner fa-pulse');
+    $('#certificates-search-btn-icon').addClass('fa-search');
   } else {
-    input.setCustomValidity('');
+    $('#certificates-search-button').prop('disabled', true);
+    $('#certificates-search-btn-icon').removeClass('fa-search');
+    $('#certificates-search-btn-icon').addClass('fa-spinner fa-pulse');
+  }
+}
+
+const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
+  const searchType = getSearchType();
+  const name = getSearchField();
+  const mac = getSearchField();
+  const firstDate = getFirstDate();
+  const secondDate = getSecondDate();
+
+  if (getAll) {
+    $.get('/user/get/all', function(res) {
+      isActiveSearchBtnState(true);
+      usersTable.clear().draw();
+      if (res.type == 'success') {
+        $('#loading-users').hide();
+        $('#users-table-wrapper').show();
+
+        res.users.forEach(function(userObj) {
+          if (!userObj.deviceCertifications) return;
+          userObj.deviceCertifications.forEach(function(cert) {
+            let certRow = $('<tr>');
+            if (hasTrash) {
+              certRow.append($('<td>').addClass('col-xs-1').append(
+                $('<input>').addClass('checkbox item-checkbox')
+                .attr('type', 'checkbox')
+                .attr('data-userid', userObj._id)
+                .attr('data-timestamp', cert.localEpochTimestamp),
+              ));
+            }
+            certRow.append(
+              $('<td>').html(
+                (cert.finished) ?
+                '<div class="fas fa-check-circle fa-2x green-text"></div>' :
+                '<div class="fas fa-times-circle fa-2x red-text"></div>',
+              ),
+              $('<td>').html(cert.mac),
+              $('<td>').html(
+                new Date(cert.localEpochTimestamp).toLocaleString('pt-BR'),
+              ),
+              $('<td>').html(userObj.name),
+              $('<td class="btn-detail">').append(
+                $('<button>').append(
+                  $('<div>').addClass('fas fa-info-circle'),
+                  $('<span>').html('&nbsp Detalhes'),
+                ).addClass('btn btn-sm btn-primary my-0')
+                .attr('type', 'button'),
+              ).attr('data-userid', userObj._id)
+              .attr('data-username', userObj.name)
+              .attr('data-timestamp', cert.localEpochTimestamp),
+            );
+            usersTable.row.add(certRow);
+          });
+        });
+        usersTable.draw();
+      } else {
+        displayAlertMsg(res);
+      }
+    }, 'json');
+  } else {
+    $.post(
+      '/user/certificates/search',
+      {
+        first_date: firstDate,
+        second_date: secondDate,
+        name: (searchType === 'no') ?
+          '' : (searchType === 'name') ? name : '',
+        device_id: (searchType === 'no') ?
+          '' : (searchType === 'mac') ? mac : '',
+        csv: csv,
+      },
+      (res) => {
+        if (csv) {
+          const csvFile = new Blob([res]);
+          let downloadElement = document.createElement('a');
+          downloadElement.href = URL.createObjectURL(
+            csvFile,
+            {type: 'text/plain'},
+          );
+          downloadElement.download = `csvfile.csv`;
+          downloadElement.style.display = 'none';
+          downloadElement.click();
+        }
+        if (res.success === true) {
+          usersTable.clear().draw();
+          $('#loading-users').hide();
+          $('#users-table-wrapper').show();
+          res.deviceCertifications.map((unwrappedCert) => {
+            const certification = unwrappedCert.certifications;
+            let certRow = $('<tr>');
+            if (hasTrash) {
+              certRow.append($('<td>').addClass('col-xs-1').append(
+                $('<input>').addClass('checkbox item-checkbox')
+                .attr('type', 'checkbox')
+                .attr('data-userid', unwrappedCert._id)
+                .attr('data-timestamp', certification.localEpochTimestamp),
+              ));
+            }
+            certRow.append(
+              $('<td>').html(
+                (certification.finished) ?
+                '<div class="fas fa-check-circle fa-2x green-text"></div>' :
+                '<div class="fas fa-times-circle fa-2x red-text"></div>',
+              ),
+              $('<td>').html(certification.mac),
+              $('<td>').html(
+                new Date(certification.localEpochTimestamp)
+                  .toLocaleString('pt-BR'),
+              ),
+              $('<td>').html(unwrappedCert.name),
+              $('<td class="btn-detail">').append(
+                $('<button>').append(
+                  $('<div>').addClass('fas fa-info-circle'),
+                  $('<span>').html('&nbsp Detalhes'),
+                ).addClass('btn btn-sm btn-primary my-0')
+                .attr('type', 'button'),
+              ).attr('data-userid', unwrappedCert._id)
+              .attr('data-username', unwrappedCert.name)
+              .attr('data-timestamp', certification.localEpochTimestamp),
+            );
+            usersTable.row.add(certRow);
+          });
+          usersTable.draw();
+        } else if (!csv) {
+          displayAlertMsg(res);
+        }
+      },
+    )
+    .fail((jqXHR, textStatus, errorThrown) => {
+      if (jqXHR.status === 404) {
+        displayAlertMsg({
+          type: 'danger',
+          message: 'Nenhuma certificação foi encontrada com esses parâmetros!',
+        });
+        return;
+      }
+    })
+    .always((jqXHR, textStatus, errorThrown) => {
+      isActiveSearchBtnState(true);
+    });
   }
 };
 
-const fetchUsers = function(usersTable, hasTrash) {
-  usersTable.clear().draw();
-  $.get('/user/get/all', function(res) {
-    if (res.type == 'success') {
-      $('#loading-users').hide();
-      $('#users-table-wrapper').show();
+const configSearchType = () => {
+  $('#certificates-search-type' + ' a').click((event) => {
+    const searchType = event.originalEvent.target.text;
+    $('#certificates-search-type-button').html(searchType);
+  });
+};
 
-      res.users.forEach(function(userObj) {
-        if (!userObj.deviceCertifications) return;
-        userObj.deviceCertifications.forEach(function(cert) {
-          let certRow = $('<tr>');
-          if (hasTrash) {
-            certRow.append($('<td>').addClass('col-xs-1').append(
-              $('<input>').addClass('checkbox item-checkbox')
-              .attr('type', 'checkbox')
-              .attr('data-userid', userObj._id)
-              .attr('data-timestamp', cert.localEpochTimestamp)
-            ));
-          }
-          certRow.append(
-            $('<td>').html(
-              (cert.finished) ?
-              '<div class="fas fa-check-circle fa-2x green-text"></div>' :
-              '<div class="fas fa-times-circle fa-2x red-text"></div>'
-            ),
-            $('<td>').html(cert.mac),
-            $('<td>').html(
-              new Date(cert.localEpochTimestamp).toLocaleString('pt-BR')
-            ),
-            $('<td>').html(userObj.name),
-            $('<td class="btn-detail">').append(
-              $('<button>').append(
-                $('<div>').addClass('fas fa-info-circle'),
-                $('<span>').html('&nbsp Detalhes')
-              ).addClass('btn btn-sm btn-primary my-0')
-              .attr('type', 'button')
-            ).attr('data-userid', userObj._id)
-            .attr('data-username', userObj.name)
-            .attr('data-timestamp', cert.localEpochTimestamp),
-          );
-          usersTable.row.add(certRow);
-        });
-      });
-      usersTable.draw();
-    } else {
-      displayAlertMsg(res);
-    }
-  }, 'json');
+const getSearchType = () => {
+  const type = $('#certificates-search-type-button').text();
+  if (type === 'Técnico') {
+    return 'name';
+  } else if (type === 'MAC/Serial') {
+    return 'mac';
+  } else {
+    return 'no';
+  }
+};
+
+const getSearchField = () => {
+  return $('#certificates-search-input').val();
+};
+
+const getFirstDate = () => {
+  const date = new Date($('#certificates-firstdatepicker-input')
+    .val())
+    .valueOf();
+  if (isNaN(date)) {
+    return '';
+  }
+  return date;
+};
+
+const getSecondDate = () => {
+  const date = new Date($('#certificates-seconddatepicker-input')
+    .val())
+    .valueOf();
+  if (isNaN(date)) {
+    return '';
+  }
+  return date;
 };
 
 const fetchCertification = function(id, name, timestamp) {
   $.get('/user/get/one/'+id, function(res) {
     if (res.type == 'success') {
       let cert = res.user.deviceCertifications.find(
-        (c)=>c.localEpochTimestamp === parseInt(timestamp)
+        (c)=>c.localEpochTimestamp === parseInt(timestamp),
       );
       // Change header icon and text
       $('#done-icon').removeClass('fa-check-circle');
@@ -114,58 +250,58 @@ const fetchCertification = function(id, name, timestamp) {
       // Change wan info
       if (cert.didConfigureWan && cert.routerConnType) {
         $('#wan-config-list').html('');
-        let wanList = $('<ul class="list-inline"></ul>').append(
-          $('<li></li>').append(
-            $('<strong></strong>').html('Tipo de Conexão:'),
-            $('<span></span>').html('&nbsp;'+cert.routerConnType),
+        let wanList = $('<ul>').addClass('list-inline').append(
+          $('<li>').append(
+            $('<strong>').html('Tipo de Conexão:'),
+            $('<span>').html('&nbsp;'+cert.routerConnType),
           ),
         );
-        if (cert.routerConnType === "PPPoE") {
+        if (cert.routerConnType === 'PPPoE') {
           if (cert.isOnu && cert.wanConfigOnu) {
             let params = JSON.parse(cert.wanConfigOnu);
             if (params.user) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('Usuário PPPoE:'),
-                $('<span></span>').html('&nbsp;'+params.user),
+              wanList.append($('<li>').append(
+                $('<strong>').html('Usuário PPPoE:'),
+                $('<span>').html('&nbsp;'+params.user),
               ));
             }
             if (params.vlan) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('VLAN ID:'),
-                $('<span></span>').html('&nbsp;'+params.vlan),
+              wanList.append($('<li>').append(
+                $('<strong>').html('VLAN ID:'),
+                $('<span>').html('&nbsp;'+params.vlan),
               ));
             }
             if (params.mtu) {
-              wanList.append($('<li></li>').append(
-                $('<strong></strong>').html('MTU:'),
-                $('<span></span>').html('&nbsp;'+params.mtu),
+              wanList.append($('<li>').append(
+                $('<strong>').html('MTU:'),
+                $('<span>').html('&nbsp;'+params.mtu),
               ));
             }
           } else {
-            wanList.append($('<li></li>').append(
-              $('<strong></strong>').html('Usuário PPPoE:'),
-              $('<span></span>').html('&nbsp;'+cert.pppoeUser),
+            wanList.append($('<li>').append(
+              $('<strong>').html('Usuário PPPoE:'),
+              $('<span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
         } else if (cert.routerConnType === 'Bridge (IP Fixo)') {
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP Fixo do CPE:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeIP),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP Fixo do CPE:'),
+            $('<span>').html('&nbsp;'+cert.bridgeIP),
           ));
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP do Gateway:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeGateway),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP do Gateway:'),
+            $('<span>').html('&nbsp;'+cert.bridgeGateway),
           ));
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('IP do DNS:'),
-            $('<span></span>').html('&nbsp;'+cert.bridgeDNS),
+          wanList.append($('<li>').append(
+            $('<strong>').html('IP do DNS:'),
+            $('<span>').html('&nbsp;'+cert.bridgeDNS),
           ));
         }
         if (cert.routerConnType.includes('Bridge')) {
           let paramSwitch = (cert.bridgeSwitch) ? 'Desabilitado' : 'Habilitado';
-          wanList.append($('<li></li>').append(
-            $('<strong></strong>').html('Switch da LAN:'),
-            $('<span></span>').html('&nbsp;'+paramSwitch),
+          wanList.append($('<li>').append(
+            $('<strong>').html('Switch da LAN:'),
+            $('<span>').html('&nbsp;'+paramSwitch),
           ));
         }
         $('#wan-config-list').append(wanList);
@@ -184,6 +320,27 @@ const fetchCertification = function(id, name, timestamp) {
           let diagTR069 = (cert.diagnostic.tr069) ? 'OK' : 'Erro';
           let diagPon = cert.diagnostic.pon;
           let diagRxPower = cert.diagnostic.rxpower;
+
+          $('#diagnostic-onu-speedtest-status-element').hide();
+          $('#diagnostic-onu-speedtest-value-element').hide();
+          if (cert.didSpeedTest === true &&
+              cert.diagnostic.speedtest === true) {
+            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            $('#diagnostic-onu-speedtest-status').html('&nbsp;'+spdTstStts);
+            $('#diagnostic-onu-speedtest-status-element').show();
+
+            if (cert.diagnostic.speedValue !== null) {
+              let spdTstVal;
+              if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
+                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
+              } else {
+                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
+              }
+              $('#diagnostic-onu-speedtest-value').html('&nbsp;'+spdTstVal);
+              $('#diagnostic-onu-speedtest-value-element').show();
+            }
+          }
+
           $('#diagnostic-onu-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-onu-tr069').html('&nbsp;'+diagTR069);
           $('#diagnostic-onu-anlix').html('&nbsp;'+diagAnlix);
@@ -212,6 +369,27 @@ const fetchCertification = function(id, name, timestamp) {
           let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
           let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
           let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
+
+          $('#diagnostic-router-speedtest-status-element').hide();
+          $('#diagnostic-router-speedtest-value-element').hide();
+          if (cert.didSpeedTest === true &&
+              cert.diagnostic.speedtest === true) {
+            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            $('#diagnostic-router-speedtest-status').html('&nbsp;'+spdTstStts);
+            $('#diagnostic-router-speedtest-status-element').show();
+
+            if (cert.diagnostic.speedValue !== null) {
+              let spdTstVal;
+              if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
+                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
+              } else {
+                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
+              }
+              $('#diagnostic-router-speedtest-value').html('&nbsp;'+spdTstVal);
+              $('#diagnostic-router-speedtest-value-element').show();
+            }
+          }
+
           $('#diagnostic-router-wan').html('&nbsp;'+diagWan);
           $('#diagnostic-router-ip4').html('&nbsp;'+diagIp4);
           $('#diagnostic-router-ip6').html('&nbsp;'+diagIp6);
@@ -235,7 +413,7 @@ const fetchCertification = function(id, name, timestamp) {
       // Change mesh info
       if (cert.didConfigureMesh && cert.mesh && cert.mesh.mode) {
         let modeStr = '';
-        switch(cert.mesh.mode){
+        switch (cert.mesh.mode) {
           case 0:
             modeStr = 'Desativado';
             break;
@@ -314,7 +492,7 @@ const fetchCertification = function(id, name, timestamp) {
       }
       // Change observation info
       if (cert.observations) {
-        let observations = cert.observations.replace(/\n/g,'<br />');
+        let observations = cert.observations.replace(/\n/g, '<br />');
         $('#observations-field').html(observations);
         $('#observations-none').hide();
         $('#observations-done').show();
@@ -337,16 +515,17 @@ $(document).ready(function() {
 
   let hasTrashButton = $('#checkboxHeader').length > 0;
 
+  configSearchType();
+
   let usersTable = $('#users-table').DataTable({
     'destroy': true,
     'paging': true,
     'info': false,
+    'searching': false,
     'pagingType': 'numbers',
     'language': {
       'zeroRecords': 'Nenhuma certificação encontrada',
       'infoEmpty': 'Nenhuma certificação encontrada',
-      'search': '',
-      'searchPlaceholder': 'Buscar...',
       'lengthMenu': 'Exibir _MENU_',
     },
     'order': [[1+hasTrashButton, 'asc'], [2+hasTrashButton, 'desc']],
@@ -354,22 +533,28 @@ $(document).ready(function() {
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0, hasTrashButton, 4+hasTrashButton]},
     ],
-    'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">  ' +
-           '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +
+    'dom': '<"row" <"col-sm-12 col-md dt-certs-table-btns">> ' +
            '<"row" t>                                          ' +
            '<"row" <"col-6"l>                                  ' +
            '       <"col-6"p>                                 >',
   });
   // Load table content
+  $('.dt-certs-table-btns').append(
+    $('<button>').attr('id', 'certificates-csv-export')
+                   .addClass('btn btn-primary mr-4')
+      .append(
+        $('<i>').addClass('fas fa-file-excel fa-lg'),
+        $('<span>').html('&nbsp; Exportar CSV'),
+      ),
+  );
   if (hasTrashButton) {
-    $('.dt-users-table-btns').append(
-      $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-        $('<button></button>').addClass('btn btn-danger btn-trash').append(
-          $('<div></div>').addClass('fas fa-trash fa-lg'))
-      )
+    $('.dt-certs-table-btns').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg')),
     );
   }
-  fetchUsers(usersTable, hasTrashButton);
+
+  fetchUsers(usersTable, hasTrashButton, true);
 
   $(document).on('change', '.checkbox', function(event) {
     let itemId = $(this).prop('id');
@@ -380,7 +565,7 @@ $(document).ready(function() {
       let timestamp = $(this).attr('data-timestamp');
       let data = {user: userId, timestamp: timestamp};
       let itemIdx = selectedItens.findIndex(
-        (s)=>(s.user===userId && s.timestamp===timestamp)
+        (s)=>(s.user===userId && s.timestamp===timestamp),
       );
       if ($(this).is(':checked')) {
         if (itemIdx == -1) {
@@ -403,7 +588,7 @@ $(document).ready(function() {
       success: function(res) {
         displayAlertMsg(res);
         if (res.type == 'success') {
-          fetchUsers(usersTable, hasTrashButton);
+          fetchUsers(usersTable, hasTrashButton, true);
         }
       },
     });
@@ -419,5 +604,14 @@ $(document).ready(function() {
     $('#details-placeholder').show();
     $('#show-certificate').modal();
     fetchCertification(id, name, timestamp);
+  });
+
+  $(document).on('click', '#certificates-csv-export', (event) => {
+    fetchUsers(usersTable, hasTrashButton, false, true);
+  });
+
+  $(document).on('click', '#certificates-search-button', (event) => {
+    isActiveSearchBtnState(false);
+    fetchUsers(usersTable, hasTrashButton, false);
   });
 });

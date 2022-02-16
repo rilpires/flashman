@@ -197,6 +197,19 @@ $(document).ready(function() {
                         ),
                       ),
                     ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
+                        .text('Desassociação de secundário no mesh'),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-slave-disassociate').append(
+                          $('<option>').val(false).text('Bloquear'),
+                          $('<option>').val(true).text('Permitir'),
+                        ),
+                      ),
+                    ),
                   ),
                   $('<div>').addClass('col-12 col-lg-4').append(
                     $('<div>').addClass('md-form').append(
@@ -642,6 +655,9 @@ $(document).ready(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-opmode-edit] option[value=' +
           roleObj.grantOpmodeEdit + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-slave-disassociate] option[value=' +
+          roleObj.grantSlaveDisassociate + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-id] option[value=' +
           roleObj.grantDeviceId + ']')

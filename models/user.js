@@ -17,7 +17,7 @@ let userSchema = new mongoose.Schema({
     required: true,
   },
   lastLogin: {type: Date},
-  createdAt: {type: Date, default: new Date()},
+  createdAt: {type: Date, default: Date.now},
   autoUpdate: {type: Boolean, default: true},
   maxElementsPerPage: {type: Number, default: 10},
   visibleColumnsOnPage: {type: [Number], default: [4, 5, 6, 7, 8]},
@@ -31,7 +31,7 @@ let userSchema = new mongoose.Schema({
     routerModel: {type: String},
     routerVersion: {type: String},
     routerRelease: {type: String},
-    timestamp: {type: Date, default: new Date()},
+    timestamp: {type: Date, default: Date.now},
     localEpochTimestamp: {type: Number},
     didDiagnose: {type: Boolean, default: false},
     diagnostic: {
@@ -44,6 +44,9 @@ let userSchema = new mongoose.Schema({
       dns: {type: Boolean, default: false},
       anlix: {type: Boolean, default: false},
       flashman: {type: Boolean, default: false},
+      speedtest: {type: Boolean, default: false},
+      speedValue: {type: Number, default: -1},
+      speedTestLimit: {type: Number, default: -1},
     },
     didConfigureTR069: {type: Boolean, default: false},
     didConfigureWan: {type: Boolean, default: false},
@@ -83,6 +86,7 @@ let userSchema = new mongoose.Schema({
     cancelReason: {type: String, required: false},
     latitude: {type: Number, default: 0},
     longitude: {type: Number, default: 0},
+    didSpeedTest: {type: Boolean, default: false},
   }]
 });
 

@@ -17,6 +17,7 @@ const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
 const {Parser, transforms: {unwind, flatten}} = require('json2csv');
 const crypto = require('crypto');
+const path = require('path');
 
 let deviceListController = {};
 
@@ -169,7 +170,7 @@ const getOnlyTR069Configs = async function() {
 // returns an object containing the tr069 time threshold used when defining
 // device status (to give it a color). Will return an Error Object in case
 // of any error.
-const buildTr069Thresholds = async function (currentTimestamp) {
+deviceListController.buildTr069Thresholds = async function (currentTimestamp) {
   // in some places this function is called, the current time was not taken.
   currentTimestamp = currentTimestamp || Date.now();
 
@@ -508,7 +509,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
       currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      tr069Times = tr069Times || await buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times || await deviceListController.buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -727,7 +728,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let lastHour = new Date(currentTimestamp -3600000);
 
   // time threshold for tr069 status (status color).
-  let tr069Times = await buildTr069Thresholds(currentTimestamp);
+  let tr069Times = await deviceListController.buildTr069Thresholds(currentTimestamp);
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
@@ -788,7 +789,23 @@ deviceListController.searchDeviceReg = async function(req, res) {
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+
+          /* Due to the misleading value of model as IGD
+            in the FastWireless FW323DAC model, check if is
+            IGD, if have that firmware version and send to
+            the table anim the 'right' model */
+          if ((device.model === 'IGD' && device.version === 'V2.0.08-191129') ||
+               device.model === 'FW323DAC') {
+            device.model_alias = 'FW323DAC';
+          }
         } else {
+          devReleases = devReleases.filter(
+            (release) => {
+              return DeviceVersion.testFirmwareUpgradeMeshLegacy(
+                device.mesh_mode, device.mesh_slaves,
+                device.version, release.flashbox_version);
+            },
+          );
           device.isUpgradeEnabled = true;
         }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
@@ -956,14 +973,16 @@ const downloadStockFirmware = async function(model) {
         method: 'GET',
       });
       let currentMd5 = '';
-      let localMd5Path = imageReleasesDir + '.' + model + '_9999-aix.zip.md5';
+      let md5fname = '.' + model + '_9999-aix.zip.md5';
+      let localMd5Path = path.join(imageReleasesDir, md5fname);
       // Check for local md5 hash
       if (fs.existsSync(localMd5Path)) {
         currentMd5 = fs.readFileSync(localMd5Path, 'utf8');
       }
       if (targetMd5 !== currentMd5) {
         // Mismatch, download new zip file
-        console.log('UPDATE: Downloading factory reset fware for '+model+'...');
+        console.log('UPDATE: Downloading factory reset firmware for ' +
+                    model + '...');
         fs.writeFileSync(localMd5Path, targetMd5);
         let responseStream = request({url: remoteFileUrl, method: 'GET'})
         .on('error', (err)=>{
@@ -976,10 +995,13 @@ const downloadStockFirmware = async function(model) {
           }
           responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
             let fname = entry.path;
-            let writeStream = fs.createWriteStream(imageReleasesDir + fname);
+            let fullFilePath = path.join(imageReleasesDir, fname);
+            let md5FName = '.' + fname.replace('.bin', '.md5');
+            let fullMd5FilePath = path.join(imageReleasesDir, md5FName);
+            let writeStream = fs.createWriteStream(fullFilePath);
             writeStream.on('close', ()=>{
-              let md5fname = imageReleasesDir + '.' + fname.replace('.bin', '.md5');
-              let binfname = imageReleasesDir + fname;
+              let md5fname = fullMd5FilePath;
+              let binfname = fullFilePath;
               let md5Checksum = md5File.sync(binfname);
               fs.writeFileSync(md5fname, md5Checksum);
               return resolve(true);
@@ -1106,19 +1128,23 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'upstatustr069':
+      case 'wanbytes':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
-        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-          return map[req.params.id.toUpperCase()];
-        });
-        if (device && !device.use_tr069 && !isDevOn) {
-          return res.status(200).json({success: false,
-                                     message: 'CPE não esta online!'});
+        if (device && !device.use_tr069) {
+          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+            return map[req.params.id.toUpperCase()];
+          });
+          if (device && !isDevOn) {
+            return res.status(200).json({success: false,
+                                       message: 'CPE não esta online!'});
+          }
         }
         if (msgtype === 'speedtest') {
-          return deviceListController.doSpeedTest(req, res);
+          if (device) {
+            return deviceListController.doSpeedTest(req, res);
+          }
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
@@ -1144,10 +1170,10 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestConnectedDevices(device);
           } else {
             mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-            });
           }
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+          });
         } else if (msgtype === 'sitesurvey') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForSiteSurveyNotification(
@@ -1157,9 +1183,14 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'ping') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
-              req.sessionID, req.params.id.toUpperCase());
+              req.sessionID, req.params.id.toUpperCase(),
+            );
           }
-          mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          if (device && device.use_tr069) {
+            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
+          } else if (device) {
+            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1175,29 +1206,24 @@ deviceListController.sendMqttMsg = function(req, res) {
             });
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestUpStatus(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-            slaves.forEach((slave)=>{
-              mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-            });
           }
-        } else if (msgtype === 'upstatustr069') {
-          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
+          slaves.forEach((slave)=>{
+            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+          });
+        } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForUpStatusTr069Notification(
+            sio.anlixWaitForWanBytesNotification(
               req.sessionID,
               req.params.id.toUpperCase(),
             );
-            slaves.forEach((slave)=>{
-              sio.anlixWaitForUpStatusTr069Notification(
-                req.sessionID,
-                slave.toUpperCase(),
-              );
-            });
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestUpStatus(device);
+            acsDeviceInfo.requestWanBytes(device);
+          } else {
+            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
@@ -1328,7 +1354,7 @@ deviceListController.getDeviceReg = function(req, res) {
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
       // tr069 time thresholds for device status.
-      let tr069Times = await buildTr069Thresholds();
+      let tr069Times = await deviceListController.buildTr069Thresholds();
       // // classifying device status.
       if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
@@ -1526,6 +1552,17 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
         }
+        // We must enable Wi-Fi corresponding to mesh radio we're using
+        // Some models have this restriction.
+        // For simplicity we're doing this for all devices
+        if (meshMode > 1 && (wifiState < 1 || wifiState5ghz < 1)) {
+          errors.push({'mesh_mode': 'Para configurar esse tipo de Mesh é ' +
+                                    'necessário habilitar todos os Wi-Fi'});
+        }
+        if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
+          errors.push({'mesh_mode': 'Não é possível desabilitar o mesh com ' +
+                                    'secundários associados'});
+        }
 
         if (errors.length < 1) {
           Role.findOne({name: util.returnObjOrEmptyStr(req.user.role)},
@@ -1539,7 +1576,16 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
-            let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+            let changes = {wan: {}, lan: {}, wifi2: {},
+                           wifi5: {}, mesh2: {}, mesh5: {}};
+
+            let model;
+
+            if (matchedDevice.use_tr069) {
+              const acsID = matchedDevice.acs_id;
+              const splitID = acsID.split('-');
+              model = splitID.slice(1, splitID.length-1).join('-');
+            }
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
@@ -1641,6 +1687,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState !== matchedDevice.wifi_state) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.enable = wifiState;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState) {
+                  changes.wifi2.beacon_type =
+                    DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
               } else {
@@ -1722,6 +1773,11 @@ deviceListController.setDeviceReg = function(req, res) {
                 wifiState5ghz !== matchedDevice.wifi_state_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.enable = wifiState5ghz;
+                // When enabling Wi-Fi set beacon type
+                if (wifiState5ghz) {
+                  changes.wifi5.beacon_type =
+                    DevicesAPI.getBeaconTypeByModel(model);
+                }
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
               } else {
@@ -1742,6 +1798,9 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
+                // Since we changed the prefix, this implies a change to SSIDs
+                changes.wifi2.ssid = matchedDevice.wifi_ssid;
+                changes.wifi5.ssid = matchedDevice.wifi_ssid_5ghz;
               } else {
                 hasPermissionError = true;
               }
@@ -1779,8 +1838,10 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('external_reference') &&
-                (content.external_reference.kind !== matchedDevice.external_reference.kind ||
-                 content.external_reference.data !== matchedDevice.external_reference.data)
+                (content.external_reference.kind !==
+                 matchedDevice.external_reference.kind ||
+                 content.external_reference.data !==
+                 matchedDevice.external_reference.data)
             ) {
               if (superuserGrant || role.grantDeviceId) {
                 matchedDevice.external_reference.kind =
@@ -1795,8 +1856,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeEnabled !== matchedDevice.bridge_mode_enabled &&
                 !matchedDevice.use_tr069) {
               if (superuserGrant || role.grantOpmodeEdit) {
-                // in the case of changing from bridge to router : clear vlan configuration
-                if(matchedDevice.bridge_mode_enabled == true && bridgeEnabled == false) {
+                // In the case of changing from bridge to router:
+                // Clear vlan configuration
+                if (matchedDevice.bridge_mode_enabled == true &&
+                    bridgeEnabled == false) {
                   matchedDevice.vlan = [];
                 }
 
@@ -1807,7 +1870,8 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('bridgeDisableSwitch') &&
-                bridgeDisableSwitch !== matchedDevice.bridge_mode_switch_disable) {
+                bridgeDisableSwitch !==
+                matchedDevice.bridge_mode_switch_disable) {
               if (superuserGrant || role.grantOpmodeEdit) {
                 matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
                 updateParameters = true;
@@ -1843,10 +1907,42 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('mesh_mode') &&
-                meshMode !== matchedDevice.mesh_mode &&
-                !matchedDevice.use_tr069) {
+                meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                // The chosen channel includes better results on some routers
+                const mesh5GhzChannel = 40;
+                const wifiRadioState = 1;
                 matchedDevice.mesh_mode = meshMode;
+                if (matchedDevice.use_tr069) {
+                  const auxChanges =
+                    meshHandlers.buildTR069Changes(matchedDevice, meshMode);
+                  changes.mesh2 = auxChanges.mesh2;
+                  changes.mesh5 = auxChanges.mesh5;
+                  if (meshMode === 2 || meshMode === 4) {
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi2.enable = wifiRadioState;
+                    changes.wifi2.beacon_type =
+                      DevicesAPI.getBeaconTypeByModel(model);
+                  }
+                  if (meshMode === 3 || meshMode === 4) {
+                    // For best performance and avoiding DFS issues
+                    // all APs must work on a single 5GHz non-DFS channel
+                    changes.wifi5.channel = mesh5GhzChannel;
+                    // When enabling Wi-Fi set beacon type
+                    changes.wifi5.enable = wifiRadioState;
+                    changes.wifi5.beacon_type =
+                      DevicesAPI.getBeaconTypeByModel(model);
+                  }
+                }
+                if (meshMode === 2 || meshMode === 4) {
+                  matchedDevice.wifi_state = wifiRadioState;
+                }
+                if (meshMode === 3 || meshMode === 4) {
+                  // For best performance and avoiding DFS issues
+                  // all APs must work on a single 5GHz non-DFS channel
+                  matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
+                  matchedDevice.wifi_state_5ghz = wifiRadioState;
+                }
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -1874,14 +1970,14 @@ deviceListController.setDeviceReg = function(req, res) {
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-                meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
               } else {
                 // tr-069 device, call acs
                 acsDeviceInfo.updateInfo(matchedDevice, changes);
               }
+              meshHandlers.syncSlaves(matchedDevice, slaveCustomConfigs);
 
-                matchedDevice.success = true;
-                return res.status(200).json(matchedDevice);
+              matchedDevice.success = true;
+              return res.status(200).json(matchedDevice);
             });
           });
         } else {
@@ -2595,7 +2691,6 @@ deviceListController.setPingHostsList = function(req, res) {
       return res.status(200).json({success: false,
                                    message: 'CPE não encontrado'});
     }
-    console.log('Updating hosts ping list for ' + matchedDevice._id);
     if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
       let approvedHosts = [];
@@ -2810,7 +2905,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não encontrado',
       });
     }
-    if (!isDevOn) {
+    if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
         message: 'CPE não está online!',
@@ -2827,7 +2922,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: 'CPE não suporta este comando',
       });
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -2845,7 +2940,15 @@ deviceListController.doSpeedTest = function(req, res) {
       if (req.sessionID && sio.anlixConnections[req.sessionID]) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
-      mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      if (matchedDevice.use_tr069) {
+        matchedDevice.current_speedtest.timestamp = new Date();
+        matchedDevice.current_speedtest.user = req.user.name;
+        matchedDevice.current_speedtest.stage = 'estimative';
+        await matchedDevice.save();
+        acsDeviceInfo.fireSpeedDiagnose(mac);
+      } else {
+        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
+      }
       return res.status(200).json({
         success: true,
       });
@@ -2886,6 +2989,33 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
           message: 'Formato invalido',
         });
       }
+    }
+  });
+};
+
+deviceListController.getDeviceCrudTrap = function(req, res) {
+  // get callback url and user
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      const user = matchedConfig.traps_callbacks.device_crud.user;
+      const url = matchedConfig.traps_callbacks.device_crud.url;
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        user: user,
+        url: url,
+      });
     }
   });
 };
@@ -2966,23 +3096,25 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
-    let splitID = acsID.split('-');
-    let model = splitID.slice(1, splitID.length-1).join('-');
-    let fields = DevicesAPI.getModelFields(splitID[0], model).fields;
+    let fields = DevicesAPI.getModelFieldsFromDevice(matchedDevice).fields;
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
+    let taskParameterNames = [rxPowerField, txPowerField];
+    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+      taskParameterNames.push(fields.wan.pon_rxpower_epon);
+      taskParameterNames.push(fields.wan.pon_txpower_epon);
+    }
     let task = {
       name: 'getParameterValues',
-      parameterNames: [rxPowerField, txPowerField],
+      parameterNames: taskParameterNames,
     };
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, true, 3000, [5000, 10000], (result)=>{
+    TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
       if (result.task.name !== 'getParameterValues') return;
       if (result.finished) {
-        acsDeviceInfo.fetchPonSignalFromGenie(mac, acsID);
+        acsDeviceInfo.fetchPonSignalFromGenie(matchedDevice, acsID);
       }
     });
   });

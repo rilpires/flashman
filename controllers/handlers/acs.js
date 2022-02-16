@@ -2,6 +2,8 @@ const xml2js = require('fast-xml-parser');
 const XmlParser = require('fast-xml-parser').j2xParser;
 let acsHandlers = {};
 
+acsHandlers.onlineAfterReset = ['MP-G421R'];
+
 acsHandlers.createNewPortFwTbl = function(pm) {
   return {'@_Name': 'PORT_FW_TBL', 'Value': [{
         '@_Name': 'InstanceNum', '@_Value': '0',
@@ -79,34 +81,40 @@ acsHandlers.setXmlPortForward = function(jsonConfigFile, device) {
 
 acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
   // find mib table
-  let i = jsonConfigFile['Config']['Dir']
-  .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
-  if (i < 0) {
+  let mibIndex = jsonConfigFile['Config']['Dir']
+    .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
+  if (mibIndex < 0) {
     console.log('Error: failed MIB_TABLE index finding at '
       +device.serial_tr069);
     return '';
   }
-  let j = jsonConfigFile['Config']['Dir'][i]['Value']
-  .findIndex((e) => e['@_Name'] == 'SUSER_NAME');
-  if (j < 0) {
-    console.log('Error: failed SUSER_NAME index finding at '
-      +device.serial_tr069);
-    return '';
-  }
-  // set web login
-  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin.web_login;
 
-  j = jsonConfigFile['Config']['Dir'][i]['Value']
-  .findIndex((e) => e['@_Name'] == 'SUSER_PASSWORD');
-  if (j < 0) {
+  let passwordIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
+    .findIndex((e) => e['@_Name'] === 'SUSER_PASSWORD');
+  if (passwordIndex < 0) {
     console.log('Error: failed SUSER_PASSWORD index finding at '
       +device.serial_tr069);
     return '';
   }
-  // set web password
-  jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
-   = device.web_admin.web_password;
+
+  let nameIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
+    .findIndex((e) => e['@_Name'] === 'SUSER_NAME');
+  if (nameIndex < 0) {
+    console.log('Error: failed SUSER_NAME index finding at '
+      +device.serial_tr069);
+    return '';
+  }
+
+  // set web login
+  // this login can clash if the username is "admin"
+  // beware if you're having trouble to login on web interface
+  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
+    = device.web_admin_user;
+
+  // set web password 
+  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
+    = device.web_admin_password;
+
   return jsonConfigFile;
 };
 

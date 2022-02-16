@@ -4,11 +4,35 @@ const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
+const acsHandlers = require('./handlers/acs');
 const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
+const fs = require('fs');
 
 let appDeviceAPIController = {};
+
+const getWifiConfig = function(matchedDevice) {
+  let wifiConfig = {
+    '2ghz': {
+      'ssid': matchedDevice.wifi_ssid,
+      'password': matchedDevice.wifi_password,
+      'channel': matchedDevice.wifi_channel,
+      'band': matchedDevice.wifi_band,
+      'mode': matchedDevice.wifi_mode,
+    },
+  };
+  if (matchedDevice.wifi_is_5ghz_capable) {
+    wifiConfig['5ghz'] = {
+      'ssid': matchedDevice.wifi_ssid_5ghz,
+      'password': matchedDevice.wifi_password_5ghz,
+      'channel': matchedDevice.wifi_channel_5ghz,
+      'band': matchedDevice.wifi_band_5ghz,
+      'mode': matchedDevice.wifi_mode_5ghz,
+    };
+  }
+  return wifiConfig;
+};
 
 let checkUpdateParametersDone = function(id, ncalls, maxcalls) {
   return new Promise((resolve, reject)=>{
@@ -64,6 +88,7 @@ let appSet = function(req, res, processFunction) {
       if (content.latitude && content.longitude) {
         matchedDevice.latitude = content.latitude;
         matchedDevice.longitude = content.longitude;
+        matchedDevice.last_location_date = new Date();
       }
 
       if (
@@ -84,8 +109,8 @@ let appSet = function(req, res, processFunction) {
       matchedDevice.save();
 
       if (matchedDevice.use_tr069) {
-        // Simply call ACS function, dont check for parameters done
         acsController.updateInfo(matchedDevice, tr069Changes);
+        meshHandlers.syncSlaves(matchedDevice);
         return res.status(200).json({is_set: 1});
       } else {
         mqtt.anlixMessageRouterUpdate(matchedDevice._id, hashSuffix);
@@ -493,6 +518,58 @@ let formatDevices = function(device) {
   };
 };
 
+const makeDeviceBackupData = function(device, config, certFile) {
+  let now = new Date();
+  let formattedNow = '';
+  formattedNow += now.getDate() + '/';
+  formattedNow += now.getMonth()+1 + '/';
+  formattedNow += now.getFullYear() + ' às ';
+  let hours = now.getHours();
+  hours = (hours < 10) ? '0'+hours : hours;
+  formattedNow += hours + ':';
+  let minutes = now.getMinutes();
+  minutes = (minutes < 10) ? '0'+minutes : minutes;
+  formattedNow += minutes;
+  let customFields = {};
+  let deviceCustomFields = device.custom_tr069_fields;
+  if (deviceCustomFields.intelbras_omci_mode) {
+    customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
+  }
+  return {
+    timestamp: formattedNow,
+    model: device.model,
+    firmware: device.version,
+    mac: device._id,
+    serial: device.serial_tr069,
+    alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
+    wan: {
+      conn_type: device.connection_type,
+      pppoe_user: device.pppoe_user,
+      pppoe_password: device.pppoe_password,
+      vlan: device.wan_vlan_id,
+      mtu: device.wan_mtu,
+    },
+    tr069: {
+      url: config.tr069.server_url,
+      interval: parseInt(config.tr069.inform_interval/1000),
+      certificate: certFile,
+    },
+    wifi: getWifiConfig(device),
+    remote: config.tr069.remote_access,
+    credentials: {
+      admin: {
+        name: config.tr069.web_login,
+        pass: config.tr069.web_password,
+      },
+      user: {
+        name: config.tr069.web_login_user,
+        pass: config.tr069.web_password_user,
+      },
+    },
+    customFields: customFields,
+  };
+};
+
 appDeviceAPIController.registerApp = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
@@ -654,7 +731,6 @@ appDeviceAPIController.refreshInfo = function(req, res) {
       }
     }
 
-
     return res.status(200).json({
       has_access: isDevOn,
       devices_timestamp: matchedDevice.last_devices_refresh,
@@ -663,9 +739,16 @@ appDeviceAPIController.refreshInfo = function(req, res) {
 };
 
 appDeviceAPIController.doSpeedtest = function(req, res) {
-  DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
+  DeviceModel.findByMacOrSerial(req.body.id).exec(
+  async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message: 'Erro interno'});
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(404).json({success: false,
+                                   message: 'CPE não encontrado'});
     }
     if (!matchedDevice) {
       return res.status(404).json({message: 'CPE não encontrado'});
@@ -717,10 +800,18 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       }
 
       if (config && config.measureServerIP) {
-        // Send mqtt message to perform speedtest
-        let url = config.measureServerIP + ':' + config.measureServerPort;
-        mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
-                                         {name: 'App_Cliente'});
+         if (matchedDevice.use_tr069) {
+          matchedDevice.current_speedtest.timestamp = new Date();
+          matchedDevice.current_speedtest.user = 'App_Cliente';
+          matchedDevice.current_speedtest.stage = 'estimative';
+          await matchedDevice.save();
+          acsController.fireSpeedDiagnose(matchedDevice._id);
+        } else {
+          // Send mqtt message to perform speedtest
+          let url = config.measureServerIP + ':' + config.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
+                                           {name: 'App_Cliente'});
+        }
       }
     }, 1.5*1000);
   });
@@ -818,13 +909,15 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
         if (err || !matchedDeviceEdit) return;
         if (mustUpdateFCM) {
-          let device = matchedDeviceEdit.lan_devices.find((d)=>d.app_uid===appid);
+          let device = matchedDeviceEdit.lan_devices.find(
+            (d)=>d.app_uid===appid);
           device.fcm_uid = fcmid;
           device.last_seen = Date.now();
         }
         if (mustUpdateLocation) {
           matchedDeviceEdit.latitude = latitude;
           matchedDeviceEdit.longitude = longitude;
+          matchedDeviceEdit.last_location_date = new Date();
         }
         matchedDeviceEdit.save();
       });
@@ -852,24 +945,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       speedtestInfo.limit = permissions.grantSpeedTestLimit;
     }
 
-    let wifiConfig = {
-      '2ghz': {
-        'ssid': matchedDevice.wifi_ssid,
-        'password': matchedDevice.wifi_password,
-        'channel': matchedDevice.wifi_channel,
-        'band': matchedDevice.wifi_band,
-        'mode': matchedDevice.wifi_mode,
-      },
-    };
-    if (matchedDevice.wifi_is_5ghz_capable) {
-      wifiConfig['5ghz'] = {
-        'ssid': matchedDevice.wifi_ssid_5ghz,
-        'password': matchedDevice.wifi_password_5ghz,
-        'channel': matchedDevice.wifi_channel_5ghz,
-        'band': matchedDevice.wifi_band_5ghz,
-        'mode': matchedDevice.wifi_mode_5ghz,
-      };
-    }
+    let wifiConfig = getWifiConfig(matchedDevice);
 
     let notifications = [];
     matchedDevice.upnp_requests.forEach((mac)=>{
@@ -907,7 +983,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     prefixObj.name = checkResponse.prefix;
     prefixObj.grant = checkResponse.enablePrefix;
 
-    return res.status(200).json({
+    let response = {
       permissions: permissions,
       wifi: wifiConfig,
       localMac: localMac,
@@ -920,7 +996,22 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
       use_tr069: matchedDevice.use_tr069,
-    });
+      mesh_mode: matchedDevice.mesh_mode,
+    };
+
+    try {
+      // Only send bakcup for tr069 devices and valid config
+      if (matchedDevice.use_tr069 && config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(
+          matchedDevice, config, certFile,
+        );
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+
+    return res.status(200).json(response);
   });
 };
 
@@ -1042,6 +1133,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
+      return res.status(500).json({message: 'Erro ao acessar configuração'});
     }
 
     let reply = {'speedtest': {}};
@@ -1187,16 +1279,22 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   // Query database for devices with matching SSID/BSSID
   let targetSSID = req.body.content.ssid;
   let targetBSSID = req.body.content.bssid.toUpperCase();
+  let ssidPrefix = (config.ssidPrefix) ? config.ssidPrefix : '';
+  let noPrefixTargetSSID = deviceHandlers.cleanAndCheckSsid(
+    ssidPrefix, targetSSID,
+  ).ssid;
   let query = {
-    use_tr069: true,
+    'use_tr069': true,
     '$or': [
       {wifi_ssid: targetSSID},
+      {wifi_ssid: noPrefixTargetSSID},
       {wifi_ssid_5ghz: targetSSID},
+      {wifi_ssid_5ghz: noPrefixTargetSSID},
       {wifi_bssid: targetBSSID},
       {wifi_bssid_5ghz: targetBSSID},
     ],
   };
-  let projection = {_id: 1, model: 1, version: 1, pending_app_secret:1};
+  let projection = {_id: 1, model: 1, version: 1, pending_app_secret: 1};
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
@@ -1232,33 +1330,34 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
-  let query = req.body.content.mac;
-  let projection = {
-    _id: 1, pending_app_secret:1, serial_tr069: 1, apps: 1, app_password: 1
+  let serial = req.body.content.serial;
+  let query = {
+    '$or': [
+      {serial_tr069: serial},
+      {alt_uid_tr069: serial},
+    ],
   };
-  DeviceModel.findById(query, projection, function(err, matchedDevice) {
+  DeviceModel.find(query).exec(async function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message': 'Erro interno'});
     }
-    if (!matchedDevice) {
+    if (!matchedDevices || matchedDevices.length === 0) {
       return res.status(404).json({'message': 'CPE não encontrado'});
     }
-    if (matchedDevice.pending_app_secret === '' ||
-        matchedDevice.pending_app_secret !== req.body.content.secret) {
+    let device = matchedDevices[0];
+    if (device.pending_app_secret === '' ||
+        device.pending_app_secret !== req.body.content.secret) {
       return res.status(403).json({'message': 'Secret inválido'});
     }
-    if (matchedDevice.serial_tr069 !== req.body.content.serial) {
-      return res.status(403).json({'message': 'Serial inválido'});
-    }
-    let appObj = matchedDevice.apps.filter((app) => app.id === req.body.app_id);
+    let appObj = device.apps.filter((app) => app.id === req.body.app_id);
     let newEntry = {
       id: req.body.app_id,
       secret: req.body.content.secret,
     };
     if (appObj.length == 0) {
-      matchedDevice.apps.push(newEntry);
+      device.apps.push(newEntry);
     } else {
-      matchedDevice.apps = matchedDevice.apps.map((app) => {
+      device.apps = device.apps.map((app) => {
         // Change old entry to new entry if ids match
         if (app.id === req.body.app_id) {
           return newEntry;
@@ -1268,12 +1367,25 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
       });
     }
     // Clear pending secret and save data
-    matchedDevice.pending_app_secret = '';
-    matchedDevice.save();
-    return res.status(200).json({
+    device.pending_app_secret = '';
+    device.save();
+    // Build hard reset backup structure for client app
+    let config = await Config.findOne(
+      {is_default: true}, 'tr069',
+    ).exec().catch((err) => err);
+    let response = {
       serialOk: true,
-      hasPassword: (matchedDevice.app_password) ? true : false, // cast to bool
-    });
+      hasPassword: (device.app_password) ? true : false, // cast to bool
+    };
+    try {
+      if (config.tr069) {
+        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+        response.resetBackup = makeDeviceBackupData(device, config, certFile);
+      }
+    } catch (err) {
+      // Do nothing if above fails - is not a required step
+    }
+    return res.status(200).json(response);
   });
 };
 
@@ -1348,6 +1460,100 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
     }
     return res.status(500).json({message: 'Dados de regras inválidos'});
   });
+};
+
+appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query;
+  if (req.body.content.alt_uid) {
+    query = {alt_uid_tr069: req.body.content.serial};
+  } else {
+    query = {serial_tr069: req.body.content.serial};
+  }
+  try {
+    let device = await DeviceModel.findOne(query).lean();
+    if (!device) {
+      // Device is not registered, cannot reconfigure
+      return res.status(200).json({success: true, isRegister: false});
+    }
+    let config = await Config.findOne(
+      {is_default: true}, 'tr069',
+    ).exec().catch((err) => err);
+    let lastContact = device.last_contact;
+    let now = Date.now();
+    // do not send that this specific model is online to client app
+    // after reset this model still online on flashman because
+    // it configuration is not entirely reseted
+    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
+
+    if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
+      // Device is online, no need to reconfigure
+      return res.status(200).json({
+        success: true, isRegister: true, isOnline: true,
+      });
+    }
+
+    // Build hard reset backup structure for client app
+    const certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+    const resetBackup = makeDeviceBackupData(device, config, certFile);
+    return res.status(200).json({
+      success: true,
+      isRegister: true,
+      isOnline: false,
+      resetBackup: resetBackup,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({success: false});
+  }
+};
+
+appDeviceAPIController.signalResetRecover = async function(req, res) {
+  if (!util.isJSONObject(req.body.content)) {
+    return res.status(500).json({message: 'JSON recebido não é válido'});
+  }
+  let query;
+  if (req.body.content.alt_uid) {
+    query = {alt_uid_tr069: req.body.content.serial};
+  } else {
+    query = {serial_tr069: req.body.content.serial};
+  }
+  try {
+    let device = await DeviceModel.findOne(query);
+    if (!device) {
+      // Device is not registered, cannot reconfigure
+      return res.status(200).json({success: true, isRegister: false});
+    }
+    let config = await Config.findOne(
+      {is_default: true}, 'tr069',
+    ).exec().catch((err) => err);
+    let lastContact = device.last_contact;
+    let now = Date.now();
+    // do not send that this specific model is online to client app
+    // after reset this model still online on flashman because
+    // it configuration is not entirely reseted
+    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
+
+    if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
+      // Device is online, no need to reconfigure
+      return res.status(200).json({
+        success: true, isRegister: true, isOnline: true,
+      });
+    }
+    // Set device hard reset flag so that it fully syncs on the next inform
+    device.recovering_tr069_reset = true;
+    device.save();
+    return res.status(200).json({
+      success: true,
+      isRegister: true,
+      isOnline: false,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({success: false});
+  }
 };
 
 module.exports = appDeviceAPIController;

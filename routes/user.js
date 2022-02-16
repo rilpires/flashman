@@ -45,11 +45,16 @@ router.route('/roles').get(
 
 router.route('/edit/:id').post(
   authController.ensureLogin(),
-  userController.editUser)
+  userController.editUser);
 
 router.route('/settings').get(
   authController.ensureLogin(),
   userController.settings
+);
+
+router.route('/certificates/search').post(
+  authController.ensureLogin(),
+  userController.certificateSearch,
 )
 
 // ** DEPRECATED **
@@ -59,7 +64,7 @@ router.route('/settings').get(
 
 router.route('/get/all').get(
   authController.ensureLogin(),
-  userController.getUsers)
+  userController.getUsers);
 
 router.route('/get/one/:id').get(
   authController.ensureLogin(),

@@ -162,6 +162,11 @@ $(document).ready(function() {
         $('#minlength-pass-pppoe').val(resp.minlengthpasspppoe)
                                   .siblings('label').addClass('active');
       }
+      if (typeof resp.bypassMqttSecretCheck !== 'undefined') {
+        $('select[name=bypass-mqtt-secret-check] option[value=' +
+          resp.bypassMqttSecretCheck + ']')
+        .attr('selected', 'selected');
+      }
       if (resp.measureServerIP) {
         $('#measure-server-ip').val(resp.measureServerIP)
                                .siblings('label').addClass('active');
@@ -198,6 +203,11 @@ $(document).ready(function() {
       if (typeof resp.wanStepRequired !== 'undefined') {
         $('select[name=wan-step-required] option[value=' +
           resp.wanStepRequired + ']')
+        .attr('selected', 'selected');
+      }
+      if (typeof resp.speedTestStepRequired !== 'undefined') {
+        $('select[name=speedtest-step-required] option[value=' +
+          resp.speedTestStepRequired + ']')
         .attr('selected', 'selected');
       }
       if (typeof resp.ipv4StepRequired !== 'undefined') {
@@ -252,6 +262,9 @@ $(document).ready(function() {
         $('#lost-informs-offline-threshold')
           .val(resp.tr069OfflineThreshold)
           .siblings('label').addClass('active');
+      }
+      if (resp.tr069STUNEnable) {
+        $('#stun_enable').prop('checked', true).change();
       }
     },
   });

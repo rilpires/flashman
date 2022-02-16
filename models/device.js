@@ -16,6 +16,8 @@ let deviceSchema = new Schema({
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
   last_tr069_sync: Date,
+  // Used to signal inform to sync all data after recovering from hard reset
+  recovering_tr069_reset: {type: Boolean, default: false},
   created_at: {type: Date},
   external_reference: {
     kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
@@ -40,6 +42,8 @@ let deviceSchema = new Schema({
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
+  wan_vlan_id: Number,
+  wan_mtu: Number,
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,
@@ -136,6 +140,8 @@ let deviceSchema = new Schema({
   mesh_slaves: [String], // Used for master only (Slave is null)
   mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
   mesh_key: String, // Security key in mesh network (key for backhaul)
+  bssid_mesh2: String, // BSSID of 2.4GHz mesh Virtual AP
+  bssid_mesh5: String, // Same as above but for 5GHz
   mesh_routers: [{ // Info from a point of view of each AP connected to mesh
     mac: String,
     last_seen: {type: Date},
@@ -219,8 +225,20 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
+  // The object bellow is used to save the user that requested the speedtest 
+  // and to indicate what time the speedtest was requested. Te timestamp is
+  // used to compare which diagnostic was requested.
+  // If current_speedtest.timestamp > speedtest_results.timestamp, then the
+  // speedtest was requested, otherwise, the ping test was requested.
+  current_speedtest: {
+    user: String,
+    timestamp: Date,
+    stage: {type: String, default: ''},
+    band_estimative: {type: Number, default: 0},
+  },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  last_location_date: {type: Date},
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
   wps_last_connected_mac: {type: String, default: ''},
@@ -232,6 +250,9 @@ let deviceSchema = new Schema({
   isSsidPrefixEnabled: {type: Boolean},
   web_admin_username: String,
   web_admin_password: String,
+  custom_tr069_fields: {
+    intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+  },
 });
 
 deviceSchema.set('autoIndex', false);

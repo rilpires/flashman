@@ -10,18 +10,54 @@ block content
     .card-body
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
-      #users-table-wrapper.table-responsive(style="display: none;")
-        table#users-table.table
-          thead
-            tr
-              if (superuser || role.grantCertificationAccess > 1)
-                th#checkboxHeader.text-center
-                  input.checkbox(type="checkbox" id="checkall")
-              th.text-center Concluído
-              th.text-center Identificador Único
-              th.text-center Data do Atendimento
-              th.text-center Técnico
-              th.text-center
+      #users-table-wrapper(style="display: none;")
+        .col.col-md-10.my-4.mx-auto.p-0
+          .md-form.input-group.input-entry
+            .input-group-btn
+              button#certificates-search-type-button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
+                type="button",
+                data-toggle="dropdown"
+              )
+                span#new_ext_ref_type_selected.selected Técnico
+              #certificates-search-type.ext-ref-type.dropdown-menu
+                a.dropdown-item.text-center Técnico
+                a.dropdown-item.text-center MAC/Serial
+            input#certificates-search-input.form-control.py-0(
+              type="text",
+              name="content",
+              placeholder="Buscar..."
+            )
+          .row
+            .col.pr-md-0
+              .md-form.input-entry.my-0
+                label.active Data inicial de atendimento
+                input#certificates-firstdatepicker-input.form-control(
+                  type="date",
+                  name="firstdatepicker",
+                )
+            .col.pr-md-0
+              .md-form.input-entry.my-0
+                label.active Data final de atendimento
+                input#certificates-seconddatepicker-input.form-control(
+                  type="date",
+                  name="seconddatepicker",
+                )
+          .row
+            .col.text-right.px-md-0
+              button#certificates-search-button.btn.btn-primary.mx-0(type="submit")
+                i#certificates-search-btn-icon.fas.fa-search.fa-lg
+        .table-responsive
+          table#users-table.table
+            thead
+              tr
+                if (superuser || role.grantCertificationAccess > 1)
+                  th#checkboxHeader.text-center
+                    input.checkbox(type="checkbox" id="checkall")
+                th.text-center Concluído
+                th.text-center Identificador Único
+                th.text-center Data do Atendimento
+                th.text-center Técnico
+                th.text-center
 
 block scripts
   script(src='/dist/showusercertificates.bundle.js')

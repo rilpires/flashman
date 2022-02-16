@@ -38,6 +38,12 @@ block content
                     required
                   )
                   .invalid-feedback Insira um número entre 1 e 64
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Ignorar aviso de alteração de firmwares Flashbox
+                    select.browser-default.md-select(name="bypass-mqtt-secret-check")
+                      option(value="false") Não
+                      option(value="true") Sim
                 .custom-control.custom-checkbox.mb-2
                   input#autoupdate.custom-control-input(
                     name="autoupdate",
@@ -160,7 +166,18 @@ block content
                   .fas.fa-info-circle.fa-lg
                   span &nbsp; A etapa a ser desabilitada na WAN será o teste 
                     | de ping feito para o gateway do CPE
+                .alert.alert-info
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; A etapa a ser desabilitada no registro do
+                    |  Flashman abrange o teste de existência de uma conexão
+                    | MQTTS ativa para CPEs que utilizem o firmware Flashbox
               .col-md-6.col-12.pl-0.pr-0
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label Execução do teste de velocidade
+                    select.browser-default.md-select(name="speedtest-step-required")
+                      option(value="true") Habilitado
+                      option(value="false") Desabilitado
                 .md-form
                   .md-selectfield.form-control.my-0
                     label Verificação de IPv4 obrigatória
@@ -185,12 +202,7 @@ block content
                     select.browser-default.md-select(name="flashman-step-required")
                       option(value="true") Habilitado
                       option(value="false") Desabilitado
-                .alert.alert-info
-                  .fas.fa-info-circle.fa-lg
-                  span &nbsp; A etapa a ser desabilitada no registro do
-                    |  Flashman abrange o teste de existência de uma conexão
-                    | MQTTS ativa para CPEs que utilizem o firmware Flashbox
-
+                
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
               data-toggle="collapse",
@@ -281,6 +293,15 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
+                  .custom-control.custom-checkbox
+                    input#stun_enable.custom-control-input(
+                      name="stun_enable",
+                      type="checkbox"
+                    )
+                    label.custom-control-label.text-muted.mr-2(for="stun_enable")
+                      | Habilitar uso do Servidor STUN
+                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (somente para modelos compatíveis)")
+                    .invalid-feedback
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg

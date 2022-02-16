@@ -3,6 +3,7 @@ import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
 
 let renderEditErrors = function(errors) {
+  let allMessages = '';
   for (let key in errors) {
     if (errors[key].messages.length > 0) {
       let message = '';
@@ -12,8 +13,10 @@ let renderEditErrors = function(errors) {
       $(errors[key].field).closest('.input-entry')
                           .find('.invalid-feedback').html(message);
       $(errors[key].field)[0].setCustomValidity(message);
+      allMessages += message;
     }
   }
+  return allMessages;
 };
 
 const validateEditDeviceMesh = function(event) {
@@ -23,6 +26,35 @@ const validateEditDeviceMesh = function(event) {
     row = row.prev();
   }
   row.find('form').submit();
+};
+
+const openErrorSwal = function() {
+  swal({
+    type: 'error',
+    title: 'Erro',
+    text: 'Alguns campos do formulário da CPE estão mal preenchidos',
+    confirmButtonColor: '#4db6ac',
+    confirmButtonText: 'OK',
+  });
+};
+
+// disable an make loading icon appear on submit button
+const switchSubmitButton = function(i) {
+  let row = $('.edit-button-'+i);
+  let iconButtonSubmit;
+  if (row.find('.btn-primary').prop('disabled')) {
+    row.find('.btn-primary').prop('disabled', false);
+    iconButtonSubmit = row.find('.fa-spinner');
+    iconButtonSubmit.addClass('fa-check');
+    iconButtonSubmit.removeClass('fa-spinner');
+    iconButtonSubmit.removeClass('fa-pulse');
+  } else {
+    row.find('.btn-primary').prop('disabled', true);
+    iconButtonSubmit = row.find('.fa-check');
+    iconButtonSubmit.removeClass('fa-check');
+    iconButtonSubmit.addClass('fa-spinner');
+    iconButtonSubmit.addClass('fa-pulse');
+  }
 };
 
 let validateEditDevice = function(event) {
@@ -36,6 +68,7 @@ let validateEditDevice = function(event) {
   let row = $(event.target).parents('tr');
   let index = row.data('index');
   let slaveCount = row.prev().data('slave-count');
+  switchSubmitButton(index);
 
   // Get form values
   let mac = row.data('deviceid');
@@ -128,8 +161,10 @@ let validateEditDevice = function(event) {
     lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
     lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
     bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
-    bridge_fixed_gateway: {field: '#edit_opmode_fixip_gateway-' + index.toString()},
+    bridge_fixed_gateway: {
+      field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
+    mesh_mode: {field: '#edit_meshMode-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -191,9 +226,12 @@ let validateEditDevice = function(event) {
                     validator.validateNetmask, errors.lan_netmask);
   }
   if (validateBridge && useBridgeFixIP) {
-    genericValidate(bridgeFixIP, validator.validateIP, errors.bridge_fixed_ip);
-    genericValidate(bridgeFixGateway, validator.validateIP, errors.bridge_fixed_gateway);
-    genericValidate(bridgeFixDNS, validator.validateIP, errors.bridge_fixed_dns);
+    genericValidate(bridgeFixIP, validator.validateIP,
+                    errors.bridge_fixed_ip);
+    genericValidate(bridgeFixGateway, validator.validateIP,
+                    errors.bridge_fixed_gateway);
+    genericValidate(bridgeFixDNS, validator.validateIP,
+                    errors.bridge_fixed_dns);
   }
 
   let hasNoErrors = function(key) {
@@ -244,7 +282,9 @@ let validateEditDevice = function(event) {
       data.content.lan_netmask = lanNetmask;
     }
     if (validateBridge) {
-      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0; // Keep this logic, because in the fronted was inverted from disable to enable
+      // Keep this logic, because in the fronted was
+      // inverted from disable to enable
+      data.content.bridgeDisableSwitch = bridgeDisableSwitch ? 1 : 0;
       data.content.bridgeFixIP = bridgeFixIP;
       data.content.bridgeFixGateway = bridgeFixGateway;
       data.content.bridgeFixDNS = bridgeFixDNS;
@@ -276,6 +316,7 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString()).
             addClass('d-none');
         }
+        switchSubmitButton(index);
       },
       error: function(xhr, status, error) {
         let resp = JSON.parse(xhr.responseText);
@@ -295,18 +336,23 @@ let validateEditDevice = function(event) {
             band5ghz: errors.band5ghz,
             mode5ghz: errors.mode5ghz,
             power5ghz: errors.power5ghz,
+            mesh_mode: errors.mesh_mode,
           };
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
           });
           renderEditErrors(errors);
+          openErrorSwal();
+          switchSubmitButton(index);
         }
       },
     });
   } else {
     // Else, render errors on form
     renderEditErrors(errors);
+    openErrorSwal();
+    switchSubmitButton(index);
   }
   editFormObj.addClass('was-validated');
   return false;
@@ -383,8 +429,8 @@ $(document).ready(function() {
             $('<label></label>')
             .addClass('custom-control-label')
             .attr('for', 'select-reboot-slave-'+s)
-            .html(slave)
-          )
+            .html(slave),
+          ),
         );
         s++;
       });

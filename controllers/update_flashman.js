@@ -85,8 +85,10 @@ const downloadUpdate = function(version) {
 
 const updateDependencies = function() {
   return new Promise((resolve, reject)=>{
-    exec('npm install --production', (err, stdout, stderr)=>{
-      (err) ? reject() : resolve();
+    exec('rm package-lock.json', (err, stdout, stderr)=>{
+      exec('npm install --production', (err, stdout, stderr)=>{
+        (err) ? reject() : resolve();
+      });
     });
   });
 };
@@ -142,7 +144,7 @@ const updateGenieACS = function(upgrades) {
             './controllers/external-genieacs/provision.js', 'utf8',
           );
           console.log('Updating GenieACS provision...');
-          waitForProvision = tasksApi.putProvision(provisionScript);
+          waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
         } catch (e) {
           waitForProvision = Promise.reject();
         }
@@ -182,6 +184,58 @@ const updateGenieACS = function(upgrades) {
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
           return reject();
+        } else {
+          console.log('GenieACS updated successfully!');
+          return resolve();
+        }
+      });
+    });
+  });
+};
+
+const updateDiagnostics = function() {
+  return new Promise((resolve, reject) => {
+    // Get config from database
+    Config.findOne({is_default: true}).then((config)=>{
+      if (!config) {
+        console.log('Error reading configs from database in update GenieACS!');
+        return resolve();
+      }
+      // Update diagnostic provision script
+      let waitForProvision;
+      try {
+        let provisionScript = fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
+        );
+        console.log('Updating GenieACS provision...');
+        waitForProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
+      } catch (e) {
+        waitForProvision = Promise.reject();
+      }
+
+      // Update preset json if needed
+      let waitForPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/diagnostic-preset.json',
+        ));
+        console.log('Updating Genie diagnostic-preset...');
+        waitForPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPreset = Promise.reject();
+      }
+
+      // Wait for all promises and check results
+      let promises = [waitForProvision, waitForPreset];
+      Promise.allSettled(promises).then((values)=>{
+        if (values[0].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-provision script!');
+        }
+        if (values[1].status !== 'fulfilled') {
+          console.log('Error updating Genie diagnostic-preset json!');
+        }
+        if (values.some((v) => v.status !== 'fulfilled')) {
+          return resolve();
         } else {
           console.log('GenieACS updated successfully!');
           return resolve();
@@ -276,6 +330,7 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
   });
 };
 
+
 updateController.rebootGenie = function(instances) {
   // Treat bugged case where pm2 may fail to provide the number of instances
   // correctly - it may be 0 or undefined, and we must then rely on both the
@@ -298,13 +353,18 @@ updateController.rebootGenie = function(instances) {
     // We do a stop/start instead of restart to avoid racing conditions when
     // genie's worker processes are killed and then respawned - this prevents
     // issues with CPEs connections since exceptions lead to buggy exp. backoff
-    exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+    exec('pm2 stop genieacs-cwmp', async (err, stdout, stderr)=>{
       // Replace genieacs instances config with what flashman gives us
       let replace = 'const INSTANCES_COUNT = .*;';
       let newText = 'const INSTANCES_COUNT = ' + instances + ';';
       let sedExpr = 's/' + replace + '/' + newText + '/';
       let targetFile = 'controllers/external-genieacs/devices-api.js';
       let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+      // Update genieACS diagnostic's script and preset
+      console.log('Updating genieACS diacnostic\'s script and preset');
+      await updateDiagnostics();
+
       exec(sedCommand, (err, stdout, stderr)=>{
         exec('pm2 start genieacs-cwmp');
       });
@@ -475,6 +535,7 @@ updateController.getAutoConfig = function(req, res) {
       return res.status(200).json({
         auto: matchedConfig.autoUpdate,
         minlengthpasspppoe: matchedConfig.pppoePassLength,
+        bypassMqttSecretCheck: matchedConfig.mqtt_secret_bypass,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
         tr069ServerURL: matchedConfig.tr069.server_url,
@@ -486,6 +547,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
+        tr069STUNEnable: matchedConfig.tr069.stun_enable,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -497,6 +559,8 @@ updateController.getAutoConfig = function(req, res) {
         ssidPrefix: matchedConfig.ssidPrefix,
         wanStepRequired: matchedConfig.certification.wan_step_required,
         ipv4StepRequired: matchedConfig.certification.ipv4_step_required,
+        speedTestStepRequired:
+          matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
@@ -556,6 +620,10 @@ updateController.setAutoConfig = async function(req, res) {
     if (!config) throw new {message: 'Erro ao encontrar configuração base'};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
+    let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
+    if (typeof bypassMqttSecretCheck === 'boolean') {
+      config.mqtt_secret_bypass = bypassMqttSecretCheck;
+    }
     let measureServerIP = req.body['measure-server-ip'];
     let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
     if (measureServerIP && !measureServerIP.match(ipRegex)) {
@@ -656,7 +724,8 @@ updateController.setAutoConfig = async function(req, res) {
         message: 'Erro validando os campos',
       });
     }
-    config.tr069.pon_signal_threshold_critical_high = ponSignalThresholdCriticalHigh;
+    config.tr069.pon_signal_threshold_critical_high =
+      ponSignalThresholdCriticalHigh;
     let message = 'Salvo com sucesso!';
 
     // checking tr069 configuration fields.
@@ -679,6 +748,7 @@ updateController.setAutoConfig = async function(req, res) {
       Number(req.body['lost-informs-recovery-threshold']);
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
+    let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -709,6 +779,7 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold: ponSignalThreshold,
         pon_signal_threshold_critical: ponSignalThresholdCritical,
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
+        stun_enable: STUNEnable,
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
@@ -720,6 +791,7 @@ updateController.setAutoConfig = async function(req, res) {
 
     let wanStepRequired = req.body['wan-step-required'] === 'true';
     let ipv4StepRequired = req.body['ipv4-step-required'] === 'true';
+    let speedTestStepRequired = req.body['speedtest-step-required'] === 'true';
     let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
     let dnsStepRequired = req.body['dns-step-required'] === 'true';
     let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
@@ -728,6 +800,9 @@ updateController.setAutoConfig = async function(req, res) {
     }
     if (typeof ipv4StepRequired === 'boolean') {
       config.certification.ipv4_step_required = ipv4StepRequired;
+    }
+    if (typeof speedTestStepRequired === 'boolean') {
+      config.certification.speedtest_step_required = speedTestStepRequired;
     }
     if (typeof ipv6StepRequired === 'boolean') {
       config.certification.ipv6_step_required = ipv6StepRequired;
@@ -761,17 +836,47 @@ updateController.updateAppPersonalization = async function(app) {
     let ios = controlReq.iosLink;
 
     Config.findOne({is_default: true}, function(err, config) {
-      if (err || !config) return console.log(err);
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
       config.personalizationHash = hash;
       config.androidLink = android;
       config.iosLink = ios;
       config.save(function(err) {
-        if (err) return console.log(err);
-        console.log('Saved succussfully!');
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
       });
     });
   } else {
-    console.log('Error at contact control');
+    console.error('App personalization hash update error');
+  }
+};
+
+updateController.updateLicenseApiSecret = async function(app) {
+  let controlReq = await controlApi.getLicenseApiSecret(app);
+  if (controlReq.success == true) {
+    const licenseApiSecret = controlReq.apiSecret;
+    const company = controlReq.company;
+
+    Config.findOne({is_default: true}, function(err, config) {
+      if (err || !config) {
+        console.error('Error when fetching Config document');
+        return;
+      }
+      config.licenseApiSecret = licenseApiSecret;
+      config.company = company;
+      config.save(function(err) {
+        if (err) {
+          console.error('Config save returned error: ' + err);
+          return;
+        }
+      });
+    });
+  } else {
+    console.error('License API secret update error');
   }
 };
 
