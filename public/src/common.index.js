@@ -25,7 +25,7 @@ i18next
     // debug: true,
     initImmediate: false, // wait for the translations before finishing initializing.
     backend: {
-      loadPath: '/public/dist/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/dist/locales/{{lng}}/{{ns}}.json',
     }
   }, (err, t) => { // finished initializing.
     if (err) {
