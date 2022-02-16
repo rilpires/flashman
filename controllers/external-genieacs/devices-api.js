@@ -481,6 +481,8 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
+      fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
