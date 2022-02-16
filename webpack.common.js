@@ -136,7 +136,7 @@ module.exports = {
       'bsCustomFileInput': 'bs-custom-file-input',
       'swal': 'sweetalert2',
       'i18next': 'i18next',
-      'i18nextHttpBackend': 'i18next-http-backend',
+      'i18next-http-backend': 'i18next-http-backend',
     }),
     new CopyPlugin({
       patterns: [
