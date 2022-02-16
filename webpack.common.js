@@ -1,5 +1,5 @@
 const webpack = require('webpack');
-const CopyPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -140,7 +140,7 @@ module.exports = {
     }),
     new CopyPlugin({
       patterns: [
-        { from: "public/locales", to: "locales" },
+        {from: 'public/locales', to: 'locales'},
       ],
     }),
   ],
