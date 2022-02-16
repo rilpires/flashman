@@ -158,33 +158,17 @@ const convertWifiMode = function(mode, oui, model) {
 };
 
 const convertWifiBand = function(band, model) {
-  if (model === 'AC10') {
-    switch (band) {
-      case 'HT20':
-      case 'VHT20':
-        return '0';
-      case 'HT40':
-      case 'VHT40':
-        return '1';
-      case 'VHT80':
-        return '3';
-      case 'auto':
-        return '2';
-      default:
-        return '';
-    }
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      return '20MHz';
+      return ((model === 'AC10') ? '0' : '20MHz');
     case 'HT40':
     case 'VHT40':
-      return '40MHz';
+      return ((model === 'AC10') ? '1' : '40MHz');
     case 'VHT80':
-      return '80MHz';
+      return ((model === 'AC10') ? '3' : '80MHz');
     case 'auto':
-      return 'auto';
+      return ((model === 'AC10') ? '2' : 'auto');
     default:
       return '';
   }
