@@ -564,7 +564,7 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
 const isMacCompatible = function( bssid , mac ) {
   let bssidHex = parseInt(bssid.replace(/:/g,""),16);
   let macHex = parseInt(mac.replace(/:/g,""),16);
-  let atherosMask = 0xE0FFFFFFF000;
+  let atherosMask  = 0x00FFFFFF0000;
   let mediatekMask = 0xFDFFFFCC0000;
   
   if( (bssidHex&atherosMask)==(macHex&atherosMask) )
