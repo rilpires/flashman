@@ -116,6 +116,7 @@ const tr069Devices = {
     },
     port_forward_opts: {
       'V6.0.10P3N9': portForwardNoAsymRanges,
+      'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
