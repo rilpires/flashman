@@ -120,30 +120,20 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-const convertWifiBand = function(band, mode, model) {
+const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
-  if (model === 'AC10') {
-    switch (band) {
-      case '0':
-        return (isAC) ? 'VHT20' : 'HT20';
-      case '1':
-        return (isAC) ? 'VHT40' : 'HT40';
-      case '2':
-        return 'auto';
-      case '3':
-        return (isAC) ? 'VHT80' : undefined;
-      default:
-        return undefined;
-    }
-  }
   switch (band) {
+    case '2':
     case 'auto':
       return 'auto';
     case '20MHz':
+    case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
     default:
@@ -254,10 +244,8 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '' &&
-                  data.wan.pppoe_user.value !== 'none');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value &&
+    data.wan.pppoe_enable.value !== '0');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -382,7 +370,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value, model) :
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) :
        undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
@@ -393,7 +381,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value, model) :
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) :
        undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
@@ -435,13 +423,18 @@ const createRegistry = async function(req, permissions) {
   }
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
+  // JSON.parse is used as cast to boolean
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value != matchedConfig.tr069.stun_enable) {
+      data.common.stun_enable.value.toString() !==
+      matchedConfig.tr069.stun_enable.toString()) {
     changes.common.stun_enable = matchedConfig.tr069.stun_enable;
     changes.stun.address = matchedConfig.tr069.server_url;
     changes.stun.port = 3478;
     doChanges = true;
   }
+  /* For Tenda AC10 model is mandatory to set
+   LANHostConfigManagement.DHCPServerConfigurable field
+   to be allowed to change CPE IP and Subnet Mask */
   if (model == 'AC10') {
     changes.lan.enable_config = '1';
   }
@@ -584,10 +577,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_user &&
-                  typeof data.wan.pppoe_user.value === 'string' &&
-                  data.wan.pppoe_user.value !== '' &&
-                  data.wan.pppoe_user.value !== 'none');
+  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value &&
+    data.wan.pppoe_enable.value !== '0');
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_enable &&
@@ -741,7 +732,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi2.band) {
     let band2 = convertWifiBand(data.wifi2.band.value,
-     data.wifi2.mode.value, model);
+     data.wifi2.mode.value);
     if (data.wifi2.band.value && !device.wifi_band) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
@@ -800,7 +791,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi5.band && data.wifi5.mode) {
     let band5 = convertWifiBand(data.wifi5.band.value,
-     data.wifi5.mode.value, model);
+     data.wifi5.mode.value);
     if (data.wifi5.band.value && !device.wifi_band_5ghz) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
@@ -834,11 +825,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   } else if (device.lan_netmask !== subnetNumber) {
     changes.lan.subnet_mask = device.lan_netmask;
     hasChanges = true;
-  }
-  if (data.lan.enable_config &&
-   data.lan.enable_config.value == '0') {
-    changes.lan = {};
-    changes.lan.enable_config = '1';
   }
   if (data.wan.recv_bytes && data.wan.recv_bytes.value &&
       data.wan.sent_bytes && data.wan.sent_bytes.value) {
@@ -930,7 +916,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // If has STUN Support in the model and
   // STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value != config.tr069.stun_enable.toString()) {
+      data.common.stun_enable.value.toString() !==
+      config.tr069.stun_enable.toString()) {
     hasChanges = true;
     changes.common.stun_enable = config.tr069.stun_enable;
     changes.stun.address = config.tr069.server_url;
@@ -1879,6 +1866,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   if (model == 'AC10') {
+    /* The fields.devices.associated in AC10 model have appended
+    the .*.X_CT-COM_RSSI, so we remove then to rightly check
+    WLANConfiguration subtree */
     assocField = assocField.split('.').slice(0, -4).join('.');
   } else {
     assocField = assocField.split('.').slice(0, -2).join('.');
