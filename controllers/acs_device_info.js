@@ -217,6 +217,7 @@ const saveDeviceData = async function(mac, landevices) {
       if (lanDev.wifi_freq) registered.wifi_freq = lanDev.wifi_freq;
       if (lanDev.rssi) registered.wifi_signal = lanDev.rssi;
       if (lanDev.snr) registered.wifi_snr = lanDev.snr;
+      if (lanDev.wifi_mode) registered.wifi_mode = lanDev.wifi_mode;
       registered.last_seen = Date.now();
     } else {
       device.lan_devices.push({
@@ -228,6 +229,7 @@ const saveDeviceData = async function(mac, landevices) {
         wifi_signal: (lanDev.rssi) ? lanDev.rssi : undefined,
         wifi_freq: (lanDev.wifi_freq) ? lanDev.wifi_freq : undefined,
         wifi_snr: (lanDev.snr) ? lanDev.snr : undefined,
+        wifi_mode: (lanDev.wifi_mode) ? lanDev.wifi_mode : undefined,
         last_seen: Date.now(),
         first_seen: Date.now(),
       });
@@ -1972,6 +1974,19 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = getFromNestedKey(data, snrKey+'._value');
+              }
+              // Collect mode, if available
+              if (fields.devices.host_mode) {
+                let modeKey = fields.devices.host_mode;
+                modeKey = modeKey.replace('*', iface).replace('*', index);
+                let modeVal = getFromNestedKey(data, modeKey+'._value');
+                if (modeVal.includes('ac')) {
+                  device.wifi_mode = 'AC';
+                } else if (modeVal.includes('n')) {
+                  device.wifi_mode = 'N';
+                } else if (modeVal.includes('g')) {
+                  device.wifi_mode = 'G';
+                }
               }
               // Collect connection speed, if available
               if (fields.devices.host_rate) {
