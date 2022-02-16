@@ -18,12 +18,13 @@ let i18nextPromise = new Promise((resolve, reject) => {
 // made us substitute all $(document).ready() calls by our own function to 
 // manage DOMContentLoaded event callbacks
 i18next
-  .use(i18nextHttpBackend) // this middleware requests translations in background.
+  // this middleware requests translations in background.
+  .use(require('i18next-http-backend'))
   .init({
     lng: navigator.language,
-    fallbackLng : "en",
+    fallbackLng : 'en',
     // debug: true,
-    initImmediate: false, // wait for the translations before finishing initializing.
+    initImmediate: false, // waits translations to load before initialing.
     backend: {
       loadPath: '/dist/locales/{{lng}}/{{ns}}.json',
     }
@@ -40,10 +41,11 @@ i18next
 // defined in other files, webpack will put them together in the same bundle,
 // so they are in the same context.
 let anlixDocumentReady = {
-  callbakcs: [], // array that will hold all callbacks to run after DOMContentLoaded event.
-  add: (f) => callbakcs.push(f), // function to add callback to array.
+  // array that will hold all callbacks to run after DOMContentLoaded event.
+  callbacks: [],
+  add: (f) => callbacks.push(f), // function to add callback to array.
   start: () => { // function that executes all callbacks.
-    callbakcs.forEach((f) => f());
+    callbacks.forEach((f) => f());
     // unassigning object, so browser user console can't re-execute callbacks.
     anlixDocumentReady = undefined;
   },
@@ -61,7 +63,8 @@ $(document).ready(async function() {
     $('#frame-modal-alert').modal('show');
   }
 
-  // we wait for i18next initialization before executing all DOMContentLoaded event callbacks.
+  // we wait for i18next initialization before executing all DOMContentLoaded
+  // event callbacks.
   await i18nextPromise; // waiting for i18next to finished its initialization.
   anlixDocumentReady.start(); // executes all DOMContentLoaded event callbacks.
 });
