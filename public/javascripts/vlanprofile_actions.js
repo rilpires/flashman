@@ -1,4 +1,5 @@
 
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
 window.checkVlanName = function(input) {

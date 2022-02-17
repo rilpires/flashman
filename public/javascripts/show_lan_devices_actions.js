@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg, socket} from './common_actions.js';
 
 anlixDocumentReady.add(function() {

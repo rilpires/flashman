@@ -1,5 +1,6 @@
 /* eslint require-jsdoc: 0 */
 import {displayAlertMsg} from './common_actions.js';
+import {anlixDocumentReady} from '../src/common.index.js';
 
 anlixDocumentReady.add(function() {
   let selectedItens = [];

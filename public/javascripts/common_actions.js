@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'bootstrap/js/src/modal';
 import {io} from 'socket.io-client';
 

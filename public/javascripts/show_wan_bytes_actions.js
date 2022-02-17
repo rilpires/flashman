@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import ApexCharts from 'apexcharts';
 import {socket} from './common_actions.js';
 

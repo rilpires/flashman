@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import Validator from './device_validator.js';
 import {setPortForwardStorage,
         getPortForwardStorage,

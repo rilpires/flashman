@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import Stepper from 'bs-stepper';
 import 'tempusdominus-bootstrap-4';
 
