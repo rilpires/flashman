@@ -561,18 +561,20 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
 // This will return true if we infer that 'bssid' is
 // generated from a device with label address 'mac'
 // (specific driver related)
-const isMacCompatible = function( bssid , mac ) {
+const isMacCompatible = function(bssid , mac) {
   let bssidHex = parseInt(bssid.replace(/:/g,""),16);
   let macHex = parseInt(mac.replace(/:/g,""),16);
   let atherosMask  = 0x00FFFFFF0000;
   let mediatekMask = 0xFDFFFFCC0000;
   
-  if( (bssidHex&atherosMask)==(macHex&atherosMask) )
+  if ((bssidHex & atherosMask) == (macHex & atherosMask)) {
     return true;
-  if( (bssidHex&mediatekMask)==(macHex&mediatekMask) )
+  }
+  if ((bssidHex & mediatekMask) == (macHex & mediatekMask)) {
     return true;
+  }
   
-    return false;
+  return false;
 }
 
 // Used for mesh v1 update
@@ -599,33 +601,78 @@ const getPossibleMeshTopology = function(
       return {};
     }
   }
+
+  // We are now creating a new field "label_mac" in each meshRouter object.
+  // We are only interested in master reading slave and slave reading master
+  // We hope that we only infer a single match with it's network interface
+  // and it's label mac address (ID).
+  meshRouters[masterMac].forEach(function(meshRouter) {
+    let inferredLabelMacs = Object.keys(meshRouters).filter(function(label) {
+      return isMacCompatible(label,meshRouter.mac);
+    });
+    if (inferredLabelMacs.length < 1) {
+      console.log(
+        "Couldn't find any label mac address for " + meshRouter.mac
+      );
+      return {};
+    } else if (inferredLabelMacs.length > 1) {
+      console.log(
+        "Ambiguous mac address inference for " + meshRouter.mac
+      );
+      return {};
+    }
+    meshRouter.label_mac = inferredLabelMacs[0];
+  });
+  slaves.forEach(function(slaveMac){
+    let matchCount = 0;
+    meshRouters[slaveMac].forEach(function(meshRouter) {
+      if (isMacCompatible(masterMac,meshRouter.mac)) {
+        meshRouter.label_mac = masterMac;
+        matchCount += 1;
+      }
+    });
+    if ( matchCount < 1 ) {
+      console.log("Couldn't find any label mac address for " + masterMac);
+      return {};
+    } else if ( matchCount > 1) {
+      console.log("Ambiguous mac address inference for " + masterMac);
+      return {};
+    }
+  });
+
   // this will be used for controlling update order
   // hash map where father is the key and value is list of sons
   let retObj = {};
   retObj[masterMac] = slaves;
+  
   // We are sorting the slaves by rssi
   // This comes from an heuristic to send the update commands 
   // in a proper order (weaker rssi first)
   // Also, we consider only the lower signal when reading
   // from both directions
   retObj[masterMac].sort(function(mac1,mac2) {
-    let masterReadingSlave1 =
-      meshRouters[masterMac].find((routerData)=>{
-        return isMacCompatible(routerData.mac,mac1);
-      }).signal;
-    let masterReadingSlave2 =
-      meshRouters[masterMac].find((routerData)=>{
-        return isMacCompatible(routerData.mac,mac2);
-      }).signal;
-    let slave1ReadingMaster =
-      meshRouters[mac1].find((routerData)=>{
-        return isMacCompatible(routerData.mac,masterMac);
-      }).signal;
-    let slave2ReadingMaster =
-      meshRouters[mac2].find((routerData)=>{
-        return isMacCompatible(routerData.mac,masterMac);
-      }).signal;
     
+    let masterReadingSlave1 = meshRouters[masterMac].find( 
+      function (meshRouter) {
+        return meshRouter.label_mac == mac1;
+      }
+    ).signal
+    let masterReadingSlave2 = meshRouters[masterMac].find( 
+      function (meshRouter) {
+        return meshRouter.label_mac == mac2;
+      }
+    ).signal
+    let slave1ReadingMaster = meshRouters[mac1].find(
+      function (meshRouter) {
+        return meshRouter.label_mac == masterMac;
+      }
+    ).signal
+    let slave2ReadingMaster = meshRouters[mac2].find( 
+      function (meshRouter) {
+        return meshRouter.label_mac == masterMac;
+      }
+    ).signal
+
     let rssi1 = (masterReadingSlave1 > slave1ReadingMaster) ?
       (slave1ReadingMaster) : (masterReadingSlave1);
     let rssi2 = (masterReadingSlave2 > slave2ReadingMaster) ?
