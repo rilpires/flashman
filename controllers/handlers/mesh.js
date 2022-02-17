@@ -576,8 +576,8 @@ const isMacCompatible = function(bssid , mac) {
     maskTest = true;
   }
 
-  let bssidByte0  = bssidHex%255; 
-  let macByte0    = macHex%255;
+  let bssidByte0  = bssidHex%256; 
+  let macByte0    = macHex%256;
   if( bssidByte0 > macByte0 ){
     diffTest = ((bssidByte0 - macByte0) <= 3);
   } else {
