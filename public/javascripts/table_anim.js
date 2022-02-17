@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import {tagsInput} from 'tags-input';
 import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
