@@ -609,7 +609,7 @@ const updatePeriodicInformInGenieAcs = async function(req, tr069InformInterval) 
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
     console.error(e);
-    throw new Error(req.t('tasksApiInformIntervalWriteError'));
+    throw new Error(req.t('tasksApiPutError', {errorline: __line}));
   });
 };
 
@@ -617,7 +617,7 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: req.t('baseconfigNotFoudError')};
+    if (!config) throw new {message: req.t('configNotFound', {errorline: __line})};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -629,7 +629,7 @@ updateController.setAutoConfig = async function(req, res) {
     if (measureServerIP && !measureServerIP.match(ipRegex)) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
     let measureServerPort = parseInt(req.body['measure-server-port']);
@@ -642,7 +642,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsValidationError'),
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.measureServerIP = measureServerIP;
@@ -657,7 +657,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsValidationError'),
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
@@ -672,7 +672,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsValidationError'),
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
@@ -685,7 +685,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
-          message: req.t('fieldsValidationError'),
+          message: req.t('fieldsInvalid', {errorline: __line}),
         });
       }
       /* check if ssid prefix was not empty and for some reason is coming
@@ -720,12 +720,12 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsValidationError'),
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical_high =
       ponSignalThresholdCriticalHigh;
-    let message = req.t('writeSuccess');
+    let message = req.t('operationSuccessful');
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -784,7 +784,7 @@ updateController.setAutoConfig = async function(req, res) {
       // respond error without much explanation.
       return res.status(500).json({
         type: 'danger',
-        message: req.t('tr069FieldsValidationError'),
+        message: req.t('fieldsInvalid', {errorline: __line}),
       });
     }
 
@@ -822,7 +822,8 @@ updateController.setAutoConfig = async function(req, res) {
     console.log(err);
     return res.status(500).json({
       type: 'danger',
-      message: (err.message) ? err.message : req.t('configWriteError'),
+      message: (err.message) ? err.message :
+                               req.t('configSaveError', {errorline: __line}),
     });
   }
 };

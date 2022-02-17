@@ -28,7 +28,7 @@ vlanController.showVlanProfiles = function(req, res) {
     if (err) {
       console.log(err);
       indexContent.type = 'danger';
-      indexContent.message = req.t('permissionNotFound');
+      indexContent.message = req.t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     }
     let userRole = roles.find(function(role) {
@@ -36,7 +36,7 @@ vlanController.showVlanProfiles = function(req, res) {
     });
     if (typeof userRole === 'undefined' && !req.user.is_superuser) {
       indexContent.type = 'danger';
-      indexContent.message = req.t('permissionNotFound');
+      indexContent.message = req.t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     } else {
       indexContent.roles = roles;
@@ -64,7 +64,7 @@ vlanController.showVlanProfiles = function(req, res) {
         });
       } else {
         indexContent.type = 'danger';
-        indexContent.message = req.t('permissionDenied');
+        indexContent.message = req.t('permissionDenied', {errorline: __line});
         return res.render('error', indexContent);
       }
     }
@@ -88,7 +88,7 @@ vlanController.updateVlanProfile = function(req, res) {
     if (err) {
       console.log(err);
       indexContent.type = 'danger';
-      indexContent.message = req.t('permissionNotFound');
+      indexContent.message = req.t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     }
     let userRole = roles.find(function(role) {
@@ -96,7 +96,7 @@ vlanController.updateVlanProfile = function(req, res) {
     });
     if (typeof userRole === 'undefined' && !req.user.is_superuser) {
       indexContent.type = 'danger';
-      indexContent.message = req.t('permissionNotFound');
+      indexContent.message = req.t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     } else {
       indexContent.roles = roles;
@@ -132,14 +132,15 @@ vlanController.updateVlanProfile = function(req, res) {
               return res.render('vlanprofile', indexContent);
             } else {
               indexContent.type = 'danger';
-              indexContent.message = req.t('vlanIdNotFound');
+              indexContent.message = req.t('vlanIdNotFound',
+                                           {errorline: __line});
               return res.render('error', indexContent);
             }
           });
         });
       } else {
         indexContent.type = 'danger';
-        indexContent.message = req.t('permissionDenied');
+        indexContent.message = req.t('permissionDenied', {errorline: __line});
         return res.render('error', indexContent);
       }
     }
@@ -150,7 +151,7 @@ vlanController.getAllVlanProfiles = function(req, res) {
   Config.findOne({is_default: true}, function(err, config) {
     if (err) {
       return res.json({success: false, type: 'danger',
-                       message: req.t('vlanNotFoundError')});
+                       message: req.t('configFindError', {errorline: __line})});
     } else {
       return res.json({success: true, type: 'success',
                        vlanProfiles: config.vlans_profiles});
@@ -168,24 +169,25 @@ vlanController.addVlanProfile = async function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: req.t('vlanIdOutOfRange'),
+      message: req.t('vlanIdOutOfRange', {errorline: __line}),
     });
   }
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(newVlanProfile.profile_name) == false) {
     return res.json({
       success: false,
       type: 'danger',
-      message: req.t('vlanProfileNameInvalidCharacter')});
+      message: req.t('vlanProfileNameInvalidCharacter', {errorline: __line})});
   }
   if (newVlanProfile.profile_name.length > 32) {
     return res.json({
       success: false,
       type: 'danger',
-      message: req.t('vlanProfileNameInvalidLength')});
+      message: req.t('vlanProfileNameInvalidLength', {errorline: __line})});
   }
 
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
-    return res.json({success: false, type: 'danger', message: rej.message});
+    return res.json({success: false, type: 'danger',
+      message: req.t('configFindError', {errorline: __line})});
   });
   if (config && config.vlans_profiles) {
     let is_vlan_id_unique = true;
@@ -203,32 +205,34 @@ vlanController.addVlanProfile = async function(req, res) {
       config.vlans_profiles.push(newVlanProfile);
       config.save().then(function() {
         return res.json({success: true, type: 'success',
-                         message: req.t('vlanProfileNameCreated')});
+                         message: req.t('operationSuccessful')});
       }).catch(function(rej) {
-        return res.json({success: false, type: 'danger', message: rej.message});
+        return res.json({success: false, type: 'danger',
+          message: req.t('configSaveError', {errorline: __line})});
       });
     } else if (!is_vlan_id_unique) {
       return res.json({
         success: false,
         type: 'danger',
-        message: req.t('vlanProfileIdExists')});
+        message: req.t('vlanProfileIdExists', {errorline: __line})});
     } else if (!is_profile_name_unique) {
       return res.json({
         success: false,
         type: 'danger',
-        message: req.t('vlanProfileNameExists')});
+        message: req.t('vlanProfileNameExists', {errorline: __line})});
     }
   } else {
     return res.json({
       success: false,
       type: 'danger',
-      message: req.t('vlanProfileFindError')});
+      message: req.t('vlanProfileFindError', {errorline: __line})});
   }
 };
 
 vlanController.editVlanProfile = async function(req, res) {
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
-    return res.json({success: false, type: 'danger', message: rej.message});
+    return res.json({success: false, type: 'danger',
+      message: req.t('configFindError', {errorline: __line})});
   });
   if (config && config.vlans_profiles) {
     let exist_vlan_profile = false;
@@ -236,20 +240,22 @@ vlanController.editVlanProfile = async function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: req.t('vlanProfileNameInvalidCharacter')});
+        message: req.t('vlanProfileNameInvalidCharacter',
+                       {errorline: __line})});
     }
     if (req.body.profilename.length > 32) {
       return res.json({
         success: false,
         type: 'danger',
-        message: req.t('vlanProfileNameInvalidLength')});
+        message: req.t('vlanProfileNameInvalidLength', {errorline: __line})});
     }
 
     for (let i = 0; i < config.vlans_profiles.length; i++) {
       if (config.vlans_profiles[i].profile_name === req.body.profilename) {
         return res.json({
           success: false, type: 'danger',
-          message: req.t('vlanProfileNameShouldBeDifferent')});
+          message: req.t('vlanProfileNameShouldBeDifferent',
+                         {errorline: __line})});
       }
 
       if (config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
@@ -263,13 +269,14 @@ vlanController.editVlanProfile = async function(req, res) {
         return res.json({
           success: true,
           type: 'success',
-          message: req.t('vlanProfileNameUpdated')});
+          message: req.t('operationSuccessful')});
       }).catch(function(rej) {
-        return res.json({success: false, type: 'danger', message: rej.message});
+        return res.json({success: false, type: 'danger',
+          message: req.t('configSaveError', {errorline: __line})});
       });
     } else {
       return res.json({success: false, type: 'danger',
-                       message: req.t('vlanIdNotFound')});
+                       message: req.t('vlanIdNotFound', {errorline: __line})});
     }
   } else {
     res.json({success: false, type: 'danger', message: config});
@@ -278,14 +285,15 @@ vlanController.editVlanProfile = async function(req, res) {
 
 vlanController.checkDevicesAffected = async function(req, res) {
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
-    return res.json({success: false, type: 'danger', message: rej.message});
+    return res.json({success: false, type: 'danger',
+      message: req.t('configFindError', {errorline: __line})});
   });
   if (config) {
     let vlanProfile = config.vlans_profiles.find(
       (vlanProfile) => vlanProfile._id == req.params.profileid);
     if (typeof vlanProfile === 'undefined') {
       return res.json({success: false, type: 'danger',
-                       message: req.t('vlanProfileNotFound')});
+        message: req.t('vlanProfileNotFound', {errorline: __line})});
     }
     let vlanId = vlanProfile.vlan_id;
 
@@ -295,7 +303,7 @@ vlanController.checkDevicesAffected = async function(req, res) {
       {_id: true, vlan: true})
     .catch((err) => {
       return res.json({success: false, type: 'danger',
-                       message: req.t('devicesNotFound')});
+                       message: req.t('cpesNotFound', {errorline: __line})});
     });
     for (let device of matchedDevices) {
       let doUpdate = false;
@@ -308,22 +316,23 @@ vlanController.checkDevicesAffected = async function(req, res) {
       if (doUpdate) {
         await device.save().catch((err) => {
           return res.json({success: false, type: 'danger',
-                           message: req.t('databaseWriteError')});
+            message: req.t('cpeSaveError', {errorline: __line})});
         });
         mqtt.anlixMessageRouterUpdate(device._id);
       }
     }
     return res.json({success: true, type: 'success',
-                     message: req.t('doneSuccess')});
+                     message: req.t('operationSuccessful')});
   } else {
     return res.json({success: false, type: 'danger',
-                     message: req.t('configNotFoud')});
+                     message: req.t('configNotFoud', {errorline: __line})});
   }
 };
 
 vlanController.removeVlanProfile = async function(req, res) {
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
-    return res.json({success: false, type: 'danger', message: rej.message});
+    return res.json({success: false, type: 'danger',
+      message: req.t('configFindError', {errorline: __line})});
   });
   if (config) {
     if (typeof req.body.ids === 'string' ||
@@ -331,7 +340,7 @@ vlanController.removeVlanProfile = async function(req, res) {
       req.body.ids = [req.body.ids.toString()];
     } else if (!Array.isArray(req.body.ids)) {
       return res.json({success: false, type: 'danger',
-        message: req.t('wrongFormat')});
+        message: req.t('fieldNameInvalid', {name: 'ids', errorline: __line})});
     }
 
     req.body.ids = req.body.ids.map((i) => i.toString());
@@ -344,12 +353,14 @@ vlanController.removeVlanProfile = async function(req, res) {
       return res.json({
         success: true,
         type: 'success',
-        message: req.t('vlanDeleteSuccess')});
+        message: req.t('operationSuccessful')});
     }).catch(function(rej) {
-      return res.json({success: false, type: 'danger', message: rej.message});
+      return res.json({success: false, type: 'danger',
+        message: req.t('configSaveError', {errorline: __line})});
     });
   } else {
-    res.json({success: false, type: 'danger', message: config});
+    res.json({success: false, type: 'danger',
+      message: req.t('configNotFoud', {errorline: __line})});
   }
 };
 
@@ -358,7 +369,7 @@ vlanController.getVlans = function(req, res) {
     if (err || !matchedDevice) {
       console.log(err);
       return res.json({success: false, type: 'danger',
-                       message: req.t('deviceFindError')});
+                       message: req.t('cpeFindError', {errorline: __line})});
     } else {
       return res.json({success: true,
                        type: 'success', vlan: matchedDevice.vlan});
@@ -369,7 +380,8 @@ vlanController.getVlans = function(req, res) {
 vlanController.updateVlans = async function(req, res) {
   let device = await DeviceModel.findById(req.params.deviceid)
   .catch(function(rej) {
-    return res.json({success: false, type: 'danger', message: rej.message});
+    return res.json({success: false, type: 'danger',
+      message: req.t('cpeFindError', {errorline: __line})});
   });
   if (device) {
     let is_vlans_valid = true;
@@ -377,7 +389,7 @@ vlanController.updateVlans = async function(req, res) {
       req.body.vlans = JSON.parse(req.body.vlans);
     } else {
       return res.json({success: false, type: 'danger',
-                       message: req.t('vlansFormatInvalid')});
+        message: req.t('fieldNameInvalid', {errorline: __line, name: 'vlans'})});
     }
 
     if (Array.isArray(req.body.vlans)) {
@@ -407,17 +419,19 @@ vlanController.updateVlans = async function(req, res) {
         return res.json({
           success: true,
           type: 'success',
-          message: req.t('deviceVlansUpdated', {deviceId: req.params.deviceid})});
+          message: req.t('operationSuccessful')});
       }).catch(function(rej) {
-        return res.json({success: false, type: 'danger', message: rej.message});
+        return res.json({success: false, type: 'danger',
+          message: req.t('cpeSaveError', {errorline: __line})});
       });
     } else {
       return res.json({success: false, type: 'danger',
-                       message: req.t('vlansFormatInvalid')});
+        message: req.t('fieldNameInvalid', 
+                       {errorline: __line, name: 'vlans'})});
     }
   } else {
     res.json({success: false, type: 'danger',
-              message: req.t('deviceNotFound')});
+              message: req.t('cpeNotFound', {errorline: __line})});
   }
 };
 
@@ -523,7 +537,8 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
   let filteredVlan = [];
   let didChange = false;
   let config = await Config.findOne({is_default: true}).catch(function(rej) {
-    return {success: false, type: 'danger', message: rej.message};
+    return {success: false, type: 'danger',
+      message: req.t('configFindError', {errorline: __line})};
   });
   if (config && config.vlans_profiles) {
     let vlans = [];
@@ -544,7 +559,8 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
       filteredVlan.push(JSON.stringify(vlanParsed));
     }
   } else {
-    return {success: false, type: 'danger', message: config};
+    return {success: false, type: 'danger',
+      message: req.t('configNotFoud', {errorline: __line})};
   }
   return {
     success: true,
@@ -626,7 +642,7 @@ vlanController.getMaxVid = function(req, res) {
   } else {
     return res.status(500).json({
       success: false,
-      message: req.t('jsonError'),
+      message: req.t('fieldNameInvalid', {errorline: __line, name: 'models'}),
       errors: [],
     });
   }
