@@ -468,8 +468,6 @@ const getZTEFields = function(model) {
     case 'ZXHN%20H199A': // URI encoded
       fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
-      fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
-      fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
