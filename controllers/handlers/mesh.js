@@ -566,16 +566,27 @@ const isMacCompatible = function(bssid , mac) {
   let macHex = parseInt(mac.replace(/:/g,""),16);
   let atherosMask  = 0x00FFFFFF0000;
   let mediatekMask = 0xFDFFFFCC0000;
-  
+  let maskTest = false;
+  let diffTest = false;
+
   if ((bssidHex & atherosMask) == (macHex & atherosMask)) {
-    return true;
+    maskTest = true;
   }
   if ((bssidHex & mediatekMask) == (macHex & mediatekMask)) {
-    return true;
+    maskTest = true;
+  }
+
+  let bssidByte0  = bssidHex%255; 
+  let macByte0    = macHex%255;
+  if( bssidByte0 > macByte0 ){
+    diffTest = ((bssidByte0 - macByte0) <= 3);
+  } else {
+    diffTest = ((macByte0 - bssidByte0) <= 3);
   }
   
-  return false;
+  return maskTest && diffTest ;
 }
+
 
 // Used for mesh v1 update
 const getPossibleMeshTopology = function(
@@ -606,22 +617,24 @@ const getPossibleMeshTopology = function(
   // We are only interested in master reading slave and slave reading master
   // We hope that we only infer a single match with it's network interface
   // and it's label mac address (ID).
+  let invalidMatching = false;
   meshRouters[masterMac].forEach(function(meshRouter) {
     let inferredLabelMacs = Object.keys(meshRouters).filter(function(label) {
       return isMacCompatible(label,meshRouter.mac);
     });
     if (inferredLabelMacs.length < 1) {
       console.log(
-        "Couldn't find any label mac address for " + meshRouter.mac
+        "Couldn't find any label mac address for slave " + meshRouter.mac
       );
-      return {};
+      invalidMatching = true;
     } else if (inferredLabelMacs.length > 1) {
       console.log(
         "Ambiguous mac address inference for " + meshRouter.mac
       );
-      return {};
+      invalidMatching = true;
+    } else {
+      meshRouter.label_mac = inferredLabelMacs[0];
     }
-    meshRouter.label_mac = inferredLabelMacs[0];
   });
   slaves.forEach(function(slaveMac){
     let matchCount = 0;
@@ -632,13 +645,18 @@ const getPossibleMeshTopology = function(
       }
     });
     if ( matchCount < 1 ) {
-      console.log("Couldn't find any label mac address for " + masterMac);
-      return {};
+      console.log("Slave " + slaveMac + " can't match master mac.");
+      invalidMatching = true;
     } else if ( matchCount > 1) {
-      console.log("Ambiguous mac address inference for " + masterMac);
-      return {};
+      console.log(
+        "Slave " + slaveMac + " is not sure about which interface is master"
+      );
+      invalidMatching = true;
     }
   });
+  if( invalidMatching ){
+    return {};
+  }
 
   // this will be used for controlling update order
   // hash map where father is the key and value is list of sons
