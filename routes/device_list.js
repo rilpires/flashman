@@ -4,7 +4,7 @@ const updaterScheduleController = require('../controllers/update_scheduler');
 const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
 const diagAPIController = require('../controllers/app_diagnostic_api');
-const i18nextMiddleware = require('../controllers/language').middleware
+const i18nextMiddleware = require('../controllers/language').middleware;
 
 let router = express.Router();
 

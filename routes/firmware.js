@@ -3,7 +3,7 @@ const express = require('express');
 const firmwareController = require('../controllers/firmware');
 const authController = require('../controllers/auth');
 const permission = 'grantFirmwareManage';
-const i18nextMiddleware = require('../controllers/language.js').middleware
+const i18nextMiddleware = require('../controllers/language.js').middleware;
 
 let router = express.Router();
 

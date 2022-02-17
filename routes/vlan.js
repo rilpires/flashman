@@ -4,7 +4,7 @@ const vlanController = require('../controllers/vlan');
 const authController = require('../controllers/auth');
 const permissionVlan = 'grantVlan';
 const permissionProfile = 'grantVlanProfileEdit';
-const i18nextMiddleware = require('../controllers/language.js').middleware
+const i18nextMiddleware = require('../controllers/language.js').middleware;
 
 // eslint-disable-next-line new-cap
 let router = express.Router();

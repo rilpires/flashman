@@ -2,7 +2,7 @@
 const express = require('express');
 const authController = require('../controllers/auth');
 const upgradeController = require('../controllers/update_flashman');
-const i18nextMiddleware = require('../controllers/language.js').middleware
+const i18nextMiddleware = require('../controllers/language.js').middleware;
 
 let router = express.Router();
 
