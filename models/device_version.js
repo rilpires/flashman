@@ -172,12 +172,14 @@ const tr069Devices = {
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
-      'V9.1.0P3N2_MUL': [],
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
+      'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
+      'V9.1.0P4N1_MUL': [],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': portForwardNoAsymRanges,
       'V9.1.0P3N2_MUL': portForwardNoAsymRanges,
+      'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
