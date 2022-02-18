@@ -1583,19 +1583,11 @@ deviceInfoController.receiveDevices = async function(req, res) {
         mutexRelease = await mutex.acquire();
         await DeviceModel.update({
           '_id': masterMac,
-        },
-        [
-          {
-            '$set': {
-              'mesh_onlinedevs_remaining': {
-                '$subtract': [
-                  '$mesh_onlinedevs_remaining',
-                  1,
-                ],
-              },
-            },
+        }, {
+          '$inc': {
+            'mesh_onlinedevs_remaining': -1,
           },
-        ]);
+        });
         let masterDevice = await DeviceModel.findOne(
           {'_id': masterMac},
           {'mesh_onlinedevs_remaining': 1,
