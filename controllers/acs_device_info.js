@@ -2677,6 +2677,17 @@ acsDeviceInfoController.changeAccessControl = async function(
     Object.entries(device.lan_devices).forEach((k) => {
       if (k[1]['is_blocked']) blockedDevices.push(k[1]);
     });
+    // These models dont accept more than 64 AC rules, so we must return an
+    // error.
+    if (['ZXHN H199A', 'ZXHN%20H199A'].includes(device.model)) {
+      if (blockedDevices.length >= 64) {
+        return {
+          'success': false,
+          'error': 429,
+          'message': 'Number of rules has reached its limits to this device.'
+        };
+      }
+    }
     let newAcFields = fields.access_control;
     if (device.wifi_state == 0) delete newAcFields.wifi2;
     if (device.wifi_state_5ghz == 0) delete newAcFields.wifi5;
