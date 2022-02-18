@@ -2470,12 +2470,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
-// TODO: Checar porque o bug do mac emulado no android ainda gera problemas no
-// controle de acesso do H199. Checar se não foi uma coincidencia junto com o
-// bug das 64 regras. Testar um hard-reset e logo depois do reset, criar duas
-// regras pra um mesmo dispositivo com dois MACs emulados diferentes
-
-const newDelete = async function(device, acSubtreeRoots, blockedDevices) {
+const deleteAcRules = async function(device, acSubtreeRoots, blockedDevices) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   // Update device tree
@@ -2529,13 +2524,18 @@ const newDelete = async function(device, acSubtreeRoots, blockedDevices) {
                 'subtree_rules': []
               };
               if (rulesDiffLen > 0) {
-                for (let j = 0; (j < acSubtreeRules.length); j++) {
-                  if (j < rulesDiffLen) {
-                    acRulesToDelete.push(acSubtreeRules[j]['root']);
-                  } else {
+                for (let j = 0; j < acSubtreeRules.length; j++) {
+                  // While we need rules to block devices, push these rules to 
+                  // the acSubtreeRulesToEdit array, with indices increasing by
+                  // one for each step.
+                  if (j < blockedDevices.length) {
                     acSubtreeRulesToEdit['subtree_rules'].push(
                       acSubtreeRules[j]
                     );
+                  // The other rules must be deleted, so push the rules to 
+                  // acRulesToDelete array.
+                  } else {
+                    acRulesToDelete.push(acSubtreeRules[j]['root']);
                   }
                 }
               }
@@ -2567,7 +2567,7 @@ const newDelete = async function(device, acSubtreeRoots, blockedDevices) {
   });
 }
 
-const newAdd = async function(device, acSubtreeRoots, rulesDiffLen) {
+const addAcRules = async function(device, acSubtreeRoots, rulesDiffLen) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   let acSubtreeRootsToAdd = [];
@@ -2691,9 +2691,9 @@ acsDeviceInfoController.changeAccessControl = async function(
     return result;
   }
   if (rulesDiffLength > 0) {
-    result = await newAdd(device, acSubtreeRoots, rulesDiffLength);
+    result = await addAcRules(device, acSubtreeRoots, rulesDiffLength);
   } else if (rulesDiffLength < 0) {
-    result = await newDelete(device, acSubtreeRoots, blockedDevices);
+    result = await deleteAcRules(device, acSubtreeRoots, blockedDevices);
   }
   if (result !== undefined &&
       result.hasOwnProperty('success') && result['success']) {

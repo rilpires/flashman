@@ -3046,7 +3046,22 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        await acsDeviceInfo.changeAccessControl(matchedDevice, newDeviceRules);
+        // TODO: tratar erros
+        let result = await acsDeviceInfo.changeAccessControl(
+          matchedDevice, newDeviceRules
+        );
+        if (!result['success']) {
+          if (result.hasOwnProperty('error')) switch (result['error']) {
+            case 429:
+            break;
+            default:
+            break;
+          }
+          return res.status(500).json({
+            success: false,
+            message: 'Erro ao registrar regra de bloqueio de acesso'
+          });
+        }
       }
       matchedDevice.save(async function(err) {
         if (err) {
@@ -3054,7 +3069,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
             success: false,
             message: 'Erro ao registrar atualização'});
         }
-        if (matchedDevice.use_tr069) {
+        if (!matchedDevice.use_tr069) {
           mqtt.anlixMessageRouterUpdate(matchedDevice._id);
         }
         return res.status(200).json({'success': true});
