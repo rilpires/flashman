@@ -576,16 +576,16 @@ const isMacCompatible = function(bssid, mac) {
     maskTest = true;
   }
 
-  let bssidByte0  = bssidHex%256; 
-  let macByte0    = macHex%256;
-  if( bssidByte0 > macByte0 ){
-    diffTest = ((bssidByte0 - macByte0) <= 3);
-  } else {
-    diffTest = ((macByte0 - bssidByte0) <= 3);
+  let macByte0 = macHex%256;
+  let bssidByte0 = bssidHex%256;
+  let diff = bssidByte0 - macByte0;
+  if (diff < 0) {
+    diff = -diff;
   }
-  
-  return maskTest && diffTest ;
-}
+  diffTest = (diff <= 3 || diff >= 253);
+
+  return maskTest && diffTest;
+};
 
 
 // Used for mesh v1 update
