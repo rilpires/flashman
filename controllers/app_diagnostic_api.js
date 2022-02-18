@@ -608,6 +608,11 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         if (req.body.wifi5Pass) {
           device.wifi_password_5ghz = req.body.wifi5Pass;
         }
+        // We need to store WiFiber's OMCI Mode for OLT connection
+        if (req.body.intelbrasOmciMode) {
+          let omciMode = req.body.intelbrasOmciMode;
+          device.custom_tr069_fields.intelbras_omci_mode = omciMode;
+        }
         await device.save();
         return res.status(200).json({
           'success': true,

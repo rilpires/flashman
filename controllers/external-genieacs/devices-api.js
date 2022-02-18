@@ -210,6 +210,7 @@ const getDefaultFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
     },
     wan: {
+      pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable',
       pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Username',
       pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Password',
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate',
@@ -346,6 +347,24 @@ const getDefaultFields = function() {
   };
 };
 
+const getTPLinkFields = function(model) {
+  let fields = getDefaultFields();
+  fields.common.mac = 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MACAddress';
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'X_TP_Password');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'X_TP_Password');
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  return fields;
+};
+
 const getHuaweiFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
@@ -449,8 +468,6 @@ const getZTEFields = function(model) {
     case 'ZXHN%20H199A': // URI encoded
       fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
-      fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice';
-      fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AssociatedDevice';
       fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
       fields.common.stun_enable =
@@ -462,6 +479,8 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
+      fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
@@ -519,6 +538,8 @@ const getStavixFields = function(model) {
     case 'xPON':
       fields.common.alt_uid = fields.common.mac;
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
+      fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
       break;
     case 'MP_G421R':
       break;
@@ -572,7 +593,7 @@ const getStavixFields = function(model) {
   return fields;
 };
 
-const getIgdFields = function() {
+const getFastWirelessFields = function() {
   let fields = getDefaultFields();
   fields.common.alt_uid = fields.common.mac;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -630,10 +651,23 @@ const getIgdFields = function() {
   return fields;
 };
 
-const getModelFields = function(oui, model) {
-  let success = true;
+const getModelFieldsFromDevice = function(device) {
+  let splitAcsID = device.acs_id.split('-');
+  let oui = splitAcsID[0];
+  let model = splitAcsID.slice(1, splitAcsID.length-1).join('-');
+  let modelName = device.model;
+  let firmwareVersion = device.version;
+  return getModelFields(oui, model, modelName, firmwareVersion);
+};
+
+const getModelFields = function(oui, model, modelName, firmwareVersion) {
   let message = 'Unknown error';
   let fields = {};
+  const unknownModel = {
+    success: false,
+    message: 'Unknown Model',
+    fields: getDefaultFields(),
+  };
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
@@ -670,18 +704,29 @@ const getModelFields = function(oui, model) {
       message = '';
       fields = getDefaultFields();
       break;
-    case 'IGD':
     case 'FW323DAC':
       message = '';
-      fields = getIgdFields();
+      fields = getFastWirelessFields();
+      break;
+    case 'IGD':
+      switch (modelName) {
+        case 'IGD': // FastWireless FW323DAC
+          message = '';
+          fields = getFastWirelessFields();
+          break;
+        case 'Archer C6': // TP-Link Archer C6 v3.2
+          message = '';
+          fields = getTPLinkFields();
+          break;
+        default:
+          return unknownModel;
+      }
       break;
     default:
-      success = false;
-      message = 'Unknown Model';
-      fields = getDefaultFields();
+      return unknownModel;
   }
   return {
-    success: success,
+    success: true,
     message: message,
     fields: fields,
   };
@@ -728,7 +773,9 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  let fieldsResult = getModelFields(params.oui, params.model);
+  let fieldsResult = getModelFields(
+    params.oui, params.model, params.modelName, params.firmwareVersion,
+  );
   if (!fieldsResult['success']) {
     return callback(null, fieldsResult);
   }
@@ -821,6 +868,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
 
 exports.convertField = convertField;
 exports.getModelFields = getModelFields;
+exports.getModelFieldsFromDevice = getModelFieldsFromDevice;
 exports.getBeaconTypeByModel = getBeaconTypeByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;

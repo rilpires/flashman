@@ -116,6 +116,7 @@ const tr069Devices = {
     },
     port_forward_opts: {
       'V6.0.10P3N9': portForwardNoAsymRanges,
+      'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -171,12 +172,14 @@ const tr069Devices = {
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
-      'V9.1.0P3N2_MUL': [],
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
+      'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
+      'V9.1.0P4N1_MUL': [],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': portForwardNoAsymRanges,
       'V9.1.0P3N2_MUL': portForwardNoAsymRanges,
+      'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -534,6 +537,28 @@ const tr069Devices = {
     vendor: 'Huawei',
     versions_upgrade: {
       '10.0.5.5(C947)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'Archer C6': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
       port_forward: false,
