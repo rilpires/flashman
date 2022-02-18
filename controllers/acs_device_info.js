@@ -313,15 +313,19 @@ const createRegistry = async function(req, permissions) {
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
-  let meshBSSIDs = {};
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid
-  ) {
-    meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
-    if (data.mesh5 && data.mesh5.bssid) {
+  let meshBSSIDs = {mesh2: '', mesh5: ''};
+  if (!permissions.grantMeshV2HardcodedBssid) {
+    if (
+      data.mesh2 && data.mesh2.bssid && data.mesh2.bssid.value &&
+      data.mesh2.bssid.value !== '00:00:00:00:00:00'
+    ) {
+      meshBSSIDs.mesh2 = data.mesh2.bssid.value.toUpperCase();
+    }
+    if (
+      data.mesh5 && data.mesh5.bssid && data.mesh5.bssid.value &&
+      data.mesh5.bssid.value !== '00:00:00:00:00:00'
+    ) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
-    } else {
-      meshBSSIDs.mesh5 = '';
     }
   } else {
     meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
@@ -721,8 +725,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi2.band = device.wifi_band;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
-      data.mesh2.bssid
+  if (
+    !permissions.grantMeshV2HardcodedBssid && data.mesh2 &&
+    data.mesh2.bssid && data.mesh2.bssid.value &&
+    data.mesh2.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid2 = data.mesh2.bssid.value;
     if (bssid2 && (device.bssid_mesh2 !== bssid2.toUpperCase())) {
@@ -779,8 +785,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       changes.wifi5.band = device.wifi_band_5ghz;
     }
   }
-  if (!permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
-      data.mesh5.bssid
+  if (
+    !permissions.grantMeshV2HardcodedBssid && data.mesh5 &&
+    data.mesh5.bssid && data.mesh5.bssid.value &&
+    data.mesh5.bssid.value !== '00:00:00:00:00:00'
   ) {
     let bssid5 = data.mesh5.bssid.value;
     if (bssid5 && (device.bssid_mesh5 !== bssid5.toUpperCase())) {
@@ -1096,7 +1104,6 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
   // We don't need to wait the diagnostics to complete
   res.status(200).json({success: true});
 
-  let mac = device._id;
   let success = false;
   let parameters = [];
   let diagNecessaryKeys = {
@@ -1186,7 +1193,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+              device, model, data, diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
@@ -1760,6 +1768,72 @@ const checkMeshObjsCreated = function(device) {
   });
 };
 
+const fetchMeshBSSID = function(device, meshMode) {
+  return new Promise((resolve, reject) => {
+    let acsID = device.acs_id;
+    let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+    let query = {_id: acsID};
+    let projection = '';
+    if (meshMode === 2 || meshMode === 4) {
+      projection += `${fields.mesh2.bssid},`;
+    }
+    if (meshMode === 3 || meshMode === 4) {
+      projection += `${fields.mesh5.bssid},`;
+    }
+    // Removing trailing comma from projection
+    projection = projection.slice(0, -1);
+    let path =
+      `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
+    let options = {
+      method: 'GET',
+      hostname: 'localhost',
+      port: 7557,
+      path: encodeURI(path),
+    };
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('data', (chunk)=>data+=chunk);
+      resp.on('end', async ()=>{
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          console.log('Error parsing bssid data from genie');
+          return resolve({success: false});
+        }
+        let bssid2 = '';
+        let bssid5 = '';
+        // Mesh modes that use 2.4GHz radio
+        if (meshMode === 2 || meshMode === 4) {
+          // Check if field exists and collect it from genie
+          let field = `${fields.mesh2.bssid}._value`;
+          if (checkForNestedKey(data, field)) {
+            bssid2 = getFromNestedKey(data, field);
+          }
+          // We need to make sure bssid2 is not empty and different than 0
+          if (!bssid2 || bssid2 === '00:00:00:00:00:00') {
+            return {success: false};
+          }
+        }
+        // Mesh modes that use 5Hz radio
+        if (meshMode === 3 || meshMode === 4) {
+          // Check if field exists and collect it from genie
+          let field = `${fields.mesh5.bssid}._value`;
+          if (checkForNestedKey(data, field)) {
+            bssid5 = getFromNestedKey(data, field);
+          }
+          // We need to make sure bssid5 is not empty and different than 0
+          if (!bssid5 || bssid5 === '00:00:00:00:00:00') {
+            return {success: false};
+          }
+        }
+        resolve({sucess: true, mesh2: bssid2, mesh5: bssid5});
+      });
+    });
+    req.end();
+  });
+};
+
 // TODO: Move this function to external-genieacs?
 acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
   let mac = device._id;
@@ -2114,26 +2188,58 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-acsDeviceInfoController.coordVAPObjects = async function(device) {
+acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
+  device, meshMode,
+) {
   let acsID = device.acs_id;
-  let populateVAPObjects = false;
-  let returnObj = {
-    code: 200,
-    msg: 'Success',
-    populate: populateVAPObjects,
+  // We have to check if the virtual AP object has been created already
+  const fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  const bssidField2 = fields.mesh2.bssid;
+  const bssidField5 = fields.mesh5.bssid;
+  const getObjTask = {
+    name: 'getParameterValues',
+    parameterNames: [],
   };
-  const splitID = acsID.split('-');
-  const model = splitID.slice(1, splitID.length-1).join('-');
+  if (meshMode === 2 || meshMode === 4) {
+    getObjTask.parameterNames.push(bssidField2);
+  }
+  if (meshMode === 3 || meshMode === 4) {
+    getObjTask.parameterNames.push(bssidField5);
+  }
+  let bssidsStatus;
+  try {
+    let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+    if (!ret || !ret.finished ||
+      ret.task.name !== 'getParameterValues') {
+      throw new Error('task error');
+    }
+    if (ret.finished) {
+      bssidsStatus = await fetchMeshBSSID(device, meshMode);
+      if (!bssidsStatus.success) {
+        throw new Error('invalid data');
+      }
+    }
+  } catch (e) {
+    const msg = `[!] -> ${e.message} in ${acsID}`;
+    console.log(msg);
+    return {success: false, msg: msg};
+  }
+  return {
+    success: true,
+    bssid_mesh2: bssidsStatus.mesh2.toUpperCase(),
+    bssid_mesh5: bssidsStatus.mesh5.toUpperCase(),
+  };
+};
+
+acsDeviceInfoController.createVirtualAPObjects = async function(device) {
+  let acsID = device.acs_id;
   // We have to check if the virtual AP object has been created already
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   const meshField = fields.mesh2.ssid.replace('.SSID', '');
   const meshField5 = fields.mesh5.ssid.replace('.SSID', '');
   const getObjTask = {
     name: 'getParameterValues',
-    parameterNames: [
-      meshField,
-      meshField5,
-    ],
+    parameterNames: [meshField, meshField5],
   };
   let meshObjsStatus;
   try {
@@ -2151,46 +2257,29 @@ acsDeviceInfoController.coordVAPObjects = async function(device) {
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
     console.log(msg);
-    returnObj.code = 500;
-    returnObj.msg = msg;
-    returnObj.populate = populateVAPObjects;
-    return returnObj;
+    return {success: false, msg: msg};
   }
   let deleteMesh5VAP = false;
   let createMesh2VAP = false;
   let createMesh5VAP = false;
   /*
-    If the 2.4GHz virtual AP object hasn't been created
-    we must create it. Since the objects are created in order we
-    must delete the 5GHz virtual AP object if it exists and then
-    recreate it.
+    If the 2.4GHz virtual AP object hasn't been created we must create it.
+    Since the objects are created in order we must delete the 5GHz virtual AP
+    object if it exists and then recreate it. We never delete the 2.4GHz VAP
+    object, only the 5GHz one in specific cases
   */
   if (!meshObjsStatus.mesh2) {
-    populateVAPObjects = true;
     createMesh2VAP = true;
     createMesh5VAP = true;
     if (meshObjsStatus.mesh5) {
       deleteMesh5VAP = true;
     }
-  } else {
-    /*
-      2.4GHz virtual AP object is created. Here we treat only the
-      5GHz case.
-    */
-    if (!meshObjsStatus.mesh5) {
-      populateVAPObjects = true;
-      createMesh5VAP = true;
-    }
+  } else if (!meshObjsStatus.mesh5) {
+    // 2.4GHz virtual AP object is created. Here we treat only the 5GHz case.
+    createMesh5VAP = true;
   }
-  /*
-    We never delete the 2.4GHz VAP object,
-    only the 5GHz one in specific cases
-  */
   if (deleteMesh5VAP) {
-    let delObjTask = {
-      name: 'deleteObject',
-      objectName: meshField5,
-    };
+    let delObjTask = {name: 'deleteObject', objectName: meshField5};
     try {
       let ret = await TasksAPI.addTask(acsID, delObjTask, true,
         10000, [5000, 10000]);
@@ -2201,16 +2290,10 @@ acsDeviceInfoController.coordVAPObjects = async function(device) {
     } catch (e) {
       const msg = `[!] -> ${e.message} in ${acsID}`;
       console.log(msg);
-      returnObj.code = 500;
-      returnObj.msg = msg;
-      returnObj.populate = populateVAPObjects;
-      return returnObj;
+      return {sucess: false, msg: msg};
     }
   }
-  /*
-    Virtual APs objects haven't been created yet.
-    We must do that
-  */
+  // Virtual APs objects haven't been created yet - do so now
   if (createMesh2VAP || createMesh5VAP) {
     let addObjTask = {
       name: 'addObject',
@@ -2218,14 +2301,7 @@ acsDeviceInfoController.coordVAPObjects = async function(device) {
       // Will work only if 2.4GHz VAP WLANConfiguration index is lower than 10
       objectName: meshField.slice(0, -2),
     };
-    /*
-      Regardless of which mesh mode is being set we create both
-      virtual AP objects. If 2.4GHz virtual AP object is already OK
-      then we only create the 5GHz virtual AP object.
-    */
-    let numObjsToCreate;
-    createMesh2VAP ? numObjsToCreate = 2 : numObjsToCreate = 1;
-
+    let numObjsToCreate = createMesh2VAP + createMesh5VAP; // cast bool to int
     for (let i = 0; i < numObjsToCreate; i++) {
       try {
         let ret = await TasksAPI.addTask(acsID, addObjTask, true,
@@ -2237,36 +2313,28 @@ acsDeviceInfoController.coordVAPObjects = async function(device) {
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
         console.log(msg);
-        returnObj.code = 500;
-        returnObj.msg = msg;
-        returnObj.populate = populateVAPObjects;
-        return returnObj;
+        return {success: false, msg: msg};
       }
-
       // A getParameterValues call forces the whole object to be created
       try {
-        let ret = await TasksAPI.addTask(
-          acsID, getObjTask, true, 10000, []);
-        if (!ret || !ret.finished||
-          ret.task.name !== 'getParameterValues') {
+        let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
+        if (!ret || !ret.finished || ret.task.name !== 'getParameterValues') {
           throw new Error('task error');
         }
       } catch (e) {
         const msg = `[!] -> ${e.message} in ${acsID}`;
         console.log(msg);
-        returnObj.code = 500;
-        returnObj.msg = msg;
-        returnObj.populate = populateVAPObjects;
-        return returnObj;
+        return {success: false, msg: msg};
       }
     }
   }
-  // Success
-  returnObj.populate = populateVAPObjects;
-  return returnObj;
+  // We must populate the newly created fields, signal that to next function
+  return {success: true, populate: (createMesh2VAP || createMesh5VAP)};
 };
 
-acsDeviceInfoController.updateInfo = async function(device, changes) {
+acsDeviceInfoController.updateInfo = async function(
+  device, changes, awaitUpdate = false,
+) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
@@ -2370,13 +2438,32 @@ acsDeviceInfoController.updateInfo = async function(device, changes) {
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
-    // TODO: Do something with task complete?
-    if (result.task.name !== 'setParameterValues') return;
-    if (result.finished && rebootAfterUpdate) {
+  let taskCallback = (result)=>{
+    if (
+      !result || !result.finished || result.task.name !== 'setParameterValues'
+    ) {
+      return;
+    }
+    if (rebootAfterUpdate) {
       acsDeviceInfoController.rebootDevice(device);
     }
-  });
+    return true;
+  };
+  try {
+    if (awaitUpdate) {
+      // We need to wait for task to be completed before we can return - caller
+      // expects a return "true" after task is done
+      let result = await TasksAPI.addTask(
+        acsID, task, true, 10000, [5000, 10000],
+      );
+      return taskCallback(result);
+    } else {
+      // Simply call addTask and free up this context
+      TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], taskCallback);
+    }
+  } catch (e) {
+    return;
+  }
 };
 
 acsDeviceInfoController.changePortForwardRules = async function(device,
@@ -2390,7 +2477,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  // redirect to config file binding instead of setParametervalues
+  // redirect to config file binding instead of setParameterValues
   if (model == 'GONUAC001' || model == 'xPON') {
     configFileEditing(device, ['port-forward']);
     return;
@@ -2831,6 +2918,51 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
     return {success: false, message: e.message};
   }
   return {success: true, message: response};
+};
+
+// Should be called after validating mesh configuration
+acsDeviceInfoController.configTR069VirtualAP = async function(
+  device, targetMode) {
+  const wifiRadioState = 1;
+  const meshChannel = 7;
+  const meshChannel5GHz = 40; // Value has better results on some routers
+
+  const hasMeshVAPObject = DeviceVersion.findByVersion(
+    device.version,
+    device.wifi_is_5ghz_capable,
+    device.model,
+  ).grantMeshVAPObject;
+  /*
+    If device doesn't have SSID Object by default, then
+    we need to check if it has been created already.
+    If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
+    IMPORTANT: even if target mode is 1 (cable) we must create these
+    objects because, in that case, we disable the virtual APs. If the
+    objects don't exist yet this will cause an error!
+  */
+  let createOk = {populate: false};
+  if (!hasMeshVAPObject && targetMode > 0) {
+    createOk =
+      await acsDeviceInfoController.createVirtualAPObjects(device);
+    if (!createOk.success) {
+      return {success: false, msg: createOk.msg};
+    }
+  }
+  // Set the mesh parameters on the TR-069 fields
+  let changes = meshHandlers.buildTR069Changes(
+    device,
+    targetMode,
+    wifiRadioState,
+    meshChannel,
+    meshChannel5GHz,
+    createOk.populate,
+  );
+  const updated =
+    await acsDeviceInfoController.updateInfo(device, changes, true);
+  if (!updated) {
+    return {success: false, msg: 'Erro ao enviar parâmetros mesh para a CPE'};
+  }
+  return {success: true};
 };
 
 module.exports = acsDeviceInfoController;
