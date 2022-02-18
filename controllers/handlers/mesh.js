@@ -561,10 +561,10 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
 // This will return true if we infer that 'bssid' is
 // generated from a device with label address 'mac'
 // (specific driver related)
-const isMacCompatible = function(bssid , mac) {
-  let bssidHex = parseInt(bssid.replace(/:/g,""),16);
-  let macHex = parseInt(mac.replace(/:/g,""),16);
-  let atherosMask  = 0x00FFFFFF0000;
+const isMacCompatible = function(bssid, mac) {
+  let bssidHex = parseInt(bssid.replace(/:/g, ''), 16);
+  let macHex = parseInt(mac.replace(/:/g, ''), 16);
+  let atherosMask = 0x00FFFFFF0000;
   let mediatekMask = 0xFDFFFFCC0000;
   let maskTest = false;
   let diffTest = false;
@@ -620,41 +620,41 @@ const getPossibleMeshTopology = function(
   let invalidMatching = false;
   meshRouters[masterMac].forEach(function(meshRouter) {
     let inferredLabelMacs = Object.keys(meshRouters).filter(function(label) {
-      return isMacCompatible(label,meshRouter.mac);
+      return isMacCompatible(label, meshRouter.mac);
     });
     if (inferredLabelMacs.length < 1) {
       console.log(
-        "Couldn't find any label mac address for slave " + meshRouter.mac
+        'Couldn\'t find any label mac address for slave ' + meshRouter.mac,
       );
       invalidMatching = true;
     } else if (inferredLabelMacs.length > 1) {
       console.log(
-        "Ambiguous mac address inference for " + meshRouter.mac
+        'Ambiguous mac address inference for ' + meshRouter.mac,
       );
       invalidMatching = true;
     } else {
       meshRouter.label_mac = inferredLabelMacs[0];
     }
   });
-  slaves.forEach(function(slaveMac){
+  slaves.forEach(function(slaveMac) {
     let matchCount = 0;
     meshRouters[slaveMac].forEach(function(meshRouter) {
-      if (isMacCompatible(masterMac,meshRouter.mac)) {
+      if (isMacCompatible(masterMac, meshRouter.mac)) {
         meshRouter.label_mac = masterMac;
         matchCount += 1;
       }
     });
     if ( matchCount < 1 ) {
-      console.log("Slave " + slaveMac + " can't match master mac.");
+      console.log('Slave ' + slaveMac + ' can\'t match master mac.');
       invalidMatching = true;
     } else if ( matchCount > 1) {
       console.log(
-        "Slave " + slaveMac + " is not sure about which interface is master"
+        'Slave ' + slaveMac + ' is not sure about which interface is master',
       );
       invalidMatching = true;
     }
   });
-  if( invalidMatching ){
+  if (invalidMatching) {
     return {};
   }
 
@@ -662,39 +662,30 @@ const getPossibleMeshTopology = function(
   // hash map where father is the key and value is list of sons
   let retObj = {};
   retObj[masterMac] = slaves;
-  
+
   // We are sorting the slaves by rssi
-  // This comes from an heuristic to send the update commands 
+  // This comes from an heuristic to send the update commands
   // in a proper order (weaker rssi first)
   // Also, we consider only the lower signal when reading
   // from both directions
-  retObj[masterMac].sort(function(mac1,mac2) {
-    
-    let masterReadingSlave1 = meshRouters[masterMac].find( 
-      function (meshRouter) {
-        return meshRouter.label_mac == mac1;
-      }
-    ).signal
-    let masterReadingSlave2 = meshRouters[masterMac].find( 
-      function (meshRouter) {
-        return meshRouter.label_mac == mac2;
-      }
-    ).signal
+  retObj[masterMac].sort(function(mac1, mac2) {
+    let masterReadingSlave1 = meshRouters[masterMac].find(
+      (router)=>router.label_mac == mac1,
+    ).signal;
+    let masterReadingSlave2 = meshRouters[masterMac].find(
+      (router)=>router.label_mac == mac2,
+    ).signal;
     let slave1ReadingMaster = meshRouters[mac1].find(
-      function (meshRouter) {
-        return meshRouter.label_mac == masterMac;
-      }
-    ).signal
-    let slave2ReadingMaster = meshRouters[mac2].find( 
-      function (meshRouter) {
-        return meshRouter.label_mac == masterMac;
-      }
-    ).signal
+      (router)=>router.label_mac == masterMac,
+    ).signal;
+    let slave2ReadingMaster = meshRouters[mac2].find(
+      (router)=>router.label_mac == masterMac,
+    ).signal;
 
     let rssi1 = (masterReadingSlave1 > slave1ReadingMaster) ?
       (slave1ReadingMaster) : (masterReadingSlave1);
     let rssi2 = (masterReadingSlave2 > slave2ReadingMaster) ?
-      (slave2ReadingMaster) : (masterReadingSlave2); 
+      (slave2ReadingMaster) : (masterReadingSlave2);
     return rssi1 - rssi2;
   });
 
