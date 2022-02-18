@@ -2440,7 +2440,7 @@ acsDeviceInfoController.updateInfo = async function(
   if (!hasChanges) return; // No need to sync data with genie
   let taskCallback = (result)=>{
     if (
-      !result || !result.finished || result.task.name !== 'setParametervalues'
+      !result || !result.finished || result.task.name !== 'setParameterValues'
     ) {
       return;
     }
@@ -2477,7 +2477,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  // redirect to config file binding instead of setParametervalues
+  // redirect to config file binding instead of setParameterValues
   if (model == 'GONUAC001' || model == 'xPON') {
     configFileEditing(device, ['port-forward']);
     return;
