@@ -59,7 +59,7 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
               a.dropdown-item(href="/user/settings")
                 i.fas.fa-cog.fa-lg.mr-2
                 | Configurações
-            if ((superuser || role.grantFlashmanManage) && !disableAutoUpdate)
+            if (superuser && !disableAutoUpdate)
               a.dropdown-item.update
                 i.fas.fa-arrow-circle-down.fa-lg.mr-2
                 | Atualizar Flashman

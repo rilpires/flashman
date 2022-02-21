@@ -530,6 +530,11 @@ const makeDeviceBackupData = function(device, config, certFile) {
   let minutes = now.getMinutes();
   minutes = (minutes < 10) ? '0'+minutes : minutes;
   formattedNow += minutes;
+  let customFields = {};
+  let deviceCustomFields = device.custom_tr069_fields;
+  if (deviceCustomFields.intelbras_omci_mode) {
+    customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
+  }
   return {
     timestamp: formattedNow,
     model: device.model,
@@ -561,6 +566,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
         pass: config.tr069.web_password_user,
       },
     },
+    customFields: customFields,
   };
 };
 
@@ -1509,7 +1515,7 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   let query;
-  if (req.body.alt_uid) {
+  if (req.body.content.alt_uid) {
     query = {alt_uid_tr069: req.body.content.serial};
   } else {
     query = {serial_tr069: req.body.content.serial};

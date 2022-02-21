@@ -740,6 +740,22 @@ updateController.setAutoConfig = async function(req, res) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
     }
+    // validate that it is a strong password, but only if value changes
+    if (onuWebPassword !== config.tr069.web_password) {
+      let passRegex = new RegExp(''
+        + /(?=.{8,16}$)/.source
+        + /(?=.*[A-Z])/.source
+        + /(?=.*[a-z])/.source
+        + /(?=.*[0-9])/.source
+        + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      if (!passRegex.test(onuWebPassword)) {
+        return res.status(500).json({
+          type: 'danger',
+          message: 'A senha para interface web das CPEs TR-069 não está nos '+
+                   'padrões esperados',
+        });
+      }
+    }
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);

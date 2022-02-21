@@ -147,45 +147,6 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-// getting values for inform configurations for tr069 from Config.
-const getOnlyTR069Configs = async function() {
-  let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
-    .lean().exec()
-    .catch((err) => err); // in case of error, return error in await.
-  // it's very unlikely that we will incur in any error but,
-  if (configsWithTr069.constructor === Error) { // if we returned an error.
-    // print error message.
-    console.log('Error when getting user config from database.'+
-      '\nUsing default values for tr069 config.');
-    return { // build a default configuration.
-      inform_interval: 10*60*1000,
-      offline_threshold: 1,
-      recovery_threshold: 3,
-    };
-  } else { // if no error.
-    return configsWithTr069.tr069; // get only tr069 config inside the document.
-  }
-};
-
-// returns an object containing the tr069 time threshold used when defining
-// device status (to give it a color). Will return an Error Object in case
-// of any error.
-deviceListController.buildTr069Thresholds = async function (currentTimestamp) {
-  // in some places this function is called, the current time was not taken.
-  currentTimestamp = currentTimestamp || Date.now();
-
-  // getting user configured tr069 parameters.
-  let tr069Config = await getOnlyTR069Configs();
-  return { // thresholds for tr069 status classification.
-    // time when devices are considered in recovery for tr069.
-    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
-      tr069Config.recovery_threshold)),
-    // time when devices are considered offline for tr069.
-    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
-      tr069Config.offline_threshold)),
-  };
-}
-
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -338,21 +299,26 @@ deviceListController.changeUpdate = async function(req, res) {
                'deve ser feita a partir do CPE principal dessa rede',
     });
   }
-  matchedDevice.do_update = doUpdate;
   if (doUpdate) {
-    matchedDevice.do_update_status = 0; // waiting
     matchedDevice.release = req.params.release.trim();
-    messaging.sendUpdateMessage(matchedDevice);
-    // Set mesh master's remaining updates field to keep track of network
-    // update progress. This is only a helper value for the frontend.
     if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
-      let slaveCount = matchedDevice.mesh_slaves.length;
-      matchedDevice.do_update_mesh_remaining = slaveCount + 1;
+      const meshUpdateStatus = await meshHandlers.beginMeshUpdate(
+        matchedDevice,
+      );
+      if (meshUpdateStatus.success) {
+        return res.status(200).json({success: true});
+      }
     }
+    matchedDevice.do_update_status = 0; // waiting
+    messaging.sendUpdateMessage(matchedDevice);
   } else {
     matchedDevice.do_update_status = 1; // success
+    // Reset mesh fields as well, in case this is a mesh network
+    matchedDevice.mesh_next_to_update = '';
+    matchedDevice.mesh_update_remaining = [];
     meshHandlers.syncUpdateCancel(matchedDevice);
   }
+  matchedDevice.do_update = doUpdate;
   try {
     await matchedDevice.save();
   } catch (e) {
@@ -367,17 +333,16 @@ deviceListController.changeUpdate = async function(req, res) {
     } else {
       return res.status(500).json(response);
     }
-  } else {
+  } else if (doUpdate) {
     mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+    // Start ack timeout
+    deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
   }
   res.status(200).json({'success': true});
-
-  // Start ack timeout
-  deviceHandlers.timeoutUpdateAck(matchedDevice._id);
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {
-  DeviceModel.findById(req.params.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.params.id, async function(err, matchedDevice) {
     if (err || !matchedDevice) {
       let indexContent = {};
       indexContent.type = 'danger';
@@ -390,7 +355,7 @@ deviceListController.changeUpdateMesh = function(req, res) {
     if (typeof req.body.do_update === 'string') {
       doUpdate = (req.body.do_update === 'true');
     }
-    // Reject update cancel command to mesh slave, use above function instead
+    // Reject update cancel command to mesh slave, use changeUpdate instead
     if (!doUpdate) {
       return res.status(500).json({
         success: false,
@@ -398,55 +363,9 @@ deviceListController.changeUpdateMesh = function(req, res) {
           'atualizar, não para cancelar a atualização',
       });
     }
-    matchedDevice.do_update = true;
-    matchedDevice.do_update_status = 0; // waiting
-    matchedDevice.release = req.params.release.trim();
-    messaging.sendUpdateMessage(matchedDevice);
-    matchedDevice.save(function(err) {
-      if (err) {
-        let indexContent = {};
-        indexContent.type = 'danger';
-        indexContent.message = err.message;
-        return res.status(500).json({success: false,
-                                     message: 'Erro ao registrar atualização'});
-      }
-
-      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-      res.status(200).json({'success': true});
-
-      // Start ack timeout
-      deviceHandlers.timeoutUpdateAck(matchedDevice._id);
-    });
-  });
-};
-
-deviceListController.changeAllUpdates = function(req, res) {
-  let form = JSON.parse(req.body.content);
-  DeviceModel.find({'_id': {'$in': Object.keys(form.ids)}},
-  function(err, matchedDevices) {
-    if (err) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.render('error', indexContent);
-    }
-
-    let scheduledDevices = [];
-    for (let idx = 0; idx < matchedDevices.length; idx++) {
-      matchedDevices[idx].do_update = form.do_update;
-      if (form.do_update) {
-        matchedDevices[idx].release = form.ids[matchedDevices[idx]._id].trim();
-        matchedDevices[idx].do_update_status = 0; // waiting
-        messaging.sendUpdateMessage(matchedDevices[idx]);
-      } else {
-        matchedDevices[idx].do_update_status = 1; // success
-      }
-      matchedDevices[idx].save();
-      mqtt.anlixMessageRouterUpdate(matchedDevices[idx]._id);
-      scheduledDevices.push(matchedDevices[idx]._id);
-    }
-
-    return res.status(200).json({'success': true, 'devices': scheduledDevices});
+    await meshHandlers.updateMeshDevice(
+      matchedDevice._id, req.params.release.trim(),
+    );
   });
 };
 
@@ -509,7 +428,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
       currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      tr069Times = tr069Times || await deviceListController.buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times || await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -736,7 +655,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
   let lastHour = new Date(currentTimestamp -3600000);
 
   // time threshold for tr069 status (status color).
-  let tr069Times = await deviceListController.buildTr069Thresholds(currentTimestamp);
+  let tr069Times = await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
@@ -807,14 +726,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
             device.model_alias = 'FW323DAC';
           }
         } else {
-          devReleases = devReleases.filter(
-            (release) => {
-              return DeviceVersion.testFirmwareUpgradeMeshLegacy(
-                device.mesh_mode, device.mesh_slaves,
-                device.version, release.flashbox_version);
-            },
-          );
+          let filteredDevReleases = [];
+          for (let i = 0; i < devReleases.length; i++) {
+            const isAllowed = meshHandlers.allowMeshUpgrade(
+              device, devReleases[i].flashbox_version,
+            );
+            if (isAllowed) filteredDevReleases.push(devReleases[i]);
+          }
           device.isUpgradeEnabled = true;
+          devReleases = filteredDevReleases;
         }
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
@@ -1053,7 +973,7 @@ deviceListController.factoryResetDevice = function(req, res) {
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
     // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(device._id);
+    deviceHandlers.timeoutUpdateAck(device._id, 'update');
   });
 };
 
@@ -1330,6 +1250,39 @@ deviceListController.getLastBootLog = function(req, res) {
   });
 };
 
+// Should be called after updating TR-069 CPE through ACS
+deviceListController.ensureBssidCollected = async function(
+  device, targetMode) {
+  /*
+    Some devices have an invalid BSSID until the AP is enabled
+    If the device doesn't have the bssid yet we have to fetch it
+  */
+  if (
+    // If we dont have 2.4GHz bssid and mesh mode requires 2.4GHz network
+    (!device.bssid_mesh2 && (targetMode === 2 || targetMode === 4)) ||
+    // If we dont have 5GHz bssid and mesh mode requires 5GHz network
+    (!device.bssid_mesh5 && (targetMode === 3 || targetMode === 4))
+  ) {
+    // It might take some time for some CPEs to enable their Wi-Fi interface
+    // after the command is sent. Since the BSSID is only available after the
+    // interface is up, we need to wait here to ensure we get a valid read
+    await new Promise((r)=>setTimeout(r, 4000));
+    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
+      device, targetMode,
+    );
+    if (!bssidsObj.success) {
+      return bssidsObj;
+    }
+    if (targetMode === 2 || targetMode === 4) {
+      device.bssid_mesh2 = bssidsObj.bssid_mesh2;
+    }
+    if (targetMode === 3 || targetMode === 4) {
+      device.bssid_mesh5 = bssidsObj.bssid_mesh5;
+    }
+  }
+  return {success: true};
+};
+
 deviceListController.getDeviceReg = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase(), true).exec(
   async function(err, matchedDevice) {
@@ -1362,8 +1315,8 @@ deviceListController.getDeviceReg = function(req, res) {
     matchedDevice.online_status = false;
     if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
       // tr069 time thresholds for device status.
-      let tr069Times = await deviceListController.buildTr069Thresholds();
-      // // classifying device status.
+      let tr069Times = await deviceHandlers.buildTr069Thresholds();
+      // classifying device status.
       if (matchedDevice.last_contact >= tr069Times.recovery) {
       // if we are inside first threshold.
         deviceColor = 'green';
@@ -1567,9 +1520,13 @@ deviceListController.setDeviceReg = function(req, res) {
           errors.push({'mesh_mode': 'Para configurar esse tipo de Mesh é ' +
                                     'necessário habilitar todos os Wi-Fi'});
         }
-        if (meshMode === 0 && matchedDevice.mesh_slaves.length > 0) {
-          errors.push({'mesh_mode': 'Não é possível desabilitar o mesh com ' +
-                                    'secundários associados'});
+        const validateOk = await meshHandlers.validateMeshMode(
+          matchedDevice, meshMode, false,
+        );
+        if (!validateOk.success) {
+          validateOk.errors.forEach((msg)=>{
+            errors.push({'mesh_mode': msg});
+          });
         }
 
         if (errors.length < 1) {
@@ -1917,39 +1874,48 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('mesh_mode') &&
                 meshMode !== matchedDevice.mesh_mode) {
               if (superuserGrant || role.grantOpmodeEdit) {
-                // The chosen channel includes better results on some routers
-                const mesh5GhzChannel = 40;
-                const wifiRadioState = 1;
-                matchedDevice.mesh_mode = meshMode;
+                /*
+                  For tr-069 CPEs we must wait until after device has been
+                  updated via genie to save device in database.
+                */
                 if (matchedDevice.use_tr069) {
-                  const auxChanges =
-                    meshHandlers.buildTR069Changes(matchedDevice, meshMode);
-                  changes.mesh2 = auxChanges.mesh2;
-                  changes.mesh5 = auxChanges.mesh5;
-                  if (meshMode === 2 || meshMode === 4) {
-                    // When enabling Wi-Fi set beacon type
-                    changes.wifi2.enable = wifiRadioState;
-                    changes.wifi2.beacon_type =
-                      DevicesAPI.getBeaconTypeByModel(model);
+                  const configOk = await acsDeviceInfo.configTR069VirtualAP(
+                    matchedDevice, meshMode,
+                  );
+                  if (!configOk.success) {
+                    return res.status(500).json({
+                      success: false,
+                      type: 'danger',
+                      message: configOk.msg,
+                    });
                   }
-                  if (meshMode === 3 || meshMode === 4) {
-                    // For best performance and avoiding DFS issues
-                    // all APs must work on a single 5GHz non-DFS channel
-                    changes.wifi5.channel = mesh5GhzChannel;
-                    // When enabling Wi-Fi set beacon type
-                    changes.wifi5.enable = wifiRadioState;
-                    changes.wifi5.beacon_type =
-                      DevicesAPI.getBeaconTypeByModel(model);
+                  const collectOk = await deviceListController
+                    .ensureBssidCollected(matchedDevice, meshMode);
+                  if (!collectOk.success) {
+                    return res.status(500).json({
+                      success: false,
+                      type: 'danger',
+                      message: collectOk.msg,
+                    });
                   }
-                }
-                if (meshMode === 2 || meshMode === 4) {
-                  matchedDevice.wifi_state = wifiRadioState;
-                }
-                if (meshMode === 3 || meshMode === 4) {
-                  // For best performance and avoiding DFS issues
-                  // all APs must work on a single 5GHz non-DFS channel
-                  matchedDevice.wifi_channel_5ghz = mesh5GhzChannel;
-                  matchedDevice.wifi_state_5ghz = wifiRadioState;
+                  // If user changed Wi-Fi 2.4GHz channel and we are configuring
+                  // a 2.4GHz mesh network, discard user channel update
+                  if (
+                    changes.wifi2.channel && (meshMode === 2 || meshMode === 4)
+                  ) {
+                    delete changes.wifi2.channel;
+                  }
+                  // If user changed Wi-Fi 5GHz channel and we are configuring
+                  // a 5GHz mesh network, discard user channel update
+                  if (
+                    changes.wifi5.channel && (meshMode === 3 || meshMode === 4)
+                  ) {
+                    delete changes.wifi5.channel;
+                  }
+                } else {
+                  meshHandlers.setMeshMode(
+                    matchedDevice, meshMode,
+                  );
                 }
                 updateParameters = true;
               } else {
