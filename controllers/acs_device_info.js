@@ -2048,7 +2048,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = getFromNestedKey(data, snrKey+'._value');
-              } else if (fields.devices.host_rssi) {
+              } else if (fields.devices.host_rssi && device.rssi) {
                 device.snr = parseInt(device.rssi)+95;
               }
               // Collect mode, if available
