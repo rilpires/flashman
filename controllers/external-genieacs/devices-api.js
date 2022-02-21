@@ -660,7 +660,7 @@ const getFastWirelessFields = function() {
   return fields;
 };
 
-const getDLinkields = function() {
+const getDLinkFields = function() {
   let fields = getDefaultFields();
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
@@ -755,7 +755,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       switch (modelName) {
         case 'DIR-842':
           message = '';
-          fields = getDLinkields();
+          fields = getDLinkFields();
           break;
         default:
           return unknownModel;
