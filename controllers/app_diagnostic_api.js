@@ -9,11 +9,10 @@ const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
+const deviceList = require('./device_list.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
-const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
 
 let diagAppAPIController = {};
@@ -348,93 +347,45 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
     if (!device) {
       return res.status(404).json({'error': 'Device not found'});
     }
-    let targetMode = parseInt(req.body.mesh_mode);
-    if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
-      return res.status(403).json({'error': 'invalid targetMode'});
-    }
-    if (targetMode === 0 && device.mesh_slaves.length > 0) {
-      return res.status(500).json({
-        'error': 'Cannot disable mesh with registered slaves',
-      });
-    }
-    const wifiRadioState = 1;
-    const meshChannel = 7;
-    const meshChannel5GHz = 40; // Value has better results on some routers
-    let model = device.model;
-    let changes;
-    let acsID;
-    let splitID;
-    if (device.use_tr069) {
-      acsID = device.acs_id;
-      splitID = acsID.split('-');
-      model = splitID.slice(1, splitID.length-1).join('-');
-    }
-    const permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      model,
+    const targetMode = parseInt(req.body.mesh_mode);
+    const validateStatus = await meshHandlers.validateMeshMode(
+      device, targetMode,
     );
-    const isMeshV1Compatible = permissions.grantMeshMode;
-    const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
-    if (!isMeshV1Compatible && !isMeshV2Compatible) {
-      return res.status(403).json({
-        'error': 'CPE isn\'t compatibe with mesh',
-      });
+    if (!validateStatus.success) {
+      return res.status(500).json({'error': validateStatus.msg});
     }
-    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
-    if (!isWifi5GHzCompatible && targetMode > 2) {
-      return res.status(403).json({
-        'error': 'CPE is not compatible with 5GHz mesh',
-      });
-    }
-    if (isMeshV2Compatible && device.use_tr069) {
-      const hasMeshVAPObject = permissions.grantMeshVAPObject;
-      /*
-        If device doesn't have SSID Object by default, then
-        we need to check if it has been created already.
-        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
-        IMPORTANT: even if target mode is 1 (cable) we must create these
-        objects because, in that case, we disable the virtual APs. If the
-        objects don't exist yet this will cause an error!
-      */
-      let populateVAPObjects = false;
-      if (!hasMeshVAPObject && targetMode > 0) {
-        const returnObj = await acsDeviceInfo.coordVAPObjects(device);
-        if (returnObj.code !== 200) {
-          return res.status(returnObj.code).json({'error': returnObj.msg});
-        }
-        populateVAPObjects = returnObj.populate;
+    /*
+      For tr-069 CPEs we must wait until after device has been
+      updated via genie to save device in database.
+    */
+    if (device.use_tr069) {
+      let configOk = await acsDeviceInfo.configTR069VirtualAP(
+        device, targetMode,
+      );
+      if (!configOk.success) {
+        return res.status(500).json({success: false, message: configOk.msg});
       }
-      changes = meshHandlers.buildTR069Changes(device, targetMode,
-        wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
+      const collectOk = await deviceList.ensureBssidCollected(
+        device, targetMode,
+      );
+      if (!collectOk.success) {
+        return res.status(500).json({
+          'error': collectOk.msg,
+        });
+      }
     }
-    // Assure radios are enabled and correct channels are set
-    if (targetMode === 2 || targetMode === 4) {
-      device.wifi_channel = meshChannel;
-      device.wifi_state = wifiRadioState;
-    }
-    if (targetMode === 3 || targetMode === 4) {
-      // For best performance and avoiding DFS issues
-      // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = meshChannel5GHz;
-      device.wifi_state_5ghz = wifiRadioState;
-    }
-    device.mesh_mode = targetMode;
-    // Apply changes to database and update device
+    meshHandlers.setMeshMode(device, targetMode);
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
-    if (device.use_tr069) {
-      // tr-069 device, call acs
-      acsDeviceInfo.updateInfo(device, changes);
-    } else {
+    if (!device.use_tr069) {
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
     }
     return res.status(200).json({'success': true});
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error': err.msg});
   }
 };
 
@@ -656,6 +607,11 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         }
         if (req.body.wifi5Pass) {
           device.wifi_password_5ghz = req.body.wifi5Pass;
+        }
+        // We need to store WiFiber's OMCI Mode for OLT connection
+        if (req.body.intelbrasOmciMode) {
+          let omciMode = req.body.intelbrasOmciMode;
+          device.custom_tr069_fields.intelbras_omci_mode = omciMode;
         }
         await device.save();
         return res.status(200).json({
@@ -987,7 +943,12 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   response.registrationStatus = 'success';
   response.bridgeStatus = isBridge;
   response.switchEnabledStatus = isSwitchEnabled;
-  response.lastBootDate = matchedSlave.lastboot_date.getTime();
+  let lastBootDate = matchedSlave.lastboot_date;
+  if (!lastBootDate) {
+    response.lastBootDate = 0;
+  } else {
+    response.lastBootDate = lastBootDate.getTime();
+  }
 
   return res.status(200).json(response);
 };

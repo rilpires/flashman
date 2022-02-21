@@ -231,12 +231,17 @@ block content
                       name="onu-web-login"
                     )
                     .invalid-feedback Insira um login válido
-                  .md-form.input-entry
+                  .md-form.input-group
                     label Senha para a interface web das CPEs
                     input#onu-web-password.form-control(
                       type="text",
                       name="onu-web-password"
                     )
+                    .input-group-append(
+                      data-toggle="tooltip",
+                      title="A senha deve ter de 8 a 16 caracteres, conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial"
+                    )
+                      a.md-addon.fas.fa-question-circle
                     .invalid-feedback Insira uma senha válida
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(
