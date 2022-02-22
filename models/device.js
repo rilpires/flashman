@@ -10,6 +10,7 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
+  secure_tr069: {type: Boolean, default: true},
   serial_tr069: {type: String, sparse: true},
   // Used when serial is not reliable for crossing data
   alt_uid_tr069: {type: String, sparse: true},
