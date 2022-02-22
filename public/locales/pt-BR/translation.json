@@ -1,9 +1,7 @@
 {
 	"bodyNotObject": "Body recebido, na requisição, não é um objeto",
 	"idInvalidInUrlParams": "ID recebido nos parametros da url é inválido: '{{id}}'",
-
 	"languageNotFound": "Language '{{language}}' doesn't exist",
-
 	"permissionNotFound": "Permissão não encontrada",
 	"permissionDenied": "Permissão negada",
 	"vlanIdNotFound": "VLAN ID não encontrado",
@@ -28,7 +26,6 @@
 	"vlansFormatInvalid": "Formato de VLANsF inválido!",
 	"deviceVlansUpdated": "VLANs do dispositivo {{deviceId}} atualizada com sucesso!",
 	"deviceNotFound": "Dispositivo não encontrado.",
-
 	"firmwareNotFoundOrSelected": "Registro não encontrado ou selecionado",
 	"genieacsCommunicationError": "Falha na comunicação com o GenieACS",
 	"binFileNotFound": "Arquivo bin não encontrado",
@@ -44,9 +41,7 @@
 	"firmwareUploadSuccess": "Upload de firmware feito com sucesso!",
 	"requestError": "Erro na requisição",
 	"authenticationError": "Erro na autenticação",
-	"databaseFindError": "Erro buscar na base de dados",
 	"firmwareAddSuccess": "Firmware(s) adicionado(s) com sucesso!",
-
 	"tasksApiInformIntervalWriteError": "Erro ao salvar intervalo de informs do TR-069 no ACS.",
 	"baseconfigNotFoudError": "Erro ao encontrar configuração base",
 	"fieldsValidationError": "Erro validando os campos",
@@ -59,7 +54,6 @@
 	"notificationStatusError": "Erro no registro de notificação de status",
 	"notificationRemoveError": "Entrada não pode ser removida",
 	"notificatioUpdateSeenError": "Não foi possível marcar notificação como vista para aparelho {{deviceId}}",
-
 	"meshSecundaryUpdateError": "Este CPE é secundário em uma rede mesh, sua atualização deve ser feita a partir do CPE principal dessa rede",
 	"functionToSetSlaveToUpdate": "Esta função só deve ser usada para marcar um slave para atualizar, não para cancelar a atualização",
 	"firmwareDownloadStockError": "Erro baixando a firmware de fábrica",
@@ -86,10 +80,6 @@
 	"portRangesAreDifferentError": "{{ip}}: As faixas de portas são de tamanhos diferentes",
 	"portRangesInvertedLimitsError": "{{ip}}: As faixas de portas estão com limites invertidos",
 	"outOfSubnetRangeError": "{{ip}}: está fora da faixa de subrede",
-
-
-
-
 	"serverError": "Erro interno do servidor ({{errorline}})",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados",
 	"databaseFindError": "Erro no acesso ao banco de dados ({{errorline}})",
@@ -106,10 +96,8 @@
 	"fieldWrongType": "Campo não é do tipo '{{dataType}}'",
 	"commandNotFound": "Esse comando não existe ({{errorline}})",
 	"incompatibleRulesError": "Possui regra não compatível",
-
 	"jsonError": "Erro ao tratar JSON ({{errorline}})",
 	"jsonInvalidFormat": "JSON fora do formato ({{errorline}})",
-
 	"cpeNotFound": "CPE não encontrada ({{errorline}})",
 	"cpesNotFound": "CPEs não encontradas ({{errorline}})",
 	"cpeIdNotFound": "CPE '{{id}}' não encontrada ({{errorline}})",

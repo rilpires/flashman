@@ -495,7 +495,8 @@ let addFirmwareFile = function(fw) {
                       function(err) {
                         fs.unlink(path.join(imageReleasesDir, md5fname),
                           function(err) {
-                            return reject(t('databaseFindError'));
+                            return reject(
+                              t('databaseFindError', {errorline: __line}));
                           },
                         );
                       },
