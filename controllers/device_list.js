@@ -474,14 +474,14 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.do_update = {$eq: true};
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
-      } 
+      }
     } else if (/^coleta (?:on|off)$/.test(tag)) { // data collecting.
       query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes('on')) {
         query['data_collecting.is_active'] = true;
       } else if (tag.includes('off')) {
         query['data_collecting.is_active'] = {$ne: true}; // undefined & false.
-      } 
+      }
     } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig === undefined) {
