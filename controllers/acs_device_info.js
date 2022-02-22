@@ -2774,7 +2774,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   let matchedConfig = await Config.findOne(
     {is_default: true}, 'tr069',
   ).exec().catch((err) => err);
-  if (matchedConfig.constructor === Error) {
+  if (matchedConfig instanceof Error) {
     console.log('Error getting user config in database to ping offline CPEs');
     return;
   }
