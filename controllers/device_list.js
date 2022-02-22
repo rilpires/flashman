@@ -474,14 +474,14 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.do_update = {$eq: true};
       } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
-      } 
+      }
     } else if (/^coleta (?:on|off)$/.test(tag)) { // data collecting.
       query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes('on')) {
         query['data_collecting.is_active'] = true;
       } else if (tag.includes('off')) {
         query['data_collecting.is_active'] = {$ne: true}; // undefined & false.
-      } 
+      }
     } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig === undefined) {
@@ -504,7 +504,15 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (/^sem sinal$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
-      query.pon_rxpower = {$exists: false}
+      query.pon_rxpower = {$exists: false};
+    } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
+      if (/\bon\b/.test(tag)) {
+        query.ipv6_enabled = {$eq: 1};
+      } else if (/\boff\b/.test(tag)) {
+        query.ipv6_enabled = {$eq: 0};
+      } else if (/\bdesconhecido\b/.test(tag)) {
+        query.ipv6_enabled = {$eq: 2};
+      }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // CPE TR-069 routers.
