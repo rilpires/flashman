@@ -9,7 +9,6 @@ const Config = require('../models/config');
 const t = require('./language').i18next.t;
 
 let dataCollectingController = {};
-const service = "data_collecting";
 
 // A function that treats body fields.
 // Executes a given validity function for 'fieldName's value, if 'fieldName'
@@ -62,7 +61,7 @@ const checkPingFqdn = (obj) =>
 const checkPingFqdnToUnset = (obj) =>
   fieldExistenceForUnset(obj, 'ping_fqdn');
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
-  checkField(obj, 'ping_packets', 
+  checkField(obj, 'ping_packets',
     checkNumericFieldInsideInterval(100, 100));
 const checkId = (obj) =>
   checkField(obj, 'id', util.isMacValid);
@@ -74,7 +73,7 @@ const checkId = (obj) =>
 class HttpError extends Error {
   // eslint-disable-next-line require-jsdoc
   constructor(code, message) {
-    super(message) // message will be sent in response's body json.
+    super(message); // message will be sent in response's body json.
     this.code = code; // to set the responses code.
   }
 }
@@ -87,7 +86,7 @@ const checkBodyIsObject = function(body) {
   return body;
 };
 
-const checkIdUrlParameter = function (id) {
+const checkIdUrlParameter = function(id) {
   let mac = id.replace(/_/g, ':');
   if (!util.isMacValid(mac)) {
     throw new HttpError(400, t('idInvalidInUrlParams',
@@ -112,7 +111,7 @@ const checkDataCollectingFields = function(obj, fieldCheckFunctions) {
   let errors = [];
   let fullFieldNames = {};
   for (let i = 0; i < fieldCheckFunctions.length; i++) {
-    let [exists, fullFieldName, value, error] = 
+    let [exists, fullFieldName, value, error] =
       fieldCheckFunctions[i](obj);
     if (error !== undefined) errors.push(error);
     else if (exists) fullFieldNames[fullFieldName] = value;
@@ -143,7 +142,7 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
   for (let changeKey in changes) {
     let change = changes[changeKey];
     if (change.obj !== undefined && change.obj.constructor === Object) {
-      // getting and object where keys are full path field names and their 
+      // getting and object where keys are full path field names and their
       // values to be set or unset.
       let fields =
         checkDataCollectingFields(change.obj, change.fieldChecks);
@@ -171,7 +170,7 @@ const throwsHttpError = function(e, httpCode, jsonErrorMessage) {
   throw new HttpError(httpCode, jsonErrorMessage);
 };
 
-// function to be used to catch all errors in a handler and to send it 
+// function to be used to catch all errors in a handler and to send it
 // in response.
 const sendErrorResponse = (e, req, res, obj) => Promise.resolve()
   .then(() => {
