@@ -36,7 +36,7 @@ let parseFilename = function(filename) {
   return firmwareFields;
 };
 
-let removeFirmware = async function(req, firmware) {
+let removeFirmware = async function(firmware) {
   if (firmware.cpe_type == 'tr069') {
     try {
       await acsDeviceInfo.delFirmwareInACS(firmware.filename);
@@ -197,7 +197,7 @@ firmwareController.delFirmware = function(req, res) {
     }
     let promises = [];
     firmwares.forEach((firmware) => {
-      promises.push(removeFirmware(req, firmware));
+      promises.push(removeFirmware(firmware));
     });
     Promise.all(promises).then(
       function() {
@@ -429,7 +429,7 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
   }
 };
 
-let addFirmwareFile = function(req, fw) {
+let addFirmwareFile = function(fw) {
   return new Promise((resolve, reject)=> {
     let wanproto = '';
     let flashboxver = '';
@@ -559,7 +559,7 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
   let firmwares = JSON.parse(req.body.firmwares);
   let promises = [];
   firmwares.forEach((firmware) => {
-    promises.push(addFirmwareFile(req, firmware));
+    promises.push(addFirmwareFile(firmware));
   });
   Promise.all(promises).then(
     function() {
