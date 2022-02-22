@@ -266,6 +266,9 @@ $(document).ready(function() {
       if (resp.tr069STUNEnable) {
         $('#stun_enable').prop('checked', true).change();
       }
+      if (resp.tr069InsecureEnable) {
+        $('#insecure_enable').prop('checked', true).change();
+      }
     },
   });
 

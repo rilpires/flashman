@@ -548,6 +548,7 @@ updateController.getAutoConfig = function(req, res) {
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         tr069STUNEnable: matchedConfig.tr069.stun_enable,
+        tr069InsecureEnable: matchedConfig.tr069.insecure_enable,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -765,6 +766,8 @@ updateController.setAutoConfig = async function(req, res) {
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
     let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
+    let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
+    let changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -796,6 +799,7 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold_critical: ponSignalThresholdCritical,
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
         stun_enable: STUNEnable,
+        insecure_enable: insecureEnable,
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
