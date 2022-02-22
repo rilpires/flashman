@@ -506,11 +506,11 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = {$exists: false};
     } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
-      if (tag.includes('on')) {
+      if (/\bon\b/.test(tag)) {
         query.ipv6_enabled = {$eq: 1};
-      } else if (tag.includes('off')) {
+      } else if (/\boff\b/.test(tag)) {
         query.ipv6_enabled = {$eq: 0};
-      } else if (tag.includes('desconhecido')) {
+      } else if (/\bdesconhecido\b/.test(tag)) {
         query.ipv6_enabled = {$eq: 2};
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
