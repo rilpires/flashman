@@ -1,8 +1,8 @@
 const express = require('express');
 const authController = require('../controllers/auth');
-const language = require('../controllers/language.js')
+const language = require('../controllers/language.js');
 
-const handlers = language.handlers
+const handlers = language.handlers;
 const router = express.Router();
 
 // router.use( // all paths will use these middlewares.
