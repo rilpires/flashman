@@ -4,13 +4,11 @@ const updaterScheduleController = require('../controllers/update_scheduler');
 const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
 const diagAPIController = require('../controllers/app_diagnostic_api');
-const i18nextMiddleware = require('../controllers/language').middleware
 
 let router = express.Router();
 
 router.use( // all paths will use these middlewares.
   authController.ensureLogin(),
-  i18nextMiddleware
 );
 
 // Home page

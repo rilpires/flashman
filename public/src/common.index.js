@@ -22,11 +22,11 @@ i18next
   .use(require('i18next-http-backend'))
   .init({
     lng: navigator.language,
-    fallbackLng : 'en',
+    fallbackLng : 'pt-BR',
     // debug: true,
     initImmediate: false, // waits translations to load before initialing.
     backend: {
-      loadPath: '/dist/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/language/translation.json',
     }
   }, (err, t) => { // finished initializing.
     if (err) {

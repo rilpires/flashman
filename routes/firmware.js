@@ -3,13 +3,11 @@ const express = require('express');
 const firmwareController = require('../controllers/firmware');
 const authController = require('../controllers/auth');
 const permission = 'grantFirmwareManage';
-const i18nextMiddleware = require('../controllers/language.js').middleware
 
 let router = express.Router();
 
 router.use( // all paths will use these middlewares.
   authController.ensureLogin(),
-  i18nextMiddleware
 );
 
 router.route('/').get(authController.ensurePermission(permission),
