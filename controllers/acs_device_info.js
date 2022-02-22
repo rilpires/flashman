@@ -244,8 +244,16 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value &&
-    data.wan.pppoe_enable.value !== '0');
+  let hasPPPoE = false;
+  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    if (typeof data.wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = data.wan.pppoe_enable.value;
+    }
+  }
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -577,8 +585,16 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value &&
-    data.wan.pppoe_enable.value !== '0');
+  let hasPPPoE = false;
+  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    if (typeof data.wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = data.wan.pppoe_enable.value;
+    }
+  }
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_enable &&
