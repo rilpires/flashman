@@ -1276,8 +1276,13 @@ $(document).ready(function() {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
           if (isTR069) {
-            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
-            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            if (device.secure_tr069) {
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
+              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            } else {
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-4');
+              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069 HTTP');
+            }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
