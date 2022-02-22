@@ -6,6 +6,7 @@ const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
 const Config = require('../models/config');
+const t = require('./language').i18next.t;
 
 let dataCollectingController = {};
 const service = "data_collecting";
@@ -17,12 +18,12 @@ const service = "data_collecting";
 // 2nd: complete fieldName path for data_collecting fields in ConfigModel.
 // 3rd: the value for 'fieldName' in 'obj'.
 // 4th: error message for defined and invalid values. undefined is allowed.
-const checkField = (req, obj, fieldName, validityFunc) => {
+const checkField = (obj, fieldName, validityFunc) => {
   let v = obj[fieldName];
   let exists = v !== undefined;
   let error = undefined;
   if (v !== undefined && !validityFunc(v)) {
-    error = req.t('fieldNameInvalid', {name: fieldName, errorline: __line});
+    error = t('fieldNameInvalid', {name: fieldName, errorline: __line});
   }
   fieldName = 'data_collecting.'+fieldName;
   return [exists, fieldName, v, error];
@@ -50,21 +51,21 @@ const checkNumericField = (v) => v.constructor === Number;
 const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
-const checkIsActive = (req, obj) =>
-  checkField(req, obj, 'is_active', checkBooleanField);
-const checkHaslatency = (req, obj) =>
-  checkField(req, obj, 'has_latency', checkBooleanField);
-const checkAlarmFqdn = (req, obj) =>
-  checkField(req, obj, 'alarm_fqdn', util.isFqdnValid);
-const checkPingFqdn = (req, obj) =>
-  checkField(req, obj, 'ping_fqdn', util.isFqdnValid);
-const checkPingFqdnToUnset = (req, obj) =>
+const checkIsActive = (obj) =>
+  checkField(obj, 'is_active', checkBooleanField);
+const checkHaslatency = (obj) =>
+  checkField(obj, 'has_latency', checkBooleanField);
+const checkAlarmFqdn = (obj) =>
+  checkField(obj, 'alarm_fqdn', util.isFqdnValid);
+const checkPingFqdn = (obj) =>
+  checkField(obj, 'ping_fqdn', util.isFqdnValid);
+const checkPingFqdnToUnset = (obj) =>
   fieldExistenceForUnset(obj, 'ping_fqdn');
-const checkPingPackets = (req, obj) => // so far, only value=100 is allowed.
-  checkField(req, obj, 'ping_packets', 
+const checkPingPackets = (obj) => // so far, only value=100 is allowed.
+  checkField(obj, 'ping_packets', 
     checkNumericFieldInsideInterval(100, 100));
-const checkId = (req, obj) =>
-  checkField(req, obj, 'id', util.isMacValid);
+const checkId = (obj) =>
+  checkField(obj, 'id', util.isMacValid);
 
 // An Object class to be used as errors to be returned in responses.
 // Every router http handler will have a final catch that expects an object of
@@ -79,21 +80,20 @@ class HttpError extends Error {
 }
 
 // Throws errors found in received request body.
-const checkBodyIsObject = function(req) {
-  if (req.body.constructor !== Object) {
-    throw new HttpError(400, req.t('bodyNotObject',
-      {errorline: __line}));
+const checkBodyIsObject = function(body) {
+  if (body.constructor !== Object) {
+    throw new HttpError(400, t('bodyNotObject', {errorline: __line}));
   }
-  return req.body;
+  return body;
 };
 
-const checkIdUrlParameter = function (req) {
-  let mac = req.params.id.replace(/_/g, ':');
+const checkIdUrlParameter = function (id) {
+  let mac = id.replace(/_/g, ':');
   if (!util.isMacValid(mac)) {
-    throw new HttpError(400, req.t('idInvalidInUrlParams', {id: mac,
-      errorline: __line}));
+    throw new HttpError(400, t('idInvalidInUrlParams',
+      {id: mac, errorline: __line}));
   }
-  return req.params;
+  return id;
 };
 
 // For each field check function in given array ('fieldCheckFunctions'),
@@ -108,12 +108,12 @@ const checkIdUrlParameter = function (req) {
 // If at least one error is returned form any field check function, an
 // HttpError is thrown where message is an array with all the error messages
 // returned from field check functions.
-const checkDataCollectingFields = function(req, obj, fieldCheckFunctions) {
+const checkDataCollectingFields = function(obj, fieldCheckFunctions) {
   let errors = [];
   let fullFieldNames = {};
   for (let i = 0; i < fieldCheckFunctions.length; i++) {
     let [exists, fullFieldName, value, error] = 
-      fieldCheckFunctions[i](req, obj);
+      fieldCheckFunctions[i](obj);
     if (error !== undefined) errors.push(error);
     else if (exists) fullFieldNames[fullFieldName] = value;
   }
@@ -136,7 +136,7 @@ const checkDataCollectingFields = function(req, obj, fieldCheckFunctions) {
 */
 // returns an object having MongoDB's update structure, having $set and $unset
 // statements, if there was any set or unset received in a request.
-const readChangesAndBuildMongoDBUpdateObject = function(req, changes) {
+const readChangesAndBuildMongoDBUpdateObject = function(changes) {
   let noChange = true; // will be changed if request contains any value.
   let update = {};
   // eslint-disable-next-line guard-for-in
@@ -146,14 +146,14 @@ const readChangesAndBuildMongoDBUpdateObject = function(req, changes) {
       // getting and object where keys are full path field names and their 
       // values to be set or unset.
       let fields =
-        checkDataCollectingFields(req, change.obj, change.fieldChecks);
+        checkDataCollectingFields(change.obj, change.fieldChecks);
       if (Object.keys(fields).length > 0) { // if any existing and valid field.
         noChange = false; // at least one update will be made.
         update[changeKey] = fields; // build $set, or $unset, statement.
       }
     }
   }
-  if (noChange) throw new HttpError(400, req.t('receivedNoAlterations'));
+  if (noChange) throw new HttpError(400, t('receivedNoAlterations'));
   return update;
 };
 
@@ -182,7 +182,7 @@ const sendErrorResponse = (e, req, res, obj) => Promise.resolve()
       console.error(`-- found a bug when handling ${req.method} `+
         `'${req.originalUrl}' at ${req._startTime.toISOString()}\n`, e, '\n');
       // sends generic error. Object sent can be passed at 4th argument.
-      res.status(500).json(obj || {message: req.t('serverError',
+      res.status(500).json(obj || {message: t('serverError',
         {errorline: __line})});
     }
   })
@@ -200,7 +200,7 @@ dataCollectingController.returnServiceParameters = function(req, res) {
   return Promise.resolve()
   .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting')
     .lean().exec()
-    .catch((e) => throwsHttpError(e, 500, req.t('databaseFindError',
+    .catch((e) => throwsHttpError(e, 500, t('databaseFindError',
       {errorline: __line}))))
   .then((config) => sendOkResponse(res,
     (config && config.data_collecting) || {}))
@@ -210,8 +210,8 @@ dataCollectingController.returnServiceParameters = function(req, res) {
 // updates data_collecting object inside Config.
 dataCollectingController.updateServiceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkBodyIsObject(req))
-  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
+  .then(() => checkBodyIsObject(req.body))
+  .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
@@ -219,7 +219,7 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
-    .catch((e) => throwsHttpError(e, 500, req.t('databaseFindError',
+    .catch((e) => throwsHttpError(e, 500, t('databaseFindError',
       {errorline: __line}))))
   .then((r) => sendOkResponse(res))
   .catch((e) => sendErrorResponse(e, req, res));
@@ -228,8 +228,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
 // updates data_collecting object inside selected devices.
 dataCollectingController.updateManyParameters = async function(req, res) {
   return Promise.resolve()
-  .then(() => checkBodyIsObject(body))
-  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
+  .then(() => checkBodyIsObject(req.body))
+  .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
@@ -242,10 +242,10 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   .then((update) => {
     let filterList = req.body.filter_list;
     if (filterList === undefined) {
-      throw new HttpError(400, req.t('fieldNameMissing',
+      throw new HttpError(400, t('fieldNameMissing',
         {name: 'filter_list', errorline: __line}));
     } else if (filterList.constructor !== String) {
-      throw new HttpError(400, req.t('fieldNameWrongType',
+      throw new HttpError(400, t('fieldNameWrongType',
         {name: 'filter_list', errorline: __line}));
     }
     filterList = filterList.split(',');
@@ -254,7 +254,7 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   })
   // .then((query) => {console.log('query', query)}
   .then((query) => DeviceModel.updateMany(query.select, query.update).exec()
-    .catch((e) => throwsHttpError(e, 500, req.t('cpeUpdateManyError',
+    .catch((e) => throwsHttpError(e, 500, t('cpeUpdateManyError',
       {errorline: __line}))))
   .then(() => sendOkResponse(res))
   .catch((e) => sendErrorResponse(e, req, res));
@@ -263,10 +263,10 @@ dataCollectingController.updateManyParameters = async function(req, res) {
 // returns data_collecting object of a given device.
 dataCollectingController.returnDeviceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkIdUrlParameter(req))
+  .then(() => checkIdUrlParameter(req.params.id))
   .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')
     .exec().catch((e) => throwsHttpError(e, 500,
-      req.t('cpeIdNotFound', {id: req.params.id, errorline: __line}))))
+      t('cpeIdNotFound', {id: req.params.id, errorline: __line}))))
   .then((device) => sendOkResponse(res, device.data_collecting || {}))
   .catch((e) => sendErrorResponse(e, req, res));
 };
@@ -274,9 +274,9 @@ dataCollectingController.returnDeviceParameters = function(req, res) {
 // updates data_collecting object inside a given device.
 dataCollectingController.updateDeviceParameters = function(req, res) {
   return Promise.resolve()
-  .then(() => checkIdUrlParameter(req))
-  .then(() => checkBodyIsObject(req))
-  .then(() => readChangesAndBuildMongoDBUpdateObject(req, {
+  .then(() => checkIdUrlParameter(req.params.id))
+  .then(() => checkBodyIsObject(req.body))
+  .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
@@ -288,7 +288,7 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   }))
   .then((update) => DeviceModel.updateOne({_id: req.params.id}, update)
     .exec().catch((e) => throwsHttpError(e, 500,
-      req.t('cpeUpdateError', {id: req.params.id, errorline: __line}))))
+      t('cpeUpdateError', {id: req.params.id, errorline: __line}))))
   .then(() => sendOkResponse(res))
   .then(() => Promise.resolve()
     .then(() => mqtt.anlixMessageRouterUpdate(req.params.id))
@@ -311,7 +311,7 @@ dataCollectingController.getConfig = function(req, res) {
     } else {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('configFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     }
   });

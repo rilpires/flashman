@@ -2,6 +2,8 @@
 	"bodyNotObject": "Body recebido, na requisição, não é um objeto",
 	"idInvalidInUrlParams": "ID recebido nos parametros da url é inválido: '{{id}}'",
 
+	"languageNotFound": "Language '{{language}}' doesn't exist",
+
 	"permissionNotFound": "Permissão não encontrada",
 	"permissionDenied": "Permissão negada",
 	"vlanIdNotFound": "VLAN ID não encontrado",
@@ -118,5 +120,5 @@
 	"cpeUpdateManyError": "Erro ao atualizar CPEs ({{errorline}})",
 	"cpeWithoutFunction": "CPE não possui essa função! ({{errorline}})",
 	"cpeOffline": "CPE não está online! ({{errorline}})",
-	"configFindError": "Erro ao encontrar configuração ({{errorline}})",
+	"configFindError": "Erro ao encontrar configuração ({{errorline}})"
 }
