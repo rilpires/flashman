@@ -48,6 +48,7 @@
 	"ssidPrefixEmptyError": "Prefixo de SSID não pode ser vazio",
 	"ssidPrefixDisabledAlterationError": "Prefixo de SSID não pode ser alterado se estiver desabilitado",
 	"writeSuccess": "Salvo com sucesso!",
+	"tr069WebPasswordValidationError": "A senha para interface web das CPEs TR-069 não está nos padrões esperados",
 	"tr069FieldsValidationError": "Erro validando os campos relacionados ao TR-069.",
 	"configWriteError": "Erro salvando configurações",
 	"notificationFindError": "Erro ao buscar notificações",
