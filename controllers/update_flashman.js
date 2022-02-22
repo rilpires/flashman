@@ -578,7 +578,7 @@ updateController.getAutoConfig = function(req, res) {
 /* saving tr069 inform interval in genieacs for all devices. The errors thrown
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
-const updatePeriodicInformInGenieAcs = async function(req, tr069InformInterval) {
+const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
 
@@ -764,7 +764,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (tr069InformInterval*1000 !== config.tr069.inform_interval
        && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS.
         // setting inform interval in genie for all devices and in preset.
-        await updatePeriodicInformInGenieAcs(req, tr069InformInterval);
+        await updatePeriodicInformInGenieAcs(tr069InformInterval);
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
