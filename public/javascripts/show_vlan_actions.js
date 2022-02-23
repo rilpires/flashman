@@ -1,7 +1,8 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'regenerator-runtime/runtime';
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-vlan-modal', async function(event) {
     let row = $(event.target).parents('tr');
     let vlanAccess = row.data('validateVlanAccess');
