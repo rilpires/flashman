@@ -4,6 +4,52 @@ import 'mdbootstrap/js/mdb'; // MDB animations
 // Import styles
 import '../scss/flashman-bundle.scss';
 
+// variables to be assigned resolve and reject callbacks of the Promise that
+// will be used as synchronization step between i18next configuration and all
+// DOMContentLoaded callbacks.
+let i18nextResolved;
+let i18nextRejected;
+let i18nextPromise = new Promise((resolve, reject) => {
+  i18nextResolved = resolve;
+  i18nextRejected = reject;
+});
+
+// configuring our internationalization package. The initialization happens in
+// this file because it's present in all webpack bundles of our project. This 
+// made us substitute all $(document).ready() calls by our own function to 
+// manage DOMContentLoaded event callbacks
+i18next
+  // this middleware requests translations in background.
+  .use(require('i18next-http-backend'))
+  .init({
+    lng: navigator.language,
+    fallbackLng: 'pt-BR',
+    // debug: true,
+    initImmediate: false, // waits translations to load before initialing.
+    backend: {
+      loadPath: '/language/translation.json',
+    },
+  }, (err, t) => { // finished initializing.
+    if (err) {
+      console.log('Error when loading i18next', err);
+      i18nextRejected(); // resolving the Promise.
+    } else {
+      i18nextResolved(); // resolving the Promise.
+    }
+  });
+
+// Object that holds all DOMContentLoaded callbacks. Even though they are
+// defined in other files, webpack will put them together in the same bundle,
+// so they are in the same context.
+const anlixDocumentReady = new function() {
+  // array that will hold all callbacks to run after DOMContentLoaded event.
+  this.readyCallbacks = [];
+  this.add = (f) => this.readyCallbacks.push(f); // adds callbacks to array.
+  this.start = () => this.readyCallbacks.forEach((f) => f()); // executes callbacks.
+};
+
+export {anlixDocumentReady};
+
 // Preloader
 $(window).on('load', function() { // makes sure the whole site is loaded
   $('#status').fadeOut(); // will first fade out the loading animation
@@ -15,4 +61,8 @@ $(document).ready(function() {
   if ($('#frame-modal-alert-message').text() !== '') {
     $('#frame-modal-alert').modal('show');
   }
+
+  // we wait for i18next initialization before executing all DOMContentLoaded
+  // event callbacks.
+  i18nextPromise.then(anlixDocumentReady.start);
 });

@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 import 'jquery-highlight';
 import {ungzip} from 'pako';
@@ -110,7 +111,7 @@ let exportLogToFile = function(filename) {
   downloadFile(logBodyRawContent, filename);
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-log-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');

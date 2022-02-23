@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import Validator from './device_validator.js';
 import {setPortForwardStorage,
         getPortForwardStorage,
@@ -673,7 +674,7 @@ let buildMappingTable = function(ip) {
   );
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-port-forward-tr069-modal', function(event) {
     let row = $(event.target).parents('tr');
     // clean modal

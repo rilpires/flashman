@@ -154,7 +154,9 @@ let deviceSchema = new Schema({
       2, // 2.4 Radio
       3, // 5.0 Radio
     ]},
+    n_conn_dev: {type: Number, default: 0},
   }],
+  mesh_father: {type: String, default: ''},
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,
@@ -181,10 +183,24 @@ let deviceSchema = new Schema({
     2, // error, image download failed
     3, // error, image check failed
     4, // error, update aborted manually
-    5, // error, ack not received in time
-    10, // ack recevied
+    5, // error, update ack not received in time
+    6, // error, topology info not received in time
+    7, // error, invalid topology
+    10, // ack received
+    20, // waiting for topology info
+    30, // topology received
   ]},
+  // Unused, only here so no fields with same name and different type is created
   do_update_mesh_remaining: {type: Number, default: 0},
+  // Next device to update in a mesh network.
+  // Only master will have this
+  mesh_next_to_update: String,
+  // How many devices in a mesh network must still send onlinedevs info
+  // Only master will have this
+  mesh_onlinedevs_remaining: {type: Number, default: 0},
+  // Devices in a mesh network that must still update
+  // Only master will have this
+  mesh_update_remaining: [String],
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
@@ -247,6 +263,9 @@ let deviceSchema = new Schema({
   isSsidPrefixEnabled: {type: Boolean},
   web_admin_username: String,
   web_admin_password: String,
+  custom_tr069_fields: {
+    intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+  },
 });
 
 deviceSchema.set('autoIndex', false);

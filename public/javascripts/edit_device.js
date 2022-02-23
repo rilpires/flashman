@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
@@ -405,7 +406,7 @@ const rebootNetworkMesh = function(ids, index, results=[]) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('submit', '.edit-form', validateEditDevice);
   $(document).on('click', '.edit-form-mesh', validateEditDeviceMesh);
 

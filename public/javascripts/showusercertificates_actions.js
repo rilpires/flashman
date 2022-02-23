@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
@@ -510,7 +511,7 @@ const fetchCertification = function(id, name, timestamp) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let hasTrashButton = $('#checkboxHeader').length > 0;
