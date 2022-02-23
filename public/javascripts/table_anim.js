@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import {tagsInput} from 'tags-input';
 import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
@@ -160,7 +161,7 @@ let fetchNotificationsForDevice = function(deviceId) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets

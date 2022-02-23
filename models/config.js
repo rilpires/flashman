@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 let configSchema = new mongoose.Schema({
   is_default: {type: Boolean, required: true, default: false},
+  language: String,
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   hasMajorUpdate: {type: Boolean, default: false},

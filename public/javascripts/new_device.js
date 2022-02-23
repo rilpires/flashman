@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
@@ -141,7 +142,7 @@ let validateNewDevice = function() {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('#deviceForm').submit(validateNewDevice);
   $('#new_external_reference').mask('000.000.000-009').keyup();
   $('#new_mac').mask('HH:HH:HH:HH:HH:HH', {

@@ -7,6 +7,7 @@ const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
+const t = require('./language').i18next.t;
 let Config = require('../models/config');
 let updateController = {};
 
@@ -623,7 +624,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
     console.error(e);
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS.');
+    throw new Error(t('tasksApiInformIntervalWriteError'));
   });
 };
 
@@ -631,7 +632,7 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: 'Erro ao encontrar configuração base'};
+    if (!config) throw new {message: t('baseconfigNotFoudError')};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -656,7 +657,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsValidationError'),
       });
     }
     config.measureServerIP = measureServerIP;
@@ -671,7 +672,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
@@ -686,7 +687,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
@@ -699,7 +700,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Erro validando os campos',
+          message: t('fieldsValidationError'),
         });
       }
       /* check if ssid prefix was not empty and for some reason is coming
@@ -707,7 +708,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser vazio',
+          message: t('ssidPrefixEmptyError'),
         });
       // If prefix is disabled, do not allow changes in current prefix
       } else if (!isSsidPrefixEnabled &&
@@ -715,8 +716,7 @@ updateController.setAutoConfig = async function(req, res) {
                  config.ssidPrefix !== req.body['ssid-prefix']) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser ' +
-                   'alterado se estiver desabilitado',
+          message: t('ssidPrefixDisabledAlterationError'),
         });
       }
       config.ssidPrefix = req.body['ssid-prefix'];
@@ -735,12 +735,12 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsValidationError'),
       });
     }
     config.tr069.pon_signal_threshold_critical_high =
       ponSignalThresholdCriticalHigh;
-    let message = 'Salvo com sucesso!';
+    let message = t('writeSuccess');
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -765,8 +765,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!passRegex.test(onuWebPassword)) {
         return res.status(500).json({
           type: 'danger',
-          message: 'A senha para interface web das CPEs TR-069 não está nos '+
-                   'padrões esperados',
+          message: t('tr069WebPasswordValidationError'),
         });
       }
     }
@@ -818,7 +817,7 @@ updateController.setAutoConfig = async function(req, res) {
       // respond error without much explanation.
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos relacionados ao TR-069.',
+        message: t('tr069FieldsValidationError'),
       });
     }
 
@@ -864,7 +863,7 @@ updateController.setAutoConfig = async function(req, res) {
     console.log(err);
     return res.status(500).json({
       type: 'danger',
-      message: (err.message) ? err.message : 'Erro salvando configurações',
+      message: (err.message) ? err.message : t('configWriteError'),
     });
   }
 };

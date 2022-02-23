@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 import 'regenerator-runtime/runtime';
@@ -84,7 +85,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let vlanProfilesTable = $('#vlan-profile-table').DataTable({
