@@ -3046,20 +3046,32 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        // TODO: tratar erros
         let result = await acsDeviceInfo.changeAccessControl(
           matchedDevice, newDeviceRules
         );
+        let errorMessage = 'Erro ao registrar regra de bloqueio de acesso';
         if (!result['success']) {
+          /*
+          // TODO (?): The return of change Access Control has established
+          // error codes. If necessary, it is possible to make res have
+          // specific messages for each error code.
           if (result.hasOwnProperty('error')) switch (result['error']) {
             case 429:
+              errorMessage = ''
+            break;
+            case 500:
+              errorMessage = ''
+            break;
+            case 502:
+              errorMessage = ''
             break;
             default:
             break;
           }
+          */
           return res.status(500).json({
             success: false,
-            message: 'Erro ao registrar regra de bloqueio de acesso'
+            message: errorMessage
           });
         }
       }
