@@ -1023,7 +1023,7 @@ scheduleController.startSchedule = async function(req, res) {
         const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
           device.version, release.flashbox_version);
         currentMeshVersion[device._id] = typeUpgrade.current;
-        upgradeMeshVersion[device._id] = typeUpgrade.current;
+        upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
         return device._id;
       });
       // Save scheduler configs to database
