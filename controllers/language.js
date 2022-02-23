@@ -38,7 +38,7 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   // if language is already set in database, set it in i18next.
   if (config.language) return i18next.changeLanguage(config.language);
   // if language is not set in database, set it using environment variable.
-  updateLanguage(process.env.LANGUAGE)
+  updateLanguage(process.env.FLM_LANGUAGE)
   // if environment variable value could not be used, set it to Portuguese.
   .then((code, msgKey) => code !== 200 && updateLanguage(defaultLanguage));
 });
