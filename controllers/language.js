@@ -105,8 +105,12 @@ let handlers = {};
 
 const getLanguageAndExecute = function(res, promise) {
   ConfigModel.findOne({is_default: true}, 'language').lean().exec()
-  .then((config) => config.language || process.env.LANGUAGE || defaultLanguage,
-        (e) => {throw 'configNotFoud'})
+  .then(
+    (config) => config.language || process.env.FLM_LANGUAGE || defaultLanguage,
+    (e) => {
+      throw Error('configNotFound');
+    },
+  )
   .then(promise)
   .catch((e) => e.constructor === String ?
     res.status(500).json({message: t(e, {errorline: __line})}) :
@@ -115,8 +119,11 @@ const getLanguageAndExecute = function(res, promise) {
 
 // sends translation.json in response according to config language.
 handlers.getTranslation = function(req, res) {
-  return getLanguageAndExecute(res, (lng) => res.sendFile(path.join(__dirname,
-    `../public/locales/${lng}/translation.json`)));
+  return getLanguageAndExecute(res, (lng) => {
+    res.sendFile(
+      path.join(__dirname, `../public/locales/${lng}/translation.json`),
+    );
+  });
 };
 
 handlers.getLanguage = function(req, res) {
