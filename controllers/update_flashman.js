@@ -563,6 +563,8 @@ updateController.getAutoConfig = function(req, res) {
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         tr069STUNEnable: matchedConfig.tr069.stun_enable,
         tr069InsecureEnable: matchedConfig.tr069.insecure_enable,
+        hasNeverEnabledInsecureTR069:
+          matchedConfig.tr069.has_never_enabled_insecure,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -812,6 +814,9 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
         stun_enable: STUNEnable,
         insecure_enable: insecureEnable,
+        has_never_enabled_insecure: (
+          config.tr069.has_never_enabled_insecure && !insecureEnable
+        ),
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
