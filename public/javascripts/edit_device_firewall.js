@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 import 'selectize';
 
@@ -191,7 +192,7 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
   }
 });
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Init selectize fields
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);

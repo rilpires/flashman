@@ -124,7 +124,11 @@
                   #list-mesh
                     h6.mt-4 Dentre os selecionados, 
                       span#mesh-count
-                      span são CPEs configuradas numa mesh no padrão antigo e a release escolhida é compatível com o mesh no novo padrão, ou vice-versa. Por isso não serão atualizadas.
+                      span são CPEs configuradas numa rede mesh no padrão novo e a release escolhida só é compatível com o mesh no padrão antigo. Por isso não serão atualizadas.
+                  #list-mesh-roles
+                    h6.mt-4 Dentre os selecionados, 
+                      span#mesh-roles-count
+                      span são CPEs configuradas numa rede mesh no padrão antigo e o principal não é compatível no padrão novo ou um dos secundário não é compatível no padrão novo. Por isso não serão atualizadas.
                   #list-missing-models
                     h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os CPEs!
                     ul#warning-missing-models

@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import {setFirmwareStorage,
         getFirmwareStorage,
@@ -93,7 +94,7 @@ window.changeCpeForm = function(input) {
   }
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];

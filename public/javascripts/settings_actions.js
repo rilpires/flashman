@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
 import {setConfigStorage, getConfigStorage} from './session_storage.js';
@@ -148,7 +149,7 @@ let configFlashman = function(event) {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
 

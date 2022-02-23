@@ -6,6 +6,7 @@
  * Module dependencies.
  */
 
+require('./globals.js')
 let app = require('../app');
 let mqtts = require('../mqtts');
 let sio = require('../sio');
