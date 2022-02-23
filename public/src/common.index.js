@@ -7,7 +7,8 @@ import '../scss/flashman-bundle.scss';
 // variables to be assigned resolve and reject callbacks of the Promise that
 // will be used as synchronization step between i18next configuration and all
 // DOMContentLoaded callbacks.
-let i18nextResolved, i18nextRejected;
+let i18nextResolved;
+let i18nextRejected;
 let i18nextPromise = new Promise((resolve, reject) => {
   i18nextResolved = resolve;
   i18nextRejected = reject;
@@ -22,12 +23,12 @@ i18next
   .use(require('i18next-http-backend'))
   .init({
     lng: navigator.language,
-    fallbackLng : 'en',
+    fallbackLng: 'pt-BR',
     // debug: true,
     initImmediate: false, // waits translations to load before initialing.
     backend: {
-      loadPath: '/dist/locales/{{lng}}/{{ns}}.json',
-    }
+      loadPath: '/language/translation.json',
+    },
   }, (err, t) => { // finished initializing.
     if (err) {
       console.log('Error when loading i18next', err);
@@ -40,7 +41,7 @@ i18next
 // Object that holds all DOMContentLoaded callbacks. Even though they are
 // defined in other files, webpack will put them together in the same bundle,
 // so they are in the same context.
-const anlixDocumentReady = new function () {
+const anlixDocumentReady = new function() {
   // array that will hold all callbacks to run after DOMContentLoaded event.
   this.readyCallbacks = [];
   this.add = (f) => this.readyCallbacks.push(f); // adds callbacks to array.
@@ -63,5 +64,5 @@ $(document).ready(function() {
 
   // we wait for i18next initialization before executing all DOMContentLoaded
   // event callbacks.
-  i18nextPromise.then(anlixDocumentReady.start)
+  i18nextPromise.then(anlixDocumentReady.start);
 });

@@ -1,6 +1,7 @@
 const Notification = require('../models/notification');
 const sio = require('../sio');
 let TasksAPI = require('./external-genieacs/tasks-api');
+const t = require('./language').i18next.t;
 
 let notificationController = {};
 
@@ -10,7 +11,7 @@ notificationController.fetchNotifications = function(req, res) {
       if (err) {
         console.log('Error retrieving notifications: ' + err);
         return res.status(500).json({success: false, type: 'danger',
-          message: req.t('notificationFindError', {errorline: __line})});
+          message: t('notificationFindError', {errorline: __line})});
       }
       return res.status(200).json({success: true, type: 'success',
                                    notifications: notifications});
@@ -25,7 +26,7 @@ notificationController.registerStatusNotification = function(req, res) {
     return res.status(500).json({
       success: false,
       type: 'danger',
-      message: req.t('notificationStatusError', {errorline: __line}),
+      message: t('notificationStatusError', {errorline: __line}),
     });
   }
 };
@@ -35,7 +36,7 @@ notificationController.delNotification = function(req, res) {
    function(err, notification) {
     if (err) {
       return res.status(500).json({success: false,
-                                   message: req.t('operationUnuccessful')});
+                                   message: t('operationUnsuccessful')});
     }
     if (notification.genieDeviceId !== undefined) {
       TasksAPI.deleteCacheAndFaultsForDevice(notification.genieDeviceId);
@@ -51,8 +52,8 @@ notificationController.SeeNotification = async function(req, res) {
     .catch((err) => err); // in case of error, return the error.
   if (op instanceof Error) { // if the update returned a error.
     return res.status(500).json({success: false,
-      message: req.t('notificatioUpdateError', 
-                     {deviceId: req.body.id, errorline: __line})});
+      message: t('notificatioUpdateError',
+                 {deviceId: req.body.id, errorline: __line})});
   }
   return res.status(200).json({success: true});
 };

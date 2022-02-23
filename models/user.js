@@ -88,7 +88,6 @@ let userSchema = new mongoose.Schema({
     longitude: {type: Number, default: 0},
     didSpeedTest: {type: Boolean, default: false},
   }],
-  language: String,
 });
 
 // Execute before each user.save() call

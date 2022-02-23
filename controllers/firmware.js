@@ -5,6 +5,7 @@ const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const DeviceVersion = require('../models/device_version');
 const acsDeviceInfo = require('./acs_device_info.js');
+const t = require('./language').i18next.t;
 
 const fs = require('fs');
 const fsPromises = fs.promises;
@@ -35,19 +36,19 @@ let parseFilename = function(filename) {
   return firmwareFields;
 };
 
-let removeFirmware = async function(req, firmware) {
+let removeFirmware = async function(firmware) {
   if (firmware.cpe_type == 'tr069') {
     try {
       await acsDeviceInfo.delFirmwareInACS(firmware.filename);
     } catch (e) {
-      throw new Error(req.t('genieacsCommunicationError'));
+      throw new Error(t('genieacsCommunicationError'));
     }
   }
 
   try {
     await fsPromises.unlink(path.join(imageReleasesDir, firmware.filename));
   } catch (e) {
-    throw new Error(req.t('binFileNotFound'));
+    throw new Error(t('binFileNotFound'));
   }
 
   let md5fname = '.' + firmware.filename.replace('.bin', '.md5');
@@ -60,7 +61,7 @@ let removeFirmware = async function(req, firmware) {
   try {
     await firmware.remove();
   } catch (e) {
-    throw new Error(req.t('firmwareNotFound'));
+    throw new Error(t('firmwareNotFound'));
   }
   return;
 };
@@ -112,7 +113,7 @@ firmwareController.fetchFirmwares = function(req, res) {
     if (err) {
       console.log(err);
       return res.json({success: false, type: 'danger',
-                       message: req.t('firmwareFindError')});
+                       message: t('firmwareFindError')});
     }
     return res.json({success: true, type: 'success', firmwares: firmwares});
   });
@@ -191,18 +192,18 @@ firmwareController.delFirmware = function(req, res) {
     if (err || firmwares.length === 0) {
       return res.json({
         type: 'danger',
-        message: req.t('firmwareNotFoundOrSelected'),
+        message: t('firmwareNotFoundOrSelected'),
       });
     }
     let promises = [];
     firmwares.forEach((firmware) => {
-      promises.push(removeFirmware(req, firmware));
+      promises.push(removeFirmware(firmware));
     });
     Promise.all(promises).then(
       function() {
         return res.json({
           type: 'success',
-          message: req.t('firmwareDeleteSuccess'),
+          message: t('firmwareDeleteSuccess'),
         });
       }).catch(function(err) {
         return res.json({
@@ -216,7 +217,7 @@ firmwareController.delFirmware = function(req, res) {
 firmwareController.uploadFirmware = async function(req, res) {
   if (!req.files) {
     return res.json({type: 'danger',
-                     message: req.t('noFileSelected')});
+                     message: t('noFileSelected')});
   }
 
   let firmwarefile;
@@ -228,17 +229,17 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmwarefile = req.files.firmwaretr069file;
   } else {
     return res.json({type: 'danger',
-                     message: req.t('noFileSelected')});
+                     message: t('noFileSelected')});
   }
 
   if (!isValidFilename(firmwarefile.name) && isFlashbox) {
     return res.json({type: 'danger',
-                     message: req.t('firmwareFileNameInvalid')});
+                     message: t('firmwareFileNameInvalid')});
   }
   try {
     await firmwarefile.mv(path.join(imageReleasesDir, firmwarefile.name));
   } catch (err) {
-    return res.json({type: 'danger', message: req.t('fileMoveError')});
+    return res.json({type: 'danger', message: t('fileMoveError')});
   }
   // Generate MD5 checksum
   const md5Checksum = md5File.sync(path.join(imageReleasesDir,
@@ -250,7 +251,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     return res.json({
       type: 'danger',
-      message: req.t('fileChecksumError'),
+      message: t('fileChecksumError'),
     });
   }
   let fnameFields;
@@ -287,7 +288,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
     return res.json({type: 'danger',
-      message: req.t('databaseFirmwareFindError')});
+      message: t('databaseFirmwareFindError')});
   }
   if (!firmware) {
     firmware = new Firmware({
@@ -302,7 +303,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     if (isTR069) {
       return res.json({
         type: 'danger',
-        message: req.t('firmwareAlreadyExists'),
+        message: t('firmwareAlreadyExists'),
       });
     }
     firmware.vendor = fnameFields.vendor;
@@ -319,12 +320,12 @@ firmwareController.uploadFirmware = async function(req, res) {
       let response = await acsDeviceInfo.addFirmwareInACS(firmware);
       if (!response) {
         res.json({type: 'danger',
-          message: req.t('genieacsCommunicationError')});
+          message: t('genieacsCommunicationError')});
       }
     }
     return res.json({
       type: 'success',
-      message: req.t('firmwareUploadSuccess'),
+      message: t('firmwareUploadSuccess'),
     });
   } catch (err) {
     let msg = '';
@@ -360,7 +361,7 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
     },
     function(error, response, body) {
       if (error) {
-        return res.json({type: 'danger', message: req.t('requestError')});
+        return res.json({type: 'danger', message: t('requestError')});
       }
       if (response.statusCode === 200) {
         let firmwareNames = [];
@@ -419,16 +420,16 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
       } else {
         return res.json({
           type: 'danger',
-          message: req.t('authenticationError'),
+          message: t('authenticationError'),
         });
       }
     });
   } else {
-    return res.json({type: 'danger', message: req.t('authenticationError')});
+    return res.json({type: 'danger', message: t('authenticationError')});
   }
 };
 
-let addFirmwareFile = function(req, fw) {
+let addFirmwareFile = function(fw) {
   return new Promise((resolve, reject)=> {
     let wanproto = '';
     let flashboxver = '';
@@ -454,7 +455,7 @@ let addFirmwareFile = function(req, fw) {
           },
         })
       .on('error', function(err) {
-        return reject(req.t('requestError'));
+        return reject(t('requestError'));
       })
       .on('response', function(response) {
         let unzipDest = new unzipper.Extract({path: imageReleasesDir});
@@ -476,7 +477,7 @@ let addFirmwareFile = function(req, fw) {
                   fs.unlink(path.join(imageReleasesDir, firmwarefname),
                     function(err) {
                       return reject(
-                        req.t('fileChecksumError'));
+                        t('fileChecksumError'));
                     },
                   );
                 }
@@ -494,7 +495,8 @@ let addFirmwareFile = function(req, fw) {
                       function(err) {
                         fs.unlink(path.join(imageReleasesDir, md5fname),
                           function(err) {
-                            return reject(req.t('databaseFindError'));
+                            return reject(
+                              t('databaseFindError', {errorline: __line}));
                           },
                         );
                       },
@@ -548,7 +550,7 @@ let addFirmwareFile = function(req, fw) {
             );
           });
         } else {
-          return reject(req.t('authenticationError'));
+          return reject(t('authenticationError'));
         }
       });
   });
@@ -558,13 +560,13 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
   let firmwares = JSON.parse(req.body.firmwares);
   let promises = [];
   firmwares.forEach((firmware) => {
-    promises.push(addFirmwareFile(req, firmware));
+    promises.push(addFirmwareFile(firmware));
   });
   Promise.all(promises).then(
     function() {
       return res.json({
         type: 'success',
-        message: req.t('firmwareAddSuccess'),
+        message: t('firmwareAddSuccess'),
       });
     }, function(errMessage) {
       return res.json({

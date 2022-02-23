@@ -7,6 +7,7 @@ const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
+const t = require('./language').i18next.t;
 let Config = require('../models/config');
 let updateController = {};
 
@@ -577,7 +578,7 @@ updateController.getAutoConfig = function(req, res) {
 /* saving tr069 inform interval in genieacs for all devices. The errors thrown
  by this function have messages that are in portuguese, ready to be used in the
  user interface. */
-const updatePeriodicInformInGenieAcs = async function(req, tr069InformInterval) {
+const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   let parameterName = // the tr069 name for inform interval.
    'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
 
@@ -609,7 +610,7 @@ const updatePeriodicInformInGenieAcs = async function(req, tr069InformInterval) 
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
     console.error(e);
-    throw new Error(req.t('tasksApiPutError', {errorline: __line}));
+    throw new Error(t('geniePresetPutError', {errorline: __line}));
   });
 };
 
@@ -617,7 +618,7 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: req.t('configNotFound', {errorline: __line})};
+    if (!config) throw new {message: t('configNotFound', {errorline: __line})};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -629,7 +630,7 @@ updateController.setAutoConfig = async function(req, res) {
     if (measureServerIP && !measureServerIP.match(ipRegex)) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     let measureServerPort = parseInt(req.body['measure-server-port']);
@@ -642,7 +643,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.measureServerIP = measureServerIP;
@@ -657,7 +658,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
@@ -672,7 +673,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
@@ -685,7 +686,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
-          message: req.t('fieldsInvalid', {errorline: __line}),
+          message: t('fieldsInvalid', {errorline: __line}),
         });
       }
       /* check if ssid prefix was not empty and for some reason is coming
@@ -693,7 +694,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
-          message: req.t('ssidPrefixEmptyError'),
+          message: t('ssidPrefixEmptyError'),
         });
       // If prefix is disabled, do not allow changes in current prefix
       } else if (!isSsidPrefixEnabled &&
@@ -701,7 +702,7 @@ updateController.setAutoConfig = async function(req, res) {
                  config.ssidPrefix !== req.body['ssid-prefix']) {
         return res.status(500).json({
           type: 'danger',
-          message: req.t('ssidPrefixDisabledAlterationError'),
+          message: t('ssidPrefixDisabledAlterationError'),
         });
       }
       config.ssidPrefix = req.body['ssid-prefix'];
@@ -720,12 +721,12 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical_high =
       ponSignalThresholdCriticalHigh;
-    let message = req.t('operationSuccessful');
+    let message = t('operationSuccessful');
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -738,6 +739,21 @@ updateController.setAutoConfig = async function(req, res) {
     if (!onuWebPassword) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
+    }
+    // validate that it is a strong password, but only if value changes
+    if (onuWebPassword !== config.tr069.web_password) {
+      let passRegex = new RegExp(''
+        + /(?=.{8,16}$)/.source
+        + /(?=.*[A-Z])/.source
+        + /(?=.*[a-z])/.source
+        + /(?=.*[0-9])/.source
+        + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      if (!passRegex.test(onuWebPassword)) {
+        return res.status(500).json({
+          type: 'danger',
+          message: t('tr069WebPasswordValidationError'),
+        });
+      }
     }
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
@@ -763,7 +779,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (tr069InformInterval*1000 !== config.tr069.inform_interval
        && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS.
         // setting inform interval in genie for all devices and in preset.
-        await updatePeriodicInformInGenieAcs(req, tr069InformInterval);
+        await updatePeriodicInformInGenieAcs(tr069InformInterval);
       }
       config.tr069 = { // create a new tr069 config with received values.
         server_url: tr069ServerURL,
@@ -784,7 +800,7 @@ updateController.setAutoConfig = async function(req, res) {
       // respond error without much explanation.
       return res.status(500).json({
         type: 'danger',
-        message: req.t('fieldsInvalid', {errorline: __line}),
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
 
@@ -823,7 +839,7 @@ updateController.setAutoConfig = async function(req, res) {
     return res.status(500).json({
       type: 'danger',
       message: (err.message) ? err.message :
-                               req.t('configSaveError', {errorline: __line}),
+                               t('configSaveError', {errorline: __line}),
     });
   }
 };

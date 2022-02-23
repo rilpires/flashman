@@ -205,6 +205,7 @@ anlixDocumentReady.add(function() {
             $('#list-missing-models').hide();
             $('#list-onus').hide();
             $('#list-mesh').hide();
+            $('#list-mesh-roles').hide();
             let release = event.originalEvent.target.text;
             $('#selected-release').html(release);
             let missingModels = res.releaseInfo.find(
@@ -218,6 +219,9 @@ anlixDocumentReady.add(function() {
             let meshIncompatibles = res.releaseInfo.find(
               (r)=>(r.id === release),
             ).meshIncompatibles;
+            let meshRolesIncompatibles = res.releaseInfo.find(
+              (r)=>(r.id === release),
+            ).meshRolesIncompatibles;
             $('#warning-missing-models').html('');
             missingModels.forEach((model)=>{
               $('#warning-missing-models').append(
@@ -235,7 +239,8 @@ anlixDocumentReady.add(function() {
             }
             if (noUpgradeCount > 0) {
               $('#warning-releases').show();
-              if (noUpgradeCount - onuCount - meshIncompatibles > 0) {
+              if (noUpgradeCount - onuCount - meshIncompatibles -
+                meshRolesIncompatibles > 0) {
                 $('#list-missing-models').show();
               }
               if (onuCount > 0) {
@@ -245,6 +250,10 @@ anlixDocumentReady.add(function() {
               if (meshIncompatibles > 0) {
                 $('#mesh-count').html(meshIncompatibles+' ');
                 $('#list-mesh').show();
+              }
+              if (meshRolesIncompatibles > 0) {
+                $('#mesh-roles-count').html(meshRolesIncompatibles+' ');
+                $('#list-mesh-roles').show();
               }
             } else {
               $('#how-btn-next').prop('disabled', false);

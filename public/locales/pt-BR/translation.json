@@ -2,8 +2,10 @@
 	"bodyNotObject": "Body recebido, na requisição, não é um objeto",
 	"idInvalidInUrlParams": "ID '{{id}}' recebido nos parametros da url é inválido ({{errorline}})",
 
+	"languageNotFound": "Language '{{language}}' doesn't exist",
+	"permissionNotFound": "Permissão não encontrada",
+	"permissionDenied": "Permissão negada",
 	"vlanIdNotFound": "VLAN ID não encontrado ({{errorline}})",
-	"vlanFindError": "Erro ao buscar perfis de VLAN ({{errorline}})",
 	"vlanIdOutOfRange": "O VLAN ID não pode ser menor que 3 ou maior que 4094! ({{errorline}})",
 	"vlanProfileNameInvalidCharacter": "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes! ({{errorline}})",
 	"vlanProfileNameInvalidLength": "Nome do Perfil de VLAN não deve ser maior do que 32 caracteres! ({{errorline}})",
@@ -11,6 +13,7 @@
 	"vlanProfileNameExists": "Já existe um perfil de VLAN com esse nome fornecido! ({{errorline}})",
 	"vlanProfileFindError": "Erro ao acessar a configuração de VLAN ({{errorline}})",
 	"vlanProfileNameShouldBeDifferent": "Nome do Perfil de VLAN deve ser distinto dos já existentes! ({{errorline}})",
+	"vlanProfileNameUpdated": "Perfil de VLAN atualizado com sucesso!",
 	"vlanProfileNotFound": "Perfil de VLAN não encontrado ({{errorline}})",
 
 	"firmwareNotFoundOrSelected": "Registro não encontrado ou selecionado",
@@ -28,13 +31,12 @@
 	"firmwareUploadSuccess": "Upload de firmware feito com sucesso!",
 	"requestError": "Erro na requisição",
 	"authenticationError": "Erro na autenticação",
-	"databaseFindError": "Erro buscar na base de dados",
 	"firmwareAddSuccess": "Firmware(s) adicionado(s) com sucesso!",
 
-	"tasksApiPutError": "Erro ao enviar task para o GenieACS ({{errorline}})",
+	"geniePresetPutError": "Erro ao enviar preset para o GenieACS ({{errorline}})",
 	"ssidPrefixEmptyError": "Prefixo de SSID não pode ser vazio",
 	"ssidPrefixDisabledAlterationError": "Prefixo de SSID não pode ser alterado se estiver desabilitado",
-	
+	"tr069WebPasswordValidationError": "A senha para interface web das CPEs TR-069 não está nos padrões esperados",
 	"notificationFindError": "Erro ao buscar notificações ({{errorline}})",
 	"notificationStatusError": "Erro no registro de notificação de status, ({{errorline}})",
 	"notificatioUpdateError": "Error ao atualizar notification para CPE {{deviceId}} ({{errorline}})",
@@ -67,16 +69,14 @@
 	"outOfSubnetRangeError": "{{ip}}: está fora da faixa de subrede",
 	"lanDeviceFindError": "Erro ao buscar dispotivo na lan ({{errorline}})",
 
-
-
 	"serverError": "Erro interno do servidor ({{errorline}})",
-	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados",
-	"permissionNotFound": "Permissão não encontrada {{errorline}}",
-	"permissionDenied": "Permissão negada {{errorline}}",
+	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados ({{errorline}})",
+	"permissionNotFound": "Permissão não encontrada ({{errorline}})",
+	"permissionDenied": "Permissão negada ({{errorline}})",
 	"databaseFindError": "Erro no acesso ao banco de dados ({{errorline}})",
 	"deleteError": "Erro na remoção ({{errorline}})",
 	"operationSuccessful": "Operação realizada com sucesso",
-	"operationUnuccessful": "Operação não pode ser realizada ({{errorline}})",
+	"operationUnsuccessful": "Operação não pode ser realizada ({{errorline}})",
 	"requestFormatError": "Erro no formato da requisição ({{errorline}})",
 
 	"fieldNameInvalid": "Campo '{{name}}' inválido ({{errorline}})",
@@ -89,10 +89,8 @@
 	
 	"commandNotFound": "Esse comando não existe ({{errorline}})",
 	"incompatibleRulesError": "Possui regra não compatível",
-
 	"jsonError": "Erro ao tratar JSON ({{errorline}})",
 	"jsonInvalidFormat": "JSON fora do formato ({{errorline}})",
-
 	"cpeNotFound": "CPE não encontrada ({{errorline}})",
 	"cpesNotFound": "CPEs não encontradas ({{errorline}})",
 	"cpeIdNotFound": "CPE '{{id}}' não encontrada ({{errorline}})",
@@ -106,5 +104,6 @@
 
 	"configFindError": "Erro ao buscar configuração ({{errorline}})",
 	"configNotFoud": "Configuração não encontrada ({{errorline}})",
-	"configSaveError": "Erro ao salvar configuração ({{errorline}})"
+	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
+	"configUpdateError": "Erro salvando configurações"
 }

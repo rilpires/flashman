@@ -4,14 +4,12 @@ const vlanController = require('../controllers/vlan');
 const authController = require('../controllers/auth');
 const permissionVlan = 'grantVlan';
 const permissionProfile = 'grantVlanProfileEdit';
-const i18nextMiddleware = require('../controllers/language.js').middleware;
 
 // eslint-disable-next-line new-cap
 let router = express.Router();
 
 router.use( // all paths will use these middlewares.
   authController.ensureLogin(),
-  i18nextMiddleware
 );
 
 router.route('/profile').get(
