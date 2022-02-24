@@ -191,9 +191,11 @@ $(document).ready(function() {
           dropdown.html('');
           res.releaseInfo.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
             // Skip stock firmwares from being listed
-            if (release.id !== '9999-aix' && release.id !== 'STOCK') {
+            if (release.id !== '9999-aix' && release.id !== 'STOCK' &&
+                release.count > 0
+            ) {
               dropdown.append(
-                $('<a>').addClass('dropdown-item text-center').html(release.id)
+                $('<a>').addClass('dropdown-item text-center').html(release.id),
               );
             }
           });
