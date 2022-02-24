@@ -1533,7 +1533,11 @@ deviceListController.setDeviceReg = function(req, res) {
         // We must enable Wi-Fi corresponding to mesh radio we're using
         // Some models have this restriction.
         // For simplicity we're doing this for all devices
-        if (meshMode > 1 && (wifiState < 1 || wifiState5ghz < 1)) {
+        let invalidState2 = (wifiState < 1);
+        let invalidState5 = (
+          matchedDevice.wifi_is_5ghz_capable && wifiState5ghz < 1
+        );
+        if (meshMode > 1 && (invalidState2 || invalidState5)) {
           errors.push({'mesh_mode': t('enableWifiToConfigureMesh')});
         }
         const validateOk = await meshHandlers.validateMeshMode(
