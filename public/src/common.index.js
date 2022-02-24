@@ -30,10 +30,8 @@ i18next
   }, (err, t) => { // finished initializing.
     if (err) {
       console.log('Error when loading i18next', err);
-      i18nextResolved(); // resolving the Promise.
-    } else {
-      i18nextResolved(); // resolving the Promise.
     }
+    i18nextResolved(); // resolving the Promise.
   });
 
 // Object that holds all DOMContentLoaded callbacks. Even though they are
