@@ -124,7 +124,9 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   await i18nextInitialization;
 
   // if language is already set in database, set it in i18next.
-  if (config.language) return i18next.changeLanguage(config.language);
+   if (config && config.language) {
+    return i18next.changeLanguage(config.language);
+  }
 
   // console.log('--- defaultLanguage:', defaultLanguage)
   // console.log('--- i18next.language:', i18next.language)
