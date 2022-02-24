@@ -128,7 +128,8 @@ $(document).ready(function() {
     stepper = new Stepper(stepper[0], {animation: true});
     resetStepperData(stepper);
     $(document).on('submit', '#devices-search-form', function(event) {
-      lastDevicesSearchInputQuery = document.getElementById('devices-search-input').value;
+      lastDevicesSearchInputQuery = document.getElementById(
+        'devices-search-input').value;
       resetStepperData(stepper);
       stepper.to(1);
       return false;
@@ -161,7 +162,7 @@ $(document).ready(function() {
       } else {
         $('#which-btn-next').prop(
           'disabled',
-          ($('input[name=deviceCount]:checked').length === 0)
+          ($('input[name=deviceCount]:checked').length === 0),
         );
       }
     });
@@ -172,7 +173,7 @@ $(document).ready(function() {
       let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;//$('#devices-search-input').val();
+      let filterList = lastDevicesSearchInputQuery;
       let useAll = (useCsv) ? false :
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       $.ajax({
@@ -191,9 +192,11 @@ $(document).ready(function() {
           dropdown.html('');
           res.releaseInfo.sort((r, s)=>(r.id < s.id)).forEach((release)=>{
             // Skip stock firmwares from being listed
-            if (release.id !== '9999-aix' && release.id !== 'STOCK') {
+            if (release.id !== '9999-aix' && release.id !== 'STOCK' &&
+                release.count > 0
+            ) {
               dropdown.append(
-                $('<a>').addClass('dropdown-item text-center').html(release.id)
+                $('<a>').addClass('dropdown-item text-center').html(release.id),
               );
             }
           });
@@ -292,7 +295,8 @@ $(document).ready(function() {
           $('#endWeekday-' + i).prop('disabled', false);
         }
         $('#addSchedule').prop('disabled', false);
-        $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
+        $('#removeSchedule').prop('disabled',
+                                  $('#time-ranges .time-range').length === 1);
       }
     });
 
@@ -304,7 +308,7 @@ $(document).ready(function() {
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;//$('#devices-search-input').val();
+      let filterList = lastDevicesSearchInputQuery;
       let release = $('#selected-release').html();
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
@@ -392,7 +396,7 @@ $(document).ready(function() {
       newHtml = newHtml.replace(/endWeekday-0/g, 'endWeekday-' + length);
       newHtml = newHtml.replace(/equal-error-0/g, 'equal-error-' + length);
       $('#time-ranges').append(
-        $('<div class="time-range">').html(newHtml)
+        $('<div class="time-range">').html(newHtml),
       );
       configureDateDiv(length);
       $('#removeSchedule').prop('disabled', false);
@@ -402,7 +406,8 @@ $(document).ready(function() {
     $('#removeSchedule').click((event)=>{
       let timeRangesContent = $('#time-ranges .time-range');
       timeRangesContent[timeRangesContent.length - 1].remove();
-      $('#removeSchedule').prop('disabled', $('#time-ranges .time-range').length === 1);
+      $('#removeSchedule').prop('disabled',
+                                $('#time-ranges .time-range').length === 1);
       $('#when-btn-next').prop('disabled', !isWhenPartValidated());
     });
 
