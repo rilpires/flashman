@@ -1004,6 +1004,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
+    // Sync Access Control rules to block devices
+    if (permissions.grantBlockDevices) {
+      await acsDeviceInfoController.changeAcRules(device);
+    }
   }
   await device.save();
   return res.status(200).json({success: true});
@@ -2574,286 +2578,8 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   }
 };
 
-const deleteAcRules = async function(device, acSubtreeRoots, blockedDevices) {
-  let acsID = device.acs_id;
-  let serial = device.serial_tr069;
-  // Update device tree
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: Object.values(acSubtreeRoots),
-  };
-  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (!result || !result.finished ||
-      result.task.name !== 'getParameterValues') {
-    return {
-      'success': false, 'error': 502,
-      'message': 'Error: failed to retrieve Access Control Rules at '+serial
-    };
-  }
-  // Get device access control subtree
-  let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+
-    '&projection='+Object.values(acSubtreeRoots).join(',');
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  let allAcSubtrees = [];
-  let acRulesToDelete = [];
-  let allRulesToEdit = [];
-  let addRulesPromise = new Promise(function(resolve, reject) {
-  // return new Promise(function(resolve, reject) {
-    let req = http.request(options, (resp)=>{
-      resp.setEncoding('utf8');
-      let data = '';
-      resp.on('error', (error) => {
-        reject ({
-          'success': false, 'error': 500,
-          'message': 'Error ('+ error +') removing an AC rule at '+serial
-        });
-      });
-      resp.on('data', (chunk) => data+=chunk);
-      resp.on('end', async () => {
-        if (data.length > 0) {
-          try {
-            data = JSON.parse(data)[0];
-            // For every access control network subtree (ex: wifi2, ..., mesh5).
-            Object.entries(acSubtreeRoots).forEach(entry => {
-              let wlanType = entry[0];
-              let acSubtreeRoot = entry[1];
-              // Get all the rules inside AC network subtree
-              let acSubtreeRules =
-                getZTEAccessControlObject(acSubtreeRoot, data, wlanType);
-              // While we need to delete rules, fill the array with the root of
-              // each access control rule that we must delete.
-              let rulesDiffLen = acSubtreeRules.length - blockedDevices.length;
-              let acSubtreeRulesToEdit = {
-                'subtree_root': acSubtreeRoot,
-                'wlan_type': wlanType,
-                'subtree_rules': []
-              };
-              if (rulesDiffLen > 0) {
-                for (let j = 0; j < acSubtreeRules.length; j++) {
-                  // While we need rules to block devices, push these rules to 
-                  // the acSubtreeRulesToEdit array, with indices increasing by
-                  // one for each step.
-                  if (j < blockedDevices.length) {
-                    acSubtreeRulesToEdit['subtree_rules'].push(
-                      acSubtreeRules[j]
-                    );
-                  // The other rules must be deleted, so push the rules to 
-                  // acRulesToDelete array.
-                  } else {
-                    acRulesToDelete.push(acSubtreeRules[j]['root']);
-                  }
-                }
-              }
-              if (acSubtreeRulesToEdit['subtree_rules'].length > 0) {
-                allRulesToEdit.push(acSubtreeRulesToEdit);
-              }
-            });
-            let result = {'success': false};
-            // Delete AC rules in device tr-069 tree based on rules that were
-            // added to acRulesToDelete array.
-            if (acRulesToDelete.length) {
-              result =
-                await deleteZTEAccessControlRule(device, acRulesToDelete);
-            }
-            // If the "delete" was successfully completed, return the array of
-            // rules that were kept in the tr-069 tree so they can be edited.
-            if (result !== undefined &&
-                result.hasOwnProperty('success') && result['success']) {
-              resolve ({'success': true, 'response': allRulesToEdit});
-            }
-          } catch (e) {
-            reject ({
-              'success': false, 'error': 500,
-              'message': 'Error ('+ e +') removing an AC rule at '+serial
-            });
-          }
-          reject ({
-            'success': false, 'error': 500,
-            'message': 'Error removing an AC rule at '+serial
-          });
-        }
-      });
-    });
-    req.end();
-  });
-  // Promise's result treatment.
-  return addRulesPromise.then(
-    resolved => {return resolved}, rejected => {return rejected});
-}
-
-const addAcRules = async function(device, acSubtreeRoots, blockedDevices) {
-  let acsID = device.acs_id;
-  let serial = device.serial_tr069;
-  // Update device tree.
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: Object.values(acSubtreeRoots),
-  };
-  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (!result || !result.finished ||
-      result.task.name !== 'getParameterValues') {
-    return {
-      'success': false, 'error': 502,
-      'message': 'Error: failed to retrieve Access Control Rules at '+serial
-    };
-  }
-  // Get device access control subtree.
-  let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+
-    '&projection='+Object.values(acSubtreeRoots).join(',');
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  // Creating the access control rule structure.
-  let wifi2SubtreeRulesToEdit = {
-    'subtree_root': acSubtreeRoots['wifi2'],
-    'subtree_rules': []
-  };
-  let wifi5SubtreeRulesToEdit = {
-    'subtree_root': acSubtreeRoots['wifi5'],
-    'subtree_rules': []
-  };
-  let allRulesToEdit = [];
-  let addRulesPromise = new Promise(function(resolve, reject) {
-    let req = http.request(options, (resp)=>{
-      resp.setEncoding('utf8');
-      let data = '';
-      let lastRuleIndex = 0;
-      // Each WLAN interface must have up to a maximum number of configured
-      // rules equal to the number of blocked devices.
-      let wifi2RulesDiffLen = blockedDevices.length;
-      let wifi5RulesDiffLen = blockedDevices.length;
-      resp.on('error', (error) => {
-        reject ({
-          'success': false, 'error': 500,
-          'message': 'Error ('+ error +') adding an AC rule at '+serial
-        });
-      });
-      resp.on('data', (chunk) => data+=chunk);
-      resp.on('end', async () => {
-        if (data.length > 0) {
-          try {
-            data = JSON.parse(data)[0];
-            // For every access control WLAN subtree (ex: wifi2, wifi5).
-            Object.entries(acSubtreeRoots).forEach(entry => {
-              let wlanType = entry[0];
-              let acSubtreeRoot = entry[1];
-              // Get all the rules inside AC WLAN subtree
-              let acSubtreeRules =
-                getZTEAccessControlObject(acSubtreeRoot, data, wlanType);
-              // These templates limit the number of Access Control rules to 64.
-              // We need to limit the num of existing rules for each WLAN to 32.
-              if (['ZXHN H199A', 'ZXHN%20H199A'].includes(device.model)) {
-                if (acSubtreeRules.length >= 32) {
-                  reject ({
-                    'success': false, 'error': 429,
-                    'message': 'Number of rules has reached its limits to this'+
-                               ' device.'
-                  });
-                }
-              }
-              for (let i in acSubtreeRules) {
-                // Decreases the number of rules to be added until the number of
-                // blocked devices (required rules) is reached.
-                if (wlanType == 'wifi2') {
-                  wifi2SubtreeRulesToEdit['subtree_rules'].push(
-                    acSubtreeRules[i]);
-                  if (wifi2RulesDiffLen > 0) {
-                    wifi2RulesDiffLen -= 1;
-                  }
-                } else if (wlanType == 'wifi5') {
-                  wifi5SubtreeRulesToEdit['subtree_rules'].push(
-                    acSubtreeRules[i]);
-                  if (wifi5RulesDiffLen > 0) {
-                    wifi5RulesDiffLen -= 1;
-                  }
-                }
-              }
-              // Updates auxLastRuleIndex with the last rule index of all WLAN
-              // subtrees.
-              if (acSubtreeRules.length > 0) {
-                let auxLastRuleIndex =
-                  parseInt(acSubtreeRules[acSubtreeRules.length-1]['id'], 10);
-                lastRuleIndex = Math.max(auxLastRuleIndex, lastRuleIndex);
-              }
-            });
-            // While we have rules to add (devices to block), we add one rule at
-            // a time and guide ourselves by the index of the last existing rule
-            // to mock the keys of the new rule that was added.
-            while (wifi2RulesDiffLen > 0) {
-              let acSubtreeRoot = acSubtreeRoots['wifi2'];
-              lastRuleIndex += 1;
-              result = await addZTEAccessControlRule(device, acSubtreeRoot);
-              if (result['success']) {
-                wifi2SubtreeRulesToEdit['subtree_rules'].push(
-                  mockZTEAccessControlObject(
-                    acSubtreeRoot, lastRuleIndex, 'wifi2'));
-                wifi2RulesDiffLen -= 1;
-              } else {
-                reject ({
-                  'success': false, 'error': 502,
-                  'message': 'Error adding an AC rule at '+serial
-                });
-              }
-            }
-            while (wifi5RulesDiffLen > 0) {
-              let acSubtreeRoot = acSubtreeRoots['wifi5'];
-              lastRuleIndex += 1;
-              result = await addZTEAccessControlRule(device, acSubtreeRoot);
-              if (result['success']) {
-                wifi5SubtreeRulesToEdit['subtree_rules'].push(
-                  mockZTEAccessControlObject(
-                    acSubtreeRoot, lastRuleIndex, 'wifi5'));
-                wifi5RulesDiffLen -= 1;
-              } else {
-                reject ({
-                  'success': false, 'error': 502,
-                  'message': 'Error adding an AC rule at '+serial
-                });
-              }
-            }
-            // If each rule subtree (per WLAN) is not empty, then add those
-            // rules to the array of rules that need to be edited and returns
-            // this array.
-            if (wifi2SubtreeRulesToEdit['subtree_rules'].length > 0) {
-              allRulesToEdit.push(wifi2SubtreeRulesToEdit);
-            }
-            if (wifi5SubtreeRulesToEdit['subtree_rules'].length > 0) {
-              allRulesToEdit.push(wifi5SubtreeRulesToEdit);
-            }
-            resolve ({'success': true, 'response': allRulesToEdit});
-          } catch (e) {
-            reject ({
-              'success': false, 'error': 500,
-              'message': 'Error ('+ e +') adding an AC rule at '+serial
-            });
-          }
-          reject ({
-            'success': false, 'error': 500,
-            'message': 'Error adding an AC rule at '+serial
-          });
-        }
-      });
-    });
-    req.end();
-  });
-  // Promise's result treatment.
-  return addRulesPromise.then(
-    resolved => {return resolved}, rejected => {return rejected});
-};
-
-acsDeviceInfoController.changeAccessControl = async function(
-  device, rulesDiffLength
-) {
+acsDeviceInfoController.changeAcRules = async function(device) {
+  // ===== Check device =====
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -2865,8 +2591,13 @@ acsDeviceInfoController.changeAccessControl = async function(
   if (!permissions || !permissions.grantBlockDevices) return;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   if (!fields) return;
-  // Creates the structure with the roots of the WLAN subtrees
+  // ===== Get blockedDevices and AC rules trees =====
+  // Creates the structures related to WLAN subtrees
   let acSubtreeRoots = {};
+  let wlanAcRulesTrees = {};
+  let wlanAcRulesIds = {};
+  let supportedWlans = [];
+  let maxId = 0;
   // Array of devices that need to be blocked (rules that need to be configured)
   let blockedDevices = [];
   let result = {'success': false};
@@ -2879,6 +2610,7 @@ acsDeviceInfoController.changeAccessControl = async function(
     // error.
     if (['ZXHN H199A', 'ZXHN%20H199A'].includes(device.model)) {
       if (blockedDevices.length >= 64) {
+        console.log('Number of rules has reached its limits to this device.');
         return {
           'success': false,
           'error': 429,
@@ -2887,106 +2619,246 @@ acsDeviceInfoController.changeAccessControl = async function(
       }
     }
     // If the device does not have 5 Ghz WiFi, then it does not add the field in
-    // acSubtreeRoots, which is the structure that guides the entire access
-    // control flow. If a root key is not in acSubtreeRoots, then the access
-    // control flow is not performed for the WLAN tied to that root key
+    // in the structures that guides the entire access control flow.
     acSubtreeRoots['wifi2'] = fields.access_control.wifi2;
+    wlanAcRulesTrees['wifi2'] = [];
+    supportedWlans.push('wifi2');
     if (device.wifi_is_5ghz_capable) {
       acSubtreeRoots['wifi5'] = fields.access_control.wifi5;
+      wlanAcRulesTrees['wifi5'] = [];
+      supportedWlans.push('wifi5');
     }
   } catch (e) {
+    console.log('Error ('+ e +') while trying to get device information.');
     return {
       'success': false,
       'error': 500,
-      'message': 'Error ('+ e +') while trying to get device information.'
+      'message': 'Error while trying to get device information.'
     };
   }
-  // A positive rulesDiffLength means the user wants to add a new AC rule.
-  // A negative rulesDiffLength means the user wants to remove an existing rule
-  if (rulesDiffLength > 0) {
-    result = await addAcRules(device, acSubtreeRoots, blockedDevices);
-  } else if (rulesDiffLength < 0) {
-    result = await deleteAcRules(device, acSubtreeRoots, blockedDevices);
-  }
-  if (result) {
-    if ('success' in result && result['success']) {
-      if ('response' in result && (result['response']).length > 0) {
-        let acSubtreesToEdit = result['response'];
-        result = await acsDeviceInfoController.updateAccessControl(
-          device, acSubtreesToEdit, blockedDevices
-        );
-        if (result && 'success' in result) return result;
-      } else return {
-        'success':true, 'message':'No need to edit access control rules'
-      };
-    }
-  }
-  return {
-    'success': false,
-    'error': 500,
-    'message': 'Error while trying to add or delete access control rules.'
+  // ===== Update device tree =====
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: Object.values(acSubtreeRoots),
   };
-};
-
-const getZTEAccessControlObject = function(acSubtreeRoot, data, wlanType) {
-  let keys = acSubtreeRoot.split('.');
-  Object.entries(keys).forEach(key => {
-    data = data[key[1]];
-  });
-  let acObjects = [];
-  Object.entries(data).forEach((key, value) => {
-    if (!['_object', '_timestamp', '_writable'].includes(key[0])) {
-      acObjects.push({
-        'id': key[0],
-        'root': acSubtreeRoot+'.'+key[0],
-        'wlan_type': wlanType,
-        'mac': acSubtreeRoot+'.'+key[0]+'.MACAddress',
-        'name': acSubtreeRoot+'.'+key[0]+'.Name'
+  result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+  if (!result || !result.finished ||
+      result.task.name !== 'getParameterValues') {
+    console.log('Error: failed to retrieve Access Control Rules at '+serial);
+    return {
+      'success': false, 'error': 502,
+      'message': 'Error: failed to retrieve Access Control Rules at '+serial
+    };
+  }
+  // ===== Get device AC tree =====
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+Object.values(acSubtreeRoots).join(',');
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  // Projection Promise
+  let getRulesPromise = new Promise(function(resolve, reject) {
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('error', (error) => {
+        console.log('Error ('+ error +') removing an AC rule at '+serial);
+        reject ({
+          'success': false, 'error': 502,
+          'message': 'Error: failed to retrieve Access Control Rules at '+serial
+        });
       });
-    }
+      resp.on('data', (chunk) => data+=chunk);
+      resp.on('end', async () => {
+        if (data.length > 0) {
+          try {
+            // Get data
+            data = JSON.parse(data)[0];
+            for (wlanType of supportedWlans) {
+              let wlanTreeRoot = acSubtreeRoots[wlanType];
+              let wlanTreeRules = [];
+              let wlanTreeRuleIds = [];
+              // Populates the WLAN subtree rule structure
+              if (checkForNestedKey(data, wlanTreeRoot)) {
+                let wlanSubtree = getFromNestedKey(data, wlanTreeRoot);
+                Object.entries(wlanSubtree).forEach(acRule => {
+                  let acRuleId = acRule[0];
+                  if (acRuleId && !acRuleId.startsWith('_')) {
+                    maxId = Math.max(Number(acRuleId), maxId);
+                    wlanTreeRuleIds.push(acRuleId);
+                    wlanTreeRules.push(wlanTreeRoot+'.'+acRuleId);
+                  }
+                });                
+              }
+              wlanAcRulesIds[wlanType] = wlanTreeRuleIds;
+              wlanAcRulesTrees[wlanType] = wlanTreeRules;
+            }
+            // If success, Resolve
+            console.log('Successfully obtained AC rule trees');
+            return resolve ({
+              'max_id': maxId,
+              'rule_ids': wlanAcRulesIds,
+              'rule_trees': wlanAcRulesTrees
+            });
+          } catch (e) {
+            // If error, Reject
+            console.log(
+              'Error ('+e+') retrieving Access Control Rules at '+serial);
+            return reject ({
+              'success': false, 'error': 502,
+              'message': 'Error: failed to retrieve Access Control Rules at '+
+                          serial
+            });
+          }
+          // If not completed, Reject
+          console.log('Error retrieving Access Control Rules at '+serial);
+          reject ({
+            'success': false, 'error': 500,
+            'message': 'Error: failed to retrieve Access Control Rules at '+
+                          serial
+          });
+        }
+      });
+    });
+    req.end();
   });
-  return acObjects;
-};
+  // ===== Promise's result treatment =====
+  return getRulesPromise.then(
+    // On Promise Resolved
+    async resolvedAcObj => {
+      rulesToEdit = {'wifi2': {}};
+      rulesToDelete = {'wifi2': {}};
+      if (permissions.grantWifi5ghz) {
+        rulesToEdit['wifi5'] = {};
+        rulesToDelete['wifi5'] = {};
+      }
+      let ids = resolvedAcObj['rule_ids'];
+      let wlanAcRulesTrees = resolvedAcObj['rule_trees'];
+      let maxId = resolvedAcObj['max_id'];
+      // If there is an imbalance in the tree or if the tree has a gap, it will
+      // delete all the rules in the tree and force the algorithm to re-populate
+      // all the rules in the tree.
+      // If the algorithm got this far and it has a rule with the id equal to
+      // the limit of 64, then there is a problem, because there are not 64
+      // blocked devices. It will also force the algorithm to repopulate the
+      // rule tree.
+      if (device.wifi_is_5ghz_capable && 
+          (ids['wifi2'].length + ids['wifi5'].length != maxId ||
+          ids['wifi2'].length != ids['wifi5'].length ||
+          maxId >= 64)) {
+        for (wlanType of supportedWlans) {
+          try {
+            await newDeleteAcRules(device, wlanAcRulesTrees[wlanType]);
+          } catch (e) {
+            console.log('Error ('+e+') at AC rules redoing');
+            return {
+              'success': false, 'error': 500,
+              'message': 'Error: AC rules redoing at '+serial
+            };
+          }
+        }
+        maxId = 0;
+        wlanAcRulesTrees = {'wifi2': {}};
+        if (permissions.grantWifi5ghz) {
+          wlanAcRulesTrees['wifi5'] = {};
+        }
+      }
+      let diff = blockedDevices.length - (maxId/2);
+      // If the difference is positive then you need to add rules to the tree.
+      if (diff > 0) {
+        rulesToEdit = wlanAcRulesTrees;
+        let addedRules;
+        try {
+          addedRules = 
+            await newAddAcRules(
+              device, acSubtreeRoots, diff, maxId, permissions.grantWifi5ghz);
+        } catch (e) {
+          console.log('Error ('+e+') at AC rules add');
+          return {
+            'success': false, 'error': 500,
+            'message': 'Error: AC rules add at '+serial
+          };
+        }
+        // Get the rules that need to be edited (old + new).
+        for (wlanType of supportedWlans) {
+          if (rulesToEdit[wlanType].length > 0) {
+            rulesToEdit[wlanType] =
+              rulesToEdit[wlanType].concat(addedRules[wlanType]);
+          } else {
+            rulesToEdit[wlanType] = addedRules[wlanType];
+          }
+        }
+      // If the difference is negative, then we need to remove rules from the
+      // tree. The algorithm will reserve the lowest id rules, which are at the
+      // beginning of the rules array, and will delete as many as necessary
+      // until it has the right number of rules.
+      } else if (diff < 0) {
+        for (wlanType of supportedWlans) {
+          let wlanTreeRules = wlanAcRulesTrees[wlanType];
+          let wlanNumOfRules = wlanTreeRules.length;
+          rulesToEdit[wlanType] =
+            wlanTreeRules.slice(0, wlanNumOfRules+diff);
+          rulesToDelete =
+            wlanTreeRules.slice(wlanNumOfRules+diff, wlanNumOfRules);
+          try {
+            await newDeleteAcRules(device, rulesToDelete);
+          } catch (e) {
+            console.log('Error ('+e+') at AC rules delete');
+            return {
+              'success': false, 'error': 500,
+              'message': 'Error: AC rules delete at '+serial
+            };
+          }
+        }
+      // If the difference is zero then we just need to edit the existing rules.
+      } else {
+        rulesToEdit = wlanAcRulesTrees;
+      }
+      console.log('permissions.grantWifi5ghz', permissions.grantWifi5ghz);
+      console.log('rulesToEdit[wifi2].length', rulesToEdit['wifi2'].length, 'blockedDevices.length', blockedDevices.length);
+      // At this point the number of rules that exist in each WLAN tree and the
+      // number of blocked devices must be equal. Otherwise, it returns an error
+      if (rulesToEdit['wifi2'].length == blockedDevices.length) {
+        if (!permissions.grantWifi5ghz ||
+          rulesToEdit['wifi5'].length == blockedDevices.length) {
+          try {
+            await newUpdateAcRules(
+              device, supportedWlans, acSubtreeRoots,
+              rulesToEdit, blockedDevices);
+            console.log('Updated Access Control tree successfully');
+            return {'success': true};
+          } catch (e) {
+            console.log('Error ('+e+') at AC rules update');
+            return {
+              'success': false, 'error': 500,
+              'message': 'Error: AC rules update at '+serial
+            };
+          }
+        }
+      } else {
+        console.log(
+          'Error at AC rules update. Number of rules doesn\'t match');
+        return {
+          'success': false, 'error': 500,
+          'message': 'Error: AC rules update at '+serial+
+                     '. Number of rules doesn\'t match'
+        };
+      }
+    },
+    // On Promise Rejected
+    rejectedError => {return rejectedError}
+  );
+}
 
-const mockZTEAccessControlObject = function(acSubtreeRoot, id, wlanType) {
-  id = id.toString(10);
-  return {
-    'id': id,
-    'root': acSubtreeRoot+'.'+id,
-    'wlan_type': wlanType,
-    'mac': acSubtreeRoot+'.'+id+'.MACAddress',
-    'name': acSubtreeRoot+'.'+id+'.Name'
-  };
-};
-
-const addZTEAccessControlRule = async function(device, acSubtreeRoot) {
+const doAccessControlTask = async function(device, acObject, taskType) {
   let acsID = device.acs_id;
-  let addObjTask = {
-    name: 'addObject',
-    objectName: acSubtreeRoot,
-  };
-  // Adding TR-069 new access control rules
-  try {
-    let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-      10000, [5000, 10000]);
-    if (!ret || !ret.finished||
-      ret.task.name !== addObjTask.name) {
-      throw new Error('task error');
-    } else {
-      return {'success': true};
-    }
-  } catch (e) {
-    console.log('Error: failure creating new Access Control rule at '+acsID);
-  }
-  return {'success': false};
-};
-
-const deleteZTEAccessControlRule = async function(device, acSubtreeRoot) {
-  let acsID = device.acs_id;
-  for (i in acSubtreeRoot) {
     let deleteObjTask = {
-      name: 'deleteObject',
-      objectName: acSubtreeRoot[i],
+      name: taskType,
+      objectName: acObject,
     };
     // Deleting TR-069 new access control rules
     try {
@@ -2994,130 +2866,122 @@ const deleteZTEAccessControlRule = async function(device, acSubtreeRoot) {
         10000, [5000, 10000]);
       if (!ret || !ret.finished||
         ret.task.name !== deleteObjTask.name) {
-        acSubtreeRoot[i] = 'failure';
-        throw new Error('task error');
-      } else acSubtreeRoot[i] = 'success';
+        return false
+      }
+      return true;
     } catch (e) {
       console.log(
         'Error: failure Access Control rule removal at '+acsID
       );
     }
-  }
-  if (acSubtreeRoot.includes('failure')) return {'success': false};
-  return {'success': true};
+  return false
 };
 
-const getZTEAccessControlTask = async function(
-  device, blockedDevices, acSubtreeRoot, acTreeObjects
-) {
-  let acRulesToDelete = [];
-  let parameterValues = [[acSubtreeRoot+'Mode', 'Ban', 'xsd:string']];
-  for (let i = 0; i < acTreeObjects.length; i++) {
-    let devOnTree = acTreeObjects[i];
-    if (i < blockedDevices.length) {
-      let devOnFlashman = blockedDevices[i];
-      // While we need to add rules to block devices, we fill the name and MAC
-      // fields with the necessary values.
-      let ruleMac = devOnFlashman['mac'];
-      // Generating a random string combined with last 4 digits of devices mac.
-      let ruleName = (
-        Math.random().toString(36).substring(2,7) + '-' +
-        devOnFlashman['mac'].replace(/:/g, "").slice(-4)
-      );
-      // Just one more check step. This model only accepts 10 caracteres in the
-      // name field.
-      ruleName = (ruleName.length > 10) ? ruleName.slice(-10) : ruleName;
-      parameterValues.push(
-        [devOnTree['name'], ruleName, 'xsd:string'],
-        [devOnTree['mac'], ruleMac, 'xsd:string']
-      );
-    } else {
-      acRulesToDelete.push(devOnTree['root']);
+// Adds a new rule in the rules tree of each WLAN and assumes an id for this
+// rule from the id of the last rule.
+// This makes it possible for us to save a get and a projection.
+const newAddAcRules = async function(
+  device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz) {
+  let id = Number(maxId);
+  let acRulesAdded = {'wifi2': []};
+  if (grantWifi5ghz) {
+    acRulesAdded['wifi5'] = [];
+  }
+  for (let i = 0; i < numberOfRules; i++) {
+    // Adding at wifi2 WLAN
+    id = id + 1;
+    let result = await doAccessControlTask(
+      device, acSubtreeRoots['wifi2'], 'addObject');
+    if (result) {
+      acRulesAdded['wifi2'].push(acSubtreeRoots['wifi2']+'.'+id.toString());
+    } else throw new Error('newAddAcRules error');
+    if (grantWifi5ghz) {
+      // Adding at wifi5 WLAN
+      id = id + 1;
+      result = await doAccessControlTask(
+        device, acSubtreeRoots['wifi5'], 'addObject');
+      if (result) {
+        acRulesAdded['wifi5'].push(acSubtreeRoots['wifi5']+'.'+id.toString());
+      } else {
+        await newDeleteAcRules(device, acRulesAdded['wifi2'].slice(-1));
+        throw new Error('newAddAcRules error');
+      }
     }
   }
-  // If there are rules left in the subtree that have not been configured
-  // according to what the blocked devices need, then it is better to remove
-  // those rules from the TR-069 tree, so that there are no blocking rules that
-  // should not exist.
-  // In theory we would never need to go into this case, because there can't be
-  // rules in the TR-069 tree of the device that were not added by flashman. But
-  // this is one more step that will give us the security that the rules will
-  // always be correct in Add operations (as well as in Delete operations).
-  if (acRulesToDelete.length > 0) {
-    result = await deleteZTEAccessControlRule(device, acRulesToDelete);
-    if (!result || !('success' in result) || !result['success']) {
-      return {'success': false};
-    }
-  }
-  return {'success': true, 'parameter_values': parameterValues};
-}
+  return acRulesAdded;
+};
 
-acsDeviceInfoController.updateAccessControl = async function(
-  device, acSubtreesToEdit, blockedDevices
-) {
+const newDeleteAcRules = async function(device, rulesToDelete) {
+  for (acRule of rulesToDelete) {
+    let result = await doAccessControlTask(device, acRule, 'deleteObject');
+    if (!result) throw new Error('newDeleteAcRules error');
+  }
+};
+
+const newUpdateAcRules = async function (
+  device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
+  let parameterValues = [];
   try {
-    let task = {
-      name: 'setParameterValues',
-      parameterValues: [],
-    };
-    // Iterate over all ac network interface,
-    for (i in acSubtreesToEdit) {
-      let acSubtreeRoot = acSubtreesToEdit[i]['subtree_root'];
-      let acSubtreeRules = acSubtreesToEdit[i]['subtree_rules'];
-      if (!(acSubtreeRules.length > 0) || !(blockedDevices.length > 0)) {
-        return {'success': true, 'message': 'There are no rules to add'};
-      }
-      // If the number of rules already existing in the subtree of each WLAN was
-      // greater than or equal to the number of blocked devices, then we can
-      // configure the necessary rules to block all devices, and if there are
-      // still rules in the WLAN subtree, then we remove the ones that
-      // are left to prevent the creation of non-existent locks.
-      if (acSubtreeRules.length >= blockedDevices.length) {
-        let getTaskResult = await getZTEAccessControlTask(
-          device, blockedDevices, acSubtreeRoot, acSubtreeRules
-        );
-        if (!getTaskResult || !('success' in getTaskResult) ||
-            !getTaskResult['success']) {
-          return {
-            'success': false,
-            'error': 500,
-            'message': 'Error in editing Access Control rules task at '+serial
-          };
-        } else if (getTaskResult && 'parameter_values' in getTaskResult) {
-          task.parameterValues =
-            task.parameterValues.concat(getTaskResult['parameter_values']);
-        }
-      }
-    }
-    if (task.parameterValues.length > 0) {
-      result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-      if (!result || !result.finished ||
-          result.task.name !== 'setParameterValues') {
+    for (wlanType of supportedWlans) {
+      if (rulesToEdit[wlanType].length !== blockedDevices.length) {
         return {
           'success': false,
           'error': 500,
-          'message': 'Error in editing Access Control rules task at '+serial
+          'message': 'Error editing Access Control rules at '+serial
         };
-      } else {
-        return {'success': true};
+      }
+      let acSubtreeRoot = acSubtreeRoots[wlanType];
+      parameterValues.push([acSubtreeRoot+'Mode', 'Ban', 'xsd:string']);
+      for (let i = 0; i < blockedDevices.length; i++) {
+        // While we need to add rules to block devices, we fill the name and MAC
+        // fields with the necessary values.
+        let ruleMac = blockedDevices[i]['mac'];
+        // Generating a random string combined with last 4 digits of devices mac.
+        let ruleName = (
+          Math.random().toString(36).substring(2,7) + '-' +
+          ruleMac.replace(/:/g, "").slice(-4)
+        );
+        // Just one more check step. This model only accepts 10 caracteres in
+        // the name field.
+        ruleName = (ruleName.length > 10) ? ruleName.slice(-10) : ruleName;
+        parameterValues.push(
+          [rulesToEdit[wlanType][i]+'.'+'Name', ruleName, 'xsd:string'],
+          [rulesToEdit[wlanType][i]+'.'+'MACAddress', ruleMac, 'xsd:string']
+        );
       }
     }
   } catch (e) {
-    console.log('Error: failed to edit Access Control rules at '+serial);
     return {
       'success': false,
       'error': 500,
-      'message': 'Error ('+ e +') while editing Access Control rules at '+serial
+      'message': 'Error editing Access Control rules at '+serial
     };
+  }
+  if (parameterValues.length > 0) {
+    try {
+      let task = {
+        name: 'setParameterValues',
+        parameterValues: parameterValues,
+      };
+      result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+      if (!result || !result.finished ||
+          result.task.name !== 'setParameterValues') {
+        console.log('Error in editing Access Control rules task at '+serial);
+      } else {
+        return {'success': true};
+      }
+    } catch (e) {
+      console.log('Error: failed to edit Access Control rules at '+serial);
+    }
   }
   return {
     'success': false,
     'error': 500,
     'message': 'Error editing Access Control rules at '+serial
   };
-};
+}
 
 const configFileEditing = async function(device, target) {
   let acsID = device.acs_id;
