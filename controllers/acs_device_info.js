@@ -2746,7 +2746,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       // the limit of 64, then there is a problem, because there are not 64
       // blocked devices. It will also force the algorithm to repopulate the
       // rule tree.
-      if (device.wifi_is_5ghz_capable && 
+      if ((!device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId) ||
           (ids['wifi2'].length + ids['wifi5'].length != maxId ||
           ids['wifi2'].length != ids['wifi5'].length ||
           maxId >= 64)) {
@@ -2768,6 +2768,10 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         }
       }
       let diff = blockedDevices.length - (maxId/2);
+      if (!permissions.grantWifi5ghz) {
+        diff = blockedDevices.length - maxId;
+      }
+      console.log('diff', diff);
       // If the difference is positive then you need to add rules to the tree.
       if (diff > 0) {
         rulesToEdit = wlanAcRulesTrees;
