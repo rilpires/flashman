@@ -152,7 +152,8 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
       }
     }
   }
-  if (noChange) throw new HttpError(400, t('receivedNoAlterations'));
+  if (noChange) throw new HttpError(400, t('receivedNoAlterations',
+                                           {errorline: __line}));
   return update;
 };
 
