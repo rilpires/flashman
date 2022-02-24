@@ -977,14 +977,14 @@ scheduleController.startSchedule = async function(req, res) {
     // Get valid models for this release
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(async function(releasesAvailable) {
-      let modelsAvailable = releasesAvailable.find((r) => r.id === release);
-      if (!modelsAvailable) {
+      let matchedRelease = releasesAvailable.find((r) => r.id === release);
+      if (!matchedRelease) {
         return res.status(500).json({
           success: false,
           message: 'Erro ao processar os parâmetros',
         });
       }
-      modelsAvailable = modelsAvailable.model;
+      let modelsAvailable = matchedRelease.model;
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
@@ -1001,13 +1001,13 @@ scheduleController.startSchedule = async function(req, res) {
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
             const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
-              slaveDevice, release.flashbox_version);
+              slaveDevice, matchedRelease.flashbox_version);
             if (!allowMeshUpgrade) valid = false;
           });
           if (!valid) return false;
         }
         const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
-          device, release.flashbox_version);
+          device, matchedRelease.flashbox_version);
         if (!allowMeshUpgrade) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
@@ -1032,7 +1032,7 @@ scheduleController.startSchedule = async function(req, res) {
           slaveCount[device._id] = 0;
         }
         const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
-          device.version, release.flashbox_version);
+          device.version, matchedRelease.flashbox_version);
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
         return device._id;
