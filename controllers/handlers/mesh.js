@@ -510,7 +510,7 @@ meshHandlers.allowMeshUpgrade = function(device, nextVersion) {
     const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
       device.version, nextVersion,
     );
-    if (typeUpgrade.current && typeUpgrade.upgrade) {
+    if (!typeUpgrade.unknownVersion) {
       if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
         // no mesh v2 -> v1 downgrade if in active mesh network
         return false;
@@ -522,8 +522,8 @@ meshHandlers.allowMeshUpgrade = function(device, nextVersion) {
         return true;
       }
     } else {
-      // allow development version
-      return true;
+      // block upgrade if one of target versions is unknown
+      return false;
     }
   } else {
     // Only restrictions are in active mesh networks

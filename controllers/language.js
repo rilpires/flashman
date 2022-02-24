@@ -35,7 +35,7 @@ const localesdDir = path.join(__dirname, '../public/locales');
 // initialization and retrieving saved language.
 let i18nextResolved;
 let i18nextRejected;
-let i18nextPromise = new Promise((resolve, reject) => {
+let i18nextInitialization = new Promise((resolve, reject) => {
   i18nextResolved = resolve;
   i18nextRejected = reject;
 });
@@ -97,6 +97,7 @@ const updateLanguage = async function(language) {
 
   // checking if given language exists in locales directory.
   if (!locales.includes(language)) {
+    console.error(`Language '${language}' doesn't exist.`);
     throw {status: 404,msg: t('languageNotFound', {language: language,
       errorline: __line})};
   }
@@ -111,16 +112,17 @@ const updateLanguage = async function(language) {
 
   // saving new language in database.
   await setConfigLanguage(language).catch((e) => {
+    console.error(`Error saving language '${language}' in config.`, e);
     throw {status: 500, msg: t('configUpdateError', {errorline: __line})};
   });
 };
 
 // This runs the first time this controller is required (imported). It sets
-// config language to environment variable 'FLM_LANGUAGE' if 'config.language'
-// is not set.
+// language to 'defaultLanguage' if 'config.language' is not set.
 ConfigModel.findOne({is_default: true}, 'language').lean().exec()
 .then(async (config) => {
-  await i18nextPromise; // waiting i18next initialization.
+  // waiting i18next initialization to be resolved.
+  await i18nextInitialization;
 
   // if language is already set in database, set it in i18next.
   if (config.language) return i18next.changeLanguage(config.language);
@@ -131,9 +133,9 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
     // if the reason for it is the default language is already set.
     // we'll try to set it to 'fallbackLanguage'.
     if (e.what !== 'alreadySet') return updateLanguage(fallbackLanguage);
-    setConfigLanguage(defaultLanguage).catch((e) => {
-      console.error(`Error saving language '${defaultLanguage}' in config.`);
-    });
+
+    setConfigLanguage(defaultLanguage).catch((e) => console.error(
+      `Error saving language '${defaultLanguage}' in config.`, e));
   });
 })
 

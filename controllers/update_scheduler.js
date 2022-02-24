@@ -165,7 +165,8 @@ const configQuery = function(setQuery, pullQuery, pushQuery) {
 const markSeveral = async function() {
   let config = await getConfig();
   if (!config) return; // this should never happen
-  let inProgress = config.device_update_schedule.rule.in_progress_devices.length;
+  let inProgress =
+    config.device_update_schedule.rule.in_progress_devices.length;
   let slotsAvailable = maxDownloads - inProgress;
   for (let i = 0; i < slotsAvailable; i++) {
     let result = await markNextForUpdate();
@@ -393,8 +394,9 @@ scheduleController.successTopology = async function(mac) {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
-  if (config.device_update_schedule.is_aborted)
+  if (config.device_update_schedule.is_aborted) {
     return {success: false, error: 'Agendamento já abortado'};
+  }
   // Change from status updating to ok
   try {
     const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
@@ -426,8 +428,9 @@ scheduleController.successDownload = async function(mac) {
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (config.device_update_schedule.is_aborted)
+  if (config.device_update_schedule.is_aborted) {
     return {success: false, error: 'Agendamento já abortado'};
+  }
   if (!device) return {success: false, error: 'MAC não encontrado'};
   // Change from status downloading to updating
   try {
@@ -458,8 +461,9 @@ scheduleController.successUpdate = async function(mac) {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
-  if (config.device_update_schedule.is_aborted)
+  if (config.device_update_schedule.is_aborted) {
     return {success: false, error: 'Agendamento já abortado'};
+  }
   // Change from status updating to ok
   try {
     const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
@@ -475,7 +479,7 @@ scheduleController.successUpdate = async function(mac) {
         'device_update_schedule.rule.in_progress_devices.mac': mac,
       }, {
         '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.state': 'downloading',
+          'device_update_schedule.rule.in_progress_devices.$.state':'downloading',
           'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
           'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
         },
@@ -498,7 +502,8 @@ scheduleController.successUpdate = async function(mac) {
       // Move from in progress to done, with status ok
       await configQuery(
         // Make schedule inactive if this is last device to enter done state
-        {'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)},
+        {'device_update_schedule.is_active':
+          (rule.done_devices.length+1 !== count)},
         // Remove from in progress state
         {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
         // Add to done, status ok
@@ -532,16 +537,18 @@ scheduleController.failedDownload = async function(mac, slave='') {
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (!device) return {success: false, error: 'MAC não encontrado'};
-  if (config.device_update_schedule.is_aborted)
+  if (config.device_update_schedule.is_aborted) {
     return {success: false, error: 'Agendamento já abortado'};
+  }
   try {
     let setQuery = null;
     let pullQuery = null;
     if (device.retry_count >= maxRetries || config.is_aborted) {
       // Will not try again or move to to_do, so check if last device to update
       setQuery = {
-        'device_update_schedule.is_active': (rule.done_devices.length+1 !== count)
-      };
+        'device_update_schedule.is_active':
+          (rule.done_devices.length+1 !== count)};
+
       if (rule.done_devices.length+1 === count) {
         // This was last device to enter done state, schedule is done
         removeOfflineWatchdog();
@@ -587,7 +594,8 @@ scheduleController.failedDownload = async function(mac, slave='') {
         'device_update_schedule.rule.in_progress_devices.mac': mac,
       }, {
         '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.retry_count': retry,
+          'device_update_schedule.rule.in_progress_devices.$.retry_count':
+            retry,
         },
       });
       if (slave) {
@@ -609,8 +617,9 @@ scheduleController.abortSchedule = async function(req, res) {
   let config = await getConfig();
   if (!config) return {success: false, error: 'Não há um agendamento ativo'};
   // Mark scheduled update as aborted - separately to mitigate racing conditions
-  if (config.device_update_schedule.is_aborted)
+  if (config.device_update_schedule.is_aborted) {
     return {success: false, error: 'Agendamento já abortado'};
+  }
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
     // Mark all todo devices as aborted
@@ -709,7 +718,8 @@ scheduleController.getDevicesReleases = async function(req, res) {
      queryContents);
   } else {
     try {
-      let csvContents = await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
+      let csvContents =
+        await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map((line)=>{
           return new Promise(async (resolve)=>{
@@ -929,7 +939,8 @@ scheduleController.startSchedule = async function(req, res) {
      queryContents);
   } else {
     try {
-      let csvContents = await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
+      let csvContents =
+        await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map((line)=>{
           return new Promise(async (resolve) => {
@@ -966,14 +977,14 @@ scheduleController.startSchedule = async function(req, res) {
     // Get valid models for this release
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(async function(releasesAvailable) {
-      let modelsAvailable = releasesAvailable.find((r) => r.id === release);
-      if (!modelsAvailable) {
+      let matchedRelease = releasesAvailable.find((r) => r.id === release);
+      if (!matchedRelease) {
         return res.status(500).json({
           success: false,
           message: 'Erro ao processar os parâmetros',
         });
       }
-      modelsAvailable = modelsAvailable.model;
+      let modelsAvailable = matchedRelease.model;
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
@@ -990,13 +1001,13 @@ scheduleController.startSchedule = async function(req, res) {
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
             const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
-              slaveDevice, release.flashbox_version);
+              slaveDevice, matchedRelease.flashbox_version);
             if (!allowMeshUpgrade) valid = false;
           });
           if (!valid) return false;
         }
         const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
-          device, release.flashbox_version);
+          device, matchedRelease.flashbox_version);
         if (!allowMeshUpgrade) return false;
         let model = device.model.replace('N/', '');
         /* below return is true if array of strings contains model name
@@ -1021,9 +1032,9 @@ scheduleController.startSchedule = async function(req, res) {
           slaveCount[device._id] = 0;
         }
         const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
-          device.version, release.flashbox_version);
+          device.version, matchedRelease.flashbox_version);
         currentMeshVersion[device._id] = typeUpgrade.current;
-        upgradeMeshVersion[device._id] = typeUpgrade.current;
+        upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
         return device._id;
       });
       // Save scheduler configs to database
@@ -1052,7 +1063,8 @@ scheduleController.startSchedule = async function(req, res) {
           if (valid.length === 0) {
             return res.status(500).json({
               success: false,
-              message: 'Erro ao processar parâmetros: ranges de tempo inválidos',
+              message: 'Erro ao processar parâmetros: ' +
+                       'ranges de tempo inválidos',
             });
           }
           config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
@@ -1153,14 +1165,25 @@ const translateState = function(state) {
   if (state === 'updating') return 'Atualizando CPE';
   if (state === 'ok') return 'Atualizado com sucesso';
   if (state === 'error') return 'Ocorreu um erro na atualização';
-  if (state === 'error_topology') return 'Ocorreu um erro na validação da topologia';
+  if (state === 'error_topology') {
+    return 'Ocorreu um erro na validação da topologia';
+  }
   if (state === 'aborted') return 'Atualização abortada';
-  if (state === 'aborted_off') return 'Atualização abortada - CPE estava offline';
-  if (state === 'aborted_topology') return 'Atualização abortada - CPE estava buscando topologia';
-  if (state === 'aborted_down') return 'Atualização abortada - CPE estava baixando firmware';
-  if (state === 'aborted_update') return 'Atualização abortada - atualizando CPE';
+  if (state === 'aborted_off') {
+    return 'Atualização abortada - CPE estava offline';
+  }
+  if (state === 'aborted_topology') {
+    return 'Atualização abortada - CPE estava buscando topologia';
+  }
+  if (state === 'aborted_down') {
+    return 'Atualização abortada - CPE estava baixando firmware';
+  }
+  if (state === 'aborted_update') {
+    return 'Atualização abortada - atualizando CPE';
+  }
   if (state === 'aborted_v1tov2') {
-    return 'Atualização abortada - atualizando mesh no padrão antigo para o novo';
+    return 'Atualização abortada - ' +
+           'atualizando mesh no padrão antigo para o novo';
   }
   return 'Status desconhecido';
 };
