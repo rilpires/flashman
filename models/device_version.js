@@ -2418,6 +2418,8 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);
   }
+  result.grantBlockWiredDevices = (Object.keys(tr069Devices).includes(model)) ?
+    false : true;
   return result;
 };
 
