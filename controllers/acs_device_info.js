@@ -1006,6 +1006,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
     // Sync Access Control rules to block devices
     if (permissions.grantBlockDevices) {
+      console.log('Will update device Access Control Rules');
+      console.log(device);
       await acsDeviceInfoController.changeAcRules(device);
     }
   }
@@ -2746,10 +2748,12 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       // the limit of 64, then there is a problem, because there are not 64
       // blocked devices. It will also force the algorithm to repopulate the
       // rule tree.
-      if ((!device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId) ||
-          (ids['wifi2'].length + ids['wifi5'].length != maxId ||
-          ids['wifi2'].length != ids['wifi5'].length ||
-          maxId >= 64)) {
+      if (
+        (!device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId) ||
+        (device.wifi_is_5ghz_capable && (
+          ids['wifi2'].length + ids['wifi5'].length != maxId ||
+          ids['wifi2'].length != ids['wifi5'].length
+        )) || maxId >= 64) {
         for (wlanType of supportedWlans) {
           try {
             await newDeleteAcRules(device, wlanAcRulesTrees[wlanType]);
@@ -2762,16 +2766,15 @@ acsDeviceInfoController.changeAcRules = async function(device) {
           }
         }
         maxId = 0;
-        wlanAcRulesTrees = {'wifi2': {}};
+        wlanAcRulesTrees = {'wifi2': []};
         if (permissions.grantWifi5ghz) {
-          wlanAcRulesTrees['wifi5'] = {};
+          wlanAcRulesTrees['wifi5'] = [];
         }
       }
       let diff = blockedDevices.length - (maxId/2);
       if (!permissions.grantWifi5ghz) {
         diff = blockedDevices.length - maxId;
       }
-      console.log('diff', diff);
       // If the difference is positive then you need to add rules to the tree.
       if (diff > 0) {
         rulesToEdit = wlanAcRulesTrees;
@@ -2822,13 +2825,18 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       } else {
         rulesToEdit = wlanAcRulesTrees;
       }
-      console.log('permissions.grantWifi5ghz', permissions.grantWifi5ghz);
-      console.log('rulesToEdit[wifi2].length', rulesToEdit['wifi2'].length, 'blockedDevices.length', blockedDevices.length);
+      // Checks if the rules in the TR-069 tree are in accordance with the
+      // number of blocked devices. For devices without 5Ghz, check step needs
+      // to be different
+      let allOkWithWifi2 = (rulesToEdit['wifi2'] && (
+        rulesToEdit['wifi2'].length == blockedDevices.length));
+      let allOkWithWifi5 = (permissions.grantWifi5ghz && (
+        rulesToEdit['wifi5'] && (
+        rulesToEdit['wifi5'].length == blockedDevices.length)));
       // At this point the number of rules that exist in each WLAN tree and the
       // number of blocked devices must be equal. Otherwise, it returns an error
-      if (rulesToEdit['wifi2'].length == blockedDevices.length) {
-        if (!permissions.grantWifi5ghz ||
-          rulesToEdit['wifi5'].length == blockedDevices.length) {
+      if (allOkWithWifi2) {
+        if (!permissions.grantWifi5ghz || allOkWithWifi5) {
           try {
             await newUpdateAcRules(
               device, supportedWlans, acSubtreeRoots,

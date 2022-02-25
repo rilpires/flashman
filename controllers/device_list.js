@@ -3033,6 +3033,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
+        console.log(matchedDevice.lan_devices);
         let result = {'success': false};
         result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {

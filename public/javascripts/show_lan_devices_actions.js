@@ -234,6 +234,7 @@ anlixDocumentReady.add(function() {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
+    let grantWiredDevicesBlock = false;
 
     if ($('#devices-table-content').data('superuser')) {
       isSuperuser = $('#devices-table-content').data('superuser');
@@ -245,6 +246,8 @@ anlixDocumentReady.add(function() {
     if ($('#devices-table-content').data('role')) {
       let role = $('#devices-table-content').data('role');
       grantLanDevicesBlock = role.grantLanDevicesBlock;
+      grantWiredDevicesBlock = role.grantWiredDevicesBlock;
+      grantWiredDevicesBlock = false;
     }
 
     $('#lan-devices-placeholder').hide();
@@ -279,7 +282,8 @@ anlixDocumentReady.add(function() {
                          .attr('data-blocked', device.is_blocked)
                          .attr('type', 'button')
                          .prop('disabled',
-                               isBridge || !(isSuperuser || grantLanDevicesBlock))
+                           (device.conn_type == 0 && !grantWiredDevicesBlock) ||
+                           isBridge || !(isSuperuser || grantLanDevicesBlock))
             .append(
               (device.is_blocked) ?
                 $('<i>').addClass('fas fa-lock fa-lg') :
