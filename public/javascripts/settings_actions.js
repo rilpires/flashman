@@ -280,7 +280,6 @@ anlixDocumentReady.add(function() {
 
   // popup warning if first time enabling insecure tr069
   $('#insecure_enable').on('change', (input)=> {
-    console.log(getConfigStorage('hasNeverEnabledInsecureTR069'));
     if (
       input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
     ) {
