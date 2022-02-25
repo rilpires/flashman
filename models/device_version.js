@@ -1,3 +1,5 @@
+const util = require('../controllers/handlers/util');
+
 let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
@@ -2503,21 +2505,23 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
 };
 
 DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
-  let result = {development: false, current: 0, upgrade: 0};
-  if (curVersion.match(versionRegex) && nextVersion.match(versionRegex)) {
-    if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
+  let result = {unknownVersion: false, current: 0, upgrade: 0};
+  const currVer = util.returnStrOrEmptyStr(curVersion);
+  const nextVer = util.returnStrOrEmptyStr(nextVersion);
+  if (currVer.match(versionRegex) && nextVer.match(versionRegex)) {
+    if (DeviceVersion.versionCompare(currVer, '0.32.0') < 0) {
       result.current = 1;
     } else {
       result.current = 2;
     }
-    if (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0) {
+    if (DeviceVersion.versionCompare(nextVer, '0.32.0') < 0) {
       result.upgrade = 1;
     } else {
       result.upgrade = 2;
     }
   } else {
     // either current or target release are development version
-    return {development: true};
+    result.unknownVersion = true;
   }
   return result;
 };
