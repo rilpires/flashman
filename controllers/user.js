@@ -212,6 +212,15 @@ userController.postRole = function(req, res) {
 
 userController.getUsers = async function(req, res) {
   try {
+    let users = await User.find().lean().exec();
+    return res.json({success: true, type: 'success', users: users});
+  } catch (err) {
+    return res.json({success: false, type: 'danger', message: err});
+  }
+};
+
+userController.getUsersForDisplay = async function(req, res) {
+  try {
     let usersProjection = {deviceCertifications: false};
     let users = await User.find({}, usersProjection).lean().exec();
     return res.json({success: true, type: 'success', users: users});
