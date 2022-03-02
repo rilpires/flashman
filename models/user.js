@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt-nodejs');
 const request = require('request-promise-native');
@@ -92,9 +93,10 @@ let userSchema = new mongoose.Schema({
 // Execute before each user.save() call
 userSchema.pre('save', function(callback) {
   let user = this;
-  let changedAttrs = {};
+  let userChangedAttrs = {};
   let certificationChangedAttrs = {};
-  let requestOptions = {};
+  let userRequestOptions = {};
+  let certificationRequestOptions = {};
   const attrsList = user.modifiedPaths();
 
   // Verify if password has changed
@@ -114,62 +116,64 @@ userSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.user_crud &&
-                 !defConfig.traps_callbacks.certification_crud) {
+                 !defConfig.traps_callbacks.user_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.user_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.user_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;
-      if (callbackUrl) {
-        attrsList.forEach((attr) => {
-          if (attr === "deviceCertifications")
-            certificationChangedAttrs[attr] = user[attr];
-          else
-            changedAttrs[attr] = user[attr];
-        });
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': user._id,
-          'type': 'user',
-          'name': user.name,
-          'changes': changedAttrs,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
+      attrsList.forEach((attr) => {
+        if (attr === "deviceCertifications")
+          certificationChangedAttrs[attr] = user[attr];
+        else
+          userChangedAttrs[attr] = user[attr];
+      });
+      if (Object.keys(userChangedAttrs).length != 0) {
+        let userCallbackUrl = defConfig.traps_callbacks.user_crud.url;
+        let userCallbackAuthUser = defConfig.traps_callbacks.user_crud.user;
+        let userCallbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;
+        if (userCallbackUrl) {
+          userRequestOptions.url = userCallbackUrl;
+          userRequestOptions.method = 'PUT';
+          userRequestOptions.json = {
+            'id': user._id,
+            'type': 'user',
+            'name': user.name,
+            'changes': userChangedAttrs,
           };
+          if (userCallbackAuthUser && userCallbackAuthSecret) {
+            userRequestOptions.auth = {
+              user: userCallbackAuthUser,
+              pass: userCallbackAuthSecret
+            };
+          }
+          request(userRequestOptions).then((resp) => {
+            // Ignore API response
+            return;
+          }, (err) => {
+            // Ignore API endpoint errors
+            return;
+          });
         }
-        request(requestOptions).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
-        });
       }
-      if (certificationChangedAttrs) {
+
+      if (Object.keys(certificationChangedAttrs).length != 0) {
         let certificationCallbackUrl = defConfig.traps_callbacks.certification_crud.url;
         let certificationCallbackAuthUser = defConfig.traps_callbacks.certification_crud.user;
         let certificationCallbackAuthSecret = defConfig.traps_callbacks.certification_crud.secret;
         if (certificationCallbackUrl) {
-          requestOptions.url = callbackUrl;
-          requestOptions.method = 'PUT';
-          requestOptions.json = {
+          certificationRequestOptions.url = certificationCallbackUrl;
+          certificationRequestOptions.method = 'PUT';
+          certificationRequestOptions.json = {
             'id': user._id,
             'type': 'user',
             'name': user.name,
             'changes': certificationChangedAttrs,
           };
-          if (callbackAuthUser && callbackAuthSecret) {
-            requestOptions.auth = {
-              user: callbackAuthUser,
-              pass: callbackAuthSecret,
+          if (certificationCallbackAuthUser && certificationCallbackAuthSecret) {
+            certificationRequestOptions.auth = {
+              user: certificationCallbackAuthUser,
+              pass: certificationCallbackAuthSecret,
             };
           }
-          request(requestOptions).then((resp) => {
+          request(certificationRequestOptions).then((resp) => {
             // Ignore API response
             return;
           }, (err) => {
