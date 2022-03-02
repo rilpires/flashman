@@ -499,12 +499,14 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   // Devices that havent synced in (config interval) need to sync immediately
   let syncDiff = Date.now() - device.last_tr069_sync;
   if (syncDiff >= config.tr069.sync_interval) {
-    return res.status(200).json({success: true, measure: true});
+    device.last_tr069_sync = Date.now();
+    res.status(200).json({success: true, measure: true});
+  } else {
+    res.status(200).json({success: true, measure: false});
   }
   // Simply update last_contact to keep device online, no need to sync
   device.last_contact = Date.now();
   await device.save();
-  return res.status(200).json({success: true, measure: false});
 };
 
 // Complete CPE information synchronization gets done here. This function
@@ -567,6 +569,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
+  // We don't need to wait
+  res.status(200).json({success: true});
   let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
@@ -1013,7 +1017,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   await device.save();
-  return res.status(200).json({success: true});
 };
 
 acsDeviceInfoController.rebootDevice = function(device, res) {
