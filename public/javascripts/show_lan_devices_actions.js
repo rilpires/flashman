@@ -3,6 +3,10 @@ import {displayAlertMsg, socket} from './common_actions.js';
 
 anlixDocumentReady.add(function() {
   let lanDevicesGlobalTimer;
+  // TR-069 CPEs that implement device blocking do this only for wireless
+  // connected devices for now. So we need to leave the lock/unlock button
+  // disabled for wired devices.
+  let lanDevicesGrantBlockWiredDevices = false;
 
   const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
     $('#lan-devices').modal();
@@ -234,12 +238,6 @@ anlixDocumentReady.add(function() {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
-    // TODO: Get the grantBlockWiredDevices flag from findByVersion to control
-    // which CPEs need to disable the lock/unlock button for wired devices.
-    // TR-069 CPEs that implement device blocking do this only for wireless
-    // connected devices for now. So we need to leave the lock/unlock button
-    // disabled for wired devices.
-    let grantWiredDevicesBlock = false;
 
     if ($('#devices-table-content').data('superuser')) {
       isSuperuser = $('#devices-table-content').data('superuser');
@@ -285,7 +283,7 @@ anlixDocumentReady.add(function() {
                          .attr('data-blocked', device.is_blocked)
                          .attr('type', 'button')
                          .prop('disabled',
-                           (device.conn_type == 0 && !grantWiredDevicesBlock) ||
+                           (device.conn_type == 0 && !lanDevicesGrantBlockWiredDevices) ||
                            isBridge || !(isSuperuser || grantLanDevicesBlock))
             .append(
               (device.is_blocked) ?
@@ -514,6 +512,7 @@ anlixDocumentReady.add(function() {
       slaves = JSON.parse(row.data('slaves').replace(/\$/g, '"'));
     }
     let upnpSupport = row.data('validate-upnp');
+    lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);
     // Controls device exhibition after all data has arrived in mesh mode

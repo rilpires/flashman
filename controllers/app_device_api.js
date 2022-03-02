@@ -62,7 +62,7 @@ let doRollback = function(device, values) {
 };
 
 let appSet = function(req, res, processFunction) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({is_set: 0});
     }
@@ -82,7 +82,8 @@ let appSet = function(req, res, processFunction) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
-      let tr069Changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+      let tr069Changes = {
+        wan: {}, lan: {}, wifi2: {}, wifi5: {}, changeBlockedDevices: false};
 
       // Update location data if present
       if (content.latitude && content.longitude) {
@@ -104,6 +105,12 @@ let appSet = function(req, res, processFunction) {
       }
       if (content.hasOwnProperty('command_timeout')) {
         commandTimeout = content.command_timeout;
+      }
+      if (tr069Changes.changeBlockedDevices) {
+        let acRulesResult = await acsController.changeAcRules(matchedDevice);
+        if (!acRulesResult.success) {
+          return res.status(500).json({is_set: 0});
+        }
       }
 
       matchedDevice.save();
@@ -270,6 +277,7 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
+    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
@@ -325,6 +333,7 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
+    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
