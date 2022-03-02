@@ -74,7 +74,7 @@ describe('DeviceVersion API', () => {
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(false);
       expect(permission.grantSpeedTestLimit).toStrictEqual(0);
-      expect(permission.grantBlockDevices).toStrictEqual(false);
+      expect(permission.grantBlockDevices).toStrictEqual(true);
       expect(permission.grantPonSignalSupport).toStrictEqual(true);
       expect(permission.grantPortForwardOpts).toStrictEqual(
         noRangePortForwawrdOpts,
@@ -96,7 +96,7 @@ describe('DeviceVersion API', () => {
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(true);
       expect(permission.grantSpeedTestLimit).toStrictEqual(100);
-      expect(permission.grantBlockDevices).toStrictEqual(false);
+      expect(permission.grantBlockDevices).toStrictEqual(true);
       expect(permission.grantPonSignalSupport).toStrictEqual(false);
       expect(permission.grantPortForwardOpts).toStrictEqual(
         noAsymRangePortForwawrdOpts,
