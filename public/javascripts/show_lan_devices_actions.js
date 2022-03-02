@@ -234,6 +234,11 @@ anlixDocumentReady.add(function() {
     let isSuperuser = false;
     let grantLanDevices = 0;
     let grantLanDevicesBlock = false;
+    // TODO: Get the grantBlockWiredDevices flag from findByVersion to control
+    // which CPEs need to disable the lock/unlock button for wired devices.
+    // TR-069 CPEs that implement device blocking do this only for wireless
+    // connected devices for now. So we need to leave the lock/unlock button
+    // disabled for wired devices.
     let grantWiredDevicesBlock = false;
 
     if ($('#devices-table-content').data('superuser')) {
@@ -246,8 +251,6 @@ anlixDocumentReady.add(function() {
     if ($('#devices-table-content').data('role')) {
       let role = $('#devices-table-content').data('role');
       grantLanDevicesBlock = role.grantLanDevicesBlock;
-      grantWiredDevicesBlock = role.grantWiredDevicesBlock;
-      grantWiredDevicesBlock = false;
     }
 
     $('#lan-devices-placeholder').hide();

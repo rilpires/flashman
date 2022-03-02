@@ -1004,10 +1004,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
         acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
+    // TODO: changeAcRules has a bug. It appears to be a race condition. Check
+    // if this is an external bug or is specifically caused by changeAcRules
     // Sync Access Control rules to block devices
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
-      console.log(device);
       await acsDeviceInfoController.changeAcRules(device);
     }
   }

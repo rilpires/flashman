@@ -3018,17 +3018,8 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
                                     {errorline: __line})});
     }
     let devFound = false;
-    let newDeviceRules = 0;
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
       if (matchedDevice.lan_devices[idx].mac === req.body.lanid) {
-        if (matchedDevice.lan_devices[idx].is_blocked === false &&
-            req.body.isblocked === 'true') {
-          newDeviceRules += 1;
-        }
-        else if (matchedDevice.lan_devices[idx].is_blocked === true &&
-                 req.body.isblocked === 'false') {
-          newDeviceRules -= 1;
-        }
         matchedDevice.lan_devices[idx].is_blocked = req.body.isblocked;
         matchedDevice.blocked_devices_index = Date.now();
         devFound = true;
@@ -3037,7 +3028,6 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        console.log(matchedDevice.lan_devices);
         let result = {'success': false};
         result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
