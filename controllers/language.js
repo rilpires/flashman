@@ -151,7 +151,9 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   // use the 'fallbackLanguage' translations. In this case, we don' save 
   // the 'fallbackLanguage' as config language. The user should chose an 
   // available language (or fix the environment variable value).
-})
+}).catch((e) => {
+  console.error("Error finding Config:", e);
+});
 
 
 
