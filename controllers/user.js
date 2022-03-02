@@ -802,9 +802,9 @@ userController.getUserCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      const user = matchedConfig.traps_callbacks.user_crud.user;
-      const url = matchedConfig.traps_callbacks.user_crud.url;
-      if (!user || !url) {
+      const url = matchedConfig.traps_callbacks.device_crud.url;
+      const user = matchedConfig.traps_callbacks.device_crud.user;
+      if (!url || typeof user === 'undefined') {
         return res.status(200).json({
           success: true,
           exists: false,
