@@ -114,12 +114,16 @@ userSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.user_crud) {
+                 !defConfig.traps_callbacks.user_crud ||
+                 !defConfig.traps_callbacks.certification_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.user_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.user_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;
+      let trapCallback = Object.values(attrsList).includes("deviceCertifications") ?
+                          defConfig.traps_callbacks.certification_crud :
+                          defConfig.traps_callbacks.user_crud;
+      let callbackUrl = trapCallback.url;
+      let callbackAuthUser = trapCallback.user;
+      let callbackAuthSecret = trapCallback.secret;
       if (callbackUrl) {
         attrsList.forEach((attr) => {
           changedAttrs[attr] = user[attr];
