@@ -892,7 +892,7 @@ deviceListController.delDeviceReg = async function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: t('operationUnuccessful', {errorline: __line}),
+      message: t('operationUnsuccessful', {errorline: __line}),
     });
   }
 };
@@ -1946,7 +1946,8 @@ deviceListController.setDeviceReg = function(req, res) {
               return res.status(403).json({
                 success: false,
                 type: 'danger',
-                message: t('notEnoughPermissionsForFields'),
+                message: t('notEnoughPermissionsForFields',
+                  {errorline: __line}),
               });
             }
             if (updateParameters) {

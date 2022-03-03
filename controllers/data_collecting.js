@@ -152,7 +152,8 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
       }
     }
   }
-  if (noChange) throw new HttpError(400, t('receivedNoAlterations'));
+  if (noChange) throw new HttpError(400, t('receivedNoAlterations',
+                                           {errorline: __line}));
   return update;
 };
 
@@ -245,7 +246,7 @@ dataCollectingController.updateManyParameters = async function(req, res) {
         {name: 'filter_list', errorline: __line}));
     } else if (filterList.constructor !== String) {
       throw new HttpError(400, t('fieldNameWrongType',
-        {name: 'filter_list', errorline: __line}));
+        {name: 'filter_list', dataType: 'string', errorline: __line}));
     }
     filterList = filterList.split(',');
     return deviceListController.complexSearchDeviceQuery(filterList)
