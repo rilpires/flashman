@@ -331,7 +331,7 @@ const tr069Devices = {
       pon_signal: false, // no fiber
       upnp: false,
       speed_test: false,
-      speed_test_limit: 300,
+      speed_test_limit: 0,
       ping_test: true,
       block_devices: false,
       firmware_upgrade: false,
