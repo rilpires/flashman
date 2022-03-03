@@ -149,18 +149,22 @@ const convertWifiBand = function(band, model) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      return ((model === 'AC10') ? '0' : '20MHz');
+      return '20MHz';
     case 'HT40':
     case 'VHT40':
-      return ((model === 'AC10') ? '1' : '40MHz');
+      return '40MHz';
     case 'VHT80':
-      return ((model === 'AC10') ? '3' : '80MHz');
+      return '80MHz';
     case 'auto':
-      return ((model === 'AC10') ?
-        '2' :
-        (model === 'BEACON HA-020W-B' || model === 'BEACON%20HA%2D020W%2DB') ?
-        'Auto' :
-        'auto');
+      if (model === 'AC10') {
+        return '2';
+      } else if (
+        model === 'BEACON HA-020W-B' ||
+        model === 'BEACON%20HA%2D020W%2DB'
+      ) {
+        return 'Auto'
+      }
+      return 'auto';
     default:
       return '';
   }
