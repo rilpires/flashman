@@ -219,6 +219,16 @@ userController.getUsers = async function(req, res) {
   }
 };
 
+userController.getUsersForDisplay = async function(req, res) {
+  try {
+    let usersProjection = {deviceCertifications: false};
+    let users = await User.find({}, usersProjection).lean().exec();
+    return res.json({success: true, type: 'success', users: users});
+  } catch (err) {
+    return res.json({success: false, type: 'danger', message: err});
+  }
+};
+
 userController.getUserById = function(req, res) {
   User.findById(req.params.id, function(err, user) {
     if (err || !user) {
@@ -868,6 +878,71 @@ userController.getRoleCrudTrap = function(req, res) {
     } else {
       const user = matchedConfig.traps_callbacks.role_crud.user;
       const url = matchedConfig.traps_callbacks.role_crud.url;
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        user: user,
+        url: url,
+      });
+    }
+  });
+};
+
+userController.setCertificationCrudTrap = function(req, res) {
+  // Store callback URL for users
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.certification_crud.url = req.body.url;
+
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.certification_crud.user = req.body.user;
+          matchedConfig.traps_callbacks.certification_crud.secret = req.body.secret;
+        }
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: 'Erro ao gravar dados na base',
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: 'Endereço salvo com sucesso',
+          });
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: 'Formato invalido',
+        });
+      }
+    }
+  });
+};
+
+userController.getCertificationCrudTrap = function(req, res) {
+  // Get callback url and user
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: 'Erro ao acessar dados na base',
+      });
+    } else {
+      const user = matchedConfig.traps_callbacks.certification_crud.user;
+      const url = matchedConfig.traps_callbacks.certification_crud.url;
       if (!user || !url) {
         return res.status(200).json({
           success: true,
