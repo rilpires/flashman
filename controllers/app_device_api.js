@@ -793,7 +793,9 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     setTimeout(async () => {
       let config;
       try {
-        config = await Config.findOne({is_default: true}).lean();
+        config = await Config.findOne(
+          {is_default: true}, {measureServerIP: true, measureServerPort: true},
+        ).lean();
         if (!config) throw {error: 'Config not found'};
       } catch (err) {
         console.log(err);
@@ -1129,7 +1131,9 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
 
     let config;
     try {
-      config = await Config.findOne({is_default: true}).lean();
+      config = await Config.findOne(
+        {is_default: true}, {measureServerIP: true, measureServerPort: true},
+      ).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
@@ -1264,7 +1268,9 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
     return res.status(500).json({message: 'JSON recebido não é válido'});
   }
   // Get global config tr069 cpe login credentials
-  let config = await Config.findOne({is_default: true}).lean().catch((err)=>{
+  let config = await Config.findOne(
+    {is_default: true}, {tr069: true, ssidPrefix: true},
+  ).lean().catch((err)=>{
     console.err('Error fetching config: ' + err);
   });
   let configUser;
@@ -1372,7 +1378,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     // Build hard reset backup structure for client app
     let config = await Config.findOne(
       {is_default: true}, 'tr069',
-    ).exec().catch((err) => err);
+    ).lean().exec().catch((err) => err);
     let response = {
       serialOk: true,
       hasPassword: (device.app_password) ? true : false, // cast to bool
@@ -1528,7 +1534,7 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     }
     let config = await Config.findOne(
       {is_default: true}, 'tr069',
-    ).exec().catch((err) => err);
+    ).lean().exec().catch((err) => err);
     let lastContact = device.last_contact;
     let now = Date.now();
     // do not send that this specific model is online to client app
