@@ -116,7 +116,8 @@ userSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.user_crud) {
+                 !defConfig.traps_callbacks.user_crud &&
+                 !defConfig.traps_callbacks.certification_crud) {
         return callback(err);
       }
       attrsList.forEach((attr) => {
@@ -153,7 +154,6 @@ userSchema.pre('save', function(callback) {
           });
         }
       }
-
       if (Object.keys(certificationChangedAttrs).length != 0) {
         let certificationCallbackUrl = defConfig.traps_callbacks.certification_crud.url;
         let certificationCallbackAuthUser = defConfig.traps_callbacks.certification_crud.user;
