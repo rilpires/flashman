@@ -23,12 +23,6 @@ router.route('/update/:id/:release').post(
   authController.ensurePermission('grantFirmwareUpgrade'),
   deviceListController.changeUpdate);
 
-// Change all device status
-router.route('/updateall').post(
-  authController.ensureLogin(),
-  authController.ensurePermission('grantFirmwareUpgrade'),
-  deviceListController.changeAllUpdates);
-
 // Search device
 router.route('/search').put(
   authController.ensureLogin(),

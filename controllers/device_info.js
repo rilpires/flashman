@@ -11,8 +11,14 @@ const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
+const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+
+const Mutex = require('async-mutex').Mutex;
+
+let mutex = new Mutex();
+let mutexRelease = null;
 
 let deviceInfoController = {};
 
@@ -753,7 +759,23 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               updateScheduler.successUpdate(matchedDevice._id);
             }
             messaging.sendUpdateDoneMessage(matchedDevice);
-            meshHandlers.syncUpdate(matchedDevice, deviceSetQuery, sentRelease);
+            const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+              matchedDevice.version, sentVersion);
+            const isV1ToV2 = (typeUpgrade.current === 1 &&
+              typeUpgrade.upgrade === 2);
+            const isWifiMesh = (matchedDevice.mesh_mode > 1);
+            const isActiveNetwork = ((matchedDevice.mesh_slaves &&
+              matchedDevice.mesh_slaves.length > 0)
+              || matchedDevice.mesh_master);
+            if (!isV1ToV2 || !isWifiMesh || !isActiveNetwork) {
+              /*
+                This isn't a mesh v1 -> mesh v2 update with an active mesh
+                network. So, the next device in the mesh network is updating
+                on reception of the previous device's syn
+              */
+              await meshHandlers.syncUpdate(
+                matchedDevice, deviceSetQuery, sentRelease);
+            }
             deviceSetQuery.do_update = false;
             matchedDevice.do_update = false; // Used in device response
             deviceSetQuery.do_update_status = 1; // success
@@ -973,7 +995,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
 // Receive device firmware upgrade confirmation
 deviceInfoController.confirmDeviceUpdate = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device: ' + err);
       return res.status(500).json({proceed: 0});
@@ -986,7 +1008,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
-          matchedDevice.save();
+          await matchedDevice.save();
           return res.status(500).json({proceed: 0});
         }
         let proceed = 0;
@@ -1004,6 +1026,29 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             matchedDevice.do_update_status = 1; // success
           } else {
             matchedDevice.do_update_status = 10; // ack received
+            await matchedDevice.save();
+            const firmware = await Firmware.findOne(
+              {release: matchedDevice.release}).lean();
+            if (firmware) {
+              const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+                matchedDevice.version, firmware.flashbox_version);
+              const isV1ToV2 = (typeUpgrade.current === 1 &&
+                typeUpgrade.upgrade === 2);
+              const isWifiMesh = (matchedDevice.mesh_mode > 1);
+              const isActiveNetwork = ((matchedDevice.mesh_slaves &&
+                matchedDevice.mesh_slaves.length > 0)
+                || matchedDevice.mesh_master);
+              if (isV1ToV2 && isWifiMesh && isActiveNetwork) {
+                /*
+                  In a mesh network where there is an upgrade from mesh v1 -> v2
+                  the next device in the mesh network won't wait for the
+                  previous to finish upgrade. When the ack is received the next
+                  device starts upgrade.
+                */
+                await meshHandlers.syncUpdate(
+                  matchedDevice, null, matchedDevice.release);
+              }
+            }
           }
           proceed = 1;
         } else if (upgStatus == '0') {
@@ -1288,7 +1333,7 @@ deviceInfoController.getPortForward = function(req, res) {
   }
 };
 
-deviceInfoController.receiveDevices = function(req, res) {
+deviceInfoController.receiveDevices = async function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
@@ -1299,7 +1344,7 @@ deviceInfoController.receiveDevices = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Cant get device profile.');
@@ -1321,8 +1366,29 @@ deviceInfoController.receiveDevices = function(req, res) {
     let outData = [];
     let routersData = undefined;
 
+    const permissions = DeviceVersion.findByVersion(
+      matchedDevice.version,
+      matchedDevice.wifi_is_5ghz_capable,
+      matchedDevice.model,
+    );
+
+    // In mesh v2 there is a new layout of the flashbox response
+    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+      permissions.grantMeshV2SecondaryMode);
+
     if ('mesh_routers' in req.body) {
       routersData = req.body.mesh_routers;
+      if (meshV2 && matchedDevice.mesh_master) {
+        // in the new layout mesh slaves only send their mesh father info
+        const meshFatherBssid = Object.keys(routersData)[0];
+        let fatherMac = await meshHandlers.convertBSSIDToId(
+          matchedDevice, meshFatherBssid,
+        );
+        if (fatherMac === '') {
+          return res.status(500).json({processed: 0});
+        }
+        matchedDevice.mesh_father = fatherMac;
+      }
     }
 
     for (let connDeviceMac in devsData) {
@@ -1432,20 +1498,36 @@ deviceInfoController.receiveDevices = function(req, res) {
       }
     }
 
+    // used for mesh networks
+    let willSignalMeshTopology = false;
+    let masterMac;
     if (routersData) {
       // Erasing existing data of previous mesh routers
       matchedDevice.mesh_routers = [];
 
       for (let connRouter in routersData) {
         if (Object.prototype.hasOwnProperty.call(routersData, connRouter)) {
-          let upConnRouterMac = connRouter.toLowerCase();
+          let upConnRouterMac;
+          if (meshV2) {
+            // in new response the keys are in uppercase
+            upConnRouterMac = connRouter.toUpperCase();
+          } else {
+            // in legacy response the keys are in lowercase
+            upConnRouterMac = connRouter.toLowerCase();
+          }
           let upConnRouter = routersData[upConnRouterMac];
           // Skip if not lowercase
           if (!upConnRouter) continue;
 
-          if (upConnRouter.rx_bit && upConnRouter.tx_bit) {
+          if (upConnRouter.rx_bit && typeof upConnRouter.rx_bit === 'number') {
             upConnRouter.rx_bit = parseInt(upConnRouter.rx_bit);
+          } else {
+            upConnRouter.rx_bit = 0;
+          }
+          if (upConnRouter.tx_bit && typeof upConnRouter.tx_bit === 'number') {
             upConnRouter.tx_bit = parseInt(upConnRouter.tx_bit);
+          } else {
+            upConnRouter.tx_bit = 0;
           }
           if (upConnRouter.signal) {
             upConnRouter.signal = parseFloat(upConnRouter.signal);
@@ -1484,10 +1566,58 @@ deviceInfoController.receiveDevices = function(req, res) {
           });
         }
       }
+
+      try {
+        masterMac = matchedDevice._id;
+        if (matchedDevice.mesh_master) {
+          masterMac = matchedDevice.mesh_master;
+        }
+
+        /*
+          This region should not have two parellel executions because fields
+          of the same device are read and written. A random timeout is set
+          between accesses to the mutex
+        */
+        let interval = Math.random() * 500; // scale to seconds, cap at 500ms
+        await new Promise((resolve) => setTimeout(resolve, interval));
+        mutexRelease = await mutex.acquire();
+        await DeviceModel.update({
+          '_id': masterMac,
+        }, {
+          '$inc': {
+            'mesh_onlinedevs_remaining': -1,
+          },
+        });
+        let masterDevice = await DeviceModel.findOne(
+          {'_id': masterMac},
+          {'mesh_onlinedevs_remaining': 1,
+          'do_update_status': 1},
+        );
+        // end of critical region
+        mutexRelease();
+
+        const devicesRemaining = masterDevice.mesh_onlinedevs_remaining;
+        if (devicesRemaining === 0) {
+          masterDevice.do_update_status = 30;
+          // Last mesh device to report topology should trigger mesh topology
+          // done to scheduler and mesh handler
+          willSignalMeshTopology = true;
+          await masterDevice.save();
+        }
+      } catch (err) {
+        console.log(err);
+        mutexRelease();
+        return res.status(500).json({processed: 0});
+      }
     }
 
     matchedDevice.last_devices_refresh = Date.now();
-    matchedDevice.save();
+    await matchedDevice.save();
+
+    if (willSignalMeshTopology) {
+      updateScheduler.successTopology(masterMac);
+      meshHandlers.validateMeshTopology(masterMac);
+    }
 
     // if someone is waiting for this message, send the information
     sio.anlixSendOnlineDevNotifications(id, outData);
