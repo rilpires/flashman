@@ -803,17 +803,17 @@ userController.getUserCrudTrap = function(req, res) {
       });
     } else {
       const url = matchedConfig.traps_callbacks.device_crud.url;
-      const user = matchedConfig.traps_callbacks.device_crud.user;
-      if (!url || typeof user === 'undefined') {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }
@@ -866,18 +866,18 @@ userController.getRoleCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      const user = matchedConfig.traps_callbacks.role_crud.user;
       const url = matchedConfig.traps_callbacks.role_crud.url;
-      if (!user || !url) {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.role_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }

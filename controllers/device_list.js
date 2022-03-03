@@ -2973,17 +2973,17 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
       });
     } else {
       const url = matchedConfig.traps_callbacks.device_crud.url;
-      const user = matchedConfig.traps_callbacks.device_crud.user;
-      if (!url || typeof user === 'undefined') {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }
