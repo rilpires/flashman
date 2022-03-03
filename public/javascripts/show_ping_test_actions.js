@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg, socket} from './common_actions.js';
 import 'selectize';
 
@@ -82,7 +83,7 @@ socket.on('PINGTEST', function(macaddr, data) {
   }
 });
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Init selectize fields
   $('#hosts-list').selectize(selectizeOptionsHosts);
 

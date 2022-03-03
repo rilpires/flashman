@@ -1,4 +1,5 @@
 
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
 window.checkVlanName = function(input) {
@@ -27,7 +28,7 @@ window.checkVlanName = function(input) {
 };
 
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('.needs-validation').submit(function(event) {
     if ($(this)[0].checkValidity()) {
       $.post($(this).attr('action'), $(this).serialize(), 'json')
