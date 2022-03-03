@@ -814,14 +814,14 @@ userController.getUserCrudTrap = function(req, res) {
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      const url = matchedConfig.traps_callbacks.device_crud.url;
+      const url = matchedConfig.traps_callbacks.user_crud.url;
       if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
-      const user = matchedConfig.traps_callbacks.device_crud.user;
+      const user = matchedConfig.traps_callbacks.user_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
