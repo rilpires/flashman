@@ -1,5 +1,6 @@
 const Config = require('../models/config');
 const DeviceModel = require('../models/device');
+const t = require('./language').i18next.t;
 
 const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
 const ipv4Regex =
@@ -25,7 +26,7 @@ const catchError = (error) => {
 
 const catchDatabaseError = (error) => {
   catchError(error);
-  return {success: false, error: 'Erro alterando base de dados'};
+  return {success: false, error: t('saveError', {errorline: __line})};
 };
 
 const returnStringOrEmptyStr = (query) => {
@@ -64,20 +65,20 @@ const weekDayCompare = (firstDate, secondDate) => {
 };
 
 const translateStateReboot = (state) => {
-  if (state.type === 'restart') return 'Aguardando reinicio';
-  if (state.type === 'retry') return 'Aguardando reinicio';
-  if (state.type === 'offline') return 'CPE offline';
-  if (state.type === 'slave') return 'Reiniciando CPE secundário';
-  if (state.type === 'ok') return 'Reiniciado com sucesso';
-  if (state.type === 'error') return 'Ocorreu um erro na ';
-  if (state.type === 'aborted') return 'Atualização abortada';
+  if (state.type === 'restart') return t('waitingRestart');
+  if (state.type === 'retry') return t('waitingRestart');
+  if (state.type === 'offline') return t('cpeOffilne');
+  if (state.type === 'slave') return t('restartingSecondaryCpe');
+  if (state.type === 'ok') return t('successfullyRestarted');
+  if (state.type === 'error') return t('anErrorHappendAt ');
+  if (state.type === 'aborted') return t('updateAborted');
   if (state.type === 'aborted' && state.beforeAbort === 'offline')
-    return 'Atualização abortada - CPE estava offline';
+    return t('updateAbortedCpeOffline');
   if (state.type === 'aborted' && state.beforeAbort === 'reboot')
-    return 'Atualização abortada - CPE estava instalando firmware';
+    return t('updateAbortedCpeInstallingFirmware');
   if (state.type === 'aborted' && state.beforeAbort === 'slave')
-    return 'Atualização abortada - atualizando CPE secundário';
-  return 'Status desconhecido';
+    return t('updateAbortedCpeUpdatingSecondaryCpe');
+  return t('unknownStatus');
 };
 
 const times = (n) => {
