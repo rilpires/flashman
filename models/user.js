@@ -116,15 +116,16 @@ userSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.user_crud &&
-                 !defConfig.traps_callbacks.certification_crud) {
+                 (!defConfig.traps_callbacks.user_crud &&
+                 !defConfig.traps_callbacks.certification_crud)) {
         return callback(err);
       }
       attrsList.forEach((attr) => {
-        if (attr === "deviceCertifications")
+        if (attr === 'deviceCertifications') {
           certificationChangedAttrs[attr] = user[attr];
-        else
+        } else {
           userChangedAttrs[attr] = user[attr];
+        }
       });
       if (Object.keys(userChangedAttrs).length != 0) {
         let userCallbackUrl = defConfig.traps_callbacks.user_crud.url;
@@ -142,7 +143,7 @@ userSchema.pre('save', function(callback) {
           if (userCallbackAuthUser && userCallbackAuthSecret) {
             userRequestOptions.auth = {
               user: userCallbackAuthUser,
-              pass: userCallbackAuthSecret
+              pass: userCallbackAuthSecret,
             };
           }
           request(userRequestOptions).then((resp) => {
@@ -155,9 +156,12 @@ userSchema.pre('save', function(callback) {
         }
       }
       if (Object.keys(certificationChangedAttrs).length != 0) {
-        let certificationCallbackUrl = defConfig.traps_callbacks.certification_crud.url;
-        let certificationCallbackAuthUser = defConfig.traps_callbacks.certification_crud.user;
-        let certificationCallbackAuthSecret = defConfig.traps_callbacks.certification_crud.secret;
+        let certificationCallbackUrl =
+          defConfig.traps_callbacks.certification_crud.url;
+        let certificationCallbackAuthUser =
+          defConfig.traps_callbacks.certification_crud.user;
+        let certificationCallbackAuthSecret =
+          defConfig.traps_callbacks.certification_crud.secret;
         if (certificationCallbackUrl) {
           certificationRequestOptions.url = certificationCallbackUrl;
           certificationRequestOptions.method = 'PUT';
@@ -167,7 +171,9 @@ userSchema.pre('save', function(callback) {
             'name': user.name,
             'changes': certificationChangedAttrs,
           };
-          if (certificationCallbackAuthUser && certificationCallbackAuthSecret) {
+          if (certificationCallbackAuthUser &&
+              certificationCallbackAuthSecret
+          ) {
             certificationRequestOptions.auth = {
               user: certificationCallbackAuthUser,
               pass: certificationCallbackAuthSecret,
