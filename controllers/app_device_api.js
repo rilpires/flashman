@@ -532,7 +532,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
   formattedNow += minutes;
   let customFields = {};
   let deviceCustomFields = device.custom_tr069_fields;
-  if (deviceCustomFields.intelbras_omci_mode) {
+  if (deviceCustomFields && deviceCustomFields.intelbras_omci_mode) {
     customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
   }
   return {
