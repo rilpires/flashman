@@ -11,7 +11,7 @@ const randomBackoff = function(factor, offset) {
 };
 
 const getMessagingConfig = async function() {
-  let config = await Config.findOne({is_default: true});
+  let config = await Config.findOne({is_default: true}).lean();
   if (!config || !config.messaging_configs.functions_fqdn ||
       !config.messaging_configs.secret_token) {
     return null;
