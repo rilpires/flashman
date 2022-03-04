@@ -17,14 +17,18 @@ const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
 
-const getFieldType = function(masterKey, key) {
+const getFieldType = function(masterKey, key, model) {
   switch (masterKey+'-'+key) {
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
     case 'mesh5-channel':
     case 'stun-port':
-      return 'xsd:unsignedInt';
+      if (model == 'AC10') {
+        return 'xsd:string';
+      } else {
+        return 'xsd:unsignedInt';
+      }
     case 'wifi2-enable':
     case 'wifi5-enable':
     case 'wifi2-auto':
@@ -36,7 +40,11 @@ const getFieldType = function(masterKey, key) {
     case 'mesh2-advertise':
     case 'mesh5-advertise':
     case 'common-stun_enable':
-      return 'xsd:boolean';
+      if (model == 'AC10') {
+        return 'xsd:string';
+      } else {
+        return 'xsd:boolean';
+      }
     default:
       return 'xsd:string';
   }
@@ -69,6 +77,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F660') return 'b,g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
+      else if (ouiModelStr === 'AC10') return 'bg';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -90,6 +99,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
+      else if (ouiModelStr === 'AC10') return 'bgn';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -111,6 +121,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -132,6 +143,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
+      else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -145,25 +157,25 @@ const convertWifiMode = function(mode, oui, model) {
   }
 };
 
-const convertWifiBand = function(band) {
+const convertWifiBand = function(band, model) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      return '20MHz';
+      return ((model === 'AC10') ? '0' : '20MHz');
     case 'HT40':
     case 'VHT40':
-      return '40MHz';
+      return ((model === 'AC10') ? '1' : '40MHz');
     case 'VHT80':
-      return '80MHz';
+      return ((model === 'AC10') ? '3' : '80MHz');
     case 'auto':
-      return 'auto';
+      return ((model === 'AC10') ? '2' : 'auto');
     default:
       return '';
   }
 };
 
 const convertField = function(masterKey, key, oui, model, value) {
-  let result = {value: null, type: getFieldType(masterKey, key)};
+  let result = {value: null, type: getFieldType(masterKey, key, model)};
   switch (masterKey+'-'+key) {
     case 'lan-subnet_mask':
       result.value = convertSubnetIntToMask(value); // convert to ip subnet
@@ -174,7 +186,11 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'mesh5-enable':
     case 'mesh2-advertise':
     case 'mesh5-advertise':
-      result.value = (value > 0) ? true : false; // convert to boolean
+      if (model == 'AC10') {
+        result.value = (value > 0) ? '1' : '0';
+      } else {
+        result.value = (value > 0) ? true : false; // convert to boolean
+      }
       break;
     case 'wifi2-channel':
     case 'wifi5-channel':
@@ -192,7 +208,8 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'wifi5-band':
     case 'mesh2-band':
     case 'mesh5-band':
-      result.value = convertWifiBand(value); // convert to TR-069 format
+      // convert to TR-069 format
+      result.value = convertWifiBand(value, model);
       break;
     default:
       result.value = value; // no transformation necessary
@@ -652,6 +669,68 @@ const getFastWirelessFields = function() {
   return fields;
 };
 
+const getTendaFields = function() {
+  let fields = getDefaultFields();
+  fields.common.alt_uid = fields.common.mac;
+  fields.common.model = 'InternetGatewayDevice.DeviceInfo.ProductClass';
+  fields.stun = {};
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun.address =
+    'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port =
+    'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.lan.subnet_mask = 'InternetGatewayDevice.LANDevice.1'+
+    '.LANHostConfigManagement.SubnetMask';
+  fields.lan.enable_config = 'InternetGatewayDevice.LANDevice.1.'+
+    'LANHostConfigManagement.DHCPServerConfigurable';
+
+  fields.port_mapping_fields.external_port_start =
+   ['ExternalPort', 'external_port_start', 'xsd:string'];
+  fields.port_mapping_fields.external_port_end =
+   ['ExternalPortEndRange', 'external_port_end', 'xsd:string'];
+  fields.port_mapping_fields.internal_port_start =
+   ['InternalPort', 'internal_port_start', 'xsd:string'];
+  fields.port_mapping_fields.client =
+   ['InternalClient', 'ip', 'xsd:string'];
+  fields.port_mapping_values.enable =
+   ['PortMappingEnabled', '1', 'xsd:string'];
+  fields.port_mapping_values.lease =
+   ['PortMappingLeaseDuration', '0', 'xsd:string'];
+  fields.port_mapping_values.protocol =
+   ['PortMappingProtocol', 'TCP AND UDP', 'xsd:string'];
+  fields.port_mapping_values.description =
+   ['PortMappingDescription', '0', 'xsd:string'];
+  fields.port_mapping_values.remote_host =
+   ['RemoteHost', '0', 'xsd:string'];
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
+    '.1.X_CT-COM_ChannelWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
+    '.2.X_CT-COM_ChannelWidth';
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+
+  fields.devices.associated = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.1.AssociatedDevice';
+  fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.2.AssociatedDevice';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
+  '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_RSSI';
+  fields.devices.alt_host_name = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_DhcpName';
+  fields.mesh2 = {};
+  fields.mesh5 = {};
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -723,6 +802,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           return unknownModel;
       }
       break;
+    case 'AC10':
+      message = '';
+      fields = getTendaFields();
+      break;
     default:
       return unknownModel;
   }
@@ -752,6 +835,7 @@ const getBeaconTypeByModel = function(model) {
     case 'F680': // Multilaser ZTE F680
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'AC10': // Tenda AC10
       ret = 'WPAand11i';
       break;
     default:

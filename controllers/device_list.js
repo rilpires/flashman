@@ -1985,6 +1985,28 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
+            if (
+              matchedDevice.model == 'AC10' &&
+              (
+                (
+                  matchedDevice.wifi_state == 0 &&
+                  JSON.stringify(changes.wifi2) != '{}' &&
+                  JSON.stringify(changes.wifi2) != '{"enable":0}'
+                ) ||
+                (
+                  matchedDevice.wifi_state_5ghz == 0 &&
+                  JSON.stringify(changes.wifi5) != '{}' &&
+                  JSON.stringify(changes.wifi5) != '{"enable":0}'
+                )
+              )
+            ) {
+              return res.status(500).json({
+                success: false,
+                message: t('enabledToModifyFields',
+                  {errorline: __line}),
+                errors: [],
+              });
+            }
             if (hasPermissionError) {
               return res.status(403).json({
                 success: false,
