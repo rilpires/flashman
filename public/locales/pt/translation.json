@@ -72,6 +72,7 @@
 
 	"serverError": "Erro interno do servidor ({{errorline}})",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados ({{errorline}})",
+	"enabledToModifyFields": "Para modificar algum campo de wifi, o mesmo deve estar previamente habilitado ({{errorline}})",
 	"permissionNotFound": "Permissão não encontrada ({{errorline}})",
 	"permissionDenied": "Permissão negada ({{errorline}})",
 	"databaseFindError": "Erro no acesso ao banco de dados ({{errorline}})",
