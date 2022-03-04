@@ -106,7 +106,7 @@ let appSet = function(req, res, processFunction) {
       if (content.hasOwnProperty('command_timeout')) {
         commandTimeout = content.command_timeout;
       }
-      if (tr069Changes.changeBlockedDevices) {
+      if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
         let acRulesRes = {'success': false, 'error': 500};
         acRulesRes = await acsController.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
