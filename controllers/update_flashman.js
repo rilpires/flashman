@@ -331,43 +331,56 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
   });
 };
 
+const stopInsecureGenieACS = function() {
+  exec('pm2 stop genieacs-cwmp-http');
+};
+
+const startInsecureGenieACS = function() {
+  exec('pm2 start genieacs-cwmp-http');
+};
 
 updateController.rebootGenie = function(instances) {
   // Treat bugged case where pm2 may fail to provide the number of instances
   // correctly - it may be 0 or undefined, and we must then rely on both the
   // envitonment.config.json file and nproc to tell us how many flashman
   // instances there are
-  exec('nproc', (err, stdout, stderr)=>{
-    instances = parseInt(instances);
-    if (isNaN(instances)) {
-      instances = parseInt(localEnvironmentJson.apps[0].instances);
+  Config.findOne({is_default: true}).then((config)=>{
+    exec('nproc', (err, stdout, stderr)=>{
+      instances = parseInt(instances);
       if (isNaN(instances)) {
-        instances = parseInt(stdout.trim()); // remove trailing newline
+        instances = parseInt(localEnvironmentJson.apps[0].instances);
+        if (isNaN(instances)) {
+          instances = parseInt(stdout.trim()); // remove trailing newline
+        }
       }
-    }
-    // If somehow is still NaN, replace with 1 as a fallback
-    if (isNaN(instances)) {
-      instances = '1';
-    } else {
-      instances = instances.toString(); // Merely for type safety
-    }
-    // We do a stop/start instead of restart to avoid racing conditions when
-    // genie's worker processes are killed and then respawned - this prevents
-    // issues with CPEs connections since exceptions lead to buggy exp. backoff
-    exec('pm2 stop genieacs-cwmp', async (err, stdout, stderr)=>{
-      // Replace genieacs instances config with what flashman gives us
-      let replace = 'const INSTANCES_COUNT = .*;';
-      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-      let sedExpr = 's/' + replace + '/' + newText + '/';
-      let targetFile = 'controllers/external-genieacs/devices-api.js';
-      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      // If somehow is still NaN, replace with 1 as a fallback
+      if (isNaN(instances)) {
+        instances = '1';
+      } else {
+        instances = instances.toString(); // Merely for type safety
+      }
+      // We do a stop/start instead of restart to avoid racing conditions when
+      // genie's worker processes are killed and then respawned - this prevents
+      // issues with CPEs connections since exceptions lead to buggy exp.backoff
+      let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
+      exec(pm2Command, async (err, stdout, stderr)=>{
+        // Replace genieacs instances config with what flashman gives us
+        let replace = 'const INSTANCES_COUNT = .*;';
+        let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+        let sedExpr = 's/' + replace + '/' + newText + '/';
+        let targetFile = 'controllers/external-genieacs/devices-api.js';
+        let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
 
-      // Update genieACS diagnostic's script and preset
-      console.log('Updating genieACS diacnostic\'s script and preset');
-      await updateDiagnostics();
+        // Update genieACS diagnostic's script and preset
+        console.log('Updating genieACS diacnostic\'s script and preset');
+        await updateDiagnostics();
 
-      exec(sedCommand, (err, stdout, stderr)=>{
-        exec('pm2 start genieacs-cwmp');
+        exec(sedCommand, (err, stdout, stderr)=>{
+          exec('pm2 start genieacs-cwmp');
+          if (config.tr069.insecure_enable) {
+            exec('pm2 start genieacs-cwmp-http');
+          }
+        });
       });
     });
   });
@@ -378,7 +391,7 @@ const rebootFlashman = function(version) {
   // racing conditions when onus try to connect - we use the service name to
   // avoid booting genieacs on servers where it was never booted in the first
   // place (as opposed to using environment.genieacs.json)
-  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+  exec('pm2 stop genieacs-cwmp genieacs-cwmp-http', (err, stdout, stderr)=>{
     // & necessary because otherwise process would kill itself and cause issues
     exec('pm2 reload environment.config.json &');
   });
@@ -549,6 +562,9 @@ updateController.getAutoConfig = function(req, res) {
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         tr069STUNEnable: matchedConfig.tr069.stun_enable,
+        tr069InsecureEnable: matchedConfig.tr069.insecure_enable,
+        hasNeverEnabledInsecureTR069:
+          matchedConfig.tr069.has_never_enabled_insecure,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -764,6 +780,8 @@ updateController.setAutoConfig = async function(req, res) {
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
     let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
+    let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
+    let changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -795,6 +813,10 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold_critical: ponSignalThresholdCritical,
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
         stun_enable: STUNEnable,
+        insecure_enable: insecureEnable,
+        has_never_enabled_insecure: (
+          config.tr069.has_never_enabled_insecure && !insecureEnable
+        ),
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
@@ -830,6 +852,14 @@ updateController.setAutoConfig = async function(req, res) {
     }
 
     await config.save();
+
+    // Start / stop insecure GenieACS instance if parameter changed
+    if (changedInsecure && config.tr069.insecure_enable) {
+      startInsecureGenieACS();
+    } else if (changedInsecure) {
+      stopInsecureGenieACS();
+    }
+
     return res.status(200).json({
       type: 'success',
       message: message,

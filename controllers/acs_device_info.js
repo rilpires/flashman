@@ -351,6 +351,7 @@ const createRegistry = async function(req, permissions) {
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
+    secure_tr069: data.common.acs_url.value.includes('https'),
     serial_tr069: splitID[splitID.length - 1],
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
@@ -583,6 +584,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   device.acs_id = req.body.acs_id;
   device.serial_tr069 = splitID[splitID.length - 1];
+  device.secure_tr069 = data.common.acs_url.value.includes('https');
 
   // Check for an alternative UID to replace serial field
   if (data.common.alt_uid && data.common.alt_uid.value) {

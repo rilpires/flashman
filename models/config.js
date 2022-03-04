@@ -28,6 +28,8 @@ let configSchema = new mongoose.Schema({
     pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
     stun_enable: {type: Boolean, default: false},
+    insecure_enable: {type: Boolean, default: false},
+    has_never_enabled_insecure: {type: Boolean, default: true},
   },
   certification: {
     // WAN steps required here are:
