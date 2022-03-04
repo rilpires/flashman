@@ -2060,12 +2060,10 @@ const fetchDevicesFromGenie = function(device, acsID) {
           }
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
-            if (model == 'AC10') {
-              assocField = fields.devices.host_rssi.slice(0, -16);
-              assocField = assocField.replace('*', iface);
-            } else {
-              assocField = fields.devices.associated.replace('*', iface);
-            }
+            assocField = fields.devices.associated.replace(
+              /WLANConfiguration\.[0-9]+\./g,
+              'WLANConfiguration.' + iface + '.',
+            );
             let assocIndexes = getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
