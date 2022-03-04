@@ -1,3 +1,5 @@
+/* global __line */
+
 const Notification = require('../models/notification');
 const sio = require('../sio');
 let TasksAPI = require('./external-genieacs/tasks-api');

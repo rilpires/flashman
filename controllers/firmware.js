@@ -1,3 +1,6 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 let User = require('../models/user');
 let Config = require('../models/config');
 let Firmware = require('../models/firmware');
@@ -41,14 +44,14 @@ let removeFirmware = async function(firmware) {
     try {
       await acsDeviceInfo.delFirmwareInACS(firmware.filename);
     } catch (e) {
-      throw new Error(t('genieacsCommunicationError'));
+      throw new Error(t('genieacsCommunicationError', {errorline: __line}));
     }
   }
 
   try {
     await fsPromises.unlink(path.join(imageReleasesDir, firmware.filename));
   } catch (e) {
-    throw new Error(t('binFileNotFound'));
+    throw new Error(t('binFileNotFound', {errorline: __line}));
   }
 
   let md5fname = '.' + firmware.filename.replace('.bin', '.md5');
@@ -61,7 +64,7 @@ let removeFirmware = async function(firmware) {
   try {
     await firmware.remove();
   } catch (e) {
-    throw new Error(t('firmwareNotFound'));
+    throw new Error(t('firmwareNotFound', {errorline: __line}));
   }
   return;
 };
@@ -113,7 +116,7 @@ firmwareController.fetchFirmwares = function(req, res) {
     if (err) {
       console.log(err);
       return res.json({success: false, type: 'danger',
-                       message: t('firmwareFindError')});
+                       message: t('firmwaresFindError', {errorline: __line})});
     }
     return res.json({success: true, type: 'success', firmwares: firmwares});
   });
@@ -192,7 +195,7 @@ firmwareController.delFirmware = function(req, res) {
     if (err || firmwares.length === 0) {
       return res.json({
         type: 'danger',
-        message: t('firmwareNotFoundOrSelected'),
+        message: t('firmwareNotFoundOrSelected', {errorline: __line}),
       });
     }
     let promises = [];
@@ -203,7 +206,7 @@ firmwareController.delFirmware = function(req, res) {
       function() {
         return res.json({
           type: 'success',
-          message: t('firmwareDeleteSuccess'),
+          message: t('operationSuccessful'),
         });
       }).catch(function(err) {
         return res.json({
@@ -217,7 +220,7 @@ firmwareController.delFirmware = function(req, res) {
 firmwareController.uploadFirmware = async function(req, res) {
   if (!req.files) {
     return res.json({type: 'danger',
-                     message: t('noFileSelected')});
+                     message: t('noFileSelected', {errorline: __line})});
   }
 
   let firmwarefile;
@@ -229,17 +232,20 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmwarefile = req.files.firmwaretr069file;
   } else {
     return res.json({type: 'danger',
-                     message: t('noFileSelected')});
+                     message: t('noFileSelected', {errorline: __line})});
   }
 
   if (!isValidFilename(firmwarefile.name) && isFlashbox) {
-    return res.json({type: 'danger',
-                     message: t('firmwareFileNameInvalid')});
+    return res.json({
+      type: 'danger',
+      message: t('firmwareFileNameInvalid', {errorline: __line}),
+    });
   }
   try {
     await firmwarefile.mv(path.join(imageReleasesDir, firmwarefile.name));
   } catch (err) {
-    return res.json({type: 'danger', message: t('fileMoveError')});
+    return res.json({type: 'danger',
+      message: t('fileMoveError', {errorline: __line})});
   }
   // Generate MD5 checksum
   const md5Checksum = md5File.sync(path.join(imageReleasesDir,
@@ -251,7 +257,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     return res.json({
       type: 'danger',
-      message: t('fileChecksumError'),
+      message: t('fileChecksumError', {errorline: __line}),
     });
   }
   let fnameFields;
@@ -288,7 +294,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     await fsPromises.unlink(path.join(imageReleasesDir, firmwarefile.name));
     await fsPromises.unlink(path.join(imageReleasesDir, md5fname));
     return res.json({type: 'danger',
-      message: t('databaseFirmwareFindError')});
+      message: t('firmwareFindError', {errorline: __line})});
   }
   if (!firmware) {
     firmware = new Firmware({
@@ -303,7 +309,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     if (isTR069) {
       return res.json({
         type: 'danger',
-        message: t('firmwareAlreadyExists'),
+        message: t('firmwareAlreadyExists', {errorline: __line}),
       });
     }
     firmware.vendor = fnameFields.vendor;
@@ -320,7 +326,7 @@ firmwareController.uploadFirmware = async function(req, res) {
       let response = await acsDeviceInfo.addFirmwareInACS(firmware);
       if (!response) {
         res.json({type: 'danger',
-          message: t('genieacsCommunicationError')});
+          message: t('genieacsCommunicationError', {errorline: __line})});
       }
     }
     return res.json({
@@ -361,7 +367,8 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
     },
     function(error, response, body) {
       if (error) {
-        return res.json({type: 'danger', message: t('requestError')});
+        return res.json({type: 'danger',
+                         message: t('requestError', {errorline: __line})});
       }
       if (response.statusCode === 200) {
         let firmwareNames = [];
@@ -420,12 +427,13 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
       } else {
         return res.json({
           type: 'danger',
-          message: t('authenticationError'),
+          message: t('authenticationError', {errorline: __line}),
         });
       }
     });
   } else {
-    return res.json({type: 'danger', message: t('authenticationError')});
+    return res.json({type: 'danger',
+      message: t('authenticationError', {errorline: __line})});
   }
 };
 
@@ -455,7 +463,7 @@ let addFirmwareFile = function(fw) {
           },
         })
       .on('error', function(err) {
-        return reject(t('requestError'));
+        return reject(t('requestError', {errorline: __line}));
       })
       .on('response', function(response) {
         let unzipDest = new unzipper.Extract({path: imageReleasesDir});
@@ -477,7 +485,7 @@ let addFirmwareFile = function(fw) {
                   fs.unlink(path.join(imageReleasesDir, firmwarefname),
                     function(err) {
                       return reject(
-                        t('fileChecksumError'));
+                        t('fileChecksumError', {errorline: __line}));
                     },
                   );
                 }
@@ -496,7 +504,7 @@ let addFirmwareFile = function(fw) {
                         fs.unlink(path.join(imageReleasesDir, md5fname),
                           function(err) {
                             return reject(
-                              t('databaseFindError', {errorline: __line}));
+                              t('firmwareFindError', {errorline: __line}));
                           },
                         );
                       },
@@ -550,7 +558,7 @@ let addFirmwareFile = function(fw) {
             );
           });
         } else {
-          return reject(t('authenticationError'));
+          return reject(t('authenticationError', {errorline: __line}));
         }
       });
   });
@@ -566,7 +574,7 @@ firmwareController.addRemoteFirmwareFile = function(req, res) {
     function() {
       return res.json({
         type: 'success',
-        message: t('firmwareAddSuccess'),
+        message: t('operationSuccessful'),
       });
     }, function(errMessage) {
       return res.json({

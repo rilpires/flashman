@@ -1,8 +1,9 @@
+/* global __line */
+
 const i18next = require('i18next');
 const i18nextFsBackend = require('i18next-fs-backend');
 // const i18nextMiddleware = require('i18next-http-middleware');
 const ConfigModel = require('../models/config');
-const fsPromises = require('fs').promises;
 const path = require('path');
 
 // some default values.
@@ -31,7 +32,7 @@ const localesdDir = path.join(__dirname, '../public/locales');
 // lngDetector.addDetector(anlixLanguageDetector);
 
 // variables to be assigned resolve and reject callbacks of the Promise that
-// will be used as synchronization step between i18next finishing 
+// will be used as synchronization step between i18next finishing
 // initialization and retrieving saved language.
 let i18nextResolved;
 let i18nextInitialization = new Promise((resolve, reject) => {
@@ -73,6 +74,17 @@ i18next
 const t = i18next.t;
 // const middleware = i18nextMiddleware.handle(i18next);
 
+
+// promisifying 'i18next.changeLanguage()'.
+const changeLanguageI18next = function(language) {
+  return new Promise((resolve, reject) => {
+    i18next.changeLanguage(language, (err, t) => {
+      if (err) reject(err);
+      else resolve(t);
+    });
+  });
+};
+
 // saving given language in database.
 const setConfigLanguage = function(language) {
   return ConfigModel.updateOne({is_default: true}, {$set: {language}}).exec();
@@ -86,26 +98,21 @@ const updateLanguage = async function(language) {
     return {status: 400, message: t('fieldMissing', {errorline: __line})};
   }
 
-  // reading available files/directories in locales directory.
-  let locales = await fsPromises.readdir(localesdDir).catch((e) => {
-    console.error(`Error finding '${localesdDir}' directory:`, locales);
-    return {status: 500, message: t('serverError', {errorline: __line})};
-  });
-
-  // checking if given language exists in locales directory.
-  if (!locales.includes(language)) {
-    console.error(`Language '${language}' doesn't exist.`);
-    return {status: 404,message: t('languageNotFound', {language: language,
-      errorline: __line})};
-  }
-
   // checking if language is the same being currently used in i18next.
   if (language === i18next.language) {
     return {status: 400, message: t('receivedNoAlterations',
-      {errorline: __line}), what: 'alreadySet'};
+      {errorline: __line})};
   }
 
-  i18next.changeLanguage(language); // setting language in i18next.
+  // setting language in i18next.
+  let previousLangauge = i18next.resolvedLanguage;
+  let ret = await changeLanguageI18next(language).catch((e) => e);
+  if (ret[0] instanceof Error) { // if language could not be loaded.
+    // we roll back to the previous language before returning.
+    await changeLanguageI18next(previousLangauge).catch((e) => e);
+    return {status: 404, message: t('languageNotFound', {language: language,
+      errorline: __line})};
+  }
 
   // saving new language in database.
   await setConfigLanguage(language).catch((e) => {
@@ -124,8 +131,10 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   await i18nextInitialization;
 
   // if language is already set in database, set it in i18next.
-   if (config && config.language) {
-    return i18next.changeLanguage(config.language);
+  if (config && config.language) {
+    return changeLanguageI18next(config.language).catch((e) => console.error(
+      `Configured language '${config.language}' could not be loaded.`,
+      e[0].message));
   }
 
   // console.log('--- defaultLanguage:', defaultLanguage)
@@ -142,7 +151,10 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   // use the 'fallbackLanguage' translations. In this case, we don' save
   // the 'fallbackLanguage' as config language. The user should chose an
   // available language (or fix the environment variable value).
+}).catch((e) => {
+  console.error('Error finding Config: ', e);
 });
+
 
 let handlers = {};
 
