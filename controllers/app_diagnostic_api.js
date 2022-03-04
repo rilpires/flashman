@@ -110,7 +110,7 @@ const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
     {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
-  ).catch((err) => err);
+  ).lean().catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -193,7 +193,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let changes = {wifi2: {}, wifi5: {}};
 
       // Get SSID prefix data
-      let matchedConfig = await ConfigModel.findOne({is_default: true});
+      let matchedConfig = await ConfigModel.findOne({is_default: true}).lean();
       if (!matchedConfig) {
         console.error('No config exists');
         return res.status(500).json({'error': 'Internal error'});
@@ -524,7 +524,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             licenseApiSecret: true,
             company: true,
           },
-        ).catch((err) => err)
+        ).lean().catch((err) => err)
       );
 
       if (config.tr069) {
@@ -666,7 +666,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
 
 diagAppAPIController.getTR069Config = async function(req, res) {
   let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
+    .lean().exec().catch((err) => err);
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
@@ -1102,7 +1102,9 @@ diagAppAPIController.getSpeedTest = function(req, res) {
 
     let config;
     try {
-      config = await ConfigModel.findOne({is_default: true}).lean();
+      config = await ConfigModel.findOne(
+        {is_default: true}, {measureServerIP: true, measureServerPort: true},
+      ).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
@@ -1177,7 +1179,9 @@ diagAppAPIController.doSpeedTest = function(req, res) {
     setTimeout(async () => {
       let config;
       try {
-        config = await ConfigModel.findOne({is_default: true}).lean();
+        config = await ConfigModel.findOne(
+          {is_default: true}, {measureServerIP: true, measureServerPort: true},
+        ).lean();
         if (!config) throw {error: 'Config not found'};
       } catch (err) {
         console.log(err);
