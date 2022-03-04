@@ -1,3 +1,6 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
@@ -15,7 +18,7 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
-const {Parser, transforms: {unwind, flatten}} = require('json2csv');
+const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
 const t = require('./language').i18next.t;
@@ -187,7 +190,8 @@ deviceListController.index = function(req, res) {
       indexContent.superuser = user.is_superuser;
     }
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    let query = {is_default: true};
+    Config.findOne(query).lean().exec(function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {
@@ -348,8 +352,10 @@ deviceListController.changeUpdateMesh = function(req, res) {
       let indexContent = {};
       indexContent.type = 'danger';
       indexContent.message = err.message;
-      return res.status(500).json({success: false,
-                                   message: t('cpeFindError', {errorline: __line})});
+      return res.status(500).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
     }
     // Cast to boolean so that javascript works as intended
     let doUpdate = req.body.do_update;
@@ -428,7 +434,8 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
       currentTimestamp = currentTimestamp || Date.now();
       let lastHour = new Date(currentTimestamp -3600000);
-      tr069Times = tr069Times || await deviceHandlers.buildTr069Thresholds(currentTimestamp);
+      tr069Times = tr069Times ||
+        await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
       // variables that will hold one query for each controller protocol.
       let flashbox; let tr069;
@@ -485,7 +492,9 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig === undefined) {
-        matchedConfig = await Config.findOne({is_default: true});
+        matchedConfig = await Config.findOne(
+          {is_default: true}, {tr069: true},
+        ).lean();
       }
       if (tag.includes('fraco')) {
         query.pon_rxpower = {
@@ -657,7 +666,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     mqttClientsMap[mqttClientsArray[i]] = true;
   }
 
-  let currentTimestamp = Date.now()
+  let currentTimestamp = Date.now();
   let lastHour = new Date(currentTimestamp -3600000);
 
   // time threshold for tr069 status (status color).
@@ -798,7 +807,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true}, function(err, matchedConfig) {
+          Config.findOne({is_default: true})
+          .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
               // Counters
@@ -843,9 +853,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
                   ponConfig: {
-                    ponSignalThreshold: matchedConfig.tr069.pon_signal_threshold,
-                    ponSignalThresholdCritical: matchedConfig.tr069.pon_signal_threshold_critical,
-                    ponSignalThresholdCriticalHigh: matchedConfig.tr069.pon_signal_threshold_critical_high,
+                    ponSignalThreshold:
+                      matchedConfig.tr069.pon_signal_threshold,
+                    ponSignalThresholdCritical:
+                      matchedConfig.tr069.pon_signal_threshold_critical,
+                    ponSignalThresholdCriticalHigh:
+                      matchedConfig.tr069.pon_signal_threshold_critical_high,
                   },
                 });
               });
@@ -892,7 +905,7 @@ deviceListController.delDeviceReg = async function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: t('operationUnuccessful', {errorline: __line}),
+      message: t('operationUnsuccessful', {errorline: __line}),
     });
   }
 };
@@ -927,6 +940,7 @@ const downloadStockFirmware = async function(model) {
           if (resp.statusCode !== 200) {
             return resolve(false);
           }
+          // eslint-disable-next-line new-cap
           responseStream.pipe(unzipper.Parse()).on('entry', (entry)=>{
             let fname = entry.path;
             let fullFilePath = path.join(imageReleasesDir, fname);
@@ -1387,35 +1401,63 @@ deviceListController.setDeviceReg = function(req, res) {
       let validator = new Validator();
 
       let errors = [];
-      let connectionType = util.returnObjOrEmptyStr(content.connection_type).toString().trim();
-      let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).toString().trim();
-      let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).toString().trim();
-      let ipv6Enabled = parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
-      let lanSubnet = util.returnObjOrEmptyStr(content.lan_subnet).toString().trim();
-      let lanNetmask = parseInt(util.returnObjOrNum(content.lan_netmask, 24));
-      let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).toString().trim();
-      let password = util.returnObjOrEmptyStr(content.wifi_password).toString().trim();
-      let channel = util.returnObjOrEmptyStr(content.wifi_channel).toString().trim();
-      let band = util.returnObjOrEmptyStr(content.wifi_band).toString().trim();
-      let mode = util.returnObjOrEmptyStr(content.wifi_mode).toString().trim();
-      let power = parseInt(util.returnObjOrNum(content.wifi_power, 100));
-      let wifiState = parseInt(util.returnObjOrNum(content.wifi_state, 1));
-      let wifiHidden = parseInt(util.returnObjOrNum(content.wifi_hidden, 0));
-      let ssid5ghz = util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).toString().trim();
-      let password5ghz = util.returnObjOrEmptyStr(content.wifi_password_5ghz).toString().trim();
-      let channel5ghz = util.returnObjOrEmptyStr(content.wifi_channel_5ghz).toString().trim();
-      let band5ghz = util.returnObjOrEmptyStr(content.wifi_band_5ghz).toString().trim();
-      let mode5ghz = util.returnObjOrEmptyStr(content.wifi_mode_5ghz).toString().trim();
-      let power5ghz = parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
-      let wifiState5ghz = parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
-      let wifiHidden5ghz = parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
-      let isSsidPrefixEnabled = parseInt(util.
-        returnObjOrNum(content.isSsidPrefixEnabled, 0)) == 0 ? false : true;
-      let bridgeEnabled = parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
-      let bridgeDisableSwitch = parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
-      let bridgeFixIP = util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
-      let bridgeFixGateway = util.returnObjOrEmptyStr(content.bridgeFixGateway).toString().trim();
-      let bridgeFixDNS = util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
+      let connectionType =
+        util.returnObjOrEmptyStr(content.connection_type).toString().trim();
+      let pppoeUser =
+        util.returnObjOrEmptyStr(content.pppoe_user).toString().trim();
+      let pppoePassword =
+        util.returnObjOrEmptyStr(content.pppoe_password).toString().trim();
+      let ipv6Enabled =
+        parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
+      let lanSubnet =
+        util.returnObjOrEmptyStr(content.lan_subnet).toString().trim();
+      let lanNetmask =
+        parseInt(util.returnObjOrNum(content.lan_netmask, 24));
+      let ssid =
+        util.returnObjOrEmptyStr(content.wifi_ssid).toString().trim();
+      let password =
+        util.returnObjOrEmptyStr(content.wifi_password).toString().trim();
+      let channel =
+        util.returnObjOrEmptyStr(content.wifi_channel).toString().trim();
+      let band =
+        util.returnObjOrEmptyStr(content.wifi_band).toString().trim();
+      let mode =
+        util.returnObjOrEmptyStr(content.wifi_mode).toString().trim();
+      let power =
+        parseInt(util.returnObjOrNum(content.wifi_power, 100));
+      let wifiState =
+        parseInt(util.returnObjOrNum(content.wifi_state, 1));
+      let wifiHidden =
+        parseInt(util.returnObjOrNum(content.wifi_hidden, 0));
+      let ssid5ghz =
+        util.returnObjOrEmptyStr(content.wifi_ssid_5ghz).toString().trim();
+      let password5ghz =
+        util.returnObjOrEmptyStr(content.wifi_password_5ghz).toString().trim();
+      let channel5ghz =
+        util.returnObjOrEmptyStr(content.wifi_channel_5ghz).toString().trim();
+      let band5ghz =
+        util.returnObjOrEmptyStr(content.wifi_band_5ghz).toString().trim();
+      let mode5ghz =
+        util.returnObjOrEmptyStr(content.wifi_mode_5ghz).toString().trim();
+      let power5ghz =
+        parseInt(util.returnObjOrNum(content.wifi_power_5ghz, 100));
+      let wifiState5ghz =
+        parseInt(util.returnObjOrNum(content.wifi_state_5ghz, 1));
+      let wifiHidden5ghz =
+        parseInt(util.returnObjOrNum(content.wifi_hidden_5ghz, 0));
+      let isSsidPrefixEnabled =
+        (parseInt(util.returnObjOrNum(content.isSsidPrefixEnabled, 0)) == 0 ?
+          false : true);
+      let bridgeEnabled =
+        parseInt(util.returnObjOrNum(content.bridgeEnabled, 1)) === 1;
+      let bridgeDisableSwitch =
+        parseInt(util.returnObjOrNum(content.bridgeDisableSwitch, 1)) === 1;
+      let bridgeFixIP =
+        util.returnObjOrEmptyStr(content.bridgeFixIP).toString().trim();
+      let bridgeFixGateway =
+        util.returnObjOrEmptyStr(content.bridgeFixGateway).toString().trim();
+      let bridgeFixDNS =
+        util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
       let slaveCustomConfigs = [];
       try {
@@ -1438,7 +1480,8 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true}, async function(err, matchedConfig) {
+      Config.findOne({is_default: true})
+      .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
           return res.status(500).json({
@@ -1946,7 +1989,8 @@ deviceListController.setDeviceReg = function(req, res) {
               return res.status(403).json({
                 success: false,
                 type: 'danger',
-                message: t('notEnoughPermissionsForFields'),
+                message: t('notEnoughPermissionsForFields',
+                  {errorline: __line}),
               });
             }
             if (updateParameters) {
@@ -1984,8 +2028,7 @@ deviceListController.setDeviceReg = function(req, res) {
     } else {
       return res.status(500).json({
         success: false,
-        message: t('fieldNameInvalid',
-          {name: 'content',errorline: __line}),
+        message: t('fieldNameInvalid', {name: 'content', errorline: __line}),
         errors: [],
       });
     }
@@ -2001,7 +2044,8 @@ deviceListController.createDeviceReg = function(req, res) {
 
     let errors = [];
     let release = util.returnObjOrEmptyStr(content.release).trim();
-    let connectionType = util.returnObjOrEmptyStr(content.connection_type).trim();
+    let connectionType =
+      util.returnObjOrEmptyStr(content.connection_type).trim();
     let pppoeUser = util.returnObjOrEmptyStr(content.pppoe_user).trim();
     let pppoePassword = util.returnObjOrEmptyStr(content.pppoe_password).trim();
     let ssid = util.returnObjOrEmptyStr(content.wifi_ssid).trim();
@@ -2022,7 +2066,8 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true}, async function(err, matchedConfig) {
+    Config.findOne({is_default: true})
+    .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
         return res.status(500).json({
@@ -2333,8 +2378,10 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     return ret;
   }
   // check compatibility in mode of port mapping
-  if (deviceListController.checkIncompatibility(rules, DeviceVersion.
-  getPortForwardTr069Compatibility(device.model, device.version))) {
+  if (deviceListController.checkIncompatibility(rules,
+        DeviceVersion.getPortForwardTr069Compatibility(device.model,
+                                                       device.version))
+  ) {
     ret.success = false;
     ret.message = t('incompatibleRulesError');
     return ret;
@@ -2344,8 +2391,8 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   // passed by validations, json is clean to put in the document
   device.port_mapping = rules;
   // push a hash from rules json
-  device.forward_index = crypto.createHash('md5').
-  update(JSON.stringify(content)).digest('base64');
+  device.forward_index =
+    crypto.createHash('md5').update(JSON.stringify(content)).digest('base64');
   try {
     await device.save();
   } catch (err) {
@@ -2392,18 +2439,17 @@ deviceListController.setPortForward = function(req, res) {
         message: t('cpeNotInBridgeCantOpenPorts'),
       });
     }
-    // tr-069 routers
+    // TR-069 routers
     if (matchedDevice.use_tr069) {
-      let result = await deviceListController.
-      setPortForwardTr069(matchedDevice, req.body.content);
+      let result =
+        await deviceListController.setPortForwardTr069(matchedDevice,
+                                                       req.body.content);
       return res.status(200).json({
         success: result.success,
         message: result.message,
       });
-    // vanilla routers
+    // Flashbox firmware routers
     } else {
-      console.log('Updating Port Forward for ' + matchedDevice._id);
-      console.log('!@#', req.body.content);
       if (util.isJsonString(req.body.content)) {
         let content = JSON.parse(req.body.content);
 
@@ -2444,9 +2490,7 @@ deviceListController.setPortForward = function(req, res) {
 
             if (!Array.isArray(r.router_port) ||
               !(r.router_port.map((p) => parseInt(p)).every(
-                  (p) => (p >= 1 && p <= 65535)
-                )
-              )
+                  (p) => (p >= 1 && p <= 65535)))
             ) {
               return res.status(200).json({
                 success: false,
@@ -2471,7 +2515,8 @@ deviceListController.setPortForward = function(req, res) {
               });
             }
 
-            if (!(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
+            if (
+              !(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
             ) {
               return res.status(200).json({
                 success: false,
@@ -2481,7 +2526,9 @@ deviceListController.setPortForward = function(req, res) {
 
             usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
           } else {
-            if (!(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))) {
+            if (
+              !(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))
+            ) {
               return res.status(200).json({
                 success: false,
                 message: t('externalPortsRepeatedInJson'),
@@ -2595,9 +2642,9 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
-        compatibility: DeviceVersion.
-        getPortForwardTr069Compatibility(matchedDevice.model,
-                                         matchedDevice.version),
+        compatibility:
+          DeviceVersion.getPortForwardTr069Compatibility(matchedDevice.model,
+                                                         matchedDevice.version),
       });
     }
 
@@ -2912,7 +2959,9 @@ deviceListController.doSpeedTest = function(req, res) {
         message: t('cpeWithoutCommand'),
       });
     }
-    Config.findOne({is_default: true}, async function(err, matchedConfig) {
+    let projection = {measureServerIP: true, measureServerPort: true};
+    Config.findOne({is_default: true}, projection)
+    .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -2948,7 +2997,9 @@ deviceListController.doSpeedTest = function(req, res) {
 
 deviceListController.setDeviceCrudTrap = function(req, res) {
   // Store callback URL for devices
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -2985,25 +3036,27 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
 
 deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const user = matchedConfig.traps_callbacks.device_crud.user;
       const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (!user || !url) {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }

@@ -267,7 +267,40 @@ anlixDocumentReady.add(function() {
       if (resp.tr069STUNEnable) {
         $('#stun_enable').prop('checked', true).change();
       }
+      if ('hasNeverEnabledInsecureTR069' in resp) {
+        setConfigStorage(
+          'hasNeverEnabledInsecureTR069', resp.hasNeverEnabledInsecureTR069,
+        );
+      }
+      if (resp.tr069InsecureEnable) {
+        $('#insecure_enable').prop('checked', true).change();
+      }
     },
+  });
+
+  // popup warning if first time enabling insecure tr069
+  $('#insecure_enable').on('change', (input)=> {
+    if (
+      input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
+    ) {
+      swal({
+        type: 'warning',
+        title: 'Atenção!',
+        html: 'Para habilitar o modo HTTP na comunicação TR-069, é necessário '+
+              'ler e concordar com nossos <a href="https://documentacao.anlix.'+
+              'io/doku.php?id=condicoes_gerais_e_termo_de_adesao">Termos de '+
+              'boas práticas em segurança de redes</a>',
+        confirmButtonText: 'Habilitar',
+        confirmButtonColor: '#4db6ac',
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#f2ab63',
+        showCancelButton: true,
+      }).then((result)=>{
+        if (!result.value) {
+          $('#insecure_enable').prop('checked', false).change();
+        }
+      });
+    }
   });
 
   // change prefix ssid input visibility
