@@ -1198,7 +1198,7 @@ scheduleController.updateScheduleStatus = async function(req, res) {
 const translateState = function(state) {
   if (state === 'update') return t('waitingUpdate');
   if (state === 'retry') return t('waitingUpdate');
-  if (state === 'offline') return t('cpeOffilne');
+  if (state === 'offline') return t('cpeOffline');
   if (state === 'topology') return t('searchingTopology');
   if (state === 'downloading') return t('downloadingFirmware');
   if (state === 'updating') return t('updatingCpe');

@@ -1,9 +1,9 @@
 {
-	"bodyNotObject": "Body recebido, na requisição, não é um objeto",
+	"bodyNotObject": "Body recebido, na requisição, não é um objeto ({{errorline}})",
 	"idInvalidInUrlParams": "ID '{{id}}' recebido nos parametros da url é inválido ({{errorline}})",
-	"receivedNoAlterations": "Nenhuma alteração recebida",
+	"receivedNoAlterations": "Nenhuma alteração recebida ({{errorline}})",
 
-	"languageNotFound": "Language '{{language}}' doesn't exist ({{errorline}})",
+	"languageNotFound": "Lingua '{{language}}' não existe ({{errorline}})",
 	"vlanIdNotFound": "VLAN ID não encontrado ({{errorline}})",
 	"vlanIdOutOfRange": "O VLAN ID não pode ser menor que 3 ou maior que 4094! ({{errorline}})",
 	"vlanProfileNameInvalidCharacter": "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes! ({{errorline}})",
@@ -12,7 +12,6 @@
 	"vlanProfileNameExists": "Já existe um perfil de VLAN com esse nome fornecido! ({{errorline}})",
 	"vlanProfileFindError": "Erro ao acessar a configuração de VLAN ({{errorline}})",
 	"vlanProfileNameShouldBeDifferent": "Nome do Perfil de VLAN deve ser distinto dos já existentes! ({{errorline}})",
-	"vlanProfileNameUpdated": "Perfil de VLAN atualizado com sucesso!",
 	"vlanProfileNotFound": "Perfil de VLAN não encontrado ({{errorline}})",
 
 	"firmwareNotFoundOrSelected": "Firmware não encontrada ou selecionada ({{errorline}})",
@@ -26,10 +25,8 @@
 	"fileMoveError": "Erro ao mover arquivo ({{errorline}})",
 	"fileChecksumError": "Erro ao gerar hash de integridade do arquivo ({{errorline}})",
 	"firmwareAlreadyExists": "Não é possível cadastrar mais de um firmware para um determinado modelo/versão ({{errorline}})",
-	"firmwareUploadSuccess": "Upload de firmware feito com sucesso! ({{errorline}})",
 	"requestError": "Erro na requisição ({{errorline}})",
 	"authenticationError": "Erro na autenticação ({{errorline}})",
-	"firmwareAddSuccess": "Firmware(s) adicionado(s) com sucesso!",
 
 	"geniePresetPutError": "Erro ao enviar preset para o GenieACS ({{errorline}})",
 	"ssidPrefixEmptyError": "Prefixo de SSID não pode ser vazio",
@@ -100,14 +97,14 @@
 	"certificateCPEIsTR069": "CPE TR-069?",
 	"model": "Modelo",
 	"cpeFirmwareVersion": "Versão do firmware da CPE",
-	"Release": "Release/Versão do hardware",
+	"harwareVersion/Release": "Release/Versão do hardware",
 	"attendanceDate": "Data do atendimento",
 	"hasBeenDiagnosed": "Foi diagnosticado",
 	"cpeSignalLevelReceivedInDbm": "Nível de sinal recebido na CPE em dBm",
 	"receivedSignalInDbmOk?": "Sinal recebido em dBm ok?",
 	"wanDiagnosticOk?": "Diagnostico da WAN ok?",
-	"IPv4Ok?": "IPv4 ok?",
-	"IPv6Ok?": "IPv6 ok?",
+	"ipV4Ok?": "IPv4 ok?",
+	"ipV6Ok?": "IPv6 ok?",
 	"dnsOk?": "DNS ok?",
 	"licensingOk?": "Licenciamento ok?",
 	"flashmanRegisterOk?": "Registro no flashman ok?",
@@ -148,7 +145,7 @@
 	"noFileSent": "Nenhum arquivo enviado ({{errorline}})",
 	"errorMovingFile": "Erro movendo o arquivo ({{errorline}})",
 	"waitingUpdate": "Aguardando atualização",
-	"cpeOffilne": "CPE offline",
+	"cpeOffline": "CPE offline",
 	"searchingTopology": "Buscando topologia",
 	"downloadingFirmware": "Baixando firmware",
 	"updatingCpe": "Atualizando CPE",
@@ -164,7 +161,7 @@
 	"updateAbortedUpdatingMeshOldToNew": "Atualização abortada - atualizando mesh no padrão antigo para o novo",
 	"unknownStatus": "Status desconhecido",
 	"xOfY": " {{current}} de {{count}}",
-	"cpeXOfY": " do CPE {{current}} de {{d.slave_count}}",
+	"cpeXOfY": " do CPE {{current}} de {{count}}",
 	"scheduling": "agendamento",
 
 	"saveError": "Erro ao salvar alteração ({{errorline}})",
@@ -200,10 +197,10 @@
 	"cpeUpdateError": "Error ao atualizar o CPE '{{id}}' ({{errorline}})",
 	"cpeUpdateManyError": "Erro ao atualizar CPEs ({{errorline}})",
 	"cpeWithoutFunction": "CPE não possui essa função! ({{errorline}})",
-	"cpeOffline": "CPE não está online! ({{errorline}})",
+	"cpeIsNotOnline": "CPE não está online! ({{errorline}})",
 
 	"configFindError": "Erro ao buscar configuração ({{errorline}})",
 	"configNotFoud": "Configuração não encontrada ({{errorline}})",
 	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
-	"configUpdateError": "Erro salvando configurações"
+	"configUpdateError": "Erro salvando configurações ({{errorline}})"
 }

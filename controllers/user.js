@@ -1243,12 +1243,12 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('IPv4Ok?'),
+        label: t('ipV4Ok?'),
         value: 'certifications.diagnostic.ipv4',
         default: '',
       },
       {
-        label: t('IPv6Ok?'),
+        label: t('ipV6Ok?'),
         value: 'certifications.diagnostic.ipv6',
         default: '',
       },
