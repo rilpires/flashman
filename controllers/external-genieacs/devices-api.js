@@ -719,9 +719,9 @@ const getTendaFields = function() {
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
 
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.1.AssociatedDevice.*.X_CT-COM_RSSI';
+    '.WLANConfiguration.1.AssociatedDevice';
   fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.2.AssociatedDevice.*.X_CT-COM_RSSI';
+    '.WLANConfiguration.2.AssociatedDevice';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
   '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_RSSI';
   fields.devices.alt_host_name = 'InternetGatewayDevice.LANDevice.1'+
