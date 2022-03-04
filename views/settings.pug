@@ -251,6 +251,24 @@ block content
                     label.custom-control-label.text-muted(for="onu_web_remote")
                       | Configurar acesso remoto para ONUs
                     .invalid-feedback
+                  .custom-control.custom-checkbox.mt-2
+                    input#stun_enable.custom-control-input(
+                      name="stun_enable",
+                      type="checkbox"
+                    )
+                    label.custom-control-label.text-muted.mr-2(for="stun_enable")
+                      | Habilitar uso do Servidor STUN
+                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (somente para modelos compatíveis)")
+                    .invalid-feedback
+                  .custom-control.custom-checkbox.mt-2
+                    input#insecure_enable.custom-control-input(
+                      name="insecure_enable",
+                      type="checkbox"
+                    )
+                    label.custom-control-label.text-muted.mr-2(for="insecure_enable")
+                      | Habilitar modo HTTP na comunicação TR-069
+                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs que não suportam o protocolo HTTPS possam se comunicar com o Flashman")
+                    .invalid-feedback
                 .col-md-6.col-12.pl-0.pr-0
                   .md-form.input-entry
                     label Intervalo entre informes do TR-069 (s)
@@ -298,15 +316,6 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
                   #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
-                  .custom-control.custom-checkbox
-                    input#stun_enable.custom-control-input(
-                      name="stun_enable",
-                      type="checkbox"
-                    )
-                    label.custom-control-label.text-muted.mr-2(for="stun_enable")
-                      | Habilitar uso do Servidor STUN
-                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (somente para modelos compatíveis)")
-                    .invalid-feedback
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg

@@ -100,7 +100,7 @@ router.route('/device/landevice/block').put(
 
 router.route('/user/get/all').get(
   authController.ensurePermission('grantAPIAccess'),
-  userController.getUsers);
+  userController.getUsersForDisplay);
 
 router.route('/user/edit/:id').put(
   authController.ensurePermission('grantAPIAccess'),
@@ -151,5 +151,20 @@ router.route('/role/traps/callback').put(
 router.route('/role/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   userController.getRoleCrudTrap);
+
+// *********************
+// *** Certification ***
+// *********************
+
+// Set traps URL for certifications CRUD operations
+router.route('/certification/traps/callback').put(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.setCertificationCrudTrap);
+
+router.route('/certification/traps/callback').get(
+  authController.ensureAPIAccess,
+  authController.ensurePermission('grantAPIAccess'),
+  userController.getCertificationCrudTrap);
 
 module.exports = router;

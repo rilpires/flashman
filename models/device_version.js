@@ -1,3 +1,5 @@
+const util = require('../controllers/handlers/util');
+
 let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
@@ -578,6 +580,31 @@ const tr069Devices = {
       block_devices: false,
       firmware_upgrade: false,
       stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'AC10': {
+    vendor: 'Tenda',
+    versions_upgrade: {
+      'V16.03.06.05_multi_BR01': [],
+    },
+    port_forward_opts: {
+      'V16.03.06.05_multi_BR01': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: false, // Practical tests doesnt worked properly
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -2530,21 +2557,23 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
 };
 
 DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
-  let result = {development: false, current: 0, upgrade: 0};
-  if (curVersion.match(versionRegex) && nextVersion.match(versionRegex)) {
-    if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
+  let result = {unknownVersion: false, current: 0, upgrade: 0};
+  const currVer = util.returnStrOrEmptyStr(curVersion);
+  const nextVer = util.returnStrOrEmptyStr(nextVersion);
+  if (currVer.match(versionRegex) && nextVer.match(versionRegex)) {
+    if (DeviceVersion.versionCompare(currVer, '0.32.0') < 0) {
       result.current = 1;
     } else {
       result.current = 2;
     }
-    if (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0) {
+    if (DeviceVersion.versionCompare(nextVer, '0.32.0') < 0) {
       result.upgrade = 1;
     } else {
       result.upgrade = 2;
     }
   } else {
     // either current or target release are development version
-    return {development: true};
+    result.unknownVersion = true;
   }
   return result;
 };

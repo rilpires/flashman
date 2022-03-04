@@ -1,5 +1,5 @@
-// const request = require('request-promise-native');
-// const mqtt = require('../mqtts');
+/* global __line */
+
 const util = require('./handlers/util');
 const mqtt = require('../mqtts');
 const DeviceModel = require('../models/device');
@@ -63,8 +63,6 @@ const checkPingFqdnToUnset = (obj) =>
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets',
     checkNumericFieldInsideInterval(100, 100));
-const checkId = (obj) =>
-  checkField(obj, 'id', util.isMacValid);
 
 // An Object class to be used as errors to be returned in responses.
 // Every router http handler will have a final catch that expects an object of
@@ -152,7 +150,9 @@ const readChangesAndBuildMongoDBUpdateObject = function(changes) {
       }
     }
   }
-  if (noChange) throw new HttpError(400, t('receivedNoAlterations'));
+  if (noChange) {
+    throw new HttpError(400, t('receivedNoAlterations', {errorline: __line}));
+  }
   return update;
 };
 
@@ -245,7 +245,7 @@ dataCollectingController.updateManyParameters = async function(req, res) {
         {name: 'filter_list', errorline: __line}));
     } else if (filterList.constructor !== String) {
       throw new HttpError(400, t('fieldNameWrongType',
-        {name: 'filter_list', errorline: __line}));
+        {name: 'filter_list', dataType: 'string', errorline: __line}));
     }
     filterList = filterList.split(',');
     return deviceListController.complexSearchDeviceQuery(filterList)
