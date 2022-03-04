@@ -4,8 +4,6 @@
 	"receivedNoAlterations": "Nenhuma alteração recebida",
 
 	"languageNotFound": "Language '{{language}}' doesn't exist ({{errorline}})",
-	"permissionNotFound": "Permissão não encontrada ({{errorline}})",
-	"permissionDenied": "Permissão negada ({{errorline}})",
 	"vlanIdNotFound": "VLAN ID não encontrado ({{errorline}})",
 	"vlanIdOutOfRange": "O VLAN ID não pode ser menor que 3 ou maior que 4094! ({{errorline}})",
 	"vlanProfileNameInvalidCharacter": "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes! ({{errorline}})",
@@ -76,7 +74,6 @@
 	"updateAbortedCpeInstallingFirmware": "Atualização abortada - CPE estava instalando firmware",
 	"updateAbortedCpeUpdatingSecondaryCpe": "Atualização abortada - atualizando CPE secundário",
 
-
 	"passwordExpired": "Sua senha expirou. Insira uma nova senha ({{errorline}})",
 	"passwordsDiffer": "As senhas estão diferentes ({{errorline}})",
 	"userFindError": "Erro ao buscar usuário ({{errorline}})",
@@ -89,7 +86,6 @@
 	"roleMightAlreadyExist": "Erro ao criar classe. Verifique se já existe ({{errorline}})",
 	"roleFindError": "Erro ao encontrar classe ({{errorline}})",
 	"roleSaveError": "Erro ao editar classe ({{errorline}})",
-	"permissionDenied": "Permissão negada ({{errorline}})",
 	"certificateDeleteErrorContactDev": "Erro interno ao deletar certificações. Entre em contato com o desenvolvedor ({{errorline}})",
 	"userDeleteErrorContactDev": "Erro interno ao deletar usuário(s). Entre em contato com o desenvolvedor ({{errorline}})",
 	"roleDeleteErrorContactDev": "Erro interno ao deletar classe(s). Entre em contato com o desenvolvedor ({{errorline}})",
@@ -157,6 +153,7 @@
 	"updatedSuccessfully": "Atualizado com sucesso",
 	"errorDuringUpdate": "Ocorreu um erro na atualização",
 	"errorDuringTopologyValidation": "Ocorreu um erro na validação da topologia",
+	"updateStartFailedMeshNetwork": "Falha ao iniciar o update da rede mesh",
 	"updateAborted": "Atualização abortada",
 	"updateAbortedCpeOffline": "Atualização abortada - CPE estava offline",
 	"updateAbortedCpeSearchingTopology": "Atualização abortada - CPE estava buscando topologia",
