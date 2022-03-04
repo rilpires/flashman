@@ -1,3 +1,6 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 let User = require('../models/user');
 let Config = require('../models/config');
 let Firmware = require('../models/firmware');
@@ -364,7 +367,8 @@ firmwareController.syncRemoteFirmwareFiles = async function(req, res) {
     },
     function(error, response, body) {
       if (error) {
-        return res.json({type: 'danger', message: t('requestError', {errorline: __line})});
+        return res.json({type: 'danger',
+                         message: t('requestError', {errorline: __line})});
       }
       if (response.statusCode === 200) {
         let firmwareNames = [];
@@ -481,7 +485,7 @@ let addFirmwareFile = function(fw) {
                   fs.unlink(path.join(imageReleasesDir, firmwarefname),
                     function(err) {
                       return reject(
-                        t('fileChecksumError',{errorline: __line}));
+                        t('fileChecksumError', {errorline: __line}));
                     },
                   );
                 }

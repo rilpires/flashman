@@ -1,3 +1,5 @@
+/* global __line */
+
 const Config = require('../models/config');
 const DeviceModel = require('../models/device');
 const t = require('./language').i18next.t;
@@ -72,12 +74,15 @@ const translateStateReboot = (state) => {
   if (state.type === 'ok') return t('successfullyRestarted');
   if (state.type === 'error') return t('anErrorHappendAt ');
   if (state.type === 'aborted') return t('updateAborted');
-  if (state.type === 'aborted' && state.beforeAbort === 'offline')
+  if (state.type === 'aborted' && state.beforeAbort === 'offline') {
     return t('updateAbortedCpeOffline');
-  if (state.type === 'aborted' && state.beforeAbort === 'reboot')
+  }
+  if (state.type === 'aborted' && state.beforeAbort === 'reboot') {
     return t('updateAbortedCpeInstallingFirmware');
-  if (state.type === 'aborted' && state.beforeAbort === 'slave')
+  }
+  if (state.type === 'aborted' && state.beforeAbort === 'slave') {
     return t('updateAbortedCpeUpdatingSecondaryCpe');
+  }
   return t('unknownStatus');
 };
 
