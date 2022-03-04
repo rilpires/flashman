@@ -1,3 +1,5 @@
+/* global __line */
+
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Role = require('../models/role');
@@ -215,23 +217,24 @@ const markNextForUpdate = async function() {
   let config = await getConfig();
   if (!config) {
     mutexRelease();
-    console.log('Scheduler: não há um agendamento');
-    return {success: false, error: t('noSchedulingActive', {errorline, __line})};
+    console.log('Scheduler: No active schedule found');
+    return {success: false,
+            error: t('noSchedulingActive', {errorline: __line})};
   } else if (config.is_aborted) {
     mutexRelease();
-    console.log('Scheduler: agendamento abortado');
+    console.log('Scheduler: Schedule aborted');
     return {success: true, marked: false};
   }
   // Check if we are in a valid date range before doing DB operations
   if (!checkValidRange(config)) {
     mutexRelease();
-    console.log('Scheduler: fora do horário válido');
+    console.log('Scheduler: Invalid time range');
     return {success: true, marked: false};
   }
   let devices = config.device_update_schedule.rule.to_do_devices;
   if (devices.length === 0) {
     mutexRelease();
-    console.log('Scheduler: não há dispositivos para atualizar');
+    console.log('Scheduler: No devices to update');
     return {success: true, marked: false};
   }
   let nextDevice = null;
@@ -255,7 +258,7 @@ const markNextForUpdate = async function() {
       console.log(err);
     }
     mutexRelease();
-    console.log('Scheduler: não há dispositivos online');
+    console.log('Scheduler: No online devices to update');
     return {success: true, marked: false};
   }
   try {
@@ -291,13 +294,13 @@ const markNextForUpdate = async function() {
       );
       mutexRelease();
       console.log(
-        'Scheduler: agendado update da rede mesh de MAC ' + nextDevice.mac,
+        'Scheduler: Mesh update scheduled for MAC ' + nextDevice.mac,
       );
       const meshUpdateStatus = await meshHandler.beginMeshUpdate(
         device,
       );
       if (!meshUpdateStatus.success) {
-        throw new Error('Falha em iniciar o update da rede mesh');
+        throw new Error(t('updateStartFailedMeshNetwork'));
       }
     } else {
       // If this is just a regular device we don't need the topology
@@ -332,7 +335,7 @@ const markNextForUpdate = async function() {
   } catch (err) {
     console.log(err);
     mutexRelease();
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   return {success: true, marked: true};
 };
@@ -341,8 +344,10 @@ scheduleController.initialize = async function(
   macList, slaveCountPerMac, currentMeshVerPerMac, upgradeMeshVerPerMac,
 ) {
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   let devices = macList.map((mac)=>{
     return {
       mac: mac.toUpperCase(),
@@ -373,7 +378,7 @@ scheduleController.initialize = async function(
     }
   } catch (err) {
     console.log(err);
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   scheduleOfflineWatchdog();
   return {success: true};
@@ -392,12 +397,16 @@ scheduleController.successTopology = async function(mac) {
   mutexRelease = await mutex.acquire();
 
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) return {success: false, error: t('macNotFound',
-    {errorline: __line})};
+  if (!device) {
+    return {success: false, error: t('macNotFound',
+                                     {errorline: __line})};
+  }
   if (config.device_update_schedule.is_aborted) {
     return {success: false, error: t('schedulingAlreadyAborted',
     {errorline: __line})};
@@ -423,23 +432,27 @@ scheduleController.successTopology = async function(mac) {
   } catch (err) {
     mutexRelease();
     console.log(err);
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   return {success: true};
 };
 
 scheduleController.successDownload = async function(mac) {
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
   if (config.device_update_schedule.is_aborted) {
     return {success: false, error: t('schedulingAlreadyAborted',
       {errorline: __line})};
   }
-  if (!device) return {success: false, error: t('macNotFound',
-    {errorline: __line})};
+  if (!device) {
+    return {success: false, error: t('macNotFound',
+                                     {errorline: __line})};
+  }
   // Change from status downloading to updating
   try {
     const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
@@ -457,23 +470,27 @@ scheduleController.successDownload = async function(mac) {
     }
   } catch (err) {
     console.log(err);
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   return {success: true};
 };
 
 scheduleController.successUpdate = async function(mac) {
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) return {success: false, error: t('macNotFound',
-    {errorline: __line})};
+  if (!device) {
+    return {success: false, error: t('macNotFound',
+                                     {errorline: __line})};
+  }
   if (config.device_update_schedule.is_aborted) {
     return {success: false, error: t('schedulingAlreadyAborted',
-      {errorline: __line})};
+                                     {errorline: __line})};
   }
   // Change from status updating to ok
   try {
@@ -532,7 +549,7 @@ scheduleController.successUpdate = async function(mac) {
     }
   } catch (err) {
     console.log(err);
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   if (rule.done_devices.length+1 === count) {
     // This was last device to enter done state, schedule is done
@@ -543,16 +560,20 @@ scheduleController.successUpdate = async function(mac) {
 
 scheduleController.failedDownload = async function(mac, slave='') {
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) return {success: false, error: t('macNotFound',
-    {errorline: __line})};
+  if (!device) {
+    return {success: false, error: t('macNotFound',
+                                     {errorline: __line})};
+  }
   if (config.device_update_schedule.is_aborted) {
     return {success: false, error: t('schedulingAlreadyAborted',
-      {errorline: __line})};
+                                     {errorline: __line})};
   }
   try {
     let setQuery = null;
@@ -622,19 +643,21 @@ scheduleController.failedDownload = async function(mac, slave='') {
     await configQuery(setQuery, pullQuery, pushQuery);
   } catch (err) {
     console.log(err);
-    return {success: false, error: t('saveError', {errorline, __line})};
+    return {success: false, error: t('saveError', {errorline: __line})};
   }
   return {success: true};
 };
 
 scheduleController.abortSchedule = async function(req, res) {
   let config = await getConfig();
-  if (!config) return {success: false, error: t('noSchedulingActive',
-    {errorline: __line})};
+  if (!config) {
+    return {success: false, error: t('noSchedulingActive',
+                                     {errorline: __line})};
+  }
   // Mark scheduled update as aborted - separately to mitigate racing conditions
   if (config.device_update_schedule.is_aborted) {
     return {success: false, error: t('schedulingAlreadyAborted',
-      {errorline: __line})};
+                                     {errorline: __line})};
   }
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
@@ -706,7 +729,7 @@ scheduleController.abortSchedule = async function(req, res) {
     console.log(err);
     return res.status(500).json({
       success: false,
-      message: t('saveError', {errorline, __line}),
+      message: t('saveError', {errorline: __line}),
     });
   }
   removeOfflineWatchdog();
@@ -1220,7 +1243,7 @@ scheduleController.scheduleResult = async function(req, res) {
     if ((d.state === 'updating' || d.state === 'downloading') &&
       d.slave_count > 0) {
       let current = d.slave_count + 1 - d.slave_updates_remaining;
-      state += t('xOfY', {current: current, count: slave_count + 1});
+      state += t('xOfY', {current: current, count: d.slave_count + 1});
     }
     csvData += `${d.mac},${state}\n`;
   });
@@ -1229,9 +1252,9 @@ scheduleController.scheduleResult = async function(req, res) {
     if (d.slave_count > 0) {
       let current = d.slave_count - d.slave_updates_remaining + 1;
       if (d.state === 'error') {
-        state += t('cpeXOfY', {current: current, count: slave_count + 1});
+        state += t('cpeXOfY', {current: current, count: d.slave_count + 1});
       } else if (d.state === 'aborted_update' || d.state === 'aborted_down') {
-        state += t('xOfY', {current: current, count: slave_count + 1});
+        state += t('xOfY', {current: current, count: d.slave_count + 1});
       }
     }
     csvData += `${d.mac},${state}\n`;
