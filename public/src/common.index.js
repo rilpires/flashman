@@ -8,10 +8,8 @@ import '../scss/flashman-bundle.scss';
 // will be used as synchronization step between i18next configuration and all
 // DOMContentLoaded callbacks.
 let i18nextResolved;
-let i18nextRejected;
-let i18nextPromise = new Promise((resolve, reject) => {
+let i18nextInitialization = new Promise((resolve, reject) => {
   i18nextResolved = resolve;
-  i18nextRejected = reject;
 });
 
 // configuring our internationalization package. The initialization happens in
@@ -32,10 +30,9 @@ i18next
   }, (err, t) => { // finished initializing.
     if (err) {
       console.log('Error when loading i18next', err);
-      i18nextRejected(); // resolving the Promise.
-    } else {
-      i18nextResolved(); // resolving the Promise.
     }
+    // to be used by other events so they know this has finished.
+    i18nextResolved();
   });
 
 // Object that holds all DOMContentLoaded callbacks. Even though they are
@@ -64,5 +61,5 @@ $(document).ready(function() {
 
   // we wait for i18next initialization before executing all DOMContentLoaded
   // event callbacks.
-  i18nextPromise.then(anlixDocumentReady.start);
+  i18nextInitialization.then(anlixDocumentReady.start);
 });

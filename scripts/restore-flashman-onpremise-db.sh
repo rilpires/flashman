@@ -1,7 +1,8 @@
 #!/bin/bash
 #Faz a restauracao do backup buscando no backblaze
 
-VERSAO=2022020701
+VERSAO=2022022801
+#2022022801 - correcao no parametro do mongorestore, pois o --nsInclude espera um padrao tipo "flashman.*" e nao apenas flashman
 #2022020701 - para o mongorestore usar --nsInclude no lugar de --db que e considerado deprecated
 #2022020401 - exibir apenas aviso quando nao conseguir fazer download dos firmwares
 #2022020303 - ajustes para considerar apenas bucket unico com uma pasta para cada empresa; removidos valores de BACKBLAZE_ACCOUNT e BACKBLAZE_APPSECRET pois serao inseridos depois
@@ -86,7 +87,7 @@ if ! unzip -o $ZIP_MONGODB_FNAME -d ./ >> $LOG 2>&1; then
     exit 1
 fi
 echo "Executando mongorestore" | tee -a $LOG
-if ! mongorestore --nsInclude flashman --drop --archive=${COMPANY}_flashman.dump >> $LOG 2>&1; then
+if ! mongorestore --nsInclude "flashman.*" --drop --archive=${COMPANY}_flashman.dump >> $LOG 2>&1; then
     echo "[$0 ERRO] ao executar mongorestore para ${COMPANY}_flashman.dump, verifique $LOG" | tee -a $LOG
     rm -f $ZIP_MONGODB_FNAME ${COMPANY}_flashman.dump
     echo "FIM|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
@@ -112,7 +113,7 @@ if ! unzip -o $ZIP_MONGODB_GENIE_FNAME >> $LOG 2>&1; then
     echo "FIM|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
     exit 1
 fi
-if ! mongorestore --nsInclude genieacs --drop --archive=${COMPANY}_genieacs.dump >> $LOG 2>&1; then
+if ! mongorestore --nsInclude "genieacs.*" --drop --archive=${COMPANY}_genieacs.dump >> $LOG 2>&1; then
     echo "[$0 ERRO] ao executar mongorestore para ${COMPANY}_genieacs.dump, verifique $LOG" | tee -a $LOG
     rm -f $ZIP_MONGODB_GENIE_FNAME ${COMPANY}_genieacs.dump
     echo "FIM|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
