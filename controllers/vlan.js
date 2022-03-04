@@ -1,4 +1,5 @@
 /* eslint-disable camelcase */
+/* global __line */
 
 const mqtt = require('../mqtts');
 let User = require('../models/user');
@@ -426,7 +427,7 @@ vlanController.updateVlans = async function(req, res) {
       });
     } else {
       return res.json({success: false, type: 'danger',
-        message: t('fieldNameInvalid', 
+        message: t('fieldNameInvalid',
                        {errorline: __line, name: 'vlans'})});
     }
   } else {
@@ -575,8 +576,6 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
     '{"port":3,"vlan_id":1}',
     '{"port":4,"vlan_id":1}'];
   let deviceInfo = DeviceVersion.getDeviceInfo(model);
-  let maxVid = deviceInfo['max_vid'];
-  let qtdPorts = deviceInfo['num_usable_lan_ports'];
   let receivedVlan;
   if (!vlanObj) {
     return defaultVlan;
@@ -612,7 +611,9 @@ vlanController.convertDeviceVlan = function(model, vlanObj) {
       ports = ports.split(' ');
       if (ports.includes(lanPorts[i].toString())) {
         vid = parseInt(vids[j]);
-        if(!vid) vid = 1;
+        if (!vid) {
+          vid = 1;
+        }
         break;
       }
     }
