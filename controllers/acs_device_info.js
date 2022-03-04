@@ -1,3 +1,4 @@
+/* global __line */
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
 const FirmwaresAPI = require('./external-genieacs/firmwares-api');
@@ -12,6 +13,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
 const utilHandlers = require('./handlers/util');
+const t = require('./language').i18next.t;
 
 const pako = require('pako');
 const http = require('http');
@@ -448,12 +450,11 @@ const createRegistry = async function(req, permissions) {
     });
     if (!matchedNotif || matchedNotif.allow_duplicate) {
       let notification = new Notification({
-        'message': 'Não foi possível habilitar o prefixo SSID ' +
-                   'pois o tamanho máximo de 32 caracteres foi excedido.',
+        'message': t('ssidPrefixInvalidLength', {errorline: __line}),
         'message_code': 5,
         'severity': 'alert',
         'type': 'communication',
-        'action_title': 'Ok',
+        'action_title': t('ok'),
         'allow_duplicate': false,
         'target': newDevice._id,
       });
@@ -472,7 +473,8 @@ const createRegistry = async function(req, permissions) {
 acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
-    return res.status(500).json({success: false, message: 'Error in database'});
+    return res.status(500).json({success: false,
+      message: t('serverError', {errorline: __line})});
   });
   // New devices need to sync immediately
   if (!device) {
@@ -482,7 +484,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   if (!device.use_tr069) {
     return res.status(500).json({
       success: false,
-      message: 'Attempt to sync acs data with non-tr-069 device',
+      message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
   // Devices updating need to return immediately
@@ -495,7 +497,8 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
   .catch((err)=>{
-    return res.status(500).json({success: false, message: 'Error in database'});
+    return res.status(500).json({success: false,
+      message: t('configFindError', {errorline: __line})});
   });
   // Devices that havent synced in (config interval) need to sync immediately
   let syncDiff = Date.now() - device.last_tr069_sync;
@@ -516,13 +519,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!data || !data.common || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
-      message: 'Missing mac field',
+      message: t('fieldNameMissing', {name: 'mac', errorline: __line}),
     });
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
   .catch((err) => {
     return res.status(500).json({success: false,
-                                 message: 'Error finding Config in database'});
+      message: t('configFindError', {errorline: __line})});
   });
   // Convert mac field from - to : if necessary
   if (data.common.mac.value.includes('-')) {
@@ -548,7 +551,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   if (!permissions) {
     return res.status(500).json({
       success: false,
-      message: 'Cannot find device permissions',
+      message: t('permissionFindError', {errorline: __line}),
     });
   }
 
@@ -558,14 +561,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     } else {
       return res.status(500).json({
         success: false,
-        message: 'Failed to create device registry',
+        message: t('acsCreateCpeRegistryError', {errorline: __line}),
       });
     }
   }
   if (!device.use_tr069) {
     return res.status(500).json({
       success: false,
-      message: 'Attempt to sync acs data with non-tr-069 device',
+      message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
   let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
@@ -1023,7 +1026,7 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
     else {
       res.status(200).json({
         success: false,
-        message: 'Dispositivos não respondeu à requisição',
+        message: t('cpeDidNotRespond', {errorline: __line}),
       });
     }
   });
@@ -1034,7 +1037,7 @@ const fetchLogFromGenie = function(success, device, acsID) {
   let mac = device._id;
   if (!success) {
     // Return with log unavailable
-    let data = 'Log não disponível!';
+    let data = t('logUnavailable', {errorline: __line});
     let compressedLog = pako.gzip(data);
     sio.anlixSendLiveLogNotifications(mac, compressedLog);
     return;
@@ -1058,7 +1061,7 @@ const fetchLogFromGenie = function(success, device, acsID) {
       }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
-        data = 'Log não disponível!';
+        data = t('logUnavailable', {errorline: __line});
       } else {
         success = true;
         data = getFromNestedKey(data, logField+'._value');
@@ -1091,16 +1094,16 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     } else {
       return res.status(500).json({
         success: false,
-        message: 'Dispositivo não encontrado',
+        message: t('cpeNotFound', {errorline: __line}),
       });
     }
   } catch (e) {
     return res.status(500).json({success: false,
-      message: 'Erro ao encontrar dispositivo'});
+      message: t('cpeFindError', {errorline: __line})});
   }
   if (!device || !device.use_tr069 || !device.acs_id) {
     return res.status(500).json({success: false,
-      message: 'Erro ao encontrar dispositivo'});
+      message: t('cpeFindError', {errorline: __line})});
   }
 
   // We don't need to wait the diagnostics to complete
@@ -1236,11 +1239,11 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   } catch (e) {
     console.log('Error:', e);
     return {success: false,
-            message: 'Erro ao encontrar dispositivo'};
+            message: t('cpeFindError', {errorline: __line})};
   }
   if (!device || !device.use_tr069 || !device.acs_id) {
     return {success: false,
-            message: 'Erro ao encontrar dispositivo'};
+            message: t('cpeFindError', {errorline: __line})};
   }
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
@@ -1276,7 +1279,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
   if (!success) {
     return {success: false,
-            message: 'Error: Could not fire TR-069 ping measure'};
+            message: t('acsPingError', {errorline: __line})};
   }
 
   let task = {
@@ -1290,10 +1293,10 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
     const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (!result || !result.finished) {
       return {success: false,
-              message: 'Error: Could not fire TR-069 ping measure'};
+              message: t('acsPingCouldNotBeSent', {errorline: __line})};
     } else {
       return {success: true,
-              message: 'Success: TR-069 ping measure fired'};
+              message: t('operationSuccessful')};
     }
   } catch (err) {
       return {success: false,
@@ -1391,11 +1394,11 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   } catch (e) {
     console.log('Error:', e);
     return {success: false,
-            message: 'Erro ao encontrar dispositivo'};
+            message: t('cpeFindError', {errorline: __line})};
   }
   if (!device || !device.use_tr069 || !device.acs_id) {
     return {success: false,
-            message: 'Erro ao encontrar dispositivo'};
+            message: t('cpeFindError', {errorline: __line})};
   }
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
@@ -1410,7 +1413,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
 
   if (!speedtestHostUrl || speedtestHostUrl === '') {
     return {success: false,
-            message: 'Error: Could not get speedtest measure file'};
+            message: t('acsSpeedTestFileUnavailable', {errorline: __line})};
   }
 
   // We need to update the parameter values before we fire the ping test
@@ -1434,7 +1437,7 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   }
   if (!success) {
     return {success: false,
-            message: 'Error: Could not fire TR-069 speedtest'};
+            message: t('acsSpeedTestError', {errorline: __line})};
   }
 
   let task = {
@@ -1447,11 +1450,11 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
     const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
     if (!result || !result.finished) {
       return {success: false,
-              message: 'Error: Could not fire TR-069 speedtest'};
+              message: t('acsSpeedTestError', {errorline: __line})};
     } else {
       console.log('Success: TR-069 speedtest fired');
       return {success: true,
-              message: 'Success: TR-069 speedtest fired'};
+              message: t('operationSuccessful')};
     }
   } catch (err) {
       return {success: false,
@@ -2825,7 +2828,8 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     }
     if (!devicesArray || devicesArray.length == 0) {
       // Nothing to report
-      return {success: false, message: 'Nenhum a reportar'};
+      return {success: false,
+        message: t('nothingToReport', {errorline: __line})};
     }
     let response = await controlApi.reportDevices(app, devicesArray);
     if (response.success) {
@@ -2839,9 +2843,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
           'target': 'general'});
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'Sua conta está sem licenças para CPEs TR-069 ' +
-                       'sobrando. Entre em contato com seu representante ' +
-                       'comercial',
+            'message': t('noMoreTr069Licences', {errorline: __line}),
             'message_code': 4,
             'severity': 'danger',
             'type': 'communication',
@@ -2856,9 +2858,8 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
           'target': 'general'});
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'Sua conta está com apenas ' + response.licensesNum +
-                       ' licenças CPE TR-069 sobrando. ' +
-                       'Entre em contato com seu representante comercial',
+            'message': t('tr069LicencesLeft',
+              {n: response.licensesNum, errorline: __line}),
             'message_code': 3,
             'severity': 'alert',
             'type': 'communication',
@@ -2871,7 +2872,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     }
   } catch (err) {
     console.error('Error in license report: ' + err);
-    return {success: false, message: 'Erro na requisição'};
+    return {success: false, message: t('requestError', {errorline: __line})};
   }
 };
 
@@ -2908,11 +2909,13 @@ acsDeviceInfoController.upgradeFirmware = async function(device) {
       cpe_type: 'tr069',
     });
     if (!firmware) {
-      return {success: false, message: 'Não existe firmware com essa versão'};
+      return {success: false,
+        message: t('firmwareVersionNotFound', {errorline: __line})};
     } else {
       let response = await acsDeviceInfoController.addFirmwareInACS(firmware);
       if (!response) {
-        return {success: false, message: 'Erro ao adicionar firmware'};
+        return {success: false,
+          message: t('firmwareInsertError', {errorline: __line})};
       }
     }
   }
@@ -2966,7 +2969,7 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
   const updated =
     await acsDeviceInfoController.updateInfo(device, changes, true);
   if (!updated) {
-    return {success: false, msg: 'Erro ao enviar parâmetros mesh para a CPE'};
+    return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }
   return {success: true};
 };

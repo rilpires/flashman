@@ -1,3 +1,4 @@
+/* global __line */
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
@@ -9,6 +10,7 @@ const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
 const fs = require('fs');
+const t = require('./language').i18next.t;
 
 let appDeviceAPIController = {};
 
@@ -665,19 +667,23 @@ appDeviceAPIController.removeApp = function(req, res) {
 appDeviceAPIController.rebootRouter = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let isDevOn;
@@ -702,19 +708,23 @@ appDeviceAPIController.rebootRouter = function(req, res) {
 appDeviceAPIController.refreshInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let isDevOn;
@@ -742,25 +752,29 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
   DeviceModel.findByMacOrSerial(req.body.id).exec(
   async (err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
+        message: t('cpeNotFound', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     // Send reply first, then send mqtt message
@@ -853,29 +867,31 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       console.log(error);
     }
     if (err || !config) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
       return res.status(404).json({
-        message: 'App não encontrado',
+        message: t('appNotFound', {errorline: __line}),
         secret: true,
       });
     }
     if (appObj[0].secret != req.body.app_secret) {
       return res.status(403).json({
-        message: 'App não autorizado',
+        message: t('appUnauthorized', {errorline: __line}),
         secret: true,
       });
     }
     if (req.body.content.password !== matchedDevice.app_password) {
       return res.status(403).json({
-        message: 'Senha errada',
+        message: t('invalidPassword'),
         password: true,
       });
     }
@@ -884,7 +900,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       config.personalizationHash !==
       req.body.content.personalizationHash) {
       return res.status(403).json({
-        message: 'Erro na hash de personalização',
+        message: t('personalizationHasError', {errorline: __line}),
         personalizationHash: true,
         androidLink: config.androidLink,
         iosLink: config.iosLink,
@@ -1020,19 +1036,23 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 appDeviceAPIController.appGetVersion = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let permissions = DeviceVersion.findByVersion(
@@ -1049,19 +1069,23 @@ appDeviceAPIController.appGetVersion = function(req, res) {
 appDeviceAPIController.appGetDevices = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let devicesInfo = formatDevices(matchedDevice);
@@ -1077,19 +1101,23 @@ appDeviceAPIController.appGetDevices = function(req, res) {
 appDeviceAPIController.appGetPortForward = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let devices = {};
@@ -1114,19 +1142,23 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
 appDeviceAPIController.appGetSpeedtest = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     let config;
@@ -1137,7 +1169,8 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       if (!config) throw new Error('Config not found');
     } catch (err) {
       console.log(err);
-      return res.status(500).json({message: 'Erro ao acessar configuração'});
+      return res.status(500).json({message:
+        t('configFindError', {errorline: __line})});
     }
 
     let reply = {'speedtest': {}};
@@ -1166,19 +1199,23 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
 appDeviceAPIController.appGetWpsState = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj[0].secret != req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
 
     return res.status(200).json({
@@ -1192,27 +1229,30 @@ appDeviceAPIController.appGetWpsState = function(req, res) {
 appDeviceAPIController.resetPassword = function(req, res) {
   if (!req.body.content || !req.body.content.reset_mac ||
       !req.body.content.reset_secret) {
-    return res.status(500).json({message: 'Erro nos parâmetros'});
+    return res.status(500).json({message:
+      t('parametersError', {errorline: __line})});
   }
   DeviceModel.findById(req.body.content.reset_mac).exec(async (err, device) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!device) {
-      return res.status(404).json({message: 'Device não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = device.apps.filter(function(app) {
       return app.id === req.body.app_id;
     });
     if (appObj.length == 0) {
       return res.status(404).json({
-        message: 'App não encontrado',
+        message: t('appNotFound', {errorline: __line}),
         secret: true,
       });
     }
     if (appObj[0].secret != req.body.content.reset_secret) {
       return res.status(403).json({
-        message: 'App não autorizado',
+        message: t('appUnauthorized', {errorline: __line}),
         secret: true,
       });
     }
@@ -1230,24 +1270,29 @@ appDeviceAPIController.resetPassword = function(req, res) {
 appDeviceAPIController.activateWpsButton = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj = matchedDevice.apps.find(function(app) {
       return app.id === req.body.app_id;
     });
     if (typeof appObj === 'undefined') {
-      return res.status(404).json({message: 'App não encontrado'});
+      return res.status(404).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj.secret !== req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
     if (!('content' in req.body) || !('activate' in req.body.content) ||
         !(typeof req.body.content.activate === 'boolean')
     ) {
-      return res.status(500).json({message: 'Erro na requisição'});
+      return res.status(500).json({message:
+        t('requestError', {errorline: __line})});
     }
 
     // Send mqtt message to activate WPS push button
@@ -1265,7 +1310,8 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
 
 appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   // Get global config tr069 cpe login credentials
   let config = await Config.findOne(
@@ -1303,7 +1349,8 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   let projection = {_id: 1, model: 1, version: 1, pending_app_secret: 1};
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
-      return res.status(500).json({'message': 'Erro interno'});
+      return res.status(500).json({'message':
+        t('serverError', {errorline: __line})});
     }
     // Generate a new secret for app
     let newSecret = crypt.randomBytes(20).toString('base64');
@@ -1334,7 +1381,8 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
 
 appDeviceAPIController.validateDeviceSerial = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   let serial = req.body.content.serial;
   let query = {
@@ -1345,15 +1393,18 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   };
   DeviceModel.find(query).exec(async function(err, matchedDevices) {
     if (err) {
-      return res.status(500).json({'message': 'Erro interno'});
+      return res.status(500).json({'message':
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevices || matchedDevices.length === 0) {
-      return res.status(404).json({'message': 'CPE não encontrado'});
+      return res.status(404).json({'message':
+        t('cpeNotFound', {errorline: __line})});
     }
     let device = matchedDevices[0];
     if (device.pending_app_secret === '' ||
         device.pending_app_secret !== req.body.content.secret) {
-      return res.status(403).json({'message': 'Secret inválido'});
+      return res.status(403).json({'message':
+        t('secretInvalid', {errorline: __line})});
     }
     let appObj = device.apps.filter((app) => app.id === req.body.app_id);
     let newEntry = {
@@ -1397,26 +1448,31 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
 
 appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   let query = req.body.id;
   let projection = {_id: 1, app_password: 1, apps: 1};
   DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     let appObj;
     if (matchedDevice.apps) {
       appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
     }
     if (typeof appObj === 'undefined') {
-      return res.status(403).json({message: 'App não encontrado'});
+      return res.status(403).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj.secret !== req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
     let content = req.body.content;
     let newPassword = (content.password) ? content.password : '';
@@ -1431,28 +1487,34 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
 
 appDeviceAPIController.appSetPortForward = function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   let query = req.body.id;
   DeviceModel.findById(query).exec(function(err, matchedDevice) {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('serverError', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
     if (!matchedDevice.use_tr069) {
-      return res.status(403).json({message: 'CPE não autorizado'});
+      return res.status(403).json({message:
+        t('cpeUnauthorized', {errorline: __line})});
     }
     let appObj;
     if (matchedDevice.apps) {
       appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);
     }
     if (typeof appObj === 'undefined') {
-      return res.status(403).json({message: 'App não encontrado'});
+      return res.status(403).json({message:
+        t('appNotFound', {errorline: __line})});
     }
     if (appObj.secret !== req.body.app_secret) {
-      return res.status(403).json({message: 'App não autorizado'});
+      return res.status(403).json({message:
+        t('appUnauthorized', {errorline: __line})});
     }
     let content = req.body.content;
     if (content.rules && content.rules.constructor === Array) {
@@ -1464,13 +1526,15 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
       acsController.changePortForwardRules(matchedDevice, diff);
       return res.status(200).json({'success': true});
     }
-    return res.status(500).json({message: 'Dados de regras inválidos'});
+    return res.status(500).json({message:
+      t('rulesDataInvalid', {errorline: __line})});
   });
 };
 
 appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   let query;
   if (req.body.content.alt_uid) {
@@ -1518,7 +1582,8 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
 
 appDeviceAPIController.signalResetRecover = async function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonError', {errorline: __line})});
   }
   let query;
   if (req.body.content.alt_uid) {

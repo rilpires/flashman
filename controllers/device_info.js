@@ -1,3 +1,4 @@
+/* global __line */
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
@@ -14,6 +15,7 @@ const deviceHandlers = require('./handlers/devices');
 const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
 
@@ -293,8 +295,7 @@ const createRegistry = async function(req, res) {
       });
       if (!matchedNotif || matchedNotif.allow_duplicate) {
         let notification = new Notification({
-          'message': 'Não foi possível habilitar o prefixo SSID ' +
-                     'pois o tamanho máximo de 32 caracteres foi excedido.',
+          'message': t('ssidPrefixInvalidLength', {errorline: __line}),
           'message_code': 5,
           'severity': 'alert',
           'type': 'communication',
@@ -1129,12 +1130,12 @@ deviceInfoController.registerMqtt = function(req, res) {
         function(err, matchedNotif) {
           if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
             let notification = new Notification({
-              'message': 'Este firmware Flashbox foi ' +
-                         'modificado ou substituído localmente',
+              'message': t('firmwareHasBeenModifiedLocally',
+                {errorline: __line}),
               'message_code': 1,
               'severity': 'alert',
               'type': 'communication',
-              'action_title': 'Permitir comunicação',
+              'action_title': t('permitCommunication'),
               'action_url': '/devicelist/command/' +
                             matchedDevice._id + '/rstmqtt',
               'allow_duplicate': false,
