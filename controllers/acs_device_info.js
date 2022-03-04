@@ -469,6 +469,7 @@ const createRegistry = async function(req, permissions) {
 // It will also check for complete synchronization necessity by dispatching
 // "measure" as true. Complete synchronization is done by "syncDevice" function
 acsDeviceInfoController.informDevice = async function(req, res) {
+  let dateNow = Date.now();
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false, message: 'Error in database'});
@@ -490,6 +491,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   if (
     device.do_update || !device.last_tr069_sync || device.recovering_tr069_reset
   ) {
+    device.last_tr069_sync = dateNow;
+    device.last_contact = dateNow;
+    await device.save();
     return res.status(200).json({success: true, measure: true});
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
@@ -497,15 +501,15 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     return res.status(500).json({success: false, message: 'Error in database'});
   });
   // Devices that havent synced in (config interval) need to sync immediately
-  let syncDiff = Date.now() - device.last_tr069_sync;
+  let syncDiff = dateNow - device.last_tr069_sync;
   if (syncDiff >= config.tr069.sync_interval) {
-    device.last_tr069_sync = Date.now();
+    device.last_tr069_sync = dateNow;
     res.status(200).json({success: true, measure: true});
   } else {
     res.status(200).json({success: true, measure: false});
   }
   // Simply update last_contact to keep device online, no need to sync
-  device.last_contact = Date.now();
+  device.last_contact = dateNow;
   await device.save();
 };
 

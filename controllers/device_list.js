@@ -3028,28 +3028,26 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        let result = {'success': false};
+        let result = {'success': false, 'error': 500};
         result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
-          let errorMessage = 'Erro ao registrar regra de bloqueio de acesso';
-          /*
-          // TODO (?): The return of change Access Control has established
+          let errorMessage = t('acRuleDefaultError', {errorline: __line});
+          // The return of change Access Control has established
           // error codes. If necessary, it is possible to make res have
           // specific messages for each error code.
           if (result.hasOwnProperty('error')) switch (result['error']) {
             case 429:
-              errorMessage = ''
+              errorMessage = t('acRuleLimits', {errorline: __line});
             break;
             case 500:
-              errorMessage = ''
+              errorMessage = t('cpeSaveError', {errorline: __line});
             break;
             case 502:
-              errorMessage = ''
+              errorMessage = t('acRuleGetError', {errorline: __line});
             break;
             default:
             break;
           }
-          */
           return res.status(500).json({
             success: false,
             message: errorMessage

@@ -109,5 +109,8 @@
 	"cpeUpdateManyError": "Erro ao atualizar CPEs ({{errorline}})",
 	"cpeWithoutFunction": "CPE não possui essa função! ({{errorline}})",
 	"cpeOffline": "CPE não está online! ({{errorline}})",
-	"configFindError": "Erro ao encontrar configuração ({{errorline}})"
+	"configFindError": "Erro ao encontrar configuração ({{errorline}})",
+	"acRuleLimits": "Não foi possível bloquear o dispositivo. O limite de dispositivos bloqueados para essa CPE foi atingido. ({{errorline}})",
+	"acRuleGetError": "Erro ao obter regras de controle de acesso ({{errorline}})",
+	"acRuleDefaultError": "Erro ao registrar regra de bloqueio de acesso ({{errorline}})"
 }

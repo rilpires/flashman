@@ -12,6 +12,8 @@ anlixDocumentReady.add(function() {
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
     $('.btn-sync-lan').prop('disabled', true);
+    $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
+
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
       type: 'post',
@@ -97,6 +99,7 @@ anlixDocumentReady.add(function() {
       data: {id: deviceId, lanid: lanDeviceId, isblocked: isBlocked},
       success: function(res) {
         if (res.success) {
+          $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
           btnStatus.removeClass('indigo-text red-text')
                    .addClass(isBlocked ? 'red-text' : 'indigo-text')
                    .html(isBlocked ? 'bloqueada' : 'liberada');
@@ -109,6 +112,12 @@ anlixDocumentReady.add(function() {
         }
       },
       error: function(xhr, status, error) {
+        let errCode = xhr.status;
+        let response = xhr.responseJSON;
+        if (!response.success) {
+          $('#lan-devices-error-message').text(response.message);
+          $('#reach-num-of-blocked-devices-limits-tr069-spam').show();
+        }
         $('.btn-lan-dev-block').prop('disabled', false);
       },
     });
@@ -513,6 +522,7 @@ anlixDocumentReady.add(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
+    $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);
     // Controls device exhibition after all data has arrived in mesh mode
