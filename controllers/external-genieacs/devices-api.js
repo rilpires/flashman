@@ -225,6 +225,7 @@ const getDefaultFields = function() {
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
+      acs_url: 'InternetGatewayDevice.ManagementServer.URL',
     },
     wan: {
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable',

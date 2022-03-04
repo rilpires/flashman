@@ -365,6 +365,7 @@ const createRegistry = async function(req, permissions) {
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
+    secure_tr069: data.common.acs_url.value.includes('https'),
     serial_tr069: splitID[splitID.length - 1],
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
@@ -618,6 +619,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   device.acs_id = req.body.acs_id;
   device.serial_tr069 = splitID[splitID.length - 1];
+  device.secure_tr069 = data.common.acs_url.value.includes('https');
 
   // Check for an alternative UID to replace serial field
   if (data.common.alt_uid && data.common.alt_uid.value) {
@@ -1373,7 +1375,9 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
 };
 
 acsDeviceInfoController.getSpeedtestFile = async function(device) {
-  let matchedConfig = await Config.findOne({is_default: true}).catch(
+  let matchedConfig = await Config.findOne(
+    {is_default: true}, {measureServerIP: true, measureServerPort: true},
+  ).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return '';
@@ -1737,7 +1741,9 @@ const fetchUpStatusFromGenie = function(device, acsID) {
           ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
           ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
           // send then
-          let config = await Config.findOne({is_default: true});
+          let config = await Config.findOne(
+            {is_default: true}, {tr069: true},
+          ).lean();
           signalState = {
             rxpower: ponSignal.rxpower,
             threshold:
@@ -2849,8 +2855,8 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   // Get TR-069 configs from database
   let matchedConfig = await Config.findOne(
     {is_default: true}, 'tr069',
-  ).exec().catch((err) => err);
-  if (matchedConfig instanceof Error) {
+  ).lean().exec().catch((err) => err);
+  if (matchedConfig.constructor === Error) {
     console.log('Error getting user config in database to ping offline CPEs');
     return;
   }

@@ -28,6 +28,8 @@ let configSchema = new mongoose.Schema({
     pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
     stun_enable: {type: Boolean, default: false},
+    insecure_enable: {type: Boolean, default: false},
+    has_never_enabled_insecure: {type: Boolean, default: true},
   },
   certification: {
     // WAN steps required here are:
@@ -116,6 +118,7 @@ let configSchema = new mongoose.Schema({
     device_crud: {url: String, user: String, secret: String},
     user_crud: {url: String, user: String, secret: String},
     role_crud: {url: String, user: String, secret: String},
+    certification_crud: {url: String, user: String, secret: String}
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},

@@ -178,7 +178,7 @@ anlixDocumentReady.add(function() {
                             company: firmware.company,
                             firmwarefile: firmware.firmwarefile,
                             wanproto: firmware.wanproto,
-                            flashboxVer: firmware.flashboxver,
+                            flashboxversion: firmware.flashboxver,
                             isbeta: firmware.isbeta,
                             isrestricted: selectedItensRestrict.includes(firmware.firmwarefile)};
       fws.push(firmwareAttrs);
