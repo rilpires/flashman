@@ -1,3 +1,5 @@
+/* global __line */
+
 const localPackageJson = require('../package.json');
 const localEnvironmentJson = require('../environment.config.json');
 const exec = require('child_process').exec;
