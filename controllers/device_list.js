@@ -1964,8 +1964,8 @@ deviceListController.setDeviceReg = function(req, res) {
             ) {
               return res.status(500).json({
                 success: false,
-                message: 'Para modificar algum campo de wifi,'+
-                  'o mesmo deve estar previamente habilitado.',
+                message: t('enabledToModifyFields',
+                  {errorline: __line}),
                 errors: [],
               });
             }

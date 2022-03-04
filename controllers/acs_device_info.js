@@ -1962,14 +1962,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  if (model == 'AC10') {
-    /* The fields.devices.associated in AC10 model have appended
-    the .*.X_CT-COM_RSSI, so we remove then to rightly check
-    WLANConfiguration subtree */
-    assocField = assocField.split('.').slice(0, -4).join('.');
-  } else {
-    assocField = assocField.split('.').slice(0, -2).join('.');
-  }
+  assocField = assocField.split('.').slice(0, -2).join('.');
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
