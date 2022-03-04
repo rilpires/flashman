@@ -438,7 +438,6 @@ const createRegistry = async function(req, permissions) {
   }
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
-  // JSON.parse is used as cast to boolean
   if (permissions.grantSTUN &&
       data.common.stun_enable.value.toString() !==
       matchedConfig.tr069.stun_enable.toString()) {
