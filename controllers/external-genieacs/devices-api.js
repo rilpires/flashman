@@ -156,9 +156,7 @@ const convertWifiBand = function(band, model) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      if (model === 'AC10') {
-        return '2';
-      } else if (
+      if (
         model === 'BEACON HA-020W-B' ||
         model === 'BEACON%20HA%2D020W%2DB'
       ) {
