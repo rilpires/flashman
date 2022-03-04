@@ -1,9 +1,12 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
-const {Parser, transforms: {unwind}} = require('json2csv');
+const {Parser} = require('json2csv');
 const t = require('./language').i18next.t;
 
 let userController = {};
@@ -448,7 +451,9 @@ userController.deleteCertificates = async function(req, res) {
   try {
     for (let userId of idList) {
       let user = await User.findById(userId);
-      if (!user) throw ('Usuário não existe');
+      if (!user) {
+        throw new Error('User not found');
+      }
       let timestamps = itemsById[userId];
       for (let timestamp of timestamps) {
         let idx = user.deviceCertifications.findIndex(
@@ -907,32 +912,34 @@ userController.setCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('databaseFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
         matchedConfig.traps_callbacks.certification_crud.url = req.body.url;
 
         if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.certification_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.certification_crud.secret = req.body.secret;
+          matchedConfig.traps_callbacks.certification_crud.user =
+            req.body.user;
+          matchedConfig.traps_callbacks.certification_crud.secret =
+            req.body.secret;
         }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: 'Erro ao gravar dados na base',
+              message: t('saveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
             success: true,
-            message: 'Endereço salvo com sucesso',
+            message: t('operationSuccessful'),
           });
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: 'Formato invalido',
+          message: t('fieldInvalid', {errorline: __line}),
         });
       }
     }
@@ -945,7 +952,7 @@ userController.getCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('databaseFindError', {errorline: __line}),
       });
     } else {
       const user = matchedConfig.traps_callbacks.certification_crud.user;
@@ -1183,14 +1190,22 @@ userController.certificateSearch = async (req, res) => {
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
       {label: t('technician'), value: 'name', default: ''},
-      {label: 'Concluído', value: 'certifications.finished', default: ''},
+      {
+        label: t('certificateFinished'),
+        value: 'certifications.finished',
+        default: '',
+      },
       {
         label: t('certificateInterruptionReason'),
         value: 'certifications.cancelReason',
         default: '',
       },
-      {label: t('uniqueIdentifier')'Identificador único', value: 'certifications.mac', default: ''},
-      {label: 'CPE TR-069?', value: 'certifications.isOnu', default: ''},
+      {label: t('uniqueIdentifier'), value: 'certifications.mac', default: ''},
+      {
+        label: t('certificateCPEIsTR069'),
+        value: 'certifications.isOnu',
+        default: '',
+      },
       {label: t('model'), value: 'certifications.routerModel', default: ''},
       {
         label: t('cpeFirmwareVersion'),
