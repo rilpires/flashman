@@ -1,8 +1,9 @@
+/* global __line */
+
 const i18next = require('i18next');
 const i18nextFsBackend = require('i18next-fs-backend');
 // const i18nextMiddleware = require('i18next-http-middleware');
 const ConfigModel = require('../models/config');
-const fsPromises = require('fs').promises;
 const path = require('path');
 
 // some default values.
@@ -31,7 +32,7 @@ const localesdDir = path.join(__dirname, '../public/locales');
 // lngDetector.addDetector(anlixLanguageDetector);
 
 // variables to be assigned resolve and reject callbacks of the Promise that
-// will be used as synchronization step between i18next finishing 
+// will be used as synchronization step between i18next finishing
 // initialization and retrieving saved language.
 let i18nextResolved;
 let i18nextInitialization = new Promise((resolve, reject) => {
@@ -74,16 +75,15 @@ const t = i18next.t;
 // const middleware = i18nextMiddleware.handle(i18next);
 
 
-
 // promisifying 'i18next.changeLanguage()'.
-const changeLanguageI18next = function (language) {
+const changeLanguageI18next = function(language) {
   return new Promise((resolve, reject) => {
     i18next.changeLanguage(language, (err, t) => {
       if (err) reject(err);
       else resolve(t);
-    })
-  })
-}
+    });
+  });
+};
 
 // saving given language in database.
 const setConfigLanguage = function(language) {
@@ -108,9 +108,9 @@ const updateLanguage = async function(language) {
   let previousLangauge = i18next.resolvedLanguage;
   let ret = await changeLanguageI18next(language).catch((e) => e);
   if (ret[0] instanceof Error) { // if language could not be loaded.
-    //we roll back to the previous language before returning.
+    // we roll back to the previous language before returning.
     await changeLanguageI18next(previousLangauge).catch((e) => e);
-    return {status: 404,message: t('languageNotFound', {language: language,
+    return {status: 404, message: t('languageNotFound', {language: language,
       errorline: __line})};
   }
 
@@ -152,9 +152,8 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   // the 'fallbackLanguage' as config language. The user should chose an
   // available language (or fix the environment variable value).
 }).catch((e) => {
-  console.error("Error finding Config:", e);
+  console.error('Error finding Config: ', e);
 });
-
 
 
 let handlers = {};
