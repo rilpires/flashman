@@ -187,7 +187,8 @@ deviceListController.index = function(req, res) {
       indexContent.superuser = user.is_superuser;
     }
 
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    let query = {is_default: true};
+    Config.findOne(query).lean().exec(function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {
@@ -485,7 +486,9 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig === undefined) {
-        matchedConfig = await Config.findOne({is_default: true});
+        matchedConfig = await Config.findOne(
+          {is_default: true}, {tr069: true},
+        ).lean();
       }
       if (tag.includes('fraco')) {
         query.pon_rxpower = {
@@ -798,7 +801,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true}, function(err, matchedConfig) {
+          Config.findOne({is_default: true})
+          .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
               // Counters
@@ -1438,7 +1442,8 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true}, async function(err, matchedConfig) {
+      Config.findOne({is_default: true})
+      .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
           return res.status(500).json({
@@ -2023,7 +2028,8 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true}, async function(err, matchedConfig) {
+    Config.findOne({is_default: true})
+    .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
         return res.status(500).json({
@@ -2913,7 +2919,9 @@ deviceListController.doSpeedTest = function(req, res) {
         message: t('cpeWithoutCommand'),
       });
     }
-    Config.findOne({is_default: true}, async function(err, matchedConfig) {
+    let projection = {measureServerIP: true, measureServerPort: true};
+    Config.findOne({is_default: true}, projection)
+    .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -2949,7 +2957,9 @@ deviceListController.doSpeedTest = function(req, res) {
 
 deviceListController.setDeviceCrudTrap = function(req, res) {
   // Store callback URL for devices
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -2986,25 +2996,27 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
 
 deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const user = matchedConfig.traps_callbacks.device_crud.user;
       const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (!user || !url) {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }

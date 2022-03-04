@@ -554,7 +554,9 @@ userController.getProfile = function(req, res) {
   }
 
   User.findById(queryUserId, function(err, user) {
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    let query = {is_default: true};
+    let projection = {hasUpdate: true, hasMajorUpdate: true};
+    Config.findOne(query, projection, function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {
@@ -633,7 +635,9 @@ userController.showCertificates = function(req, res) {
             indexContent.superuser = user.is_superuser;
           }
 
-          Config.findOne({is_default: true}, function(err, matchedConfig) {
+          let query = {is_default: true};
+          let projection = {hasUpdate: true, hasMajorUpdate: true};
+          Config.findOne(query, projection, function(err, matchedConfig) {
             if (err || !matchedConfig) {
               indexContent.update = false;
             } else {
@@ -693,7 +697,9 @@ userController.showAll = function(req, res) {
             indexContent.superuser = user.is_superuser;
           }
 
-          Config.findOne({is_default: true}, function(err, matchedConfig) {
+          let query = {is_default: true};
+          let projection = {hasUpdate: true, hasMajorUpdate: true};
+          Config.findOne(query, projection, function(err, matchedConfig) {
             if (err || !matchedConfig) {
               indexContent.update = false;
             } else {
@@ -745,7 +751,9 @@ userController.showRoles = function(req, res) {
           indexContent.superuser = user.is_superuser;
         }
 
-        Config.findOne({is_default: true}, function(err, matchedConfig) {
+        let query = {is_default: true};
+        let projection = {hasUpdate: true, hasMajorUpdate: true};
+        Config.findOne(query, projection, function(err, matchedConfig) {
           if (err || !matchedConfig) {
             indexContent.update = false;
           } else {
@@ -767,7 +775,9 @@ userController.showRoles = function(req, res) {
 
 userController.setUserCrudTrap = function(req, res) {
   // Store callback URL for users
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -805,25 +815,27 @@ userController.setUserCrudTrap = function(req, res) {
 
 userController.getUserCrudTrap = function(req, res) {
   // get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      const user = matchedConfig.traps_callbacks.user_crud.user;
       const url = matchedConfig.traps_callbacks.user_crud.url;
-      if (!user || !url) {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.user_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }
@@ -832,7 +844,9 @@ userController.getUserCrudTrap = function(req, res) {
 
 userController.setRoleCrudTrap = function(req, res) {
   // Store callback URL for roles
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -869,25 +883,27 @@ userController.setRoleCrudTrap = function(req, res) {
 
 userController.getRoleCrudTrap = function(req, res) {
   // get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: 'Erro ao acessar dados na base',
       });
     } else {
-      const user = matchedConfig.traps_callbacks.role_crud.user;
       const url = matchedConfig.traps_callbacks.role_crud.url;
-      if (!user || !url) {
+      if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
+      const user = matchedConfig.traps_callbacks.role_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
+        user: typeof user === 'undefined' ? '' : user,
         url: url,
       });
     }
@@ -1009,7 +1025,9 @@ userController.settings = function(req, res) {
   }
 
   User.findById(queryUserId, function(err, user) {
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    let query = {is_default: true};
+    let projection = {hasUpdate: true, hasMajorUpdate: true};
+    Config.findOne(query, projection, function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {

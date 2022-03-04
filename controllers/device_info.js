@@ -118,7 +118,7 @@ const createRegistry = async function(req, res) {
     return res.status(400).end();
   }
 
-  let matchedConfig = await Config.findOne({is_default: true}).catch(
+  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return res.status(500).end();
@@ -1101,7 +1101,9 @@ deviceInfoController.registerMqtt = function(req, res) {
           req.body.id + ' failed: No device found.');
         return res.status(404).json({is_registered: 0});
       }
-      let config = await Config.findOne({is_default: true}).catch(
+      let config = await Config.findOne(
+        {is_default: true}, {mqtt_secret_bypass: true},
+      ).lean().catch(
         (err) => {
           console.log('Error fetch config from database');
         },
