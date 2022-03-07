@@ -599,11 +599,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: 'Attempt to sync acs data with non-tr-069 device',
     });
   }
-<<<<<<< HEAD
   // We don't need to wait - can free session immediately
   res.status(200).json({success: true});
-  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
-=======
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     if (typeof data.wan.pppoe_enable.value === 'string') {
@@ -614,7 +611,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       hasPPPoE = data.wan.pppoe_enable.value;
     }
   }
->>>>>>> development
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
   if (data.common.stun_enable &&
