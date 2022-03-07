@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
 const fillTotalDevicesFromSearch = function(amount) {
@@ -81,7 +82,7 @@ let hideModalShowAllert = function(modalJQueryElement, message,
 // The amount of devices in search result from device list.
 let totalDevicesFromSearch = 0;
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let deviceForm = document.getElementById('data_collecting_deviceForm');
   let serviceModal = $('#data_collecting-service-modal');
   let deviceModal = $('#data_collecting-device-modal');

@@ -323,7 +323,9 @@ deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
 deviceHandlers.sendPingToTraps = function(id, results) {
   sio.anlixSendPingTestNotifications(id, results);
   // No await needed
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (!err && matchedConfig) {
       // Send ping results if device traps are activated
       if (matchedConfig.traps_callbacks &&

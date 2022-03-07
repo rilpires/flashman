@@ -1,4 +1,5 @@
 const webpack = require('webpack');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -134,6 +135,13 @@ module.exports = {
       'moment': 'moment',
       'bsCustomFileInput': 'bs-custom-file-input',
       'swal': 'sweetalert2',
+      'i18next': 'i18next',
+      'i18next-http-backend': 'i18next-http-backend',
+    }),
+    new CopyPlugin({
+      patterns: [
+        {from: 'public/locales', to: 'locales'},
+      ],
     }),
   ],
 };

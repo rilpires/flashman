@@ -21,6 +21,8 @@ curl -i 'http://localhost:7557/presets/inform' -X PUT --data \\
 '{\"precondition\":true,\"configurations\":[{\"type\":\"provision\",\"name\":\\
 \"mynewprovision\"}]}'
 
+Command to update preset on genie:
+  curl -i 'http://localhost:7557/presets/inform' -X PUT --data "$(cat controllers/external-genieacs/flashman-preset.json)"
 Command to update provision on genie:
   curl -X PUT -i 'http://localhost:7557/provisions/flashman' --data "$(cat controllers/external-genieacs/provision.js)"
 */
@@ -48,6 +50,12 @@ let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion'
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
+if(modelClass == 'AC10') {
+  declare("InternetGatewayDevice.ManagementServer.PeriodicInformEnable", null, {value: '1'});
+} else {
+  declare("InternetGatewayDevice.ManagementServer.PeriodicInformEnable", null, {value: 'true'});
+}
+
 let args = {
   oui: oui,
   model: modelClass,
@@ -55,6 +63,7 @@ let args = {
   firmwareVersion: firmwareVersion,
   acs_id: genieID,
 };
+
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 
 if (!result.success || !result.fields) {
