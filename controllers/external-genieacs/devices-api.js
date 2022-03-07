@@ -75,6 +75,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'F660') return 'b,g';
+      else if (ouiModelStr === 'HG9') return 'g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'AC10') return 'bg';
@@ -99,6 +100,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
+      else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
       else if (
         ouiModelStr === 'G-140W-C' ||
@@ -121,6 +123,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
@@ -143,6 +146,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
+      else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
@@ -611,6 +615,21 @@ const getStavixFields = function(model) {
   return fields;
 };
 
+const getHg9Fields = function() {
+  let fields = getStavixFields();
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_TDTC_VLAN';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANGponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANGponInterfaceConfig.TXPower';
+  delete fields.wifi2.band;
+  delete fields.wifi5.band;
+  delete fields.mesh2.band;
+  delete fields.mesh5.band;
+  return fields;
+};
+
 const getFastWirelessFields = function() {
   let fields = getDefaultFields();
   fields.common.alt_uid = fields.common.mac;
@@ -780,6 +799,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getStavixFields(model);
       break;
+    case 'HG9':
+      message = '';
+      fields = getHg9Fields();
+      break;
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
@@ -828,6 +851,7 @@ const getBeaconTypeByModel = function(model) {
       ret = 'WPA/WPA2';
       break;
     case 'GONUAC001': // Greatek Stavix G421R
+    case 'HG9': // Tenda HG9
       ret = 'WPA2';
       break;
     case 'F660': // Multilaser ZTE F660
