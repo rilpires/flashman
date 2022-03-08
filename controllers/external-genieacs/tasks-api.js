@@ -247,8 +247,8 @@ const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
 /* simple request to delete a task, by its id, in GenieACS and get a promise
  the resolves to the request response or rejects to request error. */
 const deleteTask = function(taskid) {
-  return genie.request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT, path:
-   '/tasks/'+taskid});
+  return genie.request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+    path: '/tasks/'+taskid});
 };
 
 /* a map structure that holds task attribute names where the keys are the task
@@ -427,12 +427,12 @@ const joinAllTasks = function(tasks) {
  to print error messages. */
 const deleteOldTasks = async function(tasksToDelete, deviceid) {
   let promises = []; // array that will hold http request promises.
+  /* eslint-disable guard-for-in */
   for (let name in tasksToDelete) { // for each task name/type.
-    if (name === name) {
-      // for each task._id in this task type/name.
-      for (let id in tasksToDelete[name]) {
-        promises.push(deleteTask(id)); // delete task.
-      }
+    // for each task._id in this task type/name.
+    /* eslint-disable guard-for-in*/
+    for (let id in tasksToDelete[name]) {
+      promises.push(deleteTask(id)); // delete task.
     }
   } // add a request to array of promises.
   // wait for all promises to finish.
@@ -470,6 +470,7 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
   let task = pendingTasks.pop(); // removes last task out of the array.
   let watchTime = watchTimes.shift(); // removes first value out of the array.
   // starts a change stream in task collection from GenieACS database.
+  /* eslint-disable new-cap */
   let changeStream = tasksCollection.watch([
     {$match: {'operationType': 'delete', 'documentKey._id':
     mongodb.ObjectID(task._id)}}, // listening for 'delete' events,
@@ -482,6 +483,7 @@ const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
     let taskTimer = setTimeout(async function() { // starts a timeout.
       // if there are zero documents matching task._id. it means task was
       // executed and change stream probably saw it first.
+      /* eslint-disable new-cap */
       if (await tasksCollection.countDocuments(
        {_id: mongodb.ObjectID(task._id)}) === 0) return;
 
