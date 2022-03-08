@@ -1189,9 +1189,9 @@ userController.certificateSearch = async (req, res) => {
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
-      {label: t('technician'), value: 'name', default: ''},
+      {label: t('Technician'), value: 'name', default: ''},
       {
-        label: t('certificateFinished'),
+        label: t('Concluded'),
         value: 'certifications.finished',
         default: '',
       },
@@ -1202,11 +1202,11 @@ userController.certificateSearch = async (req, res) => {
       },
       {label: t('uniqueIdentifier'), value: 'certifications.mac', default: ''},
       {
-        label: t('certificateCPEIsTR069'),
+        label: t('cpeIsTr069?'),
         value: 'certifications.isOnu',
         default: '',
       },
-      {label: t('model'), value: 'certifications.routerModel', default: ''},
+      {label: t('Model'), value: 'certifications.routerModel', default: ''},
       {
         label: t('cpeFirmwareVersion'),
         value: 'certifications.routerVersion',

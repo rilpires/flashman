@@ -1,3 +1,4 @@
+/* global __line */
 /*
 Set of functions that will handle the communication from flashman to genieacs
 through the use of genieacs-nbi, the genie rest api.
@@ -8,6 +9,7 @@ const mongodb = require('mongodb');
 const sio = require('../../sio');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
+const t = require('../language').i18next.t;
 
 
 let GENIEHOST = 'localhost';
@@ -96,14 +98,15 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
   ).exec();
   if (hasNotification) return;
   // notification values.
-  let params = {severity: 'alert', type: 'genieacs', action_title: 'Apagar',
+  let params = {severity: 'alert', type: 'genieacs', action_title: t('Delete'),
     message_error: errorMsg};
   if (genieDeviceId !== undefined) { // if error has an associated device.
-    params.message = 'Erro na CPE '+genieDeviceId+'. Chamar supporte.';
+    params.message = t('cpeErrorIdCallSupport', {id: genieDeviceId,
+      errorline: __line});
     params.target = device._id;
     params.genieDeviceId = genieDeviceId;
   } else { // if error has no associated device.
-    params.message = 'Erro no GenieACS. Chamar supporte.';
+    params.message = t('genieacsErrorCallSupport', {errorline: __line});
   }
   let notification = new NotificationModel(params); // creating notification.
   await notification.save(); // saving notification.

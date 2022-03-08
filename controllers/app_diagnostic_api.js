@@ -965,7 +965,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   // Instead of updating slave, we send lastboot_date
   // to app and a reboot is done
 
-  response.message = t('success');
+  response.message = t('Success');
   response.registrationStatus = 'success';
   response.bridgeStatus = isBridge;
   response.switchEnabledStatus = isSwitchEnabled;
@@ -990,7 +990,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
     return res.status(403).json({
       success: false,
-      message: t('secondaryCpeMacInvalid', {errorline: __line}),
+      message: t('secondaryIndicatedCpeMacInvalid', {errorline: __line}),
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
@@ -1004,19 +1004,21 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!matchedSlave) {
     return res.status(404).json({
       success: false,
-      message: t('secondaryCpeNotFound', {errorline: __line}),
+      message: t('secondaryIndicatedCpeNotFound', {errorline: __line}),
     });
   }
   if (!matchedSlave.mesh_master) {
     return res.status(403).json({
       success: false,
-      message: t('secondaryCpeNotAssignedToPrimary', {errorline: __line}),
+      message: t('secondaryIndicatedCpeNotAssignedToPrimary',
+        {errorline: __line}),
     });
   }
   if (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length) {
     return res.status(403).json({
       success: false,
-      message: t('secondaryCpeHasSecondariesAssigned', {errorline: __line}),
+      message: t('secondaryIndicatedCpeHasSecondariesAssigned',
+        {errorline: __line}),
     });
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
@@ -1049,7 +1051,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     return res.status(403).json({
       success: false,
-      message: t('secondaryCpeNotInPrimaryList', {errorline: __line}),
+      message: t('secondaryIndicatedCpeNotInPrimaryList', {errorline: __line}),
     });
   }
 
@@ -1077,7 +1079,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
 
   return res.status(200).json({
     success: true,
-    message: t('success'),
+    message: t('Success'),
   });
 };
 

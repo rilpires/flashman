@@ -480,7 +480,7 @@ const createRegistry = async function(req, permissions) {
         'message_code': 5,
         'severity': 'alert',
         'type': 'communication',
-        'action_title': t('ok'),
+        'action_title': t('Ok'),
         'allow_duplicate': false,
         'target': newDevice._id,
       });
