@@ -207,6 +207,10 @@ const processHostFromURL = function(url) {
   if (doubleSlash < 0) {
     return url.split(':')[0];
   }
+  let checkIpv6 = url.indexOf('[');
+  if (checkIpv6 > 0) {
+    return url.split('[')[1].split(']')[0];
+  }
   let pathStart = url.substring(doubleSlash+2).indexOf('/');
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
@@ -265,7 +269,9 @@ const createRegistry = async function(req, permissions) {
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
   let cpeIP;
-  if (data.common.stun_udp_conn_req_addr &&
+  if (data.common.stun_enable &&
+      data.common.stun_enable.value.toString() === 'true' &&
+      data.common.stun_udp_conn_req_addr &&
       typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
       data.common.stun_udp_conn_req_addr.value !== '') {
     cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
