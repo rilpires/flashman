@@ -1088,7 +1088,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
           if (device && !isDevOn) {
             return res.status(200).json({success: false,
-                                         message: t('cpeOffline',
+                                         message: t('cpeIsNotOnline',
                                            {errorline: __line})});
           }
         }
@@ -2967,7 +2967,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
-        message: t('cpeOffline', {errorline: __line}),
+        message: t('cpeIsNotOnline', {errorline: __line}),
       });
     }
     let permissions = DeviceVersion.findByVersion(

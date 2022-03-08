@@ -1,4 +1,5 @@
 // this test need to be run InBand (synchronous)
+require('../../bin/globals.js');
 const request = require('supertest');
 const {catchDatabaseError, catchError} = require('../../controllers/tools');
 const mongoose = require('mongoose');

@@ -1,3 +1,4 @@
+require('../../bin/globals.js');
 const acsHandlers = require('../../controllers/handlers/acs');
 const fs = require('fs');
 
