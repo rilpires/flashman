@@ -223,6 +223,7 @@
 
 	"saveError": "Erro ao salvar alteração ({{errorline}})",
 	"serverError": "Erro interno do servidor ({{errorline}})",
+
 	"permissionNotFound": "Permissão não encontrada ({{errorline}})",
 	"permissionDenied": "Permissão negada ({{errorline}})",
 	"databaseFindError": "Erro no acesso ao banco de dados ({{errorline}})",
@@ -231,6 +232,7 @@
 	"operationUnsuccessful": "Operação não pode ser realizada ({{errorline}})",
 	"requestFormatError": "Erro no formato da requisição ({{errorline}})",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados ({{errorline}})",
+	"enabledToModifyFields": "Para modificar algum campo de wifi, o mesmo deve estar previamente habilitado ({{errorline}})",
 
 	"fieldNameInvalid": "Campo '{{name}}' inválido ({{errorline}})",
 	"fieldInvalid": "Campo inválido ({{errorline}})",

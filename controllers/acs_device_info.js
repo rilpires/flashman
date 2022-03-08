@@ -97,6 +97,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a,n,ac':
     case 'a/n/ac':
     case 'ac,n,a':
+    case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
     default:
@@ -106,6 +107,8 @@ const convertWifiMode = function(mode, is5ghz) {
 
 const convertToDbm = function(model, rxPower) {
   switch (model) {
+    case 'HG9':
+      return rxPower = parseFloat(rxPower.split(' ')[0]);
     case 'IGD':
     case 'FW323DAC':
     case 'F660':
@@ -124,13 +127,17 @@ const convertToDbm = function(model, rxPower) {
 const convertWifiBand = function(band, mode) {
   let isAC = convertWifiMode(mode) === '11ac';
   switch (band) {
+    case '2':
     case 'auto':
       return 'auto';
     case '20MHz':
+    case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
     default:
@@ -243,7 +250,16 @@ const saveDeviceData = async function(mac, landevices) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
-  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
+  let hasPPPoE = false;
+  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    if (typeof data.wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = data.wan.pppoe_enable.value;
+    }
+  }
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -373,7 +389,8 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) : undefined,
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) :
+       undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
@@ -383,7 +400,8 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) : undefined,
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) :
+       undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
@@ -425,13 +443,20 @@ const createRegistry = async function(req, permissions) {
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value !== matchedConfig.tr069.stun_enable) {
+      data.common.stun_enable.value.toString() !==
+      matchedConfig.tr069.stun_enable.toString()) {
     changes.common.stun_enable = matchedConfig.tr069.stun_enable;
     changes.stun.address = matchedConfig.tr069.server_url;
     changes.stun.port = 3478;
     doChanges = true;
   }
-  if(doChanges) {
+  /* For Tenda AC10 model is mandatory to set
+   LANHostConfigManagement.DHCPServerConfigurable field
+   to be allowed to change CPE IP and Subnet Mask */
+  if (model == 'AC10') {
+    changes.lan.enable_config = '1';
+  }
+  if (doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
@@ -571,10 +596,21 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
-  let hasPPPoE = (data.wan.pppoe_enable && data.wan.pppoe_enable.value);
+  let hasPPPoE = false;
+  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    if (typeof data.wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = data.wan.pppoe_enable.value;
+    }
+  }
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   let cpeIP;
-  if (data.common.stun_udp_conn_req_addr &&
+  if (data.common.stun_enable &&
+      data.common.stun_enable.value.toString() === 'true' &&
+      data.common.stun_udp_conn_req_addr &&
       typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
       data.common.stun_udp_conn_req_addr.value !== '') {
     cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
@@ -723,7 +759,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (data.wifi2.band) {
-    let band2 = convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value);
+    let band2 = convertWifiBand(data.wifi2.band.value,
+     data.wifi2.mode.value);
     if (data.wifi2.band.value && !device.wifi_band) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
@@ -783,7 +820,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   if (data.wifi5.band && data.wifi5.mode) {
-    let band5 = convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value);
+    let band5 = convertWifiBand(data.wifi5.band.value,
+     data.wifi5.mode.value);
     if (data.wifi5.band.value && !device.wifi_band_5ghz) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
@@ -910,7 +948,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // If has STUN Support in the model and
   // STUN Enable flag is different from actual configuration
   if (permissions.grantSTUN &&
-      data.common.stun_enable.value !== config.tr069.stun_enable) {
+      data.common.stun_enable.value.toString() !==
+      config.tr069.stun_enable.toString()) {
     hasChanges = true;
     changes.common.stun_enable = config.tr069.stun_enable;
     changes.stun.address = config.tr069.server_url;
@@ -958,7 +997,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let targets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (device.model === 'GONUAC001' || device.model === '121AC') {
+      if (device.model === 'GONUAC001' || device.model === '121AC' ||
+        device.model === 'HG9') {
         targets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -983,7 +1023,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.model === 'GONUAC001' ||
       device.model === '121AC' ||
       device.model === 'IGD' ||
-      device.model === 'MP_G421R'
+      device.model === 'MP_G421R' ||
+      device.model === 'HG9'
     ) {
       // Trigger xml config syncing for
       // web admin user and password
@@ -1605,7 +1646,8 @@ const fetchWanBytesFromGenie = function(device, acsID) {
 const fetchUpStatusFromGenie = function(device, acsID) {
   let mac = device._id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let upTimeField = fields.wan.uptime.replace('*', 1);
+  let upTimeField1 = fields.wan.uptime.replace('*', 1);
+  let upTimeField2 = fields.wan.uptime.replace('*', 2);
   let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
   let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
@@ -1616,7 +1658,8 @@ const fetchUpStatusFromGenie = function(device, acsID) {
   let txPowerFieldEpon;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
-      ',' + upTimeField +
+      ',' + upTimeField1 +
+      ',' + upTimeField2 +
       ',' + upTimePPPField1 +
       ',' + upTimePPPField2 +
       ',' + PPPoEUser1 +
@@ -1650,7 +1693,11 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (e) {
+          return;
+        }
       }
       let successSys = false;
       let successWan = false;
@@ -1671,11 +1718,12 @@ const fetchUpStatusFromGenie = function(device, acsID) {
         if (hasPPPoE && checkForNestedKey(data, upTimePPPField2+'._value')) {
           wanUpTime = getFromNestedKey(data, upTimePPPField2+'._value');
         }
-      } else {
-          successWan = true;
-          if (checkForNestedKey(data, upTimeField+'._value')) {
-            wanUpTime = getFromNestedKey(data, upTimeField+'._value');
-          }
+      } else if (checkForNestedKey(data, upTimeField1+'._value')) {
+        successWan = true;
+        wanUpTime = getFromNestedKey(data, upTimeField1+'._value');
+      } else if (checkForNestedKey(data, upTimeField2+'._value')) {
+        successWan = true;
+        wanUpTime = getFromNestedKey(data, upTimeField2+'._value');
       }
       if (checkForNestedKey(data, rxPowerField + '._value') &&
           checkForNestedKey(data, txPowerField + '._value')) {
@@ -1971,7 +2019,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = getFromNestedKey(data, macKey+'._value');
           if (typeof device.mac === 'string') {
-            device.mac = device.mac.toUpperCase();
+            device.mac = device.mac.toUpperCase().replace(/-/g, ':');
           } else {
             // MAC is a mandatory string
             return;
@@ -2014,11 +2062,18 @@ const fetchDevicesFromGenie = function(device, acsID) {
           let interfaces = Object.keys(getFromNestedKey(data, assocField));
           interfaces = interfaces.filter((i)=>i[0]!='_');
           if (fields.devices.associated_5) {
-            interfaces.push('5');
+            if (model == 'AC10') {
+              interfaces.push('2');
+            } else {
+              interfaces.push('5');
+            }
           }
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
-            assocField = fields.devices.associated.replace('*', iface);
+            assocField = fields.devices.associated.replace(
+              /WLANConfiguration\.[0-9]+\./g,
+              'WLANConfiguration.' + iface + '.',
+            );
             let assocIndexes = getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
@@ -2051,6 +2106,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
+                device.rssi = device.rssi.replace('dBm', '');
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
@@ -2079,6 +2135,12 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 rateKey = rateKey.replace('*', iface).replace('*', index);
                 device.rate = getFromNestedKey(data, rateKey+'._value');
                 device.rate = convertWifiRate(model, device.rate);
+              }
+              if (device.mac == device.name &&
+                fields.devices.alt_host_name) {
+                let nameKey = fields.devices.alt_host_name;
+                nameKey = nameKey.replace('*', iface).replace('*', index);
+                device.name = getFromNestedKey(data, nameKey+'._value');
               }
             });
           });
@@ -2375,13 +2437,24 @@ acsDeviceInfoController.updateInfo = async function(
         // Special case since channel relates to 2 fields
         let channel = changes[masterKey][key];
         let auto = channel === 'auto';
-        task.parameterValues.push([
-          fields[masterKey]['auto'], auto, 'xsd:boolean',
-        ]);
-        if (!auto) {
+        if (model == 'AC10') {
           task.parameterValues.push([
-            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+            fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
           ]);
+          if (!auto) {
+            task.parameterValues.push([
+              fields[masterKey][key], channel, 'xsd:string',
+            ]);
+          }
+        } else {
+          task.parameterValues.push([
+            fields[masterKey]['auto'], auto, 'xsd:boolean',
+          ]);
+          if (!auto) {
+            task.parameterValues.push([
+              fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+            ]);
+          }
         }
         hasChanges = true;
         return;
@@ -2486,8 +2559,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   let acsID = device.acs_id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
-  // redirect to config file binding instead of setParameterValues
-  if (model == 'GONUAC001' || model == 'xPON') {
+  // redirect to config file binding instead of setParametervalues
+  if (model == 'GONUAC001' || model == 'xPON' ||
+      model == 'HG9') {
     configFileEditing(device, ['port-forward']);
     return;
   }
