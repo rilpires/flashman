@@ -2667,6 +2667,47 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
 };
 
 acsDeviceInfoController.changeAcRules = async function(device) {
+  // TODO: realizar esses testes no contexto do flashman e no contexto do app
+  // do cliente.
+  
+  // ===== TESTES =====
+  // return {
+  // 'success': false,
+  // 'error': 1,
+  // 'message': t('acRuleLimits', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false,
+  // 'error': 2,
+  // 'message': t('cpeSaveError', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false, 'error': 3,
+  // 'message': t('acRuleGetError', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false, 'error': 4,
+  // 'message': t('acRuleReDoError', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false, 'error': 5,
+  // 'message': t('acRuleDefaultError', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false, 'error': 6,
+  // 'message': t('acRuleDefaultError', {errorline: __line})
+  // };
+
+  // return {
+  // 'success': false, 'error': 7,
+  // 'message': t('acRuleDefaultError', {errorline: __line})
+  // };
+
   // ===== Check device =====
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -2701,7 +2742,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       return {
         'success': false,
         'error': 1,
-        'message': 'Number of rules has reached its limits to this device.'
+        'message': t('acRuleLimits', {errorline: __line})
       };
     }
     // If the device does not have 5 Ghz WiFi, then it does not add the field in
@@ -2719,7 +2760,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     return {
       'success': false,
       'error': 2,
-      'message': 'Error while trying to get device information.'
+      'message': t('cpeSaveError', {errorline: __line})
     };
   }
   // ===== Update device tree =====
@@ -2733,7 +2774,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {
       'success': false, 'error': 3,
-      'message': 'Error: failed to retrieve Access Control Rules at '+serial
+      'message': t('acRuleGetError', {errorline: __line})
     };
   }
 
@@ -2744,7 +2785,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   } catch (e) {
     return {
       'success': false, 'error': 3,
-      'message': 'Error: failed to retrieve Access Control Rules at '+serial
+      'message': t('acRuleGetError', {errorline: __line})
     };
   }
 
@@ -2787,7 +2828,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         if (!deleteSuccess) {
           return {
             'success': false, 'error': 4,
-            'message': 'Error: AC rules redoing at '+serial
+            'message': t('acRuleReDoError', {errorline: __line})
           };
         }
       }
@@ -2816,7 +2857,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         console.log('Error ('+e+') at AC rules add');
         return {
           'success': false, 'error': 5,
-          'message': 'Error: AC rules add at '+serial
+          'message': t('acRuleDefaultError', {errorline: __line})
         };
       }
       // Get the rules that need to be edited (old + new).
@@ -2863,7 +2904,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         if (!deleteSuccess) {
           return {
             'success': false, 'error': 6,
-            'message': 'Error: AC rules delete at '+serial
+            'message': t('acRuleDefaultError', {errorline: __line})
           };
         }
       }
@@ -2893,7 +2934,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
           console.log('Error ('+e+') at AC rules update');
           return {
             'success': false, 'error': 7,
-            'message': 'Error: AC rules update at '+serial
+            'message': t('acRuleDefaultError', {errorline: __line})
           };
         }
       }
@@ -2902,14 +2943,13 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         'Error at AC rules update. Number of rules doesn\'t match');
       return {
         'success': false, 'error': 7,
-        'message': 'Error: AC rules update at '+serial+
-                   '. Number of rules doesn\'t match'
+        'message': t('acRuleDefaultError', {errorline: __line})
       };
     }
   } else {
     return {
       'success': false, 'error': 3,
-      'message': 'Error: failed to retrieve Access Control Rules at '+serial
+      'message': t('acRuleGetError', {errorline: __line})
     };
   }
 }
@@ -2936,7 +2976,7 @@ const getAcRuleTrees = async function (
         console.log('Error ('+ error +') removing an AC rule at '+serial);
         reject ({
           'success': false, 'error': 3,
-          'message': 'Error: failed to retrieve Access Control Rules at '+serial
+          'message': t('acRuleGetError', {errorline: __line})
         });
       });
       resp.on('data', (chunk) => data+=chunk);
@@ -2978,16 +3018,14 @@ const getAcRuleTrees = async function (
               'Error ('+e+') retrieving Access Control Rules at '+serial);
             return reject ({
               'success': false, 'error': 3,
-              'message': 'Error: failed to retrieve Access Control Rules at '+
-                          serial
+              'message': t('acRuleGetError', {errorline: __line})
             });
           }
           // If not completed, Reject
           console.log('Error retrieving Access Control Rules at '+serial);
           reject ({
             'success': false, 'error': 3,
-            'message': 'Error: failed to retrieve Access Control Rules at '+
-                          serial
+            'message': t('acRuleGetError', {errorline: __line})
           });
         }
       });

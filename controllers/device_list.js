@@ -3106,30 +3106,11 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
         let result = {'success': false};
         result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
-          let errorMessage = t('acRuleDefaultError', {errorline: __line});
           // The return of change Access Control has established
-          // error codes. If necessary, it is possible to make res have
+          // error codes. It is possible to make res have
           // specific messages for each error code.
-          if (result.hasOwnProperty('error')) switch (result['error']) {
-            case 1:
-              errorMessage = t('acRuleLimits', {errorline: __line});
-            break;
-            case 2:
-              errorMessage = t('cpeSaveError', {errorline: __line});
-            break;
-            case 3:
-              errorMessage = t('acRuleGetError', {errorline: __line});
-            break;
-            case 4:
-              errorMessage = t('acRuleReDoError', {errorline: __line});
-            break;
-            case 5:
-            case 6:
-            case 7:
-            default:
-              errorMessage = t('acRuleDefaultError', {errorline: __line});
-            break;
-          }
+          let errorMessage = result.hasOwnProperty('message') ?
+            result['message'] : t('acRuleDefaultError', {errorline: __line});
           return res.status(500).json({
             success: false,
             message: errorMessage

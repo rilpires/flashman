@@ -113,16 +113,16 @@ let appSet = function(req, res, processFunction) {
         let acRulesRes = {'success': false};
         acRulesRes = await acsController.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
+          // The return of change Access Control has established
+          // error codes. It is possible to make res have
+          // specific messages for each error code.
+          let errorMessage = acRulesRes.hasOwnProperty('message') ?
+            acRulesRes['message'] : t('acRuleDefaultError', {errorline:__line});
           let response = {
             is_set: 0,
             success: false,
+            message: errorMessage,
           };
-          // The return of change Access Control has established
-          // error codes. If necessary, it is possible to make res have
-          // specific messages for each error code.
-          if (acRulesRes.hasOwnProperty('error')) {
-            response.error_code = acRulesRes['error'];
-          }
           // We need to return a code 200, because the flashman was able to
           // successfully complete the entire request. So we have to return the
           // internal error code in the response, as an "error_code".
