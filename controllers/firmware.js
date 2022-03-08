@@ -331,7 +331,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     }
     return res.json({
       type: 'success',
-      message: t('firmwareUploadSuccess'),
+      message: t('operationSuccessful'),
     });
   } catch (err) {
     let msg = '';

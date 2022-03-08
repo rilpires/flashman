@@ -69,7 +69,7 @@ const weekDayCompare = (firstDate, secondDate) => {
 const translateStateReboot = (state) => {
   if (state.type === 'restart') return t('waitingRestart');
   if (state.type === 'retry') return t('waitingRestart');
-  if (state.type === 'offline') return t('cpeOffilne');
+  if (state.type === 'offline') return t('cpeOffline');
   if (state.type === 'slave') return t('restartingSecondaryCpe');
   if (state.type === 'ok') return t('successfullyRestarted');
   if (state.type === 'error') return t('anErrorHappendAt ');

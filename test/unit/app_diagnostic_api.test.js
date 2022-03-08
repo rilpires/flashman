@@ -1,5 +1,6 @@
 /* eslint require-jsdoc: 0 */
 
+require('../../bin/globals.js');
 const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 const diagAppAPIController = require('../../controllers/app_diagnostic_api');
