@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* global __line */
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
@@ -810,7 +811,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
         config = await Config.findOne(
           {is_default: true}, {measureServerIP: true, measureServerPort: true},
         ).lean();
-        if (!config) throw {error: 'Config not found'};
+        if (!config) throw new Error('Config not found');
       } catch (err) {
         console.log(err);
       }
