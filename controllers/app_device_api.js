@@ -669,7 +669,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -710,7 +710,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -754,7 +754,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
   async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
@@ -869,7 +869,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     }
     if (err || !config) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1038,7 +1038,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1071,7 +1071,7 @@ appDeviceAPIController.appGetDevices = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1103,7 +1103,7 @@ appDeviceAPIController.appGetPortForward = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1144,7 +1144,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1201,7 +1201,7 @@ appDeviceAPIController.appGetWpsState = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1236,7 +1236,7 @@ appDeviceAPIController.resetPassword = function(req, res) {
   DeviceModel.findById(req.body.content.reset_mac).exec(async (err, device) => {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!device) {
       return res.status(404).json({message:
@@ -1272,7 +1272,7 @@ appDeviceAPIController.activateWpsButton = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1351,7 +1351,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message':
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     // Generate a new secret for app
     let newSecret = crypt.randomBytes(20).toString('base64');
@@ -1395,7 +1395,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
   DeviceModel.find(query).exec(async function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message':
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevices || matchedDevices.length === 0) {
       return res.status(404).json({'message':
@@ -1457,7 +1457,7 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
   DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:
@@ -1495,7 +1495,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
   DeviceModel.findById(query).exec(function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (!matchedDevice) {
       return res.status(404).json({message:

@@ -290,7 +290,7 @@ deviceListController.changeUpdate = async function(req, res) {
   }
   if (error || !matchedDevice) {
     return res.status(500).json({success: false,
-      message: t('databaseFindError', {errorline: __line})});
+      message: t('cpeFindError', {errorline: __line})});
   }
   // Cast to boolean so that javascript works as intended
   let doUpdate = req.body.do_update;
@@ -588,7 +588,7 @@ deviceListController.getDevices = async function(req, res) {
   if (err) {
     return res.status(500).json({ // in case of error, returns message.
       success: false,
-      message: t('databaseFindError', {errorline: __line}),
+      message: t('roleFindError', {errorline: __line}),
     });
   }
   let finalQuery;
@@ -1008,7 +1008,7 @@ deviceListController.sendMqttMsg = function(req, res) {
   async function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(device) && device.length > 0) {
@@ -1088,7 +1088,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
           if (device && !isDevOn) {
             return res.status(200).json({success: false,
-                                         message: t('cpeIsNotOnline',
+                                         message: t('cpeNotOnline',
                                            {errorline: __line})});
           }
         }
@@ -1228,7 +1228,7 @@ deviceListController.getFirstBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1256,7 +1256,7 @@ deviceListController.getLastBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1318,7 +1318,7 @@ deviceListController.getDeviceReg = function(req, res) {
     if (err) {
       console.log(err);
       return res.status(500).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1384,7 +1384,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (err) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
         errors: [],
       });
     }
@@ -2133,7 +2133,7 @@ deviceListController.createDeviceReg = function(req, res) {
         if (err) {
           return res.status(500).json({
             success: false,
-            message: t('databaseFindError', {errorline: __line}),
+            message: t('cpeFindError', {errorline: __line}),
             errors: errors,
           });
         } else {
@@ -2436,7 +2436,7 @@ deviceListController.setPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2640,7 +2640,7 @@ deviceListController.getPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2716,7 +2716,7 @@ deviceListController.getPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2739,7 +2739,7 @@ deviceListController.setPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2890,7 +2890,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (matchedDevice == null) {
@@ -2921,7 +2921,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
@@ -2955,7 +2955,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
@@ -2967,7 +2967,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
-        message: t('cpeIsNotOnline', {errorline: __line}),
+        message: t('cpeNotOnline', {errorline: __line}),
       });
     }
     let permissions = DeviceVersion.findByVersion(
