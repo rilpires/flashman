@@ -13,12 +13,12 @@ let meshHandlers = {};
 
 meshHandlers.genMeshID = function() {
   return crypt.randomBytes(10).toString('base64')
-              .replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '');
+              .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 };
 
 meshHandlers.genMeshKey = function() {
   return crypt.randomBytes(20).toString('base64')
-              .replace(/\//g, '!').replace(/\=/g, '');
+              .replace(/\//g, '!').replace(/=/g, '');
 };
 
 meshHandlers.syncSlaveWifi = function(master, slave) {
@@ -539,8 +539,7 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
   if (meshTopology[newMac] && meshTopology[newMac].length) {
     for (let i=0; i<meshTopology[newMac].length; i++) {
       const auxDevice = getNextToUpdateRec(
-        meshTopology, meshTopology[newMac][i], devicesToUpdate
-      );
+        meshTopology, meshTopology[newMac][i], devicesToUpdate);
       // Only choose a device that hasn't been updated yet
       if (devicesToUpdate.includes(auxDevice)) {
         nextDevice = auxDevice;
