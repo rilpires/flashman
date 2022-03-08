@@ -130,14 +130,17 @@ const convertWifiBand = function(band, mode) {
   switch (band) {
     case '2':
     case 'auto':
+    case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
     case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '20/40MHz':
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '20/40/80MHz':
     case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
@@ -1240,7 +1243,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping,
+              device, model, data,
+              diagNecessaryKeys.ping,
               fields.diagnostics.ping,
             );
           }
@@ -1515,8 +1519,7 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
 
-  if ('current_speedtest' in device &&
-      'timestamp' in device.current_speedtest) {
+  if (device.current_speedtest && device.current_speedtest.timestamp) {
     rqstTime = device.current_speedtest.timestamp.valueOf();
   }
 
@@ -2507,7 +2510,7 @@ acsDeviceInfoController.updateInfo = async function(
         if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+        masterKey, key, splitID[0], modelName, changes[masterKey][key],
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
@@ -2635,6 +2638,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
         device.port_mapping[i][v[1][1]], v[1][2]]);
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
+      if (v[0] == 'description') {
+        v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+      }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
     });
@@ -2781,6 +2787,17 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
             if (checkForNestedKey(data, portMapProtocolPath)) {
               if (getFromNestedKey(data,
                 portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+              ) {
+                isDiff = true;
+                break;
+              }
+            }
+            let portMapDescriptionPath = iterateTemplate +
+                                      fields.port_mapping_values.description[0];
+            if (checkForNestedKey(data, portMapDescriptionPath)) {
+              if (
+                getFromNestedKey(data, portMapDescriptionPath) !=
+                fields.port_mapping_values.description[1]
               ) {
                 isDiff = true;
                 break;
