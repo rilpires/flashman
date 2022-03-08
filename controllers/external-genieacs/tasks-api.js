@@ -226,6 +226,26 @@ genie.putPreset = async function(preset) {
   }, presetjson);
 };
 
+genie.addOrDeleteObject = async function(deviceid, acObject, taskType) {
+  let task = {
+    name: taskType,
+    objectName: acObject,
+  };
+  try {
+    let ret = await genie.addTask(deviceid, task, true, 10000, []);
+    if (!ret || !ret.finished||
+      ret.task.name !== task.name) {
+      return false
+    }
+    return true;
+  } catch (e) {
+    console.log(
+      'Error: '+taskType+' failure at '+deviceid
+    );
+  }
+  return false;
+};
+
 /* simple request to send a new task to GenieACS and get a promise the resolves
  to the request response or rejects to request error. Will throw an uncaught
  error if task can't be stringifyed to json. */

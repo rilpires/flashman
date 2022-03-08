@@ -3103,7 +3103,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        let result = {'success': false, 'error': 500};
+        let result = {'success': false};
         result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
           let errorMessage = t('acRuleDefaultError', {errorline: __line});
@@ -3111,16 +3111,23 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
           // error codes. If necessary, it is possible to make res have
           // specific messages for each error code.
           if (result.hasOwnProperty('error')) switch (result['error']) {
-            case 429:
+            case 1:
               errorMessage = t('acRuleLimits', {errorline: __line});
             break;
-            case 500:
+            case 2:
               errorMessage = t('cpeSaveError', {errorline: __line});
             break;
-            case 502:
+            case 3:
               errorMessage = t('acRuleGetError', {errorline: __line});
             break;
+            case 4:
+              errorMessage = t('acRuleReDoError', {errorline: __line});
+            break;
+            case 5:
+            case 6:
+            case 7:
             default:
+              errorMessage = t('acRuleDefaultError', {errorline: __line});
             break;
           }
           return res.status(500).json({

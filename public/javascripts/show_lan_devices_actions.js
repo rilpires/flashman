@@ -12,7 +12,7 @@ anlixDocumentReady.add(function() {
     $('#lan-devices').modal();
     $('#lan-devices').attr('data-validate-upnp', upnpSupport);
     $('.btn-sync-lan').prop('disabled', true);
-    $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
+    $('#show-spam-error').hide();
 
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/onlinedevs',
@@ -99,7 +99,7 @@ anlixDocumentReady.add(function() {
       data: {id: deviceId, lanid: lanDeviceId, isblocked: isBlocked},
       success: function(res) {
         if (res.success) {
-          $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
+          $('#show-spam-error').hide();
           btnStatus.removeClass('indigo-text red-text')
                    .addClass(isBlocked ? 'red-text' : 'indigo-text')
                    .html(isBlocked ? 'bloqueada' : 'liberada');
@@ -115,8 +115,8 @@ anlixDocumentReady.add(function() {
         let errCode = xhr.status;
         let response = xhr.responseJSON;
         if (!response.success) {
-          $('#lan-devices-error-message').text(response.message);
-          $('#reach-num-of-blocked-devices-limits-tr069-spam').show();
+          $('#spam-error-message').text(response.message);
+          $('#show-spam-error').show();
         }
         $('.btn-lan-dev-block').prop('disabled', false);
       },
@@ -267,6 +267,12 @@ anlixDocumentReady.add(function() {
     let countAddedRouters = 0;
 
     $.each(lanDevices, function(idx, device) {
+      let isWired = (device.conn_type == 0);
+      let cantBlockWired = !lanDevicesGrantBlockWiredDevices;
+      let dontGrantBlockDevices = !(isSuperuser || grantLanDevicesBlock);
+      let cantBlockDevice =
+        isBridge || (isWired && cantBlockWired) || dontGrantBlockDevices;
+
       // Skip if offline for too long
       if (device.is_old) {
         return true;
@@ -291,10 +297,7 @@ anlixDocumentReady.add(function() {
                          .attr('data-mac', device.mac)
                          .attr('data-blocked', device.is_blocked)
                          .attr('type', 'button')
-                         .prop('disabled',
-                           (device.conn_type == 0 && !lanDevicesGrantBlockWiredDevices) ||
-                           isBridge || !(isSuperuser || grantLanDevicesBlock))
-            .append(
+                         .prop('disabled', cantBlockDevice).append(
               (device.is_blocked) ?
                 $('<i>').addClass('fas fa-lock fa-lg') :
                 $('<i>').addClass('fas fa-lock-open fa-lg'),
@@ -522,7 +525,7 @@ anlixDocumentReady.add(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
-    $('#reach-num-of-blocked-devices-limits-tr069-spam').hide();
+    $('#show-spam-error').hide();
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);
     // Controls device exhibition after all data has arrived in mesh mode
