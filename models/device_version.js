@@ -586,6 +586,28 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'DIR-842': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.3': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 250,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
   'AC10': {
     vendor: 'Tenda',
     versions_upgrade: {
