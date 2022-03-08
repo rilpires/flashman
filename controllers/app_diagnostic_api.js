@@ -200,7 +200,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       if (!matchedConfig) {
         console.error('No config exists');
         return res.status(500).json({'error':
-          t('serverError', {errorline: __line})});
+          t('configFindError', {errorline: __line})});
       }
 
       let createPrefixErrNotification = false;
@@ -812,7 +812,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
       let possibleMatch = await DeviceModel.findById(
         possibleSlaveMac, {_id: true})
       .catch((err) => {
-        response.message = t('databaseFindError', {errorline: __line});
+        response.message = t('cpeFindError', {errorline: __line});
         return res.status(500).json(response);
       });
       if (possibleMatch && possibleMatch._id) {
@@ -844,7 +844,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   try {
     matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection);
   } catch (err) {
-    response.message = t('serverError', {errorline: __line});
+    response.message = t('cpeFindError', {errorline: __line});
     response.errcode = 'internal';
     return res.status(500).json(response);
   }
@@ -873,7 +873,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   try {
     matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection);
   } catch (err) {
-    response.message = t('serverError', {errorline: __line});
+    response.message = t('cpeFindError', {errorline: __line});
     response.errcode = 'internal';
     return res.status(500).json(response);
   }
@@ -998,7 +998,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   .catch((err) => {
     return res.status(500).json({
       success: false,
-      message: t('serverError', {errorline: __line}),
+      message: t('cpeFindError', {errorline: __line}),
     });
   });
   if (!matchedSlave) {
@@ -1027,7 +1027,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   .catch((err) => {
     return res.status(500).json({
       success: false,
-      message: t('serverError', {errorline: __line}),
+      message: t('cpeFindError', {errorline: __line}),
     });
   });
   if (!matchedMaster) {
@@ -1097,7 +1097,7 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   let matchedDevice = await DeviceModel.findById(macAddr, field)
   .catch((err) => {
     return res.status(500).json({message:
-      t('serverError', {errorline: __line})});
+      t('cpeFindError', {errorline: __line})});
   });
   if (!matchedDevice) {
     return res.status(404).json({message:
@@ -1120,7 +1120,7 @@ diagAppAPIController.getSpeedTest = function(req, res) {
   async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
@@ -1171,7 +1171,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
   async (err, matchedDevice) => {
     if (err) {
       return res.status(500).json({message:
-        t('serverError', {errorline: __line})});
+        t('cpeFindError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];

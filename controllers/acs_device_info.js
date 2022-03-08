@@ -500,7 +500,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
-      message: t('serverError', {errorline: __line})});
+      message: t('cpeFindError', {errorline: __line})});
   });
   // New devices need to sync immediately
   if (!device) {

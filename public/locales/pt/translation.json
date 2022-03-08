@@ -277,5 +277,7 @@
 	"configFindError": "Erro ao buscar configuração ({{errorline}})",
 	"configNotFoud": "Configuração não encontrada ({{errorline}})",
 	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
-	"configUpdateError": "Erro salvando configurações ({{errorline}})"
+	"configUpdateError": "Erro salvando configurações ({{errorline}})",
+
+	"roleFindError": "Erro ao buscar classe ({{errorline}})"
 }

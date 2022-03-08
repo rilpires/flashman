@@ -567,7 +567,7 @@ userController.getProfile = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = t('databaseFindError', {errorline: __line});
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
@@ -777,7 +777,7 @@ userController.setUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -817,7 +817,7 @@ userController.getUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.user_crud.url;
@@ -846,7 +846,7 @@ userController.setRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -885,7 +885,7 @@ userController.getRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.role_crud.url;
@@ -912,7 +912,7 @@ userController.setCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -952,7 +952,7 @@ userController.getCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const user = matchedConfig.traps_callbacks.certification_crud.user;
@@ -1039,7 +1039,7 @@ userController.settings = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = t('databaseFindError', {errorline: __line});
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
