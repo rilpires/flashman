@@ -1083,7 +1083,8 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
 
 diagAppAPIController.poolFlashmanField = async function(req, res) {
   if (!req.body.mac || !req.body.field) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonInvalidFormat', {errorline: __line})});
   }
   const macAddr = req.body.mac.toUpperCase();
   if (!utilHandlers.isMacValid(macAddr)) {
@@ -1214,7 +1215,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
         config = await ConfigModel.findOne(
           {is_default: true}, {measureServerIP: true, measureServerPort: true},
         ).lean();
-        if (!config) throw {error: 'Config not found'};
+        if (!config) throw new Error('Config not found');
       } catch (err) {
         console.log(err);
       }
