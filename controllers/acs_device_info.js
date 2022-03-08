@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* global __line */
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
@@ -1493,7 +1494,6 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
       return {success: false,
               message: t('acsSpeedTestError', {errorline: __line})};
     } else {
-      console.log('Success: TR-069 speedtest fired');
       return {success: true,
               message: t('operationSuccessful')};
     }
@@ -2156,7 +2156,6 @@ const fetchDevicesFromGenie = function(device, acsID) {
 acsDeviceInfoController.requestLogs = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
   let acsID = device.acs_id;
   let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
   let task = {
@@ -2172,7 +2171,6 @@ acsDeviceInfoController.requestLogs = function(device) {
 acsDeviceInfoController.requestWanBytes = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
-  let mac = device._id;
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let recvField = fields.wan.recv_bytes;
