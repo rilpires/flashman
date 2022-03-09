@@ -116,14 +116,11 @@ let appSet = function(req, res, processFunction) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
           // specific messages for each error code.
-          let errorMessage = acRulesRes.hasOwnProperty('message') ?
-            acRulesRes['message'] : t('acRuleDefaultError', {errorline:__line});
           let errorCode = acRulesRes.hasOwnProperty('error_code') ?
-            acRulesRes['error_code'] : 0;
+            acRulesRes['error_code'] : 'acRuleDefaultError';
           let response = {
             is_set: 0,
             success: false,
-            message: errorMessage,
             error_code: errorCode,
           };
           // We need to return a code 200, because the flashman was able to

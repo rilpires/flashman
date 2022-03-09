@@ -2700,7 +2700,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       console.log('Number of rules has reached its limits to this device.');
       return {
         'success': false,
-        'error_code': 1,
+        'error_code': 'acRuleLimits',
         'message': t('acRuleLimits', {errorline: __line})
       };
     }
@@ -2718,7 +2718,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     console.log('Error ('+e+') while trying to get device information.');
     return {
       'success': false,
-      'error_code': 2,
+      'error_code': 'cpeSaveError',
       'message': t('cpeSaveError', {errorline: __line})
     };
   }
@@ -2732,7 +2732,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       result.task.name !== 'getParameterValues') {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {
-      'success': false, 'error_code': 3,
+      'success': false, 'error_code': 'acRuleGetError',
       'message': t('acRuleGetError', {errorline: __line})
     };
   }
@@ -2743,7 +2743,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       acsID, serial, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId);
   } catch (e) {
     return {
-      'success': false, 'error_code': 3,
+      'success': false, 'error_code': 'acRuleGetError',
       'message': t('acRuleGetError', {errorline: __line})
     };
   }
@@ -2786,7 +2786,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         }
         if (!deleteSuccess) {
           return {
-            'success': false, 'error_code': 4,
+            'success': false, 'error_code': 'acRuleReDoError',
             'message': t('acRuleReDoError', {errorline: __line})
           };
         }
@@ -2815,7 +2815,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       } catch (e) {
         console.log('Error ('+e+') at AC rules add');
         return {
-          'success': false, 'error_code': 5,
+          'success': false, 'error_code': 'acRuleDefaultError',
           'message': t('acRuleDefaultError', {errorline: __line})
         };
       }
@@ -2862,7 +2862,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         }
         if (!deleteSuccess) {
           return {
-            'success': false, 'error_code': 6,
+            'success': false, 'error_code': 'acRuleDefaultError',
             'message': t('acRuleDefaultError', {errorline: __line})
           };
         }
@@ -2892,7 +2892,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         } catch (e) {
           console.log('Error ('+e+') at AC rules update');
           return {
-            'success': false, 'error_code': 7,
+            'success': false, 'error_code': 'acRuleDefaultError',
             'message': t('acRuleDefaultError', {errorline: __line})
           };
         }
@@ -2901,13 +2901,13 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       console.log(
         'Error at AC rules update. Number of rules doesn\'t match');
       return {
-        'success': false, 'error_code': 7,
+        'success': false, 'error_code': 'acRuleDefaultError',
         'message': t('acRuleDefaultError', {errorline: __line})
       };
     }
   } else {
     return {
-      'success': false, 'error_code': 3,
+      'success': false, 'error_code': 'acRuleGetError',
       'message': t('acRuleGetError', {errorline: __line})
     };
   }
@@ -2934,7 +2934,7 @@ const getAcRuleTrees = async function (
       resp.on('error', (error) => {
         console.log('Error ('+ error +') removing an AC rule at '+serial);
         reject ({
-          'success': false, 'error_code': 3,
+          'success': false, 'error_code': 'acRuleGetError',
           'message': t('acRuleGetError', {errorline: __line})
         });
       });
@@ -2976,14 +2976,14 @@ const getAcRuleTrees = async function (
             console.log(
               'Error ('+e+') retrieving Access Control Rules at '+serial);
             return reject ({
-              'success': false, 'error_code': 3,
+              'success': false, 'error_code': 'acRuleGetError',
               'message': t('acRuleGetError', {errorline: __line})
             });
           }
           // If not completed, Reject
           console.log('Error retrieving Access Control Rules at '+serial);
           reject ({
-            'success': false, 'error_code': 3,
+            'success': false, 'error_code': 'acRuleGetError',
             'message': t('acRuleGetError', {errorline: __line})
           });
         }
