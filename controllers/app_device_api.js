@@ -118,10 +118,13 @@ let appSet = function(req, res, processFunction) {
           // specific messages for each error code.
           let errorMessage = acRulesRes.hasOwnProperty('message') ?
             acRulesRes['message'] : t('acRuleDefaultError', {errorline:__line});
+          let errorCode = acRulesRes.hasOwnProperty('error_code') ?
+            acRulesRes['error_code'] : 0;
           let response = {
             is_set: 0,
             success: false,
             message: errorMessage,
+            error_code: errorCode,
           };
           // We need to return a code 200, because the flashman was able to
           // successfully complete the entire request. So we have to return the
@@ -439,7 +442,9 @@ let processUpnpInfo = function(content, device, rollback, tr069Changes) {
     // Deep copy upnp requests for rollback
     rollback.upnp_requests = util.deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
-    let macDevice = content.device_configs.mac.toLowerCase();
+    let macDevice = device.use_tr069 ?
+      content.device_configs.mac.toUpperCase() :
+      content.device_configs.mac.toLowerCase();
     let allow = 'none';
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
@@ -727,7 +732,7 @@ appDeviceAPIController.rebootRouter = function(req, res) {
       // Send mqtt message to reboot router
       mqtt.anlixMessageRouterReboot(req.body.id);
       isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[req.body.id.toLowerCase()];
+        return map[req.body.id.toUpperCase()];
       });
     }
 
@@ -769,7 +774,7 @@ appDeviceAPIController.refreshInfo = function(req, res) {
         // Send mqtt message to update devices on flashman db
         mqtt.anlixMessageRouterOnlineLanDevs(req.body.id);
         isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-          return map[req.body.id.toLowerCase()];
+          return map[req.body.id.toUpperCase()];
         });
       }
     }
@@ -826,7 +831,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     }
 
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[req.body.id.toLowerCase()];
+      return map[req.body.id.toUpperCase()];
     });
 
     res.status(200).json({
@@ -1022,7 +1027,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       isDevOn = true;
     } else {
       isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[req.body.id.toLowerCase()];
+        return map[req.body.id.toUpperCase()];
       });
     }
 
@@ -1293,7 +1298,7 @@ appDeviceAPIController.resetPassword = function(req, res) {
     device.app_password = undefined;
     await device.save();
     if (!device.use_tr069) {
-      mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toLowerCase());
+      mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
     }
 
     return res.status(200).json({success: true});
