@@ -1376,7 +1376,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         loss: parseInt(pingKeys.failure_count * 100 /
                (pingKeys.success_count + pingKeys.failure_count)).toString(),
       };
-      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+      if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
@@ -2044,10 +2044,11 @@ const fetchDevicesFromGenie = function(device, acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = getFromNestedKey(data, ifaceKey+'._value');
-          if (l2iface === iface2) {
+          // DIR-842 leaves the dot in the layer2 interface name
+          if (l2iface === iface2 || l2iface === iface2 + '.') {
             device.wifi = true;
             device.wifi_freq = 2.4;
-          } else if (l2iface === iface5) {
+          } else if (l2iface === iface5 || l2iface === iface5 + '.') {
             device.wifi = true;
             device.wifi_freq = 5;
           }
@@ -2109,11 +2110,13 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
-                // Casts to string if is a number
+                // Casts to string if is a number so we can replace 'dBm'
                 if (typeof device.rssi === 'number') {
                   device.rssi = device.rssi.toString();
                 }
                 device.rssi = device.rssi.replace('dBm', '');
+                // Cast back to number to avoid converting issues
+                device.rssi = parseInt(device.rssi);
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
