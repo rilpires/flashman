@@ -1,9 +1,13 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 const User = require('../models/user');
 const Role = require('../models/role');
 const Config = require('../models/config');
 const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
-const {Parser, transforms: {unwind}} = require('json2csv');
+const {Parser} = require('json2csv');
+const t = require('./language').i18next.t;
 
 let userController = {};
 
@@ -12,7 +16,7 @@ userController.changePassword = function(req, res) {
     return res.render('changepassword',
                       {user: req.user,
                        username: req.user.name,
-                       message: 'Sua senha expirou. Insira uma nova senha',
+                       message: t('passwordExpired', {errorline: __line}),
                        type: 'danger',
                        superuser: req.user.is_superuser,
                        role: role});
@@ -23,7 +27,7 @@ userController.changeElementsPerPage = function(req, res) {
   if (isNaN(parseInt(req.body.elementsperpage))) {
     return res.json({
       type: 'danger',
-      message: 'Valor inválido',
+      message: t('valueInvalid', {errorline: __line}),
     });
   }
   // Use the User model to find a specific user
@@ -31,7 +35,7 @@ userController.changeElementsPerPage = function(req, res) {
     if (err) {
       return res.json({
         type: 'danger',
-        message: 'Erro ao encontrar usuário',
+        message: t('userFindError', {errorline: __line}),
       });
     }
 
@@ -40,12 +44,12 @@ userController.changeElementsPerPage = function(req, res) {
       if (err) {
         return res.json({
           type: 'danger',
-          message: 'Erro gravar alteração',
+          message: t('saveError', {errorline: __line}),
         });
       }
       return res.json({
         type: 'success',
-        message: 'Alteração feita com sucesso!',
+        message: t('operationSuccessful'),
       });
     });
   });
@@ -55,7 +59,7 @@ userController.changeVisibleColumnsOnPage = function(req, res) {
   if (!Array.isArray(req.body.visiblecolumnsperpage)) {
     return res.json({
       type: 'danger',
-      message: 'Valor inválido',
+      message: t('valueInvalid', {errorline: __line}),
     });
   }
   // Use the User model to find a specific user
@@ -63,7 +67,7 @@ userController.changeVisibleColumnsOnPage = function(req, res) {
     if (err) {
       return res.json({
         type: 'danger',
-        message: 'Erro ao encontrar usuário',
+        message: t('userFindError', {errorline: __line}),
       });
     }
 
@@ -72,12 +76,12 @@ userController.changeVisibleColumnsOnPage = function(req, res) {
       if (err) {
         return res.json({
           type: 'danger',
-          message: 'Erro gravar alteração',
+          message: t('saveError', {errorline: __line}),
         });
       }
       return res.json({
         type: 'success',
-        message: 'Alteração feita com sucesso!',
+        message: t('operationSuccessful'),
       });
     });
   });
@@ -90,8 +94,7 @@ userController.postUser = function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: 'Erro ao criar usuário. ' +
-               'O nome não pode conter mais de 23 caracteres.',
+      message: t('nameCantBeBiggerThan23', {errorline: __line}),
     });
   }
   let user = new User({
@@ -106,13 +109,13 @@ userController.postUser = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro ao criar usuário. Verifique se o usuário já existe.',
+        message: t('userMightAlreadyExist', {errorline: __line}),
       });
     }
     return res.json({
       success: true,
       type: 'success',
-      message: 'Usuário criado com sucesso!',
+      message: t('operationSuccessful'),
     });
   });
 };
@@ -180,16 +183,14 @@ userController.postRole = function(req, res) {
     return res.json({
       success: false,
       type: 'danger',
-      message: 'Erro de conflito de classe: Controle de Atualização ' +
-               'de Firmware Restrita sem Controle de Atualização de Firmware',
+      message: t('firmwareUpdateControllConflict', {errorline: __line}),
     });
   } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
     return res.json({
       success: false,
       type: 'danger',
-      message: 'Erro de conflito de classe: Controle de Atualização ' +
-               'de Firmware Beta sem Controle de Atualização de Firmware',
+      message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
     });
   }
 
@@ -199,13 +200,13 @@ userController.postRole = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro ao criar classe. Verifique se já existe.',
+        message: t('roleMightAlreadyExist', {errorline: __line}),
       });
     }
     return res.json({
       success: true,
       type: 'success',
-      message: 'Classe de permissões criada com sucesso!',
+      message: t('operationSuccessful'),
     });
   });
 };
@@ -213,6 +214,16 @@ userController.postRole = function(req, res) {
 userController.getUsers = async function(req, res) {
   try {
     let users = await User.find().lean().exec();
+    return res.json({success: true, type: 'success', users: users});
+  } catch (err) {
+    return res.json({success: false, type: 'danger', message: err});
+  }
+};
+
+userController.getUsersForDisplay = async function(req, res) {
+  try {
+    let usersProjection = {deviceCertifications: false};
+    let users = await User.find({}, usersProjection).lean().exec();
     return res.json({success: true, type: 'success', users: users});
   } catch (err) {
     return res.json({success: false, type: 'danger', message: err});
@@ -245,7 +256,7 @@ userController.editUser = function(req, res) {
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: 'Erro ao encontrar usuário',
+        message: t('userFindError', {errorline: __line}),
       });
     }
 
@@ -262,7 +273,7 @@ userController.editUser = function(req, res) {
         return res.status(500).json({
           success: false,
           type: 'danger',
-          message: 'As senhas estão diferentes',
+          message: t('passwordsDiffer', {errorline: __line}),
         });
       }
     }
@@ -272,7 +283,7 @@ userController.editUser = function(req, res) {
         return res.status(500).json({
           success: false,
           type: 'danger',
-          message: 'Erro ao salvar alterações',
+          message: t('saveError', {errorline: __line}),
         });
       }
 
@@ -298,13 +309,13 @@ userController.editUser = function(req, res) {
             return res.status(500).json({
               success: false,
               type: 'danger',
-              message: 'Erro ao salvar alterações',
+              message: t('saveError', {errorline: __line}),
             });
           } else {
             return res.json({
               success: true,
               type: 'success',
-              message: 'Editado com sucesso!',
+              message: t('operationSuccessful'),
             });
           }
         });
@@ -312,7 +323,7 @@ userController.editUser = function(req, res) {
         return res.status(403).json({
           success: false,
           type: 'danger',
-          message: 'Permissão negada',
+          message: t('permissionDenied', {errorline: __line}),
         });
       }
     });
@@ -326,7 +337,7 @@ userController.editRole = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro ao encontrar classe.',
+        message: t('roleFindError', {errorline: __line}),
       });
     }
     let basicFirmwareUpgrade = false;
@@ -388,16 +399,14 @@ userController.editRole = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro de conflito de classe: Controle de Atualização ' +
-                 'de Firmware Restrita sem Controle de Atualização de Firmware',
+        message: t('firmwareUpdateControllConflict', {errorline: __line}),
       });
     } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro de conflito de classe: Controle de Atualização ' +
-                 'de Firmware Beta sem Controle de Atualização de Firmware',
+        message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
       });
     }
 
@@ -407,13 +416,13 @@ userController.editRole = function(req, res) {
         return res.json({
           success: false,
           type: 'danger',
-          message: 'Erro ao editar classe.',
+          message: t('roleSaveError', {errorline: __line}),
         });
       }
       return res.json({
         success: true,
         type: 'success',
-        message: 'Classe de permissões editada com sucesso!',
+        message: t('operationSuccessful'),
       });
     });
   });
@@ -425,8 +434,7 @@ userController.deleteCertificates = async function(req, res) {
     return res.status(500).json({
       success: false,
       type: 'danger',
-      message: 'Erro interno ao deletar certificações. '+
-      'Entre em contato com o desenvolvedor',
+      message: t('certificateDeleteErrorContactDev', {errorline: __line}),
     });
   }
   items = JSON.parse(items);
@@ -443,7 +451,9 @@ userController.deleteCertificates = async function(req, res) {
   try {
     for (let userId of idList) {
       let user = await User.findById(userId);
-      if (!user) throw ('Usuário não existe');
+      if (!user) {
+        throw new Error('User not found');
+      }
       let timestamps = itemsById[userId];
       for (let timestamp of timestamps) {
         let idx = user.deviceCertifications.findIndex(
@@ -457,15 +467,14 @@ userController.deleteCertificates = async function(req, res) {
     return res.status(200).json({
       success: true,
       type: 'success',
-      message: 'Certificações deletadas com sucesso',
+      message: t('operationSuccessful'),
     });
   } catch (err) {
-    console.error(err);
+    console.error(err.message ? err.message : err);
     return res.status(500).json({
       success: false,
       type: 'danger',
-      message: 'Erro interno ao deletar certificações. ' +
-               'Entre em contato com o desenvolvedor',
+      message: t('certificateDeleteErrorContactDev', {errorline: __line}),
     });
   }
 };
@@ -477,8 +486,7 @@ userController.deleteUser = function(req, res) {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro interno ao deletar usuário(s). ' +
-        'Entre em contato com o desenvolvedor',
+        message: t('userDeleteErrorContactDev', {errorline: __line}),
       });
     }
     users.forEach((user) => {
@@ -487,7 +495,7 @@ userController.deleteUser = function(req, res) {
     return res.json({
       success: true,
       type: 'success',
-      message: 'Usuário(s) deletado(s) com sucesso!',
+      message: t('operationSuccessful'),
     });
   });
 };
@@ -501,8 +509,7 @@ userController.deleteRole = function(req, res) {
           return res.json({
             success: false,
             type: 'danger',
-            message: 'Erro interno ao deletar classe(s). ' +
-            'Entre em contato com o desenvolvedor',
+            message: t('roleDeleteErrorContactDev', {errorline: __line}),
           });
         }
         roles.forEach((role) => {
@@ -511,15 +518,14 @@ userController.deleteRole = function(req, res) {
         return res.json({
           success: true,
           type: 'success',
-          message: 'Classe(s) deletada(s) com sucesso!',
+          message: t('operationSuccessful'),
         });
       });
     } else {
       return res.json({
         success: false,
         type: 'danger',
-        message: 'Erro ao deletar classe(s). ' +
-        'Uma ou mais classes ainda estão em uso por seus usuários.',
+        message: t('rolesStillInUse', {errorline: __line}),
       });
     }
   });
@@ -561,7 +567,7 @@ userController.getProfile = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = 'Erro ao acessar base de dados';
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
@@ -569,7 +575,7 @@ userController.getProfile = function(req, res) {
         });
         if (typeof userRole === 'undefined' && !req.user.is_superuser) {
           indexContent.type = 'danger';
-          indexContent.message = 'Permissão não encontrada';
+          indexContent.message = t('permissionNotFound', {errorline: __line});
           return res.render('error', indexContent);
         } else {
           indexContent.role = userRole;
@@ -603,7 +609,7 @@ userController.showCertificates = function(req, res) {
     if (err) {
       console.log(err);
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão não encontrada';
+      indexContent.message = t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     }
     let userRole = roles.find(function(role) {
@@ -611,7 +617,7 @@ userController.showCertificates = function(req, res) {
     });
     if (typeof userRole === 'undefined' && !req.user.is_superuser) {
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão não encontrada';
+      indexContent.message = t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     } else {
       indexContent.roles = roles;
@@ -641,7 +647,7 @@ userController.showCertificates = function(req, res) {
         });
       } else {
         indexContent.type = 'danger';
-        indexContent.message = 'Permissão negada';
+        indexContent.message = t('permissionDenied', {errorline: __line});
         return res.render('error', indexContent);
       }
     }
@@ -665,7 +671,7 @@ userController.showAll = function(req, res) {
     if (err) {
       console.log(err);
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão não encontrada';
+      indexContent.message = t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     }
     let userRole = roles.find(function(role) {
@@ -673,7 +679,7 @@ userController.showAll = function(req, res) {
     });
     if (typeof userRole === 'undefined' && !req.user.is_superuser) {
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão não encontrada';
+      indexContent.message = t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     } else {
       indexContent.roles = roles;
@@ -703,7 +709,7 @@ userController.showAll = function(req, res) {
         });
       } else {
         indexContent.type = 'danger';
-        indexContent.message = 'Permissão negada';
+        indexContent.message = t('permissionDenied', {errorline: __line});
         return res.render('error', indexContent);
       }
     }
@@ -727,7 +733,7 @@ userController.showRoles = function(req, res) {
     if (err || (!role && !req.user.is_superuser)) {
       console.log(err);
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão não encontrada';
+      indexContent.message = t('permissionNotFound', {errorline: __line});
       return res.render('error', indexContent);
     }
 
@@ -757,7 +763,7 @@ userController.showRoles = function(req, res) {
       });
     } else {
       indexContent.type = 'danger';
-      indexContent.message = 'Permissão negada';
+      indexContent.message = t('permissionDenied', {errorline: __line});
       return res.render('error', indexContent);
     }
   });
@@ -771,7 +777,7 @@ userController.setUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -785,18 +791,18 @@ userController.setUserCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: 'Erro ao gravar dados na base',
+              message: t('saveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
             success: true,
-            message: 'Endereço salvo com sucesso',
+            message: t('operationSuccessful'),
           });
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: 'Formato invalido',
+          message: t('fieldInvalid', {errorline: __line}),
         });
       }
     }
@@ -811,7 +817,7 @@ userController.getUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.user_crud.url;
@@ -840,7 +846,7 @@ userController.setRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -853,18 +859,18 @@ userController.setRoleCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: 'Erro ao gravar dados na base',
+              message: t('saveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
             success: true,
-            message: 'Endereço salvo com sucesso',
+            message: t('operationSuccessful'),
           });
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: 'Formato invalido',
+          message: t('fieldInvalid', {errorline: __line}),
         });
       }
     }
@@ -879,7 +885,7 @@ userController.getRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: 'Erro ao acessar dados na base',
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.role_crud.url;
@@ -900,6 +906,73 @@ userController.getRoleCrudTrap = function(req, res) {
   });
 };
 
+userController.setCertificationCrudTrap = function(req, res) {
+  // Store callback URL for users
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      if ('url' in req.body) {
+        matchedConfig.traps_callbacks.certification_crud.url = req.body.url;
+
+        if ('user' in req.body && 'secret' in req.body) {
+          matchedConfig.traps_callbacks.certification_crud.user =
+            req.body.user;
+          matchedConfig.traps_callbacks.certification_crud.secret =
+            req.body.secret;
+        }
+        matchedConfig.save((err) => {
+          if (err) {
+            return res.status(500).json({
+              success: false,
+              message: t('saveError', {errorline: __line}),
+            });
+          }
+          return res.status(200).json({
+            success: true,
+            message: t('operationSuccessful'),
+          });
+        });
+      } else {
+        return res.status(500).json({
+          success: false,
+          message: t('fieldInvalid', {errorline: __line}),
+        });
+      }
+    }
+  });
+};
+
+userController.getCertificationCrudTrap = function(req, res) {
+  // Get callback url and user
+  Config.findOne({is_default: true}, function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      const user = matchedConfig.traps_callbacks.certification_crud.user;
+      const url = matchedConfig.traps_callbacks.certification_crud.url;
+      if (!user || !url) {
+        return res.status(200).json({
+          success: true,
+          exists: false,
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        exists: true,
+        user: user,
+        url: url,
+      });
+    }
+  });
+};
+
 userController.checkAccountIsBlocked = async function(app) {
   try {
     let response = await controlApi.isAccountBlocked(app);
@@ -910,9 +983,7 @@ userController.checkAccountIsBlocked = async function(app) {
           'target': 'general'});
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'A conta Anlix de seu provedor está bloqueada. ' +
-                       'Verifique se há faturas vencidas e entre em ' +
-                       'contato com seu representante comercial',
+            'message': t('accountCreditsExpired', {errorline: __line}),
             'message_code': 2,
             'severity': 'danger',
             'type': 'communication',
@@ -927,7 +998,8 @@ userController.checkAccountIsBlocked = async function(app) {
     }
   } catch (err) {
     console.error('Error checking if user account is blocked: ' + err);
-    return {success: false, message: 'Erro ao verificar status'};
+    return {success: false, message: t('statusVerificationError',
+      {errorline: __line})};
   }
 };
 
@@ -967,7 +1039,7 @@ userController.settings = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = 'Erro ao acessar base de dados';
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
@@ -975,7 +1047,7 @@ userController.settings = function(req, res) {
         });
         if (typeof userRole === 'undefined' && !req.user.is_superuser) {
           indexContent.type = 'danger';
-          indexContent.message = 'Permissão não encontrada';
+          indexContent.message = t('permissionNotFound', {errorline: __line});
           return res.render('error', indexContent);
         } else {
           indexContent.role = userRole;
@@ -1102,7 +1174,7 @@ userController.certificateSearch = async (req, res) => {
       console.log(err);
       return res.status(500).json({
         success: false,
-        error: 'Failed to query users',
+        error: t('userQueryError', {errorline: __line}),
       });
     })
     .then((users) =>
@@ -1117,199 +1189,207 @@ userController.certificateSearch = async (req, res) => {
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
-      {label: 'Técnico', value: 'name', default: ''},
-      {label: 'Concluído', value: 'certifications.finished', default: ''},
+      {label: t('Technician'), value: 'name', default: ''},
       {
-        label: 'Motivo de interrupção na certificação',
+        label: t('Concluded'),
+        value: 'certifications.finished',
+        default: '',
+      },
+      {
+        label: t('certificateInterruptionReason'),
         value: 'certifications.cancelReason',
         default: '',
       },
-      {label: 'Identificador único', value: 'certifications.mac', default: ''},
-      {label: 'CPE TR-069?', value: 'certifications.isOnu', default: ''},
-      {label: 'Modelo', value: 'certifications.routerModel', default: ''},
+      {label: t('uniqueIdentifier'), value: 'certifications.mac', default: ''},
       {
-        label: 'Versão do firmware da CPE',
+        label: t('cpeIsTr069?'),
+        value: 'certifications.isOnu',
+        default: '',
+      },
+      {label: t('Model'), value: 'certifications.routerModel', default: ''},
+      {
+        label: t('cpeFirmwareVersion'),
         value: 'certifications.routerVersion',
         default: '',
       },
       {
-        label: 'Release/Versão do hardware',
+        label: t('harwareVersion/Release'),
         value: 'certifications.routerRelease',
         default: '',
       },
       {
-        label: 'Data do atendimento',
+        label: t('attendanceDate'),
         value: 'certifications.localEpochTimestamp',
         default: '',
       },
       {
-        label: 'Foi diagnosticado',
+        label: t('hasBeenDiagnosed'),
         value: 'certifications.didDiagnose',
         default: '',
       },
       {
-        label: 'Nível de sinal recebido na CPE em dBm',
+        label: t('cpeSignalLevelReceivedInDbm'),
         value: 'certifications.diagnostic.rxpower',
         default: '',
       },
       {
-        label: 'Sinal recebido em dBm ok?',
+        label: t('receivedSignalInDbmOk?'),
         value: 'certifications.diagnostic.pon',
         default: '',
       },
       {
-        label: 'Diagnostico da WAN ok?',
+        label: t('wanDiagnosticOk?'),
         value: 'certifications.diagnostic.wan',
         default: '',
       },
       {
-        label: 'IPv4 ok?',
+        label: t('ipV4Ok?'),
         value: 'certifications.diagnostic.ipv4',
         default: '',
       },
       {
-        label: 'IPv6 ok?',
+        label: t('ipV6Ok?'),
         value: 'certifications.diagnostic.ipv6',
         default: '',
       },
       {
-        label: 'DNS ok?',
+        label: t('dnsOk?'),
         value: 'certifications.diagnostic.dns',
         default: '',
       },
       {
-        label: 'Licenciamento ok?',
+        label: t('licensingOk?'),
         value: 'certifications.diagnostic.anlix',
         default: '',
       },
       {
-        label: 'Registro no flashman ok?',
+        label: t('flashmanRegisterOk?'),
         value: 'certifications.diagnostic.flashman',
         default: '',
       },
       {
-        label: 'Configuração TR-069 foi aplicada?',
+        label: t('tr069ConfigApplied?'),
         value: 'certifications.didConfigureTR069',
         default: '',
       },
       {
-        label: 'Configuração Wi-Fi foi alterada?',
+        label: t('wifiConfigChanged?'),
         value: 'certifications.didConfigureWifi',
         default: '',
       },
       {
-        label: 'Teste de velocidade habilitado',
+        label: t('speedTestEnabled'),
         value: 'certifications.diagnostic.speedtest',
         default: '',
       },
       {
-        label: 'Resultado do teste de velocidade (Mbps)',
+        label: t('speedTestResultsMbps'),
         value: 'certifications.diagnostic.speedValue',
         default: '',
       },
       {
-        label: 'Valor limite do teste de velocidade (Mbps)',
+        label: t('speedTestLimitMbps'),
         value: 'certifications.diagnostic.speedTestLimit',
         default: '',
       },
       {
-        label: 'Tipo de conexão na WAN',
+        label: t('wanConnectionType'),
         value: 'certifications.routerConnType',
         default: '',
       },
       {
-        label: 'Usuario PPPoE',
+        label: t('pppoeUser'),
         value: 'certifications.pppoeUser',
         default: '',
       },
       {
-        label: 'Modo bridge: Endereço de IP',
+        label: t('bridgeModeBridgeIp'),
         value: 'certifications.bridgeIP',
         default: '',
       },
       {
-        label: 'Modo bridge: Gateway',
+        label: t('bridgeModeGateway'),
         value: 'certifications.bridgeGateway',
         default: '',
       },
       {
-        label: 'Modo bridge: Endereço de DNS',
+        label: t('bridgeModeDnsAddress'),
         value: 'certifications.bridgeDNS',
         default: '',
       },
       {
-        label: 'É dual band?',
+        label: t('isDualBand?'),
         value: 'certifications.wifiConfig.hasFive',
         default: '',
       },
       {
-        label: 'SSID 2.4GHz',
+        label: t('24ghzSsid'),
         value: 'certifications.wifiConfig.two.ssid',
         default: '',
       },
       {
-        label: 'Canal 2.4GHz',
+        label: t('24ghzChannel'),
         value: 'certifications.wifiConfig.two.channel',
         default: '',
       },
       {
-        label: 'Largura de banda 2.4GHz',
+        label: t('24ghzBandwidth'),
         value: 'certifications.wifiConfig.two.band',
         default: '',
       },
       {
-        label: 'Modo de operação 2.4GHz',
+        label: t('24ghzOperationMode'),
         value: 'certifications.wifiConfig.two.mode',
         default: '',
       },
       {
-        label: 'SSID 5GHz',
+        label: t('5ghzSsid'),
         value: 'certifications.wifiConfig.five.ssid',
         default: '',
       },
       {
-        label: 'Canal 5GHz',
+        label: t('5ghzChannel'),
         value: 'certifications.wifiConfig.five.channel',
         default: '',
       },
       {
-        label: 'Largura de banda 5GHz',
+        label: t('5ghzBandwidth'),
         value: 'certifications.wifiConfig.five.band',
         default: '',
       },
       {
-        label: 'Modo de operação 5GHz',
+        label: t('5ghzOperationMode'),
         value: 'certifications.wifiConfig.five.mode',
         default: '',
       },
       {
-        label: 'Mesh foi configurado?',
+        label: t('hasMeshBeenConfigured?'),
         value: 'certifications.didConfigureMesh',
         default: '',
       },
       {
-        label: 'Modo mesh configurado',
+        label: t('configuredMeshMode'),
         value: 'certifications.mesh.mode',
         default: '',
       },
       {
-        label: 'CPF/CNPJ/Número de contrato',
+        label: t('contractNumber'),
         value: 'certifications.contract',
         default: '',
       },
       {
-        label: 'Observações',
+        label: t('observations'),
         value: 'certifications.observations',
         default: '',
       },
 
       {
-        label: 'Latitude no momento da certificação',
+        label: t('certificateLatitute'),
         value: 'certifications.latitude',
         default: '',
       },
       {
-        label: 'Longitude no momento da certificação',
+        label: t('certificateLongitude'),
         value: 'certifications.longitude',
         default: '',
       },
@@ -1356,13 +1436,13 @@ userController.certificateSearch = async (req, res) => {
   } else if (deviceCertifications.length <= 0) {
     return res.status(404).json({
       success: true,
-      deviceCertifications: 'No certifications found!',
+      deviceCertifications: t('certificatesNotFound', {errorline: __line}),
     });
   }
 
   return res.status(500).json({
     success: false,
-    error: 'Error on query user certifications',
+    error: t('certificatesNotFound', {errorline: __line}),
   });
 };
 

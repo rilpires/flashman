@@ -6,28 +6,26 @@ const permission = 'grantFirmwareManage';
 
 let router = express.Router();
 
-router.route('/').get(authController.ensureLogin(),
-                      authController.ensurePermission(permission),
+router.use( // all paths will use these middlewares.
+  authController.ensureLogin(),
+);
+
+router.route('/').get(authController.ensurePermission(permission),
                       firmwareController.index);
 
-router.route('/fetch').get(authController.ensureLogin(),
-                           authController.ensurePermission(permission),
+router.route('/fetch').get(authController.ensurePermission(permission),
                            firmwareController.fetchFirmwares);
 
-router.route('/del').post(authController.ensureLogin(),
-                          authController.ensurePermission(permission),
+router.route('/del').post(authController.ensurePermission(permission),
                           firmwareController.delFirmware);
 
-router.route('/upload').post(authController.ensureLogin(),
-                             authController.ensurePermission(permission),
+router.route('/upload').post(authController.ensurePermission(permission),
                              firmwareController.uploadFirmware);
 
-router.route('/sync').post(authController.ensureLogin(),
-                           authController.ensurePermission(permission),
+router.route('/sync').post(authController.ensurePermission(permission),
                            firmwareController.syncRemoteFirmwareFiles);
 
-router.route('/add').post(authController.ensureLogin(),
-                          authController.ensurePermission(permission),
+router.route('/add').post(authController.ensurePermission(permission),
                           firmwareController.addRemoteFirmwareFile);
 
 module.exports = router;

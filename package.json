@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.24.3",
+  "version": "2.25.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -17,8 +17,8 @@
   },
   "genieacs": {
     "ref": "d29448e3a7d3f3ae9cdbcfeae7b9c7ec4e9ee675",
-    "presetHash": "c27d0bde19e042f46e9bf32e4248f840",
-    "provisionHash": "bc5012c7b4df2404efddc11bf89329f6"
+    "presetHash": "27da9cb1abe298532d63aeed8096d22f",
+    "provisionHash": "6fa10219c4a5030fd5c077b641c5ffb0"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",
@@ -45,6 +45,10 @@
     "express-socket.io-session": "~1.3.5",
     "fast-xml-parser": "~3.20.3",
     "http": "~0.0.1-security",
+    "i18next": "~21.6.6",
+    "i18next-fs-backend": "~1.1.4",
+    "i18next-http-backend": "~1.3.2",
+    "i18next-http-middleware": "~3.1.5",
     "jquery": "~3.5.1",
     "jquery-highlight": "~3.5.0",
     "jquery-mask-plugin": "~1.14.16",
@@ -87,6 +91,7 @@
     "@shelf/jest-mongodb": "^1.2.5",
     "babel-loader": "^8.2.2",
     "clean-css-cli": "^4.3.0",
+    "copy-webpack-plugin": "~9.1.0",
     "css-loader": "^5.2.4",
     "eslint": "^7.32.0",
     "eslint-config-google": "^0.9.1",

@@ -1,3 +1,4 @@
+/* global __line */
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
 const messaging = require('../messaging');
@@ -6,17 +7,18 @@ const crypt = require('crypto');
 const deviceHandlers = require('./devices');
 const DevicesAPI = require('../external-genieacs/devices-api');
 const util = require('./util');
+const t = require('../language').i18next.t;
 
 let meshHandlers = {};
 
 meshHandlers.genMeshID = function() {
   return crypt.randomBytes(10).toString('base64')
-              .replace(/\+/g, '-').replace(/\//g, '_').replace(/\=/g, '');
+              .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 };
 
 meshHandlers.genMeshKey = function() {
   return crypt.randomBytes(20).toString('base64')
-              .replace(/\//g, '!').replace(/\=/g, '');
+              .replace(/\//g, '!').replace(/=/g, '');
 };
 
 meshHandlers.syncSlaveWifi = function(master, slave) {
@@ -249,13 +251,13 @@ meshHandlers.validateMeshMode = async function(
 ) {
   let errors = [];
   if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
-    errors.push('Modo mesh inválido');
+    errors.push(t('meshModeInvalid', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
   if (targetMode === 0 && device.mesh_slaves.length > 0) {
-    errors.push('Não é possível desabilitar o mesh com secundários associados');
+    errors.push(t('cantDesenableMeshWithSecondaries', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
@@ -279,7 +281,7 @@ meshHandlers.validateMeshMode = async function(
     }
     // If CPE is tr-069 it must be online when enabling wifi mesh mode
     if (!isDevOn && isEnablingWifiMesh) {
-      errors.push('CPE TR-069 não está online');
+      errors.push(t('cpeTr069NotOnline', {errorline: __line}));
       if (abortOnError) {
         return {success: false, msg: errors.slice(-1)[0], errors: errors};
       }
@@ -295,7 +297,7 @@ meshHandlers.validateMeshMode = async function(
   const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
 
   if (!isMeshV1Compatible && !isMeshV2Compatible && targetMode > 0) {
-    errors.push('CPE não é compatível com o mesh');
+    errors.push(t('cpeNotCompatibleWithMesh', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
@@ -303,13 +305,13 @@ meshHandlers.validateMeshMode = async function(
 
   const isWifi5GHzCompatible = permissions.grantWifi5ghz;
   if (!isWifi5GHzCompatible && targetMode > 2) {
-    errors.push('CPE não é compatível com o mesh 5GHz');
+    errors.push(t('cpeNotCompatibleWithMesh5ghz', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
   }
   return {
-    success: errors.length === 0, msg: 'Ver campo "errors"', errors: errors,
+    success: errors.length === 0, msg: t('seeErrorsField'), errors: errors,
   };
 };
 
@@ -537,8 +539,7 @@ const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
   if (meshTopology[newMac] && meshTopology[newMac].length) {
     for (let i=0; i<meshTopology[newMac].length; i++) {
       const auxDevice = getNextToUpdateRec(
-        meshTopology, meshTopology[newMac][i], devicesToUpdate
-      );
+        meshTopology, meshTopology[newMac][i], devicesToUpdate);
       // Only choose a device that hasn't been updated yet
       if (devicesToUpdate.includes(auxDevice)) {
         nextDevice = auxDevice;
@@ -840,7 +841,7 @@ const markNextDeviceToUpdate = async function(master) {
       if (matchedSlave == null) {
         return {
           success: false,
-          message: 'CPE secundário não encontrado',
+          message: t('secondaryCpeNotFound', {errorline: __line}),
         };
       }
       enrichedMeshRouters = await getMeshRouters(matchedSlave);
@@ -861,7 +862,7 @@ const markNextDeviceToUpdate = async function(master) {
   if (!meshTopology || Object.keys(meshTopology).length === 0) {
     return {
       success: false,
-      message: 'Erro na obtenção da topologia mesh',
+      message: t('meshTopologyGetError', {errorline: __line}),
     };
   }
   const meshNextToUpdate = getNextToUpdateRec(

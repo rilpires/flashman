@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import Stepper from 'bs-stepper';
 import 'tempusdominus-bootstrap-4';
 
@@ -64,7 +65,7 @@ const configureDateDiv = function(i) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
   $('#when-error-msg').hide();
 

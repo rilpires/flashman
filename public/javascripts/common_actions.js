@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'bootstrap/js/src/modal';
 import {io} from 'socket.io-client';
 
@@ -80,7 +81,7 @@ let fetchNotifications = function() {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   if (!window.location.href.includes('/login')) {
     fetchNotifications();
   }
