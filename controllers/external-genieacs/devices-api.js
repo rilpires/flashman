@@ -86,7 +86,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
-      else if (ouiModelStr === 'DIR-842') return 'g-only';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'g-only';
+      }
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
@@ -110,7 +112,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
-      else if (ouiModelStr === 'DIR-842') return 'b,g,n';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'b,g,n';
+      }
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
@@ -134,7 +138,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
-      else if (ouiModelStr === 'DIR-842') return 'a,n';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'a,n';
+      }
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
@@ -158,7 +164,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
-      else if (ouiModelStr === 'DIR-842') return 'ac,a,n';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'ac,a,n';
+      }
       else return '11ac';
     default:
       return '';
@@ -172,15 +180,15 @@ const convertWifiBand = function(band, model, is5ghz=false) {
       return ((model === 'AC10') ? '0' : '20MHz');
     case 'HT40':
     case 'VHT40':
-      if (model === 'DIR-842') return '20/40MHz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       else if (model === 'AC10') return '1';
       return '40MHz';
     case 'VHT80':
-      if (model === 'DIR-842') return '20/40/80MHz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       if (model === 'AC10') return '3';
       return '80MHz';
     case 'auto':
-      if (model === 'DIR-842') {
+      if (model === 'DIR-842' || model === 'DIR-841') {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       }
       else if (model === 'AC10') return '2';
@@ -716,9 +724,7 @@ const getDLinkFields = function() {
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_DLINK_OperatingChannelBandwidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
-  // fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
-  // delete fields.port_mapping_values.remote_host;
-  // fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
   return fields;
 };
 
@@ -862,6 +868,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'Router':
       switch (modelName) {
         case 'DIR-842':
+        case 'DIR-841':
           message = '';
           fields = getDLinkFields();
           break;

@@ -2109,6 +2109,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
+                if (typeof device.rssi === 'number' ) {
+                  device.rssi = device.rssi.toString();
+                }
                 device.rssi = device.rssi.replace('dBm', '');
               }
               // Collect snr, if available
