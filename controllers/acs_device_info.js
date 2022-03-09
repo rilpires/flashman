@@ -1376,7 +1376,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         loss: parseInt(pingKeys.failure_count * 100 /
                (pingKeys.success_count + pingKeys.failure_count)).toString(),
       };
-      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+      if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
