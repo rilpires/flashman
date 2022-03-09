@@ -503,6 +503,8 @@ const getNokiaFields = function(model) {
       fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_ALU_COM_ChannelBandWidthExtend';
       fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.RSSI';
+      fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.WebAccount.UserName';
+      fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.WebAccount.Password';
       break;
     case 'G-140W-C':
     case 'G%2D140W%2DC':
