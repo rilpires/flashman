@@ -2256,7 +2256,7 @@ const getSsidPrefixCheck = async function(device) {
     config = await Config.findOne({is_default: true}).lean();
     if (!config) throw new Error('Config not found');
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
   }
   // -> 'updating registry' scenario
   return deviceHandlers.checkSsidPrefix(

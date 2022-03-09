@@ -439,7 +439,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           config = await Config.findOne({is_default: true}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
-          console.log(error);
+          console.log(error.message);
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(

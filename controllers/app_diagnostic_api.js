@@ -1140,7 +1140,7 @@ diagAppAPIController.getSpeedTest = function(req, res) {
       ).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
-      console.log(err);
+      console.log(err.message);
     }
 
     let reply = {'speedtest': {}};
@@ -1219,7 +1219,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
         ).lean();
         if (!config) throw new Error('Config not found');
       } catch (err) {
-        console.log(err);
+        console.log(err.message);
       }
 
       if (config && config.measureServerIP) {

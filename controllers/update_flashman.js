@@ -867,7 +867,7 @@ updateController.setAutoConfig = async function(req, res) {
       message: message,
     });
   } catch (err) {
-    console.log(err);
+    console.log(err.message ? err.message : err);
     return res.status(500).json({
       type: 'danger',
       message: (err.message) ? err.message :

@@ -470,7 +470,7 @@ userController.deleteCertificates = async function(req, res) {
       message: t('operationSuccessful'),
     });
   } catch (err) {
-    console.error(err);
+    console.error(err.message ? err.message : err);
     return res.status(500).json({
       success: false,
       type: 'danger',
