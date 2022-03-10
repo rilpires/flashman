@@ -371,7 +371,10 @@ const getDefaultFields = function() {
 
 const getTPLinkFields = function(model) {
   let fields = getDefaultFields();
-  fields.common.mac = 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MACAddress';
+  if (model === 'Archer C6') {
+    fields.common.mac = 'InternetGatewayDevice.LANDevice.1.'+
+      'LANHostConfigManagement.MACAddress';
+  }
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
@@ -380,8 +383,26 @@ const getTPLinkFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'X_TP_Password');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'X_TP_Password');
+  if (model === 'EC220-G5') {
+    fields.stun = {};
+    fields.common.stun_enable =
+      'InternetGatewayDevice.ManagementServer.STUNEnable';
+    fields.stun.address =
+      'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+    fields.stun.port =
+      'InternetGatewayDevice.ManagementServer.STUNServerPort';
+    fields.common.stun_udp_conn_req_addr =
+    'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+    fields.wifi2.password = fields.wifi2.password
+      .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+    fields.wifi5.password = fields.wifi5.password
+      .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+  } else {
+    fields.wifi2.password = fields.wifi2.password
+      .replace(/KeyPassphrase/g, 'X_TP_Password');
+    fields.wifi5.password = fields.wifi5.password
+      .replace(/KeyPassphrase/g, 'X_TP_Password');
+  }
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   return fields;
@@ -817,9 +838,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           message = '';
           fields = getFastWirelessFields();
           break;
+        case 'EC220-G5': // TP-Link EC220-5G
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
-          fields = getTPLinkFields();
+          fields = getTPLinkFields(modelName);
           break;
         default:
           return unknownModel;
