@@ -319,10 +319,10 @@ const tr069Devices = {
     mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x5'],
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
   },
-  'BEACON HA-020W-B': {
+  'BEACON 1 HA-020W-B': {
     vendor: 'Nokia',
     versions_upgrade: {
-      '1.0': [],
+      '3FE49127HJII42': [],
     },
     port_forward_opts: {
     },

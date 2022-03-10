@@ -157,7 +157,7 @@ const convertWifiBand = function(band, model) {
       return '80MHz';
     case 'auto':
       if (
-        model === 'BEACON HA-020W-B' ||
+        model === 'BEACON 1 HA-020W-B' ||
         model === 'BEACON%20HA%2D020W%2DB'
       ) {
         return 'Auto'
@@ -496,7 +496,7 @@ const getZTEFields = function(model) {
 const getNokiaFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
-    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
     case 'BEACON%20HA%2D020W%2DB':
       fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_ALU_COM_ChannelBandWidthExtend';
       fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
@@ -684,7 +684,7 @@ const getModelFields = function(oui, model) {
     case 'G%2D140W%2DCS': // URI encoded
     case 'G-140W-UD': // Nokia G-140W-UD
     case 'G%2D140W%2DUD': // URI encoded
-    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
     case 'BEACON%20HA%2D020W%2DB': // URI encoded
       message = '';
       fields = getNokiaFields(model);
