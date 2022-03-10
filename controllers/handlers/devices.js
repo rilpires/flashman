@@ -353,11 +353,9 @@ deviceHandlers.sendPingToTraps = function(id, results) {
           }
           request(requestOptions).then((resp) => {
             // Ignore API response
-            console.log(resp);
             return;
           }, (err) => {
             // Ignore API endpoint errors
-            console.log(err);
             return;
           });
         }
