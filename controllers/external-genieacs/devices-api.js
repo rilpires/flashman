@@ -397,6 +397,14 @@ const getTPLinkFields = function(model) {
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
     fields.wifi5.password = fields.wifi5.password
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+    fields.port_mapping_fields.external_port_end =
+    ['X_TP_ExternalPortEnd', 'external_port_end', 'xsd:unsignedInt'];
+    fields.port_mapping_fields.internal_port_end =
+    ['X_TP_InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt'];
+    fields.port_mapping_values.description[0] = 'ServiceName';
+    fields.port_mapping_values.protocol[1] = 'TCP or UDP';
+    delete fields.port_mapping_values.remote_host;
+    delete fields.port_mapping_values.lease;
   } else {
     fields.wifi2.password = fields.wifi2.password
       .replace(/KeyPassphrase/g, 'X_TP_Password');
