@@ -1470,15 +1470,19 @@ deviceInfoController.receiveDevices = async function(req, res) {
         }
         if (upConnDev.conn_speed) {
           upConnDev.conn_speed = parseInt(upConnDev.conn_speed);
+          if (isNaN(upConnDev.conn_speed)) upConnDev.conn_speed = null;
         }
         if (upConnDev.wifi_signal) {
           upConnDev.wifi_signal = parseFloat(upConnDev.wifi_signal);
+          if (isNaN(upConnDev.wifi_signal)) upConnDev.wifi_signal = null;
         }
         if (upConnDev.wifi_snr) {
           upConnDev.wifi_snr = parseInt(upConnDev.wifi_snr);
+          if (isNaN(upConnDev.wifi_snr)) upConnDev.wifi_snr = null;
         }
         if (upConnDev.wifi_freq) {
           upConnDev.wifi_freq = parseFloat(upConnDev.wifi_freq);
+          if (isNaN(upConnDev.wifi_freq)) upConnDev.wifi_freq = null;
         }
         if (devReg) {
           if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
