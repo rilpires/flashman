@@ -79,6 +79,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'AC10') return 'bg';
+      else if (ouiModelStr === 'EC220-G5') return 'gn';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -102,6 +103,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F680') return 'b,g,n';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
+      else if (ouiModelStr === 'EC220-G5') return 'n';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -125,6 +127,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
+      else if (ouiModelStr === 'EC220-G5') return 'nac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -148,6 +151,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F680') return 'a,n,ac';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
+      else if (ouiModelStr === 'EC220-G5') return 'ac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -165,14 +169,34 @@ const convertWifiBand = function(band, model) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      return ((model === 'AC10') ? '0' : '20MHz');
+      if (model === 'AC10') {
+        return '0';
+      } else if (model === 'EC220-G5') {
+        return '20M';
+      }
+      return '20MHz';
     case 'HT40':
     case 'VHT40':
-      return ((model === 'AC10') ? '1' : '40MHz');
+      if (model === 'AC10') {
+        return '1';
+      } else if (model === 'EC220-G5') {
+        return '40M';
+      }
+      return '40MHz';
     case 'VHT80':
-      return ((model === 'AC10') ? '3' : '80MHz');
+      if (model === 'AC10') {
+        return '3';
+      } else if (model === 'EC220-G5') {
+        return '80M';
+      }
+      return '80MHz';
     case 'auto':
-      return ((model === 'AC10') ? '2' : 'auto');
+      if (model === 'AC10') {
+        return '2';
+      } else if (model === 'EC220-G5') {
+        return 'Auto';
+      }
+      return 'auto';
     default:
       return '';
   }
@@ -383,6 +407,7 @@ const getTPLinkFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '2');
   if (model === 'EC220-G5') {
     fields.stun = {};
     fields.common.stun_enable =
@@ -397,6 +422,10 @@ const getTPLinkFields = function(model) {
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
     fields.wifi5.password = fields.wifi5.password
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+    fields.wifi2.band = fields.wifi2.band
+      .replace(/BandWidth/g, 'X_TP_Bandwidth');
+    fields.wifi5.band = fields.wifi5.band
+      .replace(/BandWidth/g, 'X_TP_Bandwidth');
     fields.port_mapping_fields.external_port_end =
     ['X_TP_ExternalPortEnd', 'external_port_end', 'xsd:unsignedInt'];
     fields.port_mapping_fields.internal_port_end =
@@ -405,14 +434,22 @@ const getTPLinkFields = function(model) {
     fields.port_mapping_values.protocol[1] = 'TCP or UDP';
     delete fields.port_mapping_values.remote_host;
     delete fields.port_mapping_values.lease;
+    fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaSignalStrength';
+    fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaStandard';
+    fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaConnectionSpeed';
   } else {
     fields.wifi2.password = fields.wifi2.password
       .replace(/KeyPassphrase/g, 'X_TP_Password');
     fields.wifi5.password = fields.wifi5.password
       .replace(/KeyPassphrase/g, 'X_TP_Password');
+    fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+      'WANCommonInterfaceConfig.TotalBytesReceived';
+    fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+      'WANCommonInterfaceConfig.TotalBytesSent';
   }
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   return fields;
 };
 
