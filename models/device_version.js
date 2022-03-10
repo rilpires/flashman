@@ -633,6 +633,31 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'EC220-G5': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+    },
+    port_forward_opts: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
 };
 
 const flashboxFirmwareDevices = {
