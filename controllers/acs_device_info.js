@@ -2464,6 +2464,7 @@ acsDeviceInfoController.updateInfo = async function(
         let channel = changes[masterKey][key];
         let auto = channel === 'auto';
         if (model == 'AC10') {
+          // Special case - fields are treated as strings
           task.parameterValues.push([
             fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
           ]);
@@ -2472,6 +2473,12 @@ acsDeviceInfoController.updateInfo = async function(
               fields[masterKey][key], channel, 'xsd:string',
             ]);
           }
+        } else if (model === 'ST-1001-FL') {
+          // Special case - there is no auto field, use channel 0
+          if (auto) channel = '0';
+          task.parameterValues.push([
+            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+          ]);
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
