@@ -813,7 +813,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
         ).lean();
         if (!config) throw new Error('Config not found');
       } catch (err) {
-        console.log(err);
+        console.log(err.message);
       }
 
       if (config && config.measureServerIP) {
@@ -865,7 +865,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       config = await Config.findOne({is_default: true}).lean();
       if (!config) throw new Error('Config not found');
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
     }
     if (err || !config) {
       return res.status(500).json({message:
@@ -1169,7 +1169,7 @@ appDeviceAPIController.appGetSpeedtest = function(req, res) {
       ).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
-      console.log(err);
+      console.log(err.message);
       return res.status(500).json({message:
         t('configFindError', {errorline: __line})});
     }

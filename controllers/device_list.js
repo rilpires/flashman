@@ -3021,7 +3021,7 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
   // Store callback URL for devices
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -3060,7 +3060,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,

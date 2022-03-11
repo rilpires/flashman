@@ -127,7 +127,10 @@ userSchema.pre('save', function(callback) {
           userChangedAttrs[attr] = user[attr];
         }
       });
-      if (Object.keys(userChangedAttrs).length != 0) {
+      if (Object.keys(userChangedAttrs).length != 0 &&
+          defConfig.traps_callbacks.user_crud &&
+          defConfig.traps_callbacks.user_crud.url.length != 0
+      ) {
         let userCallbackUrl = defConfig.traps_callbacks.user_crud.url;
         let userCallbackAuthUser = defConfig.traps_callbacks.user_crud.user;
         let userCallbackAuthSecret = defConfig.traps_callbacks.user_crud.secret;
@@ -155,7 +158,10 @@ userSchema.pre('save', function(callback) {
           });
         }
       }
-      if (Object.keys(certificationChangedAttrs).length != 0) {
+      if (Object.keys(certificationChangedAttrs).length != 0 &&
+          defConfig.traps_callbacks.certification_crud &&
+          defConfig.traps_callbacks.certification_crud.url.length != 0
+      ) {
         let certificationCallbackUrl =
           defConfig.traps_callbacks.certification_crud.url;
         let certificationCallbackAuthUser =
