@@ -664,6 +664,9 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.0.8': [],
     },
+    port_forward_opts: {
+      'V1.0.8': portForwardFullSupport,
+    },
     feature_support: {
       port_forward: true,
       pon_signal: true,
