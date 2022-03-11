@@ -2075,7 +2075,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
-              /WLANConfiguration\.[0-9]+\./g,
+              /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
             let assocIndexes = getFromNestedKey(data, assocField);
