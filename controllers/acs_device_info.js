@@ -749,9 +749,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid = bssid2.toUpperCase();
     }
   }
-  if (data.wifi2.auto && data.wifi2.channel) {
-    let channel2 =
-      (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
+  if (data.wifi2.channel) {
+    let channel2 = data.wifi2.channel.value.toString();
+    if (data.wifi2.auto && data.wifi2.auto.value) {
+      // Explicit auto option, use that
+      channel2 = 'auto';
+    } else if (channel2 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel2 = 'auto';
+    }
     if (channel2 && !device.wifi_channel) {
       device.wifi_channel = channel2;
     } else if (device.wifi_channel !== channel2) {
@@ -810,9 +816,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid_5ghz = bssid5.toUpperCase();
     }
   }
-  if (data.wifi5.auto && data.wifi5.channel) {
-    let channel5 =
-      (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
+  if (data.wifi5.channel) {
+    let channel5 = data.wifi5.channel.value.toString();
+    if (data.wifi5.auto && data.wifi5.auto.value) {
+      // Explicit auto option, use that
+      channel5 = 'auto';
+    } else if (channel5 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel5 = 'auto';
+    }
     if (channel5 && !device.wifi_channel_5ghz) {
       device.wifi_channel_5ghz = channel5;
     } else if (device.wifi_channel_5ghz !== channel5) {
