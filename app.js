@@ -299,6 +299,10 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(bodyParser.raw({type: 'application/octet-stream'}));
 
+// adding translation function to app scope in express.
+// this allows the Pug engine to have access to it.
+app.locals.t = require('./controllers/language.js').i18next.t;
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
