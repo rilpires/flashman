@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 let configSchema = new mongoose.Schema({
   is_default: {type: Boolean, required: true, default: false},
+  language: String,
   autoUpdate: {type: Boolean, default: true},
   hasUpdate: {type: Boolean, default: false},
   hasMajorUpdate: {type: Boolean, default: false},
@@ -27,6 +28,8 @@ let configSchema = new mongoose.Schema({
     pon_signal_threshold_critical: {type: Number, default: -23},
     pon_signal_threshold_critical_high: {type: Number, default: 3},
     stun_enable: {type: Boolean, default: false},
+    insecure_enable: {type: Boolean, default: false},
+    has_never_enabled_insecure: {type: Boolean, default: true},
   },
   certification: {
     // WAN steps required here are:
@@ -70,20 +73,44 @@ let configSchema = new mongoose.Schema({
         state: {type: String, enum: ['update', 'retry', 'offline']},
         slave_count: {type: Number, default: 0},
         retry_count: {type: Number, default: 0},
+        // mesh version of current release
+        mesh_current: {type: Number, default: 1},
+        // mesh version of release after upgrade
+        mesh_upgrade: {type: Number, default: 1},
       }],
       in_progress_devices: [{
         mac: {type: String, required: true},
-        state: {type: String, enum: ['downloading', 'updating', 'slave']},
+        // slave state is legacy, can't be changed, simply means that the first
+        // device has already updated
+        state: {
+          type: String, enum: [
+            'topology', 'downloading', 'updating', 'slave', 'v1tov2',
+          ],
+        },
         slave_count: {type: Number, default: 0},
+        // legacy name that we can't change, it's just number of devices
+        // reamining
         slave_updates_remaining: {type: Number, default: 0},
         retry_count: {type: Number, default: 0},
+        mesh_current: {type: Number, default: 1},
+        mesh_upgrade: {type: Number, default: 1},
       }],
       done_devices: [{
         mac: {type: String, required: true},
         slave_count: {type: Number, default: 0},
+        // legacy name that we can't change, it's just number of devices
+        // reamining
         slave_updates_remaining: {type: Number, default: 0},
-        state: {type: String, enum: ['ok', 'error', 'aborted', 'aborted_off',
-          'aborted_down', 'aborted_update', 'aborted_slave']},
+        state: {
+          type: String,
+          enum: [
+            'ok', 'error', 'error_topology', 'aborted', 'aborted_off',
+            'aborted_down', 'aborted_update', 'aborted_slave',
+            'aborted_topology', 'aborted_v1tov2',
+          ],
+        },
+        mesh_current: {type: Number, default: 1},
+        mesh_upgrade: {type: Number, default: 1},
       }],
     },
   },
@@ -91,6 +118,7 @@ let configSchema = new mongoose.Schema({
     device_crud: {url: String, user: String, secret: String},
     user_crud: {url: String, user: String, secret: String},
     role_crud: {url: String, user: String, secret: String},
+    certification_crud: {url: String, user: String, secret: String}
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},

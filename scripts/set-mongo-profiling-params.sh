@@ -1,3 +1,20 @@
+#!/bin/bash
+
+echo "Este script deve rodar no diretório do Flashman!"
+read -p "Pressione Enter para continuar..."
+
+echo "Atualizando tamanho máximo do OPLog no mongo..."
+OPLOG=$(mongo --eval 'db.adminCommand({replSetResizeOplog: 1, size: 990})')
+echo "$OPLOG"
+OK_OPLOG=$(echo "$OPLOG" | grep 'ok' | grep -o [0-9])
+if [ "$OK_OPLOG" != "1" ]; then
+  echo "Erro atualizando parâmetro, abortando..."
+  exit 1
+fi
+echo ""
+
+echo "Identificando versão do MongoDB..."
+MAJOR_VER=$(mongo --eval 'db.version()' | grep -o 'MongoDB server version: [0-9]' | grep -o [0-9])
 echo "$MAJOR_VER"
 echo ""
 
@@ -54,7 +71,7 @@ if [ $MAJOR_VER -eq '4' ]; then
     fi
   fi
 else
-echo "Esta versão do mongo não precisa atualizar outros parâmetros."
+  echo "Esta versão do mongo não precisa atualizar outros parâmetros."
 fi
 
 echo "Setup feito com sucesso!"

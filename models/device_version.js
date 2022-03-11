@@ -1,3 +1,5 @@
+const util = require('../controllers/handlers/util');
+
 let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
@@ -100,7 +102,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -116,6 +118,7 @@ const tr069Devices = {
     },
     port_forward_opts: {
       'V6.0.10P3N9': portForwardNoAsymRanges,
+      'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -132,12 +135,12 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x2'],
     mesh_ssid_object_exists: true,
   },
   'ZXHN H198A V3.0': {
@@ -171,12 +174,14 @@ const tr069Devices = {
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
-      'V9.1.0P3N2_MUL': [],
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
+      'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
+      'V9.1.0P4N1_MUL': [],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': portForwardNoAsymRanges,
       'V9.1.0P3N2_MUL': portForwardNoAsymRanges,
+      'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
       port_forward: true,
@@ -193,7 +198,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -244,6 +249,8 @@ const tr069Devices = {
       port_forward: false,
       pon_signal: true,
       upnp: false,
+      wps: false,
+      stun: false,
       speed_test: true,
       speed_test_limit: 300,
       ping_test: true,
@@ -253,6 +260,37 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'HG9': {
+    vendor: 'Tenda',
+    versions_upgrade: {
+      'v1.0.1': [],
+    },
+    port_forward_opts: {
+      'v1.0.1': portForwardFullSupport,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      stun: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      ping_test: true,
+      block_devices: false,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
@@ -580,6 +618,75 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'DIR-842': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.3': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'AC10': {
+    vendor: 'Tenda',
+    versions_upgrade: {
+      'V16.03.06.05_multi_BR01': [],
+    },
+    port_forward_opts: {
+      'V16.03.06.05_multi_BR01': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: false, // Practical tests doesnt worked properly
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'Archer C6': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '1.0.14 Build 20211118 rel.43110(5553)': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
 };
 
 const flashboxFirmwareDevices = {
@@ -806,7 +913,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 0,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -826,7 +933,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 0,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -845,7 +952,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 4094,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -2260,10 +2367,9 @@ const grantMeshV1Mode = function(version, model) {
   }
 };
 
-const grantMeshV2PrimaryMode = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support.mesh_v2_primary_support;
-  }
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 primary device
+const grantMeshV2PrimaryModeUpgrade = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -2273,7 +2379,37 @@ const grantMeshV2PrimaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
+    return true;
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantMeshV2PrimaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
+  }
+  if (grantMeshV2PrimaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    return false;
+  }
+};
+
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 secondary device
+const grantMeshV2SecondaryModeUpgrade = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].mesh_v2_secondary_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return true;
   } else {
     // Development version, enable everything by default
     return true;
@@ -2284,19 +2420,10 @@ const grantMeshV2SecondaryMode = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.mesh_v2_secondary_support;
   }
-  if (version.match(versionRegex)) {
-    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-      // Unspecified model
-      return false;
-    }
-    if (!flashboxFirmwareDevices[model].mesh_v2_secondary_support) {
-      // Model is not compatible with feature
-      return false;
-    }
+  if (grantMeshV2SecondaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
-    // Development version, enable everything by default
-    return true;
+    return false;
   }
 };
 
@@ -2386,7 +2513,11 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(model);
   result.grantMeshMode = grantMeshV1Mode(version, model);
+  result.grantMeshV2PrimaryModeUpgrade =
+    grantMeshV2PrimaryModeUpgrade(version, model);
   result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2SecondaryModeUpgrade =
+    grantMeshV2SecondaryModeUpgrade(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
   result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(model);
   result.grantMeshVAPObject = grantMeshVAPObject(model);
@@ -2479,32 +2610,26 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   return versions;
 };
 
-/*
-  Flashbox devices with firmware version before 0.32.0 only
-  had mesh v1 capabilities. If these models are in mesh mode (not on cable, > 1)
-  with associated slaves they can't be allowed to upgrade to a mesh v2
-  compatible release because mesh v2 is not compatible with mesh v1
-  (slaves will lose connection).
-  Analogously, mesh v2 devices cannot upgrade to mesh v1 under same conditions
-*/
-DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
-  meshMode, slaves, curVersion, nextVersion) {
-  if (curVersion.match(versionRegex)) {
-    if (meshMode > 1 && slaves && slaves.length > 0) {
-      if (!nextVersion) {
-        return false;
-      } else if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0);
-      } else {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') >= 0);
-      }
+DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
+  let result = {unknownVersion: false, current: 0, upgrade: 0};
+  const currVer = util.returnStrOrEmptyStr(curVersion);
+  const nextVer = util.returnStrOrEmptyStr(nextVersion);
+  if (currVer.match(versionRegex) && nextVer.match(versionRegex)) {
+    if (DeviceVersion.versionCompare(currVer, '0.32.0') < 0) {
+      result.current = 1;
     } else {
-      return true;
+      result.current = 2;
+    }
+    if (DeviceVersion.versionCompare(nextVer, '0.32.0') < 0) {
+      result.upgrade = 1;
+    } else {
+      result.upgrade = 2;
     }
   } else {
-    // development version, allow everything
-    return true;
+    // either current or target release are development version
+    result.unknownVersion = true;
   }
+  return result;
 };
 
 DeviceVersion.isUpgradeSupport = function(model) {

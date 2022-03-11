@@ -7,11 +7,6 @@
 		},
 		{
 			"type": "value",
-			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformEnable",
-			"value": "true"
-		},
-		{
-			"type": "value",
 			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformInterval",
 			"value": "300"
 		},

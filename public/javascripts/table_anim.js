@@ -1,3 +1,4 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import {tagsInput} from 'tags-input';
 import {updateSearchResultsScheduler} from './show_upgrade_schedule_actions.js';
@@ -160,7 +161,7 @@ let fetchNotificationsForDevice = function(deviceId) {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Enable tags on search input
   [].forEach.call(document.querySelectorAll('input[type="tags"]'), tagsInput);
   // The code below related to tags is because the tags-input plugin resets
@@ -372,10 +373,15 @@ $(document).ready(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  const updateSlavesRecursively = function(row, iter, update,
-                                           status, remain, mac='') {
+  const updateSlavesRecursively = function(
+    row, iter, update, status, remain, mac='', masterStatus,
+  ) {
     if (iter < 0) {
-      if (!update) {
+      if (!update && masterStatus != 6 && masterStatus != 7 &&
+        masterStatus != 20
+      ) {
+        // status 6 and 7 are special statuses that can happen before do_update
+        // is activated
         // Activate dropdown
         row.find('.device-update .dropdown-toggle .selected').text('Escolher');
         row.find('.device-update .dropdown-toggle').attr('disabled', false);
@@ -396,28 +402,41 @@ $(document).ready(function() {
         upgradeStatus.find('.status-waiting').addClass('d-none');
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
-        if (status == 0 || status == 10) {
-          upgradeStatus.find('.status-waiting').removeClass('d-none');
-          let slaveCount = row.data('slave-count');
-          let tooltip = 'Atualizando CPE...';
-          if (remain === slaveCount+1) {
-            tooltip = 'Atualizando CPE principal...';
-          } else if (remain > 0) {
-            let current = slaveCount - remain + 1;
-            tooltip = 'Atualizando CPE secundário '+
-              current+' de '+slaveCount+'...';
-          }
-          upgradeStatus.find('.status-waiting').attr('title', tooltip);
-        } else if (status == 1) {
-          upgradeStatus.find('.status-ok').removeClass('d-none');
-        } else if (status >= 2) {
+        if ((status >= 2 && status <= 5) || masterStatus == 6 ||
+          masterStatus == 7
+        ) {
+          // error statuses
           let slaveCount = row.data('slave-count');
           let progress = (remain === slaveCount+1) ? 0
             : slaveCount - remain + 1;
           let errorAnchor = upgradeStatus.find('.status-error');
           errorAnchor.attr('data-progress', progress);
           errorAnchor.attr('data-mac', mac);
+          if (masterStatus == 6 || masterStatus == 7) {
+            errorAnchor.attr('data-status', masterStatus);
+          }
           errorAnchor.removeClass('d-none');
+        } else if (status == 0 || status == 10 || masterStatus == 20) {
+          upgradeStatus.find('.status-waiting').removeClass('d-none');
+          let slaveCount = row.data('slave-count');
+          let tooltip = 'Atualizando CPE...';
+          if (slaveCount) {
+            if (masterStatus == 20) {
+              tooltip = 'Coletando topologia';
+            } else {
+              if (remain === 0) {
+                // mesh v1 -> v2 update
+                tooltip = 'Esperando dispositivos ficarem online';
+              } else {
+                const currentDeviceNum = (slaveCount + 1 - remain) + 1;
+                tooltip =
+                  `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
+              }
+            }
+          }
+          upgradeStatus.find('.status-waiting').attr('title', tooltip);
+        } else if (status == 1) {
+          upgradeStatus.find('.status-ok').removeClass('d-none');
         }
         // Activate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', false);
@@ -448,7 +467,7 @@ $(document).ready(function() {
           localMac = res._id;
         }
         updateSlavesRecursively(row, iter-1, localUpdate,
-          localStatus, remain, localMac);
+          localStatus, remain, localMac, masterStatus);
       },
     });
   };
@@ -505,8 +524,9 @@ $(document).ready(function() {
           slaveCount-1,
           res.do_update,
           res.do_update_status,
-          res.do_update_mesh_remaining,
+          res.mesh_update_remaining.length,
           deviceId,
+          res.do_update_status,
         );
       },
       complete: function(xhr, status) {
@@ -644,33 +664,99 @@ $(document).ready(function() {
         '</span>'+
       '</div>'+
     '</td>';
+    let meshCount = 1;
+    const slaveCount = slaves.length;
+    let currentDevice = device._id;
     let inProgress = device.do_update;
     let status = device.do_update_status;
-    let meshCount = device.do_update_mesh_remaining;
-    let slaveCount = slaves.length;
-    let currentSlave = device._id;
-    let currentSlaveNum = 0;
+    const masterStatus = device.do_update_status;
+    let currentDeviceNum = slaveCount + 1;
     let tooltipMsg = 'Atualizando CPE...';
-    if (slaveCount > 0) {
-      slaves.forEach((slave)=>{
-        if (inProgress) return;
-        inProgress = slave.do_update;
-        status = slave.do_update_status;
-        currentSlave = slave._id;
-      });
-      if (meshCount === slaveCount+1) {
-        tooltipMsg = 'Atualizando CPE principal...';
+    if (slaveCount) {
+      if (device.mesh_next_to_update) {
+        // get next device to update in mesh network
+        currentDevice = device.mesh_next_to_update;
+        if (currentDevice !== device._id) {
+          // If currentDevice isn't master, look at slaves
+          let currentSlave;
+          for (let i=0; i<slaves.length; i++) {
+            if (slaves[i]._id === currentDevice) {
+              currentSlave = slaves[i];
+              break;
+            }
+          }
+          inProgress = currentSlave.do_update;
+          status = currentSlave.do_update_status;
+        }
+        if (device.mesh_update_remaining && device.mesh_update_remaining.length
+        ) {
+          meshCount = device.mesh_update_remaining.length;
+        }
+        currentDeviceNum = slaveCount + 1 - meshCount + 1;
+        tooltipMsg =
+          `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
       } else {
-        currentSlaveNum = slaveCount - meshCount + 1;
-        tooltipMsg = 'Atualizando CPE secundário '+currentSlaveNum+' de '+slaveCount+'...';
+        // Could be a normal update that has finished or could be mesh v1 -> v2
+        // after all devices have begun download.
+        let differentStatus = false;
+        for (let i=0; i<slaves.length; i++) {
+          if (slaves[i]._id === currentDevice) {
+            if (slaves[i].do_update_status !== 1) {
+              status = slaves[i].do_update_status;
+              differentStatus = true;
+              break;
+            }
+          }
+        }
+        if (differentStatus || masterStatus !== 1) {
+          // this is a mesh v1 -> v2 update
+          inProgress = true;
+          tooltipMsg = 'Esperando dispositivos ficarem online';
+        } else {
+          inProgress = false;
+        }
       }
     }
-    if (inProgress) {
+    if (masterStatus == 6 || masterStatus == 7) {
+      // Error status 6 and 7 are only saved on master device
+      upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_2', '');
+      upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+      let meshParams = `data-progress="${currentDeviceNum}" 
+        data-mac="${currentDevice}" data-status="${masterStatus}"`;
+      upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
+    } else if (!inProgress && masterStatus == 20) {
+      // Status 20 is only saved on master
+      tooltipMsg = 'Coletando topologia';
+      upgradeCol = upgradeCol.replace('$STATUS_0', '');
+      upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+      upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
+      upgradeCol = upgradeCol.replace('$TOOLTIP', tooltipMsg);
+      upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+    } else if (inProgress) {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
       upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_NO', 'd-none');
-      if (status == 0 || status == 10) {
+      if ( status >= 2 && status <= 5) {
+        // error statuses
+        upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
+        upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
+        upgradeCol = upgradeCol.replace('$STATUS_2', '');
+        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
+        if (slaveCount > 0) {
+          let meshParams =
+          `data-progress="${currentDeviceNum}" data-mac="${currentDevice}"`;
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
+        } else {
+          upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
+        }
+      } else if (status == 0 || status == 10 || masterStatus == 20) {
+        // Status 20 is only saved on master
+        if (masterStatus == 20) {
+          tooltipMsg = 'Coletando topologia';
+        }
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -682,17 +768,6 @@ $(document).ready(function() {
         upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
         upgradeCol = upgradeCol.replace('$TOOLTIP', '');
         upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
-      } else if (status >= 2) {
-        upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
-        upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
-        upgradeCol = upgradeCol.replace('$STATUS_2', '');
-        upgradeCol = upgradeCol.replace('$TOOLTIP', '');
-        if (slaveCount > 0) {
-          let meshParams = 'data-progress="'+currentSlaveNum+'" data-mac="'+currentSlave+'"';
-          upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
-        } else {
-          upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
-        }
       }
     } else {
       upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
@@ -1202,8 +1277,16 @@ $(document).ready(function() {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
           if (isTR069) {
-            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
-            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            // Undefined treats legacy cases - which are all HTTPS
+            if (
+              typeof device.secure_tr069 === 'undefined' || device.secure_tr069
+            ) {
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
+              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            } else {
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-4');
+              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069 HTTP');
+            }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');

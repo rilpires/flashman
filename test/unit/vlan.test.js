@@ -1,9 +1,18 @@
+/* eslint require-jsdoc: 0 */
+
 const vlanController = require('../../controllers/vlan.js');
 const ConfigModel = require('../../models/config');
 const mockingoose = require('mockingoose');
 const crypto = require('crypto');
+const mqtt = require('../../mqtts');
 
 describe('VLAN Controller', () => {
+  afterAll((done) => {
+    mqtt.close(() => {
+      done();
+    });
+  });
+
   /* list of possibilities
     model
       1 - null
@@ -21,7 +30,8 @@ describe('VLAN Controller', () => {
       4 - corrupted array of vlans - [{vlan_idz:123, portz:5}, ...]
       5 - a valid array of vlans - [{vlan_idz:15, port:2}, ...]
         1 - vlan in the max vid range
-        2 - vlan out of max vid range */
+        2 - vlan out of max vid range
+  */
   test('convertFlashmanVlan : m1 v1', () => {
     let model = null;
     let vlanObj = null;

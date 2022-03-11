@@ -200,7 +200,9 @@ mqtts.authenticate = function(client, username, password, cb) {
               debug('MQTT AUTH OK: id ' + username);
               cb(null, true);
             } else {
-              let config = await Config.findOne({is_default: true}).catch(
+              let config = await Config.findOne(
+                {is_default: true}, {mqtt_secret_bypass: true},
+              ).lean().catch(
                 (err) => {
                   debug('MQTT AUTH ERROR: Config not found!');
                 },
