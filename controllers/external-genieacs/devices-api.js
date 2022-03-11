@@ -434,6 +434,8 @@ const getTPLinkFields = function(model) {
     fields.port_mapping_values.protocol[1] = 'TCP or UDP';
     delete fields.port_mapping_values.remote_host;
     delete fields.port_mapping_values.lease;
+    // is needless to set this parameter
+    delete fields.lan.dns_servers;
     fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
       '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaSignalStrength';
     fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
