@@ -115,6 +115,7 @@ const convertToDbm = function(model, rxPower) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
     case 'G-140W-UD':
@@ -130,16 +131,20 @@ const convertWifiBand = function(band, mode) {
   switch (band) {
     case '2':
     case 'auto':
+    case 'Auto':
     case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
+    case '20Mhz':
     case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '40Mhz':
     case '20/40MHz':
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '80Mhz':
     case '20/40/80MHz':
     case '3':
       return (isAC) ? 'VHT80' : undefined;
@@ -154,6 +159,7 @@ const convertWifiRate = function(model, rate) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
       return rate = parseInt(rate) / 1000;
     default:
       return rate = parseInt(rate);

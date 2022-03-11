@@ -659,6 +659,28 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'ST-1001-FL': {
+    vendor: 'Hurakall',
+    versions_upgrade: {
+      'V1.0.8': [],
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 999,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
 };
 
 const flashboxFirmwareDevices = {
