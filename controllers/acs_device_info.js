@@ -2475,9 +2475,11 @@ acsDeviceInfoController.updateInfo = async function(
           task.parameterValues.push([
             fields['lan']['ip_routers'], subnet, 'xsd:string',
           ]);
-          task.parameterValues.push([
-            fields['lan']['dns_servers'], subnet, 'xsd:string',
-          ]);
+          if (fields['lan']['dns_servers']) {
+            task.parameterValues.push([
+              fields['lan']['dns_servers'], subnet, 'xsd:string',
+            ]);
+          }
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
         }
@@ -2507,7 +2509,7 @@ acsDeviceInfoController.updateInfo = async function(
         if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+        masterKey, key, splitID[0], modelName, changes[masterKey][key],
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
