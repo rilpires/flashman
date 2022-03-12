@@ -710,7 +710,7 @@ const getFastWirelessFields = function() {
   return fields;
 };
 
-const getDLinkFields = function() {
+const getDLinkFields = function(modelName) {
   let fields = getDefaultFields();
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
@@ -725,6 +725,11 @@ const getDLinkFields = function() {
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  if (modelName == 'DIR-841') {
+    fields.common.alt_uid = 'DeviceID.SerialNumber';
+    fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.ExternalIPAddress';
+    fields.wan.uptime = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.Uptime';
+  }
   return fields;
 };
 
@@ -870,7 +875,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
         case 'DIR-842':
         case 'DIR-841':
           message = '';
-          fields = getDLinkFields();
+          fields = getDLinkFields(modelName);
           break;
         default:
           return unknownModel;
