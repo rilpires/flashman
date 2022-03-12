@@ -1,4 +1,6 @@
 {
+	"lang": "pt",
+
 	"errorDownloadingFile": "Erro ao baixar arquivo ({{errorline}})",
 	"firmwareUpdateTaskDidNotFinsh": "Tarefa de atualizar firmware não foi terminada ({{errorline}})",
 
