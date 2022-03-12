@@ -363,9 +363,10 @@ const tr069Devices = {
       '3FE49127HJII42': [],
     },
     port_forward_opts: {
+      '3FE49127HJII42': portForwardNoAsymRanges,
     },
     feature_support: {
-      port_forward: false,
+      port_forward: true,
       pon_signal: false, // no fiber
       upnp: false,
       speed_test: true,
