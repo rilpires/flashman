@@ -524,10 +524,8 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       }
     } else if (/^(mesh) (?:on|off)$/.test(tag)) {
       if (/\bon\b/.test(tag)) {
-        query.mesh_slaves = {$ne: []};
         query.mesh_mode = {$ne: 0};
       } else if (/\boff\b/.test(tag)) {
-        query.mesh_slaves = {$eq: []};
         query.mesh_mode = {$eq: 0};
       }
     } else if (/^(modo) (?:roteador|bridge)$/.test(tag)) {
