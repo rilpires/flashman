@@ -130,14 +130,17 @@ const convertWifiBand = function(band, mode) {
   switch (band) {
     case '2':
     case 'auto':
+    case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
     case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '20/40MHz':
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '20/40/80MHz':
     case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
@@ -480,7 +483,7 @@ const createRegistry = async function(req, permissions) {
         'message_code': 5,
         'severity': 'alert',
         'type': 'communication',
-        'action_title': t('ok'),
+        'action_title': t('Ok'),
         'allow_duplicate': false,
         'target': newDevice._id,
       });
@@ -500,7 +503,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
-      message: t('serverError', {errorline: __line})});
+      message: t('cpeFindError', {errorline: __line})});
   });
   // New devices need to sync immediately
   if (!device) {
@@ -1240,7 +1243,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping,
+              device, model, data,
+              diagNecessaryKeys.ping,
               fields.diagnostics.ping,
             );
           }
@@ -1372,7 +1376,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         loss: parseInt(pingKeys.failure_count * 100 /
                (pingKeys.success_count + pingKeys.failure_count)).toString(),
       };
-      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+      if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
@@ -1515,8 +1519,7 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
   let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
 
-  if ('current_speedtest' in device &&
-      'timestamp' in device.current_speedtest) {
+  if (device.current_speedtest && device.current_speedtest.timestamp) {
     rqstTime = device.current_speedtest.timestamp.valueOf();
   }
 
@@ -2041,10 +2044,11 @@ const fetchDevicesFromGenie = function(device, acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = getFromNestedKey(data, ifaceKey+'._value');
-          if (l2iface === iface2) {
+          // DIR-842 leaves the dot in the layer2 interface name
+          if (l2iface === iface2 || l2iface === iface2 + '.') {
             device.wifi = true;
             device.wifi_freq = 2.4;
-          } else if (l2iface === iface5) {
+          } else if (l2iface === iface5 || l2iface === iface5 + '.') {
             device.wifi = true;
             device.wifi_freq = 5;
           }
@@ -2071,7 +2075,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
-              /WLANConfiguration\.[0-9]+\./g,
+              /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
             let assocIndexes = getFromNestedKey(data, assocField);
@@ -2106,7 +2110,13 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
+                // Casts to string if is a number so we can replace 'dBm'
+                if (typeof device.rssi === 'number') {
+                  device.rssi = device.rssi.toString();
+                }
                 device.rssi = device.rssi.replace('dBm', '');
+                // Cast back to number to avoid converting issues
+                device.rssi = parseInt(device.rssi);
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
@@ -2249,7 +2259,7 @@ const getSsidPrefixCheck = async function(device) {
     config = await Config.findOne({is_default: true}).lean();
     if (!config) throw new Error('Config not found');
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
   }
   // -> 'updating registry' scenario
   return deviceHandlers.checkSsidPrefix(
@@ -2507,7 +2517,7 @@ acsDeviceInfoController.updateInfo = async function(
         if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+        masterKey, key, splitID[0], modelName, changes[masterKey][key],
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
@@ -2635,6 +2645,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
         device.port_mapping[i][v[1][1]], v[1][2]]);
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
+      if (v[0] == 'description') {
+        v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+      }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
     });
@@ -2781,6 +2794,17 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
             if (checkForNestedKey(data, portMapProtocolPath)) {
               if (getFromNestedKey(data,
                 portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+              ) {
+                isDiff = true;
+                break;
+              }
+            }
+            let portMapDescriptionPath = iterateTemplate +
+                                      fields.port_mapping_values.description[0];
+            if (checkForNestedKey(data, portMapDescriptionPath)) {
+              if (
+                getFromNestedKey(data, portMapDescriptionPath) !=
+                fields.port_mapping_values.description[1]
               ) {
                 isDiff = true;
                 break;

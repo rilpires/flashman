@@ -86,6 +86,7 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
+      else if (ouiModelStr === 'DIR-842') return 'g-only';
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
@@ -109,6 +110,7 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
+      else if (ouiModelStr === 'DIR-842') return 'b,g,n';
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
@@ -132,6 +134,7 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
+      else if (ouiModelStr === 'DIR-842') return 'a,n';
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
@@ -155,24 +158,33 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
+      else if (ouiModelStr === 'DIR-842') return 'ac,a,n';
       else return '11ac';
     default:
       return '';
   }
 };
 
-const convertWifiBand = function(band, model) {
+const convertWifiBand = function(band, model, is5ghz=false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
       return ((model === 'AC10') ? '0' : '20MHz');
     case 'HT40':
     case 'VHT40':
-      return ((model === 'AC10') ? '1' : '40MHz');
+      if (model === 'DIR-842') return '20/40MHz';
+      else if (model === 'AC10') return '1';
+      return '40MHz';
     case 'VHT80':
-      return ((model === 'AC10') ? '3' : '80MHz');
+      if (model === 'DIR-842') return '20/40/80MHz';
+      if (model === 'AC10') return '3';
+      return '80MHz';
     case 'auto':
-      return ((model === 'AC10') ? '2' : 'auto');
+      if (model === 'DIR-842') {
+        return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
+      }
+      else if (model === 'AC10') return '2';
+      return 'auto';
     default:
       return '';
   }
@@ -209,11 +221,13 @@ const convertField = function(masterKey, key, oui, model, value) {
       result.value = convertWifiMode(value, oui, model); // convert to TR-069
       break;
     case 'wifi2-band':
-    case 'wifi5-band':
     case 'mesh2-band':
+      result.value = convertWifiBand(value, model); // convert to TR-069
+      break;
+    case 'wifi5-band':
     case 'mesh5-band':
       // convert to TR-069 format
-      result.value = convertWifiBand(value, model);
+      result.value = convertWifiBand(value, model, true); // convert to TR-069
       break;
     default:
       result.value = value; // no transformation necessary
@@ -688,6 +702,26 @@ const getFastWirelessFields = function() {
   return fields;
 };
 
+const getDLinkFields = function() {
+  let fields = getDefaultFields();
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '3');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '3');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '3');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '3');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '3');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '3');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '3');
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_DLINK_OperatingChannelBandwidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
+  // fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  // delete fields.port_mapping_values.remote_host;
+  // fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  return fields;
+};
+
 const getTendaFields = function() {
   let fields = getDefaultFields();
   fields.common.alt_uid = fields.common.mac;
@@ -820,6 +854,16 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
           fields = getTPLinkFields();
+          break;
+        default:
+          return unknownModel;
+      }
+      break;
+    case 'Router':
+      switch (modelName) {
+        case 'DIR-842':
+          message = '';
+          fields = getDLinkFields();
           break;
         default:
           return unknownModel;

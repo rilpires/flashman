@@ -39,7 +39,7 @@ passport.use(new LocalStrategy(
   function(name, password, callback) {
     User.findOne({name: name}, function(err, user) {
       if (err) {
-        return callback({message: t('error')}, null);
+        return callback({message: t('Error')}, null);
       }
       // No user found with that name
       if (!user) {
@@ -48,7 +48,7 @@ passport.use(new LocalStrategy(
       // Make sure the password is correct
       user.verifyPassword(password, function(err, isMatch) {
         if (err) {
-          return callback({message: t('error')}, null);
+          return callback({message: t('Error')}, null);
         }
         // Password did not match
         if (!isMatch) {

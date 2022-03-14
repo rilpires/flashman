@@ -333,7 +333,7 @@ const markNextForUpdate = async function() {
       deviceHandlers.timeoutUpdateAck(device._id, 'update');
     }
   } catch (err) {
-    console.log(err);
+    console.log(err.message ? err.message : err);
     mutexRelease();
     return {success: false, error: t('saveError', {errorline: __line})};
   }
