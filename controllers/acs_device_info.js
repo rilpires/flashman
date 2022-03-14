@@ -2894,7 +2894,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
     last_contact: {$lt: offlineThreshold},
   }, {
     acs_id: true,
-  });
+  }).lean();
   // Issue a task for every offline device to try and force it to reconnect
   for (let i = 0; i < offlineDevices.length; i++) {
     let id = offlineDevices[i].acs_id;
