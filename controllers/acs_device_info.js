@@ -125,11 +125,12 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-const convertWifiBand = function(band, mode) {
-  let isAC = convertWifiMode(mode) === '11ac';
+const convertWifiBand = function(band, mode, is5ghz) {
+  let isAC = convertWifiMode(mode, is5ghz) === '11ac';
   switch (band) {
     case '2':
     case 'auto':
+    case 'Auto':
     case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
@@ -393,7 +394,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) :
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value, false) :
        undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
@@ -404,7 +405,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) :
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value, true) :
        undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
@@ -500,6 +501,7 @@ const createRegistry = async function(req, permissions) {
 // It will also check for complete synchronization necessity by dispatching
 // "measure" as true. Complete synchronization is done by "syncDevice" function
 acsDeviceInfoController.informDevice = async function(req, res) {
+  let dateNow = Date.now();
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
@@ -522,6 +524,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   if (
     device.do_update || !device.last_tr069_sync || device.recovering_tr069_reset
   ) {
+    device.last_tr069_sync = dateNow;
+    device.last_contact = dateNow;
+    await device.save();
     return res.status(200).json({success: true, measure: true});
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
@@ -530,14 +535,16 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       message: t('configFindError', {errorline: __line})});
   });
   // Devices that havent synced in (config interval) need to sync immediately
-  let syncDiff = Date.now() - device.last_tr069_sync;
+  let syncDiff = dateNow - device.last_tr069_sync;
   if (syncDiff >= config.tr069.sync_interval) {
-    return res.status(200).json({success: true, measure: true});
+    device.last_tr069_sync = dateNow;
+    res.status(200).json({success: true, measure: true});
+  } else {
+    res.status(200).json({success: true, measure: false});
   }
-  // Simply update last_contact to keep device online, no need to sync
-  device.last_contact = Date.now();
+  // Always update last_contact to keep device online
+  device.last_contact = dateNow;
   await device.save();
-  return res.status(200).json({success: true, measure: false});
 };
 
 // Complete CPE information synchronization gets done here. This function
@@ -600,6 +607,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
+  // We don't need to wait - can free session immediately
+  res.status(200).json({success: true});
+
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     if (typeof data.wan.pppoe_enable.value === 'string') {
@@ -764,7 +774,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi2.band) {
     let band2 = convertWifiBand(data.wifi2.band.value,
-     data.wifi2.mode.value);
+     data.wifi2.mode.value, false);
     if (data.wifi2.band.value && !device.wifi_band) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
@@ -825,7 +835,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi5.band && data.wifi5.mode) {
     let band5 = convertWifiBand(data.wifi5.band.value,
-     data.wifi5.mode.value);
+     data.wifi5.mode.value, true);
     if (data.wifi5.band.value && !device.wifi_band_5ghz) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
@@ -1056,7 +1066,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
   }
   await device.save();
-  return res.status(200).json({success: true});
 };
 
 acsDeviceInfoController.rebootDevice = function(device, res) {
@@ -2075,7 +2084,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
-              /WLANConfiguration\.[0-9]+\./g,
+              /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
             let assocIndexes = getFromNestedKey(data, assocField);
@@ -2506,7 +2515,8 @@ acsDeviceInfoController.updateInfo = async function(
       }
       if (key === 'web_admin_password') {
         // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char
+        // at least one number, lower case and special char - special char cant
+        // be the first one!
         let password = changes[masterKey][key];
         let passRegex= new RegExp(''
           + /(?=.{8,16}$)/.source
@@ -2515,6 +2525,7 @@ acsDeviceInfoController.updateInfo = async function(
           + /(?=.*[0-9])/.source
           + /(?=.*[-!@#$%^&*+_.]).*/.source);
         if (!passRegex.test(password)) return;
+        if ('-!@#$%^&*+_.'.includes(password[0])) return;
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], modelName, changes[masterKey][key],
@@ -2871,39 +2882,6 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       });
     });
     req.end();
-  }
-};
-
-acsDeviceInfoController.pingOfflineDevices = async function() {
-  // Get TR-069 configs from database
-  let matchedConfig = await Config.findOne(
-    {is_default: true}, 'tr069',
-  ).lean().exec().catch((err) => err);
-  if (matchedConfig.constructor === Error) {
-    console.log('Error getting user config in database to ping offline CPEs');
-    return;
-  }
-  // Compute offline threshold from options
-  let currentTime = Date.now();
-  let interval = matchedConfig.tr069.inform_interval;
-  let threshold = matchedConfig.tr069.offline_threshold;
-  let offlineThreshold = new Date(currentTime - (interval*threshold));
-  // Query database for offline TR-069 CPE devices
-  let offlineDevices = await DeviceModel.find({
-    use_tr069: true,
-    last_contact: {$lt: offlineThreshold},
-  }, {
-    acs_id: true,
-  });
-  // Issue a task for every offline device to try and force it to reconnect
-  for (let i = 0; i < offlineDevices.length; i++) {
-    let id = offlineDevices[i].acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: [fields.common.uptime],
-    };
-    await TasksAPI.addTask(id, task, true, 50, [], null);
   }
 };
 

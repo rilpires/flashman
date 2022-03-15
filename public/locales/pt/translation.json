@@ -371,7 +371,7 @@
 	"cpesWebinterfaceLogin": "Login para a interface web das CPEs",
 	"insertValidLogin": "Insira um login válido",
 	"cpesWebinterfacePassword": "Senha para a interface web das CPEs",
-	"onuWebPasswordTooltip": "A senha deve ter de 8 a 16 caracteres, conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial",
+	"onuWebPasswordTooltip": "A senha deve ter de 8 a 16 caracteres, conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial. O caractere especial não pode ser o primeiro caractere!",
 	"insertValidPassword": "Insira uma senha válida",
 	"configureOnusRemoteAccess": "Configurar acesso remoto para ONUs",
 	"enableStunServerUsage": "Habilitar uso do Servidor STUN",
