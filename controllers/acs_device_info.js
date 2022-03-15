@@ -130,6 +130,7 @@ const convertWifiBand = function(band, mode, is5ghz) {
   switch (band) {
     case '2':
     case 'auto':
+    case 'Auto':
     case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
