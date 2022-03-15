@@ -759,6 +759,7 @@ updateController.setAutoConfig = async function(req, res) {
       onuWebPassword = config.tr069.web_password;
     }
     // validate that it is a strong password, but only if value changes
+    // first character cannot be special character
     if (onuWebPassword !== config.tr069.web_password) {
       let passRegex = new RegExp(''
         + /(?=.{8,16}$)/.source
@@ -766,7 +767,10 @@ updateController.setAutoConfig = async function(req, res) {
         + /(?=.*[a-z])/.source
         + /(?=.*[0-9])/.source
         + /(?=.*[-!@#$%^&*+_.]).*/.source);
-      if (!passRegex.test(onuWebPassword)) {
+      if (
+        !passRegex.test(onuWebPassword) ||
+        '-!@#$%^&*+_.'.includes(onuWebPassword[0])
+      ) {
         return res.status(500).json({
           type: 'danger',
           message: t('tr069WebPasswordValidationError'),

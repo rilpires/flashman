@@ -191,6 +191,12 @@ const convertWifiBand = function(band, model, is5ghz=false) {
       if (model === 'DIR-842' || model === 'DIR-841') {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       }
+      if (
+        model === 'BEACON 1 HA-020W-B' ||
+        model === 'BEACON%20HA%2D020W%2DB'
+      ) {
+        return 'Auto'
+      }
       else if (model === 'AC10') return '2';
       return 'auto';
     default:
@@ -550,19 +556,46 @@ const getZTEFields = function(model) {
   return fields;
 };
 
-const getNokiaFields = function() {
+const getNokiaFields = function(model) {
   let fields = getDefaultFields();
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
-  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
-  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
-  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+  switch (model) {
+    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB':
+      fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_ALU_COM_ChannelBandWidthExtend';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_ALU_COM_ChannelBandWidthExtend';
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.RSSI';
+      fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.WebAccount.UserName';
+      fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.WebAccount.Password';
+      fields.port_mapping_values.protocol[1] = 'TCPorUDP';
+      fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.remote_host =
+         ['RemoteHost', '', 'xsd:string'];
+      fields.port_mapping_fields.internal_port_end = ['X_ASB_COM_InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt'];
+      break;
+    case 'G-140W-C':
+    case 'G%2D140W%2DC':
+    case 'G-140W-CS':
+    case 'G%2D140W%2DCS':
+    case 'G-140W-UD':
+    case 'G%2D140W%2DUD':
+      fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
+      fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+      fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+      break;
+    default:
+      break
+  }
   return fields;
 };
 
@@ -835,8 +868,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'G%2D140W%2DCS': // URI encoded
     case 'G-140W-UD': // Nokia G-140W-UD
     case 'G%2D140W%2DUD': // URI encoded
+    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB': // URI encoded
       message = '';
-      fields = getNokiaFields();
+      fields = getNokiaFields(model);
       break;
     case 'MP_G421R': // Unee Stavix G412R
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
