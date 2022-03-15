@@ -662,7 +662,6 @@ scheduleController.abortSchedule = async function(req, res) {
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
     // Mark all todo devices as aborted
-    let count = config.device_update_schedule.device_count;
     let rule = config.device_update_schedule.rule;
     let pushArray = rule.to_do_devices.map((d)=>{
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
@@ -698,17 +697,11 @@ scheduleController.abortSchedule = async function(req, res) {
     pushArray = pushArray.filter((item, idx) => {
       return pushArray.indexOf(item) === idx;
     });
-
     let setQuery = {
+      'device_update_schedule.is_active': false,
       'device_update_schedule.rule.to_do_devices': [],
       'device_update_schedule.rule.in_progress_devices': [],
     };
-    // We allow device counting to be greater than assigned schedule count
-    // due to some rare racing conditions that count the same device more
-    // then once. No harm.
-    if ((rule.done_devices.length + pushArray.length) >= count) {
-      setQuery['device_update_schedule.is_active'] = false;
-    }
     await configQuery(
       setQuery,
       null,
