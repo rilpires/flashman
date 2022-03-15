@@ -7,19 +7,19 @@ block content
         .card-body
           .row.justify-content-center
             .col-8
-              p.h4.text-center.mb-4 Autenticação
+              p.h4.text-center.mb-4= t('Authentication')
 
               form(method='post', action='/login')
                 .md-form
                   i.fas.fa-user.prefix.grey-text
                   input#name.form-control(type="text", name="name")
-                  label(for="name") Usuário
+                  label(for="name")= t('User')
                 .md-form
                   i.fas.fa-lock.prefix.grey-text
                   input#password.form-control(type="password", name="password")
-                  label(for="password") Senha
+                  label(for="password")= t('Password')
                 .form-buttons.text-center
-                  button.btn.btn-primary.btn-lg.teal.lighten-2(type="submit") Entrar
+                  button.btn.btn-primary.btn-lg.teal.lighten-2(type="submit")= t('SignIn')
 
 block scripts
   script(src='/dist/login.bundle.js')
