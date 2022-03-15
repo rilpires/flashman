@@ -651,13 +651,13 @@ scheduleController.failedDownload = async function(mac, slave='') {
 scheduleController.abortSchedule = async function(req, res) {
   let config = await getConfig();
   if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
+    return res.status(500).json({
+      success: false, error: t('noSchedulingActive', {errorline: __line})});
   }
   // Mark scheduled update as aborted - separately to mitigate racing conditions
   if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-                                     {errorline: __line})};
+    return res.status(500).json({success: false,
+      error: t('schedulingAlreadyAborted', {errorline: __line})});
   }
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
