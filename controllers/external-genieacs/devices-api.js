@@ -542,6 +542,21 @@ const getZTEFields = function(model) {
   return fields;
 };
 
+const getDatacomFields = function(model) {
+  let fields = getDefaultFields();
+  switch (model) {
+    case 'DM985-424':
+    case 'DM985%2D424':
+      break;
+  }
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getNokiaFields = function() {
   let fields = getDefaultFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
@@ -844,6 +859,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'FW323DAC':
       message = '';
       fields = getFastWirelessFields();
+      break;
+    case 'DM985-424':
+    case 'DM985%2D424':
+      message = '';
+      fields = getDatacomFields(model);
       break;
     case 'IGD':
       switch (modelName) {

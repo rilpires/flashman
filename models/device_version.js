@@ -659,6 +659,29 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'DM985-424': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V3.0.1': [],
+    },
+    port_forward_opts: {
+      'V3.0.1': portForwardFullSupport,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: true,
+      upnp: true,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 1000,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    }
+  },
 };
 
 const flashboxFirmwareDevices = {
