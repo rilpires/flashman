@@ -34,14 +34,6 @@ sio.on('connection', function(socket) {
               ') connected on Notification Broker');
   // just save connections of authenticated users
   if (socket.handshake.session.passport) {
-    // We keep only one connection for each session
-    if (sio.anlixConnections[socket.handshake.sessionID]) {
-      let oldsock = sio.anlixConnections[socket.handshake.sessionID];
-      oldsock.disconnect(true);
-      debug(oldsock.handshake.address + ' (' +
-            oldsock.handshake.sessionID +
-            ') disconnect from Notification Broker: Overwrite');
-    }
     sio.anlixConnections[socket.handshake.sessionID] = socket;
   } else {
     socket.disconnect(true);
