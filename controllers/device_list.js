@@ -1000,7 +1000,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await device.save();
+    await device.save().catch((err) => {
+      console.log('UPDATE: Error saving device on factory reset: ' + err);
+      return res.status(500).json({
+        success: false,
+        message: t('cpeSaveError'),
+      });
+    });
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
@@ -1034,13 +1040,19 @@ deviceListController.sendMqttMsg = function(req, res) {
                                                   device.wifi_is_5ghz_capable,
                                                   device.model);
 
+    let emitMsg = true;
     switch (msgtype) {
       case 'rstapp':
         if (device) {
           device.app_password = undefined;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving app reset password: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        }
         break;
       case 'rstdevices':
         if (!permissions.grantResetDevices) {
@@ -1054,17 +1066,27 @@ deviceListController.sendMqttMsg = function(req, res) {
             return lanDevice;
           });
           device.blocked_devices_index = Date.now();
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of blocked devices: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        }
         break;
       case 'rstmqtt':
         if (device) {
           device.mqtt_secret = undefined;
           device.mqtt_secret_bypass = true;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of mqtt: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        }
         break;
       case 'updateupnp':
         if (device) {
@@ -1080,9 +1102,13 @@ deviceListController.sendMqttMsg = function(req, res) {
               return false;
             }
           });
-          device.save(function(err) {
-            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          await device.save().catch((err) => {
+            console.log('Error saving on update upnp: ' + err);
+            emitMsg = false;
           });
+          if (emitMsg) {
+            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          }
         }
         break;
       case 'log':
@@ -3017,7 +3043,12 @@ deviceListController.doSpeedTest = function(req, res) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
         matchedDevice.current_speedtest.stage = 'estimative';
-        await matchedDevice.save();
+        await matchedDevice.save().catch((err) => {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        });
         acsDeviceInfo.fireSpeedDiagnose(mac);
       } else {
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
