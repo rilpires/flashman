@@ -23,7 +23,6 @@ const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
-const SIO_NOTIFICATION_GENIE_TASK = 'GENIETASK';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
 const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
 
@@ -332,36 +331,6 @@ sio.anlixSendSpeedTestNotifications = function(macaddr, testdata) {
   } else {
     console.log('Speedtest results for device ' +
     macaddr + ' received successfully.');
-  }
-  return found;
-};
-
-sio.anlixWaitForGenieAcsTaskNotification = function(session, deviceid) {
-  if (!session) {
-    debug('ERROR: SIO: '
-      +'Tried to add genie task notification with an invalid session!');
-    return false;
-  }
-  if (!deviceid) {
-    debug('ERROR: SIO: Tried to add genie task '
-      +'notification with an invalid deviceid!');
-    return false;
-  }
-
-  registerNotification(session, SIO_NOTIFICATION_GENIE_TASK, deviceid);
-  return true;
-};
-
-sio.anlixSendGenieAcsTaskNotifications = function(deviceid, taskInfo) {
-  if (!deviceid) {
-    debug('ERROR: SIO: Tried to send genie task notification '
-      +`to an invalid deviceid! ${deviceid}`);
-    return false;
-  }
-  let found = emitNotification(SIO_NOTIFICATION_GENIE_TASK,
-                               deviceid, taskInfo, deviceid);
-  if (!found) {
-    debug(`SIO: NO Session found for ${deviceid} Discarding message...`);
   }
   return found;
 };
