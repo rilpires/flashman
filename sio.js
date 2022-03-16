@@ -9,12 +9,11 @@ const sio = new Server();
 
 // Redis use for comm between multiple processes
 if (process.env.FLM_USE_MQTT_PERSISTENCE) {
-  const pubClient = createClient({host: 'localhost', port: 6379});
-  const subClient = pubClient.duplicate();
+  sio.pubClient = createClient({host: 'localhost', port: 6379});
+  sio.subClient = sio.pubClient.duplicate();
 
-  sio.adapter(createAdapter(pubClient, subClient));
+  sio.adapter(createAdapter(sio.pubClient, sio.subClient));
 }
-
 
 const SIO_NOTIFICATION_LIVELOG = 'LIVELOG';
 const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';

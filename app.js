@@ -46,8 +46,7 @@ if (!isOnProduction) {
           .swagger-ui .topbar {
             background-color: #4db6ac;
           }
-        `
-      },
+        `},
       specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
       alwaysServeDocs: false,
     },
