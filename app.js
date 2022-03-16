@@ -16,7 +16,8 @@ const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
-let session = require('express-session');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
@@ -352,6 +353,10 @@ let sessParam = session({
   secret: app.locals.secret,
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    maxAge: 28800000,
+  },
+  store: new MongoStore({mongooseConnection: mongoose.connection}),
 });
 
 app.use(sessParam);

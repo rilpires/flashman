@@ -28,7 +28,6 @@ const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
 const SIO_NOTIFICATION_SITESURVEY = 'SITESURVEY';
 
 sio.anlixConnections = {};
-sio.anlixNotifications = {};
 
 sio.on('connection', function(socket) {
   debug(socket.handshake.address + ' (' + socket.handshake.sessionID +
