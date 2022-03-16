@@ -1,8 +1,20 @@
-const socketio = require('socket.io');
+/* eslint-disable no-prototype-builtins */
+const {Server} = require('socket.io');
+const {createClient} = require('redis');
+const {createAdapter} = require('@socket.io/redis-adapter');
 const sharedsession = require('express-socket.io-session');
 const debug = require('debug')('SIO');
 
-let sio = socketio();
+const sio = new Server();
+
+// Redis use for comm between multiple processes
+if (process.env.FLM_USE_MQTT_PERSISTENCE) {
+  const pubClient = createClient({host: 'localhost', port: 6379});
+  const subClient = pubClient.duplicate();
+
+  sio.adapter(createAdapter(pubClient, subClient));
+}
+
 
 const SIO_NOTIFICATION_LIVELOG = 'LIVELOG';
 const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
@@ -28,12 +40,9 @@ sio.on('connection', function(socket) {
     if (sio.anlixConnections[socket.handshake.sessionID]) {
       let oldsock = sio.anlixConnections[socket.handshake.sessionID];
       oldsock.disconnect(true);
-      if (sio.anlixNotifications[socket.handshake.sessionID]) {
-        delete sio.anlixNotifications[socket.handshake.sessionID];
-      }
       debug(oldsock.handshake.address + ' (' +
-                  oldsock.handshake.sessionID +
-                  ') disconnect from Notification Broker: Overwrite');
+            oldsock.handshake.sessionID +
+            ') disconnect from Notification Broker: Overwrite');
     }
     sio.anlixConnections[socket.handshake.sessionID] = socket;
   } else {
@@ -46,82 +55,28 @@ sio.on('connection', function(socket) {
     if (sio.anlixConnections[socket.handshake.sessionID]) {
       delete sio.anlixConnections[socket.handshake.sessionID];
     }
-    if (sio.anlixNotifications[socket.handshake.sessionID]) {
-      delete sio.anlixNotifications[socket.handshake.sessionID];
-    }
     debug(socket.handshake.address + ' (' + socket.handshake.sessionID +
-                ') disconnect from Notification Broker: '+ reason);
+          ') disconnect from Notification Broker: '+ reason);
   });
 });
 
 const registerNotification = function(sessionId, type, macaddr=null) {
-  let notification = {};
-  notification.type = type;
-  notification.timer = Date.now();
-  if (macaddr) {
-    notification.macaddr = macaddr;
-  }
-  if (!sio.anlixNotifications[sessionId]) {
-    sio.anlixNotifications[sessionId] = [];
-  }
-  if (!sio.anlixNotifications[sessionId].find((notif) => {
-    const sameType = notif.type == notification.type;
-    let sameMac = true;
-    if (sameType && macaddr) {
-      sameMac = notif.macaddr == macaddr;
-    }
-    return sameType && sameMac;
-  })) {
-    sio.anlixNotifications[sessionId].push(notification);
+  if (sio.anlixConnections[sessionId]) {
+    sio.anlixConnections[sessionId].join(type);
   }
 };
 
 const emitNotification = function(type, macaddr, data, removeMeKey=null) {
-  let found = false;
-  // Get who is waiting for this notification
-  for (let sessionId in sio.anlixNotifications) {
-    if (sio.anlixNotifications.hasOwnProperty(sessionId)) {
-      let notifications = sio.anlixNotifications[sessionId];
-      for (let nIdx = 0; nIdx < notifications.length; nIdx++) {
-        let notification = notifications[nIdx];
-        if (notification.type == type) {
-          if (removeMeKey) {
-            if (notification.macaddr == removeMeKey) {
-              debug('SIO: Send ' + type +' of ' + macaddr +
-                          ' information for ' + sessionId);
-              if (sio.anlixConnections[sessionId]) {
-                sio.anlixConnections[sessionId].emit(type, macaddr, data);
-              }
-              found = true;
-              // Remove from notifications array
-              notifications.splice(nIdx, 1);
-              break;
-            }
-          } else {
-            debug('SIO: Send ' + type +' of ' + macaddr +
-                        ' information for ' + sessionId);
-            if (sio.anlixConnections[sessionId]) {
-              sio.anlixConnections[sessionId].emit(type, macaddr, data);
-            }
-            found = true;
-            break;
-          }
-        }
-      }
-      if (found) {
-        break;
-      }
-    }
-  }
-  return found;
+  debug('SIO: Send ' + type +' of ' + macaddr);
+  sio.to(type).emit(type, macaddr, data);
+  return true;
 };
 
 sio.anlixSendDeviceStatusNotification = function(mac, data) {
   if (!mac) {
     debug(
       'ERROR: SIO: ' +
-      'Try to send status notification to an invalid mac address!'
-    );
+      'Try to send status notification to an invalid mac address!');
     return false;
   }
   let found = emitNotification(SIO_NOTIFICATION_DEVICE_STATUS, mac, data);
@@ -188,8 +143,7 @@ sio.anlixSendOnlineDevNotifications = function(macaddr, devsData) {
   if (!macaddr) {
     debug(
       'ERROR: SIO: ' +
-      'Try to send onlinedev notification to an invalid mac address!'
-    );
+      'Try to send onlinedev notification to an invalid mac address!');
     return false;
   }
 
@@ -348,7 +302,7 @@ sio.anlixSendPonSignalNotification = function(macaddr, ponSignalMeasure) {
                 macaddr + '! Discarding message...');
   }
   return found;
-}
+};
 
 sio.anlixWaitForSpeedTestNotification = function(session, macaddr) {
   if (!session) {
