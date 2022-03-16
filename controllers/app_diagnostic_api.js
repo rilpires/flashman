@@ -517,12 +517,14 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       let device;
       let tr069Info = {url: '', interval: 0};
 
-      if (req.body.isOnu && req.body.onuMac) {
-        device = await DeviceModel.findById(req.body.onuMac);
-      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
-        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
-      } else if (req.body.isOnu) {
-        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+      if (req.body.isOnu) {
+        if (req.body.onuMac) {
+          device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
+        } else {
+          device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+        }
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
