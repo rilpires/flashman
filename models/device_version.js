@@ -357,6 +357,35 @@ const tr069Devices = {
     mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x5'],
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
   },
+  'BEACON 1 HA-020W-B': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE49127HJII42': [],
+    },
+    port_forward_opts: {
+      '3FE49127HJII42': portForwardNoAsymRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: false, // no fiber
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 800,
+      ping_test: true,
+      block_devices: false,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
@@ -594,6 +623,28 @@ const tr069Devices = {
     vendor: 'DLink',
     versions_upgrade: {
       '3.0.3': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'DIR-841': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.4': [],
     },
     feature_support: {
       port_forward: false,
