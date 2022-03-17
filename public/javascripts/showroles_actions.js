@@ -2,6 +2,8 @@
 import {displayAlertMsg} from './common_actions.js';
 import {anlixDocumentReady} from '../src/common.index.js';
 
+const t = i18next.t;
+
 anlixDocumentReady.add(function() {
   let selectedItens = [];
   let selectedNames = [];
@@ -107,7 +109,7 @@ anlixDocumentReady.add(function() {
               .attr('action', '/user/role/edit/' + roleObj._id)
               .append(
                 $('<h5>').addClass('text-muted mb-0 mt-3')
-                         .text('Permissões do cadastro e ações nas CPEs'),
+                         .text(t('registerPermissionsAndActionsInCpes')),
                 $('<hr>').addClass('my-1'),
                 $('<div>').addClass('row mb-3')
                 .append(
@@ -115,32 +117,32 @@ anlixDocumentReady.add(function() {
                     $('<div>').addClass('md-form').append(
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
-                        $('<label>').text('Informações do WiFi'),
+                        $('<label>').text(t('wifiInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-wifi-info').append(
                           $('<option>').val(0)
-                          .text('Não visualizar'),
+                          .text(t('cannotView')),
                           $('<option>').val(1)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(2)
-                          .text('Visualizar e editar'),
+                          .text(t('viewAndEdit')),
                         ),
                       ),
                     ),
                     $('<div>').addClass('md-form').append(
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
-                        $('<label>').text('Informações do PPPoE'),
+                        $('<label>').text(t('pppoeInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-pppoe-info').append(
                           $('<option>').val(0)
-                          .text('Não visualizar'),
+                          .text(t('cannotView')),
                           $('<option>').val(1)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(2)
-                          .text('Visualizar e editar'),
+                          .text(t('viewAndEdit')),
                         ),
                       ),
                     ),
@@ -148,12 +150,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Visualização de Senhas ao Editar'),
+                        .text(t('viewPasswordWhenEditing')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-pass-show').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -161,14 +163,14 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle da rede LAN'),
+                        .text(t('lanNetworkControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-lan-edit').append(
                           $('<option>').val(false)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(true)
-                          .text('Visualizar e editar'),
+                          .text(t('viewAndEdit')),
                         ),
                       ),
                     ),
@@ -176,12 +178,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de bloqueio de Internet nos dispositivos'),
+                        .text(t('internetInDevicesBlockingControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-lan-devices-block').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -189,12 +191,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Modo de Operação'),
+                        .text(t('operationModeControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-opmode-edit').append(
-                          $('<option>').val(false).text('Visualizar'),
-                          $('<option>').val(true).text('Visualizar e editar'),
+                          $('<option>').val(false).text(t('View')),
+                          $('<option>').val(true).text(t('viewAndEdit')),
                         ),
                       ),
                     ),
@@ -202,12 +204,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Desassociação de secundário no mesh'),
+                        .text(t('meshSecundaryDisassociation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-slave-disassociate').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -217,12 +219,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Identificação do CPE'),
+                        .text(t('cpeIdentificationControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-id').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -230,12 +232,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Ações no CPE'),
+                        .text(t('actionsInCpeControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-actions').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -243,12 +245,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso aos Logs dos CPEs'),
+                        .text(t('accessCpeLogs')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-log-access').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -256,12 +258,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Mostrar Alertas em CPEs'),
+                        .text(t('showCpeAlerts')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-notification-popups').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -269,16 +271,16 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Informações Sobre Dispositivos Conectados'),
+                        .text(t('connectedDevicesInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-lan-devices').append(
                           $('<option>').val(0)
-                          .text('Não visualizar'),
+                          .text(t('cannotView')),
                           $('<option>').val(1)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(2)
-                          .text('Visualizar e realizar ações'),
+                          .text(t('viewAndMakeActions')),
                         ),
                       ),
                     ),
@@ -286,12 +288,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Informações Sobre Redes ao Redor'),
+                        .text(t('neighboringNetworksInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-site-survey').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -299,12 +301,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso a gráficos de tráfego na WAN'),
+                        .text(t('wanTrafficPlotsAccess')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-wan-bytes').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -314,12 +316,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Voltar CPE para a Firmware de Fábrica'),
+                        .text(t('returnCpeToFactoryFirmware')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-factory-reset').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -327,13 +329,13 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Remoção de Registro de CPE'),
+                        .text(t('cpesRegistersRemoval')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-removal').append(
-                          $('<option>').val(0).text('Bloquear'),
-                          $('<option>').val(1).text('Permitir'),
-                          $('<option>').val(2).text('Permitir em massa'),
+                          $('<option>').val(0).text(t('Block')),
+                          $('<option>').val(1).text(t('Allow')),
+                          $('<option>').val(2).text(t('allowMany')),
                         ),
                       ),
                     ),
@@ -341,12 +343,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Adição de Registro de CPE'),
+                        .text(t('cpesRegistersAddition')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-device-add').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -354,13 +356,13 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Informações de VLANs'),
+                        .text(t('vlanInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-vlan').append(
                           $('<option>').val(0).text('Não Visualizar'),
-                          $('<option>').val(1).text('Visualizar'),
-                          $('<option>').val(2).text('Visualizar e Editar'),
+                          $('<option>').val(1).text(t('View')),
+                          $('<option>').val(2).text(t('viewAndEdit')),
                         ),
                       ),
                     ),
@@ -368,16 +370,16 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Informações Sobre Medição de Velocidade'),
+                        .text(t('speedTestInformation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-measure-devices').append(
                           $('<option>').val(0)
-                          .text('Não visualizar'),
+                          .text(t('cannotView')),
                           $('<option>').val(1)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(2)
-                          .text('Visualizar e realizar ações'),
+                          .text(t('viewAndMakeActions')),
                         ),
                       ),
                     ),
@@ -385,19 +387,19 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle do Tipo de Conexão'),
+                        .text(t('connectionTypeControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-wan-type').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
                   ),
                 ),
                 $('<h5>').addClass('text-muted mb-0 mt-3')
-                         .text('Permissões de atualização de firmware'),
+                         .text(t('firmwareUpdatePermissions')),
                 $('<hr>').addClass('my-1'),
                 $('<div>').addClass('row mb-3')
                 .append(
@@ -406,13 +408,13 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Atualização de Firmware'),
+                        .text(t('firmwareUpdateControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-upgrade').append(
-                          $('<option>').val(0).text('Bloquear'),
-                          $('<option>').val(1).text('Permitir'),
-                          $('<option>').val(2).text('Permitir em massa'),
+                          $('<option>').val(0).text(t('Block')),
+                          $('<option>').val(1).text(t('Allow')),
+                          $('<option>').val(2).text(t('allowMany')),
                         ),
                       ),
                     ),
@@ -422,13 +424,13 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Atualização de Firmware Restrita'),
+                        .text(t('restrictedFirmwareUpdateControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-restricted-upgrade')
                         .append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -436,12 +438,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Gerência de Firmwares'),
+                        .text(t('firmwareManagementControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-manage').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -451,19 +453,19 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Atualização de Firmware Beta'),
+                        .text(t('betaFirmwareUpdateControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-firmware-beta-upgrade').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
                   ),
                 ),
                 $('<h5>').addClass('text-muted mb-0 mt-3')
-                         .text('Permissões gerais do Flashman'),
+                         .text(t('generalFlashmanPermissions')),
                 $('<hr>').addClass('my-1'),
                 $('<div>').addClass('row mb-3')
                 .append(
@@ -472,12 +474,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Total sobre status de CPEs'),
+                        .text(t('cpeStatusTotal')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-search-summary').append(
-                          $('<option>').val(false).text('Não visualizar'),
-                          $('<option>').val(true).text('Visualizar'),
+                          $('<option>').val(false).text(t('cannotView')),
+                          $('<option>').val(true).text(t('View')),
                         ),
                       ),
                     ),
@@ -485,12 +487,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Permitir Acesso a API REST'),
+                        .text(t('allowRestApiAccess')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-api-access').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -498,12 +500,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Configurações do Flashman'),
+                        .text(t('flashmanConfigurationsControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-flashman-manage').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -513,12 +515,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Controle de Gerência de Usuários'),
+                        .text(t('userManagementControl')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-user-manage').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -526,12 +528,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Configuração de parâmetros do TR-069'),
+                        .text(t('tr069ParametersConfiguration')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-monitor-manage').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -539,16 +541,16 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso às Certificações de CPEs'),
+                        .text(t('cpeCertificatesAccess')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-certification-access').append(
                           $('<option>').val(0)
-                          .text('Não visualizar'),
+                          .text(t('cannotView')),
                           $('<option>').val(1)
-                          .text('Visualizar'),
+                          .text(t('View')),
                           $('<option>').val(2)
-                          .text('Visualizar e editar'),
+                          .text(t('viewAndEdit')),
                         ),
                       ),
                     ),
@@ -556,16 +558,16 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Busca de CPEs'),
+                        .text(t('cpeSearch')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-search-level').append(
                           $('<option>').val(0)
-                          .text('Não permitir busca e visualização'),
+                          .text(t('cannotSearchAndView')),
                           $('<option>').val(1)
-                          .text('Busca simples'),
+                          .text(t('simpleSearch')),
                           $('<option>').val(2)
-                          .text('Busca completa com filtros especiais'),
+                          .text(t('completeSearchWithSpecialFilters')),
                         ),
                       ),
                     ),
@@ -575,12 +577,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Exportação de cadastros por CSV'),
+                        .text(t('csvRegisterExport')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-csv-export').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -588,12 +590,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Adição/Edição/Remoção de Perfis de VLANs'),
+                        .text(t('vlanProfilesAdditionEditionRemoval')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-vlan-profile-edit').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -601,12 +603,12 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text('Acesso ao App do Técnico'),
+                        .text(t('technicianAppAccess')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-diag-app-access').append(
-                          $('<option>').val(false).text('Bloquear'),
-                          $('<option>').val(true).text('Permitir'),
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -621,7 +623,7 @@ anlixDocumentReady.add(function() {
                       .attr('type', 'submit')
                       .append(
                         $('<div>').addClass('fas fa-check'),
-                        $('<span>').html('&nbsp Editar'),
+                        $('<span>').html('&nbsp '+t('Edit')),
                       ),
                     ),
                   ),
