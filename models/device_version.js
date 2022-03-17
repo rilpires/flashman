@@ -392,11 +392,11 @@ const tr069Devices = {
       '3FE49025IJHK03': [],
     },
     port_forward_opts: {
-      '3FE49025IJHK03': portForwardFullSupport,
+      '3FE49025IJHK03': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
-      pon_signal: true, // no fiber
+      pon_signal: true,
       upnp: false,
       speed_test: true,
       speed_test_limit: 10000,

@@ -576,13 +576,6 @@ const getZTEFields = function(model) {
   return fields;
 };
 
-const getNokiaG2425Fields = function(model) {
-  let fields = getNokiaFields(model);
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  return fields;
-}
-
 const getNokiaFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
@@ -627,6 +620,15 @@ const getNokiaFields = function(model) {
   }
   return fields;
 };
+
+const getNokiaG2425Fields = function(model) {
+  let fields = getNokiaFields(model);
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.TXPower';
+  return fields;
+}
 
 const getStavixFields = function(model) {
   let fields = getDefaultFields();
