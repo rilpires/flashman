@@ -93,7 +93,9 @@ exports.uiAuthenticate = function(req, res, next) {
       }
 
       user.lastLogin = new Date();
-      user.save();
+      user.save().catch((err) => {
+        console.log('Error saving last login to database');
+      });
 
       res.redirect('/devicelist');
     });

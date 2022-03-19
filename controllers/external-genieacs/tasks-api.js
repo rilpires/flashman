@@ -108,7 +108,9 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
     params.message = t('genieacsErrorCallSupport', {errorline: __line});
   }
   let notification = new NotificationModel(params); // creating notification.
-  await notification.save(); // saving notification.
+  await notification.save().catch((err) => {
+    console.log('Error saving device task api notification: ' + err);
+  }); // saving notification.
 };
 
 // removes entries in Genie's 'faults' and 'cache' collections related to
@@ -510,6 +512,7 @@ itself and will be removed and re added.*/
     // if the last task was execute, it's high likely the previous tasks were
     // also executed.
     changeStream.hasNext().then(async function() {
+      if (!changeStream) return;
       if (changeStream.isClosed()) return;
       await changeStream.next();
       changeStream.close(); // close this change stream.
