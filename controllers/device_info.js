@@ -1066,10 +1066,12 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
-          await matchedDevice.save().catch((err) => {
+          try {
+            await matchedDevice.save();
             return res.status(500).json({proceed: 0});
-          });
-          return res.status(500).json({proceed: 0});
+          } catch (err) {
+            return res.status(500).json({proceed: 0});
+          }
         }
         let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
@@ -1179,13 +1181,15 @@ deviceInfoController.registerMqtt = function(req, res) {
           (config && config.mqtt_secret_bypass)
       ) {
         matchedDevice.mqtt_secret = req.body.mqttsecret;
-        await matchedDevice.save().catch((err) => {
-          console.log('Error saving device on MQTT register: ' +err);
+        try {
+          await matchedDevice.save();
+          console.log('Device ' +
+                      req.body.id + ' register MQTT secret successfully.');
+          return res.status(200).json({is_registered: 1});
+        } catch (err) {
+          console.log('Error saving device on MQTT register: ' + err);
           return res.status(500).json({is_registered: 0});
-        });
-        console.log('Device ' +
-          req.body.id + ' register MQTT secret successfully.');
-        return res.status(200).json({is_registered: 1});
+        }
       } else {
         // Device have a secret. Modification of secret is forbidden!
         console.log('Attempt to register MQTT secret for device ' +
@@ -2097,12 +2101,14 @@ deviceInfoController.receiveWpsResult = function(req, res) {
         return res.status(500).json({processed: 0});
       }
     }
-    await matchedDevice.save().catch((err) => {
+    try {
+      await matchedDevice.save();
+      console.log('Wps: ' + id + ' received successfully');
+      return res.status(200).json({processed: 1});
+    } catch (err) {
       console.log('Wps: ' + id + ' database save error');
       return res.status(500).json({processed: 0});
-    });
-    console.log('Wps: ' + id + ' received successfully');
-    return res.status(200).json({processed: 1});
+    }
   });
 };
 
