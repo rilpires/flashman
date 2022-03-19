@@ -24,7 +24,9 @@ controlController.checkPubKey = async function(app) {
     let matchedConfig = await Config.findOne({is_default: true});
     // Check config existence and create one if not found
     if (!matchedConfig) {
-      await newConfig.save();
+      await newConfig.save().catch((err) => {
+        console.log('Error saving first Config');
+      });
       // Generate key pair
       await keyHandlers.generateAuthKeyPair();
       // Send public key to be included in firmwares
@@ -66,7 +68,9 @@ controlController.getMessageConfig = async function(app) {
       if (resp && resp.token && resp.fqdn) {
         matchedConfig.messaging_configs.secret_token = resp.token;
         matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-        matchedConfig.save();
+        matchedConfig.save().catch((err) => {
+          console.log('Error saving first Config');
+        });
         console.log('Obtained message config successfully!');
       }
     }, (err) => {

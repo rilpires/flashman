@@ -109,7 +109,9 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
     params.message = t('genieacsErrorCallSupport', {errorline: __line});
   }
   let notification = new NotificationModel(params); // creating notification.
-  await notification.save(); // saving notification.
+  await notification.save().catch((err) => {
+    console.log('Error saving device task api notification: ' + err);
+  }); // saving notification.
 };
 
 // removes entries in Genie's 'faults' and 'cache' collections related to

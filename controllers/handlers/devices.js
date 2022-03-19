@@ -156,7 +156,9 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
         // Ack expected but not received after timeout - assume error and cancel
         console.log(timeoutMsg);
         matchedDevice.do_update_status = errStatus; // ack not received
-        matchedDevice.save();
+        matchedDevice.save().catch((err) => {
+          console.log('Error saving ack update status: ' + err);
+        });
         // Sync with update scheduler to signal error for that update
         // TODO: Find a way to use the function in update_scheduler.js instead
         //       We have to use a local one here because of circular dependency
@@ -183,7 +185,9 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
         if (index > -1) {
           masterDevice.mesh_slaves.splice(index, 1);
         }
-        masterDevice.save();
+        masterDevice.save().catch((err) => {
+          console.log('Error saving mesh slave remove operation: ' + err);
+        });
         console.log('Slave ' + device._id.toUpperCase() +
           ' removed from Master ' + meshMaster + ' successfully.');
       }
@@ -422,7 +426,9 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     device.last_speedtest_error.error = 'Error';
   }
 
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving device speedtest: ' + err);
+  });
   if (mutex.isLocked()) mutexRelease();
 
   sio.anlixSendSpeedTestNotifications(device._id, result);
