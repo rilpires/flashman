@@ -65,7 +65,7 @@ let doRollback = function(device, values) {
 };
 
 let appSet = function(req, res, processFunction) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({is_set: 0});
     }
@@ -109,7 +109,10 @@ let appSet = function(req, res, processFunction) {
         commandTimeout = content.command_timeout;
       }
 
-      matchedDevice.save();
+      await matchedDevice.save().catch((err) => {
+        console.log('Error setting app sent data: ' + err);
+        return res.status(500).json({is_set: 0});
+      });
 
       if (matchedDevice.use_tr069) {
         acsController.updateInfo(matchedDevice, tr069Changes);
@@ -125,11 +128,15 @@ let appSet = function(req, res, processFunction) {
             return res.status(200).json({is_set: 1});
           }
           doRollback(matchedDevice, rollbackValues);
-          matchedDevice.save();
+          matchedDevice.save().catch((err) => {
+            console.log('Error setting app sent data: ' + err);
+          });
           return res.status(500).json({is_set: 0});
         }, (rejectedVal)=>{
           doRollback(matchedDevice, rollbackValues);
-          matchedDevice.save();
+          matchedDevice.save().catch((err) => {
+            console.log('Error setting app sent data: ' + err);
+          });
           return res.status(500).json({is_set: 0});
         });
       }
@@ -575,7 +582,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
 
 appDeviceAPIController.registerApp = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_registered: 0});
       }
@@ -609,8 +616,13 @@ appDeviceAPIController.registerApp = function(req, res) {
         appObj[0].secret = req.body.app_secret;
         matchedDevice.apps.push(appObj[0]);
       }
-      matchedDevice.save();
-      return res.status(200).json({is_registered: 1});
+      try {
+        await matchedDevice.save();
+        return res.status(200).json({is_registered: 1});
+      } catch (err) {
+        console.log('Error registering app: ' + err);
+        return res.status(500).json({is_registered: 0});
+      }
     });
   } else {
     return res.status(401).json({is_registered: 0});
@@ -619,7 +631,7 @@ appDeviceAPIController.registerApp = function(req, res) {
 
 appDeviceAPIController.registerPassword = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_registered: 0});
       }
@@ -636,8 +648,14 @@ appDeviceAPIController.registerPassword = function(req, res) {
         return res.status(403).json({is_set: 0});
       }
       matchedDevice.app_password = req.body.router_passwd;
-      matchedDevice.save();
-      return res.status(200).json({is_registered: 1});
+      try {
+        await matchedDevice.save();
+        return res.status(200).json({is_registered: 1});
+      } catch (err) {
+        console.log('Error registering password for ' +
+                    req.body.id + ': ' + err);
+        return res.status(500).json({is_registered: 0});
+      }
     });
   } else {
     return res.status(401).json({is_registered: 0});
@@ -646,7 +664,7 @@ appDeviceAPIController.registerPassword = function(req, res) {
 
 appDeviceAPIController.removeApp = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+    DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_unregistered: 0});
       }
@@ -657,8 +675,14 @@ appDeviceAPIController.removeApp = function(req, res) {
         return app.id !== req.body.app_id;
       });
       matchedDevice.apps = appsFiltered;
-      matchedDevice.save();
-      return res.status(200).json({is_unregistered: 1});
+      try {
+        await matchedDevice.save();
+        return res.status(200).json({is_unregistered: 1});
+      } catch (err) {
+        console.log('Error removing app for ' +
+                    req.body.id + ': ' + err);
+        return res.status(200).json({is_unregistered: 0});
+      }
     });
   } else {
     return res.status(401).json({is_unregistered: 0});
@@ -821,8 +845,12 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
           matchedDevice.current_speedtest.timestamp = new Date();
           matchedDevice.current_speedtest.user = 'App_Cliente';
           matchedDevice.current_speedtest.stage = 'estimative';
-          await matchedDevice.save();
-          acsController.fireSpeedDiagnose(matchedDevice._id);
+          try {
+            await matchedDevice.save();
+            acsController.fireSpeedDiagnose(matchedDevice._id);
+          } catch (err) {
+            console.log('Error speed test procedure: ' + err);
+          }
         } else {
           // Send mqtt message to perform speedtest
           let url = config.measureServerIP + ':' + config.measureServerPort;
@@ -925,7 +953,9 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let mustUpdateLocation = (latitude && longitude);
     if (mustUpdateFCM || mustUpdateLocation) {
       // Query again but this time without .lean() so we can edit register
-      DeviceModel.findById(req.body.id).exec(function(err, matchedDeviceEdit) {
+      DeviceModel.findById(req.body.id).exec(async function(err,
+                                                            matchedDeviceEdit,
+      ) {
         if (err || !matchedDeviceEdit) return;
         if (mustUpdateFCM) {
           let device = matchedDeviceEdit.lan_devices.find(
@@ -938,7 +968,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
           matchedDeviceEdit.longitude = longitude;
           matchedDeviceEdit.last_location_date = new Date();
         }
-        matchedDeviceEdit.save();
+        try {
+          await matchedDevice.save();
+        } catch (err) {
+          console.log('Error saving location or FCM: ' + err);
+        }
       });
     }
 
@@ -1259,11 +1293,18 @@ appDeviceAPIController.resetPassword = function(req, res) {
     }
 
     device.app_password = undefined;
-    await device.save();
+    try {
+      await device.save();
+    } catch (err) {
+      console.log('Error resetting app password: ' + err);
+      return res.status(500).json({
+        message: t('saveError', {errorline: __line}),
+        secret: true,
+      });
+    }
     if (!device.use_tr069) {
       mqtt.anlixMessageRouterResetApp(req.body.content.reset_mac.toUpperCase());
     }
-
     return res.status(200).json({success: true});
   });
 };
@@ -1358,7 +1399,11 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
     let foundDevices = matchedDevices.map((device) => {
       // Save secret as a pending secret for devices
       device.pending_app_secret = newSecret;
-      device.save();
+      try {
+        device.save();
+      } catch (err) {
+        console.log('Error saving pending secret of device: ' + err);
+      }
       // Format data for app
       let result = {
         mac: device._id,
@@ -1426,7 +1471,14 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     }
     // Clear pending secret and save data
     device.pending_app_secret = '';
-    device.save();
+    try {
+      await device.save();
+    } catch (err) {
+      console.log('Error removing pending secret of device: ' + err);
+      return res.status(500).json({
+        message: t('saveError', {errorline: __line}),
+      });
+    }
     // Build hard reset backup structure for client app
     let config = await Config.findOne(
       {is_default: true}, 'tr069',
@@ -1454,7 +1506,9 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
   }
   let query = req.body.id;
   let projection = {_id: 1, app_password: 1, apps: 1};
-  DeviceModel.findById(query, projection).exec(function(err, matchedDevice) {
+  DeviceModel.findById(query, projection).exec(async function(err,
+                                                              matchedDevice
+  ) {
     if (err) {
       return res.status(500).json({message:
         t('cpeFindError', {errorline: __line})});
@@ -1481,7 +1535,14 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
       return res.status(200).json({registerOK: false});
     }
     matchedDevice.app_password = newPassword;
-    matchedDevice.save();
+    try {
+      await matchedDevice.save();
+    } catch (err) {
+      console.log('Error saving app password: ' + err);
+      return res.status(500).json({
+        message: t('saveError', {errorline: __line}),
+      });
+    }
     return res.status(200).json({registerOK: true});
   });
 };
@@ -1492,7 +1553,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
       t('jsonError', {errorline: __line})});
   }
   let query = req.body.id;
-  DeviceModel.findById(query).exec(function(err, matchedDevice) {
+  DeviceModel.findById(query).exec(async function(err, matchedDevice) {
     if (err) {
       return res.status(500).json({message:
         t('cpeFindError', {errorline: __line})});
@@ -1523,7 +1584,14 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
       let newLength = content.rules.length;
       let diff = newLength - oldLength;
       matchedDevice.port_mapping = content.rules;
-      matchedDevice.save();
+      try {
+        await matchedDevice.save();
+      } catch (err) {
+        console.log('Error saving port mapping: ' + err);
+        return res.status(500).json({
+          message: t('saveError', {errorline: __line}),
+        });
+      }
       acsController.changePortForwardRules(matchedDevice, diff);
       return res.status(200).json({'success': true});
     }
