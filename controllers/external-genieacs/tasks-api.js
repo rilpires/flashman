@@ -518,6 +518,7 @@ itself and will be removed and re added.*/
     // if the last task was execute, it's high likely the previous tasks were
     // also executed.
     changeStream.hasNext().then(async function() {
+      if (!changeStream) return;
       if (changeStream.isClosed()) return;
       await changeStream.next();
       changeStream.close(); // close this change stream.

@@ -75,6 +75,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'F660') return 'b,g';
+      else if (ouiModelStr === 'ST-1001-FL') return 'b,g';
       else if (ouiModelStr === 'HG9') return 'g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
@@ -103,6 +104,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
+      else if (ouiModelStr === 'ST-1001-FL') return 'b,g,n';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
       else if (
@@ -129,6 +131,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
@@ -155,6 +158,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
+      else if (ouiModelStr === 'ST-1001-FL') return 'a,n,ac';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
@@ -177,27 +181,31 @@ const convertWifiBand = function(band, model, is5ghz=false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      return ((model === 'AC10') ? '0' : '20MHz');
+      if (model === 'AC10') return '0';
+      if (model === 'ST-1001-FL') return '20Mhz';
+      return '20MHz';
     case 'HT40':
     case 'VHT40':
+      if (model === 'AC10') return '1';
+      if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
-      else if (model === 'AC10') return '1';
       return '40MHz';
     case 'VHT80':
-      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       if (model === 'AC10') return '3';
+      if (model === 'ST-1001-FL') return '80Mhz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       return '80MHz';
     case 'auto':
+      if (model === 'AC10') return '2';
+      if (
+        model === 'BEACON 1 HA-020W-B' || model === 'BEACON%20HA%2D020W%2DB' ||
+        model === 'ST-1001-FL'
+      ) {
+        return 'Auto';
+      }
       if (model === 'DIR-842' || model === 'DIR-841') {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       }
-      if (
-        model === 'BEACON 1 HA-020W-B' ||
-        model === 'BEACON%20HA%2D020W%2DB'
-      ) {
-        return 'Auto'
-      }
-      else if (model === 'AC10') return '2';
       return 'auto';
     default:
       return '';
@@ -828,6 +836,31 @@ const getTendaFields = function() {
   return fields;
 };
 
+const getHurakallFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  // fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+  // fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+  // fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -921,6 +954,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getTendaFields();
       break;
+    case 'CDTSNAND128H':
+      message = '';
+      fields = getHurakallFields();
+      break;
     default:
       return unknownModel;
   }
@@ -949,6 +986,7 @@ const getBeaconTypeByModel = function(model) {
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
+    case 'ST-1001-FL': // Hurakall ST-1001-FL
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
     case 'AC10': // Tenda AC10
