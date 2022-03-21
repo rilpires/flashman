@@ -2956,6 +2956,39 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
   }
 };
 
+acsDeviceInfoController.pingOfflineDevices = async function() {
+  // Get TR-069 configs from database
+  let matchedConfig = await Config.findOne(
+    {is_default: true}, 'tr069',
+  ).lean().exec().catch((err) => err);
+  if (matchedConfig.constructor === Error) {
+    console.log('Error getting user config in database to ping offline CPEs');
+    return;
+  }
+  // Compute offline threshold from options
+  let currentTime = Date.now();
+  let interval = matchedConfig.tr069.inform_interval;
+  let threshold = matchedConfig.tr069.offline_threshold;
+  let offlineThreshold = new Date(currentTime - (interval*threshold));
+  // Query database for offline TR-069 CPE devices
+  let offlineDevices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$lt: offlineThreshold},
+  }, {
+    acs_id: true,
+  }).lean();
+  // Issue a task for every offline device to try and force it to reconnect
+  for (let i = 0; i < offlineDevices.length; i++) {
+    let id = offlineDevices[i].acs_id;
+    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [fields.common.uptime],
+    };
+    await TasksAPI.addTask(id, task, true, 50, [], null);
+  }
+};
+
 acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   try {
     let devicesArray = null;
