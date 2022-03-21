@@ -3156,7 +3156,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
             result['message'] : t('acRuleDefaultError', {errorline: __line});
           return res.status(500).json({
             success: false,
-            message: errorMessage
+            message: errorMessage,
           });
         }
       }
