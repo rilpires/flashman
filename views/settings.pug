@@ -11,7 +11,7 @@ block content
         .card.mt-4.mb-4
           h4.card-header.primary-color.white-text
             .fas.fa-cog.fa-lg
-            span &nbsp; Configurações
+            span &nbsp; #{t('Configurations')}
 
         .card.px-3.py-3.mb-4
           h5.card-header.primary-color.white-text(
@@ -23,13 +23,13 @@ block content
               .col-1
                 .fas.fa-chevron-down
               .col-10.text-center
-                span.card-title Configurações gerais
+                span.card-title #{t('generalConfigurations')}
 
           #general.card-body.collapse.out
             .row
               .col-md.col-12.pl-0.pr-md-4.pr-0
                 .md-form.input-entry
-                  label Número mínimo de caracteres da senha PPPoE
+                  label= t('minimumAmountOfPppoePaswordChars')
                   input#minlength-pass-pppoe.form-control(
                     type="number",
                     name="minlength-pass-pppoe",
@@ -37,37 +37,33 @@ block content
                     max=64,
                     required
                   )
-                  .invalid-feedback Insira um número entre 1 e 64
+                  .invalid-feedback= t('insertANumberBetweenMinMax', {min: 1, max: 63})
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Ignorar aviso de alteração de firmwares Flashbox
+                    label= t('ignoreFlashboxFirmwwareAlterationWarning')
                     select.browser-default.md-select(name="bypass-mqtt-secret-check")
-                      option(value="false") Não
-                      option(value="true") Sim
+                      option(value="false")= t('No')
+                      option(value="true")= t('Yes')
                 .custom-control.custom-checkbox.mb-2
                   input#autoupdate.custom-control-input(
                     name="autoupdate",
                     type="checkbox"
                   )
                   label.custom-control-label.text-muted(for="autoupdate")
-                    | Deixar que o Flashman se atualize automaticamente
+                    | #{t('letFLashmanAutomaticallyUpdate')}
                   .invalid-feedback
               .col-md.col-12.pl-0.pr-0.d-none#is-ssid-prefix-enabled-col
                 .alert.alert-info
                   .fas.fa-info-circle.fa-lg
-                  span &nbsp; Dica! Utilize o mesmo prefixo SSID configurado no
-                    |  preset das firmwares Flashbox. Lembre dos caracteres
-                    |  maiúsculos e minúsculos
+                  span &nbsp; #{t('hintUseTheSameSsidPrefixFromFlashboxFirmwarePreset')}
                 .md-form.input-entry#ssid-prefix-box
-                  label Prefixo SSID
+                  label= t('ssidPrefix')
                   input#ssid-prefix.form-control(
                     type="text",
                     name="ssid-prefix"
                     oninput="checkSsidPrefixValidity()"
                   )
-                  #error-ssid-prefix.invalid-feedback Este campo não pode ter
-                    |  mais de 16 caracteres, são aceitos caracteres alfanuméricos e
-                    | deve ter pelo menos um ponto, -, _ ou # como separador no final
+                  #error-ssid-prefix.invalid-feedback= t('ssidPrefixInvalidFeedback')
                 .custom-control.custom-checkbox
                   input#is-ssid-prefix-enabled.custom-control-input(
                     name="is-ssid-prefix-enabled",
@@ -75,7 +71,7 @@ block content
                     onchange="changeSsidPrefixInputDisableness(this)"
                   )
                   label.custom-control-label.text-muted(for="is-ssid-prefix-enabled")
-                    | Habilitar prefixo SSID no Wi-Fi dos CPEs
+                    | #{t('enableSsidPrefixInCpesWifi')}
                   .invalid-feedback
 
           h5.card-header.primary-color.white-text.mt-2(
@@ -87,10 +83,10 @@ block content
               .col-1
                 .fas.fa-chevron-down
               .col-10.text-center
-                span.card-title Configurações do servidor de medição de velocidade
+                span.card-title= t('speedMeasureServerConfigurations')
           #speed-measurement.card-body.collapse.out
             .md-form.input-entry
-              label Endereço IP do servidor de medição de velocidade
+              label= t('speedMeasureServerIpAddress')
               input#measure-server-ip.form-control.ip-mask-field(
                 type="text",
                 name="measure-server-ip",
@@ -99,9 +95,9 @@ block content
                 size=15,
                 pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
               )
-              .invalid-feedback Insira um IP válido
+              .invalid-feedback= t('insertValidIp')
             .md-form.input-entry
-              label Porta do servidor de medição de velocidade
+              label= t('speedMeasureServerPort')
               input#measure-server-port.form-control(
                 type="number",
                 name="measure-server-port",
@@ -110,7 +106,7 @@ block content
                 value=80,
                 placeholder="80"
               )
-              .invalid-feedback Insira uma porta válida
+              .invalid-feedback= t('insertValidPort')
 
           h5.card-header.primary-color.white-text.mt-2(
             data-toggle="collapse",
@@ -121,13 +117,13 @@ block content
               .col-1
                 .fas.fa-chevron-down
               .col-10.text-center
-                span.card-title Configurações para App do Técnico
+                span.card-title= t('technicianAppConfigurations')
 
           #technicianapp.card-body.collapse.out
             .row
               .col-md-6.col-12.pl-0.pr-md-4.pr-0
                 .md-form.input-entry
-                  label Alerta amarelo do sinal óptico (dBm)
+                  label= t('opticalSignalYellowAlertDbm')
                   input#pon-signal-threshold.form-control(
                     type="number",
                     name="pon-signal-threshold",
@@ -135,9 +131,9 @@ block content
                     max=100,
                     value=-18
                   )
-                  .invalid-feedback Insira um número em dBm válido
+                  .invalid-feedback= t('insertValidDbmNumber')
                 .md-form.input-entry
-                  label Alerta vermelho do sinal óptico (dBm)
+                  label= t('opticalSignalRedAlertDbm')
                   input#pon-signal-threshold-critical.form-control(
                     type="number",
                     name="pon-signal-threshold-critical",
@@ -145,9 +141,9 @@ block content
                     max=100,
                     value=-23
                   )
-                  .invalid-feedback Insira um número em dBm válido
+                  .invalid-feedback= t('insertValidDbmNumber')
                 .md-form.input-entry
-                  label Alerta vermelho do sinal óptico elevado (dBm)
+                  label= t('opticalSignalElevatedRedAlertDbm')
                   input#pon-signal-threshold-critical-high.form-control(
                     type="number",
                     name="pon-signal-threshold-critical-high",
@@ -155,53 +151,50 @@ block content
                     max=100,
                     value=3
                   )
-                  .invalid-feedback Insira um número em dBm válido
+                  .invalid-feedback= t('insertValidDbmNumber')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Verificação da WAN obrigatória
+                    label= t('mandatoryWanVerification')
                     select.browser-default.md-select(name="wan-step-required")
-                      option(value="true") Habilitado
-                      option(value="false") Desabilitado
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
                 .alert.alert-info
                   .fas.fa-info-circle.fa-lg
-                  span &nbsp; A etapa a ser desabilitada na WAN será o teste 
-                    | de ping feito para o gateway do CPE
+                  span &nbsp; #{t('disabledWanStepWillBePingTestToCpeGateway')}
                 .alert.alert-info
                   .fas.fa-info-circle.fa-lg
-                  span &nbsp; A etapa a ser desabilitada no registro do
-                    |  Flashman abrange o teste de existência de uma conexão
-                    | MQTTS ativa para CPEs que utilizem o firmware Flashbox
+                  span &nbsp; #{t('disabledFlashmanRegisterStepWillBeMqttsConnectionTest')}
               .col-md-6.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Execução do teste de velocidade
+                    label= t('speedTestExecution')
                     select.browser-default.md-select(name="speedtest-step-required")
-                      option(value="true") Habilitado
-                      option(value="false") Desabilitado
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Verificação de IPv4 obrigatória
+                    label= t('mandatoryIpvxVerification', {x: 4})
                     select.browser-default.md-select(name="ipv4-step-required")
-                      option(value="true") Habilitado
-                      option(value="false") Desabilitado
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Verificação de IPv6 obrigatória
+                    label= t('mandatoryIpvxVerification', {x: 6})
                     select.browser-default.md-select(name="ipv6-step-required")
-                      option(value="false") Desabilitado
-                      option(value="true") Habilitado
+                      option(value="false")= t('Disabled')
+                      option(value="true")= t('Enabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Verificação de DNS obrigatória
+                    label= t('mandatoryDnsVerification')
                     select.browser-default.md-select(name="dns-step-required")
-                      option(value="true") Habilitado
-                      option(value="false") Desabilitado
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Verificação de registro no Flashman obrigatória
+                    label= t('mandatoryFlashmanRegisterVerification')
                     select.browser-default.md-select(name="flashman-step-required")
-                      option(value="true") Habilitado
-                      option(value="false") Desabilitado
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
                 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
@@ -213,43 +206,43 @@ block content
                 .col-1
                   .fas.fa-chevron-down
                 .col-10.text-center
-                  span.card-title Configurações de TR-069
+                  span.card-title= t('tr069Configurations')
             #tr.card-body.collapse.out
               .row
                 .col-md-6.col-12.pl-0.pr-md-4.pr-0
                   .md-form.input-entry
-                    label FQDN do servidor TR-069 do Flashman
+                    label= t('flashmansTr069ServerFqdn')
                     input#tr069-server-url.form-control(
                       type="text",
                       name="tr069-server-url"
                     )
-                    .invalid-feedback Insira um FQDN válido
+                    .invalid-feedback= t('insertValidFqdn')
                   .md-form.input-entry
-                    label Login para a interface web das CPEs
+                    label= t('cpesWebinterfaceLogin')
                     input#onu-web-login.form-control(
                       type="text",
                       name="onu-web-login"
                     )
-                    .invalid-feedback Insira um login válido
+                    .invalid-feedback= t('insertValidLogin')
                   .md-form.input-group
-                    label Senha para a interface web das CPEs
+                    label= t('cpesWebinterfacePassword')
                     input#onu-web-password.form-control(
                       type="text",
                       name="onu-web-password"
                     )
                     .input-group-append(
                       data-toggle="tooltip",
-                      title="A senha deve ter de 8 a 16 caracteres, conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial. O caractere especial não pode ser o primeiro caractere!"
+                      title=t('onuWebPasswordTooltip')
                     )
                       a.md-addon.fas.fa-question-circle
-                    .invalid-feedback Insira uma senha válida
+                    .invalid-feedback= t('insertValidPassword')
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(
                       name="onu_web_remote",
                       type="checkbox"
                     )
                     label.custom-control-label.text-muted(for="onu_web_remote")
-                      | Configurar acesso remoto para ONUs
+                      | #{t('configureOnusRemoteAccess')}
                     .invalid-feedback
                   .custom-control.custom-checkbox.mt-2
                     input#stun_enable.custom-control-input(
@@ -257,8 +250,8 @@ block content
                       type="checkbox"
                     )
                     label.custom-control-label.text-muted.mr-2(for="stun_enable")
-                      | Habilitar uso do Servidor STUN
-                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (somente para modelos compatíveis)")
+                      | #{t('enableStunServerUsage')}
+                    a.fas.fa-question-circle(data-toggle="tooltip" title=t('stunEnableTooltip'))
                     .invalid-feedback
                   .custom-control.custom-checkbox.mt-2
                     input#insecure_enable.custom-control-input(
@@ -266,12 +259,12 @@ block content
                       type="checkbox"
                     )
                     label.custom-control-label.text-muted.mr-2(for="insecure_enable")
-                      | Habilitar modo HTTP na comunicação TR-069
-                    a.fas.fa-question-circle(data-toggle="tooltip" title="Necessário para que as CPEs que não suportam o protocolo HTTPS possam se comunicar com o Flashman")
+                      | #{t('enableTr069HttpCommunicationMode')}
+                    a.fas.fa-question-circle(data-toggle="tooltip" title=t('tr069HttpCommunicationTooltip'))
                     .invalid-feedback
                 .col-md-6.col-12.pl-0.pr-0
                   .md-form.input-entry
-                    label Intervalo entre informes do TR-069 (s)
+                    label= t('tr069InformIntervalSeconds')
                     input#inform-interval.form-control(
                       type="number",
                       name="inform-interval",
@@ -280,9 +273,9 @@ block content
                       value=300,
                       placeholder="300"
                     )
-                    .invalid-feedback Valor inválido. Valor mínimo de 60 segundos
+                    .invalid-feedback= t('tr069InformIntervalInvalidFeedback')
                   .md-form.input-entry
-                    label Intervalo entre sincronizações de dados do TR-069 (s)
+                    label= t('tr069DataSynchronizationIntervalSeconds')
                     input#sync-interval.form-control(
                       type="number",
                       name="sync-interval",
@@ -291,9 +284,9 @@ block content
                       value=300,
                       placeholder="300"
                     )
-                    .invalid-feedback Valor inválido. Valor mínimo de 60 segundos
+                    .invalid-feedback= t('tr069DataSynchronizationIntervalInvalidFeedback')
                   .md-form.input-entry
-                    label Informes não recebidos para CPE instável
+                    label= t('lostInformsForUnstableCpe')
                     input#lost-informs-recovery-threshold.form-control(
                       type="number",
                       name="lost-informs-recovery-threshold",
@@ -302,9 +295,9 @@ block content
                       value=1,
                       oninput="checkrecoveryOfflineInputDependency()"
                     )
-                    #error-lost-informs-recovery-threshold.invalid-feedback Insira uma quantidade válida
+                    #error-lost-informs-recovery-threshold.invalid-feedback= t('lostInformsInvalidFeedback')
                   .md-form.input-entry
-                    label Informes não recebidos para CPE offline
+                    label= t('lostInformsForOfflineCpe')
                     input#lost-informs-offline-threshold.form-control(
                       type="number",
                       name="lost-informs-offline-threshold",
@@ -314,8 +307,8 @@ block content
                       oninput="checkrecoveryOfflineInputDependency()"
                     )
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
-                    #error-lost-informs-offline-threshold.invalid-feedback Insira uma quantidade válida
-                  #error-recovery-offline-thresholds.invalid-feedback Valor para instável precisa ser menor que o valor offline.
+                    #error-lost-informs-offline-threshold.invalid-feedback= t('lostInformsInvalidFeedback')
+                  #error-recovery-offline-thresholds.invalid-feedback= t('lostInformsRecoveryOfflineThresholdsInvalidFeedback')
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg
