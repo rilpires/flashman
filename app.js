@@ -16,7 +16,8 @@ const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
-let session = require('express-session');
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
@@ -46,8 +47,7 @@ if (!isOnProduction) {
           .swagger-ui .topbar {
             background-color: #4db6ac;
           }
-        `
-      },
+        `},
       specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
       alwaysServeDocs: false,
     },
@@ -357,6 +357,10 @@ let sessParam = session({
   secret: app.locals.secret,
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    maxAge: 28800000,
+  },
+  store: new MongoStore({mongooseConnection: mongoose.connection}),
 });
 
 app.use(sessParam);
@@ -448,6 +452,16 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     updater.rebootGenie(process.env.instances);
     // Force an update check to alert user on app startup
     updater.checkUpdate();
+
+    let early4amRule = new schedule.RecurrenceRule();
+    early4amRule.hour = 4;
+    early4amRule.minute = 0;
+    schedule.scheduleJob(early4amRule, function() {
+      // Issue a command to offline ONUs to try and fix exp. backoff bug
+      // This is only relevant for a few ONU models, and currently this is
+      // out best fix available...
+      acsDeviceController.pingOfflineDevices();
+    });
   });
 }
 

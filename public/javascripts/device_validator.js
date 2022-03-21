@@ -1,12 +1,15 @@
 (function() {
   // this code is used in both back end and front end and we need to use
   // i18next in both. So this will handle i18next for both cases.
-  const hasI18NextGlobal = typeof i18next !== 'undefined';
+  const nodeVer = typeof process !== "undefined" && process.versions
+    && process.versions.node;
   // making webpack ignore 'require' global call.
-  const nodeRequire = hasI18NextGlobal ? __non_webpack_require__ : require;
+  const nodeRequire = nodeVer ?
+    typeof __webpack_require__ === "function" ? __non_webpack_require__ : require
+    : undefined;
   // using translation function from global i18next (front end) or from our
   // language controller (nodejs back end).
-  const t = hasI18NextGlobal ? i18next.t
+  const t = typeof i18next !== 'undefined' ? i18next.t
     : nodeRequire('../../controllers/language.js').i18next.t;
 
   let deviceValidator = (function() {
