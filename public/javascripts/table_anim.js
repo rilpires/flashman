@@ -1278,7 +1278,10 @@ anlixDocumentReady.add(function() {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
           if (isTR069) {
-            if (device.secure_tr069) {
+            // Undefined treats legacy cases - which are all HTTPS
+            if (
+              typeof device.secure_tr069 === 'undefined' || device.secure_tr069
+            ) {
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
             } else {

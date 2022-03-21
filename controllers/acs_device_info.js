@@ -115,6 +115,7 @@ const convertToDbm = function(model, rxPower) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
     case 'G-140W-UD':
@@ -125,19 +126,26 @@ const convertToDbm = function(model, rxPower) {
   }
 };
 
-const convertWifiBand = function(band, mode) {
-  let isAC = convertWifiMode(mode) === '11ac';
+const convertWifiBand = function(band, mode, is5ghz) {
+  let isAC = convertWifiMode(mode, is5ghz) === '11ac';
   switch (band) {
     case '2':
     case 'auto':
+    case 'Auto':
+    case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
+    case '20Mhz':
     case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '40Mhz':
+    case '20/40MHz':
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '80Mhz':
+    case '20/40/80MHz':
     case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
@@ -151,6 +159,7 @@ const convertWifiRate = function(model, rate) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
       return rate = parseInt(rate) / 1000;
     default:
       return rate = parseInt(rate);
@@ -216,6 +225,7 @@ const processHostFromURL = function(url) {
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
+  if (!device) return;
   landevices.forEach((lanDev)=>{
     let lanMac = lanDev.mac.toUpperCase();
     let registered = device.lan_devices.find((d)=>d.mac===lanMac);
@@ -246,7 +256,9 @@ const saveDeviceData = async function(mac, landevices) {
     }
   });
   device.last_devices_refresh = Date.now();
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving tr-069 device data ' + mac + ': ' + err);
+  });
 };
 
 const createRegistry = async function(req, permissions) {
@@ -367,11 +379,23 @@ const createRegistry = async function(req, permissions) {
     wanUptime = undefined;
   }
 
+  let serialTR069 = splitID[splitID.length - 1];
+  // Convert Hurakall serial information
+  if (model === 'ST-1001-FL') {
+    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
+    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
+    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
+    // decode from base16 to utf8
+    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    // join parts in final format
+    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
     secure_tr069: data.common.acs_url.value.includes('https'),
-    serial_tr069: splitID[splitID.length - 1],
+    serial_tr069: serialTR069,
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
     model: model,
@@ -390,7 +414,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value) :
+      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value, false) :
        undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
@@ -401,7 +425,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value) :
+      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value, true) :
        undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
@@ -430,7 +454,7 @@ const createRegistry = async function(req, permissions) {
     await newDevice.save();
     await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
-    console.error(err);
+    console.error('Error on device tr-069 creation: ' + err);
     return false;
   }
   // Update SSID prefix on CPE if enabled
@@ -480,7 +504,7 @@ const createRegistry = async function(req, permissions) {
         'message_code': 5,
         'severity': 'alert',
         'type': 'communication',
-        'action_title': t('ok'),
+        'action_title': t('Ok'),
         'allow_duplicate': false,
         'target': newDevice._id,
       });
@@ -501,7 +525,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
-      message: t('serverError', {errorline: __line})});
+      message: t('cpeFindError', {errorline: __line})});
   });
   // New devices need to sync immediately
   if (!device) {
@@ -522,7 +546,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   ) {
     device.last_tr069_sync = dateNow;
     device.last_contact = dateNow;
-    await device.save();
+    await device.save().catch((err) => {
+      console.log('Error saving last contact and last tr-069 sync');
+    });
     return res.status(200).json({success: true, measure: true});
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
@@ -538,9 +564,11 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   } else {
     res.status(200).json({success: true, measure: false});
   }
-  // Simply update last_contact to keep device online, no need to sync
+  // Always update last_contact to keep device online
   device.last_contact = dateNow;
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving last contact');
+  });
 };
 
 // Complete CPE information synchronization gets done here. This function
@@ -631,7 +659,22 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   device.acs_id = req.body.acs_id;
-  device.serial_tr069 = splitID[splitID.length - 1];
+
+  if (data.common.model.value) device.model = data.common.model.value.trim();
+
+  let serialTR069 = splitID[splitID.length - 1];
+  // Convert Hurakall serial information
+  if (device.model === 'ST-1001-FL') {
+    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
+    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
+    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
+    // decode from base16 to utf8
+    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    // join parts in final format
+    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  }
+  device.serial_tr069 = serialTR069;
+
   device.secure_tr069 = data.common.acs_url.value.includes('https');
 
   // Check for an alternative UID to replace serial field
@@ -651,7 +694,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     data.common.web_admin_password.value = webCredentials.password;
   }
 
-  if (data.common.model.value) device.model = data.common.model.value.trim();
   if (data.common.version.value) {
     device.version = data.common.version.value.trim();
   }
@@ -748,9 +790,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid = bssid2.toUpperCase();
     }
   }
-  if (data.wifi2.auto && data.wifi2.channel) {
-    let channel2 =
-      (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
+  if (data.wifi2.channel) {
+    let channel2 = data.wifi2.channel.value.toString();
+    if (data.wifi2.auto && data.wifi2.auto.value) {
+      // Explicit auto option, use that
+      channel2 = 'auto';
+    } else if (channel2 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel2 = 'auto';
+    }
     if (channel2 && !device.wifi_channel) {
       device.wifi_channel = channel2;
     } else if (device.wifi_channel !== channel2) {
@@ -769,7 +817,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi2.band) {
     let band2 = convertWifiBand(data.wifi2.band.value,
-     data.wifi2.mode.value);
+     data.wifi2.mode.value, false);
     if (data.wifi2.band.value && !device.wifi_band) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
@@ -809,9 +857,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid_5ghz = bssid5.toUpperCase();
     }
   }
-  if (data.wifi5.auto && data.wifi5.channel) {
-    let channel5 =
-      (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
+  if (data.wifi5.channel) {
+    let channel5 = data.wifi5.channel.value.toString();
+    if (data.wifi5.auto && data.wifi5.auto.value) {
+      // Explicit auto option, use that
+      channel5 = 'auto';
+    } else if (channel5 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel5 = 'auto';
+    }
     if (channel5 && !device.wifi_channel_5ghz) {
       device.wifi_channel_5ghz = channel5;
     } else if (device.wifi_channel_5ghz !== channel5) {
@@ -830,7 +884,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wifi5.band && data.wifi5.mode) {
     let band5 = convertWifiBand(data.wifi5.band.value,
-     data.wifi5.mode.value);
+     data.wifi5.mode.value, true);
     if (data.wifi5.band.value && !device.wifi_band_5ghz) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
@@ -1064,7 +1118,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       await acsDeviceInfoController.changeAcRules(device);
     }
   }
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving device sync data to database: ' + err);
+  });
 };
 
 acsDeviceInfoController.rebootDevice = function(device, res) {
@@ -1125,7 +1181,9 @@ const fetchLogFromGenie = function(success, device, acsID) {
         deviceEdit.last_contact = Date.now();
         deviceEdit.lastboot_date = Date.now();
         deviceEdit.lastboot_log = Buffer.from(compressedLog);
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving last boot log to database: ' + err);
+        });
       }
       sio.anlixSendLiveLogNotifications(mac, compressedLog);
     });
@@ -1251,7 +1309,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data, diagNecessaryKeys.ping,
+              device, model, data,
+              diagNecessaryKeys.ping,
               fields.diagnostics.ping,
             );
           }
@@ -1383,7 +1442,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         loss: parseInt(pingKeys.failure_count * 100 /
                (pingKeys.success_count + pingKeys.failure_count)).toString(),
       };
-      if (model === 'HG8245Q2' || model === 'EG8145V5') {
+      if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
@@ -1566,7 +1625,9 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
       if (device.current_speedtest.stage == 'estimative') {
         device.current_speedtest.band_estimative = speedValueBasic;
         device.current_speedtest.stage = 'measure';
-        await device.save();
+        await device.save().catch((err) => {
+          console.log('Error saving speed test est to database: ' + err);
+        });
         await sio.anlixSendSpeedTestNotifications(device._id, {
           stage: 'estimative_finished',
           user: device.current_speedtest.user,
@@ -1645,6 +1706,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         wanBytes = appendBytesMeasure(
           deviceEdit.wan_bytes,
@@ -1652,7 +1714,9 @@ const fetchWanBytesFromGenie = function(device, acsID) {
           wanBytes.sent,
         );
         deviceEdit.wan_bytes = wanBytes;
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving device wan bytes: ' + err);
+        });
       }
       sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
     });
@@ -1787,7 +1851,9 @@ const fetchUpStatusFromGenie = function(device, acsID) {
           );
           deviceEdit.pon_signal_measure = ponSignal;
         }
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving device up status: ' + err);
+        });
       }
       sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
@@ -1959,6 +2025,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
           ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
@@ -1972,7 +2039,9 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
           ponSignal.txpower,
         );
         deviceEdit.pon_signal_measure = ponSignal;
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving pon signal: ' + err);
+        });
       }
       sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
       return ponSignal;
@@ -2058,10 +2127,11 @@ const fetchDevicesFromGenie = function(device, acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = getFromNestedKey(data, ifaceKey+'._value');
-          if (l2iface === iface2) {
+          // DIR-842 leaves the dot in the layer2 interface name
+          if (l2iface === iface2 || l2iface === iface2 + '.') {
             device.wifi = true;
             device.wifi_freq = 2.4;
-          } else if (l2iface === iface5) {
+          } else if (l2iface === iface5 || l2iface === iface5 + '.') {
             device.wifi = true;
             device.wifi_freq = 5;
           }
@@ -2088,7 +2158,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
           interfaces.forEach((iface)=>{
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
-              /WLANConfiguration\.[0-9]+\./g,
+              /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
             let assocIndexes = getFromNestedKey(data, assocField);
@@ -2123,7 +2193,13 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
                 device.rssi = getFromNestedKey(data, rssiKey+'._value');
+                // Casts to string if is a number so we can replace 'dBm'
+                if (typeof device.rssi === 'number') {
+                  device.rssi = device.rssi.toString();
+                }
                 device.rssi = device.rssi.replace('dBm', '');
+                // Cast back to number to avoid converting issues
+                device.rssi = parseInt(device.rssi);
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
@@ -2266,7 +2342,7 @@ const getSsidPrefixCheck = async function(device) {
     config = await Config.findOne({is_default: true}).lean();
     if (!config) throw new Error('Config not found');
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
   }
   // -> 'updating registry' scenario
   return deviceHandlers.checkSsidPrefix(
@@ -2453,6 +2529,7 @@ acsDeviceInfoController.updateInfo = async function(
         let channel = changes[masterKey][key];
         let auto = channel === 'auto';
         if (model == 'AC10') {
+          // Special case - fields are treated as strings
           task.parameterValues.push([
             fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
           ]);
@@ -2461,6 +2538,12 @@ acsDeviceInfoController.updateInfo = async function(
               fields[masterKey][key], channel, 'xsd:string',
             ]);
           }
+        } else if (model === 'ST-1001-FL') {
+          // Special case - there is no auto field, use channel 0
+          if (auto) channel = '0';
+          task.parameterValues.push([
+            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+          ]);
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
@@ -2513,7 +2596,8 @@ acsDeviceInfoController.updateInfo = async function(
       }
       if (key === 'web_admin_password') {
         // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char
+        // at least one number, lower case and special char - special char cant
+        // be the first one!
         let password = changes[masterKey][key];
         let passRegex= new RegExp(''
           + /(?=.{8,16}$)/.source
@@ -2522,9 +2606,10 @@ acsDeviceInfoController.updateInfo = async function(
           + /(?=.*[0-9])/.source
           + /(?=.*[-!@#$%^&*+_.]).*/.source);
         if (!passRegex.test(password)) return;
+        if ('-!@#$%^&*+_.'.includes(password[0])) return;
       }
       let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], splitID[1], changes[masterKey][key],
+        masterKey, key, splitID[0], modelName, changes[masterKey][key],
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
@@ -2652,6 +2737,9 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
         device.port_mapping[i][v[1][1]], v[1][2]]);
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
+      if (v[0] == 'description') {
+        v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+      }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
     });
@@ -2683,7 +2771,6 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   // Creates the structures related to WLAN subtrees
   let acSubtreeRoots = {};
   let wlanAcRulesTrees = {};
-  let wlanAcRulesIds = {};
   let supportedWlans = [];
   let maxId = 0;
   // Array of devices that need to be blocked (rules that need to be configured)
@@ -2701,7 +2788,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       return {
         'success': false,
         'error_code': 'acRuleLimits',
-        'message': t('acRuleLimits', {errorline: __line})
+        'message': t('acRuleLimits', {errorline: __line}),
       };
     }
     // If the device does not have 5 Ghz WiFi, then it does not add the field in
@@ -2719,7 +2806,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     return {
       'success': false,
       'error_code': 'cpeSaveError',
-      'message': t('cpeSaveError', {errorline: __line})
+      'message': t('cpeSaveError', {errorline: __line}),
     };
   }
   // ===== Update device tree =====
@@ -2733,7 +2820,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {
       'success': false, 'error_code': 'acRuleGetError',
-      'message': t('acRuleGetError', {errorline: __line})
+      'message': t('acRuleGetError', {errorline: __line}),
     };
   }
 
@@ -2744,13 +2831,13 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   } catch (e) {
     return {
       'success': false, 'error_code': 'acRuleGetError',
-      'message': t('acRuleGetError', {errorline: __line})
+      'message': t('acRuleGetError', {errorline: __line}),
     };
   }
 
   if ('success' in acRulesResult && acRulesResult['success']) {
-    rulesToEdit = {'wifi2': {}};
-    rulesToDelete = {'wifi2': {}};
+    let rulesToEdit = {'wifi2': {}};
+    let rulesToDelete = {'wifi2': {}};
     if (permissions.grantWifi5ghz) {
       rulesToEdit['wifi5'] = {};
       rulesToDelete['wifi5'] = {};
@@ -2771,7 +2858,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     let condB = condBA || condBB;
     let condC = device.wifi_is_5ghz_capable;
     if (condA || (condB && condC) || maxId >= 64) {
-      for (wlanType of supportedWlans) {
+      for (let wlanType of supportedWlans) {
         let deleteSuccess = true;
         try {
           let deleteRulesResult =
@@ -2787,7 +2874,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         if (!deleteSuccess) {
           return {
             'success': false, 'error_code': 'acRuleReDoError',
-            'message': t('acRuleReDoError', {errorline: __line})
+            'message': t('acRuleReDoError', {errorline: __line}),
           };
         }
       }
@@ -2806,7 +2893,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
       rulesToEdit = wlanAcRulesTrees;
       let addedRules;
       try {
-        addRulesResult =
+        let addRulesResult =
           await addAcRules(
             device, acSubtreeRoots, diff, maxId, permissions.grantWifi5ghz);
         if ('success' in addRulesResult && addRulesResult['success']) {
@@ -2816,11 +2903,11 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         console.log('Error ('+e+') at AC rules add');
         return {
           'success': false, 'error_code': 'acRuleDefaultError',
-          'message': t('acRuleDefaultError', {errorline: __line})
+          'message': t('acRuleDefaultError', {errorline: __line}),
         };
       }
       // Get the rules that need to be edited (old + new).
-      for (wlanType of supportedWlans) {
+      for (let wlanType of supportedWlans) {
         if (rulesToEdit[wlanType].length > 0) {
           rulesToEdit[wlanType] =
             rulesToEdit[wlanType].concat(addedRules[wlanType]);
@@ -2833,15 +2920,15 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     // beginning of the rules array, and will delete as many as necessary
     // until it has the right number of rules.
     } else if (diff < 0) {
-      for (wlanType of supportedWlans) {
+      for (let wlanType of supportedWlans) {
         let deleteSuccess = true;
         let wlanTreeRules = wlanAcRulesTrees[wlanType];
         // This sort solves the TR-069 sorting problem (eg 1, 11, 2, 3, ..., 10)
         wlanTreeRules = wlanTreeRules.sort((a, b) => {
           let aArr = a.split('.');
-          let aId = parseInt(a[a.length - 1], 10);
+          let aId = parseInt(aArr[aArr.length - 1], 10);
           let bArr = b.split('.');
-          let bId = parseInt(b[b.length - 1], 10);
+          let bId = parseInt(bArr[bArr.length - 1], 10);
           return aId - bId;
         });
         let wlanNumOfRules = wlanTreeRules.length;
@@ -2863,7 +2950,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         if (!deleteSuccess) {
           return {
             'success': false, 'error_code': 'acRuleDefaultError',
-            'message': t('acRuleDefaultError', {errorline: __line})
+            'message': t('acRuleDefaultError', {errorline: __line}),
           };
         }
       }
@@ -2893,7 +2980,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
           console.log('Error ('+e+') at AC rules update');
           return {
             'success': false, 'error_code': 'acRuleDefaultError',
-            'message': t('acRuleDefaultError', {errorline: __line})
+            'message': t('acRuleDefaultError', {errorline: __line}),
           };
         }
       }
@@ -2902,18 +2989,18 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         'Error at AC rules update. Number of rules doesn\'t match');
       return {
         'success': false, 'error_code': 'acRuleDefaultError',
-        'message': t('acRuleDefaultError', {errorline: __line})
+        'message': t('acRuleDefaultError', {errorline: __line}),
       };
     }
   } else {
     return {
       'success': false, 'error_code': 'acRuleGetError',
-      'message': t('acRuleGetError', {errorline: __line})
+      'message': t('acRuleGetError', {errorline: __line}),
     };
   }
-}
+};
 
-const getAcRuleTrees = async function (
+const getAcRuleTrees = async function(
   acsID, serial, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId) {
   let wlanAcRulesIds = {};
   // ===== Get device AC tree =====
@@ -2933,9 +3020,9 @@ const getAcRuleTrees = async function (
       let data = '';
       resp.on('error', (error) => {
         console.log('Error ('+ error +') removing an AC rule at '+serial);
-        reject ({
+        reject({
           'success': false, 'error_code': 'acRuleGetError',
-          'message': t('acRuleGetError', {errorline: __line})
+          'message': t('acRuleGetError', {errorline: __line}),
         });
       });
       resp.on('data', (chunk) => data+=chunk);
@@ -2944,48 +3031,42 @@ const getAcRuleTrees = async function (
           try {
             // Get data
             data = JSON.parse(data)[0];
-            for (wlanType of supportedWlans) {
+            for (let wlanType of supportedWlans) {
               let wlanTreeRoot = acSubtreeRoots[wlanType];
               let wlanTreeRules = [];
               let wlanTreeRuleIds = [];
               // Populates the WLAN subtree rule structure
               if (checkForNestedKey(data, wlanTreeRoot)) {
                 let wlanSubtree = getFromNestedKey(data, wlanTreeRoot);
-                Object.entries(wlanSubtree).forEach(acRule => {
+                Object.entries(wlanSubtree).forEach((acRule) => {
                   let acRuleId = acRule[0];
                   if (acRuleId && !acRuleId.startsWith('_')) {
                     maxId = Math.max(Number(acRuleId), maxId);
                     wlanTreeRuleIds.push(acRuleId);
                     wlanTreeRules.push(wlanTreeRoot+'.'+acRuleId);
                   }
-                });                
+                });
               }
               wlanAcRulesIds[wlanType] = wlanTreeRuleIds;
               wlanAcRulesTrees[wlanType] = wlanTreeRules;
             }
             // If success, Resolve
             console.log('Successfully obtained AC rule trees');
-            return resolve ({
+            return resolve({
               'success': true,
               'max_id': maxId,
               'rule_ids': wlanAcRulesIds,
-              'rule_trees': wlanAcRulesTrees
+              'rule_trees': wlanAcRulesTrees,
             });
           } catch (e) {
             // If error, Reject
             console.log(
               'Error ('+e+') retrieving Access Control Rules at '+serial);
-            return reject ({
+            return reject({
               'success': false, 'error_code': 'acRuleGetError',
-              'message': t('acRuleGetError', {errorline: __line})
+              'message': t('acRuleGetError', {errorline: __line}),
             });
           }
-          // If not completed, Reject
-          console.log('Error retrieving Access Control Rules at '+serial);
-          reject ({
-            'success': false, 'error_code': 'acRuleGetError',
-            'message': t('acRuleGetError', {errorline: __line})
-          });
         }
       });
     });
@@ -3010,7 +3091,7 @@ const addAcRules = async function(
       device.acs_id, acSubtreeRoots['wifi2'], 'addObject');
     if (result) {
       acRulesAdded['wifi2'].push(
-        acSubtreeRoots['wifi2']+'.'+currentMaxId.toString()
+        acSubtreeRoots['wifi2']+'.'+currentMaxId.toString(),
       );
     } else {
       console.log('addAcRules error');
@@ -3023,7 +3104,7 @@ const addAcRules = async function(
         device.acs_id, acSubtreeRoots['wifi5'], 'addObject');
       if (result) {
         acRulesAdded['wifi5'].push(
-          acSubtreeRoots['wifi5']+'.'+currentMaxId.toString()
+          acSubtreeRoots['wifi5']+'.'+currentMaxId.toString(),
         );
       // If we were not successful adding a rule to the subtree of wifi5 WLAN,
       // then we need to rollback the added rule to wifi2 WLAN.
@@ -3038,7 +3119,7 @@ const addAcRules = async function(
 };
 
 const deleteAcRules = async function(device, rulesToDelete) {
-  for (acRule of rulesToDelete) {
+  for (let acRule of rulesToDelete) {
     let result = await TasksAPI.addOrDeleteObject(
       device.acs_id, acRule, 'deleteObject');
     if (!result) {
@@ -3049,18 +3130,18 @@ const deleteAcRules = async function(device, rulesToDelete) {
   return {'success': true};
 };
 
-const updateAcRules = async function (
+const updateAcRules = async function(
   device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   let parameterValues = [];
   try {
-    for (wlanType of supportedWlans) {
+    for (let wlanType of supportedWlans) {
       if (rulesToEdit[wlanType].length !== blockedDevices.length) {
         return {
           'success': false,
           'error': 500,
-          'message': 'Error editing Access Control rules at '+serial
+          'message': 'Error editing Access Control rules at '+serial,
         };
       }
       let acSubtreeRoot = acSubtreeRoots[wlanType];
@@ -3072,13 +3153,13 @@ const updateAcRules = async function (
         // fields with the necessary values.
         let ruleMac = blockedDevices[i]['mac'];
         // Generating a random string combined with last 4 digits of devices mac
-        let ruleName = ruleId + '-' + ruleMac.replace(/:/g, "").slice(-4);
+        let ruleName = ruleId + '-' + ruleMac.replace(/:/g, '').slice(-4);
         // Just one more check step. This model only accepts 10 caracteres in
         // the name field.
         ruleName = (ruleName.length > 10) ? ruleName.slice(-10) : ruleName;
         parameterValues.push(
           [rulesToEdit[wlanType][i]+'.'+'Name', ruleName, 'xsd:string'],
-          [rulesToEdit[wlanType][i]+'.'+'MACAddress', ruleMac, 'xsd:string']
+          [rulesToEdit[wlanType][i]+'.'+'MACAddress', ruleMac, 'xsd:string'],
         );
       }
     }
@@ -3086,7 +3167,7 @@ const updateAcRules = async function (
     return {
       'success': false,
       'error': 500,
-      'message': 'Error editing Access Control rules at '+serial
+      'message': 'Error editing Access Control rules at '+serial,
     };
   }
   if (parameterValues.length > 0) {
@@ -3095,7 +3176,7 @@ const updateAcRules = async function (
         name: 'setParameterValues',
         parameterValues: parameterValues,
       };
-      result = await TasksAPI.addTask(acsID, task, true, 10000, []);
+      let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
       if (!result || !result.finished ||
           result.task.name !== 'setParameterValues') {
         console.log('Error in editing Access Control rules task at '+serial);
@@ -3109,9 +3190,9 @@ const updateAcRules = async function (
   return {
     'success': false,
     'error': 500,
-    'message': 'Error editing Access Control rules at '+serial
+    'message': 'Error editing Access Control rules at '+serial,
   };
-}
+};
 
 const configFileEditing = async function(device, target) {
   let acsID = device.acs_id;
@@ -3250,6 +3331,17 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
                 break;
               }
             }
+            let portMapDescriptionPath = iterateTemplate +
+                                      fields.port_mapping_values.description[0];
+            if (checkForNestedKey(data, portMapDescriptionPath)) {
+              if (
+                getFromNestedKey(data, portMapDescriptionPath) !=
+                fields.port_mapping_values.description[1]
+              ) {
+                isDiff = true;
+                break;
+              }
+            }
             let portMapClientPath = iterateTemplate +
                                     fields.port_mapping_fields.client[0];
             if (checkForNestedKey(data, portMapClientPath)) {
@@ -3334,7 +3426,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
     last_contact: {$lt: offlineThreshold},
   }, {
     acs_id: true,
-  });
+  }).lean();
   // Issue a task for every offline device to try and force it to reconnect
   for (let i = 0; i < offlineDevices.length; i++) {
     let id = offlineDevices[i].acs_id;
@@ -3371,7 +3463,10 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     if (response.success) {
       for (let device of devicesArray) {
         device.is_license_active = true;
-        await device.save();
+        await device.save().catch((err) => {
+          console.log('Error saving reported devices to ' +
+          device.serial_tr069 + ' : ' + err);
+        });
       }
       if (response.noLicenses) {
         let matchedNotif = await Notification.findOne({

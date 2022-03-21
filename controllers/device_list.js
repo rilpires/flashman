@@ -290,7 +290,7 @@ deviceListController.changeUpdate = async function(req, res) {
   }
   if (error || !matchedDevice) {
     return res.status(500).json({success: false,
-      message: t('databaseFindError', {errorline: __line})});
+      message: t('cpeFindError', {errorline: __line})});
   }
   // Cast to boolean so that javascript works as intended
   let doUpdate = req.body.do_update;
@@ -522,6 +522,18 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       } else if (/\bdesconhecido\b/.test(tag)) {
         query.ipv6_enabled = {$eq: 2};
       }
+    } else if (/^(mesh) (?:on|off)$/.test(tag)) {
+      if (/\bon\b/.test(tag)) {
+        query.mesh_mode = {$ne: 0};
+      } else if (/\boff\b/.test(tag)) {
+        query.mesh_mode = {$eq: 0};
+      }
+    } else if (/^(modo) (?:roteador|bridge)$/.test(tag)) {
+      if (tag.includes('roteador')) {
+        query.bridge_mode_enabled = {$eq: false};
+      } else if (tag.includes('bridge')) {
+        query.bridge_mode_enabled = {$eq: true};
+      }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
     } else if (tag === 'tr069') { // CPE TR-069 routers.
@@ -588,7 +600,7 @@ deviceListController.getDevices = async function(req, res) {
   if (err) {
     return res.status(500).json({ // in case of error, returns message.
       success: false,
-      message: t('databaseFindError', {errorline: __line}),
+      message: t('roleFindError', {errorline: __line}),
     });
   }
   let finalQuery;
@@ -988,7 +1000,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await device.save();
+    await device.save().catch((err) => {
+      console.log('UPDATE: Error saving device on factory reset: ' + err);
+      return res.status(500).json({
+        success: false,
+        message: t('cpeSaveError'),
+      });
+    });
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
@@ -1008,7 +1026,7 @@ deviceListController.sendMqttMsg = function(req, res) {
   async function(err, device) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(device) && device.length > 0) {
@@ -1022,13 +1040,19 @@ deviceListController.sendMqttMsg = function(req, res) {
                                                   device.wifi_is_5ghz_capable,
                                                   device.model);
 
+    let emitMsg = true;
     switch (msgtype) {
       case 'rstapp':
         if (device) {
           device.app_password = undefined;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving app reset password: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        }
         break;
       case 'rstdevices':
         if (!permissions.grantResetDevices) {
@@ -1042,17 +1066,27 @@ deviceListController.sendMqttMsg = function(req, res) {
             return lanDevice;
           });
           device.blocked_devices_index = Date.now();
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of blocked devices: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        }
         break;
       case 'rstmqtt':
         if (device) {
           device.mqtt_secret = undefined;
           device.mqtt_secret_bypass = true;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of mqtt: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        }
         break;
       case 'updateupnp':
         if (device) {
@@ -1068,9 +1102,13 @@ deviceListController.sendMqttMsg = function(req, res) {
               return false;
             }
           });
-          device.save(function(err) {
-            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          await device.save().catch((err) => {
+            console.log('Error saving on update upnp: ' + err);
+            emitMsg = false;
           });
+          if (emitMsg) {
+            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          }
         }
         break;
       case 'log':
@@ -1088,7 +1126,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
           if (device && !isDevOn) {
             return res.status(200).json({success: false,
-                                         message: t('cpeIsNotOnline',
+                                         message: t('cpeNotOnline',
                                            {errorline: __line})});
           }
         }
@@ -1228,7 +1266,7 @@ deviceListController.getFirstBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1256,7 +1294,7 @@ deviceListController.getLastBootLog = function(req, res) {
   async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1318,7 +1356,7 @@ deviceListController.getDeviceReg = function(req, res) {
     if (err) {
       console.log(err);
       return res.status(500).json({success: false,
-                                   message: t('databaseFindError',
+                                   message: t('cpeFindError',
                                     {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -1384,7 +1422,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (err) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
         errors: [],
       });
     }
@@ -2133,7 +2171,7 @@ deviceListController.createDeviceReg = function(req, res) {
         if (err) {
           return res.status(500).json({
             success: false,
-            message: t('databaseFindError', {errorline: __line}),
+            message: t('cpeFindError', {errorline: __line}),
             errors: errors,
           });
         } else {
@@ -2436,7 +2474,7 @@ deviceListController.setPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2640,7 +2678,7 @@ deviceListController.getPortForward = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2716,7 +2754,7 @@ deviceListController.getPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2739,7 +2777,7 @@ deviceListController.setPingHostsList = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
@@ -2890,7 +2928,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (matchedDevice == null) {
@@ -2921,7 +2959,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
@@ -2955,7 +2993,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (!matchedDevice) {
@@ -2967,7 +3005,7 @@ deviceListController.doSpeedTest = function(req, res) {
     if (!matchedDevice.use_tr069 && !isDevOn) {
       return res.status(200).json({
         success: false,
-        message: t('cpeIsNotOnline', {errorline: __line}),
+        message: t('cpeNotOnline', {errorline: __line}),
       });
     }
     let permissions = DeviceVersion.findByVersion(
@@ -3005,7 +3043,12 @@ deviceListController.doSpeedTest = function(req, res) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
         matchedDevice.current_speedtest.stage = 'estimative';
-        await matchedDevice.save();
+        await matchedDevice.save().catch((err) => {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        });
         acsDeviceInfo.fireSpeedDiagnose(mac);
       } else {
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
@@ -3021,7 +3064,7 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
   // Store callback URL for devices
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
@@ -3060,7 +3103,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection).lean().exec(function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,

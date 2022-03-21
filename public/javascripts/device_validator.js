@@ -1,4 +1,17 @@
 (function() {
+  // this code is used in both back end and front end and we need to use
+  // i18next in both. So this will handle i18next for both cases.
+  const nodeVer = typeof process !== "undefined" && process.versions
+    && process.versions.node;
+  // making webpack ignore 'require' global call.
+  const nodeRequire = nodeVer ?
+    typeof __webpack_require__ === "function" ? __non_webpack_require__ : require
+    : undefined;
+  // using translation function from global i18next (front end) or from our
+  // language controller (nodejs back end).
+  const t = typeof i18next !== 'undefined' ? i18next.t
+    : nodeRequire('../../controllers/language.js').i18next.t;
+
   let deviceValidator = (function() {
     let validateRegex = function(value, minlength, length, regex) {
       let valid = true;
@@ -97,10 +110,10 @@
 
     Validator.prototype.validateSSIDPrefix = function(ssid, isRequired) {
       const messages = [
-        'Este campo é obrigatório',
-        'Este campo não pode ter mais de 16 caracteres',
-        'São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #',
-        'Deve ter pelo menos um ponto, -, _ ou # como separador no final',
+        t('thisFieldIsMandatory'),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: "16"}),
+        t('acceptableCharsAre0-9a-zA-Z .-_#'),
+        t('endingSeparatorMustHaveAtLeastOne.-_#'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
         /^([a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#))*$/);

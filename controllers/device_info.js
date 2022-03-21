@@ -439,7 +439,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           config = await Config.findOne({is_default: true}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
-          console.log(error);
+          console.log(error.message);
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -1066,8 +1066,12 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         matchedDevice.last_contact = Date.now();
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
-          await matchedDevice.save();
-          return res.status(500).json({proceed: 0});
+          try {
+            await matchedDevice.save();
+            return res.status(500).json({proceed: 0});
+          } catch (err) {
+            return res.status(500).json({proceed: 0});
+          }
         }
         let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
@@ -1084,7 +1088,10 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             matchedDevice.do_update_status = 1; // success
           } else {
             matchedDevice.do_update_status = 10; // ack received
-            await matchedDevice.save();
+            await matchedDevice.save().catch((err) => {
+              console.log('Error saving device during update ack received: ' +
+                          err);
+            });
             const firmware = await Firmware.findOne(
               {release: matchedDevice.release}).lean();
             if (firmware) {
@@ -1139,7 +1146,9 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           proceed = 1;
         }
 
-        matchedDevice.save();
+        matchedDevice.save().catch((err) => {
+          console.log('Error saving device during upgrade confirmation: ' +err);
+        });
         return res.status(200).json({proceed: proceed});
       }
     }
@@ -1172,10 +1181,15 @@ deviceInfoController.registerMqtt = function(req, res) {
           (config && config.mqtt_secret_bypass)
       ) {
         matchedDevice.mqtt_secret = req.body.mqttsecret;
-        matchedDevice.save();
-        console.log('Device ' +
-          req.body.id + ' register MQTT secret successfully.');
-        return res.status(200).json({is_registered: 1});
+        try {
+          await matchedDevice.save();
+          console.log('Device ' +
+                      req.body.id + ' register MQTT secret successfully.');
+          return res.status(200).json({is_registered: 1});
+        } catch (err) {
+          console.log('Error saving device on MQTT register: ' + err);
+          return res.status(500).json({is_registered: 0});
+        }
       } else {
         // Device have a secret. Modification of secret is forbidden!
         console.log('Attempt to register MQTT secret for device ' +
@@ -1238,7 +1252,7 @@ deviceInfoController.registerMeshSlave = function(req, res) {
       let pos = matchedDevice.mesh_slaves.indexOf(slave);
       if (pos < 0) {
         // Not found, register
-        DeviceModel.findById(slave, function(err, slaveDevice) {
+        DeviceModel.findById(slave, async function(err, slaveDevice) {
           if (err) {
             console.log('Attempt to register mesh slave ' + slave +
               ' for device ' + req.body.id + ' failed: cant get slave device.');
@@ -1267,10 +1281,16 @@ deviceInfoController.registerMeshSlave = function(req, res) {
 
           slaveDevice.mesh_master = matchedDevice._id;
           meshHandlers.syncSlaveWifi(matchedDevice, slaveDevice);
-          slaveDevice.save();
+          await slaveDevice.save().catch((err) => {
+            console.log('Error saving master to slave: ' + slave);
+            return res.status(500).json({is_registered: 0});
+          });
 
           matchedDevice.mesh_slaves.push(slave);
-          matchedDevice.save();
+          await matchedDevice.save().catch((err) => {
+            console.log('Error saving slave to master: ' + req.body.id);
+            return res.status(500).json({is_registered: 0});
+          });
 
           // Push updates to the Slave
           mqtt.anlixMessageRouterUpdate(slave);
@@ -1303,7 +1323,7 @@ deviceInfoController.receiveLog = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Log Receiving for device ' +
         id + ' failed: Cant get device profile.');
@@ -1315,25 +1335,42 @@ deviceInfoController.receiveLog = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    let dbSaveOk = true;
     if (bootType == 'FIRST') {
       matchedDevice.firstboot_log = Buffer.from(req.body);
       matchedDevice.firstboot_date = Date.now();
-      matchedDevice.save();
-      console.log('Log Receiving for device ' +
-        id + ' successfully. FIRST BOOT');
+      await matchedDevice.save().catch((err) => {
+        console.log('Log Receiving for device ' +
+                    id + ' failed: Failed to save on database');
+        dbSaveOk = false;
+      });
+      if (dbSaveOk) {
+        console.log('Log Receiving for device ' +
+                    id + ' successfully. FIRST BOOT');
+      }
     } else if (bootType == 'BOOT') {
       matchedDevice.lastboot_log = Buffer.from(req.body);
       matchedDevice.lastboot_date = Date.now();
-      matchedDevice.save();
-      console.log('Log Receiving for device ' +
-        id + ' successfully. LAST BOOT');
+      await matchedDevice.save().catch((err) => {
+        console.log('Log Receiving for device ' +
+                    id + ' failed: Failed to save on database');
+        dbSaveOk = false;
+      });
+      if (dbSaveOk) {
+        console.log('Log Receiving for device ' +
+                    id + ' successfully. LAST BOOT');
+      }
     } else if (bootType == 'LIVE') {
       sio.anlixSendLiveLogNotifications(id, req.body);
       console.log('Log Receiving for device ' +
         id + ' successfully. LIVE');
     }
 
-    return res.status(200).json({processed: 1});
+    if (dbSaveOk) {
+      return res.status(200).json({processed: 1});
+    } else {
+      return res.status(500).json({processed: 0});
+    }
   });
 };
 
@@ -1470,15 +1507,19 @@ deviceInfoController.receiveDevices = async function(req, res) {
         }
         if (upConnDev.conn_speed) {
           upConnDev.conn_speed = parseInt(upConnDev.conn_speed);
+          if (isNaN(upConnDev.conn_speed)) upConnDev.conn_speed = null;
         }
         if (upConnDev.wifi_signal) {
           upConnDev.wifi_signal = parseFloat(upConnDev.wifi_signal);
+          if (isNaN(upConnDev.wifi_signal)) upConnDev.wifi_signal = null;
         }
         if (upConnDev.wifi_snr) {
           upConnDev.wifi_snr = parseInt(upConnDev.wifi_snr);
+          if (isNaN(upConnDev.wifi_snr)) upConnDev.wifi_snr = null;
         }
         if (upConnDev.wifi_freq) {
           upConnDev.wifi_freq = parseFloat(upConnDev.wifi_freq);
+          if (isNaN(upConnDev.wifi_freq)) upConnDev.wifi_freq = null;
         }
         if (devReg) {
           if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
@@ -1672,7 +1713,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
     }
 
     matchedDevice.last_devices_refresh = Date.now();
-    await matchedDevice.save();
+    await matchedDevice.save().catch((err) => {
+      console.log('Error saving received devices to database: ' + id);
+    });
 
     if (willSignalMeshTopology) {
       updateScheduler.successTopology(masterMac);
@@ -1699,7 +1742,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Site Survey Receiving for device ' +
         id + ' failed: Cant get device profile.');
@@ -1780,7 +1823,10 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
     }
 
     matchedDevice.last_site_survey = Date.now();
-    matchedDevice.save();
+    await matchedDevice.save().catch((err) => {
+      console.log('Error saving site survey to database');
+      return res.status(500).json({processed: 0});
+    });
 
     // if someone is waiting for this message, send the information
     sio.anlixSendSiteSurveyNotifications(id, outData);
@@ -1932,7 +1978,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Upnp request for device ' + id +
         ' failed: Cant get device profile.');
@@ -1965,7 +2011,9 @@ deviceInfoController.receiveUpnp = function(req, res) {
         ' explicit user reject');
       return res.status(200).json({processed: 0, reason: 'User rejected upnp'});
     }
-    matchedDevice.save();
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
 
     messaging.sendUpnpMessage(matchedDevice, deviceMac, deviceName);
 
@@ -1987,7 +2035,7 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       return res.status(400).json({processed: 0});
     }
@@ -2001,7 +2049,9 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
-    matchedDevice.save();
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
     sio.anlixSendUpStatusNotification(id, req.body);
     sio.anlixSendWanBytesNotification(id, req.body);
     return res.status(200).json({processed: 1});
@@ -2019,7 +2069,7 @@ deviceInfoController.receiveWpsResult = function(req, res) {
     }
   }
 
-  DeviceModel.findById(id, function(err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Wps: Error fetching database');
       return res.status(400).json({processed: 0});
@@ -2051,9 +2101,14 @@ deviceInfoController.receiveWpsResult = function(req, res) {
         return res.status(500).json({processed: 0});
       }
     }
-    matchedDevice.save();
-    console.log('Wps: ' + id + ' received successfully');
-    return res.status(200).json({processed: 1});
+    try {
+      await matchedDevice.save();
+      console.log('Wps: ' + id + ' received successfully');
+      return res.status(200).json({processed: 1});
+    } catch (err) {
+      console.log('Wps: ' + id + ' database save error');
+      return res.status(500).json({processed: 0});
+    }
   });
 };
 
