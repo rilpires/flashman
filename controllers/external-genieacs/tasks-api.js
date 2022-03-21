@@ -513,7 +513,12 @@ itself and will be removed and re added.*/
     // also executed.
     changeStream.hasNext().then(async function() {
       if (!changeStream) return;
-      if (changeStream.isClosed()) return;
+      if (typeof changeStream.isClosed === 'function' &&
+          changeStream.isClosed()) {
+        return;
+      } else if (changeStream.closed) {
+        return;
+      }
       await changeStream.next();
       changeStream.close(); // close this change stream.
       clearTimeout(taskTimer); // clear setTimeout.
