@@ -111,7 +111,7 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
   jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
     = device.web_admin_user;
 
-  // set web password 
+  // set web password
   jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
     = device.web_admin_password;
 
