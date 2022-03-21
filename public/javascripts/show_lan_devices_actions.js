@@ -1,5 +1,7 @@
 import {anlixDocumentReady} from '../src/common.index.js';
-import {displayAlertMsg, socket} from './common_actions.js';
+import {displayAlertMsg,
+        secondsTimeSpanToHMS,
+        socket} from './common_actions.js';
 
 anlixDocumentReady.add(function() {
   let lanDevicesGlobalTimer;
@@ -112,7 +114,6 @@ anlixDocumentReady.add(function() {
         }
       },
       error: function(xhr, status, error) {
-        let errCode = xhr.status;
         let response = xhr.responseJSON;
         if (!response.success) {
           $('#spam-error-message').text(response.message);
@@ -288,7 +289,7 @@ anlixDocumentReady.add(function() {
                   $('<i>').addClass('fas fa-wifi fa-lg'),
                 (device.conn_type == 0) ?
                   $('<span>').html('&nbsp Cabo') :
-                  $('<span>').html('&nbsp Wi-Fi')
+                  $('<span>').html('&nbsp Wi-Fi'),
               ) :
               $('<div>').addClass('col')
             ),
@@ -308,7 +309,7 @@ anlixDocumentReady.add(function() {
                   .html('bloqueada') :
                 $('<span>')
                   .addClass('dev-block-status-text indigo-text')
-                  .html('liberada')
+                  .html('liberada'),
             ),
           ),
           $('<div>').addClass('row pt-3').append(
@@ -318,19 +319,20 @@ anlixDocumentReady.add(function() {
                 $('<i>').addClass('fas fa-circle red-text')),
               (device.is_online ?
                 $('<span>').html('&nbsp Online') :
-                $('<span>').html('&nbsp Offline'))
+                $('<span>').html('&nbsp Offline')),
             ),
             (device.conn_speed && device.is_online ?
               $('<div>').addClass('col-8 text-right').append(
                 $('<h6>').text('Velocidade Máx. ' +
-                                    device.conn_speed + ' Mbps')
+                                    device.conn_speed + ' Mbps'),
               ) : ''
             ),
           ),
           (hasSlaves ?
             $('<div>').addClass('row pt-2').append(
               $('<div>').addClass('col').append(
-                $('<div>').addClass('badge primary-color').html('Conectado no CPE ' + device.gateway_mac),
+                $('<div>').addClass('badge primary-color')
+                  .html('Conectado no CPE ' + device.gateway_mac),
               ),
           ) : ''),
           $('<div>').addClass('row pt-2').append(
@@ -342,7 +344,7 @@ anlixDocumentReady.add(function() {
                            .prop('disabled', !device.ip)
               .append(
                 $('<i>').addClass('fas fa-search'),
-                $('<span>').html('&nbsp IPv4')
+                $('<span>').html('&nbsp IPv4'),
               ),
               $('<button>').addClass('btn btn-primary btn-sm')
                            .attr('type', 'button')
@@ -351,7 +353,7 @@ anlixDocumentReady.add(function() {
                            .prop('disabled', device.ipv6.length == 0)
               .append(
                 $('<i>').addClass('fas fa-search'),
-                $('<span>').html('&nbsp IPv6')
+                $('<span>').html('&nbsp IPv6'),
               ),
               ((isSuperuser || grantLanDevices > 1) && upnpSupport ?
                 $('<button>').addClass('btn btn-primary btn-sm ' +
@@ -368,7 +370,7 @@ anlixDocumentReady.add(function() {
                     .addClass(device.upnp_permission == 'accept' ?
                               'indigo-text' : 'red-text')
                     .html(device.upnp_permission == 'accept' ?
-                          'Liberado' : 'Bloqueado')
+                          'Liberado' : 'Bloqueado'),
                 ) :
                 ''
               ),
@@ -377,8 +379,8 @@ anlixDocumentReady.add(function() {
                         .attr('id', 'ipv4-collapse-' + idx)
               .append(
                 $('<div>').addClass('mt-2').append(
-                  $('<h6>').text(device.ip)
-                )
+                  $('<h6>').text(device.ip),
+                ),
               ),
               // IPv6 section
               $('<div>').addClass('collapse')
@@ -390,22 +392,26 @@ anlixDocumentReady.add(function() {
                     opts.append($('<h6>').text(ipv6));
                   });
                   return opts.html();
-                })
-              )
-            )
+                }),
+              ),
+            ),
           ),
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h6>').text(device.name),
               $('<h6>').text(device.dhcp_name),
-              $('<h6>').text(device.mac)
+              $('<h6>').text(device.mac),
             ),
             (device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
-              $('<h6>').text(((device.wifi_freq) ? device.wifi_freq : 'N/D') + ' GHz'),
-              $('<h6>').text('Modo: ' + ((device.wifi_mode) ? device.wifi_mode : 'N/D')),
-              $('<h6>').text('Sinal: ' + ((device.wifi_signal) ? device.wifi_signal : 'N/D') +' dBm'),
-              $('<h6>').text('SNR: ' + ((device.wifi_snr) ? device.wifi_snr : 'N/D') + ' dB')
+              $('<h6>').text(((device.wifi_freq) ?
+                device.wifi_freq : 'N/D') + ' GHz'),
+              $('<h6>').text('Modo: ' + ((device.wifi_mode) ?
+                device.wifi_mode : 'N/D')),
+              $('<h6>').text('Sinal: ' + ((device.wifi_signal) ?
+                device.wifi_signal : 'N/D') +' dBm'),
+              $('<h6>').text('SNR: ' + ((device.wifi_snr) ?
+                device.wifi_snr : 'N/D') + ' dB')
               .append(
                 $('<span>').html('&nbsp'),
                 ((device.wifi_snr >= 25) ?
@@ -413,12 +419,12 @@ anlixDocumentReady.add(function() {
                  (device.wifi_snr >= 15) ?
                  $('<i>').addClass('fas fa-circle yellow-text') :
                  $('<i>').addClass('fas fa-circle red-text')
-                )
-              )
+                ),
+              ),
             ) :
-            ''
-          )
-        )
+            '',
+          ),
+        ),
       );
       countAddedDevs += 1;
       // Line break every 2 columns
@@ -476,7 +482,8 @@ anlixDocumentReady.add(function() {
                   (router.signal +' dBm'))),
             ),
             $('<div>').addClass('col').append(
-              $('<h6>').text('Velocidade de recepção: ' + router.rx_bit + ' Mbps'),
+              $('<h6>').text('Velocidade de recepção: ' +
+                router.rx_bit + ' Mbps'),
               $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' Mbps'),
               $('<h6>').text('Latência: ' +
                 (router.latency > 0 ? router.latency + ' ms' : 'N/D')),
@@ -487,7 +494,7 @@ anlixDocumentReady.add(function() {
                 (router.iface == 1) ?
                   $('<span>').html('&nbsp; Cabo') :
                   $('<span>').html('&nbsp; Wi-Fi ' +
-                                   (router.iface == 2 ? '2.4' : '5.0') + 'GHz')
+                                   (router.iface == 2 ? '2.4' : '5.0') + 'GHz'),
               ),
             ),
           ),
