@@ -6,7 +6,6 @@ through the use of genieacs-nbi, the genie rest api.
 
 const http = require('http');
 const mongodb = require('mongodb');
-const sio = require('../../sio');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
@@ -502,11 +501,6 @@ itself and will be removed and re added.*/
       } else { // if there no more watch times we won't retry anymore.
         if (callback) {
           callback({finished: false, task: task});
-        } else {
-          // sending a socket.io message saying it wasn't executed.
-          sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: false,
-           taskid: task._id, source: 'timer', message:
-           `task never executed for deviceid ${deviceid}`});
         }
         resolve({finished: false, task: task, source: 'timer',
          message: `task never executed for deviceid ${deviceid}`});
@@ -525,10 +519,6 @@ itself and will be removed and re added.*/
       clearTimeout(taskTimer); // clear setTimeout.
       if (callback) {
         callback({finished: true, task: task});
-      } else {
-        // sending a socket.io message saying it was executed.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'change stream', message: 'task executed.'});
       }
       resolve({finished: true, task: task, source: 'change stream', message:
        'task executed.'});
@@ -601,9 +591,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
     code 200, this means task has execute before 'timeout'. */
       if (callback) {
         callback({finished: true, task: task});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'request', message: 'task executed.'});
       }
       return {finished: true, task: task, source: 'request',
        message: 'task executed.'};
@@ -616,10 +603,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
     if (!watchTimes || watchTimes.length === 0) {
       if (callback) {
         callback({finished: false, task: pendingTasks.pop()});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-         {finished: false, taskid: pendingTasks.pop()._id,
-         source: 'pending reject', message: 'no watch times defined'});
       }
     } else {
       // watch tasks collection until the new task is deleted.
