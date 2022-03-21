@@ -108,7 +108,7 @@
 	"firmwareNotFound": "Firmware não encontrada ({{errorline}})",
 	"firmwareFindError": "Erro ao buscar firmware ({{errorline}})",
 	"firmwaresFindError": "Erro ao buscar firmwares ({{errorline}})",
-	"noFileSelected": "Nenhum arquivo foi selecionado ({{errorline}})",
+	"noFileSelectedError": "Nenhum arquivo foi selecionado ({{errorline}})",
 	"firmwareFileNameInvalid": "Formato inválido de arquivo. Nomes de arquivo válidos: *FABRICANTE*_*MODELO*_*VERSÃO*_*RELEASE*.bin ({{errorline}})",
 	"fileMoveError": "Erro ao mover arquivo ({{errorline}})",
 	"fileChecksumError": "Erro ao gerar hash de integridade do arquivo ({{errorline}})",
@@ -287,6 +287,7 @@
 	"repeatNewPassword": "Repita a nova senha",
 	"Alter": "Alterar",
 	"newFirmwareUpload": "Upload de novo firmware",
+	"File": "Arquivo",
 	"anlixAccount": "Conta da Anlix",
 
 	"Type": "Tipo",
@@ -308,6 +309,7 @@
 	"restrictedFirmware": "Firmware Restrita",
 	"noRegisterFound": "Nenhum registro encontrado",
 	"noFirmwaresAvailable": "Nenhum firmware disponível",
+	"noFileSelected": "Nenhum arquivo foi selecionado",
 	"Show": "Exibir",
 	"Add": "Adicionar",
 
