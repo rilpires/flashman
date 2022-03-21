@@ -279,7 +279,10 @@
 	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
 	"configUpdateError": "Erro salvando configurações ({{errorline}})",
 
-
+	"acRuleLimits": "O limite de dispositivos bloqueados para essa CPE foi atingido. ({{errorline}})",
+	"acRuleGetError": "Erro ao obter regras de controle de acesso ({{errorline}})",
+	"acRuleDefaultError": "Erro ao registrar regras de controle de acesso ({{errorline}})",
+	"acRuleReDoError": "Erro ao reestruturar regras de controle de acesso ({{errorline}})",
 
 	"passwordRenewal": "Renovação de senha",
 	"newPassword": "Nova senha",

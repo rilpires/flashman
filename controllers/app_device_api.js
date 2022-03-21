@@ -85,7 +85,8 @@ let appSet = function(req, res, processFunction) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let rollbackValues = {};
-      let tr069Changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}};
+      let tr069Changes = {
+        wan: {}, lan: {}, wifi2: {}, wifi5: {}, changeBlockedDevices: false};
 
       // Update location data if present
       if (content.latitude && content.longitude) {
@@ -108,6 +109,27 @@ let appSet = function(req, res, processFunction) {
       if (content.hasOwnProperty('command_timeout')) {
         commandTimeout = content.command_timeout;
       }
+      if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
+        let acRulesRes = {'success': false};
+        acRulesRes = await acsController.changeAcRules(matchedDevice);
+        if (!acRulesRes || !acRulesRes['success']) {
+          // The return of change Access Control has established
+          // error codes. It is possible to make res have
+          // specific messages for each error code.
+          let errorCode = acRulesRes.hasOwnProperty('error_code') ?
+            acRulesRes['error_code'] : 'acRuleDefaultError';
+          let response = {
+            is_set: 0,
+            success: false,
+            error_code: errorCode,
+          };
+          // We need to return a code 200, because the flashman was able to
+          // successfully complete the entire request. So we have to return the
+          // internal error code in the response, as an "error_code".
+          return res.status(200).json(response);
+        }
+      }
+      delete tr069Changes.changeBlockedDevices;
 
       await matchedDevice.save().catch((err) => {
         console.log('Error setting app sent data: ' + err);
@@ -246,7 +268,9 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
     let dhcpLease = content.blacklist_device.id;
     if (dhcpLease === '*') dhcpLease = '';
     // Search blocked device
-    let blackMacDevice = content.blacklist_device.mac.toLowerCase();
+    let blackMacDevice = device.use_tr069 ?
+      content.blacklist_device.mac.toUpperCase() :
+      content.blacklist_device.mac.toLowerCase();
     let ret = false;
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == blackMacDevice) {
@@ -280,10 +304,13 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
+    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
-    let blackMacDevice = content.device_configs.mac.toLowerCase();
+    let blackMacDevice = device.use_tr069 ?
+      content.device_configs.mac.toUpperCase() :
+      content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == blackMacDevice) {
         device.lan_devices[idx].last_seen = Date.now();
@@ -317,7 +344,9 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
     // Search device to unblock
-    let whiteMacDevice = content.whitelist_device.mac.toLowerCase();
+    let whiteMacDevice = device.use_tr069 ?
+      content.whitelist_device.mac.toUpperCase() :
+      content.whitelist_device.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == whiteMacDevice) {
         device.lan_devices[idx].last_seen = Date.now();
@@ -335,10 +364,13 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
+    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
-    let blackMacDevice = content.device_configs.mac.toLowerCase();
+    let blackMacDevice = device.use_tr069 ?
+      content.device_configs.mac.toUpperCase() :
+      content.device_configs.mac.toLowerCase();
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == blackMacDevice) {
         device.lan_devices[idx].last_seen = Date.now();
@@ -414,7 +446,9 @@ let processUpnpInfo = function(content, device, rollback, tr069Changes) {
     // Deep copy upnp requests for rollback
     rollback.upnp_requests = util.deepCopyObject(device.upnp_requests);
     let newLanDevice = true;
-    let macDevice = content.device_configs.mac.toLowerCase();
+    let macDevice = device.use_tr069 ?
+      content.device_configs.mac.toUpperCase() :
+      content.device_configs.mac.toLowerCase();
     let allow = 'none';
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == macDevice) {
