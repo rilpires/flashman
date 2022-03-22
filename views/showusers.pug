@@ -12,7 +12,7 @@ block content
             .col-1
               .fas.fa-plus
             .col-10.text-center
-              span.card-title Adicionar novo usuário
+              span.card-title #{t('addNewUser')}
         .card-body.collapse.out(id="new-user-card")
           form.needs-validation(
             id="new-user-form",
@@ -21,31 +21,31 @@ block content
             novalidate
           )
             .md-form.input-entry
-              label(for="new_user") Usuário
+              label(for="new_user")= t('User')
               input.form-control(type="text",
                                  id="new_user",
                                  name="name",
                                  maxlength=23,
                                  required)
-              .invalid-feedback Por favor, preencha este campo
+              .invalid-feedback= t('pleaseFillinThisField')
             .md-form.input-entry
-              label(for="new_pass") Senha
+              label(for="new_pass")= t('Password')
               input.form-control(type="password",
                                  id="new_pass",
                                  name="password",
                                  required)
-              .invalid-feedback Por favor, preencha este campo
+              .invalid-feedback= t('pleaseFillinThisField')
             .md-form.input-entry
-              label(for="new_pass_ack") Senha novamente
+              label(for="new_pass_ack")= t('passwordAgain') 
               input.form-control(type="password",
                                  id="new_pass_ack",
                                  name="passwordack"
                                  oninput="check(this)",
                                  required)
-              .invalid-feedback As senhas estão diferentes
+              .invalid-feedback= t('passwordsAreDifferent')
             .md-form.pt-2
               .md-selectfield.form-control.my-0
-                label(for="new_user_role") Classe de permissões
+                label(for="new_user_role")= t('permissionsRole')
                 select.browser-default.md-select(id="new_user_role",
                                                  name="role",
                                                  required)
@@ -55,11 +55,11 @@ block content
               .form-buttons
                 button.btn.btn-primary(type="submit")
                   .fas.fa-check.fa-lg
-                  span &nbsp Adicionar
+                  span &nbsp #{t('Add')}
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-users.fa-lg
-      span &nbsp Usuários
+      span &nbsp #{t('Users')}
     .card-body
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
@@ -69,10 +69,10 @@ block content
             tr
               th.text-center
                 input.checkbox(type="checkbox" id="checkall")
-              th.text-center Usuário
-              th.text-center Classe de permissões
-              th.text-center Data de criação
-              th.text-center Último acesso
+              th.text-center= t('User')
+              th.text-center= t('permissionsRole')
+              th.text-center= t('creationDate')
+              th.text-center= t('lastAccess')
               th.text-center
           tbody
 

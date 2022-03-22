@@ -204,7 +204,7 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text(t('meshSecundaryDisassociation')),
+                        .text(t('meshSecondaryDisassociation')),
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-slave-disassociate').append(

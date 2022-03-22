@@ -2,9 +2,11 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
+const t = i18next.t
+
 window.check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {
-    input.setCustomValidity('As senhas estão diferentes');
+    input.setCustomValidity(t('passwordsAreDifferent'));
   } else {
     input.setCustomValidity('');
   }
@@ -42,7 +44,7 @@ const fetchUsers = function(usersTable) {
           $('<td></td>').append(
             $('<button></button>').append(
               $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
-              $('<span></span>').html('&nbsp Editar')
+              $('<span></span>').html(`&nbsp ${t('Edit')}`)
             ).addClass('btn btn-sm btn-primary my-0 btn-usr-edit')
             .attr('data-userid', userObj._id)
             .attr('type', 'button')
@@ -65,11 +67,11 @@ anlixDocumentReady.add(function() {
     'info': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhum usuário encontrado',
-      'infoEmpty': 'Nenhum usuário encontrado',
+      'zeroRecords': t('noUserFound'),
+      'infoEmpty': t('noUserFound'),
       'search': '',
-      'searchPlaceholder': 'Buscar...',
-      'lengthMenu': 'Exibir _MENU_',
+      'searchPlaceholder': t('Search...'),
+      'lengthMenu': `${t('Show')} _MENU_`,
     },
     'order': [[1, 'asc'], [2, 'asc']],
     'columnDefs': [

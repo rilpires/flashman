@@ -12,16 +12,16 @@ block content
             .col-1
               .fas.fa-plus
             .col-10.text-center
-              span.card-title Adicionar novo perfil de VLAN
+              span.card-title #{t('addNewVlanProfile')}
         .card-body.collapse.out(id="new-vlan-profile-card")
           .alert.alert-info
             .fas.fa-info-circle.fa-lg
-            span &nbsp; Importante! Os modelos de CPEs possuem diferentes valores máximos de VLAN ID
+            span &nbsp; #{t('Important!')} #{t('cpeModelsHaveDifferentVlanIdMaxValues')}
             table.table.table-sm.table-borderless.text-center
               thead
                 tr
-                  th Modelo
-                  th ID de VLAN máximo
+                  th= t('Model')
+                  th= t('maxVlanId')
               tbody#max-vlan-table
           form.needs-validation(
             id="new-vlan-profile-form",
@@ -30,30 +30,30 @@ block content
             novalidate
           )
             .md-form.input-entry
-              label(for="new_vlan-id") VLAN ID
+              label(for="new_vlan-id")= t('vlanId')
               input.form-control(type="number",
                                  id="new_vlan-id",
                                  name="id",
                                  oninput="checkVlanId(this)", 
                                  required)
-              .invalid-feedback O VLAN ID deve ser distinto, não pode ser menor que 3 ou maior que 4094
+              .invalid-feedback= t('vlanIdRules')
             .md-form.input-entry
-              label(for="new_vlan-profile-name") Nome
+              label(for="new_vlan-profile-name")= t('Name')
               input.form-control(type="text",
                                  id="new_vlan-profile-name",
                                  name="name",
                                  oninput="checkVlanName(this)"
                                  required)
-              .invalid-feedback O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes
+              .invalid-feedback= t('vlanProfileNameRules')
             .col.text-center.mt-3
               .form-buttons
                 button.btn.btn-primary(type="submit")
                   .fas.fa-check.fa-lg
-                  span &nbsp Adicionar
+                  span &nbsp #{t('Add')}
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-project-diagram.fa-lg
-      span &nbsp Perfis de VLANs
+      span &nbsp #{t('vlanProfiles')}
     .card-body
       h3#loading-vlan-profile.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
@@ -63,8 +63,8 @@ block content
             tr
               th.text-center
                 input.checkbox(type="checkbox" id="checkall")
-              th.text-center VLAN ID
-              th.text-center Nome
+              th.text-center= t('vlanId')
+              th.text-center= t('Name')
               th.text-center
 
 block scripts
