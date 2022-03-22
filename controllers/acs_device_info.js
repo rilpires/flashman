@@ -115,6 +115,7 @@ const convertToDbm = function(model, rxPower) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
     case 'G-140W-UD':
@@ -134,13 +135,16 @@ const convertWifiBand = function(band, mode, is5ghz) {
     case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
+    case '20Mhz':
     case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
+    case '40Mhz':
     case '20/40MHz':
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
+    case '80Mhz':
     case '20/40/80MHz':
     case '3':
       return (isAC) ? 'VHT80' : undefined;
@@ -155,6 +159,7 @@ const convertWifiRate = function(model, rate) {
     case 'F660':
     case 'F670L':
     case 'F680':
+    case 'ST-1001-FL':
       return rate = parseInt(rate) / 1000;
     default:
       return rate = parseInt(rate);
@@ -220,6 +225,7 @@ const processHostFromURL = function(url) {
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
+  if (!device) return;
   landevices.forEach((lanDev)=>{
     let lanMac = lanDev.mac.toUpperCase();
     let registered = device.lan_devices.find((d)=>d.mac===lanMac);
@@ -250,7 +256,9 @@ const saveDeviceData = async function(mac, landevices) {
     }
   });
   device.last_devices_refresh = Date.now();
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving tr-069 device data ' + mac + ': ' + err);
+  });
 };
 
 const createRegistry = async function(req, permissions) {
@@ -371,11 +379,23 @@ const createRegistry = async function(req, permissions) {
     wanUptime = undefined;
   }
 
+  let serialTR069 = splitID[splitID.length - 1];
+  // Convert Hurakall serial information
+  if (model === 'ST-1001-FL') {
+    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
+    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
+    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
+    // decode from base16 to utf8
+    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    // join parts in final format
+    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
     secure_tr069: data.common.acs_url.value.includes('https'),
-    serial_tr069: splitID[splitID.length - 1],
+    serial_tr069: serialTR069,
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
     model: model,
@@ -434,7 +454,7 @@ const createRegistry = async function(req, permissions) {
     await newDevice.save();
     await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
   } catch (err) {
-    console.error(err);
+    console.error('Error on device tr-069 creation: ' + err);
     return false;
   }
   // Update SSID prefix on CPE if enabled
@@ -526,7 +546,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   ) {
     device.last_tr069_sync = dateNow;
     device.last_contact = dateNow;
-    await device.save();
+    await device.save().catch((err) => {
+      console.log('Error saving last contact and last tr-069 sync');
+    });
     return res.status(200).json({success: true, measure: true});
   }
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
@@ -544,7 +566,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   }
   // Always update last_contact to keep device online
   device.last_contact = dateNow;
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving last contact');
+  });
 };
 
 // Complete CPE information synchronization gets done here. This function
@@ -552,7 +576,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 // true
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
-  if (!data || !data.common || !data.common.mac.value) {
+  if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
       message: t('fieldNameMissing', {name: 'mac', errorline: __line}),
@@ -636,7 +660,22 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let splitID = req.body.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   device.acs_id = req.body.acs_id;
-  device.serial_tr069 = splitID[splitID.length - 1];
+
+  if (data.common.model.value) device.model = data.common.model.value.trim();
+
+  let serialTR069 = splitID[splitID.length - 1];
+  // Convert Hurakall serial information
+  if (device.model === 'ST-1001-FL') {
+    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
+    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
+    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
+    // decode from base16 to utf8
+    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    // join parts in final format
+    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  }
+  device.serial_tr069 = serialTR069;
+
   device.secure_tr069 = data.common.acs_url.value.includes('https');
 
   // Check for an alternative UID to replace serial field
@@ -656,7 +695,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     data.common.web_admin_password.value = webCredentials.password;
   }
 
-  if (data.common.model.value) device.model = data.common.model.value.trim();
   if (data.common.version.value) {
     device.version = data.common.version.value.trim();
   }
@@ -753,9 +791,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid = bssid2.toUpperCase();
     }
   }
-  if (data.wifi2.auto && data.wifi2.channel) {
-    let channel2 =
-      (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value.toString();
+  if (data.wifi2.channel) {
+    let channel2 = data.wifi2.channel.value.toString();
+    if (data.wifi2.auto && data.wifi2.auto.value) {
+      // Explicit auto option, use that
+      channel2 = 'auto';
+    } else if (channel2 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel2 = 'auto';
+    }
     if (channel2 && !device.wifi_channel) {
       device.wifi_channel = channel2;
     } else if (device.wifi_channel !== channel2) {
@@ -814,9 +858,15 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wifi_bssid_5ghz = bssid5.toUpperCase();
     }
   }
-  if (data.wifi5.auto && data.wifi5.channel) {
-    let channel5 =
-      (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value.toString();
+  if (data.wifi5.channel) {
+    let channel5 = data.wifi5.channel.value.toString();
+    if (data.wifi5.auto && data.wifi5.auto.value) {
+      // Explicit auto option, use that
+      channel5 = 'auto';
+    } else if (channel5 === '0') {
+      // No explicit auto option, assume channel 0 encodes auto
+      channel5 = 'auto';
+    }
     if (channel5 && !device.wifi_channel_5ghz) {
       device.wifi_channel_5ghz = channel5;
     } else if (device.wifi_channel_5ghz !== channel5) {
@@ -1065,7 +1115,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       }
     }
   }
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving device sync data to database: ' + err);
+  });
 };
 
 acsDeviceInfoController.rebootDevice = function(device, res) {
@@ -1126,7 +1178,9 @@ const fetchLogFromGenie = function(success, device, acsID) {
         deviceEdit.last_contact = Date.now();
         deviceEdit.lastboot_date = Date.now();
         deviceEdit.lastboot_log = Buffer.from(compressedLog);
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving last boot log to database: ' + err);
+        });
       }
       sio.anlixSendLiveLogNotifications(mac, compressedLog);
     });
@@ -1561,7 +1615,9 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
       if (device.current_speedtest.stage == 'estimative') {
         device.current_speedtest.band_estimative = speedValueBasic;
         device.current_speedtest.stage = 'measure';
-        await device.save();
+        await device.save().catch((err) => {
+          console.log('Error saving speed test est to database: ' + err);
+        });
         await sio.anlixSendSpeedTestNotifications(device._id, {
           stage: 'estimative_finished',
           user: device.current_speedtest.user,
@@ -1640,6 +1696,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         wanBytes = appendBytesMeasure(
           deviceEdit.wan_bytes,
@@ -1647,7 +1704,9 @@ const fetchWanBytesFromGenie = function(device, acsID) {
           wanBytes.sent,
         );
         deviceEdit.wan_bytes = wanBytes;
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving device wan bytes: ' + err);
+        });
       }
       sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
     });
@@ -1782,7 +1841,9 @@ const fetchUpStatusFromGenie = function(device, acsID) {
           );
           deviceEdit.pon_signal_measure = ponSignal;
         }
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving device up status: ' + err);
+        });
       }
       sio.anlixSendUpStatusNotification(mac, {
         sysuptime: sysUpTime,
@@ -1954,6 +2015,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
           ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
@@ -1967,7 +2029,9 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
           ponSignal.txpower,
         );
         deviceEdit.pon_signal_measure = ponSignal;
-        await deviceEdit.save();
+        await deviceEdit.save().catch((err) => {
+          console.log('Error saving pon signal: ' + err);
+        });
       }
       sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
       return ponSignal;
@@ -2455,6 +2519,7 @@ acsDeviceInfoController.updateInfo = async function(
         let channel = changes[masterKey][key];
         let auto = channel === 'auto';
         if (model == 'AC10') {
+          // Special case - fields are treated as strings
           task.parameterValues.push([
             fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
           ]);
@@ -2463,6 +2528,12 @@ acsDeviceInfoController.updateInfo = async function(
               fields[masterKey][key], channel, 'xsd:string',
             ]);
           }
+        } else if (model === 'ST-1001-FL') {
+          // Special case - there is no auto field, use channel 0
+          if (auto) channel = '0';
+          task.parameterValues.push([
+            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+          ]);
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
@@ -2885,6 +2956,39 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
   }
 };
 
+acsDeviceInfoController.pingOfflineDevices = async function() {
+  // Get TR-069 configs from database
+  let matchedConfig = await Config.findOne(
+    {is_default: true}, 'tr069',
+  ).lean().exec().catch((err) => err);
+  if (matchedConfig.constructor === Error) {
+    console.log('Error getting user config in database to ping offline CPEs');
+    return;
+  }
+  // Compute offline threshold from options
+  let currentTime = Date.now();
+  let interval = matchedConfig.tr069.inform_interval;
+  let threshold = matchedConfig.tr069.offline_threshold;
+  let offlineThreshold = new Date(currentTime - (interval*threshold));
+  // Query database for offline TR-069 CPE devices
+  let offlineDevices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$lt: offlineThreshold},
+  }, {
+    acs_id: true,
+  }).lean();
+  // Issue a task for every offline device to try and force it to reconnect
+  for (let i = 0; i < offlineDevices.length; i++) {
+    let id = offlineDevices[i].acs_id;
+    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
+    let task = {
+      name: 'getParameterValues',
+      parameterNames: [fields.common.uptime],
+    };
+    await TasksAPI.addTask(id, task, true, 50, [], null);
+  }
+};
+
 acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
   try {
     let devicesArray = null;
@@ -2909,7 +3013,10 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     if (response.success) {
       for (let device of devicesArray) {
         device.is_license_active = true;
-        await device.save();
+        await device.save().catch((err) => {
+          console.log('Error saving reported devices to ' +
+          device.serial_tr069 + ' : ' + err);
+        });
       }
       if (response.noLicenses) {
         let matchedNotif = await Notification.findOne({
