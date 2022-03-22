@@ -360,7 +360,7 @@ anlixDocumentReady.add(function() {
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-vlan').append(
-                          $('<option>').val(0).text('Não Visualizar'),
+                          $('<option>').val(0).text(t('cannotView')),
                           $('<option>').val(1).text(t('View')),
                           $('<option>').val(2).text(t('viewAndEdit')),
                         ),

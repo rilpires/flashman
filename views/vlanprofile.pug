@@ -6,7 +6,7 @@ block content
       .card.mt-5
         h4.card-header.teal.lighten-2.white-text
           .fas.fa-info.fa-lg
-          span &nbsp #{t('vlanProfile')}
+          span &nbsp; #{t('vlanProfile')}
         .card-body
           form.needs-validation(method='post', action='/vlan/profile/edit/' + vlanprofile.vlan_id, novalidate)
             .row
@@ -23,7 +23,7 @@ block content
                   .invalid-feedback= t('vlanProfileNameRules')
             .col-12.mt-3.text-center
               .form-buttons
-                button.btn.btn-primary(type="submit") Atualizar
+                button.btn.btn-primary(type="submit")= t('Update')
 
 block scripts
   script(src='/dist/vlanprofile.bundle.js')
