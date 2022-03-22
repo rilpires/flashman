@@ -57,7 +57,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes'),
+                  $('<span>').html('&nbsp ' + t('Details')),
                 ).addClass('btn btn-sm btn-primary my-0')
                 .attr('type', 'button'),
               ).attr('data-userid', userObj._id)
@@ -126,7 +126,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes'),
+                  $('<span>').html('&nbsp ' + t('Details')),
                 ).addClass('btn btn-sm btn-primary my-0')
                 .attr('type', 'button'),
               ).attr('data-userid', unwrappedCert._id)
