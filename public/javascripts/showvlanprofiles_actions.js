@@ -3,7 +3,7 @@ import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 import 'regenerator-runtime/runtime';
 
-const t = i18next.t
+const t = i18next.t;
 
 window.checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol
@@ -38,7 +38,7 @@ window.checkVlanName = function(input) {
       }
     }
     if (distinctValidity) {
-      input.setCustomValidity(t('vlanProfileUniquenessRule')+'.');
+      input.setCustomValidity(t('vlanProfileNameUniquenessRule')+'.');
     } else {
       input.setCustomValidity('');
     }

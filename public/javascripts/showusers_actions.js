@@ -2,7 +2,7 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
-const t = i18next.t
+const t = i18next.t;
 
 window.check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {
