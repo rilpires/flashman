@@ -3129,7 +3129,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
 };
 
 deviceListController.setLanDeviceBlockState = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
                                    message: t('cpeFindError',
@@ -3145,14 +3145,30 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       }
     }
     if (devFound) {
-      matchedDevice.save(function(err) {
+      if (matchedDevice.use_tr069) {
+        let result = {'success': false};
+        result = await acsDeviceInfo.changeAcRules(matchedDevice);
+        if (!result || !result['success']) {
+          // The return of change Access Control has established
+          // error codes. It is possible to make res have
+          // specific messages for each error code.
+          let errorMessage = result.hasOwnProperty('message') ?
+            result['message'] : t('acRuleDefaultError', {errorline: __line});
+          return res.status(500).json({
+            success: false,
+            message: errorMessage,
+          });
+        }
+      }
+      matchedDevice.save(async function(err) {
         if (err) {
           return res.status(500).json({
             success: false,
             message: t('cpeSaveError', {errorline: __line})});
         }
-        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
+        if (!matchedDevice.use_tr069) {
+          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+        }
         return res.status(200).json({'success': true});
       });
     } else {
