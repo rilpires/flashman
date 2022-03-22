@@ -158,13 +158,13 @@ anlixDocumentReady.add(function() {
 
   // Important: include and initialize socket.io first using socket var
   socket.on('SPEEDTEST', function(macaddr, data) {
-    // only do this if timeout has not happened yet
-    if (socketIoTimeout) return;
-    socketIoResponse = true;
-    clearTimeout(socketIoTimeoutTimerID);
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
+        // only do this if timeout has not happened yet
+        if (socketIoTimeout) return;
+        socketIoResponse = true;
+        clearTimeout(socketIoTimeoutTimerID);
         if (data.downSpeed.includes('Mbps')) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > data.limit) {
@@ -178,10 +178,12 @@ anlixDocumentReady.add(function() {
           updateMeasuresTable(macaddr);
         } else {
           if (data.downSpeed === 'Unavailable') {
-            $('#speed-test-shown-text').html('O servidor está ocupado, tente mais tarde');
+            $('#speed-test-shown-text')
+              .html('O servidor está ocupado, tente mais tarde');
             $('#speed-test-warn-text').show();
           } else {
-            $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
+            $('#speed-test-shown-text')
+              .html('Um erro ocorreu, por favor tente novamente');
           }
           $('#speed-test-shown-icon')
           .removeClass((i, c)=>c.match(/fa\-.*/))
@@ -193,15 +195,20 @@ anlixDocumentReady.add(function() {
   });
 
   socket.on('SPEEDESTIMATIVE', function(macaddr, data) {
-    // only do this if timeout has not happened yet
-    if (socketIoTimeout) return;
-    socketIoResponse = true;
     if (($('#speed-test').data('bs.modal') || {})._isShown) {
-      $('#speed-test-strong-text').empty();
-      $('#speed-test-shown-text').html('Aguardando resultado...');
-      $('#speed-test-shown-icon')
-      .removeClass((i, c)=>c.match(/fa\-.*/))
-      .addClass('fa-3x fa-spinner fa-pulse');
+      let id = $('#speed-test-hlabel').text();
+      if (id === macaddr) {
+        // only do this if timeout has not happened yet
+        if (socketIoTimeout) return;
+        socketIoResponse = true;
+        if (($('#speed-test').data('bs.modal') || {})._isShown) {
+          $('#speed-test-strong-text').empty();
+          $('#speed-test-shown-text').html('Aguardando resultado...');
+          $('#speed-test-shown-icon')
+          .removeClass((i, c)=>c.match(/fa\-.*/))
+          .addClass('fa-3x fa-spinner fa-pulse');
+        }
+      }
     }
   });
 

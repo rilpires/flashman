@@ -573,29 +573,29 @@ anlixDocumentReady.add(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('ONLINEDEVS', function(macaddr, data) {
     if (($('#lan-devices').data('bs.modal') || {})._isShown) {
-      if ($('#lan-devices').data('cleanup') == true) {
-        // Clear old data
-        $('#lan-devices').data('cleanup', false);
-        $('.btn-sync-lan').prop('disabled', false);
-        $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
-        $('#lan-devices').removeAttr('data-lan-devices-list');
-        $('#lan-devices').removeData('lan-devices-list');
-        $('#lan-devices').removeAttr('data-lan-routers-list');
-        $('#lan-devices').removeData('lan-routers-list');
-        $('#lan-devices-body').empty();
-        $('#lan-routers-body').empty();
-        $('#lan-devices-placeholder').show();
-        $('#lan-devices-placeholder-none').hide();
-      } else {
-        $('#lan-devices-body').empty();
-        $('#lan-routers-body').empty();
-      }
       let id = $('#lan-devices-hlabel').text();
-      let upnpSupport = $('#lan-devices').data('validate-upnp');
       let slaves = $('#lan-devices').data('slaves');
-      let hasSlaves = slaves ? true : false;
-      let isBridge = $('#isBridgeDiv').html() === 'Sim';
       if (id == macaddr || slaves.includes(macaddr)) {
+        if ($('#lan-devices').data('cleanup') == true) {
+          // Clear old data
+          $('#lan-devices').data('cleanup', false);
+          $('.btn-sync-lan').prop('disabled', false);
+          $('.btn-sync-lan > i').removeClass('animated rotateOut infinite');
+          $('#lan-devices').removeAttr('data-lan-devices-list');
+          $('#lan-devices').removeData('lan-devices-list');
+          $('#lan-devices').removeAttr('data-lan-routers-list');
+          $('#lan-devices').removeData('lan-routers-list');
+          $('#lan-devices-body').empty();
+          $('#lan-routers-body').empty();
+          $('#lan-devices-placeholder').show();
+          $('#lan-devices-placeholder-none').hide();
+        } else {
+          $('#lan-devices-body').empty();
+          $('#lan-routers-body').empty();
+        }
+        let upnpSupport = $('#lan-devices').data('validate-upnp');
+        let hasSlaves = slaves ? true : false;
+        let isBridge = $('#isBridgeDiv').html() === 'Sim';
         let totalSynced = $('#lan-devices').data('routers-synced');
         $('#lan-devices').data('routers-synced', totalSynced + 1);
         clearTimeout(lanDevicesGlobalTimer);
