@@ -74,8 +74,8 @@ socket.on('PINGTEST', function(macaddr, data) {
             .html('latência de ' + hostLatency + ' ms'),
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
-            .html(hostLoss + '% pacotes perdidos')
-          )
+            .html(hostLoss + '% pacotes perdidos'),
+          ),
         );
       });
       $('#ping-test-results').append(resultsList).show('fast');
