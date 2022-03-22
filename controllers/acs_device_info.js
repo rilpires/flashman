@@ -576,7 +576,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 // true
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
-  if (!data || !data.common || !data.common.mac.value) {
+  if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
       message: t('fieldNameMissing', {name: 'mac', errorline: __line}),
