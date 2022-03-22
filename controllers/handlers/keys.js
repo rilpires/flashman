@@ -15,7 +15,9 @@ keyHandlers.generateAuthKeyPair = async function() {
   }
   config.auth_pubkey = keyPub;
   config.auth_privkey = keyPriv;
-  await config.save();
+  await config.save().catch((err) => {
+    console.log('Error saving key pair on config: ' + err);
+  });
 
   return true;
 };

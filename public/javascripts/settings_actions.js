@@ -3,6 +3,8 @@ import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
 import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
+const t = i18next.t;
+
 // assigning tr069 elements.
 let recoveryInput =
   document.getElementById('lost-informs-recovery-threshold');
@@ -30,8 +32,8 @@ const resetRecoveryOfflineInputDependencyError = function() {
 // offline inputs and shows an error message that belongs to both input fields.
 const setRecoveryOfflineInputDependencyError = function() {
   // setting custom validity, which means inpute becomes invalid.
-  recoveryInput.setCustomValidity('recovery precisa ser menor que offline');
-  offlineInput.setCustomValidity('offline precisa ser maior que recovery');
+  recoveryInput.setCustomValidity(t('unstableShouldBeLessThanOffline'));
+  offlineInput.setCustomValidity(t('OfflineShouldBeBiggerThanUnstable'));
   // we report validity by showing a text right below the inputs and hide
   // each input's individual error text message.
   recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
@@ -76,9 +78,7 @@ window.changeSsidPrefixInputDisableness = function(value) {
 
 
 const setSsidPrefixError = function() {
-  ssidPrefixInput.setCustomValidity('Este campo não pode ter '+
-    'mais de 16 caracteres e Somente são aceitos: caracteres'+
-    ' alfanuméricos, espaços, ponto, - e _');
+  ssidPrefixInput.setCustomValidity(t('ssidPrefixInvalidFeedback'));
   ssidPrefixErrorElement.style.display = 'block';
 };
 
@@ -140,7 +140,7 @@ let configFlashman = function(event) {
   } else {
     displayAlertMsg({
       type: 'danger',
-      message: 'Há erros em um ou mais campos de configuração',
+      message: t('errorsInOneOrMoreConfigurationsFields'),
     });
     event.preventDefault();
     event.stopPropagation();
@@ -285,14 +285,11 @@ anlixDocumentReady.add(function() {
     ) {
       swal({
         type: 'warning',
-        title: 'Atenção!',
-        html: 'Para habilitar o modo HTTP na comunicação TR-069, é necessário '+
-              'ler e concordar com nossos <a href="https://documentacao.anlix.'+
-              'io/doku.php?id=condicoes_gerais_e_termo_de_adesao">Termos de '+
-              'boas práticas em segurança de redes</a>',
-        confirmButtonText: 'Habilitar',
+        title: t('Attention!'),
+        html: t('enablingTr069HttpCommunicationMustReadAndAgreeConditions'),
+        confirmButtonText: t('Enable'),
         confirmButtonColor: '#4db6ac',
-        cancelButtonText: 'Cancelar',
+        cancelButtonText: t('Cancel'),
         cancelButtonColor: '#f2ab63',
         showCancelButton: true,
       }).then((result)=>{

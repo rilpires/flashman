@@ -220,7 +220,7 @@ firmwareController.delFirmware = function(req, res) {
 firmwareController.uploadFirmware = async function(req, res) {
   if (!req.files) {
     return res.json({type: 'danger',
-                     message: t('noFileSelected', {errorline: __line})});
+                     message: t('noFileSelectedError', {errorline: __line})});
   }
 
   let firmwarefile;
@@ -232,7 +232,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmwarefile = req.files.firmwaretr069file;
   } else {
     return res.json({type: 'danger',
-                     message: t('noFileSelected', {errorline: __line})});
+                     message: t('noFileSelectedError', {errorline: __line})});
   }
 
   if (!isValidFilename(firmwarefile.name) && isFlashbox) {

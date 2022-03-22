@@ -5,6 +5,8 @@ import {setFirmwareStorage,
         deleteFirmwareStorage} from './session_storage.js';
 import 'datatables.net-bs4';
 
+const t = i18next.t;
+
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
   $.get('/firmware/fetch', function(res) {
@@ -13,9 +15,9 @@ const fetchLocalFirmwares = function(firmwaresTable) {
         let isRestricted = firmware.is_restricted;
         let displayRestricted = '';
         if (isRestricted) {
-          displayRestricted = 'Sim';
+          displayRestricted = t('Yes');
         } else {
-          displayRestricted = 'Não';
+          displayRestricted = t('No');
         }
         let firmwareRow = $('<tr></tr>').append(
           $('<td></td>').append(
@@ -106,10 +108,10 @@ anlixDocumentReady.add(function() {
     'lengthChange': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhum registro encontrado',
-      'infoEmpty': 'Nenhum firmware disponível',
+      'zeroRecords': t('noRegisterFound'),
+      'infoEmpty': t('noFirmwaresAvailable'),
       'search': '',
-      'searchPlaceholder': 'Buscar...',
+      'searchPlaceholder': t('Search...'),
     },
     'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
     'columnDefs': [
@@ -309,7 +311,7 @@ anlixDocumentReady.add(function() {
     } else {
       displayAlertMsg({
         type: 'danger',
-        message: 'Nenhum arquivo foi selecionado',
+        message: t('noFileSelected'),
       });
     }
 
@@ -380,11 +382,11 @@ anlixDocumentReady.add(function() {
           'info': false,
           'pagingType': 'numbers',
           'language': {
-            'zeroRecords': 'Nenhum registro encontrado',
-            'infoEmpty': 'Nenhum firmware disponível',
+            'zeroRecords': t('noRegisterFound'),
+            'infoEmpty': t('noFirmwaresAvailable'),
             'search': '',
-            'searchPlaceholder': 'Buscar...',
-            'lengthMenu': 'Exibir _MENU_',
+            'searchPlaceholder': t('Search...'),
+            'lengthMenu': t('Show')+' _MENU_',
           },
           'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
           'columnDefs': [
@@ -400,7 +402,7 @@ anlixDocumentReady.add(function() {
         $('.dt-up-firm-table-btns').append(
           $('<div></div>').addClass('btn-group').attr('role', 'group').append(
             $('<div></div>').addClass('fas fa-plus fa-lg btn-fw-add-icon'),
-                  $('<span></span>').html('&nbsp Adicionar')).addClass(
+                  $('<span></span>').html('&nbsp '+t('Add'))).addClass(
                   'btn btn-md ml-0 my-md-0 btn-primary btn-firmware-add'),
         );
       } else {

@@ -333,7 +333,7 @@ const markNextForUpdate = async function() {
       deviceHandlers.timeoutUpdateAck(device._id, 'update');
     }
   } catch (err) {
-    console.log(err);
+    console.log(err.message ? err.message : err);
     mutexRelease();
     return {success: false, error: t('saveError', {errorline: __line})};
   }
@@ -651,18 +651,17 @@ scheduleController.failedDownload = async function(mac, slave='') {
 scheduleController.abortSchedule = async function(req, res) {
   let config = await getConfig();
   if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
+    return res.status(500).json({
+      success: false, error: t('noSchedulingActive', {errorline: __line})});
   }
   // Mark scheduled update as aborted - separately to mitigate racing conditions
   if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-                                     {errorline: __line})};
+    return res.status(500).json({success: false,
+      error: t('schedulingAlreadyAborted', {errorline: __line})});
   }
   try {
     await configQuery({'device_update_schedule.is_aborted': true}, null, null);
     // Mark all todo devices as aborted
-    let count = config.device_update_schedule.device_count;
     let rule = config.device_update_schedule.rule;
     let pushArray = rule.to_do_devices.map((d)=>{
       let state = 'aborted' + ((d.state === 'offline') ? '_off' : '');
@@ -698,17 +697,11 @@ scheduleController.abortSchedule = async function(req, res) {
     pushArray = pushArray.filter((item, idx) => {
       return pushArray.indexOf(item) === idx;
     });
-
     let setQuery = {
+      'device_update_schedule.is_active': false,
       'device_update_schedule.rule.to_do_devices': [],
       'device_update_schedule.rule.in_progress_devices': [],
     };
-    // We allow device counting to be greater than assigned schedule count
-    // due to some rare racing conditions that count the same device more
-    // then once. No harm.
-    if ((rule.done_devices.length + pushArray.length) >= count) {
-      setQuery['device_update_schedule.is_active'] = false;
-    }
     await configQuery(
       setQuery,
       null,

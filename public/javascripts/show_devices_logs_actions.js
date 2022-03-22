@@ -10,8 +10,8 @@ let logBodyRawContent = '';
 socket.on('LIVELOG', function(macaddr, data) {
   if (($('#analyse-logs').data('bs.modal') || {})._isShown) {
     let id = $('#logRouterid_label').text();
-    $('.btn-log-live').prop('disabled', false);
     if (id == macaddr) {
+      $('.btn-log-live').prop('disabled', false);
       let textarea = $('#logArea');
       if (textarea.text() == 'Aguardando resposta do CPE...') {
         let usrtypes = ['user', 'daemon', 'kern', 'local1', 'authpriv'];
