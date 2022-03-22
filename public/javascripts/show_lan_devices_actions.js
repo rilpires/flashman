@@ -415,7 +415,12 @@ anlixDocumentReady.add(function() {
       countAddedDevs += 1;
       // Line break every 2 columns
       if (countAddedDevs % 2 == 0) {
-        lanDevsRow.append($('<div></div>').addClass('w-100'));
+        lanDevsRow.find('#empty-dev-cell').remove();
+        lanDevsRow.append($('<div>').addClass('w-100'));
+      } else {
+        lanDevsRow.find('#empty-dev-cell').remove();
+        lanDevsRow.append($('<div>').attr('id', 'empty-dev-cell')
+                                    .addClass('col-lg m-1'));
       }
     });
 
