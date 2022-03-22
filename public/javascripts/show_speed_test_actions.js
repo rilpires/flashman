@@ -201,13 +201,11 @@ anlixDocumentReady.add(function() {
         // only do this if timeout has not happened yet
         if (socketIoTimeout) return;
         socketIoResponse = true;
-        if (($('#speed-test').data('bs.modal') || {})._isShown) {
-          $('#speed-test-strong-text').empty();
-          $('#speed-test-shown-text').html('Aguardando resultado...');
-          $('#speed-test-shown-icon')
-          .removeClass((i, c)=>c.match(/fa\-.*/))
-          .addClass('fa-3x fa-spinner fa-pulse');
-        }
+        $('#speed-test-strong-text').empty();
+        $('#speed-test-shown-text').html('Aguardando resultado...');
+        $('#speed-test-shown-icon')
+        .removeClass((i, c)=>c.match(/fa-.*/))
+        .addClass('fa-3x fa-spinner fa-pulse');
       }
     }
   });
