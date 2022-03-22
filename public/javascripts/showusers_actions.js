@@ -20,31 +20,31 @@ const fetchUsers = function(usersTable) {
       $('#users-table-wrapper').show();
 
       res.users.forEach(function(userObj) {
-        let userRow = $('<tr></tr>').append(
+        let userRow = $('<tr>').append(
           (userObj.is_superuser ?
-            $('<td></td>') :
-            $('<td></td>').append(
-              $('<input></input>').addClass('checkbox')
+            $('<td>') :
+            $('<td>').append(
+              $('<input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', userObj._id)
             )
           ),
-          $('<td></td>').html(userObj.name),
+          $('<td>').html(userObj.name),
           (userObj.role ?
-            $('<td></td>').html(userObj.role) :
-            $('<td></td>')
+            $('<td>').html(userObj.role) :
+            $('<td>')
           ),
-          $('<td></td>').html(new Date(userObj.createdAt)
+          $('<td>').html(new Date(userObj.createdAt)
                         .toLocaleString('pt-BR')),
           (userObj.lastLogin ?
-            $('<td></td>').html(new Date(userObj.lastLogin)
+            $('<td>').html(new Date(userObj.lastLogin)
                           .toLocaleString('pt-BR')) :
-            $('<td></td>')
+            $('<td>')
           ),
-          $('<td></td>').append(
-            $('<button></button>').append(
-              $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
-              $('<span></span>').html(`&nbsp ${t('Edit')}`)
+          $('<td>').append(
+            $('<button>').append(
+              $('<div>').addClass('fas fa-edit btn-usr-edit-icon'),
+              $('<span>').html(`&nbsp ${t('Edit')}`)
             ).addClass('btn btn-sm btn-primary my-0 btn-usr-edit')
             .attr('data-userid', userObj._id)
             .attr('type', 'button')
@@ -86,9 +86,9 @@ anlixDocumentReady.add(function() {
   });
   // Initialize custom options on dataTable
   $('.dt-users-table-btns').append(
-    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-      $('<button></button>').addClass('btn btn-danger btn-trash').append(
-        $('<div></div>').addClass('fas fa-trash fa-lg'))
+    $('<div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg'))
     )
   );
   // Load table content
