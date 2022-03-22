@@ -519,12 +519,14 @@
 	"Important!": "Importante!",
 	"cpeModelsHaveDifferentVlanIdMaxValues": "Os modelos de CPEs possuem diferentes valores máximos de VLAN ID",
 	"maxVlanId": "ID de VLAN máximo",
+	"uniquenessRule": "deve ser distinto dos já existentes",
 	"vlanIdLengthRule": "O VLAN ID não pode ser menor que 3 ou maior que 4094",
-	"vlanIdUniquenessRule": "O VLAN ID deve ser distinto dos já existentes",
-	"vlanIdRules": "$t(vlanIdUniquenessRule). $t(vlanIdLengthRule)",
+	"vlanIdUniquenessRule": "O VLAN ID $t(uniquenessRule)",
+	"vlanIdRules": "$t(vlanIdUniquenessRule) e $t(vlanIdLengthRule).",
 	"Name": "Name",
-	"vlanProfileUniquenessRule": "O Nome do Perfil da VLAN deve ser distinto dos já existentes",
-	"vlanProfileNameRules": "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes",
+	"vlanProfileNameUniquenessRule": "O nome do Perfil da VLAN $t(uniquenessRule)",
+	"vlanProfileNameCharRules": "O nome do Perfil de VLAN não pode ser vazio, deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado",
+	"vlanProfileNameRules": "$t(vlanProfileCharRules) e $t(vlanProfileUniquenessRule).",
 	"vlanProfiles": "Perfis de VLANs",
 	"noVlanProfileFound": "Nenhum perfil de VLAN encontrado",
 	"editName": "Editar nome",
@@ -532,4 +534,6 @@
 	"Proceed": "Prosseguir",
 	"errorDeletingVlanProfile": "Erro ao excluir perfis de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Exclusão de perfis não foi possível pois alguns CPEs não atualizaram a configuração de VLAN.",
+
+	"vlanProfile": "Perfil de VLAN"
 }
