@@ -2,6 +2,8 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
+const t = i18next.t;
+
 const isActiveSearchBtnState = function(active = true) {
   if (active) {
     $('#certificates-search-button').prop('disabled', false);
@@ -55,7 +57,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes'),
+                  $('<span>').html('&nbsp ' + t('Details')),
                 ).addClass('btn btn-sm btn-primary my-0')
                 .attr('type', 'button'),
               ).attr('data-userid', userObj._id)
@@ -124,7 +126,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
               $('<td class="btn-detail">').append(
                 $('<button>').append(
                   $('<div>').addClass('fas fa-info-circle'),
-                  $('<span>').html('&nbsp Detalhes'),
+                  $('<span>').html('&nbsp ' + t('Details')),
                 ).addClass('btn btn-sm btn-primary my-0')
                 .attr('type', 'button'),
               ).attr('data-userid', unwrappedCert._id)
@@ -143,7 +145,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
       if (jqXHR.status === 404) {
         displayAlertMsg({
           type: 'danger',
-          message: 'Nenhuma certificação foi encontrada com esses parâmetros!',
+          message: t('noCertificatesFoundWithTheseParameters'),
         });
         return;
       }
@@ -163,9 +165,9 @@ const configSearchType = () => {
 
 const getSearchType = () => {
   const type = $('#certificates-search-type-button').text();
-  if (type === 'Técnico') {
+  if (type === t('Technician')) {
     return 'name';
-  } else if (type === 'MAC/Serial') {
+  } else if (type === t('MAC/Serial')) {
     return 'mac';
   } else {
     return 'no';
@@ -208,11 +210,11 @@ const fetchCertification = function(id, name, timestamp) {
       if (cert.finished) {
         $('#done-icon').addClass('fa-check-circle');
         $('#details-cancel').hide();
-        $('#done-text').html('&nbsp;&nbsp;Certificação Concluída');
+        $('#done-text').html(`&nbsp;&nbsp;${t('certificationCompleted')}`);
         $('#details-cancel').hide();
       } else {
         $('#done-icon').addClass('fa-times-circle');
-        $('#done-text').html('&nbsp;&nbsp;Certificação Não Concluída');
+        $('#done-text').html(`&nbsp;&nbsp;${t('certificationNotCompleted')}`);
         let reason = cert.cancelReason.replace(/\n/g, '<br />');
         $('#details-cancel-text').html('&nbsp;'+reason);
         $('#details-cancel').show();
@@ -224,7 +226,7 @@ const fetchCertification = function(id, name, timestamp) {
       if (cert.contract) {
         $('#user-contract').html('&nbsp;'+cert.contract);
       } else {
-        $('#user-contract').html('&nbsp;Não especificado');
+        $('#user-contract').html(`&nbsp;${t('notSpecified')}`);
       }
       // Change router info
       if (cert.isOnu) {
@@ -253,7 +255,7 @@ const fetchCertification = function(id, name, timestamp) {
         $('#wan-config-list').html('');
         let wanList = $('<ul>').addClass('list-inline').append(
           $('<li>').append(
-            $('<strong>').html('Tipo de Conexão:'),
+            $('<strong>').html(`${t('connectionType')}:`),
             $('<span>').html('&nbsp;'+cert.routerConnType),
           ),
         );
@@ -262,46 +264,46 @@ const fetchCertification = function(id, name, timestamp) {
             let params = JSON.parse(cert.wanConfigOnu);
             if (params.user) {
               wanList.append($('<li>').append(
-                $('<strong>').html('Usuário PPPoE:'),
+                $('<strong>').html(`${t('pppoeUser')}:`),
                 $('<span>').html('&nbsp;'+params.user),
               ));
             }
             if (params.vlan) {
               wanList.append($('<li>').append(
-                $('<strong>').html('VLAN ID:'),
+                $('<strong>').html(`${t('vlanId')}:`),
                 $('<span>').html('&nbsp;'+params.vlan),
               ));
             }
             if (params.mtu) {
               wanList.append($('<li>').append(
-                $('<strong>').html('MTU:'),
+                $('<strong>').html(`${t('MTU')}:`),
                 $('<span>').html('&nbsp;'+params.mtu),
               ));
             }
           } else {
             wanList.append($('<li>').append(
-              $('<strong>').html('Usuário PPPoE:'),
+              $('<strong>').html(`${t('pppoeUser')}:`),
               $('<span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
         } else if (cert.routerConnType === 'Bridge (IP Fixo)') {
           wanList.append($('<li>').append(
-            $('<strong>').html('IP Fixo do CPE:'),
+            $('<strong>').html(`${t('cpeFixedIp')}:`),
             $('<span>').html('&nbsp;'+cert.bridgeIP),
           ));
           wanList.append($('<li>').append(
-            $('<strong>').html('IP do Gateway:'),
+            $('<strong>').html(`${t('gatewayIp')}:`),
             $('<span>').html('&nbsp;'+cert.bridgeGateway),
           ));
           wanList.append($('<li>').append(
-            $('<strong>').html('IP do DNS:'),
+            $('<strong>').html(`${t('dnsIp')}:`),
             $('<span>').html('&nbsp;'+cert.bridgeDNS),
           ));
         }
         if (cert.routerConnType.includes('Bridge')) {
-          let paramSwitch = (cert.bridgeSwitch) ? 'Desabilitado' : 'Habilitado';
+          let paramSwitch = (cert.bridgeSwitch) ? t('Disabled') : t('Enabled');
           wanList.append($('<li>').append(
-            $('<strong>').html('Switch da LAN:'),
+            $('<strong>').html(`${t('lanSwitch')}:`),
             $('<span>').html('&nbsp;'+paramSwitch),
           ));
         }
@@ -314,11 +316,11 @@ const fetchCertification = function(id, name, timestamp) {
       }
       // Change diagnostics info
       if (cert.didDiagnose && cert.diagnostic) {
-        let diagWan = (cert.diagnostic.wan) ? 'OK' : 'Erro';
-        let diagAnlix = (cert.diagnostic.anlix) ? 'OK' : 'Erro';
-        let diagFlashman = (cert.diagnostic.flashman) ? 'OK' : 'Erro';
+        let diagWan = (cert.diagnostic.wan) ? t('Ok') : t('Error');
+        let diagAnlix = (cert.diagnostic.anlix) ? t('Ok') : t('Error');
+        let diagFlashman = (cert.diagnostic.flashman) ? t('Ok') : t('Error');
         if (cert.isOnu) {
-          let diagTR069 = (cert.diagnostic.tr069) ? 'OK' : 'Erro';
+          let diagTR069 = (cert.diagnostic.tr069) ? t('Ok') : t('Error');
           let diagPon = cert.diagnostic.pon;
           let diagRxPower = cert.diagnostic.rxpower;
 
@@ -326,16 +328,16 @@ const fetchCertification = function(id, name, timestamp) {
           $('#diagnostic-onu-speedtest-value-element').hide();
           if (cert.didSpeedTest === true &&
               cert.diagnostic.speedtest === true) {
-            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            let spdTstStts = (cert.diagnostic.speedtest) ? t('Ok') : t('Error');
             $('#diagnostic-onu-speedtest-status').html('&nbsp;'+spdTstStts);
             $('#diagnostic-onu-speedtest-status-element').show();
 
             if (cert.diagnostic.speedValue !== null) {
               let spdTstVal;
               if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
-                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
+                spdTstVal = cert.diagnostic.speedTestLimit+' '+t('Mbps');
               } else {
-                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
+                spdTstVal = cert.diagnostic.speedValue+' '+t('Mbps');
               }
               $('#diagnostic-onu-speedtest-value').html('&nbsp;'+spdTstVal);
               $('#diagnostic-onu-speedtest-value-element').show();
@@ -347,10 +349,10 @@ const fetchCertification = function(id, name, timestamp) {
           $('#diagnostic-onu-anlix').html('&nbsp;'+diagAnlix);
           $('#diagnostic-onu-flashman').html('&nbsp;'+diagFlashman);
           if (diagPon >= 0) {
-            diagPon = (diagPon > 0) ? 'Erro': 'OK';
+            diagPon = (diagPon > 0) ? t('Error'): t('Ok');
             if (diagPon == 4) {
               // Could not measure RX power
-              diagRxPower = 'Não medido';
+              diagRxPower = t('notMeasured');
             } else {
               diagRxPower = diagRxPower.toString() + ' dBm';
             }
@@ -367,24 +369,24 @@ const fetchCertification = function(id, name, timestamp) {
           $('#diagnostic-none-onu').hide();
           $('#diagnostic-done-onu').show();
         } else {
-          let diagIp4 = (cert.diagnostic.ipv4) ? 'OK' : 'Erro';
-          let diagIp6 = (cert.diagnostic.ipv6) ? 'OK' : 'Erro';
-          let diagDns = (cert.diagnostic.dns) ? 'OK' : 'Erro';
+          let diagIp4 = (cert.diagnostic.ipv4) ? t('Ok') : t('Error');
+          let diagIp6 = (cert.diagnostic.ipv6) ? t('Ok') : t('Error');
+          let diagDns = (cert.diagnostic.dns) ? t('Ok') : t('Error');
 
           $('#diagnostic-router-speedtest-status-element').hide();
           $('#diagnostic-router-speedtest-value-element').hide();
           if (cert.didSpeedTest === true &&
               cert.diagnostic.speedtest === true) {
-            let spdTstStts = (cert.diagnostic.speedtest) ? 'Ok' : 'Erro';
+            let spdTstStts = (cert.diagnostic.speedtest) ? t('Ok') : t('Error');
             $('#diagnostic-router-speedtest-status').html('&nbsp;'+spdTstStts);
             $('#diagnostic-router-speedtest-status-element').show();
 
             if (cert.diagnostic.speedValue !== null) {
               let spdTstVal;
               if (cert.diagnostic.speedValue > cert.diagnostic.speedTestLimit) {
-                spdTstVal = cert.diagnostic.speedTestLimit+'+ Mpbs';
+                spdTstVal = cert.diagnostic.speedTestLimit+' '+t('Mbps');
               } else {
-                spdTstVal = cert.diagnostic.speedValue+' Mpbs';
+                spdTstVal = cert.diagnostic.speedValue+' '+t('Mbps');
               }
               $('#diagnostic-router-speedtest-value').html('&nbsp;'+spdTstVal);
               $('#diagnostic-router-speedtest-value-element').show();
@@ -416,33 +418,33 @@ const fetchCertification = function(id, name, timestamp) {
         let modeStr = '';
         switch (cert.mesh.mode) {
           case 0:
-            modeStr = 'Desativado';
+            modeStr = t('Deactivaded');
             break;
           case 1:
-            modeStr = 'Cabo';
+            modeStr = t('Cable');
             break;
           case 2:
-            modeStr = 'Cabo e Wi-Fi 2.4 GHz';
+            modeStr = t('cableAndWifi24ghz');
             break;
           case 3:
-            modeStr = 'Cabo e Wi-Fi 5.0 GHz';
+            modeStr = t('cableAndWifi24ghz');
             break;
           case 4:
-            modeStr = 'Cabo e ambos Wi-Fi';
+            modeStr = t('cableAndBothWifi');
             break;
           default:
-            modeStr = 'Desconhecido';
+            modeStr = t('Unknown');
         }
         $('#mesh-mode').html('&nbsp;'+modeStr);
         $('#mesh-slave-list').html('');
         $('#mesh-remove-list').html('');
         if (cert.mesh.updatedSlaves && cert.mesh.updatedSlaves.length > 0) {
-          $('#mesh-slave-head').html('CPEs secundários:');
+          $('#mesh-slave-head').html(`${t('secondaryCpes')}:`);
           cert.mesh.updatedSlaves.forEach((slave)=>{
             $('#mesh-slave-list').append('<li>'+slave+'</li>');
           });
         } else {
-          $('#mesh-slave-head').html('A rede Mesh não possui CPEs secundários');
+          $('#mesh-slave-head').html(t('meshNetworkHasNoSecondaryCpes'));
         }
         if (cert.mesh.originalSlaves && cert.mesh.originalSlaves.length > 0) {
           let removedRouters = cert.mesh.originalSlaves;
@@ -452,15 +454,15 @@ const fetchCertification = function(id, name, timestamp) {
             });
           }
           if (removedRouters.length > 0) {
-            $('#mesh-remove-head').html('CPEs secundários removidos:');
+            $('#mesh-remove-head').html(`${t('removedSecondaryCpes')}:`);
             removedRouters.forEach((slave)=>{
               $('#mesh-remove-list').append('<li>'+slave+'</li>');
             });
           } else {
-            $('#mesh-remove-head').html('Nenhum CPE secundário foi removido');
+            $('#mesh-remove-head').html(t('noSecondaryCpesRemoved'));
           }
         } else {
-          $('#mesh-remove-head').html('Nenhum CPE secundário foi removido');
+          $('#mesh-remove-head').html(t('noSecondaryCpesRemoved'));
         }
         $('#mesh-config-none').hide();
         $('#mesh-config-done').show();
@@ -525,9 +527,9 @@ anlixDocumentReady.add(function() {
     'searching': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhuma certificação encontrada',
-      'infoEmpty': 'Nenhuma certificação encontrada',
-      'lengthMenu': 'Exibir _MENU_',
+      'zeroRecords': t('noCertificatesFound'),
+      'infoEmpty': t('noCertificatesFound'),
+      'lengthMenu': `${t('Show')} _MENU_`,
     },
     'order': [[1+hasTrashButton, 'asc'], [2+hasTrashButton, 'desc']],
     'columnDefs': [
@@ -545,7 +547,7 @@ anlixDocumentReady.add(function() {
                    .addClass('btn btn-primary mr-4')
       .append(
         $('<i>').addClass('fas fa-file-excel fa-lg'),
-        $('<span>').html('&nbsp; Exportar CSV'),
+        $('<span>').html(`&nbsp; ${t('exportCsv')}`),
       ),
   );
   if (hasTrashButton) {

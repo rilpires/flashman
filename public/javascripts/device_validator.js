@@ -1,11 +1,11 @@
 (function() {
   // this code is used in both back end and front end and we need to use
   // i18next in both. So this will handle i18next for both cases.
-  const nodeVer = typeof process !== "undefined" && process.versions
+  const nodeVer = typeof process !== 'undefined' && process.versions
     && process.versions.node;
   // making webpack ignore 'require' global call.
   const nodeRequire = nodeVer ?
-    typeof __webpack_require__ === "function" ? __non_webpack_require__ : require
+    typeof __webpack_require__ === 'function' ? __non_webpack_require__ : require
     : undefined;
   // using translation function from global i18next (front end) or from our
   // language controller (nodejs back end).
@@ -53,8 +53,10 @@
 
     Validator.prototype.validateBand = function(band) {
       return {
-        valid: ['auto', 'HT20', 'HT40', 'VHT20', 'VHT40', 'VHT80'].includes(band),
-        err: ['Somente são aceitos os valores auto,HT20,HT40,VHT20,VHT40 e VHT80'],
+        valid: ['auto', 'HT20', 'HT40',
+                'VHT20', 'VHT40', 'VHT80'].includes(band),
+        err: ['Somente são aceitos os valores auto,' +
+              'HT20,HT40,VHT20,VHT40 e VHT80'],
       };
     };
 
@@ -78,7 +80,7 @@
         'Este campo não pode ter mais de 64 caracteres',
         'Somente são aceitos: caracteres alfanuméricos, espaços, @, _, - e .',
       ];
-      let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@\.\-\_\#\s]+$/);
+      let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -90,9 +92,11 @@
       const messages = [
         'Este campo deve ter no mínimo ' + minlength + ' caracteres',
         'Este campo não pode ter mais de 64 caracteres',
-        'Letras com acento, cedilha, e alguns caracteres especiais não são aceitos',
+        'Letras com acento, cedilha, e alguns ' +
+        'caracteres especiais não são aceitos',
       ];
-      let ret = validateRegex(pass, minlength, 64, /^[a-zA-Z0-9\.\-\_\#\!\@\$\%\&\*\=\+\?]+$/);
+      let ret = validateRegex(pass, minlength, 64,
+                              /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -103,7 +107,7 @@
         'Este campo não pode ter mais de 32 caracteres',
         'Somente são aceitos: caracteres alfanuméricos, espaços, ponto, - e _',
       ];
-      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9\.\-\_\#\s]+$/);
+      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -111,13 +115,13 @@
     Validator.prototype.validateSSIDPrefix = function(ssid, isRequired) {
       const messages = [
         t('thisFieldIsMandatory'),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max: "16"}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: '16'}),
         t('acceptableCharsAre0-9a-zA-Z .-_#'),
         t('endingSeparatorMustHaveAtLeastOne.-_#'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
-        /^([a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#))*$/);
-      
+        /^([a-zA-Z0-9.\-_#\s]+(\.|-|_|#))*$/);
+
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -126,9 +130,11 @@
       const messages = [
         'Este campo deve ter no mínimo 8 caracteres',
         'Este campo não pode ter mais de 64 caracteres',
-        'Letras com acento, cedilha, e alguns caracteres especiais não são aceitos',
+        'Letras com acento, cedilha, e alguns ' +
+        'caracteres especiais não são aceitos',
       ];
-      let ret = validateRegex(pass, 8, 64, /^[a-zA-Z0-9\.\-\_\#\!\@\$\%\&\*\=\+\?]+$/);
+      let ret = validateRegex(pass, 8, 64,
+                              /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };

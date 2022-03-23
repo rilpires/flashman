@@ -1218,7 +1218,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('attendanceDate'),
+        label: t('serviceDate'),
         value: 'certifications.localEpochTimestamp',
         default: '',
       },

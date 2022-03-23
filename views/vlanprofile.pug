@@ -6,13 +6,13 @@ block content
       .card.mt-5
         h4.card-header.teal.lighten-2.white-text
           .fas.fa-info.fa-lg
-          span &nbsp Perfil de VLAN
+          span &nbsp; #{t('vlanProfile')}
         .card-body
           form.needs-validation(method='post', action='/vlan/profile/edit/' + vlanprofile.vlan_id, novalidate)
             .row
               .col-md
                 .md-form
-                  label(for="profilename") Nome
+                  label(for="profilename")= t('Name')
                   input#profilename.form-control(
                     type="text",
                     name="profilename",
@@ -20,10 +20,10 @@ block content
                     oninput="checkVlanName(this)"
                     required
                   )
-                  .invalid-feedback O nome deve ter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes
+                  .invalid-feedback= t('vlanProfileNameRules')
             .col-12.mt-3.text-center
               .form-buttons
-                button.btn.btn-primary(type="submit") Atualizar
+                button.btn.btn-primary(type="submit")= t('Update')
 
 block scripts
   script(src='/dist/vlanprofile.bundle.js')

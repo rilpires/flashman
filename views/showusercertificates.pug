@@ -6,7 +6,7 @@ block content
   .card.mt-5.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-file-alt.fa-lg
-      span &nbsp; Certificações
+      span &nbsp; #{t('Certificates')}
     .card-body
       h3#loading-users.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
@@ -18,26 +18,26 @@ block content
                 type="button",
                 data-toggle="dropdown"
               )
-                span#new_ext_ref_type_selected.selected Técnico
+                span#new_ext_ref_type_selected.selected= t('Technician')
               #certificates-search-type.ext-ref-type.dropdown-menu
-                a.dropdown-item.text-center Técnico
-                a.dropdown-item.text-center MAC/Serial
+                a.dropdown-item.text-center= t('Technician')
+                a.dropdown-item.text-center= t('MAC/Serial')
             input#certificates-search-input.form-control.py-0(
               type="text",
               name="content",
-              placeholder="Buscar..."
+              placeholder=t('Search...')
             )
           .row
             .col.pr-md-0
               .md-form.input-entry.my-0
-                label.active Data inicial de atendimento
+                label.active= t('serviceStartDate')
                 input#certificates-firstdatepicker-input.form-control(
                   type="date",
                   name="firstdatepicker",
                 )
             .col.pr-md-0
               .md-form.input-entry.my-0
-                label.active Data final de atendimento
+                label.active= t('serviceEndDate')
                 input#certificates-seconddatepicker-input.form-control(
                   type="date",
                   name="seconddatepicker",
@@ -53,10 +53,10 @@ block content
                 if (superuser || role.grantCertificationAccess > 1)
                   th#checkboxHeader.text-center
                     input.checkbox(type="checkbox" id="checkall")
-                th.text-center Concluído
-                th.text-center Identificador Único
-                th.text-center Data do Atendimento
-                th.text-center Técnico
+                th.text-centere= t('Concluded')
+                th.text-centere= t('uniqueIdentifier')
+                th.text-centere= t('serviceDate')
+                th.text-centere= t('Technician')
                 th.text-center
 
 block scripts
