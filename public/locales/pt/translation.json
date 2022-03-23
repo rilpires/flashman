@@ -524,7 +524,7 @@
 	"vlanIdLengthRule": "O VLAN ID não pode ser menor que 3 ou maior que 4094",
 	"vlanIdUniquenessRule": "O VLAN ID $t(uniquenessRule)",
 	"vlanIdRules": "$t(vlanIdUniquenessRule) e $t(vlanIdLengthRule).",
-	"Name": "Name",
+	"Name": "Nome",
 	"vlanProfileNameUniquenessRule": "O nome do Perfil da VLAN $t(uniquenessRule)",
 	"vlanProfileNameCharRules": "O nome do Perfil de VLAN não pode ser vazio, deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado",
 	"vlanProfileNameRules": "$t(vlanProfileCharRules) e $t(vlanProfileUniquenessRule).",
