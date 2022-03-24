@@ -1,3 +1,4 @@
+const util = require('util');
 let utilHandlers = {};
 
 utilHandlers.isJSONObject = function(val) {
@@ -101,5 +102,13 @@ utilHandlers.parseDate = function(dateString) {
   let minute = parseInt(hourAndMinute[1], 10);
   return new Date(year, month-1, day, hour, minute, 0, 0);
 }
+
+utilHandlers.jsonParse = util.promisify(JSON.parse);
+
+utilHandlers.jsonStringify = util.promisify(JSON.stringify);
+
+utilHandlers.parseInt = util.promisify(parseInt);
+
+utilHandlers.parseFloat = util.promisify(parseFloat);
 
 module.exports = utilHandlers;

@@ -106,10 +106,12 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertToDbm = function(model, rxPower) {
+const convertToDbm = async function(model, rxPower) {
   switch (model) {
     case 'HG9':
-      return rxPower = parseFloat(rxPower.split(' ')[0]);
+      return rxPower = await utilHandlers
+        .parseFloat(rxPower.split(' ')[0])
+        .catch(debug);
     case 'IGD':
     case 'FW323DAC':
     case 'F660':
@@ -119,7 +121,9 @@ const convertToDbm = function(model, rxPower) {
     case 'G-140W-C':
     case 'G-140W-CS':
     case 'G-140W-UD':
-      return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+      return rxPower = await utilHandlers.parseFloat(
+        (10 * Math.log10(rxPower*0.0001)).toFixed(3)
+      ).catch(debug);
     case 'GONUAC001':
     default:
       return rxPower;
@@ -154,15 +158,15 @@ const convertWifiBand = function(band, mode, is5ghz) {
   }
 };
 
-const convertWifiRate = function(model, rate) {
+const convertWifiRate = async function(model, rate) {
   switch (model) {
     case 'F660':
     case 'F670L':
     case 'F680':
     case 'ST-1001-FL':
-      return rate = parseInt(rate) / 1000;
+      return rate = await utilHandlers.parseInt(rate).catch(debug) / 1000;
     default:
-      return rate = parseInt(rate);
+      return rate = await utilHandlers.parseInt(rate).catch(debug);
   }
 };
 
@@ -184,30 +188,44 @@ const extractGreatekCredentials = function(config) {
   return {username: username, password: password};
 };
 
-const appendBytesMeasure = function(original, recv, sent) {
-  let now = Math.floor(Date.now()/1000);
-  if (!original) original = {};
-  let bytes = JSON.parse(JSON.stringify(original));
-  if (Object.keys(bytes).length >= 300) {
-    let keysNum = Object.keys(bytes).map((k)=>parseInt(k));
-    let smallest = Math.min(...keysNum);
-    delete bytes[smallest];
+const appendBytesMeasure = async function(original, recv, sent) {
+  try {
+    let now = Math.floor(Date.now()/1000);
+    if (!original) original = {};
+    let bytes = await utilHandlers
+      .jsonParse(utilHandlers.jsonStringify(original));
+    if (Object.keys(bytes).length >= 300) {
+      let keysNum = Object
+        .keys(bytes)
+        .map(async (k) => {
+          return parseInt(k);
+        });
+      let smallest = Math.min(...keysNum);
+      delete bytes[smallest];
+    }
+    bytes[now] = [recv, sent];
+    return bytes;
+  } catch (e) {
+    debug(`appendBytesMeasure Exception: ${e}`);
   }
-  bytes[now] = [recv, sent];
-  return bytes;
 };
 
-const appendPonSignal = function(original, rxPower, txPower) {
-  let now = Math.floor(Date.now() / 1000);
-  if (!original) original = {};
-  let dbms = JSON.parse(JSON.stringify(original));
-  if (Object.keys(dbms).length >= 100) {
-    let keysNum = Object.keys(dbms).map((k) => parseInt(k));
-    let smallest = Math.min(...keysNum);
-    delete dbms[smallest];
+const appendPonSignal = async function(original, rxPower, txPower) {
+  try {
+    let now = Math.floor(Date.now() / 1000);
+    if (!original) original = {};
+    let dbms = await utilHandlers
+      .jsonParse(await utilHandlers.jsonStringify(original));
+    if (Object.keys(dbms).length >= 100) {
+      let keysNum = Object.keys(dbms).map((k) => parseInt(k));
+      let smallest = Math.min(...keysNum);
+      delete dbms[smallest];
+    }
+    dbms[now] = [rxPower, txPower];
+    return dbms;
+  } catch (e) {
+    debug(`appendPonSignal Exception: ${e}`);
   }
-  dbms[now] = [rxPower, txPower];
-  return dbms;
 };
 
 const processHostFromURL = function(url) {
@@ -386,8 +404,9 @@ const createRegistry = async function(req, permissions) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c) => {
-      String.fromCharCode(parseInt(c, 16))
+    serialPrefix = serialPrefix.map(async (c) => {
+      const parsedData = await utilHandlers.parseInt(c, 16).catch(debug);
+      return String.fromCharCode(parsedData);
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
@@ -671,8 +690,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c) => {
-      String.fromCharCode(parseInt(c, 16))
+    serialPrefix = serialPrefix.map(async (c) => {
+      const parsedData = await utilHandlers.parseInt(c, 16).catch(debug);
+      return String.fromCharCode(parsedData);
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
@@ -927,38 +947,42 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wan.recv_bytes && data.wan.recv_bytes.value &&
       data.wan.sent_bytes && data.wan.sent_bytes.value) {
-    device.wan_bytes = appendBytesMeasure(
+    device.wan_bytes = await appendBytesMeasure(
       device.wan_bytes,
       data.wan.recv_bytes.value,
       data.wan.sent_bytes.value,
-    );
+    ).catch(debug);
   }
   let isPonRxValOk = false;
   let isPonTxValOk = false;
-  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    device.pon_rxpower = convertToDbm(data.common.model.value,
-                                      data.wan.pon_rxpower.value);
-    isPonRxValOk = true;
-  } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    device.pon_rxpower = convertToDbm(data.common.model.value,
-                                      data.wan.pon_rxpower_epon.value);
-    isPonRxValOk = true;
-  }
-  if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    device.pon_txpower = convertToDbm(data.common.model.value,
-                                      data.wan.pon_txpower.value);
-    isPonTxValOk = true;
-  } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    device.pon_txpower = convertToDbm(data.common.model.value,
-                                      data.wan.pon_txpower_epon.value);
-    isPonTxValOk = true;
-  }
-  if (isPonRxValOk && isPonTxValOk) {
-    device.pon_signal_measure = appendPonSignal(
-      device.pon_signal_measure,
-      device.pon_rxpower,
-      device.pon_txpower,
-    );
+  try {
+    if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
+      device.pon_rxpower = await convertToDbm(data.common.model.value,
+                                        data.wan.pon_rxpower.value);
+      isPonRxValOk = true;
+    } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
+      device.pon_rxpower = await convertToDbm(data.common.model.value,
+                                        data.wan.pon_rxpower_epon.value);
+      isPonRxValOk = true;
+    }
+    if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
+      device.pon_txpower = await convertToDbm(data.common.model.value,
+                                        data.wan.pon_txpower.value);
+      isPonTxValOk = true;
+    } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
+      device.pon_txpower = await convertToDbm(data.common.model.value,
+                                        data.wan.pon_txpower_epon.value);
+      isPonTxValOk = true;
+    }
+    if (isPonRxValOk && isPonTxValOk) {
+      device.pon_signal_measure = await appendPonSignal(
+        device.pon_signal_measure,
+        device.pon_rxpower,
+        device.pon_txpower,
+      );
+    }
+  } catch (e) {
+    debug(e);
   }
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
     if (typeof config.tr069.web_login !== 'undefined' &&
@@ -1170,7 +1194,8 @@ const fetchLogFromGenie = function(success, device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        data = parsedData[0];
       }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
@@ -1304,7 +1329,8 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     response.on('end', async (chunk)=>{
       let body = Buffer.concat(chunks);
       try {
-        let data = JSON.parse(body)[0];
+        const parsedData = await utilHandlers.jsonParse(body);
+        let data = parsedData[0];
         let permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
@@ -1441,11 +1467,15 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
     ) {
-      result[pingKeys.host] = {
-        lat: pingKeys.avg_resp_time.toString(),
-        loss: parseInt(pingKeys.failure_count * 100 /
-               (pingKeys.success_count + pingKeys.failure_count)).toString(),
-      };
+      try {
+        result[pingKeys.host] = {
+          lat: pingKeys.avg_resp_time.toString(),
+          loss: parseInt(pingKeys.failure_count * 100 /
+                 (pingKeys.success_count + pingKeys.failure_count)).toString(),
+        };
+      } catch (e) {
+        debug(e);
+      }
       if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
@@ -1697,7 +1727,8 @@ const fetchWanBytesFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        data = parsedData[0];
       }
       let success = false;
       if (checkForNestedKey(data, recvField+'._value') &&
@@ -1712,11 +1743,11 @@ const fetchWanBytesFromGenie = function(device, acsID) {
         let deviceEdit = await DeviceModel.findById(mac);
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
-        wanBytes = appendBytesMeasure(
+        wanBytes = await appendBytesMeasure(
           deviceEdit.wan_bytes,
           wanBytes.recv,
           wanBytes.sent,
-        );
+        ).catch(debug);
         deviceEdit.wan_bytes = wanBytes;
         await deviceEdit.save().catch((err) => {
           console.log('Error saving device wan bytes: ' + err);
@@ -1779,7 +1810,8 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     resp.on('end', async ()=>{
       if (data.length > 0) {
         try {
-          data = JSON.parse(data)[0];
+          const parseData = await utilHandlers.jsonParse(data)[0];
+          data = parsedData[0];
         } catch (e) {
           return;
         }
@@ -1832,8 +1864,8 @@ const fetchUpStatusFromGenie = function(device, acsID) {
         deviceEdit.wan_up_time = wanUpTime;
         if (successRxPower) {
           // covert rx and tx signal
-          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
-          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+          ponSignal.rxpower = await convertToDbm(deviceEdit.model, ponSignal.rxpower);
+          ponSignal.txpower = await convertToDbm(deviceEdit.model, ponSignal.txpower);
           // send then
           let config = await Config.findOne(
             {is_default: true}, {tr069: true},
@@ -1848,7 +1880,7 @@ const fetchUpStatusFromGenie = function(device, acsID) {
               config.tr069.pon_signal_threshold_critical_high,
           };
           // append to device data structure
-          ponSignal = appendPonSignal(
+          ponSignal = await appendPonSignal(
             deviceEdit.pon_signal_measure,
             ponSignal.rxpower,
             ponSignal.txpower,
@@ -1894,7 +1926,8 @@ const checkMeshObjsCreated = function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         try {
-          data = JSON.parse(data)[0];
+          const parsedData = await utilHandlers.jsonParse(data);
+          data = parsedData[0];
         } catch (e) {
           result.success = false;
           resolve(result);
@@ -1940,7 +1973,8 @@ const fetchMeshBSSID = function(device, meshMode) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         try {
-          data = JSON.parse(data)[0];
+          const parsedData = await utilHandlers.jsonParse(data);
+          data = parsedData[0];
         } catch (e) {
           console.log('Error parsing bssid data from genie');
           return resolve({success: false});
@@ -2009,7 +2043,8 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        data = parsedData[0];
       }
       let success = false;
       if (checkForNestedKey(data, rxPowerField + '._value') &&
@@ -2032,12 +2067,12 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
-          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
+          ponSignal.rxpower = await convertToDbm(deviceEdit.model, ponSignal.rxpower);
         }
         if (ponSignal.txpower) {
-          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
+          ponSignal.txpower = await convertToDbm(deviceEdit.model, ponSignal.txpower);
         }
-        ponSignal = appendPonSignal(
+        ponSignal = await appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
           ponSignal.txpower,
@@ -2078,7 +2113,8 @@ const fetchDevicesFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        data = parsedData[0];
       }
       let success = true;
       let hostKeys = [];
@@ -2159,7 +2195,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
               interfaces.push('5');
             }
           }
-          interfaces.forEach((iface)=>{
+          interfaces.forEach(async (iface) => {
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
@@ -2172,7 +2208,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
               assocIndexes = [];
             }
             assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
-            assocIndexes.forEach((index)=>{
+            assocIndexes.forEach((index) => {
               // Collect associated mac
               let macKey = fields.devices.assoc_mac;
               macKey = macKey.replace('*', iface).replace('*', index);
@@ -2231,7 +2267,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rateKey = fields.devices.host_rate;
                 rateKey = rateKey.replace('*', iface).replace('*', index);
                 device.rate = getFromNestedKey(data, rateKey+'._value');
-                device.rate = convertWifiRate(model, device.rate);
+                convertWifiRate(model, device.rate)
+                  .then(result => device.rate = result)
+                  .catch(debug);
               }
               if (device.mac == device.name &&
                 fields.devices.alt_host_name) {
@@ -2242,7 +2280,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
             });
           });
         }
-        await saveDeviceData(mac, devices);
+        await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);
     });
@@ -3034,7 +3072,8 @@ const getAcRuleTrees = async function(
         if (data.length > 0) {
           try {
             // Get data
-            data = JSON.parse(data)[0];
+            const parsedData = await utilHandlers.jsonParse(data);
+            data = parsedData[0];
             for (let wlanType of supportedWlans) {
               let wlanTreeRoot = acSubtreeRoots[wlanType];
               let wlanTreeRules = [];
@@ -3229,7 +3268,10 @@ const configFileEditing = async function(device, target) {
     resp.on('data', (chunk)=>rawConfigFile+=chunk);
     resp.on('end', async ()=>{
       if (rawConfigFile.length > 0) {
-        rawConfigFile = JSON.parse(rawConfigFile)[0];
+        const parsedData = await utilHandlers
+          .jsonParse(rawConfigFile)
+          .catch(debug);
+        rawConfigFile = parsedData[0];
       }
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
@@ -3297,7 +3339,8 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         if (data.length > 0) {
-          data = JSON.parse(data)[0];
+          const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+          data = parsedData[0];
         }
         let isDiff = false;
         let template = '';
