@@ -386,7 +386,9 @@ const createRegistry = async function(req, permissions) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    serialPrefix = serialPrefix.map(
+      (c) => String.fromCharCode(parseInt(c, 16))
+    );
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
   }
@@ -669,7 +671,9 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    serialPrefix = serialPrefix.map(
+      (c) => String.fromCharCode(parseInt(c, 16))
+    );
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
   }
