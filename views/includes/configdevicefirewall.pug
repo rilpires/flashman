@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-lock-open.fa-lg
-          strong &nbsp; Abertura de portas no CPE &nbsp;
+          strong &nbsp; #{t('cpePortOpening')} &nbsp;
             label(name="openfirewallRouterid_label" id="openfirewallRouterid_label")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -14,29 +14,22 @@
           .col
             .row
               .col-6 
-                span Dispositivo &nbsp;
+                span #{t('Device')} &nbsp;
                 a.fas.fa-question-circle(
                   data-toggle="tooltip",
-                  title="Peça para o cliente conectar o dispositivo ao CPE. " +
-                        "É possível também digitar o endereço MAC do dispositivo"
+                  title=t('deviceTooltip'),
                 )
               .col-3
-                span Abrir portas &nbsp;
+                span #{t('openPorts')} &nbsp;
                 a.fas.fa-question-circle(
                   data-toggle="tooltip",
-                  title="As portas abertas terão um mapeamento um para um. " +
-                        "Ou seja, a porta X aberta no dispositivo será " +
-                        "mapeada na mesma porta X do CPE. Para portas assimetricas, " +
-                        "separe as portas com ':'. Ex: 80:8080" 
+                  title=t('openPortsToolTip'),
                 )
               .col-1.px-0
                 span DMZ &nbsp;
                 a.fas.fa-question-circle(
                   data-toggle="tooltip",
-                  title="Somente IPv4. Ao ativar a DMZ, o dispositivo ficará " +
-                        "em uma rede isolada da rede LAN. Os dispositivos da " +
-                        "rede LAN ainda poderão se comunicar com os " +
-                        "dispositivos na DMZ",
+                  title=t('DmzTooltip'),
                 )
               .col-2.p
                 span &nbsp
@@ -62,14 +55,13 @@
               table.table
                 thead
                   tr
-                    th.text-left Dispositivo
-                    th.text-center Portas abertas IPv4
+                    th.text-left= t('Device')
+                    th.text-center= t('OpennedPortIpv4')
                     th.text-center
-                      span Portas abertas IPv6 &nbsp;
+                      span #{t('OpennedPortIpv6')} &nbsp;
                       a.fas.fa-question-circle(
                         data-toggle="tooltip",
-                        title="Caso não veja as portas listadas, " +
-                              "atualize o firmware do CPE",
+                        title=t('opennedPortsTooltip'),
                       )
                     th.text-center DMZ
                     th &nbsp;
@@ -80,4 +72,4 @@
       .modal-footer 
         button.btn.btn-primary.btn-openFirewallPortsSubmit(type="button")
           .fas.fa-check.fa-lg
-          span &nbsp Aplicar
+          span &nbsp #{t('Apply')}

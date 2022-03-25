@@ -2,6 +2,8 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 import 'selectize';
 
+const t = i18next.t;
+
 const selectizeOptionsMacs = {
   create: true,
   createFilter: RegExp('^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$'),
@@ -303,8 +305,8 @@ anlixDocumentReady.add(function() {
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (deviceId == '') {
       swal({
-        title: 'Falha na inclusão da regra',
-        text: 'O dispositivo deve ser informado!',
+        title: t('ruleInclusionFail'),
+        text: t('deviceMustBeInformed!'),
         type: 'error',
         confirmButtonColor: '#4db6ac',
       });
@@ -312,8 +314,8 @@ anlixDocumentReady.add(function() {
     }
     if (ports == '') {
       swal({
-        title: 'Falha na inclusão da regra',
-        text: 'Informe, no mínimo, uma porta para liberar acesso!',
+        title: t('ruleInclusionFail'),
+        text: t('informAtLeastOnePortToOpenAccess!'),
         type: 'error',
         confirmButtonColor: '#4db6ac',
       });
@@ -324,8 +326,8 @@ anlixDocumentReady.add(function() {
     $.each(ports, function(idx, portValue) {
       if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'CPE não aceita portas assimétricas! Atualize o firmware.',
+          title: t('ruleInclusionFail'),
+          text: t('cpeDoesNotSupportAsymmetricPorts'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -376,8 +378,8 @@ anlixDocumentReady.add(function() {
 
       if (reservedPorts.indexOf(parseInt(portFinal)) != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'Porta Externa já utilizada!',
+          title: t('ruleInclusionFail'),
+          text: t('externalPortAlreadyInUse!'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -387,8 +389,8 @@ anlixDocumentReady.add(function() {
 
       if (intPorts.indexOf(parseInt(intPort)) != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'Porta Interna já utilizada!',
+          title: t('ruleInclusionFail'),
+          text: t('internalPortAlreadyInUse!'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -431,13 +433,13 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         if (res.success) {
           swal({
-            title: 'Sucesso! Reinicie o dispositivo alterado',
+            title: `${t('Sucess')}! ${t('restartModifiedDeviced')}`,
             type: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
           swal({
-            title: 'Falha ao aplicar regras',
+            title: t('ruleApplicationFail'),
             text: res.message,
             type: 'error',
             confirmButtonColor: '#4db6ac',
@@ -446,7 +448,7 @@ anlixDocumentReady.add(function() {
       },
       error: function(xhr, status, error) {
         swal({
-          title: 'Falha ao aplicar regras',
+          title: t('ruleApplicationFail'),
           text: error,
           type: 'error',
           confirmButtonColor: '#4db6ac',

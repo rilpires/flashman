@@ -276,7 +276,7 @@ const fetchCertification = function(id, name, timestamp) {
             }
             if (params.mtu) {
               wanList.append($('<li>').append(
-                $('<strong>').html(`${t('MTU')}:`),
+                $('<strong>').html('MTU:'),
                 $('<span>').html('&nbsp;'+params.mtu),
               ));
             }

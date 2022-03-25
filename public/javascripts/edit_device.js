@@ -3,6 +3,8 @@ import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
 
+const t = i18next.t;
+
 let renderEditErrors = function(errors) {
   let allMessages = '';
   for (let key in errors) {
@@ -32,7 +34,7 @@ const validateEditDeviceMesh = function(event) {
 const openErrorSwal = function(message) {
   swal({
     type: 'error',
-    title: 'Erro',
+    title: t('Error'),
     text: message,
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',
@@ -306,7 +308,7 @@ let validateEditDevice = function(event) {
       contentType: 'application/json',
       success: function(resp) {
         editFormObj.removeClass('was-validated');
-        displayAlertMsg({type: 'success', message: 'Editado com sucesso'});
+        displayAlertMsg({type: 'success', message: t('editSuccess')});
         // remove checkbox on request success
         // if is to disable ssid prefix on device
         // (case is not enable anymore in all flashman)
@@ -352,7 +354,7 @@ let validateEditDevice = function(event) {
   } else {
     // Else, render errors on form
     renderEditErrors(errors);
-    openErrorSwal('Alguns campos do formulário da CPE estão mal preenchidos');
+    openErrorSwal(t('someCpeFormFieldAreInvalid'));
     switchSubmitButton(index);
   }
   editFormObj.addClass('was-validated');
@@ -381,7 +383,7 @@ const rebootNetworkMesh = function(ids, index, results=[]) {
       for (let i = 0; i < ids.length; i++) {
         if (results[i].success) {
           $('#reboot-error-div').append(
-            $('<h5></h5>').html(ids[i] + ' - Sucesso!')
+            $('<h5></h5>').html(ids[i] + ` - ${t('Success')}!`)
           );
         } else {
           $('#reboot-error-div').append(
