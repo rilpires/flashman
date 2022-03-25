@@ -3023,7 +3023,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
           let dId = parseInt(aArr[aArr.length - 1], 10);
           if (isNaN(aId)) {
             debug(`wlanTreeRules aId is not an number`);
-          }          let bArr = b.split('.');
+          }
           let bId = parseInt(bArr[bArr.length - 1], 10);
           if (isNaN(bId)) {
             debug(`wlanTreeRules bId is not an number`);
