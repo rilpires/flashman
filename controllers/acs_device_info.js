@@ -106,12 +106,15 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertToDbm = async function(model, rxPower) {
+const convertToDbm = function(model, rxPower) {
   switch (model) {
-    case 'HG9':
-      return rxPower = await utilHandlers
-        .parseFloat(rxPower.split(' ')[0])
-        .catch(debug);
+    case 'HG9': {
+      rxPower = parseFloat(rxPower.split(' ')[0]);
+      if (isNaN(rxPower)) {
+        debug('rxPower is not an number!!!');
+      }
+      return rxPower;
+    }
     case 'IGD':
     case 'FW323DAC':
     case 'F660':
@@ -120,10 +123,13 @@ const convertToDbm = async function(model, rxPower) {
     case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
-    case 'G-140W-UD':
-      return rxPower = await utilHandlers.parseFloat(
-        (10 * Math.log10(rxPower*0.0001)).toFixed(3)
-      ).catch(debug);
+    case 'G-140W-UD': {
+      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+      if (isNaN(rxPower)) {
+        debug('rxPower is not a number!!!');
+      }
+      return rxPower;
+    }
     case 'GONUAC001':
     default:
       return rxPower;
@@ -158,15 +164,24 @@ const convertWifiBand = function(band, mode, is5ghz) {
   }
 };
 
-const convertWifiRate = async function(model, rate) {
+const convertWifiRate = function(model, rate) {
   switch (model) {
     case 'F660':
     case 'F670L':
     case 'F680':
-    case 'ST-1001-FL':
-      return rate = await utilHandlers.parseInt(rate).catch(debug) / 1000;
-    default:
-      return rate = await utilHandlers.parseInt(rate).catch(debug);
+    case 'ST-1001-FL': {
+      rate = parseInt(rate) / 1000;
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+      return rate;
+    }
+    default: {
+      rate = parseInt(rate);
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+    }
   }
 };
 
@@ -404,9 +419,12 @@ const createRegistry = async function(req, permissions) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map(async (c) => {
-      const parsedData = await utilHandlers.parseInt(c, 16).catch(debug);
-      return String.fromCharCode(parsedData);
+    serialPrefix = serialPrefix.map((prefix) => {
+      prefix = parseInt(prefix, 16);
+      if (isNaN(prefix)) {
+        debug('prefix on serialPrefix is not an number');
+      }
+      return String.fromCharCode(prefix);
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
@@ -690,9 +708,12 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map(async (c) => {
-      const parsedData = await utilHandlers.parseInt(c, 16).catch(debug);
-      return String.fromCharCode(parsedData);
+    serialPrefix = serialPrefix.map((prefix) => {
+      prefix = parseInt(prefix, 16);
+      if (isNaN(prefix)) {
+        debug('prefix on serialPrefix are not an number');
+      }
+      return String.fromCharCode(prefix);
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
@@ -957,20 +978,20 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let isPonTxValOk = false;
   try {
     if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-      device.pon_rxpower = await convertToDbm(data.common.model.value,
+      device.pon_rxpower = convertToDbm(data.common.model.value,
                                         data.wan.pon_rxpower.value);
       isPonRxValOk = true;
     } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-      device.pon_rxpower = await convertToDbm(data.common.model.value,
+      device.pon_rxpower = convertToDbm(data.common.model.value,
                                         data.wan.pon_rxpower_epon.value);
       isPonRxValOk = true;
     }
     if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-      device.pon_txpower = await convertToDbm(data.common.model.value,
+      device.pon_txpower = convertToDbm(data.common.model.value,
                                         data.wan.pon_txpower.value);
       isPonTxValOk = true;
     } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-      device.pon_txpower = await convertToDbm(data.common.model.value,
+      device.pon_txpower = convertToDbm(data.common.model.value,
                                         data.wan.pon_txpower_epon.value);
       isPonTxValOk = true;
     }
@@ -1864,8 +1885,8 @@ const fetchUpStatusFromGenie = function(device, acsID) {
         deviceEdit.wan_up_time = wanUpTime;
         if (successRxPower) {
           // covert rx and tx signal
-          ponSignal.rxpower = await convertToDbm(deviceEdit.model, ponSignal.rxpower);
-          ponSignal.txpower = await convertToDbm(deviceEdit.model, ponSignal.txpower);
+          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
+          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
           // send then
           let config = await Config.findOne(
             {is_default: true}, {tr069: true},
@@ -2067,10 +2088,10 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
-          ponSignal.rxpower = await convertToDbm(deviceEdit.model, ponSignal.rxpower);
+          ponSignal.rxpower = convertToDbm(deviceEdit.model, ponSignal.rxpower);
         }
         if (ponSignal.txpower) {
-          ponSignal.txpower = await convertToDbm(deviceEdit.model, ponSignal.txpower);
+          ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
         }
         ponSignal = await appendPonSignal(
           deviceEdit.pon_signal_measure,
@@ -2267,9 +2288,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 let rateKey = fields.devices.host_rate;
                 rateKey = rateKey.replace('*', iface).replace('*', index);
                 device.rate = getFromNestedKey(data, rateKey+'._value');
-                convertWifiRate(model, device.rate)
-                  .then(result => device.rate = result)
-                  .catch(debug);
+                device.rate = convertWifiRate(model, device.rate);
               }
               if (device.mac == device.name &&
                 fields.devices.alt_host_name) {
