@@ -39,7 +39,11 @@ utilHandlers.returnObjOrStr = function(query, str) {
 };
 
 utilHandlers.deepCopyObject = function(obj) {
-  return JSON.parse(JSON.stringify(obj));
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    console.log(`deepCopyObject failed error: ${e}`)
+  }
 };
 
 const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
@@ -100,15 +104,25 @@ utilHandlers.parseDate = function(dateString) {
   let year = parseInt(dayMonthAndYear[2], 10);
   let hour = parseInt(hourAndMinute[0], 10);
   let minute = parseInt(hourAndMinute[1], 10);
+  if (
+    isNaN(day) ||
+    isNaN(month) ||
+    isNaN(year) ||
+    isNaN(hour) ||
+    isNaN(minute)
+  ) {
+    console.log('dateString error NaN was passed');
+    console.log(`day: ${isNaN(day)}`);
+    console.log(`month: ${isNaN(month)}`);
+    console.log(`year: ${isNaN(year)}`);
+    console.log(`hour: ${isNaN(hour)}`);
+    console.log(`minute: ${isNaN(minute)}`);
+  }
   return new Date(year, month-1, day, hour, minute, 0, 0);
 }
 
 utilHandlers.jsonParse = util.promisify(JSON.parse);
 
 utilHandlers.jsonStringify = util.promisify(JSON.stringify);
-
-utilHandlers.parseInt = util.promisify(parseInt);
-
-utilHandlers.parseFloat = util.promisify(parseFloat);
 
 module.exports = utilHandlers;
