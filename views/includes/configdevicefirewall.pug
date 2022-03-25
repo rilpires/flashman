@@ -56,9 +56,9 @@
                 thead
                   tr
                     th.text-left= t('Device')
-                    th.text-center= t('OpennedPortIpv4')
+                    th.text-center= t('OpennedPortIpvx', {x: 4})
                     th.text-center
-                      span #{t('OpennedPortIpv6')} &nbsp;
+                      span #{t('OpennedPortIpvx', {x: 6})} &nbsp;
                       a.fas.fa-question-circle(
                         data-toggle="tooltip",
                         title=t('opennedPortsTooltip'),
