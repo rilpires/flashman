@@ -212,8 +212,12 @@ const appendBytesMeasure = async function(original, recv, sent) {
     if (Object.keys(bytes).length >= 300) {
       let keysNum = Object
         .keys(bytes)
-        .map(async (k) => {
-          return parseInt(k);
+        .map((keyNum) => {
+          const parsedKeyNum = parseInt(keyNum);
+          if (isNaN(parsedKeyNum)) {
+            debug('parsedKeyNum is NaN!!!');
+          }
+          return parsedKeyNum;
         });
       let smallest = Math.min(...keysNum);
       delete bytes[smallest];
@@ -232,7 +236,15 @@ const appendPonSignal = async function(original, rxPower, txPower) {
     let dbms = await utilHandlers
       .jsonParse(await utilHandlers.jsonStringify(original));
     if (Object.keys(dbms).length >= 100) {
-      let keysNum = Object.keys(dbms).map((k) => parseInt(k));
+      let keysNum = Object
+        .keys(dbms)
+        .map((keyNum) => {
+          const parsedKeyNum = parseInt(keyNum);
+          if (isNaN(parsedKeyNum)) {
+            debug('parsedKeyNum is NaN!!!');
+          }
+          return parsedKeyNum;
+        }));
       let smallest = Math.min(...keysNum);
       delete dbms[smallest];
     }
@@ -1488,15 +1500,15 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
     ) {
-      try {
-        result[pingKeys.host] = {
-          lat: pingKeys.avg_resp_time.toString(),
-          loss: parseInt(pingKeys.failure_count * 100 /
-                 (pingKeys.success_count + pingKeys.failure_count)).toString(),
-        };
-      } catch (e) {
-        debug(e);
+      const loss = parseInt(pingKeys.failure_count * 100 /
+        (pingKeys.success_count + pingKeys.failure_count));
+      if (isNaN(loss)) {
+        debug('calculatePingDiagnostic loss is not an number!!!');
       }
+      result[pingKeys.host] = {
+        lat: pingKeys.avg_resp_time.toString(),
+        loss: loss.toString();
+      };
       if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
@@ -1696,8 +1708,14 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
         };
         if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
           result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+          if (isNaN(parseInt(speedValueFullLoad))) {
+            result.downSpeed = '0 Mbps';
+          }
         } else {
           result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+          if (isNaN(parseInt(speedValueBasic))) {
+            result.downSpeed = '0 Mbps';
+          }
         }
         deviceHandlers.storeSpeedtestResult(device, result);
         return;
@@ -2261,6 +2279,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 device.rssi = device.rssi.replace('dBm', '');
                 // Cast back to number to avoid converting issues
                 device.rssi = parseInt(device.rssi);
+                if (isNaN(parseInt(device.rssi))) {
+                  debug(`device.rssi is NaN beware!!!`);
+                }
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
@@ -2269,6 +2290,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 device.snr = getFromNestedKey(data, snrKey+'._value');
               } else if (fields.devices.host_rssi && device.rssi) {
                 device.snr = parseInt(device.rssi)+95;
+                if (isNaN(parseInt(device.rssi))) {
+                  debug(`device.rssi is NaN beware!!!`);
+                }
               }
               // Collect mode, if available
               if (fields.devices.host_mode) {
@@ -2602,16 +2626,25 @@ acsDeviceInfoController.updateInfo = async function(
         } else if (model === 'ST-1001-FL') {
           // Special case - there is no auto field, use channel 0
           if (auto) channel = '0';
+          const parsedChannel = parseInt(channel);
+          // this should never happen if auto is true
+          if (isNaN(parsedChannel)) {
+            debug('Wrong channel, auto but not an number!!!');
+          }
           task.parameterValues.push([
-            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+            fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
           ]);
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
           ]);
           if (!auto) {
+            const parsedChannel = parseInt(channel);
+            if (isNaN(parsedChannel)) {
+              debug('Wrong channel, not auto but not an number!!!');
+            }
             task.parameterValues.push([
-              fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+              fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
             ]);
           }
         }
@@ -2987,9 +3020,15 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         // This sort solves the TR-069 sorting problem (eg 1, 11, 2, 3, ..., 10)
         wlanTreeRules = wlanTreeRules.sort((a, b) => {
           let aArr = a.split('.');
-          let aId = parseInt(aArr[aArr.length - 1], 10);
-          let bArr = b.split('.');
+          let dId = parseInt(aArr[aArr.length - 1], 10);
+          if (isNaN(aId)) {
+            debug(`wlanTreeRules aId is not an number`);
+          }          let bArr = b.split('.');
           let bId = parseInt(bArr[bArr.length - 1], 10);
+          if (isNaN(bId)) {
+            debug(`wlanTreeRules bId is not an number`);
+          }
+          let bArr = b.split('.');
           return aId - bId;
         });
         let wlanNumOfRules = wlanTreeRules.length;
@@ -3142,6 +3181,9 @@ const getAcRuleTrees = async function(
 const addAcRules = async function(
   device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz) {
   let currentMaxId = parseInt(maxId, 10);
+  if (isNaN(currentMaxId)) {
+    debug('maxId is not an number');
+  }
   let acRulesAdded = {'wifi2': []};
   if (grantWifi5ghz) {
     acRulesAdded['wifi5'] = [];
