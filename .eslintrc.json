@@ -12,7 +12,8 @@
         "jest": true
     },
     "globals": {
-        "i18next": true
+        "i18next": true,
+        "swal": true
     },
     "plugins": [
         "jest"
