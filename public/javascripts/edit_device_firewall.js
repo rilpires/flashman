@@ -434,7 +434,7 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         if (res.success) {
           swal({
-            title: `${t('Sucess')}! ${t('restartModifiedDeviced')}`,
+            title: `${t('Success')}! ${t('restartModifiedDeviced')}`,
             type: 'success',
             confirmButtonColor: '#4db6ac',
           });
