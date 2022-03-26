@@ -14,6 +14,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
 const utilHandlers = require('./handlers/util');
+const debug = require('debug')('ACS_DEVICE_INFO');
 const t = require('./language').i18next.t;
 
 const pako = require('pako');
