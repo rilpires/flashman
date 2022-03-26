@@ -991,34 +991,30 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   let isPonRxValOk = false;
   let isPonTxValOk = false;
-  try {
-    if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-      device.pon_rxpower = convertToDbm(data.common.model.value,
-                                        data.wan.pon_rxpower.value);
-      isPonRxValOk = true;
-    } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-      device.pon_rxpower = convertToDbm(data.common.model.value,
-                                        data.wan.pon_rxpower_epon.value);
-      isPonRxValOk = true;
-    }
-    if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-      device.pon_txpower = convertToDbm(data.common.model.value,
-                                        data.wan.pon_txpower.value);
-      isPonTxValOk = true;
-    } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-      device.pon_txpower = convertToDbm(data.common.model.value,
-                                        data.wan.pon_txpower_epon.value);
-      isPonTxValOk = true;
-    }
-    if (isPonRxValOk && isPonTxValOk) {
-      device.pon_signal_measure = await appendPonSignal(
-        device.pon_signal_measure,
-        device.pon_rxpower,
-        device.pon_txpower,
-      );
-    }
-  } catch (e) {
-    debug(e);
+  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
+    device.pon_rxpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_rxpower.value);
+    isPonRxValOk = true;
+  } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
+    device.pon_rxpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_rxpower_epon.value);
+    isPonRxValOk = true;
+  }
+  if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
+    device.pon_txpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_txpower.value);
+    isPonTxValOk = true;
+  } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
+    device.pon_txpower = convertToDbm(data.common.model.value,
+                                      data.wan.pon_txpower_epon.value);
+    isPonTxValOk = true;
+  }
+  if (isPonRxValOk && isPonTxValOk) {
+    device.pon_signal_measure = await appendPonSignal(
+      device.pon_signal_measure,
+      device.pon_rxpower,
+      device.pon_txpower,
+    );
   }
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
     if (typeof config.tr069.web_login !== 'undefined' &&
@@ -2237,7 +2233,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
               interfaces.push('5');
             }
           }
-          interfaces.forEach(async (iface) => {
+          interfaces.forEach((iface) => {
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
@@ -3023,15 +3019,15 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         // This sort solves the TR-069 sorting problem (eg 1, 11, 2, 3, ..., 10)
         wlanTreeRules = wlanTreeRules.sort((a, b) => {
           let aArr = a.split('.');
-          let dId = parseInt(aArr[aArr.length - 1], 10);
+          let aId = parseInt(aArr[aArr.length - 1], 10);
           if (isNaN(aId)) {
             debug(`wlanTreeRules aId is not an number`);
           }
+          let bArr = b.split('.');
           let bId = parseInt(bArr[bArr.length - 1], 10);
           if (isNaN(bId)) {
             debug(`wlanTreeRules bId is not an number`);
           }
-          let bArr = b.split('.');
           return aId - bId;
         });
         let wlanNumOfRules = wlanTreeRules.length;
