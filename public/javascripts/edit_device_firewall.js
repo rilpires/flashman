@@ -10,19 +10,19 @@ const selectizeOptionsMacs = {
   labelField: 'label',
   render: {
     option_create: function(data, escape) {
-      return $('<div></div>').addClass('create').append(
+      return $('<div>').addClass('create').append(
         'Adicionar: ',
-        $('<strong></strong>').html(escape(data.input))
+        $('<strong>').html(escape(data.input)),
       );
     },
     option: function(data, escape) {
       let dataVal =
         isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
-      return $('<div></div>').addClass('option').append(
-        $('<span></span>').addClass('title')
+      return $('<div>').addClass('option').append(
+        $('<span>').addClass('title')
         .html(escape(data.label.toUpperCase())),
-        $('<span></span>').addClass('description')
-        .html(escape(dataVal.toUpperCase()))
+        $('<span>').addClass('description')
+        .html(escape(dataVal.toUpperCase())),
       );
     },
   },
@@ -54,17 +54,17 @@ const selectizeOptionsPorts = {
   render: {
     option_create: function(data, escape) {
       if (data.input.indexOf(':') == -1) {
-        return $('<div></div>').addClass('create').append(
+        return $('<div>').addClass('create').append(
           'Adicionar: ',
-          $('<strong></strong>').html(escape(data.input))
+          $('<strong>').html(escape(data.input)),
         );
       } else {
         let res = data.input.split(':', 2);
-        return $('<div></div>').addClass('create').append(
+        return $('<div>').addClass('create').append(
           'Dispositivo: ',
-          $('<strong></strong>').html(escape(res[0])),
+          $('<strong>').html(escape(res[0])),
           '<br>Externo: ',
-          $('<strong></strong>').html(escape(res[1]))
+          $('<strong>').html(escape(res[1])),
         );
       }
     },
@@ -107,11 +107,11 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
       }
     }
     portListBadges.append(
-      $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4)
+      $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4),
     );
     if (hasPortOpenIpv6 && deviceEntry.has_dhcpv6) {
       portListBadgesIpv6.append(
-        $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6)
+        $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6),
       );
     }
   });
@@ -126,22 +126,22 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
       $('<td>').addClass('text-left').append(
         $('<span>').css('display', 'block').append(
           $('<strong>').html(deviceEntry.label.toUpperCase())
-                                .addClass('conn-device-label')
+                                .addClass('conn-device-label'),
         ),
         $('<span>').css('display', 'block')
-                          .html(deviceEntry.mac.toUpperCase())
+                          .html(deviceEntry.mac.toUpperCase()),
       ),
       portListBadges,
       portListBadgesIpv6,
       $('<td>').addClass('text-center').html(dmzString),
       $('<td>').addClass('text-right').append(
         $('<button>').append(
-          $('<div>').addClass('fas fa-times fa-lg')
+          $('<div>').addClass('fas fa-times fa-lg'),
         ).addClass('btn btn-sm btn-danger my-0 openFirewallPortsRemoveRule')
-        .attr('type', 'button')
-      )
+        .attr('type', 'button'),
+      ),
     ).addClass('bounceIn')
-    .attr('data-device', deviceEntry.mac)
+    .attr('data-device', deviceEntry.mac),
   );
   // Delete rule from list if MAC already exists
   let rules = $('#openFirewallPortsFinalRules');
@@ -346,6 +346,7 @@ anlixDocumentReady.add(function() {
       let rulesJson = JSON.parse(rules.val());
       $.each(rulesJson, function(idx, ruleEntry) {
         let portsArray = [];
+        // eslint-disable-next-line no-prototype-builtins
         if (ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port) {
           portsArray = ruleEntry.router_port;
         } else {
