@@ -1224,10 +1224,15 @@ const fetchLogFromGenie = function(success, device, acsID) {
     resp.setEncoding('utf8');
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
-        data = parsedData[0];
+        try {
+          const parsedData = await utilHandlers.asyncJsonParse(data);
+          data = parsedData[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
@@ -1358,7 +1363,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     let chunks = [];
     response.on('error', (error) => console.log(error));
     response.on('data', async (chunk)=>chunks.push(chunk));
-    response.on('end', async (chunk)=>{
+    response.on('end', async (chunk) => {
       let body = Buffer.concat(chunks);
       try {
         const parsedData = await utilHandlers.asyncJsonParse(body);
@@ -1763,10 +1768,15 @@ const fetchWanBytesFromGenie = function(device, acsID) {
     let data = '';
     let wanBytes = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
-        data = parsedData[0];
+        try {
+          const parsedData = await utilHandlers.asyncJsonParse(data);
+          data = parsedData[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (checkForNestedKey(data, recvField+'._value') &&
@@ -1845,12 +1855,13 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     let signalState = {};
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data)[0];
+          const parsedData = await utilHandlers.asyncJsonParse(data);
           data = parsedData[0];
-        } catch (e) {
+        } catch (err) {
+          debug(err);
           return;
         }
       }
@@ -1962,7 +1973,7 @@ const checkMeshObjsCreated = function(device) {
       resp.setEncoding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         try {
           const parsedData = await utilHandlers.asyncJsonParse(data);
           data = parsedData[0];
@@ -2009,7 +2020,7 @@ const fetchMeshBSSID = function(device, meshMode) {
       resp.setEncoding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         try {
           const parsedData = await utilHandlers.asyncJsonParse(data);
           data = parsedData[0];
@@ -2079,10 +2090,15 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
     let data = '';
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
-        data = parsedData[0];
+        try {
+          const parsedData = await utilHandlers.asyncJsonParse(data);
+          data = parsedData[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (checkForNestedKey(data, rxPowerField + '._value') &&
@@ -2149,10 +2165,15 @@ const fetchDevicesFromGenie = function(device, acsID) {
     resp.setEncoding('utf8');
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
-        data = parsedData[0];
+        try {
+          const parsedData = await utilHandlers.asyncJsonParse(data);
+          data = parsedData[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = true;
       let hostKeys = [];
@@ -3326,12 +3347,15 @@ const configFileEditing = async function(device, target) {
     resp.setEncoding('utf8');
     let rawConfigFile = '';
     resp.on('data', (chunk)=>rawConfigFile+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (rawConfigFile.length > 0) {
-        const parsedData = await utilHandlers
-          .asyncJsonParse(rawConfigFile)
-          .catch(debug);
-        rawConfigFile = parsedData[0];
+        try {
+          const parsedData = await utilHandlers.asyncJsonParse(rawConfigFile);
+          rawConfigFile = parsedData[0];
+        } catch (err) {
+          debug(err);
+          rawConfigFile = '';
+        }
       }
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
@@ -3397,12 +3421,15 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       let data = '';
       let i;
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         if (data.length > 0) {
-          const parsedData = await utilHandlers
-            .asyncJsonParse(data)
-            .catch(debug);
-          data = parsedData[0];
+          try {
+            const parsedData = await utilHandlers.asyncJsonParse(data);
+            data = parsedData[0];
+          } catch (err) {
+            debug(err);
+            data = '';
+          }
         }
         let isDiff = false;
         let template = '';
