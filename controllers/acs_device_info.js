@@ -205,9 +205,9 @@ const extractGreatekCredentials = function(config) {
 };
 
 const appendBytesMeasure = async function(original, recv, sent) {
+  if (!original) original = {};
   try {
     let now = Math.floor(Date.now()/1000);
-    if (!original) original = {};
     let bytes = await utilHandlers
       .jsonParse(await utilHandlers.jsonStringify(original));
     if (Object.keys(bytes).length >= 300) {
@@ -227,13 +227,14 @@ const appendBytesMeasure = async function(original, recv, sent) {
     return bytes;
   } catch (e) {
     debug(`appendBytesMeasure Exception: ${e}`);
+    return original;
   }
 };
 
 const appendPonSignal = async function(original, rxPower, txPower) {
+  if (!original) original = {};
   try {
     let now = Math.floor(Date.now() / 1000);
-    if (!original) original = {};
     let dbms = await utilHandlers
       .jsonParse(await utilHandlers.jsonStringify(original));
     if (Object.keys(dbms).length >= 100) {
@@ -253,6 +254,7 @@ const appendPonSignal = async function(original, rxPower, txPower) {
     return dbms;
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);
+    return original;
   }
 };
 
@@ -985,7 +987,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       device.wan_bytes,
       data.wan.recv_bytes.value,
       data.wan.sent_bytes.value,
-    ).catch(debug);
+    );
   }
   let isPonRxValOk = false;
   let isPonTxValOk = false;
@@ -1787,7 +1789,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
           deviceEdit.wan_bytes,
           wanBytes.recv,
           wanBytes.sent,
-        ).catch(debug);
+        );
         deviceEdit.wan_bytes = wanBytes;
         await deviceEdit.save().catch((err) => {
           console.log('Error saving device wan bytes: ' + err);
