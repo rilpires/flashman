@@ -38,11 +38,12 @@ utilHandlers.returnObjOrStr = function(query, str) {
   }
 };
 
-utilHandlers.deepCopyObject = function(obj) {
+utilHandlers.deepCopyObject = function(objArr) {
   try {
-    return JSON.parse(JSON.stringify(obj));
+    return JSON.parse(JSON.stringify(objArr));
   } catch (e) {
-    console.log(`deepCopyObject failed error: ${e}`)
+    console.log(`deepCopyObject failed error: ${e}`);
+    return [];
   }
 };
 
