@@ -14,7 +14,7 @@ const isActiveSearchBtnState = function(active = true) {
     $('#certificates-search-btn-icon').removeClass('fa-search');
     $('#certificates-search-btn-icon').addClass('fa-spinner fa-pulse');
   }
-}
+};
 
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
@@ -520,6 +520,7 @@ anlixDocumentReady.add(function() {
 
   configSearchType();
 
+  // eslint-disable-next-line new-cap
   let usersTable = $('#users-table').DataTable({
     'destroy': true,
     'paging': true,

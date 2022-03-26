@@ -2,7 +2,7 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
   a.navbar-brand(href="/").mc-auto
     .image-block
       img(alt="brand", src="/images/logo.png", width="50", height="50")
-      span(style="font-size: 24px;") &nbsp Flashman
+      span(style="font-size: 24px;") &nbsp; Flashman
   ul.navbar-nav.mc-auto
       li.nav-item
         a.nav-link(data-toggle="modal" data-target="#alerts-flashman")
@@ -20,18 +20,18 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
           a.nav-link(target="_blank",
                      rel="noopener noreferrer", href="https://documentacao.anlix.io")
             .fas.fa-lg(class="fa-book")
-            span &nbsp #{t('Documentation')}
+            span &nbsp; #{t('Documentation')}
         li.nav-item
           a.nav-link(target="_blank",
                      rel="noopener noreferrer", href="https://forum.anlix.io")
             .fas.fa-lg(class="fa-comments")
-            span &nbsp #{t('Community')}
+            span &nbsp; #{t('Community')}
 
       ul.navbar-nav.ml-auto.nav-flex-icons
         li.nav-item.dropdown
           a#navbarDropdown.nav-link.dropdown-toggle(data-toggle="dropdown")
             i.fas.fa-cog
-            span &nbsp #{username}
+            span &nbsp; #{username}
           .dropdown-menu(aria-labelledby="navbarDropdown")
             a.dropdown-item(href="/user/profile")
               i.fas.fa-user.fa-lg.mr-2= t('myProfile')
