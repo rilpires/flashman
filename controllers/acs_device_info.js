@@ -209,7 +209,7 @@ const appendBytesMeasure = async function(original, recv, sent) {
   try {
     let now = Math.floor(Date.now()/1000);
     let bytes = await utilHandlers
-      .jsonParse(await utilHandlers.jsonStringify(original));
+      .asyncJsonParse(await utilHandlers.asyncJsonStringify(original));
     if (Object.keys(bytes).length >= 300) {
       let keysNum = Object
         .keys(bytes)
@@ -236,7 +236,7 @@ const appendPonSignal = async function(original, rxPower, txPower) {
   try {
     let now = Math.floor(Date.now() / 1000);
     let dbms = await utilHandlers
-      .jsonParse(await utilHandlers.jsonStringify(original));
+      .asyncJsonParse(await utilHandlers.asyncJsonStringify(original));
     if (Object.keys(dbms).length >= 100) {
       let keysNum = Object
         .keys(dbms)
@@ -1226,7 +1226,7 @@ const fetchLogFromGenie = function(success, device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
         data = parsedData[0];
       }
       let success = false;
@@ -1361,7 +1361,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     response.on('end', async (chunk)=>{
       let body = Buffer.concat(chunks);
       try {
-        const parsedData = await utilHandlers.jsonParse(body);
+        const parsedData = await utilHandlers.asyncJsonParse(body);
         let data = parsedData[0];
         let permissions = DeviceVersion.findByVersion(
           device.version,
@@ -1765,7 +1765,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
         data = parsedData[0];
       }
       let success = false;
@@ -1848,7 +1848,7 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     resp.on('end', async ()=>{
       if (data.length > 0) {
         try {
-          const parseData = await utilHandlers.jsonParse(data)[0];
+          const parsedData = await utilHandlers.asyncJsonParse(data)[0];
           data = parsedData[0];
         } catch (e) {
           return;
@@ -1964,7 +1964,7 @@ const checkMeshObjsCreated = function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         try {
-          const parsedData = await utilHandlers.jsonParse(data);
+          const parsedData = await utilHandlers.asyncJsonParse(data);
           data = parsedData[0];
         } catch (e) {
           result.success = false;
@@ -2011,7 +2011,7 @@ const fetchMeshBSSID = function(device, meshMode) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         try {
-          const parsedData = await utilHandlers.jsonParse(data);
+          const parsedData = await utilHandlers.asyncJsonParse(data);
           data = parsedData[0];
         } catch (e) {
           console.log('Error parsing bssid data from genie');
@@ -2081,7 +2081,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
         data = parsedData[0];
       }
       let success = false;
@@ -2151,7 +2151,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async ()=>{
       if (data.length > 0) {
-        const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+        const parsedData = await utilHandlers.asyncJsonParse(data).catch(debug);
         data = parsedData[0];
       }
       let success = true;
@@ -3129,7 +3129,7 @@ const getAcRuleTrees = async function(
         if (data.length > 0) {
           try {
             // Get data
-            const parsedData = await utilHandlers.jsonParse(data);
+            const parsedData = await utilHandlers.asyncJsonParse(data);
             data = parsedData[0];
             for (let wlanType of supportedWlans) {
               let wlanTreeRoot = acSubtreeRoots[wlanType];
@@ -3329,7 +3329,7 @@ const configFileEditing = async function(device, target) {
     resp.on('end', async ()=>{
       if (rawConfigFile.length > 0) {
         const parsedData = await utilHandlers
-          .jsonParse(rawConfigFile)
+          .asyncJsonParse(rawConfigFile)
           .catch(debug);
         rawConfigFile = parsedData[0];
       }
@@ -3399,7 +3399,9 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async ()=>{
         if (data.length > 0) {
-          const parsedData = await utilHandlers.jsonParse(data).catch(debug);
+          const parsedData = await utilHandlers
+            .asyncJsonParse(data)
+            .catch(debug);
           data = parsedData[0];
         }
         let isDiff = false;

@@ -122,8 +122,8 @@ utilHandlers.parseDate = function(dateString) {
   return new Date(year, month-1, day, hour, minute, 0, 0);
 }
 
-utilHandlers.jsonParse = util.promisify(JSON.parse);
+utilHandlers.asyncJsonParse = util.promisify(JSON.parse);
 
-utilHandlers.jsonStringify = util.promisify(JSON.stringify);
+utilHandlers.asyncJsonStringify = util.promisify(JSON.stringify);
 
 module.exports = utilHandlers;
