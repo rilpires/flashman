@@ -209,7 +209,7 @@ const appendBytesMeasure = async function(original, recv, sent) {
     let now = Math.floor(Date.now()/1000);
     if (!original) original = {};
     let bytes = await utilHandlers
-      .jsonParse(utilHandlers.jsonStringify(original));
+      .jsonParse(await utilHandlers.jsonStringify(original));
     if (Object.keys(bytes).length >= 300) {
       let keysNum = Object
         .keys(bytes)
@@ -245,7 +245,7 @@ const appendPonSignal = async function(original, rxPower, txPower) {
             debug('parsedKeyNum is NaN!!!');
           }
           return parsedKeyNum;
-        }));
+        });
       let smallest = Math.min(...keysNum);
       delete dbms[smallest];
     }
@@ -1508,7 +1508,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
       }
       result[pingKeys.host] = {
         lat: pingKeys.avg_resp_time.toString(),
-        loss: loss.toString();
+        loss: loss.toString(),
       };
       if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
