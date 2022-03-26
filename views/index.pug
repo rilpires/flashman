@@ -37,7 +37,7 @@ block content
               data-toggle="modal",
               data-target="#special-search-terms"
             )
-              | #{t('specialFilters')} &nbsp
+              | #{t('specialFilters')} &nbsp;
               .fas.fa-plus-circle
     else
       .row.justify-content-center
@@ -156,7 +156,7 @@ block content
                     th
                     th
                     th.text-left
-                      span #{t('Status')} &nbsp
+                      span #{t('Status')} &nbsp;
                       a.fas.fa-question-circle(
                         data-toggle="tooltip",
                         title=t('greenRedGrayLegendTooltip'),
@@ -180,7 +180,7 @@ block content
                     th.text-center
                       a#sort-pon-signal= t('opticalSignalState')
                     if (superuser || role.grantFirmwareUpgrade)
-                      th.text-center Atualizar Firmware
+                      th.text-center= t('updateFirmware')
                 tbody#devices-table-content(
                   data-role=role,
                   data-superuser=superuser ? "true" : "false",
@@ -194,7 +194,7 @@ block content
               .text-right
                 button#export-csv.btn.btn-primary.mr-0.my-0
                   .fas.fa-file-excel.fa-lg
-                  span &nbsp #{t('exportCsv')}
+                  span &nbsp; #{t('exportCsv')}
   else
     h2.text-center.grey-text.mt-5
       i.fas.fa-exclamation-triangle.fa-4x.mb-4
