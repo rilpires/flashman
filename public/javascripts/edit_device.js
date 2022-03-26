@@ -83,7 +83,8 @@ let validateEditDevice = function(event) {
   let validatePppoe = row.data('validatePppoe');
   let validateIpv6Enabled = row.data('validate-ipv6-enabled');
   let validateLan = row.data('validate-lan');
-  let ipv6Enabled = ($('#edit_ipv6_enabled-' + index.toString()).is(':checked') ? 1 : 0);
+  let ipv6Enabled = (
+    $('#edit_ipv6_enabled-' + index.toString()).is(':checked') ? 1 : 0);
   let pppoe = $('#edit_connect_type-' + index.toString()).val() === 'PPPoE';
   let pppoeUser = $('#edit_pppoe_user-' + index.toString()).val();
   let pppoePassword = $('#edit_pppoe_pass-' + index.toString()).val();
@@ -96,16 +97,20 @@ let validateEditDevice = function(event) {
   let band = $('#edit_wifi_band-' + index.toString()).val();
   let mode = $('#edit_wifi_mode-' + index.toString()).val();
   let power = $('#edit_wifi_power-' + index.toString()).val();
-  let wifiState = ($('#edit_wifi_state-' + index.toString()).is(':checked') ? 1 : 0);
-  let wifiHidden = ($('#edit_wifi_hidden-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiState = (
+    $('#edit_wifi_state-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiHidden = (
+    $('#edit_wifi_hidden-' + index.toString()).is(':checked') ? 1 : 0);
   let ssid5ghz = $('#edit_wifi5_ssid-' + index.toString()).val();
   let password5ghz = $('#edit_wifi5_pass-' + index.toString()).val();
   let channel5ghz = $('#edit_wifi5_channel-' + index.toString()).val();
   let band5ghz = $('#edit_wifi5_band-' + index.toString()).val();
   let mode5ghz = $('#edit_wifi5_mode-' + index.toString()).val();
   let power5ghz = $('#edit_wifi5_power-' + index.toString()).val();
-  let wifiState5ghz = ($('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
-  let wifiHidden5ghz = ($('#edit_wifi5_hidden-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiState5ghz = (
+    $('#edit_wifi5_state-' + index.toString()).is(':checked') ? 1 : 0);
+  let wifiHidden5ghz = (
+    $('#edit_wifi5_hidden-' + index.toString()).is(':checked') ? 1 : 0);
   let isDeviceSsidPrefixEnabled = ($('#edit_is_ssid_prefix_enabled-' +
     index.toString()).is(':checked') ? 1 : 0);
   let ssidPrefix = '';
@@ -116,15 +121,20 @@ let validateEditDevice = function(event) {
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
-  let validateBridge = $('#edit_opmode-' + index.toString()).val() === 'Modo Bridge';
+  let validateBridge =
+    $('#edit_opmode-' + index.toString()).val() === 'Modo Bridge';
   let bridgeEnabled = validateBridge;
   let useBridgeFixIP = $('input[name="edit_opmode_fixip_en-'+
                       index.toString()+'"]:checked').length > 0;
-  let bridgeFixIP = (useBridgeFixIP) ? $('#edit_opmode_fixip-' + index.toString()).val() : '';
-  let bridgeFixGateway = (useBridgeFixIP) ? $('#edit_opmode_fixip_gateway-' + index.toString()).val() : '';
-  let bridgeFixDNS = (useBridgeFixIP) ? $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
+  let bridgeFixIP = (useBridgeFixIP) ?
+    $('#edit_opmode_fixip-' + index.toString()).val() : '';
+  let bridgeFixGateway = (useBridgeFixIP) ?
+    $('#edit_opmode_fixip_gateway-' + index.toString()).val() : '';
+  let bridgeFixDNS = (useBridgeFixIP) ?
+    $('#edit_opmode_fixip_dns-' + index.toString()).val() : '';
+  // Case not marked assign True, pointing that is disabled
   let bridgeDisableSwitch = $('input[name="edit_opmode_switch_en-'+
-                              index.toString()+'"]:checked').length == 0; // Case not marked assign True, pointing that is disabled
+                              index.toString()+'"]:checked').length == 0;
   let meshMode = $('#edit_meshMode-' + index.toString()).val();
 
   let slaveCustomConfigs = [];
@@ -314,10 +324,10 @@ let validateEditDevice = function(event) {
         // (case is not enable anymore in all flashman)
         if (isDeviceSsidPrefixEnabled == 0 &&
             !getConfigStorage('isSsidPrefixEnabled')) {
-          $('#ssid_prefix_checkbox-' + index.toString()).
-            removeClass('d-block');
-          $('#ssid_prefix_checkbox-' + index.toString()).
-            addClass('d-none');
+          $('#ssid_prefix_checkbox-' + index.toString())
+            .removeClass('d-block');
+          $('#ssid_prefix_checkbox-' + index.toString())
+            .addClass('d-none');
         }
         switchSubmitButton(index);
       },
@@ -383,12 +393,10 @@ const rebootNetworkMesh = function(ids, index, results=[]) {
       for (let i = 0; i < ids.length; i++) {
         if (results[i].success) {
           $('#reboot-error-div').append(
-            $('<h5></h5>').html(ids[i] + ` - ${t('Success')}!`)
-          );
+            $('<h5>').html(ids[i] + ` - ${t('Success')}!`));
         } else {
           $('#reboot-error-div').append(
-            $('<h5></h5>').html(ids[i] + ' - ' + results[i].message)
-          );
+            $('<h5>').html(ids[i] + ' - ' + results[i].message));
         }
       }
       $('#reboot-loading').hide('fast', ()=>{
@@ -424,12 +432,12 @@ anlixDocumentReady.add(function() {
       let s = 0;
       slaves.forEach((slave)=>{
         $('#reboot-options').append(
-          $('<div></div>').addClass('custom-control custom-checkbox').append(
-            $('<input></input>')
+          $('<div>').addClass('custom-control custom-checkbox').append(
+            $('<input>')
             .addClass('mesh-router custom-control-input')
             .attr('id', 'select-reboot-slave-'+s)
             .attr('type', 'checkbox'),
-            $('<label></label>')
+            $('<label>')
             .addClass('custom-control-label')
             .attr('for', 'select-reboot-slave-'+s)
             .html(slave),

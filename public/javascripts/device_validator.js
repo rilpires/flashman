@@ -5,7 +5,7 @@
     && process.versions.node;
   // making webpack ignore 'require' global call.
   const nodeRequire = nodeVer ?
-    typeof __webpack_require__ === 'function' ? __non_webpack_require__ : require
+    typeof __webpack_require__ === 'function'? __non_webpack_require__ : require
     : undefined;
   // using translation function from global i18next (front end) or from our
   // language controller (nodejs back end).
@@ -76,7 +76,7 @@
     Validator.prototype.validateUser = function(user) {
       const messages = [
         t('thisFieldIsMandatory'),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max : 64}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('acceptableCharOnly0-9a-zA-Z @_-.'),
       ];
       let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
@@ -90,7 +90,7 @@
       }
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: minlength}),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max : 64}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
       ];
       let ret = validateRegex(pass, minlength, 64,
@@ -102,7 +102,7 @@
     Validator.prototype.validateSSID = function(ssid) {
       const messages = [
         t('thisFieldIsMandatory'),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max : 32}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
         t('acceptableCharsAre0-9a-zA-Z .-_'),
       ];
       let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
@@ -150,7 +150,8 @@
     Validator.prototype.validateIPAgainst = function(ip, ipChallenge) {
       return {
         valid: !ip.includes(ipChallenge),
-        err: [t('thisFieldCannotHaveTheValueValItIsReserved', {val: ipChallenge})],
+        err: [
+          t('thisFieldCannotHaveTheValueValItIsReserved', {val: ipChallenge})],
       };
     };
 
