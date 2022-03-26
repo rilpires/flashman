@@ -11,7 +11,7 @@ const selectizeOptionsMacs = {
   render: {
     option_create: function(data, escape) {
       return $('<div>').addClass('create').append(
-        'Adicionar: ',
+        t('Add') + ': ',
         $('<strong>').html(escape(data.input)),
       );
     },
@@ -55,15 +55,15 @@ const selectizeOptionsPorts = {
     option_create: function(data, escape) {
       if (data.input.indexOf(':') == -1) {
         return $('<div>').addClass('create').append(
-          'Adicionar: ',
+          t('Add') + ': ',
           $('<strong>').html(escape(data.input)),
         );
       } else {
         let res = data.input.split(':', 2);
         return $('<div>').addClass('create').append(
-          'Dispositivo: ',
+          t('Device') + ': ',
           $('<strong>').html(escape(res[0])),
-          '<br>Externo: ',
+          '<br>' + t('External') + ': ',
           $('<strong>').html(escape(res[1])),
         );
       }

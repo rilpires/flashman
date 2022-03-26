@@ -339,6 +339,7 @@
 	"notificationsAndAlerts": "Notificações e Alertas",
 	"cpePortOpening": "Abertura de portas no CPE",
 	"Device": "Dispositivo",
+	"External": "Externo",
 	"deviceTooltip": "Peça para o cliente conectar o dispositivo ao CPE. É possível também digitar o endereço MAC do dispositivo",
 	"openPorts": "Abrir portas",
 	"openPortsToolTip": "As portas abertas terão um mapeamento um para um. Ou seja, a porta X aberta no dispositivo será mapeada na mesma porta X do CPE. Para portas assimetricas, separe as portas com ':'. Ex: 80:8080",
