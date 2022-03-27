@@ -2586,8 +2586,9 @@ acsDeviceInfoController.updateInfo = async function(
       }
       if (key === 'web_admin_password') {
         // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char - special char cant
-        // be the first one!
+        // at least one number, lower case and special char.
+        // Special char cant be the first one an will be validated
+        // at config setup since there is legacy support needed
         let password = changes[masterKey][key];
         let passRegex= new RegExp(''
           + /(?=.{8,16}$)/.source
@@ -2596,7 +2597,6 @@ acsDeviceInfoController.updateInfo = async function(
           + /(?=.*[0-9])/.source
           + /(?=.*[-!@#$%^&*+_.]).*/.source);
         if (!passRegex.test(password)) return;
-        if ('-!@#$%^&*+_.'.includes(password[0])) return;
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], modelName, changes[masterKey][key],
