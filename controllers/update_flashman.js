@@ -98,22 +98,29 @@ const updateDependencies = function() {
 
 const updateGenieRepo = function(ref) {
   let fetch = 'cd ../genieacs && git fetch';
-  let checkout = 'cd ../genieacs && git checkout ' + ref;
+  let checkoutCurr = 'cd ../genieacs && git checkout .';
+  let checkoutNext = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
-  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
+  let reloadNbi = 'pm2 reload genieacs-nbi';
+  let reloadFs = 'pm2 reload genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
-      exec(checkout, (err, stdout, stderr) => {
-        if (err) return reject();
-        exec(install, (err, stdout, stderr) => {
+      exec(checkoutCurr, (err, stdout, stderr) => {
+        exec(checkoutNext, (err, stdout, stderr) => {
           if (err) return reject();
-          exec(build, (err, stdout, stderr) => {
+          exec(install, (err, stdout, stderr) => {
             if (err) return reject();
-            exec(reload, (err, stdout, stderr) => {
+            exec(build, (err, stdout, stderr) => {
               if (err) return reject();
-              return resolve();
+              exec(reloadNbi, (err, stdout, stderr) => {
+                if (err) return reject();
+                exec(reloadFs, (err, stdout, stderr) => {
+                  if (err) return reject();
+                  return resolve();
+                });
+              });
             });
           });
         });
