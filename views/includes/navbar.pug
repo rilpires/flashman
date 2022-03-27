@@ -2,7 +2,7 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
   a.navbar-brand(href="/").mc-auto
     .image-block
       img(alt="brand", src="/images/logo.png", width="50", height="50")
-      span(style="font-size: 24px;") &nbsp Flashman
+      span(style="font-size: 24px;") &nbsp; Flashman
   ul.navbar-nav.mc-auto
       li.nav-item
         a.nav-link(data-toggle="modal" data-target="#alerts-flashman")
@@ -11,7 +11,7 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
           .bell-counter(style="display: none;")
   button.navbar-toggler.col-2(type="button", data-toggle="collapse",
                         data-target="#navbar-menu", aria-controls="#navbar-menu",
-                        aria-expanded="false", aria-label="Alternar navegação")
+                        aria-expanded="false", aria-label=t('changeNavigation'))
     span.navbar-toggler-icon
   #navbar-menu.navbar-default.navbar-collapse.collapse
     if (username)
@@ -20,49 +20,49 @@ nav.navbar.navbar-expand-lg.navbar-dark.primary-color
           a.nav-link(target="_blank",
                      rel="noopener noreferrer", href="https://documentacao.anlix.io")
             .fas.fa-lg(class="fa-book")
-            span &nbsp Documentação
+            span &nbsp; #{t('Documentation')}
         li.nav-item
           a.nav-link(target="_blank",
                      rel="noopener noreferrer", href="https://forum.anlix.io")
             .fas.fa-lg(class="fa-comments")
-            span &nbsp Comunidade
+            span &nbsp; #{t('Community')}
 
       ul.navbar-nav.ml-auto.nav-flex-icons
         li.nav-item.dropdown
           a#navbarDropdown.nav-link.dropdown-toggle(data-toggle="dropdown")
             i.fas.fa-cog
-            span &nbsp #{username}
+            span &nbsp; #{username}
           .dropdown-menu(aria-labelledby="navbarDropdown")
             a.dropdown-item(href="/user/profile")
               i.fas.fa-user.fa-lg.mr-2
-              | Meu perfil
+              | #{t('myProfile')}
             if (superuser || role.grantFirmwareManage)
               a.dropdown-item(href="/firmware")
                 i.fas.fa-hdd.fa-lg.mr-2
-                | Firmwares
+                | #{t('Firmwares')}
             if (superuser || role.grantUserManage)
               a.dropdown-item(href="/user/showall")
                 i.fas.fa-users.fa-lg.mr-2
-                | Gerenciar usuários
+                | #{t('manageUsers')}
               a.dropdown-item(href="/user/roles")
                 i.fas.fa-address-card.fa-lg.mr-2
-                | Gerenciar permissões
+                | #{t('managePermissions')}
             if (superuser || role.grantCertificationAccess > 0)
               a.dropdown-item(href="/user/certificates")
                 i.fas.fa-file-alt.fa-lg.mr-2
-                | Ver Certificações
+                | #{t('seeCertificates')}
             if (superuser || role.grantVlanProfileEdit)
               a.dropdown-item(href="/vlan/profile")
                 i.fas.fa-project-diagram.fa-lg.mr-2
-                | Perfis de VLANs
+                | #{t('vlanProfiles')}
             if (superuser || role.grantFlashmanManage)
               a.dropdown-item(href="/user/settings")
                 i.fas.fa-cog.fa-lg.mr-2
-                | Configurações
+                | #{t('Configurations')}
             if (superuser && !disableAutoUpdate)
               a.dropdown-item.update
                 i.fas.fa-arrow-circle-down.fa-lg.mr-2
-                | Atualizar Flashman
+                | #{t('updateFlashman')}
         li.nav-item
           a.ml-4.nav-link.waves-effect.waves-light(href="/logout")
             i.fas.fa-sign-out-alt

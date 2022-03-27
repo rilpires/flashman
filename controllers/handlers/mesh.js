@@ -261,7 +261,7 @@ meshHandlers.validateMeshMode = async function(
     }
   }
   if (targetMode === 0 && device.mesh_slaves.length > 0) {
-    errors.push(t('cantDesenableMeshWithSecondaries', {errorline: __line}));
+    errors.push(t('cantDisableMeshWithSecondaries', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }

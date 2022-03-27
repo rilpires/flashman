@@ -301,7 +301,7 @@ deviceListController.changeUpdate = async function(req, res) {
   if (matchedDevice.mesh_master && doUpdate) {
     return res.status(500).json({
       success: false,
-      message: t('meshSecundaryUpdateError'),
+      message: t('meshSecondaryUpdateError'),
     });
   }
   if (doUpdate) {
