@@ -753,11 +753,13 @@ scheduleController.getDevicesReleases = async function(req, res) {
       let csvContents =
         await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
-        let promises = csvContents.map((line)=>{
-          return new Promise(async (resolve)=>{
-            if (!line.field1.match(macRegex)) return resolve(null);
-            resolve(await getDevice(line.field1, true));
-          });
+        let promises = csvContents.map(async (line) => {
+          if (!line.field1.match(macRegex)) {
+            return null;
+          } else {
+            let device = await getDevice(line.field1, true);
+            return device;
+          }
         });
         let values = await Promise.all(promises);
         deviceList = values.filter((value)=>value!==null);
@@ -931,12 +933,14 @@ scheduleController.uploadDevicesFile = function(req, res) {
       });
     }
     csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv').then((result)=>{
-      let promises = result.map((line)=>{
-        return new Promise(async (resolve)=>{
-          if (!line.field1.match(macRegex)) return resolve(0);
-          if (await getDevice(line.field1, true) !== null) return resolve(1);
-          else return resolve(0);
-        });
+      let promises = result.map(async (line) => {
+        if (!line.field1.match(macRegex)) {
+          return 0;
+        } else if (await getDevice(line.field1, true) !== null) {
+          return 1;
+        } else {
+          return 0;
+        }
       });
       Promise.all(promises).then((values)=>{
         return res.status(200).json({
@@ -974,11 +978,13 @@ scheduleController.startSchedule = async function(req, res) {
       let csvContents =
         await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
-        let promises = csvContents.map((line)=>{
-          return new Promise(async (resolve) => {
-            if (!line.field1.match(macRegex)) return resolve(null);
-            resolve(await getDevice(line.field1, true));
-          });
+        let promises = csvContents.map(async (line) => {
+          if (!line.field1.match(macRegex)) {
+            return null;
+          } else {
+            let device = await getDevice(line.field1, true);
+            return device;
+          }
         });
         let values = await Promise.all(promises);
         deviceList = values.filter((value)=>value!==null);
