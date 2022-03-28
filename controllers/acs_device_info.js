@@ -264,6 +264,10 @@ const processHostFromURL = function(url) {
   if (doubleSlash < 0) {
     return url.split(':')[0];
   }
+  let checkIpv6 = url.indexOf('[');
+  if (checkIpv6 > 0) {
+    return url.split('[')[1].split(']')[0];
+  }
   let pathStart = url.substring(doubleSlash+2).indexOf('/');
   let endIndex = (pathStart >= 0) ? doubleSlash+2+pathStart : url.length;
   let hostAndPort = url.substring(doubleSlash+2, endIndex);
@@ -325,7 +329,9 @@ const createRegistry = async function(req, permissions) {
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
   let cpeIP;
-  if (data.common.stun_udp_conn_req_addr &&
+  if (data.common.stun_enable &&
+      data.common.stun_enable.value.toString() === 'true' &&
+      data.common.stun_udp_conn_req_addr &&
       typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
       data.common.stun_udp_conn_req_addr.value !== '') {
     cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
@@ -2710,8 +2716,9 @@ acsDeviceInfoController.updateInfo = async function(
       }
       if (key === 'web_admin_password') {
         // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char - special char cant
-        // be the first one!
+        // at least one number, lower case and special char.
+        // Special char cant be the first one an will be validated
+        // at config setup since there is legacy support needed
         let password = changes[masterKey][key];
         let passRegex= new RegExp(''
           + /(?=.{8,16}$)/.source
@@ -2720,7 +2727,6 @@ acsDeviceInfoController.updateInfo = async function(
           + /(?=.*[0-9])/.source
           + /(?=.*[-!@#$%^&*+_.]).*/.source);
         if (!passRegex.test(password)) return;
-        if ('-!@#$%^&*+_.'.includes(password[0])) return;
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], modelName, changes[masterKey][key],
