@@ -14,6 +14,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
 const utilHandlers = require('./handlers/util');
+const debug = require('debug')('ACS_DEVICE_INFO');
 const t = require('./language').i18next.t;
 
 const pako = require('pako');
@@ -108,8 +109,13 @@ const convertWifiMode = function(mode, is5ghz) {
 
 const convertToDbm = function(model, rxPower) {
   switch (model) {
-    case 'HG9':
-      return rxPower = parseFloat(rxPower.split(' ')[0]);
+    case 'HG9': {
+      rxPower = parseFloat(rxPower.split(' ')[0]);
+      if (isNaN(rxPower)) {
+        debug('rxPower is not an number!!!');
+      }
+      return rxPower;
+    }
     case 'IGD':
     case 'FW323DAC':
     case 'F660':
@@ -118,8 +124,13 @@ const convertToDbm = function(model, rxPower) {
     case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
-    case 'G-140W-UD':
-      return rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+    case 'G-140W-UD': {
+      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
+      if (isNaN(rxPower)) {
+        debug('rxPower is not a number!!!');
+      }
+      return rxPower;
+    }
     case 'GONUAC001':
     default:
       return rxPower;
@@ -159,10 +170,19 @@ const convertWifiRate = function(model, rate) {
     case 'F660':
     case 'F670L':
     case 'F680':
-    case 'ST-1001-FL':
-      return rate = parseInt(rate) / 1000;
-    default:
-      return rate = parseInt(rate);
+    case 'ST-1001-FL': {
+      rate = parseInt(rate) / 1000;
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+      return rate;
+    }
+    default: {
+      rate = parseInt(rate);
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+    }
   }
 };
 
@@ -185,29 +205,55 @@ const extractGreatekCredentials = function(config) {
 };
 
 const appendBytesMeasure = function(original, recv, sent) {
-  let now = Math.floor(Date.now()/1000);
   if (!original) original = {};
-  let bytes = JSON.parse(JSON.stringify(original));
-  if (Object.keys(bytes).length >= 300) {
-    let keysNum = Object.keys(bytes).map((k)=>parseInt(k));
-    let smallest = Math.min(...keysNum);
-    delete bytes[smallest];
+  try {
+    let now = Math.floor(Date.now()/1000);
+    let bytes = JSON.parse(JSON.stringify(original));
+    if (Object.keys(bytes).length >= 300) {
+      let keysNum = Object
+        .keys(bytes)
+        .map((keyNum) => {
+          const parsedKeyNum = parseInt(keyNum);
+          if (isNaN(parsedKeyNum)) {
+            debug('parsedKeyNum is NaN!!!');
+          }
+          return parsedKeyNum;
+        });
+      let smallest = Math.min(...keysNum);
+      delete bytes[smallest];
+    }
+    bytes[now] = [recv, sent];
+    return bytes;
+  } catch (e) {
+    debug(`appendBytesMeasure Exception: ${e}`);
+    return original;
   }
-  bytes[now] = [recv, sent];
-  return bytes;
 };
 
 const appendPonSignal = function(original, rxPower, txPower) {
-  let now = Math.floor(Date.now() / 1000);
   if (!original) original = {};
-  let dbms = JSON.parse(JSON.stringify(original));
-  if (Object.keys(dbms).length >= 100) {
-    let keysNum = Object.keys(dbms).map((k) => parseInt(k));
-    let smallest = Math.min(...keysNum);
-    delete dbms[smallest];
+  try {
+    let now = Math.floor(Date.now() / 1000);
+    let dbms = JSON.parse(JSON.stringify(original));
+    if (Object.keys(dbms).length >= 100) {
+      let keysNum = Object
+        .keys(dbms)
+        .map((keyNum) => {
+          const parsedKeyNum = parseInt(keyNum);
+          if (isNaN(parsedKeyNum)) {
+            debug('parsedKeyNum is NaN!!!');
+          }
+          return parsedKeyNum;
+        });
+      let smallest = Math.min(...keysNum);
+      delete dbms[smallest];
+    }
+    dbms[now] = [rxPower, txPower];
+    return dbms;
+  } catch (e) {
+    debug(`appendPonSignal Exception: ${e}`);
+    return original;
   }
-  dbms[now] = [rxPower, txPower];
-  return dbms;
 };
 
 const processHostFromURL = function(url) {
@@ -392,7 +438,13 @@ const createRegistry = async function(req, permissions) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    serialPrefix = serialPrefix.map((prefix) => {
+      prefix = parseInt(prefix, 16);
+      if (isNaN(prefix)) {
+        debug('prefix on serialPrefix is not an number');
+      }
+      return String.fromCharCode(prefix);
+    });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
   }
@@ -675,7 +727,13 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
     serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
     // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((c)=>String.fromCharCode(parseInt(c, 16)));
+    serialPrefix = serialPrefix.map((prefix) => {
+      prefix = parseInt(prefix, 16);
+      if (isNaN(prefix)) {
+        debug('prefix on serialPrefix are not an number');
+      }
+      return String.fromCharCode(prefix);
+    });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
   }
@@ -1170,9 +1228,14 @@ const fetchLogFromGenie = function(success, device, acsID) {
     resp.setEncoding('utf8');
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (!checkForNestedKey(data, logField+'._value')) {
@@ -1303,7 +1366,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     let chunks = [];
     response.on('error', (error) => console.log(error));
     response.on('data', async (chunk)=>chunks.push(chunk));
-    response.on('end', async (chunk)=>{
+    response.on('end', async (chunk) => {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
@@ -1443,10 +1506,14 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
     ) {
+      const loss = parseInt(pingKeys.failure_count * 100 /
+        (pingKeys.success_count + pingKeys.failure_count));
+      if (isNaN(loss)) {
+        debug('calculatePingDiagnostic loss is not an number!!!');
+      }
       result[pingKeys.host] = {
         lat: pingKeys.avg_resp_time.toString(),
-        loss: parseInt(pingKeys.failure_count * 100 /
-               (pingKeys.success_count + pingKeys.failure_count)).toString(),
+        loss: loss.toString(),
       };
       if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
@@ -1647,8 +1714,14 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
         };
         if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
           result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+          if (isNaN(parseInt(speedValueFullLoad))) {
+            result.downSpeed = '0 Mbps';
+          }
         } else {
           result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+          if (isNaN(parseInt(speedValueBasic))) {
+            result.downSpeed = '0 Mbps';
+          }
         }
         deviceHandlers.storeSpeedtestResult(device, result);
         return;
@@ -1697,9 +1770,14 @@ const fetchWanBytesFromGenie = function(device, acsID) {
     let data = '';
     let wanBytes = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (checkForNestedKey(data, recvField+'._value') &&
@@ -1778,11 +1856,12 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     let signalState = {};
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
         try {
           data = JSON.parse(data)[0];
-        } catch (e) {
+        } catch (err) {
+          debug(err);
           return;
         }
       }
@@ -1894,7 +1973,7 @@ const checkMeshObjsCreated = function(device) {
       resp.setEncoding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         try {
           data = JSON.parse(data)[0];
         } catch (e) {
@@ -1940,7 +2019,7 @@ const fetchMeshBSSID = function(device, meshMode) {
       resp.setEncoding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         try {
           data = JSON.parse(data)[0];
         } catch (e) {
@@ -2009,9 +2088,14 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
     let data = '';
     let ponSignal = {};
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = false;
       if (checkForNestedKey(data, rxPowerField + '._value') &&
@@ -2078,9 +2162,14 @@ const fetchDevicesFromGenie = function(device, acsID) {
     resp.setEncoding('utf8');
     let data = '';
     resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (data.length > 0) {
-        data = JSON.parse(data)[0];
+        try {
+          data = JSON.parse(data)[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
       }
       let success = true;
       let hostKeys = [];
@@ -2161,7 +2250,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
               interfaces.push('5');
             }
           }
-          interfaces.forEach((iface)=>{
+          interfaces.forEach((iface) => {
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
@@ -2174,7 +2263,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
               assocIndexes = [];
             }
             assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
-            assocIndexes.forEach((index)=>{
+            assocIndexes.forEach((index) => {
               // Collect associated mac
               let macKey = fields.devices.assoc_mac;
               macKey = macKey.replace('*', iface).replace('*', index);
@@ -2206,6 +2295,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 device.rssi = device.rssi.replace('dBm', '');
                 // Cast back to number to avoid converting issues
                 device.rssi = parseInt(device.rssi);
+                if (isNaN(parseInt(device.rssi))) {
+                  debug(`device.rssi is NaN beware!!!`);
+                }
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {
@@ -2214,6 +2306,9 @@ const fetchDevicesFromGenie = function(device, acsID) {
                 device.snr = getFromNestedKey(data, snrKey+'._value');
               } else if (fields.devices.host_rssi && device.rssi) {
                 device.snr = parseInt(device.rssi)+95;
+                if (isNaN(parseInt(device.rssi))) {
+                  debug(`device.rssi is NaN beware!!!`);
+                }
               }
               // Collect mode, if available
               if (fields.devices.host_mode) {
@@ -2244,7 +2339,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
             });
           });
         }
-        await saveDeviceData(mac, devices);
+        await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);
     });
@@ -2547,16 +2642,25 @@ acsDeviceInfoController.updateInfo = async function(
         } else if (model === 'ST-1001-FL') {
           // Special case - there is no auto field, use channel 0
           if (auto) channel = '0';
+          const parsedChannel = parseInt(channel);
+          // this should never happen if auto is true
+          if (isNaN(parsedChannel)) {
+            debug('Wrong channel, auto but not an number!!!');
+          }
           task.parameterValues.push([
-            fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+            fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
           ]);
         } else {
           task.parameterValues.push([
             fields[masterKey]['auto'], auto, 'xsd:boolean',
           ]);
           if (!auto) {
+            const parsedChannel = parseInt(channel);
+            if (isNaN(parsedChannel)) {
+              debug('Wrong channel, not auto but not an number!!!');
+            }
             task.parameterValues.push([
-              fields[masterKey][key], parseInt(channel), 'xsd:unsignedInt',
+              fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
             ]);
           }
         }
@@ -2933,8 +3037,14 @@ acsDeviceInfoController.changeAcRules = async function(device) {
         wlanTreeRules = wlanTreeRules.sort((a, b) => {
           let aArr = a.split('.');
           let aId = parseInt(aArr[aArr.length - 1], 10);
+          if (isNaN(aId)) {
+            debug(`wlanTreeRules aId is not an number`);
+          }
           let bArr = b.split('.');
           let bId = parseInt(bArr[bArr.length - 1], 10);
+          if (isNaN(bId)) {
+            debug(`wlanTreeRules bId is not an number`);
+          }
           return aId - bId;
         });
         let wlanNumOfRules = wlanTreeRules.length;
@@ -3086,6 +3196,9 @@ const getAcRuleTrees = async function(
 const addAcRules = async function(
   device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz) {
   let currentMaxId = parseInt(maxId, 10);
+  if (isNaN(currentMaxId)) {
+    debug('maxId is not an number');
+  }
   let acRulesAdded = {'wifi2': []};
   if (grantWifi5ghz) {
     acRulesAdded['wifi5'] = [];
@@ -3229,9 +3342,14 @@ const configFileEditing = async function(device, target) {
     resp.setEncoding('utf8');
     let rawConfigFile = '';
     resp.on('data', (chunk)=>rawConfigFile+=chunk);
-    resp.on('end', async ()=>{
+    resp.on('end', async () => {
       if (rawConfigFile.length > 0) {
-        rawConfigFile = JSON.parse(rawConfigFile)[0];
+        try {
+          rawConfigFile = JSON.parse(rawConfigFile)[0];
+        } catch (err) {
+          debug(err);
+          rawConfigFile = '';
+        }
       }
       if (checkForNestedKey(rawConfigFile, configField+'._value')) {
         // modify xml config file
@@ -3297,9 +3415,14 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       let data = '';
       let i;
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
+      resp.on('end', async () => {
         if (data.length > 0) {
-          data = JSON.parse(data)[0];
+          try {
+            data = JSON.parse(data)[0];
+          } catch (err) {
+            debug(err);
+            data = '';
+          }
         }
         let isDiff = false;
         let template = '';
