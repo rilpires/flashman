@@ -204,12 +204,11 @@ const extractGreatekCredentials = function(config) {
   return {username: username, password: password};
 };
 
-const appendBytesMeasure = async function(original, recv, sent) {
+const appendBytesMeasure = function(original, recv, sent) {
   if (!original) original = {};
   try {
     let now = Math.floor(Date.now()/1000);
-    let bytes = await utilHandlers
-      .asyncJsonParse(await utilHandlers.asyncJsonStringify(original));
+    let bytes = JSON.parse(JSON.stringify(original));
     if (Object.keys(bytes).length >= 300) {
       let keysNum = Object
         .keys(bytes)
@@ -231,12 +230,11 @@ const appendBytesMeasure = async function(original, recv, sent) {
   }
 };
 
-const appendPonSignal = async function(original, rxPower, txPower) {
+const appendPonSignal = function(original, rxPower, txPower) {
   if (!original) original = {};
   try {
     let now = Math.floor(Date.now() / 1000);
-    let dbms = await utilHandlers
-      .asyncJsonParse(await utilHandlers.asyncJsonStringify(original));
+    let dbms = JSON.parse(JSON.stringify(original));
     if (Object.keys(dbms).length >= 100) {
       let keysNum = Object
         .keys(dbms)
@@ -989,7 +987,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (data.wan.recv_bytes && data.wan.recv_bytes.value &&
       data.wan.sent_bytes && data.wan.sent_bytes.value) {
-    device.wan_bytes = await appendBytesMeasure(
+    device.wan_bytes = appendBytesMeasure(
       device.wan_bytes,
       data.wan.recv_bytes.value,
       data.wan.sent_bytes.value,
@@ -1016,7 +1014,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     isPonTxValOk = true;
   }
   if (isPonRxValOk && isPonTxValOk) {
-    device.pon_signal_measure = await appendPonSignal(
+    device.pon_signal_measure = appendPonSignal(
       device.pon_signal_measure,
       device.pon_rxpower,
       device.pon_txpower,
@@ -1233,8 +1231,7 @@ const fetchLogFromGenie = function(success, device, acsID) {
     resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (err) {
           debug(err);
           data = '';
@@ -1372,8 +1369,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     response.on('end', async (chunk) => {
       let body = Buffer.concat(chunks);
       try {
-        const parsedData = await utilHandlers.asyncJsonParse(body);
-        let data = parsedData[0];
+        let data = JSON.parse(body)[0];
         let permissions = DeviceVersion.findByVersion(
           device.version,
           device.wifi_is_5ghz_capable,
@@ -1777,8 +1773,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
     resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (err) {
           debug(err);
           data = '';
@@ -1797,7 +1792,7 @@ const fetchWanBytesFromGenie = function(device, acsID) {
         let deviceEdit = await DeviceModel.findById(mac);
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
-        wanBytes = await appendBytesMeasure(
+        wanBytes = appendBytesMeasure(
           deviceEdit.wan_bytes,
           wanBytes.recv,
           wanBytes.sent,
@@ -1864,8 +1859,7 @@ const fetchUpStatusFromGenie = function(device, acsID) {
     resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (err) {
           debug(err);
           return;
@@ -1935,7 +1929,7 @@ const fetchUpStatusFromGenie = function(device, acsID) {
               config.tr069.pon_signal_threshold_critical_high,
           };
           // append to device data structure
-          ponSignal = await appendPonSignal(
+          ponSignal = appendPonSignal(
             deviceEdit.pon_signal_measure,
             ponSignal.rxpower,
             ponSignal.txpower,
@@ -1981,8 +1975,7 @@ const checkMeshObjsCreated = function(device) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async () => {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (e) {
           result.success = false;
           resolve(result);
@@ -2028,8 +2021,7 @@ const fetchMeshBSSID = function(device, meshMode) {
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('end', async () => {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (e) {
           console.log('Error parsing bssid data from genie');
           return resolve({success: false});
@@ -2099,8 +2091,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
     resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (err) {
           debug(err);
           data = '';
@@ -2132,7 +2123,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
         if (ponSignal.txpower) {
           ponSignal.txpower = convertToDbm(deviceEdit.model, ponSignal.txpower);
         }
-        ponSignal = await appendPonSignal(
+        ponSignal = appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
           ponSignal.txpower,
@@ -2174,8 +2165,7 @@ const fetchDevicesFromGenie = function(device, acsID) {
     resp.on('end', async () => {
       if (data.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(data);
-          data = parsedData[0];
+          data = JSON.parse(data)[0];
         } catch (err) {
           debug(err);
           data = '';
@@ -3156,8 +3146,7 @@ const getAcRuleTrees = async function(
         if (data.length > 0) {
           try {
             // Get data
-            const parsedData = await utilHandlers.asyncJsonParse(data);
-            data = parsedData[0];
+            data = JSON.parse(data)[0];
             for (let wlanType of supportedWlans) {
               let wlanTreeRoot = acSubtreeRoots[wlanType];
               let wlanTreeRules = [];
@@ -3356,8 +3345,7 @@ const configFileEditing = async function(device, target) {
     resp.on('end', async () => {
       if (rawConfigFile.length > 0) {
         try {
-          const parsedData = await utilHandlers.asyncJsonParse(rawConfigFile);
-          rawConfigFile = parsedData[0];
+          rawConfigFile = JSON.parse(rawConfigFile)[0];
         } catch (err) {
           debug(err);
           rawConfigFile = '';
@@ -3430,8 +3418,7 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
       resp.on('end', async () => {
         if (data.length > 0) {
           try {
-            const parsedData = await utilHandlers.asyncJsonParse(data);
-            data = parsedData[0];
+            data = JSON.parse(data)[0];
           } catch (err) {
             debug(err);
             data = '';
