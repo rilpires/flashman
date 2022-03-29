@@ -1714,7 +1714,16 @@ const fetchWanBytesFromGenie = function(acsID) {
   req.end();
 };
 
-const fetchUpStatusFromGenie = function(device, acsID) {
+const fetchUpStatusFromGenie = function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
   let mac = device._id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let upTimeField1 = fields.wan.uptime.replace('*', 1);
@@ -2301,10 +2310,7 @@ acsDeviceInfoController.requestUpStatus = function(device) {
       task.parameterNames.push(fields.wan.pon_txpower_epon);
     }
   }
-  TasksAPI.addTask(acsID, task, true, 10000, [15000, 30000], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchUpStatusFromGenie(device, acsID);
-  });
+  TasksAPI.addTask(acsID, task, fetchUpStatusFromGenie);
 };
 
 acsDeviceInfoController.requestConnectedDevices = function(device) {
