@@ -1,7 +1,7 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const request = require('supertest');
-const {catchDatabaseError, catchError} = require('../../controllers/tools');
+const utilHandler = require('../../controllers/handlers/util');
 const mongoose = require('mongoose');
 const DeviceModel = require('../../models/device');
 const {populateDevices, disconnectThemAll} = require('../fake_router');
@@ -22,7 +22,7 @@ describe('vlan routes', () => {
         name: 'admin',
         password: 'landufrj123',
       })
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     adminCookie = adminLogin.header['set-cookie'];
     if (typeof adminCookie === undefined) {
       throw new Error('Failed to get admin cookie');
@@ -34,7 +34,7 @@ describe('vlan routes', () => {
         name: 'teste.testet@testetest.com.br',
         password: 'teste123',
       })
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     testCookie = testLogin.header['set-cookie'];
     if (typeof testCookie === undefined) {
       throw new Error('Failed to get admin cookie');
@@ -46,7 +46,7 @@ describe('vlan routes', () => {
         name: 'teste',
         password: 'teste123',
       })
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     managerCookie = managerLogin.header['set-cookie'];
     if (typeof managerCookie === undefined) {
       throw new Error('Failed to get admin cookie');
@@ -62,13 +62,13 @@ describe('vlan routes', () => {
         useFindAndModify: false,
         useCreateIndex: true,
       },
-    ).catch(catchDatabaseError);
+    ).catch(utilHandler.catchDatabaseError);
 
     const query = {};
     const matchedDevices = await DeviceModel
       .find(query)
       .lean()
-      .catch(catchDatabaseError);
+      .catch(utilHandler.catchDatabaseError);
 
     let slaveCount = {};
     const macList = matchedDevices.map((device) => {
@@ -80,7 +80,8 @@ describe('vlan routes', () => {
       return device._id;
     });
 
-    fakeDevicesInstances = await populateDevices(macList).catch(catchError);
+    fakeDevicesInstances =
+      await populateDevices(macList).catch(utilHandler.catchError);
     fakeDevicesInstances.map((device) => {
       device.on('message', async (_, message) => {
         if (message.toString() === 'boot') {
@@ -123,7 +124,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile')
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
   });
   test('/vlan/profile - Try to get the list of vlan profile page as test user',
@@ -131,7 +132,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile')
       .set('Cookie', testCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(403);
   });
 
@@ -141,7 +142,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/fetch')
       .set('Cookie', testCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.vlanProfiles.length).toBe(14);
@@ -154,7 +155,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/'+10)
       .set('Cookie', testCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(403);
     expect(res.text).toMatch(/Permissão negada/);
   });
@@ -164,7 +165,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/'+13)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.text).toMatch(/VLAN ID não encontrado/);
   });
@@ -174,7 +175,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/'+31)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.text).toMatch(/name="profilename" value="test31"/);
   });
@@ -186,7 +187,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/check/'+profileId)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('Perfil de VLAN não encontrado');
@@ -197,7 +198,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/profile/check/'+profileId)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
@@ -209,7 +210,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/fetch/'+deviceId)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.vlan[0].vlan_id).toBe(1);
@@ -227,7 +228,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/fetch/'+deviceId)
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
   });
@@ -238,7 +239,7 @@ describe('vlan routes', () => {
     let res = await request('localhost:8000')
       .get('/vlan/fetchvlancompatible')
       .set('Cookie', adminCookie)
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.compatibleModels.length).toBe(41);
@@ -252,7 +253,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 16, name: 'teste123'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -265,7 +266,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 2323, name: 'ipphone'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -278,7 +279,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 9999, name: 'teste123'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -291,7 +292,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 2323, name: 'test123test123test123test123test123'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -304,7 +305,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 2323, name: '123test'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -317,7 +318,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/new')
       .set('Cookie', adminCookie)
       .send({id: 2323, name: 'test2323'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -332,7 +333,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+42)
       .set('Cookie', adminCookie)
       .send({profilename: 'teste123'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -345,7 +346,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+10)
       .set('Cookie', adminCookie)
       .send({profilename: 'WAN'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -358,7 +359,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+10)
       .set('Cookie', adminCookie)
       .send({profilename: 'abcdefabcdefabcdefabcdefabcdefabcdef'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -371,7 +372,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+10)
       .set('Cookie', adminCookie)
       .send({profilename: '123test'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -383,7 +384,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+10)
       .set('Cookie', adminCookie)
       .send({profilename: 'Android'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -395,7 +396,7 @@ describe('vlan routes', () => {
       .post('/vlan/profile/edit/'+10)
       .set('Cookie', adminCookie)
       .send({profilename: 'ipphone'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -409,7 +410,7 @@ describe('vlan routes', () => {
       .post('/vlan/fetchmaxvid')
       .set('Cookie', adminCookie)
       .send({models: '"ARCHERC2V1"; "DIR-819A1"; "EC220-G5V2"'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(500);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -423,7 +424,7 @@ describe('vlan routes', () => {
       .post('/vlan/fetchmaxvid')
       .set('Cookie', adminCookie)
       .send({models: JSON.stringify(models)})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.maxVids[models[0]]).toBe(31);
@@ -437,7 +438,7 @@ describe('vlan routes', () => {
       .post('/vlan/fetchmaxvid')
       .set('Cookie', adminCookie)
       .send({models: JSON.stringify(models)})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.maxVids[models[0]]).toBe(0);
@@ -452,7 +453,7 @@ describe('vlan routes', () => {
       .post('/vlan/update/'+deviceId)
       .set('Cookie', adminCookie)
       .send({})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/Dispositivo não encontrado/);
@@ -465,7 +466,7 @@ describe('vlan routes', () => {
       .post('/vlan/update/'+deviceId)
       .set('Cookie', managerCookie)
       .send({})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(403);
   });
   test('/vlan/update/:deviceid  - Try update a vlan with'+
@@ -476,7 +477,7 @@ describe('vlan routes', () => {
       .post('/vlan/update/'+deviceId)
       .set('Cookie', testCookie)
       .send({})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/Formato de VLANs inválido/);
@@ -489,7 +490,7 @@ describe('vlan routes', () => {
       .set('Cookie', testCookie)
       .send({vlans: '[{"port":1, "vlan_id":10},{"port":2, "vlan_id":15},'+
         '{"port":3, "vlan_id":10},{"port":4, "vlan_id":1}]'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toMatch(/atualizada com sucesso/);
@@ -503,7 +504,7 @@ describe('vlan routes', () => {
       .set('Cookie', testCookie)
       .send({vlans: '[{"port":1, "vlan_id":1},{"port":2, "vlan_id":1},'+
         '{"port":3, "vlan_id":1},{"port":4, "vlan_id":1}]'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toMatch(/atualizada com sucesso/);
@@ -517,7 +518,7 @@ describe('vlan routes', () => {
       .delete('/vlan/profile/del')
       .set('Cookie', adminCookie)
       .send({ids: '2323'})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -530,7 +531,7 @@ describe('vlan routes', () => {
       .delete('/vlan/profile/del')
       .set('Cookie', adminCookie)
       .send({ids: 32})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -543,7 +544,7 @@ describe('vlan routes', () => {
       .delete('/vlan/profile/del')
       .set('Cookie', adminCookie)
       .send({ids: [64, 16, 15]})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message)
@@ -556,7 +557,7 @@ describe('vlan routes', () => {
       .delete('/vlan/profile/del')
       .set('Cookie', adminCookie)
       .send({ids: {a: 123, b: 321}})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -569,7 +570,7 @@ describe('vlan routes', () => {
       .delete('/vlan/profile/del')
       .set('Cookie', adminCookie)
       .send({})
-      .catch(catchError);
+      .catch(utilHandler.catchError);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(false);
     expect(res.body.message)
@@ -581,6 +582,6 @@ describe('vlan routes', () => {
       await disconnectThemAll(fakeDevicesInstances);
       fakeDevicesInstances = [];
     }
-    await mongooseConnection.disconnect().catch(catchError);
+    await mongooseConnection.disconnect().catch(utilHandler.catchError);
   });
 });

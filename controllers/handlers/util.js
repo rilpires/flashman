@@ -1,3 +1,7 @@
+/* global __line */
+
+const t = require('../language').i18next.t;
+
 let utilHandlers = {};
 
 utilHandlers.isJSONObject = function(val) {
@@ -120,6 +124,17 @@ utilHandlers.parseDate = function(dateString) {
     console.log(`minute: ${isNaN(minute)}`);
   }
   return new Date(year, month-1, day, hour, minute, 0, 0);
+};
+
+/* ****Functions for test utilities**** */
+
+utilHandlers.catchError = function(error) {
+  console.log(error);
+};
+
+utilHandlers.catchDatabaseError = function(error) {
+  utilHandlers.catchError(error);
+  return {success: false, error: t('saveError', {errorline: __line})};
 };
 
 module.exports = utilHandlers;

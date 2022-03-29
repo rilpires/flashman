@@ -1,7 +1,7 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const request = require('supertest');
-const {catchDatabaseError, catchError} = require('../../controllers/tools');
+const utilHandler = require('../../controllers/handlers/util');
 const mongoose = require('mongoose');
 const DeviceModel = require('../../models/device');
 const {populateDevices, disconnectThemAll} = require('../fake_router');
@@ -20,7 +20,7 @@ describe('api_v2', () => {
         name: 'admin',
         password: 'landufrj123',
       })
-      .catch(catchError);
+      .catch(utilHandler.catchError);
 
     adminCookie = adminLogin.header['set-cookie'];
     if (typeof adminCookie === undefined) {
@@ -37,13 +37,13 @@ describe('api_v2', () => {
         useFindAndModify: false,
         useCreateIndex: true,
       },
-    ).catch(catchDatabaseError);
+    ).catch(utilHandler.catchDatabaseError);
 
     const query = {};
     const matchedDevices = await DeviceModel
       .find(query)
       .lean()
-      .catch(catchDatabaseError);
+      .catch(utilHandler.catchDatabaseError);
 
     let slaveCount = {};
     const macList = matchedDevices.map((device) => {
@@ -55,7 +55,8 @@ describe('api_v2', () => {
       return device._id;
     });
 
-    fakeDevicesInstances = await populateDevices(macList).catch(catchError);
+    fakeDevicesInstances =
+      await populateDevices(macList).catch(utilHandler.catchError);
     fakeDevicesInstances.map((device) => {
       device.on('message', async (_, message) => {
         if (message.toString() === 'boot') {
@@ -853,6 +854,6 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       await disconnectThemAll(fakeDevicesInstances);
       fakeDevicesInstances = [];
     }
-    await mongooseConnection.disconnect().catch(catchError);
+    await mongooseConnection.disconnect().catch(utilHandler.catchError);
   });
 });
