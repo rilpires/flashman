@@ -2374,16 +2374,13 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
   }
   let bssidsStatus;
   try {
-    let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
-    if (!ret || !ret.finished ||
-      ret.task.name !== 'getParameterValues') {
+    let ret = await TasksAPI.addTask(acsID, getObjTask);
+    if (!ret || !ret.success) {
       throw new Error('task error');
     }
-    if (ret.finished) {
-      bssidsStatus = await fetchMeshBSSID(device, meshMode);
-      if (!bssidsStatus.success) {
-        throw new Error('invalid data');
-      }
+    bssidsStatus = await fetchMeshBSSID(device, meshMode);
+    if (!bssidsStatus.success) {
+      throw new Error('invalid data');
     }
   } catch (e) {
     const msg = `[!] -> ${e.message} in ${acsID}`;
