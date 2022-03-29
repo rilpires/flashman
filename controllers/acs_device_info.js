@@ -2058,7 +2058,16 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchDevicesFromGenie = function(device, acsID) {
+const fetchDevicesFromGenie = function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
   let mac = device._id;
   let splitID = acsID.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -2328,10 +2337,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
   }
-  TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchDevicesFromGenie(device, acsID);
-  });
+  TasksAPI.addTask(acsID, task, fetchDevicesFromGenie);
 };
 
 const getSsidPrefixCheck = async function(device) {
