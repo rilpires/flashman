@@ -1630,20 +1630,19 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
     } else {
       // Error treatment (switch-case for future error handling)
       switch (speedKeys.diag_state) {
-        case ('Error_InitConnectionFailed' ||
-              'Error_NoResponse' ||
-              'Error_Other'):
-        console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
-        result = {
-          downSpeed: '503 Server',
-          user: device.current_speedtest.user,
-        };
-        break;
+        case 'Error_InitConnectionFailed':
+        case 'Error_NoResponse':
+        case 'Error_Other':
+          console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
+          result = {
+            downSpeed: '503 Server',
+            user: device.current_speedtest.user,
+          };
+          break;
         default:
-        result = {
-          user: device.current_speedtest.user,
-        };
-        break;
+          result = {
+            user: device.current_speedtest.user,
+          };
       }
       deviceHandlers.storeSpeedtestResult(device, result);
       return;
