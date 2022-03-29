@@ -2701,9 +2701,8 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
         i--) {
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          10000, [5000, 10000]);
-        if (!ret || !ret.finished) {
+        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
+        if (!ret || !ret.success || !ret.executed) {
           return;
         }
       } catch (e) {
@@ -2715,9 +2714,8 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask, true,
-          10000, [5000, 10000]);
-        if (!ret || !ret.finished) {
+        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
+        if (!ret || !ret.success || !ret.executed) {
           return;
         }
       } catch (e) {
@@ -2745,10 +2743,7 @@ acsDeviceInfoController.changePortForwardRules = async function(device,
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
-    TasksAPI.addTask(acsID, updateTasks,
-        true, 10000, [5000, 10000]).catch((e) => {
-          console.error('[!] -> '+e.message+' in '+acsID);
-        });
+    TasksAPI.addTask(acsID, updateTasks);
   }
 };
 
