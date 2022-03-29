@@ -1354,6 +1354,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnIPPingDiagnostics = fields.diagnostics.ping.root;
+  // We need to update the parameter values before we fire the ping test
   let task = {
     name: 'getParameterValues',
     parameterNames: [diagnIPPingDiagnostics],
@@ -1500,8 +1501,34 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   }
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-
   let diagnSpeedtestDiagnostics = fields.diagnostics.speedtest.root;
+  // We need to update the parameter values before we fire the speedtest
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [diagnSpeedtestDiagnostics],
+  };
+  const result = await TasksAPI.addTask(acsID, task, startSpeedtestDiagnose);
+  if (result.success) {
+    return {success: true, message: t('operationSuccessful')};
+  } else {
+    return {
+      success: false, message: t('acsSpeedTestError', {errorline: __line}),
+    };
+  }
+};
+
+const startSpeedtestDiagnose = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (err) {
+    return {success: false, message: err.message + ' in ' + acsID};
+  }
+  if (!device) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnStateField = fields.diagnostics.speedtest.diag_state;
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
@@ -1510,32 +1537,8 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
   let speedtestHostUrl = await acsDeviceInfoController.getSpeedtestFile(device);
 
   if (!speedtestHostUrl || speedtestHostUrl === '') {
-    return {success: false,
-            message: t('acsSpeedTestFileUnavailable', {errorline: __line})};
-  }
-
-  // We need to update the parameter values before we fire the ping test
-  let success = false;
-  try {
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: [diagnSpeedtestDiagnostics],
-    };
-    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-    if (
-      !result || !result.finished || result.task.name !== 'getParameterValues'
-    ) {
-      console.log('Failed: genie diagnostic fields can\'t be updated');
-    } else {
-      success = true;
-    }
-  } catch (e) {
-    console.log('Failed: genie diagnostic fields can\'t be updated');
-    console.log('Error:', e);
-  }
-  if (!success) {
-    return {success: false,
-            message: t('acsSpeedTestError', {errorline: __line})};
+    console.log('No valid speedtest URL found for ' + acsID);
+    return;
   }
 
   let task = {
@@ -1544,18 +1547,9 @@ acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
-  try {
-    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-    if (!result || !result.finished) {
-      return {success: false,
-              message: t('acsSpeedTestError', {errorline: __line})};
-    } else {
-      return {success: true,
-              message: t('operationSuccessful')};
-    }
-  } catch (err) {
-      return {success: false,
-              message: err.message+' in '+acsID};
+  const result = await TasksAPI.addTask(acsID, task);
+  if (!result.success) {
+    console.log('Error starting speedtest diagnose for ' + acsID);
   }
 };
 
