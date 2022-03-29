@@ -1147,15 +1147,19 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchLogFromGenie = function(success, device, acsID) {
-  let mac = device._id;
-  if (!success) {
-    // Return with log unavailable
-    let data = t('logUnavailable', {errorline: __line});
-    let compressedLog = pako.gzip(data);
-    sio.anlixSendLiveLogNotifications(mac, compressedLog);
-    return;
+const fetchLogFromGenie = function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return res.status(500).json({success: false,
+      message: t('cpeFindError', {errorline: __line})});
   }
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return res.status(500).json({success: false,
+      message: t('cpeFindError', {errorline: __line})});
+  }
+  let mac = device._id;
   let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
@@ -2242,10 +2246,7 @@ acsDeviceInfoController.requestLogs = function(device) {
     name: 'getParameterValues',
     parameterNames: [logField],
   };
-  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    fetchLogFromGenie(result.finished, device, acsID);
-  });
+  TasksAPI.addTask(acsID, task, fetchLogFromGenie);
 };
 
 acsDeviceInfoController.requestWanBytes = function(device) {
