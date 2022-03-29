@@ -2375,7 +2375,7 @@ acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
   let bssidsStatus;
   try {
     let ret = await TasksAPI.addTask(acsID, getObjTask);
-    if (!ret || !ret.success) {
+    if (!ret || !ret.success || !ret.executed) {
       throw new Error('task error');
     }
     bssidsStatus = await fetchMeshBSSID(device, meshMode);
@@ -2406,9 +2406,8 @@ acsDeviceInfoController.createVirtualAPObjects = async function(device) {
   };
   let meshObjsStatus;
   try {
-    let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
-    if (!ret || !ret.finished ||
-      ret.task.name !== 'getParameterValues') {
+    let ret = await TasksAPI.addTask(acsID, getObjTask);
+    if (!ret || !ret.success || !ret.executed) {
       throw new Error('task error');
     }
     if (ret.finished) {
@@ -2444,10 +2443,8 @@ acsDeviceInfoController.createVirtualAPObjects = async function(device) {
   if (deleteMesh5VAP) {
     let delObjTask = {name: 'deleteObject', objectName: meshField5};
     try {
-      let ret = await TasksAPI.addTask(acsID, delObjTask, true,
-        10000, [5000, 10000]);
-      if (!ret || !ret.finished||
-        ret.task.name !== 'deleteObject') {
+      let ret = await TasksAPI.addTask(acsID, delObjTask);
+      if (!ret || !ret.success || !ret.executed) {
         throw new Error('delObject task error');
       }
     } catch (e) {
@@ -2469,8 +2466,7 @@ acsDeviceInfoController.createVirtualAPObjects = async function(device) {
       try {
         let ret = await TasksAPI.addTask(acsID, addObjTask, true,
           10000, [5000, 10000]);
-        if (!ret || !ret.finished||
-          ret.task.name !== 'addObject') {
+        if (!ret || !ret.success || !ret.executed) {
           throw new Error('task error');
         }
       } catch (e) {
@@ -2480,8 +2476,8 @@ acsDeviceInfoController.createVirtualAPObjects = async function(device) {
       }
       // A getParameterValues call forces the whole object to be created
       try {
-        let ret = await TasksAPI.addTask(acsID, getObjTask, true, 10000, []);
-        if (!ret || !ret.finished || ret.task.name !== 'getParameterValues') {
+        let ret = await TasksAPI.addTask(acsID, getObjTask);
+        if (!ret || !ret.success || !ret.executed) {
           throw new Error('task error');
         }
       } catch (e) {
