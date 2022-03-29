@@ -471,7 +471,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           {$lt: new Date(tr069Times.offline - hourThreshold)},
         };
       } else if (statusTags['online >'].test(tag)) {
-        const parsedHouse = Math.abs(parseInt(tag.split('>')[1]));
+        const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
         const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
         flashbox = {
           _id: {$nin: mqttClients},
