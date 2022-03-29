@@ -3264,9 +3264,22 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       finalQuery = deviceListController.simpleSearchDeviceQuery(
         queryContents);
     }
+    let queryProjection = {
+      '_id': true, 'serial_tr069': true, 'alt_uid_tr069': true,
+      'connection_type': true, 'pppoe_user': true, 'pppoe_password': true,
+      'lan_subnet': true, 'lan_netmask': true, 'wifi_ssid': true,
+      'wifi_password': true, 'wifi_channel': true, 'wifi_band': true,
+      'wifi_mode': true, 'wifi_ssid_5ghz': true, 'wifi_password_5ghz': true,
+      'wifi_channel_5ghz': true, 'wifi_band_5ghz': true, 'wifi_mode_5ghz': true,
+      'ip': true, 'wan_ip': true, 'ipv6_enabled': true,
+      'wan_negociated_speed': true, 'wan_negociated_duplex': true,
+      'external_reference.kind': true, 'external_reference.data': true,
+      'model': true, 'version': true, 'installed_release': true,
+      'do_update': true,
+    };
 
     let devices = {};
-    devices = await DeviceModel.find(finalQuery).lean();
+    devices = await DeviceModel.find(finalQuery, queryProjection).lean();
 
     let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
                            true : false);
