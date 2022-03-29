@@ -1196,23 +1196,11 @@ const fetchLogFromGenie = function(success, device, acsID) {
   req.end();
 };
 
-acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
+acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   let acsID = req.body.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let serial = splitID[splitID.length-1];
-
   let device;
   try {
-    device = await DeviceModel.findByMacOrSerial(serial);
-    if (Array.isArray(device) && device.length > 0) {
-      device = device[0];
-    } else {
-      return res.status(500).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
-    }
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
   } catch (e) {
     return res.status(500).json({success: false,
       message: t('cpeFindError', {errorline: __line})});
@@ -1222,10 +1210,30 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
       message: t('cpeFindError', {errorline: __line})});
   }
 
-  // We don't need to wait the diagnostics to complete
+  // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  let success = false;
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [
+      fields.diagnostics.ping.root, fields.diagnostics.speedtest.root,
+    ],
+  };
+  TasksAPI.addTask(acsID, task, fetchDiagnosticsFromGenie);
+}
+
+const fetchDiagnosticsFromGenie = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return;
+  }
+
   let parameters = [];
   let diagNecessaryKeys = {
     ping: {
@@ -1268,26 +1276,7 @@ acsDeviceInfoController.fetchDiagnosticsFromGenie = async function(req, res) {
     }
   }
 
-  // We need to update the parameter values after the diagnostics complete
-  try {
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: parameters,
-    };
-    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-    if (
-      !result || !result.finished || result.task.name !== 'getParameterValues'
-    ) {
-      console.log('Failed: genie diagnostics can\'t be updated');
-    } else {
-      success = true;
-    }
-  } catch (e) {
-    console.log('Error:', e);
-    console.log('Failed: genie diagnostics can\'t be updated');
-  }
-  if (!success) return;
-  success = false;
+  let success = false;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+
               '&projection='+parameters.join(',');
