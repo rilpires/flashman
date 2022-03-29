@@ -124,7 +124,7 @@ describe('api_v2', () => {
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
+    expect(r.message).toContain('Não existe log deste CPE');
   });
   test('Visualize first boot log of an CPE(flashbox): non existent mac',
   async () => {
@@ -135,7 +135,7 @@ describe('api_v2', () => {
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
+    expect(r.message).toContain('não encontrada');
   });
   test('Visualize first boot log of an CPE(tr-069): existent serial +'+
     ' non existent log',
@@ -147,7 +147,7 @@ describe('api_v2', () => {
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
+    expect(r.message).toContain('Não existe log deste CPE');
   });
   test('Visualize first boot log of an CPE(tr-069): non existent serial',
   async () => {
@@ -158,7 +158,7 @@ describe('api_v2', () => {
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
+    expect(r.message).toContain('não encontrada');
   });
 
   /* Visualizar último log enviado de um roteador
@@ -193,7 +193,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
+    expect(r.message).toContain('Não existe log deste CPE');
   });
   test('Visualize last boot log of an CPE(flashbox): non existent mac',
   async () => {
@@ -204,7 +204,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
+    expect(r.message).toContain('não encontrada');
   });
   test('Visualize last boot log of an CPE(tr-069): existent serial +'+
     ' existent log',
@@ -227,7 +227,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/Não existe log deste CPE/);
+    expect(r.message).toContain('Não existe log deste CPE');
   });
   test('Visualize last boot log of an CPE(tr-069): non existent serial',
   async () => {
@@ -238,7 +238,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     let r = res.body;
     expect(res.statusCode).toBe(200);
     expect(r.success).toBeFalsy();
-    expect(r.message).toMatch(/CPE não encontrado/);
+    expect(r.message).toContain('não encontrada');
   });
   /* Consultar informações de um roteador
   localhost:8000/api/v2/device/update/:id GET
@@ -314,7 +314,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Query port forward of an CPE(flashbox): exists +'+
     ' do not have this feature',
@@ -325,7 +325,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não possui essa função/);
+    expect(res.body.message).toContain('não possui essa função');
   });
   test('Query port forward of an CPE(flashbox): exists +'+
     ' have this feature',
@@ -346,7 +346,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Query port forward of an CPE(tr-069): exists by serial +'+
     ' do not have this feature',
@@ -357,7 +357,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não possui essa função/);
+    expect(res.body.message).toContain('não possui essa função');
   });
   test('Query port forward of an CPE(tr-069): exists by serial +'+
     ' have this feature',
@@ -391,7 +391,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Query ping test address list of an CPE(flashbox): exists',
   async () => {
@@ -411,7 +411,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch(/CPE não encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Query ping test address list of an CPE(tr-069): exists by serial',
   async () => {
@@ -435,7 +435,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
     expect(res.body.type).toMatch(/danger/);
-    expect(res.body.message).toMatch(/Nenhum roteador encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Delete a CPE(flashbox): exists',
   async () => {
@@ -446,7 +446,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeTruthy();
     expect(res.body.type).toMatch(/success/);
-    expect(res.body.message).toBe('Cadastro(s) removido(s) com sucesso!');
+    expect(res.body.message).toContain('com sucesso');
     let resCheck = await request('localhost:8000')
       .get('/api/v2/device/update/'+id)
       .auth('admin', 'landufrj123');
@@ -461,7 +461,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
     expect(res.body.type).toMatch(/danger/);
-    expect(res.body.message).toMatch(/Nenhum roteador encontrado/);
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Delete a CPE(tr-069): exists by serial',
   async () => {
@@ -472,7 +472,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeTruthy();
     expect(res.body.type).toMatch(/success/);
-    expect(res.body.message).toBe('Cadastro(s) removido(s) com sucesso!');
+    expect(res.body.message).toContain('com sucesso');
     let resCheck = await request('localhost:8000')
       .get('/api/v2/device/update/'+id)
       .auth('admin', 'landufrj123');
@@ -503,7 +503,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(500);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('Dispositivo não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Enable firwmare update of an CPE(flashbox): exists',
   async () => {
@@ -526,7 +526,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(500);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('Dispositivo não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
 
   /* Enviar comando para um roteador
@@ -548,7 +548,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Send command to CPE(flashbox): exists',
   async () => {
@@ -569,7 +569,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Send command to CPE(tr-069): exists by serial',
   async () => {
@@ -623,7 +623,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .set('Accept', 'application/json')
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Set CPE(tr-069) registry: exists by serial',
   async () => {
@@ -655,7 +655,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .set('Accept', 'application/json')
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
 
   /* Configurar abertura de portas de um roteador
@@ -725,7 +725,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toBe('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Set port forward in a CPE(tr-069): exists by serial',
   async () => {
@@ -746,7 +746,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeTruthy();
-    expect(res.body.message).toMatch(/salvo com sucesso/);
+    expect(res.body.message).toContain('com sucesso');
   });
   test('Set port forward in a CPE(tr-069): not exists by serial',
   async () => {
@@ -759,7 +759,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
 
   /* Configurar lista de endereços para teste de ping
@@ -807,7 +807,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
   test('Set a ping test address list in a CPE(tr-069): exists by serial',
   async () => {
@@ -846,7 +846,7 @@ test('Visualize last boot log of an CPE(flashbox): existent mac '+
       .auth('admin', 'landufrj123');
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBeFalsy();
-    expect(res.body.message).toMatch('CPE não encontrado');
+    expect(res.body.message).toContain('não encontrada');
   });
 
   afterAll(async () => {
