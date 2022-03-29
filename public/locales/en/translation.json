@@ -124,5 +124,8 @@
 	"addressSaveSuccess": "Endereço salvo com sucesso",
 	"invalidFormat": "Formato invalido",
 	"externalRequestError": "Erro externo de comunicação",
-	"onuNotFound": "ONU não encontrada"
+	"onuNotFound": "ONU não encontrada",
+  "ipv6Online": "true",
+  "ipv6Offline": "false",
+  "ipv6Unknown": "unknown"
 }

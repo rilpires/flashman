@@ -3272,11 +3272,11 @@ deviceListController.exportDevicesCsv = async function(req, res) {
                            true : false);
 
     devices = devices.map((device) => {
-      let ipv6Enabled = false;
+      let ipv6Enabled = t('ipv6Offline');
       if (device.ipv6_enabled === 1) {
-        ipv6Enabled = true;
+        ipv6Enabled = t('ipv6Online');
       } else if (device.ipv6_enabled=== 2) {
-        ipv6Enabled = 'unknown';
+        ipv6Enabled = t('ipv6Unknown');
       }
       device.ipv6_enabled = ipv6Enabled;
       return device;

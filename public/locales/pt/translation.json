@@ -536,5 +536,9 @@
 	"errorDeletingVlanProfile": "Erro ao excluir perfis de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Exclusão de perfis não foi possível pois alguns CPEs não atualizaram a configuração de VLAN.",
 
-	"vlanProfile": "Perfil de VLAN"
+	"vlanProfile": "Perfil de VLAN",
+
+  "ipv6Online": "true",
+  "ipv6Offline": "false",
+  "ipv6Unknown": "desconhecido"
 }
