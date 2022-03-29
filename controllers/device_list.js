@@ -3278,9 +3278,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       } else if (device.ipv6_enabled=== 2) {
         ipv6Enabled = 'unknown';
       }
-      console.log(device.ipv6_enabled);
       device.ipv6_enabled = ipv6Enabled;
-      console.log(device.ipv6_enabled);
       return device;
     });
 
