@@ -545,7 +545,7 @@ const sendTasks = async function(deviceid, tasks, callback) {
       if (callback) {
         callback(deviceid);
       }
-      return {success: true, message: 'task success'};
+      return {success: true, executed: true, message: 'task success'};
     } else if (response.statusCode === 202) {
       // if this is the last task (which originated this call), and result was
       // success without immediate response (202), add task id and callback to
@@ -565,7 +565,7 @@ const sendTasks = async function(deviceid, tasks, callback) {
           timestamp: Date.now(),
         };
       }
-      return {success: true, message: 'task success'};
+      return {success: true, executed: false, message: 'task scheduled'};
     } else {
       // something went wrong, log error and return
       console.log('Error adding task to GenieACS: ' + response.data);

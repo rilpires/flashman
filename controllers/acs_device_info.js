@@ -1980,7 +1980,15 @@ const fetchMeshBSSID = function(device, meshMode) {
 };
 
 // TODO: Move this function to external-genieacs?
-acsDeviceInfoController.fetchPonSignalFromGenie = function(device, acsID) {
+acsDeviceInfoController.fetchPonSignalFromGenie = function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    console.log('Error:', e);
+    return {success: false,
+            message: t('cpeFindError', {errorline: __line})};
+  }
   let mac = device._id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let rxPowerField = fields.wan.pon_rxpower;
