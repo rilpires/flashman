@@ -1134,17 +1134,16 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let task = {name: 'reboot'};
-  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
-    if (result.task.name !== 'reboot') return;
-    if (!res) return; // Prevent crash in case res is not defined
-    if (result.finished) res.status(200).json({success: true});
-    else {
-      res.status(200).json({
-        success: false,
-        message: t('cpeDidNotRespond', {errorline: __line}),
-      });
-    }
-  });
+  let result = await TasksAPI.addTask(acsID, task);
+  if (!res) return; // Prevent crash in case res is not defined
+  if (result.success) {
+    return res.status(200).json({success: true});
+  } else {
+    return res.status(200).json({
+      success: false,
+      message: t('cpeDidNotRespond', {errorline: __line}),
+    });
+  }
 };
 
 // TODO: Move this function to external-genieacs?
