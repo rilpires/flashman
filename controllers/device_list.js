@@ -474,11 +474,11 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
         const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
         flashbox = {
-          _id: {$nin: mqttClients},
-          last_contact: {$lt: new Date(lastHour - hourThreshold)},
+          _id: {$in: mqttClients},
+          last_contact: {$gte: new Date(lastHour - hourThreshold)},
         };
         tr069 = {
-          last_contact: {$lt: new Date(tr069Times.offline - hourThreshold)},
+          last_contact: {$gte: tr069Times.recovery},
         };
       }
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
