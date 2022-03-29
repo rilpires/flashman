@@ -1152,12 +1152,10 @@ const fetchLogFromGenie = function(acsID) {
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
   } catch (e) {
-    return res.status(500).json({success: false,
-      message: t('cpeFindError', {errorline: __line})});
+    return;
   }
-  if (!device || !device.use_tr069 || !device.acs_id) {
-    return res.status(500).json({success: false,
-      message: t('cpeFindError', {errorline: __line})});
+  if (!device || !device.use_tr069) {
+    return;
   }
   let mac = device._id;
   let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
