@@ -6,49 +6,49 @@ form.needs-validation(id="deviceForm", novalidate)
         type="button",
         data-toggle="dropdown"
       )
-        span#new_ext_ref_type_selected.selected CPF
+        span#new_ext_ref_type_selected.selected= t('personIdentificationSystem')
       .ext-ref-type.dropdown-menu
-        a.dropdown-item.text-center.primary-color.active CPF
-        a.dropdown-item.text-center CNPJ
-        a.dropdown-item.text-center Outro
+        a.dropdown-item.text-center.primary-color.active= t('personIdentificationSystem')
+        a.dropdown-item.text-center= t('enterpriseIdentificationSystem')
+        a.dropdown-item.text-center= t('Other') 
     input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
       type="text",
       id="new_external_reference",
-      placeholder="Identificação do cliente (opcional)",
+      placeholder=t('clientIdentificationOptional'),
       maxlength="64"
     )
   .md-form.input-entry
-    label(for="new_mac") Endereço MAC
+    label(for="new_mac")= t('macAddress')
     input.form-control(type="text", id="new_mac")
     .invalid-feedback
   .md-form.pt-2
     .md-selectfield.form-control.my-0
-      label(for="new_connect_type") Tipo de Conexão
+      label(for="new_connect_type")= t('connectionType')
       select.browser-default.md-select(id="new_connect_type")
         option(value="DHCP") DHCP
         option(value="PPPoE") PPPoE
   .md-form
     .md-selectfield.form-control.my-0
-      label(for="new_wifi_channel") Canal do Wi-Fi
+      label(for="new_wifi_channel")= t('wifiChannel')
       select.browser-default.md-select(id="new_wifi_channel")
-        option(value="auto") auto
+        option(value="auto")= t('auto')
         option(value="1") 1
         option(value="6") 6
         option(value="11") 11
   .md-form
     .md-selectfield.form-control.my-0
-      label(for="new_wifi_band") Largura de banda do Wi-Fi
+      label(for="new_wifi_band")= t('wifiBandwidth') 
       select.browser-default.md-select(id="new_wifi_band")
         option(value="HT40") 40 MHz
         option(value="HT20") 20 MHz
   .md-form
     .md-selectfield.form-control.my-0
-      label(for="new_wifi_mode") Modo de operação do Wi-Fi
+      label(for="new_wifi_mode")= t('wifiOperationMode')
       select.browser-default.md-select(id="new_wifi_mode")
         option(value="11n") BGN
         option(value="11g") G
   .md-form.input-group.input-entry
-    label(for="new_wifi_ssid", id="ssid_label") SSID do Wi-Fi
+    label(for="new_wifi_ssid", id="ssid_label")= t('wifiSsid')
     #ssid_prefix_div.input-group-prepend.d-none
       span#ssid_prefix.input-group-text.px-0.text-primary(
         style="background:inherit;border:none;")
@@ -57,19 +57,19 @@ form.needs-validation(id="deviceForm", novalidate)
                        maxlength="32")
     .invalid-feedback
   .md-form.input-entry
-    label(for="new_wifi_pass") Senha do Wi-Fi
+    label(for="new_wifi_pass")= t('wifiPassword')
     input.form-control(type="text",
                        id="new_wifi_pass",
                        maxlength="64")
     .invalid-feedback
   .md-form.input-entry
-    label(for="new_pppoe_user") Usuário PPPoE
+    label(for="new_pppoe_user")= t('pppoeUser')
     input.form-control(type="text",
                        id="new_pppoe_user",
                        maxlength="64")
     .invalid-feedback
   .md-form.input-entry
-    label(for="new_pppoe_pass") Senha PPPoE
+    label(for="new_pppoe_pass")= t('pppoePassword') 
     input.form-control(type="text",
                        id="new_pppoe_pass",
                        maxlength="64",
@@ -79,4 +79,4 @@ form.needs-validation(id="deviceForm", novalidate)
     .form-buttons
       button.btn.btn-lg.btn-primary(type="submit")
         .fas.fa-check.fa-lg
-        span &nbsp Adicionar
+        span &nbsp; #{t('Add')}

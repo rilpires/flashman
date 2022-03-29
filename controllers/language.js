@@ -52,8 +52,8 @@ i18next
     // },
     initImmediate: false,
     backend: {
-      loadPath: './public/locales/{{lng}}/{{ns}}.json',
-      addPath: './public/locales/{{lng}}/{{ns}}.json',
+      loadPath: path.join(localesdDir, '/{{lng}}/{{ns}}.json'),
+      addPath: path.join(localesdDir, '/{{lng}}/{{ns}}.json'),
     },
     // preload: ['en', 'en-US', 'es', 'pt-BR', 'lsls'],
     // resource: {},

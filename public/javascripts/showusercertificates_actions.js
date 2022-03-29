@@ -14,7 +14,7 @@ const isActiveSearchBtnState = function(active = true) {
     $('#certificates-search-btn-icon').removeClass('fa-search');
     $('#certificates-search-btn-icon').addClass('fa-spinner fa-pulse');
   }
-}
+};
 
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
@@ -276,7 +276,7 @@ const fetchCertification = function(id, name, timestamp) {
             }
             if (params.mtu) {
               wanList.append($('<li>').append(
-                $('<strong>').html(`${t('MTU')}:`),
+                $('<strong>').html('MTU:'),
                 $('<span>').html('&nbsp;'+params.mtu),
               ));
             }
@@ -424,10 +424,10 @@ const fetchCertification = function(id, name, timestamp) {
             modeStr = t('Cable');
             break;
           case 2:
-            modeStr = t('cableAndWifi24ghz');
+            modeStr = t('cableAndWifixghz', {x: '2.4'});
             break;
           case 3:
-            modeStr = t('cableAndWifi24ghz');
+            modeStr = t('cableAndWifixghz', {x: '5.0'});
             break;
           case 4:
             modeStr = t('cableAndBothWifi');
@@ -520,6 +520,7 @@ anlixDocumentReady.add(function() {
 
   configSearchType();
 
+  // eslint-disable-next-line new-cap
   let usersTable = $('#users-table').DataTable({
     'destroy': true,
     'paging': true,
