@@ -2528,7 +2528,8 @@ deviceListController.setPortForward = function(req, res) {
           }
 
           if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-            !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+            !(r.port.map((p) => parseInt(p))
+                    .every((p) => (p >= 1 && p <= 65535)))
           ) {
             return res.status(200).json({
               success: false,
