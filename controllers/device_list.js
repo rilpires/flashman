@@ -3270,6 +3270,20 @@ deviceListController.exportDevicesCsv = async function(req, res) {
 
     let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
                            true : false);
+
+    devices = devices.map((device) => {
+      let ipv6Enabled = false;
+      if (device.ipv6_enabled === 1) {
+        ipv6Enabled = true;
+      } else if (device.ipv6_enabled=== 2) {
+        ipv6Enabled = 'unknown';
+      }
+      console.log(device.ipv6_enabled);
+      device.ipv6_enabled = ipv6Enabled;
+      console.log(device.ipv6_enabled);
+      return device;
+    });
+
     const csvFields = [
       {label: 'Endereço MAC', value: '_id'},
       {label: 'Identificador Serial', value: 'serial_tr069'},
@@ -3303,6 +3317,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
       {label: 'IP Público', value: 'ip'},
       {label: 'IP WAN', value: 'wan_ip'},
+      {label: 'IPV6 Habilitado', value: 'ipv6_enabled'},
       {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
       {label: 'Modo de transmissão WAN (duplex)',
               value: 'wan_negociated_duplex'},
