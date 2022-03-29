@@ -1353,8 +1353,33 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
   let acsID = device.acs_id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-
   let diagnIPPingDiagnostics = fields.diagnostics.ping.root;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [diagnIPPingDiagnostics],
+  };
+  const result = await TasksAPI.addTask(acsID, task, startPingDiagnose);
+  if (result.success) {
+    return {success: true, message: t('operationSuccessful')};
+  } else {
+    return {
+      success: false, message: t('acsPingCouldNotBeSent', {errorline: __line}),
+    };
+  }
+};
+
+const startPingDiagnose = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (err) {
+    return {success: false, message: err.message + ' in ' + acsID};
+  }
+  if (!device) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
@@ -1364,30 +1389,6 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   let pingHostUrl = device.ping_hosts[0];
   let timeout = 1000;
 
-  // We need to update the parameter values before we fire the ping test
-  let success = false;
-  try {
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: [diagnIPPingDiagnostics],
-    };
-    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-    if (
-      !result || !result.finished || result.task.name !== 'getParameterValues'
-    ) {
-      console.log('Failed: genie diagnostic fields can\'t be updated');
-    } else {
-      success = true;
-    }
-  } catch (e) {
-    console.log('Failed: genie diagnostic fields can\'t be updated');
-    console.log('Error:', e);
-  }
-  if (!success) {
-    return {success: false,
-            message: t('acsPingError', {errorline: __line})};
-  }
-
   let task = {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
@@ -1395,18 +1396,9 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
                       [diagnURLField, pingHostUrl, 'xsd:string'],
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
-  try {
-    const result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-    if (!result || !result.finished) {
-      return {success: false,
-              message: t('acsPingCouldNotBeSent', {errorline: __line})};
-    } else {
-      return {success: true,
-              message: t('operationSuccessful')};
-    }
-  } catch (err) {
-      return {success: false,
-              message: err.message+' in '+acsID};
+  const result = await TasksAPI.addTask(acsID, task);
+  if (!result.success) {
+    console.log('Error starting ping diagnose for ' + acsID);
   }
 };
 
