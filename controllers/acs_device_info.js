@@ -1653,7 +1653,16 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchWanBytesFromGenie = function(device, acsID) {
+const fetchWanBytesFromGenie = function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
   let mac = device._id;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let recvField = fields.wan.recv_bytes;
@@ -2261,10 +2270,7 @@ acsDeviceInfoController.requestWanBytes = function(device) {
       sentField,
     ],
   };
-  TasksAPI.addTask(acsID, task, true, 10000, [], (result)=>{
-    if (result.task.name !== 'getParameterValues') return;
-    if (result.finished) fetchWanBytesFromGenie(device, acsID);
-  });
+  TasksAPI.addTask(acsID, task, fetchWanBytesFromGenie);
 };
 
 acsDeviceInfoController.requestUpStatus = function(device) {
