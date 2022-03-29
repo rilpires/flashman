@@ -1397,7 +1397,7 @@ acsDeviceInfoController.firePingDiagnose = async function(mac) {
   }
   if (!success) {
     return {success: false,
-            message: t('acsPingError', {errorline: __line})};
+            message: t('acsPingCouldNotBeSent', {errorline: __line})};
   }
 
   let task = {
