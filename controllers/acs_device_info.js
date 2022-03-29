@@ -1129,12 +1129,17 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   });
 };
 
+const sendRebootCommand = async function(acsID) {
+  let task = {name: 'reboot'};
+  let result = await TasksAPI.addTask(acsID, task);
+  return result;
+};
+
 acsDeviceInfoController.rebootDevice = function(device, res) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let task = {name: 'reboot'};
-  let result = await TasksAPI.addTask(acsID, task);
+  let result = await sendRebootCommand(acsID);
   if (!res) return; // Prevent crash in case res is not defined
   if (result.success) {
     return res.status(200).json({success: true});
@@ -2617,14 +2622,9 @@ acsDeviceInfoController.updateInfo = async function(
     });
   });
   if (!hasChanges) return; // No need to sync data with genie
-  let taskCallback = (result)=>{
-    if (
-      !result || !result.finished || result.task.name !== 'setParameterValues'
-    ) {
-      return;
-    }
+  let taskCallback = (acsID)=>{
     if (rebootAfterUpdate) {
-      acsDeviceInfoController.rebootDevice(device);
+      sendRebootCommand(acsID);
     }
     return true;
   };
@@ -2632,13 +2632,14 @@ acsDeviceInfoController.updateInfo = async function(
     if (awaitUpdate) {
       // We need to wait for task to be completed before we can return - caller
       // expects a return "true" after task is done
-      let result = await TasksAPI.addTask(
-        acsID, task, true, 10000, [5000, 10000],
-      );
-      return taskCallback(result);
+      let result = await TasksAPI.addTask(acsID, task);
+      if (!result || !result.success || !result.executed) {
+        return;
+      }
+      return taskCallback(acsID);
     } else {
       // Simply call addTask and free up this context
-      TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], taskCallback);
+      TasksAPI.addTask(acsID, task, taskCallback);
     }
   } catch (e) {
     return;
