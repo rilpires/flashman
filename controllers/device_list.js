@@ -470,6 +470,16 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         tr069 = {last_contact:
           {$lt: new Date(tr069Times.offline - hourThreshold)},
         };
+      } else if (statusTags['online >'].test(tag)) {
+        const parsedHouse = Math.abs(parseInt(tag.split('>')[1]));
+        const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
+        flashbox = {
+          _id: {$nin: mqttClients},
+          last_contact: {$lt: new Date(lastHour - hourThreshold)},
+        };
+        tr069 = {
+          last_contact: {$lt: new Date(tr069Times.offline - hourThreshold)},
+        };
       }
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
       tr069.use_tr069 = true; // this will select only tr069.
