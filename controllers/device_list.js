@@ -2528,7 +2528,8 @@ deviceListController.setPortForward = function(req, res) {
           }
 
           if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-            !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+            !(r.port.map((p) => parseInt(p))
+                    .every((p) => (p >= 1 && p <= 65535)))
           ) {
             return res.status(200).json({
               success: false,
@@ -3259,12 +3260,37 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       finalQuery = deviceListController.simpleSearchDeviceQuery(
         queryContents);
     }
+    let queryProjection = {
+      '_id': true, 'serial_tr069': true, 'alt_uid_tr069': true,
+      'connection_type': true, 'pppoe_user': true, 'pppoe_password': true,
+      'lan_subnet': true, 'lan_netmask': true, 'wifi_ssid': true,
+      'wifi_password': true, 'wifi_channel': true, 'wifi_band': true,
+      'wifi_mode': true, 'wifi_ssid_5ghz': true, 'wifi_password_5ghz': true,
+      'wifi_channel_5ghz': true, 'wifi_band_5ghz': true, 'wifi_mode_5ghz': true,
+      'ip': true, 'wan_ip': true, 'ipv6_enabled': true,
+      'wan_negociated_speed': true, 'wan_negociated_duplex': true,
+      'external_reference.kind': true, 'external_reference.data': true,
+      'model': true, 'version': true, 'installed_release': true,
+      'do_update': true,
+    };
 
     let devices = {};
-    devices = await DeviceModel.find(finalQuery).lean();
+    devices = await DeviceModel.find(finalQuery, queryProjection).lean();
 
     let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
                            true : false);
+
+    devices = devices.map((device) => {
+      let ipv6Enabled = false;
+      if (device.ipv6_enabled === 1) {
+        ipv6Enabled = true;
+      } else if (device.ipv6_enabled=== 2) {
+        ipv6Enabled = 'unknown';
+      }
+      device.ipv6_enabled = ipv6Enabled;
+      return device;
+    });
+
     const csvFields = [
       {label: 'Endereço MAC', value: '_id'},
       {label: 'Identificador Serial', value: 'serial_tr069'},
@@ -3298,6 +3324,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
       {label: 'IP Público', value: 'ip'},
       {label: 'IP WAN', value: 'wan_ip'},
+      {label: 'IPV6 Habilitado', value: 'ipv6_enabled'},
       {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
       {label: 'Modo de transmissão WAN (duplex)',
               value: 'wan_negociated_duplex'},
