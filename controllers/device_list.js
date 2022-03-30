@@ -304,46 +304,53 @@ deviceListController.changeUpdate = async function(req, res) {
       message: t('meshSecondaryUpdateError'),
     });
   }
-  if (doUpdate) {
-    matchedDevice.release = req.params.release.trim();
-    if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+  // Mesh upgrade logic
+  if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+    if (doUpdate) {
+      matchedDevice.release = req.params.release.trim();
       const meshUpdateStatus = await meshHandlers.beginMeshUpdate(
         matchedDevice,
       );
-      if (meshUpdateStatus.success) {
-        return res.status(200).json({success: true});
+      if (!meshUpdateStatus.success) {
+        return res.status(500).json({
+          success: false,
+          message: t('updateStartFailedMeshNetwork'),
+        });
       }
-    }
-    matchedDevice.do_update_status = 0; // waiting
-    messaging.sendUpdateMessage(matchedDevice);
-  } else {
-    matchedDevice.do_update_status = 1; // success
-    // Reset mesh fields as well, in case this is a mesh network
-    matchedDevice.mesh_next_to_update = '';
-    matchedDevice.mesh_update_remaining = [];
-    meshHandlers.syncUpdateCancel(matchedDevice);
-  }
-  matchedDevice.do_update = doUpdate;
-  try {
-    await matchedDevice.save();
-  } catch (e) {
-    return res.status(500).json({success: false,
-      message: t('cpeSaveError', {errorline: __line})});
-  }
-
-  if (matchedDevice.use_tr069 && doUpdate) {
-    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
-    if (response.success) {
-      return res.status(200).json(response);
     } else {
-      return res.status(500).json(response);
+      await meshHandlers.syncUpdateCancel(matchedDevice);
     }
-  } else if (doUpdate) {
-    mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-    // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
+    return res.status(200).json({'success': true});
+  // Simple CPE upgrade logic
+  } else {
+    if (doUpdate) {
+      matchedDevice.release = req.params.release.trim();
+      matchedDevice.do_update_status = 0; // waiting
+      messaging.sendUpdateMessage(matchedDevice);
+    } else {
+      matchedDevice.do_update_status = 1; // success
+    }
+    matchedDevice.do_update = doUpdate;
+    try {
+      await matchedDevice.save();
+    } catch (e) {
+      return res.status(500).json({success: false,
+        message: t('cpeSaveError', {errorline: __line})});
+    }
+    if (matchedDevice.use_tr069 && doUpdate) {
+      let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+      if (response.success) {
+        return res.status(200).json(response);
+      } else {
+        return res.status(500).json(response);
+      }
+    } else if (doUpdate) {
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      // Start ack timeout
+      deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
+    }
+    return res.status(200).json({'success': true});
   }
-  res.status(200).json({'success': true});
 };
 
 deviceListController.changeUpdateMesh = function(req, res) {

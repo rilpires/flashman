@@ -709,14 +709,7 @@ scheduleController.abortSchedule = async function(req, res) {
     );
     rule.in_progress_devices.forEach(async (d) => {
       let device = await getDevice(d.mac);
-      // Remove do_update from in_progress devices
-      device.do_update = false;
-      device.do_update_status = 4;
-      // reset update parameters
-      device.mesh_next_to_update = '';
-      device.mesh_update_remaining = [];
-      await device.save();
-      meshHandler.syncUpdateCancel(d, 4);
+      await meshHandler.syncUpdateCancel(device, 4);
     });
   } catch (err) {
     console.log(err);

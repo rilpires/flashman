@@ -138,11 +138,18 @@ meshHandlers.enhanceSearchResult = async function(result) {
   return extraResults;
 };
 
-meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
+meshHandlers.syncUpdateCancel = async function(masterDevice, status=1) {
   if (!masterDevice.mesh_slaves || masterDevice.mesh_slaves.length === 0) {
     // Abort if not a mesh master - why would this be called?
     return;
   }
+  masterDevice.do_update = false;
+  masterDevice.do_update_status = status;
+  masterDevice.mesh_next_to_update = '';
+  masterDevice.mesh_update_remaining = [];
+  await masterDevice.save().catch((err) => {
+    console.log('Error saving master device on mesh update: ' + err);
+  });
   masterDevice.mesh_slaves.forEach((slaveMac)=>{
     DeviceModel.findById(slaveMac, function(err, slaveDevice) {
       if (err) {
