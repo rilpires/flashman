@@ -475,9 +475,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
         flashbox = {
           _id: {$in: mqttClients},
-          last_contact: {$gte: new Date(lastHour - hourThreshold)},
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
         };
         tr069 = {
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
           last_contact: {$gte: tr069Times.recovery},
         };
       }
