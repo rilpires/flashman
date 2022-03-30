@@ -492,7 +492,7 @@
 	"upSpeedValue": "Velocidade de envio: {{value}} Mbps",
 	"latencyValue": "Latência: {{value}}",
 	"maxSpeedValue": "Velocidade Máx: {{value}} Mbps",
-	"nd": "N/D",
+	"notAvailable": "N/D",
 	"manageVlansFor": "Administrar VLANs de",
 
 	"latencyAndBidirectionalLossFor": "Latência e perda bidirecional para",

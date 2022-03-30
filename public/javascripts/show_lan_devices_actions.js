@@ -409,13 +409,13 @@ anlixDocumentReady.add(function() {
             (device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
               $('<h6>').text(((device.wifi_freq) ?
-                device.wifi_freq : t('nd')) + ' GHz'),
+                device.wifi_freq : t('notAvailable')) + ' GHz'),
               $('<h6>').text(t('modeValue', {value: device.wifi_mode ?
-                device.wifi_mode : t('nd'))}),
+                device.wifi_mode : t('notAvailable'))}),
               $('<h6>').text(t('signalValue', {value: (device.wifi_signal ?
-                device.wifi_signal : t('nd')) +' dBm'}),
+                device.wifi_signal : t('notAvailable')) +' dBm'}),
               $('<h6>').text('SNR: ' + ((device.wifi_snr) ?
-                device.wifi_snr : t('nd')) + ' dB')
+                device.wifi_snr : t('notAvailable')) + ' dB')
               .append(
                 $('<span>').html('&nbsp'),
                 ((device.wifi_snr >= 25) ?
@@ -474,19 +474,19 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
             $('<div>').addClass('col').append(
               $('<h6>').text(t('timeConnectedValue', {value: (router.iface == 1) ?
-                t('nd') : secondsTimeSpanToHMS(router.conn_time)})),
+                t('notAvailable') : secondsTimeSpanToHMS(router.conn_time)})),
               $('<h6>').text(t('rxBytesValue', {value: router.iface == 1 ?
-                t('nd') : router.rx_bytes)}),
+                t('notAvailable') : router.rx_bytes)}),
               $('<h6>').text(t('txBytesValue', {value: router.iface == 1 ?
-                t('nd') : router.tx_bytes)}),
+                t('notAvailable') : router.tx_bytes)}),
               $('<h6>').text(t('signalValue', {value: router.iface == 1 ?
-                t('nd') : (router.signal + ' dBm'))}),
+                t('notAvailable') : (router.signal + ' dBm'))}),
             ),
             $('<div>').addClass('col').append(
               $('<h6>').text(t('downSpeedValue', {value: router.rx_bit})),
               $('<h6>').text(t('upSpeedValue', {value: router.tx_bit})),
               $('<h6>').text(t('latencyValue', {value: router.latency > 0 ?
-                router.latency + ' ms' : t('nd')})),
+                router.latency + ' ms' : t('notAvailable')})),
               $('<div>').addClass('mt-2').append(
                 (router.iface == 1) ?
                   $('<i>').addClass('fas fa-ethernet fa-lg') :
