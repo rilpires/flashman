@@ -3,6 +3,8 @@ import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
 
+const t = i18next.t;
+
 anlixDocumentReady.add(function() {
   let lanDevicesGlobalTimer;
   // TR-069 CPEs that implement device blocking do this only for wireless
@@ -73,7 +75,8 @@ anlixDocumentReady.add(function() {
                    .addClass(upnpPermission == 'accept' ?
                              'indigo-text' : 'red-text')
                    .html(upnpPermission == 'accept' ?
-                         'Liberado' : 'Bloqueado');
+                         t('Granted', {context: 'male'}) :
+                         t('Blocked', {context: 'male'}));
           btnStatus.parent().data('permission', upnpPermission);
           setTimeout(function() {
             $('.btn-upnp').prop('disabled', false);
@@ -104,7 +107,8 @@ anlixDocumentReady.add(function() {
           $('#show-spam-error').hide();
           btnStatus.removeClass('indigo-text red-text')
                    .addClass(isBlocked ? 'red-text' : 'indigo-text')
-                   .html(isBlocked ? 'bloqueada' : 'liberada');
+                   .html(isBlocked ? t('blocked', {context: 'female'}) :
+                                     t('granted', {context: 'female'}));
           btnStatus.parent().data('blocked', isBlocked);
           setTimeout(function() {
             $('.btn-lan-dev-block').prop('disabled', false);
@@ -288,7 +292,7 @@ anlixDocumentReady.add(function() {
                   $('<i>').addClass('fas fa-ethernet fa-lg') :
                   $('<i>').addClass('fas fa-wifi fa-lg'),
                 (device.conn_type == 0) ?
-                  $('<span>').html('&nbsp Cabo') :
+                  $('<span>').html(`&nbsp ${t('Cable')}`) :
                   $('<span>').html('&nbsp Wi-Fi'),
               ) :
               $('<div>').addClass('col')
@@ -306,10 +310,10 @@ anlixDocumentReady.add(function() {
               (device.is_blocked) ?
                 $('<span>')
                   .addClass('dev-block-status-text red-text')
-                  .html('bloqueada') :
+                  .html(t('blocked', {context: 'female'})) :
                 $('<span>')
                   .addClass('dev-block-status-text indigo-text')
-                  .html('liberada'),
+                  .html(t('granted', {context: 'female'})),
             ),
           ),
           $('<div>').addClass('row pt-3').append(
@@ -323,8 +327,7 @@ anlixDocumentReady.add(function() {
             ),
             (device.conn_speed && device.is_online ?
               $('<div>').addClass('col-8 text-right').append(
-                $('<h6>').text('Velocidade Máx. ' +
-                                    device.conn_speed + ' Mbps'),
+                $('<h6>').text(t('maxSpeedValue', {value: device.conn_speed})),
               ) : ''
             ),
           ),
@@ -332,7 +335,7 @@ anlixDocumentReady.add(function() {
             $('<div>').addClass('row pt-2').append(
               $('<div>').addClass('col').append(
                 $('<div>').addClass('badge primary-color')
-                  .html('Conectado no CPE ' + device.gateway_mac),
+                  .html(t('connectedToCpeMac', {mac: device.gateway_mac})),
               ),
           ) : ''),
           $('<div>').addClass('row pt-2').append(
@@ -370,7 +373,8 @@ anlixDocumentReady.add(function() {
                     .addClass(device.upnp_permission == 'accept' ?
                               'indigo-text' : 'red-text')
                     .html(device.upnp_permission == 'accept' ?
-                          'Liberado' : 'Bloqueado'),
+                          t('Granted', {context: 'male'}) :
+                          t('Blocked', {context: 'male'})),
                 ) :
                 ''
               ),
@@ -405,13 +409,13 @@ anlixDocumentReady.add(function() {
             (device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
               $('<h6>').text(((device.wifi_freq) ?
-                device.wifi_freq : 'N/D') + ' GHz'),
-              $('<h6>').text('Modo: ' + ((device.wifi_mode) ?
-                device.wifi_mode : 'N/D')),
-              $('<h6>').text('Sinal: ' + ((device.wifi_signal) ?
-                device.wifi_signal : 'N/D') +' dBm'),
+                device.wifi_freq : t('nd')) + ' GHz'),
+              $('<h6>').text(t('modeValue', {value: device.wifi_mode ?
+                device.wifi_mode : t('nd'))}),
+              $('<h6>').text(t('signalValue', {value: (device.wifi_signal ?
+                device.wifi_signal : t('nd')) +' dBm'}),
               $('<h6>').text('SNR: ' + ((device.wifi_snr) ?
-                device.wifi_snr : 'N/D') + ' dB')
+                device.wifi_snr : t('nd')) + ' dB')
               .append(
                 $('<span>').html('&nbsp'),
                 ((device.wifi_snr >= 25) ?
@@ -455,7 +459,7 @@ anlixDocumentReady.add(function() {
         $('<div>').addClass('row pt-2').append(
           $('<div>').addClass('col text-right').append(
             $('<div>').addClass('badge primary-color')
-                      .html('Conexões de ' + routerMacKey),
+                      .html(t('connectionsOfMac', {mac: routerMacKey})),
           ),
         ),
       );
@@ -464,40 +468,31 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row m-0 mt-2').append(
             $('<div>').addClass('col p-0').append(
               $('<div>').addClass('badge primary-color-dark z-depth-0')
-                        .html('Conexão com ' + router.mac),
+                        .html(t('connectionWithMac', {mac: router.mac})),
             ),
           ),
           $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
             $('<div>').addClass('col').append(
-              $('<h6>').text('Tempo conectado: ' +
-                ((router.iface == 1) ?
-                  'N/D' :
-                  secondsTimeSpanToHMS(router.conn_time))),
-              $('<h6>').text('Bytes recebidos: ' +
-                ((router.iface == 1) ?
-                  'N/D' :
-                  router.rx_bytes)),
-              $('<h6>').text('Bytes enviados: ' +
-                ((router.iface == 1) ?
-                  'N/D' :
-                  router.tx_bytes)),
-              $('<h6>').text('Sinal: ' +
-                ((router.iface == 1) ?
-                  'N/D' :
-                  (router.signal +' dBm'))),
+              $('<h6>').text(t('timeConnectedValue', {value: (router.iface == 1) ?
+                t('nd') : secondsTimeSpanToHMS(router.conn_time)})),
+              $('<h6>').text(t('rxBytesValue', {value: router.iface == 1 ?
+                t('nd') : router.rx_bytes)}),
+              $('<h6>').text(t('txBytesValue', {value: router.iface == 1 ?
+                t('nd') : router.tx_bytes)}),
+              $('<h6>').text(t('signalValue', {value: router.iface == 1 ?
+                t('nd') : (router.signal + ' dBm'))}),
             ),
             $('<div>').addClass('col').append(
-              $('<h6>').text('Velocidade de recepção: ' +
-                router.rx_bit + ' Mbps'),
-              $('<h6>').text('Velocidade de envio: ' + router.tx_bit + ' Mbps'),
-              $('<h6>').text('Latência: ' +
-                (router.latency > 0 ? router.latency + ' ms' : 'N/D')),
+              $('<h6>').text(t('downSpeedValue', {value: router.rx_bit})),
+              $('<h6>').text(t('upSpeedValue', {value: router.tx_bit})),
+              $('<h6>').text(t('latencyValue', {value: router.latency > 0 ?
+                router.latency + ' ms' : t('nd')})),
               $('<div>').addClass('mt-2').append(
                 (router.iface == 1) ?
                   $('<i>').addClass('fas fa-ethernet fa-lg') :
                   $('<i>').addClass('fas fa-wifi fa-lg'),
                 (router.iface == 1) ?
-                  $('<span>').html('&nbsp; Cabo') :
+                  $('<span>').html(`&nbsp; ${t('Cable')}`) :
                   $('<span>').html('&nbsp; Wi-Fi ' +
                                    (router.iface == 2 ? '2.4' : '5.0') + 'GHz'),
               ),
@@ -529,7 +524,7 @@ anlixDocumentReady.add(function() {
       serialid = altuid;
     }
     let isTR069 = row.data('is-tr069') === true; // cast to bool
-    let isBridge = row.data('bridge-enabled') === 'Sim';
+    let isBridge = row.data('bridge-enabled') === t('Yes');
     let slaveCount = parseInt(row.data('slave-count'));
     let totalRouters = slaveCount + 1;
     if (slaveCount > 0) {
@@ -564,7 +559,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-sync-lan', function(event) {
     let id = $('#lan-devices-hlabel').text();
     let upnpSupport = $('#lan-devices').data('validate-upnp');
-    let isBridge = $('#isBridgeDiv').html() === 'Sim';
+    let isBridge = $('#isBridgeDiv').html() === t('Yes');
 
     $('#lan-devices').data('routers-synced', 0);
     clearTimeout(lanDevicesGlobalTimer);
@@ -626,7 +621,7 @@ anlixDocumentReady.add(function() {
         }
         let upnpSupport = $('#lan-devices').data('validate-upnp');
         let hasSlaves = slaves ? true : false;
-        let isBridge = $('#isBridgeDiv').html() === 'Sim';
+        let isBridge = $('#isBridgeDiv').html() === t('Yes');
         let totalSynced = $('#lan-devices').data('routers-synced');
         $('#lan-devices').data('routers-synced', totalSynced + 1);
         clearTimeout(lanDevicesGlobalTimer);

@@ -1303,7 +1303,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('bridgeModeBridgeIp'),
+        label: t('bridgeModeIpAddress'),
         value: 'certifications.bridgeIP',
         default: '',
       },

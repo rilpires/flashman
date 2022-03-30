@@ -13,7 +13,7 @@ socket.on('LIVELOG', function(macaddr, data) {
     if (id == macaddr) {
       $('.btn-log-live').prop('disabled', false);
       let textarea = $('#logArea');
-      if (textarea.text() == 'Aguardando resposta do CPE...') {
+      if (textarea.text() == t('waitingCpeResponse...')) {
         let usrtypes = ['user', 'daemon', 'kern', 'local1', 'authpriv'];
         let logContent = ungzip(data, {to: 'string'});
         // Store log to be downloadable
@@ -54,7 +54,7 @@ let printLogData = function(url) {
     success: function(res, status, xhr) {
       let ct = xhr.getResponseHeader('content-type') || '';
       if (ct.indexOf('json') > -1) {
-        textarea.html('Erro: ' + res.message);
+        textarea.html(`${t('Error')}: ${res.message}`);
       } else {
         // Store log to be downloadable
         logBodyRawContent = res;
@@ -124,7 +124,7 @@ anlixDocumentReady.add(function() {
     let isTR069 = row.data('is-tr069') === true; // cast to bool
     if (isTR069) {
       $('.btn-log-upgrade').hide();
-      $('#boot-log').html('&nbsp; Último log');
+      $('#boot-log').html(`&nbsp; ${t('lastLog')}`);
     } else {
       $('.btn-log-upgrade').show();
       $('#boot-log').html('&nbsp; Boot');
@@ -145,7 +145,7 @@ anlixDocumentReady.add(function() {
       $('#mesh-change-div').hide();
     }
 
-    $('#logRouterid_title').html('&nbsp; Logs do CPE &nbsp;');
+    $('#logRouterid_title').html(`&nbsp; ${t('cpeLogs')} &nbsp;`);
     if (isTR069) {
       $('#logRouterid_visual').html(serialid);
     } else {
@@ -178,7 +178,7 @@ anlixDocumentReady.add(function() {
         $('#logs-placeholder').hide('fast', function() {
           $('#logArea').show('fast');
           if (res.success) {
-            textarea.html('Aguardando resposta do CPE...');
+            textarea.html(t('waitingCpeResponse...'));
           } else {
             textarea.html(res.message);
           }

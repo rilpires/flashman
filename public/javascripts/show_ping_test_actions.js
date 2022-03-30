@@ -2,6 +2,8 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg, socket} from './common_actions.js';
 import 'selectize';
 
+const t = i18next.t;
+
 let isPingHostListInitialized = false;
 
 const saveHostList = function() {
@@ -74,7 +76,7 @@ socket.on('PINGTEST', function(macaddr, data) {
             .html('latência de ' + hostLatency + ' ms'),
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
-            .html(hostLoss + '% pacotes perdidos'),
+            .html(hostLoss + t('%LostPackets')),
           ),
         );
       });
@@ -141,7 +143,7 @@ anlixDocumentReady.add(function() {
                 $('<i></i>').addClass('fas fa-spinner fa-pulse fa-4x'),
                 $('</br>'),
                 $('</br>'),
-                $('<span></span>').html('Aguardando resposta do CPE...')
+                $('<span></span>').html(t('waitingCpeResponse...'))
               )
             );
           } else {
