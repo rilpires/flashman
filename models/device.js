@@ -227,8 +227,8 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  sys_up_time: {type: Number, default: 0},
-  wan_up_time: {type: Number, default: 0},
+  sys_up_time: {type: Number, default: 0}, // seconds
+  wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
