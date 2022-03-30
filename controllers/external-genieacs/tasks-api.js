@@ -45,7 +45,7 @@ const watchGenieTasks = async function() {
   ]);
   changeStream.on('error', (e)=>console.log('Error in genieacs tasks stream'));
   changeStream.on('change', (change)=>{
-    let taskID = change.fullDocument['_id'];
+    let taskID = change.documentKey['_id'];
     if (taskID && taskID in taskWatchlist) {
       let deviceID = taskWatchlist[taskID].deviceID;
       let callback = taskWatchlist[taskID].callback;

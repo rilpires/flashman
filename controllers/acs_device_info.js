@@ -1193,7 +1193,7 @@ const sendRebootCommand = async function(acsID) {
   return result;
 };
 
-acsDeviceInfoController.rebootDevice = function(device, res) {
+acsDeviceInfoController.rebootDevice = async function(device, res) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -1210,7 +1210,7 @@ acsDeviceInfoController.rebootDevice = function(device, res) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchLogFromGenie = function(acsID) {
+const fetchLogFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -1373,9 +1373,7 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await acsDeviceInfoController.calculatePingDiagnostic(
-              device, model, data,
-              diagNecessaryKeys.ping,
-              fields.diagnostics.ping,
+              device, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
@@ -1473,7 +1471,7 @@ const startPingDiagnose = async function(acsID) {
   }
 };
 
-acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
+acsDeviceInfoController.calculatePingDiagnostic = function(device, data,
                                                            pingKeys,
                                                            pingFields) {
   pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
@@ -1502,6 +1500,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
         lat: pingKeys.avg_resp_time.toString(),
         loss: loss.toString(),
       };
+      let model = device.model;
       if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
@@ -1730,7 +1729,7 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchWanBytesFromGenie = function(acsID) {
+const fetchWanBytesFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -1796,7 +1795,7 @@ const fetchWanBytesFromGenie = function(acsID) {
   req.end();
 };
 
-const fetchUpStatusFromGenie = function(acsID) {
+const fetchUpStatusFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -2057,7 +2056,7 @@ const fetchMeshBSSID = function(device, meshMode) {
 };
 
 // TODO: Move this function to external-genieacs?
-acsDeviceInfoController.fetchPonSignalFromGenie = function(acsID) {
+acsDeviceInfoController.fetchPonSignalFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -2146,7 +2145,7 @@ acsDeviceInfoController.fetchPonSignalFromGenie = function(acsID) {
 };
 
 // TODO: Move this function to external-genieacs?
-const fetchDevicesFromGenie = function(acsID) {
+const fetchDevicesFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -2897,7 +2896,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   return {'success': true};
 };
 
-const compareNewACRulesWithTree = function(acsID) {
+const compareNewACRulesWithTree = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -2944,8 +2943,8 @@ const compareNewACRulesWithTree = function(acsID) {
     rulesToDelete['wifi5'] = {};
   }
   let ids = acRulesResult['rule_ids'];
-  let wlanAcRulesTrees = acRulesResult['rule_trees'];
-  let maxId = acRulesResult['max_id'];
+  wlanAcRulesTrees = acRulesResult['rule_trees'];
+  maxId = acRulesResult['max_id'];
   // If there is an imbalance in the tree or if the tree has a gap, it will
   // delete all the rules in the tree and force the algorithm to re-populate
   // all the rules in the tree.
