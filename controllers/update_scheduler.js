@@ -813,13 +813,10 @@ scheduleController.getDevicesReleases = async function(req, res) {
               devicesByModel[model] += 1;
             }
           } else if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+            const allowUpgrade = deviceHandlers.isUpgradePossible(device);
             const meshVersion =
               DeviceVersion.versionCompare(device.version, '0.32.0') < 0 ?
               1 : 2;
-            let allowV1ToV2Upgrade;
-            if (meshVersion === 1) {
-              allowV1ToV2Upgrade = await meshHandler.allowMeshV1ToV2(device);
-            }
             let models = [];
             models.push(model);
             for (let i = 0; i < device.mesh_slaves.length; i++) {
@@ -835,7 +832,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
               deviceCount: 1 + device.mesh_slaves.length,
               version: meshVersion,
               models: models,
-              allowMeshV2: (meshVersion === 1 ? allowV1ToV2Upgrade : true),
+              allowMeshV2: allowUpgrade,
             });
           }
         }
@@ -1038,13 +1035,13 @@ scheduleController.startSchedule = async function(req, res) {
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
-            const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
+            const allowMeshUpgrade = meshHandler.isUpgradePossible(
               slaveDevice, matchedRelease.flashbox_version);
             if (!allowMeshUpgrade) valid = false;
           });
           if (!valid) return false;
         }
-        const allowMeshUpgrade = meshHandler.allowMeshUpgrade(
+        const allowMeshUpgrade = meshHandler.isUpgradePossible(
           device, matchedRelease.flashbox_version);
         if (!allowMeshUpgrade) return false;
         let model = device.model.replace('N/', '');

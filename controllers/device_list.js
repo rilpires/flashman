@@ -755,7 +755,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         } else {
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
-            const isAllowed = meshHandlers.allowMeshUpgrade(
+            const isAllowed = meshHandlers.isUpgradePossible(
               device, devReleases[i].flashbox_version,
             );
             if (isAllowed) filteredDevReleases.push(devReleases[i]);
