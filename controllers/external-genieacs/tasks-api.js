@@ -261,21 +261,22 @@ genie.putPreset = async function(preset) {
   }, presetjson);
 };
 
-genie.addOrDeleteObject = async function(deviceid, acObject, taskType) {
+genie.addOrDeleteObject = async function(
+  deviceid, acObject, taskType, callback=null,
+) {
   let task = {
     name: taskType,
     objectName: acObject,
   };
   try {
-    let ret = await genie.addTask(deviceid, task, true, 10000, []);
-    if (!ret || !ret.finished||
-      ret.task.name !== task.name) {
-      return false
+    let ret = await genie.addTask(deviceid, task, callback);
+    if (!ret || !ret.success || !ret.executed) {
+      return false;
     }
     return true;
   } catch (e) {
     console.log(
-      'Error: '+taskType+' failure at '+deviceid
+      'Error: ' + taskType + ' failure at ' + deviceid,
     );
   }
   return false;
@@ -284,13 +285,14 @@ genie.addOrDeleteObject = async function(deviceid, acObject, taskType) {
 /* simple request to send a new task to GenieACS and get a promise the resolves
  to the request response or rejects to request error. Will throw an uncaught
  error if task can't be stringifyed to json. */
-const postTask = function(deviceid, task) {
+const postTask = function(deviceid, task, legacyTimeout) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   // console.log("Posting a task.")
   let encodedID = encodeURIComponent(deviceid);
+  let timeout = (legacyTimeout > 0) ? legacyTimeout.toString() : '7500';
   return genie.request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/devices/' + encodedID + '/tasks?timeout=5000&connection_request',
+    path: '/devices/'+encodedID+'/tasks?timeout='+timeout+'&connection_request',
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(taskjson)},
   }, taskjson);
@@ -512,10 +514,10 @@ const deleteOldTasks = async function(tasksToDelete, deviceid) {
  boolean that tells GenieACS to initiate a connection to the CPE and
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
-const sendTasks = async function(deviceid, tasks, callback) {
+const sendTasks = async function(deviceid, tasks, callback, legacyTimeout) {
   // making each task become a promise.
   // transforming task objects into postTask promise function.
-  tasks = tasks.map((task) => postTask(deviceid, task));
+  tasks = tasks.map((task) => postTask(deviceid, task, legacyTimeout));
   // wait for all promises to finish.
   let results = await Promise.allSettled(tasks);
   // array of tasks that did not execute in less than 'timeout' millisecond.
@@ -607,7 +609,7 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
 
-genie.addTask = async function(deviceid, task, callback=null) {
+genie.addTask = async function(deviceid, task, callback=null, legacyTimeout=0) {
   // checking device id.
   if (!deviceid || deviceid.constructor !== String) {
     return {
@@ -664,7 +666,7 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
    ", watchTimes:", watchTimes)
    sending the new task and the old tasks being substituted,
    then return result. */
-  return sendTasks(deviceid, tasks, callback);
+  return sendTasks(deviceid, tasks, callback, legacyTimeout);
 };
 
 module.exports = genie;

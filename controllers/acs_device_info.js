@@ -1416,8 +1416,7 @@ acsDeviceInfoController.calculatePingDiagnostic = function(device, model, data,
   pingKeys = acsDeviceInfoController.getAllNestedKeysFromObject(
     data, pingKeys, pingFields,
   );
-  if (pingKeys.diag_state !== 'Requested' &&
-             pingKeys.diag_state !== 'None') {
+  if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
     let result = {};
     device.ping_hosts.forEach((host) => {
       if (host) {
@@ -2762,239 +2761,212 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   if (!fields) return;
   // ===== Get blockedDevices and AC rules trees =====
   // Creates the structures related to WLAN subtrees
-  let acSubtreeRoots = {};
-  let wlanAcRulesTrees = {};
-  let supportedWlans = [];
-  let maxId = 0;
-  // Array of devices that need to be blocked (rules that need to be configured)
-  let blockedDevices = [];
-  let result = {'success': false};
-  try {
-    // Get the devices that need to be blocked.
-    Object.entries(device.lan_devices).forEach((k) => {
-      if (k[1]['is_blocked']) blockedDevices.push(k[1]);
-    });
-    // The ZTE models dont accept more than 64 AC rules, so we must return an
-    // error.
-    if (blockedDevices.length >= 64) {
-      console.log('Number of rules has reached its limits to this device.');
-      return {
-        'success': false,
-        'error_code': 'acRuleLimits',
-        'message': t('acRuleLimits', {errorline: __line}),
-      };
-    }
-    // If the device does not have 5 Ghz WiFi, then it does not add the field in
-    // in the structures that guides the entire access control flow.
-    acSubtreeRoots['wifi2'] = fields.access_control.wifi2;
-    wlanAcRulesTrees['wifi2'] = [];
-    supportedWlans.push('wifi2');
-    if (device.wifi_is_5ghz_capable) {
-      acSubtreeRoots['wifi5'] = fields.access_control.wifi5;
-      wlanAcRulesTrees['wifi5'] = [];
-      supportedWlans.push('wifi5');
-    }
-  } catch (e) {
-    console.log('Error ('+e+') while trying to get device information.');
+  // Make sure there are no more than 31 devices to block - limit of 64 rules
+  let blockedDevicesCount = Object.values(device.lan_devices).reduce((v, d)=>{
+    return v + ((d.is_blocked) ? 1 : 0);
+  }, 0);
+  if (blockedDevicesCount >= 32) {
+    console.log('Number of rules has reached its limit for device ' + acsID);
     return {
-      'success': false,
-      'error_code': 'cpeSaveError',
-      'message': t('cpeSaveError', {errorline: __line}),
+      success: false,
+      error_code: 'acRuleLimits',
+      message: t('acRuleLimits', {errorline: __line})
     };
+  }
+  let acSubtreeRoots = {'wifi2': fields.access_control.wifi2};
+  if (device.wifi_is_5ghz_capable) {
+    acSubtreeRoots['wifi5'] = fields.access_control.wifi5;
   }
   // ===== Update device tree =====
   let task = {
     name: 'getParameterValues',
     parameterNames: Object.values(acSubtreeRoots),
   };
-  result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (!result || !result.finished ||
-      result.task.name !== 'getParameterValues') {
+  result = await TasksAPI.addTask(acsID, task, compareNewACRulesWithTree);
+  if (!result || !result.success) {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {
       'success': false, 'error_code': 'acRuleGetError',
       'message': t('acRuleGetError', {errorline: __line}),
     };
   }
+  return {'success': true};
+};
 
-  let acRulesResult = {};
+const compareNewACRulesWithTree = function(acsID) {
+  let device;
   try {
-    acRulesResult = await getAcRuleTrees(
-      acsID, serial, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId);
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
   } catch (e) {
-    return {
-      'success': false, 'error_code': 'acRuleGetError',
-      'message': t('acRuleGetError', {errorline: __line}),
-    };
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
   }
 
-  if ('success' in acRulesResult && acRulesResult['success']) {
-    let rulesToEdit = {'wifi2': {}};
-    let rulesToDelete = {'wifi2': {}};
+  let maxId = 0;
+  let acRulesResult = {};
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let blockedDevices = Object.values(device.lan_devices).filter(
+    (d)=>d.is_blocked,
+  );
+
+  let supportedWlans = ['wifi2'];
+  let acSubtreeRoots = {'wifi2': fields.access_control.wifi2};
+  let wlanAcRulesTrees = {'wifi2': []};
+  if (device.wifi_is_5ghz_capable) {
+    supportedWlans.push('wifi5');
+    acSubtreeRoots['wifi5'] = fields.access_control.wifi5;
+    wlanAcRulesTrees['wifi5'] = [];
+  }
+
+  try {
+    acRulesResult = await getAcRuleTrees(
+      acsID, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId,
+    );
+    if (!('success' in acRulesResult) || !acRulesResult.success) {
+      console.log('Error getting AC rules for device ' + acsID);
+      return;
+    }
+  } catch (e) {
+    console.log('Exception getting AC rules for device ' + acsID);
+    return;
+  }
+
+  let rulesToEdit = {'wifi2': {}};
+  let rulesToDelete = {'wifi2': {}};
+  if (device.wifi_is_5ghz_capable) {
+    rulesToEdit['wifi5'] = {};
+    rulesToDelete['wifi5'] = {};
+  }
+  let ids = acRulesResult['rule_ids'];
+  let wlanAcRulesTrees = acRulesResult['rule_trees'];
+  let maxId = acRulesResult['max_id'];
+  // If there is an imbalance in the tree or if the tree has a gap, it will
+  // delete all the rules in the tree and force the algorithm to re-populate
+  // all the rules in the tree.
+  // If the algorithm got this far and it has a rule with the id equal to
+  // the limit of 64, then there is a problem, because there are not 64
+  // blocked devices. It will also force the algorithm to repopulate the
+  // rule tree.
+  let condA = !device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId;
+  let condBA = (ids['wifi2'].length + ids['wifi5'].length) != maxId;
+  let condBB = ids['wifi2'].length != ids['wifi5'].length;
+  let condB = condBA || condBB;
+  let condC = device.wifi_is_5ghz_capable;
+  if (condA || (condB && condC) || maxId >= 64) {
+    for (let wlanType of supportedWlans) {
+      let deleteRulesResult = await deleteAcRules(
+        device, wlanAcRulesTrees[wlanType],
+      );
+      if (!deleteRulesResult) {
+        console.log('Error deleting AC rules for redo device ' + acsID);
+        return;
+      }
+    }
+    maxId = 0;
+    wlanAcRulesTrees = {'wifi2': []};
     if (permissions.grantWifi5ghz) {
-      rulesToEdit['wifi5'] = {};
-      rulesToDelete['wifi5'] = {};
+      wlanAcRulesTrees['wifi5'] = [];
     }
-    let ids = acRulesResult['rule_ids'];
-    let wlanAcRulesTrees = acRulesResult['rule_trees'];
-    let maxId = acRulesResult['max_id'];
-    // If there is an imbalance in the tree or if the tree has a gap, it will
-    // delete all the rules in the tree and force the algorithm to re-populate
-    // all the rules in the tree.
-    // If the algorithm got this far and it has a rule with the id equal to
-    // the limit of 64, then there is a problem, because there are not 64
-    // blocked devices. It will also force the algorithm to repopulate the
-    // rule tree.
-    let condA = !device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId;
-    let condBA = (ids['wifi2'].length + ids['wifi5'].length) != maxId;
-    let condBB = ids['wifi2'].length != ids['wifi5'].length;
-    let condB = condBA || condBB;
-    let condC = device.wifi_is_5ghz_capable;
-    if (condA || (condB && condC) || maxId >= 64) {
-      for (let wlanType of supportedWlans) {
-        let deleteSuccess = true;
-        try {
-          let deleteRulesResult =
-            await deleteAcRules(device, wlanAcRulesTrees[wlanType]);
-          if (!('success' in deleteRulesResult) ||
-              !deleteRulesResult['success']) {
-            deleteSuccess = false;
-          }
-        } catch (e) {
-          console.log('Error ('+e+') at AC rules redoing');
-          deleteSuccess = false;
-        }
-        if (!deleteSuccess) {
-          return {
-            'success': false, 'error_code': 'acRuleReDoError',
-            'message': t('acRuleReDoError', {errorline: __line}),
-          };
-        }
+  }
+  let diff = blockedDevices.length - (maxId/2);
+  if (!device.wifi_is_5ghz_capable) {
+    diff = blockedDevices.length - maxId;
+  }
+  // If the difference is positive then you need to add rules to the tree.
+  if (diff > 0) {
+    rulesToEdit = wlanAcRulesTrees;
+    let addedRules;
+    try {
+      let addRulesResult =
+        await addAcRules(
+          device, acSubtreeRoots, diff, maxId, device.wifi_is_5ghz_capable,
+        );
+      if ('success' in addRulesResult && addRulesResult['success']) {
+        addedRules = addRulesResult['added_rules'];
       }
-      maxId = 0;
-      wlanAcRulesTrees = {'wifi2': []};
-      if (permissions.grantWifi5ghz) {
-        wlanAcRulesTrees['wifi5'] = [];
+    } catch (e) {
+      console.log('Error ('+e+') at AC rules add');
+      return;
+    }
+    // Get the rules that need to be edited (old + new).
+    for (let wlanType of supportedWlans) {
+      if (rulesToEdit[wlanType].length > 0) {
+        rulesToEdit[wlanType] =
+          rulesToEdit[wlanType].concat(addedRules[wlanType]);
+      } else {
+        rulesToEdit[wlanType] = addedRules[wlanType];
       }
     }
-    let diff = blockedDevices.length - (maxId/2);
-    if (!permissions.grantWifi5ghz) {
-      diff = blockedDevices.length - maxId;
-    }
-    // If the difference is positive then you need to add rules to the tree.
-    if (diff > 0) {
-      rulesToEdit = wlanAcRulesTrees;
-      let addedRules;
+  // If the difference is negative, then we need to remove rules from the
+  // tree. The algorithm will reserve the lowest id rules, which are at the
+  // beginning of the rules array, and will delete as many as necessary
+  // until it has the right number of rules.
+  } else if (diff < 0) {
+    for (let wlanType of supportedWlans) {
+      let deleteSuccess = true;
+      let wlanTreeRules = wlanAcRulesTrees[wlanType];
+      // This sort solves the TR-069 sorting problem (eg 1, 11, 2, 3, ..., 10)
+      wlanTreeRules = wlanTreeRules.sort((a, b) => {
+        let aArr = a.split('.');
+        let aId = parseInt(aArr[aArr.length - 1], 10);
+        let bArr = b.split('.');
+        let bId = parseInt(bArr[bArr.length - 1], 10);
+        return aId - bId;
+      });
+      let wlanNumOfRules = wlanTreeRules.length;
+      rulesToEdit[wlanType] =
+        wlanTreeRules.slice(0, wlanNumOfRules+diff);
+      rulesToDelete =
+        wlanTreeRules.slice(wlanNumOfRules+diff, wlanNumOfRules);
       try {
-        let addRulesResult =
-          await addAcRules(
-            device, acSubtreeRoots, diff, maxId, permissions.grantWifi5ghz);
-        if ('success' in addRulesResult && addRulesResult['success']) {
-          addedRules = addRulesResult['added_rules'];
+        let deleteRulesResult =
+          await deleteAcRules(device, rulesToDelete);
+        if (!deleteRulesResult) {
+          deleteSuccess = false;
         }
       } catch (e) {
-        console.log('Error ('+e+') at AC rules add');
-        return {
-          'success': false, 'error_code': 'acRuleDefaultError',
-          'message': t('acRuleDefaultError', {errorline: __line}),
-        };
+        console.log('Error ('+e+') at AC rules delete');
+        deleteSuccess = false;
       }
-      // Get the rules that need to be edited (old + new).
-      for (let wlanType of supportedWlans) {
-        if (rulesToEdit[wlanType].length > 0) {
-          rulesToEdit[wlanType] =
-            rulesToEdit[wlanType].concat(addedRules[wlanType]);
-        } else {
-          rulesToEdit[wlanType] = addedRules[wlanType];
-        }
+      if (!deleteSuccess) {
+        return;
       }
-    // If the difference is negative, then we need to remove rules from the
-    // tree. The algorithm will reserve the lowest id rules, which are at the
-    // beginning of the rules array, and will delete as many as necessary
-    // until it has the right number of rules.
-    } else if (diff < 0) {
-      for (let wlanType of supportedWlans) {
-        let deleteSuccess = true;
-        let wlanTreeRules = wlanAcRulesTrees[wlanType];
-        // This sort solves the TR-069 sorting problem (eg 1, 11, 2, 3, ..., 10)
-        wlanTreeRules = wlanTreeRules.sort((a, b) => {
-          let aArr = a.split('.');
-          let aId = parseInt(aArr[aArr.length - 1], 10);
-          let bArr = b.split('.');
-          let bId = parseInt(bArr[bArr.length - 1], 10);
-          return aId - bId;
-        });
-        let wlanNumOfRules = wlanTreeRules.length;
-        rulesToEdit[wlanType] =
-          wlanTreeRules.slice(0, wlanNumOfRules+diff);
-        rulesToDelete =
-          wlanTreeRules.slice(wlanNumOfRules+diff, wlanNumOfRules);
-        try {
-          let deleteRulesResult =
-            await deleteAcRules(device, rulesToDelete);
-          if (!('success' in deleteRulesResult) ||
-              !deleteRulesResult['success']) {
-            deleteSuccess = false;
-          }
-        } catch (e) {
-          console.log('Error ('+e+') at AC rules delete');
-          deleteSuccess = false;
-        }
-        if (!deleteSuccess) {
-          return {
-            'success': false, 'error_code': 'acRuleDefaultError',
-            'message': t('acRuleDefaultError', {errorline: __line}),
-          };
-        }
-      }
-    // If the difference is zero then we just need to edit the existing rules.
-    } else {
-      rulesToEdit = wlanAcRulesTrees;
     }
-    // Checks if the rules in the TR-069 tree are in accordance with the
-    // number of blocked devices. For devices without 5Ghz, check step needs
-    // to be different
-    let allOkWithWifi2 = (rulesToEdit['wifi2'] && (
-      rulesToEdit['wifi2'].length == blockedDevices.length));
-    let allOkWithWifi5 = (permissions.grantWifi5ghz && (
-      rulesToEdit['wifi5'] && (
-      rulesToEdit['wifi5'].length == blockedDevices.length)));
-    // At this point the number of rules that exist in each WLAN tree and the
-    // number of blocked devices must be equal. Otherwise, it returns an error
-    if (allOkWithWifi2) {
-      if (!permissions.grantWifi5ghz || allOkWithWifi5) {
-        try {
-          await updateAcRules(
-            device, supportedWlans, acSubtreeRoots,
-            rulesToEdit, blockedDevices);
-          console.log('Updated Access Control tree successfully');
-          return {'success': true};
-        } catch (e) {
-          console.log('Error ('+e+') at AC rules update');
-          return {
-            'success': false, 'error_code': 'acRuleDefaultError',
-            'message': t('acRuleDefaultError', {errorline: __line}),
-          };
-        }
+  // If the difference is zero then we just need to edit the existing rules.
+  } else {
+    rulesToEdit = wlanAcRulesTrees;
+  }
+  // Checks if the rules in the TR-069 tree are in accordance with the
+  // number of blocked devices. For devices without 5Ghz, check step needs
+  // to be different
+  let allOkWithWifi2 = (rulesToEdit['wifi2'] && (
+    rulesToEdit['wifi2'].length == blockedDevices.length));
+  let allOkWithWifi5 = (permissions.grantWifi5ghz && (
+    rulesToEdit['wifi5'] && (
+    rulesToEdit['wifi5'].length == blockedDevices.length)));
+  // At this point the number of rules that exist in each WLAN tree and the
+  // number of blocked devices must be equal. Otherwise, it returns an error
+  if (allOkWithWifi2) {
+    if (!permissions.grantWifi5ghz || allOkWithWifi5) {
+      try {
+        await updateAcRules(
+          device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices
+        );
+        console.log('Updated Access Control tree successfully');
+      } catch (e) {
+        console.log('Error ('+e+') at AC rules update');
       }
-    } else {
-      console.log(
-        'Error at AC rules update. Number of rules doesn\'t match');
-      return {
-        'success': false, 'error_code': 'acRuleDefaultError',
-        'message': t('acRuleDefaultError', {errorline: __line}),
-      };
     }
   } else {
-    return {
-      'success': false, 'error_code': 'acRuleGetError',
-      'message': t('acRuleGetError', {errorline: __line}),
-    };
+    console.log('Error at AC rules update. Number of rules doesn\'t match');
   }
 };
 
 const getAcRuleTrees = async function(
-  acsID, serial, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId) {
+  acsID, acSubtreeRoots, supportedWlans, wlanAcRulesTrees, maxId,
+) {
   let wlanAcRulesIds = {};
   // ===== Get device AC tree =====
   let query = {_id: acsID};
@@ -3012,7 +2984,7 @@ const getAcRuleTrees = async function(
       resp.setEncoding('utf8');
       let data = '';
       resp.on('error', (error) => {
-        console.log('Error ('+ error +') removing an AC rule at '+serial);
+        console.log('Error ('+ error +') removing an AC rule at '+acsID);
         reject({
           'success': false, 'error_code': 'acRuleGetError',
           'message': t('acRuleGetError', {errorline: __line}),
@@ -3054,7 +3026,7 @@ const getAcRuleTrees = async function(
           } catch (e) {
             // If error, Reject
             console.log(
-              'Error ('+e+') retrieving Access Control Rules at '+serial);
+              'Error ('+e+') retrieving Access Control Rules at '+acsID);
             return reject({
               'success': false, 'error_code': 'acRuleGetError',
               'message': t('acRuleGetError', {errorline: __line}),
@@ -3071,7 +3043,8 @@ const getAcRuleTrees = async function(
 // rule from the id of the last rule.
 // This makes it possible for us to save a get and a projection.
 const addAcRules = async function(
-  device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz) {
+  device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz
+) {
   let currentMaxId = parseInt(maxId, 10);
   let acRulesAdded = {'wifi2': []};
   if (grantWifi5ghz) {
@@ -3112,30 +3085,33 @@ const addAcRules = async function(
 };
 
 const deleteAcRules = async function(device, rulesToDelete) {
-  for (let acRule of rulesToDelete) {
-    let result = await TasksAPI.addOrDeleteObject(
-      device.acs_id, acRule, 'deleteObject');
-    if (!result) {
-      console.log('deleteAcRules error');
-      return {'success': false};
+  try {
+    for (let acRule of rulesToDelete) {
+      let result = await TasksAPI.addOrDeleteObject(
+        device.acs_id, acRule, 'deleteObject'
+      );
+      if (!result) {
+        console.log('deleteAcRules error');
+        return false;
+      }
     }
+  } catch (e) {
+    console.log('Exception deleting AC rules for device ' + device.acs_id);
+    return false;
   }
-  return {'success': true};
+  return true;
 };
 
 const updateAcRules = async function(
-  device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices) {
+  device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices,
+) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   let parameterValues = [];
   try {
     for (let wlanType of supportedWlans) {
       if (rulesToEdit[wlanType].length !== blockedDevices.length) {
-        return {
-          'success': false,
-          'error': 500,
-          'message': 'Error editing Access Control rules at '+serial,
-        };
+        return;
       }
       let acSubtreeRoot = acSubtreeRoots[wlanType];
       parameterValues.push([acSubtreeRoot+'Mode', 'Ban', 'xsd:string']);
@@ -3157,11 +3133,7 @@ const updateAcRules = async function(
       }
     }
   } catch (e) {
-    return {
-      'success': false,
-      'error': 500,
-      'message': 'Error editing Access Control rules at '+serial,
-    };
+    return;
   }
   if (parameterValues.length > 0) {
     try {
@@ -3169,22 +3141,14 @@ const updateAcRules = async function(
         name: 'setParameterValues',
         parameterValues: parameterValues,
       };
-      let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-      if (!result || !result.finished ||
-          result.task.name !== 'setParameterValues') {
+      let result = await TasksAPI.addTask(acsID, task);
+      if (!result || !result.success) {
         console.log('Error in editing Access Control rules task at '+serial);
-      } else {
-        return {'success': true};
       }
     } catch (e) {
       console.log('Error: failed to edit Access Control rules at '+serial);
     }
   }
-  return {
-    'success': false,
-    'error': 500,
-    'message': 'Error editing Access Control rules at '+serial,
-  };
 };
 
 const configFileEditing = async function(device, target) {
@@ -3196,12 +3160,27 @@ const configFileEditing = async function(device, target) {
     name: 'getParameterValues',
     parameterNames: [configField],
   };
-  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (!result || !result.finished ||
-      result.task.name !== 'getParameterValues') {
+  let cback = (acsID)=>fetchAndEditConfigFile(acsID, target);
+  let result = await TasksAPI.addTask(acsID, task, cback);
+  if (!result || !result.success) {
     console.log('Error: failed to retrieve ConfigFile at '+serial);
     return;
   }
+};
+
+const fetchAndEditConfigFile = async function(acsID, target) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
+  let serial = device.serial_tr069;
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+
   // get xml config file from genieacs
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+
@@ -3227,13 +3206,12 @@ const configFileEditing = async function(device, target) {
           .digestXmlConfig(device, rawConfigFile, target);
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
-          task = {
+          let task = {
             name: 'setParameterValues',
             parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
           };
-          result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-          if (!result || !result.finished ||
-              result.task.name !== 'setParameterValues') {
+          let result = await TasksAPI.addTask(acsID, task);
+          if (!result || !result.success) {
             console.log('Error: failed to write ConfigFile at '+serial);
             return;
           }
@@ -3263,140 +3241,158 @@ acsDeviceInfoController.checkPortForwardRules = async function(device) {
     portMappingTemplate = fields.port_mapping_dhcp;
   }
   task.parameterNames.push(portMappingTemplate);
-  let result = await TasksAPI.addTask(acsID, task, true, 10000, []);
-  if (result && result.finished == true &&
-      result.task.name === 'getParameterValues') {
-    let query = {_id: acsID};
-    let projection1 = portMappingTemplate
-    .replace('*', '1').replace('*', '1');
-    let projection2 = portMappingTemplate
-    .replace('*', '1').replace('*', '2');
-    let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
-               projection1 + ',' + projection2;
-    let options = {
-      method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
-      path: encodeURI(path),
-    };
-    let req = http.request(options, (resp) => {
-      resp.setEncoding('utf8');
-      let data = '';
-      let i;
-      resp.on('data', (chunk)=>data+=chunk);
-      resp.on('end', async ()=>{
-        if (data.length > 0) {
-          data = JSON.parse(data)[0];
-        }
-        let isDiff = false;
-        let template = '';
-        if (checkForNestedKey(data, projection1)) {
-          template = projection1;
-        } else if (checkForNestedKey(data, projection2)) {
-          template = projection2;
-        }
-        if (template != '') {
-          for (i = 0; i < device.port_mapping.length; i++) {
-            let iterateTemplate = template+'.'+(i+1)+'.';
-            let portMapEnablePath = iterateTemplate +
-                                    fields.port_mapping_values.enable[0];
-            if (checkForNestedKey(data, portMapEnablePath)) {
-              if (getFromNestedKey(data, portMapEnablePath) != true) {
-                isDiff = true;
-                break;
-              }
-            }
-            let portMapLeasePath = iterateTemplate +
-                                    fields.port_mapping_values.lease[0];
-            if (checkForNestedKey(data, portMapLeasePath)) {
-              if (getFromNestedKey(data, portMapLeasePath) != 0) {
-                isDiff = true;
-                break;
-              }
-            }
-            let portMapProtocolPath = iterateTemplate +
-                                      fields.port_mapping_values.protocol[0];
-            if (checkForNestedKey(data, portMapProtocolPath)) {
-              if (getFromNestedKey(data,
-                portMapProtocolPath) != fields.port_mapping_values.protocol[1]
-              ) {
-                isDiff = true;
-                break;
-              }
-            }
-            let portMapDescriptionPath = iterateTemplate +
-                                      fields.port_mapping_values.description[0];
-            if (checkForNestedKey(data, portMapDescriptionPath)) {
-              if (
-                getFromNestedKey(data, portMapDescriptionPath) !=
-                fields.port_mapping_values.description[1]
-              ) {
-                isDiff = true;
-                break;
-              }
-            }
-            let portMapClientPath = iterateTemplate +
-                                    fields.port_mapping_fields.client[0];
-            if (checkForNestedKey(data, portMapClientPath)) {
-              if (getFromNestedKey(data,
-                portMapClientPath) != device.port_mapping[i].ip
-              ) {
-                isDiff = true;
-                break;
-              }
-            }
-            let portMapExtStart = iterateTemplate +
-              fields.port_mapping_fields.external_port_start[0];
-            if (checkForNestedKey(data, portMapExtStart)) {
-              if (getFromNestedKey(data, portMapExtStart) !=
-                device.port_mapping[i].external_port_start) {
-                isDiff = true;
-                break;
-              }
-            }
-            if (fields.port_mapping_fields.external_port_end) {
-              let portMapExtEnd = iterateTemplate +
-                fields.port_mapping_fields.external_port_end[0];
-              if (checkForNestedKey(data, portMapExtEnd)) {
-                if (getFromNestedKey(data, portMapExtEnd) !=
-                  device.port_mapping[i].external_port_end) {
-                  isDiff = true;
-                  break;
-                }
-              }
-            }
-            let portMapIntStart = iterateTemplate +
-              fields.port_mapping_fields.internal_port_start[0];
-            if (checkForNestedKey(data, portMapIntStart)) {
-              if (getFromNestedKey(data, portMapIntStart) !=
-                device.port_mapping[i].internal_port_start) {
-                isDiff = true;
-                break;
-              }
-            }
-            if (fields.port_mapping_fields.internal_port_end) {
-              let portMapIntEnd = iterateTemplate +
-                fields.port_mapping_fields.internal_port_end[0];
-              if (checkForNestedKey(data, portMapIntEnd)) {
-                if (getFromNestedKey(data, portMapIntEnd) !=
-                  device.port_mapping[i].internal_port_end) {
-                  isDiff = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (isDiff) {
-            acsDeviceInfoController.changePortForwardRules(device, 0);
-          }
-        } else {
-          console.log('Wrong PortMapping in the device tree ' +
-                      'from genie. ACS ID is ' + acsID);
-        }
-      });
-    });
-    req.end();
+  let result = await TasksAPI.addTask(acsID, task, fetchAndComparePortForward);
+  if (!result || !result.success) {
+    console.log('Error getting port forward fields on device ' + acsID);
   }
+};
+
+const fetchAndComparePortForward = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let portMappingTemplate = '';
+  if (device.connection_type === 'pppoe') {
+    portMappingTemplate = fields.port_mapping_ppp;
+  } else {
+    portMappingTemplate = fields.port_mapping_dhcp;
+  }
+
+  let query = {_id: acsID};
+  let projection1 = portMappingTemplate.replace('*', '1').replace('*', '1');
+  let projection2 = portMappingTemplate.replace('*', '1').replace('*', '2');
+  let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
+             projection1 + ',' + projection2;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp) => {
+    resp.setEncoding('utf8');
+    let data = '';
+    let i;
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async ()=>{
+      if (data.length > 0) {
+        data = JSON.parse(data)[0];
+      }
+      let isDiff = false;
+      let template = '';
+      if (checkForNestedKey(data, projection1)) {
+        template = projection1;
+      } else if (checkForNestedKey(data, projection2)) {
+        template = projection2;
+      }
+      if (template != '') {
+        for (i = 0; i < device.port_mapping.length; i++) {
+          let iterateTemplate = template+'.'+(i+1)+'.';
+          let portMapEnablePath = iterateTemplate +
+                                  fields.port_mapping_values.enable[0];
+          if (checkForNestedKey(data, portMapEnablePath)) {
+            if (getFromNestedKey(data, portMapEnablePath) != true) {
+              isDiff = true;
+              break;
+            }
+          }
+          let portMapLeasePath = iterateTemplate +
+                                  fields.port_mapping_values.lease[0];
+          if (checkForNestedKey(data, portMapLeasePath)) {
+            if (getFromNestedKey(data, portMapLeasePath) != 0) {
+              isDiff = true;
+              break;
+            }
+          }
+          let portMapProtocolPath = iterateTemplate +
+                                    fields.port_mapping_values.protocol[0];
+          if (checkForNestedKey(data, portMapProtocolPath)) {
+            if (getFromNestedKey(data,
+              portMapProtocolPath) != fields.port_mapping_values.protocol[1]
+            ) {
+              isDiff = true;
+              break;
+            }
+          }
+          let portMapDescriptionPath = iterateTemplate +
+                                    fields.port_mapping_values.description[0];
+          if (checkForNestedKey(data, portMapDescriptionPath)) {
+            if (
+              getFromNestedKey(data, portMapDescriptionPath) !=
+              fields.port_mapping_values.description[1]
+            ) {
+              isDiff = true;
+              break;
+            }
+          }
+          let portMapClientPath = iterateTemplate +
+                                  fields.port_mapping_fields.client[0];
+          if (checkForNestedKey(data, portMapClientPath)) {
+            if (getFromNestedKey(data,
+              portMapClientPath) != device.port_mapping[i].ip
+            ) {
+              isDiff = true;
+              break;
+            }
+          }
+          let portMapExtStart = iterateTemplate +
+            fields.port_mapping_fields.external_port_start[0];
+          if (checkForNestedKey(data, portMapExtStart)) {
+            if (getFromNestedKey(data, portMapExtStart) !=
+              device.port_mapping[i].external_port_start) {
+              isDiff = true;
+              break;
+            }
+          }
+          if (fields.port_mapping_fields.external_port_end) {
+            let portMapExtEnd = iterateTemplate +
+              fields.port_mapping_fields.external_port_end[0];
+            if (checkForNestedKey(data, portMapExtEnd)) {
+              if (getFromNestedKey(data, portMapExtEnd) !=
+                device.port_mapping[i].external_port_end) {
+                isDiff = true;
+                break;
+              }
+            }
+          }
+          let portMapIntStart = iterateTemplate +
+            fields.port_mapping_fields.internal_port_start[0];
+          if (checkForNestedKey(data, portMapIntStart)) {
+            if (getFromNestedKey(data, portMapIntStart) !=
+              device.port_mapping[i].internal_port_start) {
+              isDiff = true;
+              break;
+            }
+          }
+          if (fields.port_mapping_fields.internal_port_end) {
+            let portMapIntEnd = iterateTemplate +
+              fields.port_mapping_fields.internal_port_end[0];
+            if (checkForNestedKey(data, portMapIntEnd)) {
+              if (getFromNestedKey(data, portMapIntEnd) !=
+                device.port_mapping[i].internal_port_end) {
+                isDiff = true;
+                break;
+              }
+            }
+          }
+        }
+        if (isDiff) {
+          acsDeviceInfoController.changePortForwardRules(device, 0);
+        }
+      } else {
+        console.log('Wrong PortMapping in the device tree ' +
+                    'from genie. ACS ID is ' + acsID);
+      }
+    });
+  });
+  req.end();
 };
 
 acsDeviceInfoController.pingOfflineDevices = async function() {
@@ -3428,7 +3424,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
       name: 'getParameterValues',
       parameterNames: [fields.common.uptime],
     };
-    await TasksAPI.addTask(id, task, true, 50, [], null);
+    await TasksAPI.addTask(id, task, null, 50);
   }
 };
 
