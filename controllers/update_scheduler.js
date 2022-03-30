@@ -806,7 +806,8 @@ scheduleController.getDevicesReleases = async function(req, res) {
               devicesByModel[model] += 1;
             }
           } else if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            const allowUpgrade = deviceHandlers.isUpgradePossible(device);
+            const allowUpgrade = deviceHandlers.isUpgradePossible(device,
+                                                                  '0.32.0');
             const meshVersion =
               DeviceVersion.versionCompare(device.version, '0.32.0') < 0 ?
               1 : 2;
