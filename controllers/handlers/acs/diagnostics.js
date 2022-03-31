@@ -7,6 +7,7 @@ const deviceHandlers = require('../devices');
 const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
 const http = require('http');
+const debug = require('debug')('ACS_DIAGNOSTICS');
 
 let acsDiagnosticsHandler = {};
 

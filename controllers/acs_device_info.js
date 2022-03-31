@@ -118,27 +118,6 @@ const convertWifiBand = function(band, mode, is5ghz) {
   }
 };
 
-const convertWifiRate = function(model, rate) {
-  switch (model) {
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL': {
-      rate = parseInt(rate) / 1000;
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-      return rate;
-    }
-    default: {
-      rate = parseInt(rate);
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-    }
-  }
-};
-
 const extractGreatekCredentials = function(config) {
   let usernameRegex = /SUSER_NAME(.+?)\//g;
   let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
@@ -1179,7 +1158,7 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
   }
-  TasksAPI.addTask(acsID, task, fetchDevicesFromGenie);
+  TasksAPI.addTask(acsID, task, acsConnDevicesHandler.fetchDevicesFromGenie);
 };
 
 const getSsidPrefixCheck = async function(device) {

@@ -4,6 +4,7 @@ const DevicesAPI = require('../../external-genieacs/devices-api');
 const DeviceModel = require('../../../models/device');
 const utilHandlers = require('../util.js');
 const http = require('http');
+const debug = require('debug')('ACS_ACCESS_CONTROL');
 
 let acsAccessControlHandler = {};
 

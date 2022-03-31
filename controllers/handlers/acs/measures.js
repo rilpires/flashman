@@ -4,6 +4,7 @@ const Config = require('../../../models/config');
 const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
 const http = require('http');
+const debug = require('debug')('ACS_DEVICES_MEASURES');
 
 let acsMeasuresHandler = {};
 

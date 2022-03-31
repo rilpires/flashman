@@ -4,6 +4,7 @@ const utilHandlers = require('../util.js');
 const XmlParser = require('fast-xml-parser').j2xParser;
 const xml2js = require('fast-xml-parser');
 const http = require('http');
+const debug = require('debug')('ACS_XMLCONFIG');
 
 let acsXMLConfigHandler = {};
 

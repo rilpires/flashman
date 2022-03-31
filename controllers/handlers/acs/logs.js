@@ -4,6 +4,7 @@ const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
 const pako = require('pako');
 const http = require('http');
+const debug = require('debug')('ACS_DEVICE_LOGS');
 
 let acsDeviceLogsHandler = {};
 

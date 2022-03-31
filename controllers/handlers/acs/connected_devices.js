@@ -3,8 +3,30 @@ const DevicesAPI = require('../../external-genieacs/devices-api');
 const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
 const http = require('http');
+const debug = require('debug')('ACS_CONNECTED_DEVICES');
 
 let acsConnDevicesHandler = {};
+
+const convertWifiRate = function(model, rate) {
+  switch (model) {
+    case 'F660':
+    case 'F670L':
+    case 'F680':
+    case 'ST-1001-FL': {
+      rate = parseInt(rate) / 1000;
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+      return rate;
+    }
+    default: {
+      rate = parseInt(rate);
+      if (isNaN(rate)) {
+        debug('rate is NaN beware!!!');
+      }
+    }
+  }
+};
 
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
