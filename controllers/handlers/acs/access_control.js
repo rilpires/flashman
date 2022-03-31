@@ -5,6 +5,7 @@ const DeviceModel = require('../../../models/device');
 const utilHandlers = require('../util.js');
 const http = require('http');
 const debug = require('debug')('ACS_ACCESS_CONTROL');
+const t = require('./language').i18next.t;
 
 let acsAccessControlHandler = {};
 

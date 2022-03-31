@@ -5,6 +5,7 @@ const sio = require('../../../sio');
 const pako = require('pako');
 const http = require('http');
 const debug = require('debug')('ACS_DEVICE_LOGS');
+const t = require('./language').i18next.t;
 
 let acsDeviceLogsHandler = {};
 

@@ -1,5 +1,6 @@
 const FirmwaresAPI = require('../../external-genieacs/firmwares-api');
 const FirmwareModel = require('../../../models/firmware');
+const t = require('./language').i18next.t;
 
 let acsFirmwareHandler = {};
 
