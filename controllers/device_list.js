@@ -408,7 +408,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    'online': /^online$/, 'instavel': /^instavel$/, 'offline': /^offline$/,
+    'online': /^online$/,
+    'online >': /^online >.*/ ,
+    'instavel': /^instavel$/,
+    'offline': /^offline$/,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
