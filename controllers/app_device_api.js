@@ -4,6 +4,9 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
+const acsAccessControlHandler = require('./handlers/acs/access_control');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
+const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsHandlers = require('./handlers/acs');
@@ -111,7 +114,7 @@ let appSet = function(req, res, processFunction) {
       }
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
         let acRulesRes = {'success': false};
-        acRulesRes = await acsController.changeAcRules(matchedDevice);
+        acRulesRes = await acsAccessControlHandler.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
@@ -881,7 +884,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
           matchedDevice.current_speedtest.stage = 'estimative';
           try {
             await matchedDevice.save();
-            acsController.fireSpeedDiagnose(matchedDevice._id);
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
           } catch (err) {
             console.log('Error speed test procedure: ' + err);
           }
@@ -1626,7 +1629,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
           message: t('saveError', {errorline: __line}),
         });
       }
-      acsController.changePortForwardRules(matchedDevice, diff);
+      acsPortForwardHandler.changePortForwardRules(matchedDevice, diff);
       return res.status(200).json({'success': true});
     }
     return res.status(500).json({message:

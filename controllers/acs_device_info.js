@@ -1045,7 +1045,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     }
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
-      await acsDeviceInfoController.changeAcRules(device);
+      await acsAccessControlHandler.changeAcRules(device);
     }
   }
   await device.save().catch((err) => {
@@ -1103,14 +1103,6 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
     acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
   );
 }
-
-acsDeviceInfoController.firePingDiagnose = async function(mac) {
-  return await acsDiagnosticsHandler.firePingDiagnose(mac);
-};
-
-acsDeviceInfoController.fireSpeedDiagnose = async function(mac) {
-  return await acsDiagnosticsHandler.fireSpeedDiagnose(mac);
-};
 
 acsDeviceInfoController.requestLogs = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
@@ -1202,12 +1194,6 @@ const getSsidPrefixCheck = async function(device) {
   return deviceHandlers.checkSsidPrefix(
     config, device.wifi_ssid, device.wifi_ssid_5ghz,
     device.isSsidPrefixEnabled);
-};
-
-acsDeviceInfoController.getMeshBSSIDFromGenie = async function(
-  device, meshMode,
-) {
-  return await acsMeshDeviceHandler.getMeshBSSIDFromGenie(device, meshMode);
 };
 
 acsDeviceInfoController.updateInfo = async function(
@@ -1369,18 +1355,6 @@ acsDeviceInfoController.updateInfo = async function(
   }
 };
 
-acsDeviceInfoController.changePortForwardRules = async function(
-  device, rulesDiffLength,
-) {
-  return await acsPortForwardHandler.changePortForwardRules(
-    device, rulesDiffLength,
-  );
-};
-
-acsDeviceInfoController.changeAcRules = async function(device) {
-  return await acsAccessControlHandler.changeAcRules(device);
-};
-
 acsDeviceInfoController.pingOfflineDevices = async function() {
   // Get TR-069 configs from database
   let matchedConfig = await Config.findOne(
@@ -1480,18 +1454,6 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
     console.error('Error in license report: ' + err);
     return {success: false, message: t('requestError', {errorline: __line})};
   }
-};
-
-acsDeviceInfoController.addFirmwareInACS = async function(firmware) {
-  return await acsFirmwareHandler.addFirmwareInACS(firmware);
-};
-
-acsDeviceInfoController.delFirmwareInACS = async function(filename) {
-  return await acsFirmwareHandler.delFirmwareInACS(filename);
-};
-
-acsDeviceInfoController.upgradeFirmware = async function(device) {
-  return await acsFirmwareHandler.upgradeFirmware(device);
 };
 
 // Should be called after validating mesh configuration
