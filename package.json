@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.27.1",
+  "version": "2.27.2",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -16,7 +16,7 @@
     "githubBranch": "master"
   },
   "genieacs": {
-    "ref": "d29448e3a7d3f3ae9cdbcfeae7b9c7ec4e9ee675",
+    "ref": "fa95d7a310b7faaccf574d6de53e134558cdab69",
     "presetHash": "27da9cb1abe298532d63aeed8096d22f",
     "provisionHash": "6fa10219c4a5030fd5c077b641c5ffb0"
   },
@@ -98,6 +98,7 @@
     "css-loader": "^5.2.4",
     "eslint": "^7.32.0",
     "eslint-config-google": "^0.9.1",
+    "eslint-plugin-i18n-json": "^3.1.0",
     "eslint-plugin-jest": "^24.3.6",
     "file-loader": "^6.2.0",
     "jest": "^27.5.1",
