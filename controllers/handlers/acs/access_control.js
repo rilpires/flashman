@@ -199,7 +199,7 @@ const updateAcRules = async function(
   }
 };
 
-const compareNewACRulesWithTree = async function(acsID) {
+const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -209,13 +209,13 @@ const compareNewACRulesWithTree = async function(acsID) {
   if (!device || !device.use_tr069) {
     return;
   }
+  let permissions = DeviceVersion.findByVersion(
+    device.version, device.wifi_is_5ghz_capable, device.model,
+  );
 
   let maxId = 0;
   let acRulesResult = {};
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let blockedDevices = Object.values(device.lan_devices).filter(
-    (d)=>d.is_blocked,
-  );
 
   let supportedWlans = ['wifi2'];
   let acSubtreeRoots = {'wifi2': fields.access_control.wifi2};
@@ -392,9 +392,10 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   // ===== Get blockedDevices and AC rules trees =====
   // Creates the structures related to WLAN subtrees
   // Make sure there are no more than 31 devices to block - limit of 64 rules
-  let blockedDevicesCount = Object.values(device.lan_devices).reduce((v, d)=>{
-    return v + ((d.is_blocked) ? 1 : 0);
-  }, 0);
+  let blockedDevices = Object.values(device.lan_devices).filter(
+    (d)=>d.is_blocked,
+  );
+  let blockedDevicesCount = blockedDevices.length;
   if (blockedDevicesCount >= 32) {
     console.log('Number of rules has reached its limit for device ' + acsID);
     return {
@@ -412,7 +413,8 @@ acsAccessControlHandler.changeAcRules = async function(device) {
     name: 'getParameterValues',
     parameterNames: Object.values(acSubtreeRoots),
   };
-  result = await TasksAPI.addTask(acsID, task, compareNewACRulesWithTree);
+  let cback = (acsID)=>compareNewACRulesWithTree(acsID, blockedDevices);
+  result = await TasksAPI.addTask(acsID, task, cback);
   if (!result || !result.success) {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {
