@@ -408,7 +408,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    'online': /^online$/, 'instavel': /^instavel$/, 'offline': /^offline$/,
+    'online': /^online$/,
+    'online >': /^online >.*/ ,
+    'instavel': /^instavel$/,
+    'offline': /^offline$/,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
@@ -469,6 +472,17 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         };
         tr069 = {last_contact:
           {$lt: new Date(tr069Times.offline - hourThreshold)},
+        };
+      } else if (statusTags['online >'].test(tag)) {
+        const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
+        const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
+        flashbox = {
+          _id: {$in: mqttClients},
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
+        };
+        tr069 = {
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
+          last_contact: {$gte: tr069Times.recovery},
         };
       }
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
