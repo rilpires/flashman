@@ -353,33 +353,11 @@ deviceListController.changeUpdate = async function(req, res) {
   }
 };
 
-deviceListController.changeUpdateMesh = function(req, res) {
-  DeviceModel.findById(req.params.id, async function(err, matchedDevice) {
-    if (err || !matchedDevice) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.status(500).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
-    }
-    // Cast to boolean so that javascript works as intended
-    let doUpdate = req.body.do_update;
-    if (typeof req.body.do_update === 'string') {
-      doUpdate = (req.body.do_update === 'true');
-    }
-    // Reject update cancel command to mesh slave, use changeUpdate instead
-    if (!doUpdate) {
-      return res.status(500).json({
-        success: false,
-        message: t('functionToSetSlaveToUpdate', {errorline: __line}),
-      });
-    }
-    await meshHandlers.updateMeshDevice(
-      matchedDevice._id, req.params.release.trim(),
-    );
-  });
+deviceListController.retryMeshUpdate = function(req, res) {
+  meshHandlers.updateMeshDevice(
+    req.params.id, req.params.release.trim(),
+  );
+  return res.status(200).json({success: true});
 };
 
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
