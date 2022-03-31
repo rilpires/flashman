@@ -407,7 +407,6 @@ acsDiagnosticsHandler.firePingDiagnose = async function(mac) {
     };
   }
 };
-}
 
 acsDiagnosticsHandler.fireSpeedDiagnose = async function(mac) {
   let device;
