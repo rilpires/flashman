@@ -1116,7 +1116,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             }
           }
           proceed = 1;
-        } else if (upgStatus == '0') {
+        } else if (upgStatus == '0' || upgStatus == '2') {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
             updateScheduler.failedDownload(
@@ -1124,20 +1124,13 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           } else {
             updateScheduler.failedDownload(req.body.id);
           }
-          console.log('WARNING: Device ' + req.body.id +
-                      ' failed in firmware check!');
-          matchedDevice.do_update_status = 3; // img check failed
-        } else if (upgStatus == '2') {
-          if (matchedDevice.mesh_master) {
-            // Mesh slaves call update schedules function with their master mac
-            updateScheduler.failedDownload(
-              matchedDevice.mesh_master, req.body.id);
+          console.log('WARNING: Device ' + req.body.id +' failed in firmware ' +
+                      (upgStatus == '0' ? 'check' : 'download'));
+          if (upgStatus == '0') {
+            matchedDevice.do_update_status = 3; // img check failed
           } else {
-            updateScheduler.failedDownload(req.body.id);
+            matchedDevice.do_update_status = 2; // img download failed
           }
-          console.log('WARNING: Device ' + req.body.id +
-                      ' failed to download firmware!');
-          matchedDevice.do_update_status = 2; // img download failed
         } else if (upgStatus == '') {
           console.log('WARNING: Device ' + req.body.id +
                       ' ack update on an old firmware! Reseting upgrade...');
