@@ -1088,28 +1088,18 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             matchedDevice.do_update_status = 1; // success
           } else {
             matchedDevice.do_update_status = 10; // ack received
-            await matchedDevice.save().catch((err) => {
-              console.log('Error saving device during update ack received: ' +
-                          err);
-            });
-            const firmware = await Firmware.findOne(
-              {release: matchedDevice.release}).lean();
-            if (firmware) {
+            const firmware = await Firmware.findByReleaseCombinedModel(
+              matchedDevice.release, matchedDevice.model, true)[0];
+            if (firmware && firmware.flashbox_version) {
               const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
                 matchedDevice.version, firmware.flashbox_version);
               const isV1ToV2 = (typeUpgrade.current === 1 &&
-                typeUpgrade.upgrade === 2);
-              const isWifiMesh = (matchedDevice.mesh_mode > 1);
-              const isActiveNetwork = ((matchedDevice.mesh_slaves &&
-                matchedDevice.mesh_slaves.length > 0)
-                || matchedDevice.mesh_master);
-              if (isV1ToV2 && isWifiMesh && isActiveNetwork) {
-                /*
-                  In a mesh network where there is an upgrade from mesh v1 -> v2
-                  the next device in the mesh network won't wait for the
-                  previous to finish upgrade. When the ack is received the next
-                  device starts upgrade.
-                */
+                                typeUpgrade.upgrade === 2);
+              // Mesh network upgrade from mesh v1 to v2:
+              // The next device in the mesh network won't wait for the
+              // previous to finish upgrade. When the ack is received the next
+              // device starts upgrade.
+              if (isV1ToV2) {
                 await meshHandlers.syncUpdate(
                   matchedDevice, null, matchedDevice.release);
               }
