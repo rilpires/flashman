@@ -1,6 +1,7 @@
 /* global __line */
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const FirmwareModel = require('../../models/firmware');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
@@ -411,23 +412,53 @@ meshHandlers.generateBSSIDLists = async function(device) {
 };
 
 meshHandlers.beginMeshUpdate = async function(masterDevice) {
-  // Remaining devices are needed to differentiate between the first
-  // time a device is updated the other times, as well as to rule out
-  // which devices mustn't update in the future.
-  masterDevice.mesh_update_remaining = [
-    masterDevice._id, ...masterDevice.mesh_slaves,
-  ];
-  // update number of devices remaining to send onlinedevs info
-  masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length + 1;
-  masterDevice.do_update_status = 20; // waiting for topology
-  await masterDevice.save().catch((err) => {
-    console.log('Error saving master device on mesh update: ' + err);
-  });
-  masterDevice.mesh_update_remaining.forEach((mac)=>{
-    mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
-  });
-  deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
-  return {'success': true};
+  try {
+    let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
+      masterDevice.release, masterDevice.model, true)[0];
+    if (!matchedFirmware || !matchedFirmware.flashbox_version) {
+      return {'success': false};
+    }
+    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+      masterDevice.version, matchedFirmware.flashbox_version,
+    );
+    if (!typeUpgrade.unknownVersion) {
+      // Mesh v2 -> v1
+      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
+        return {'success': false};
+      // Mesh v1 -> v2
+      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
+        // Remaining devices are needed to differentiate between the first
+        // time a device is updated the other times, as well as to rule out
+        // which devices must not update in the future.
+        masterDevice.mesh_update_remaining = [
+          masterDevice._id, ...masterDevice.mesh_slaves,
+        ];
+        // update number of devices remaining to send onlinedevs info
+        masterDevice.mesh_onlinedevs_remaining =
+          masterDevice.mesh_slaves.length + 1;
+        masterDevice.do_update_status = 20; // waiting for topology
+        await masterDevice.save().catch((err) => {
+          console.log('Error saving master device on mesh update: ' + err);
+        });
+        masterDevice.mesh_update_remaining.forEach((mac)=>{
+          mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
+        });
+        deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
+        return {'success': true};
+      // Mesh v2 -> v2 or v1 -> v1
+      } else {
+        masterDevice.mesh_update_remaining = [
+          masterDevice._id, ...masterDevice.mesh_slaves,
+        ];
+        meshHandlers.updateMeshDevice(masterDevice._id, masterDevice.release);
+        return {'success': true};
+      }
+    } else {
+      return {'success': false};
+    }
+  } catch (err) {
+    return {'success': false};
+  }
 };
 
 meshHandlers.convertBSSIDToId = async function(device, bssid) {
@@ -869,78 +900,84 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
   }
 };
 
-const propagateUpdate = async function(
-  masterDevice, macOfUpdated, release, setQuery=undefined) {
+const propagateUpdate = async function(masterDevice, macOfUpdated,
+                                       release, setQuery=undefined,
+) {
+  // Update remaining devices to update
   const meshUpdateRemaining =
-    masterDevice.mesh_update_remaining.filter( (mac) => mac !== macOfUpdated);
-  const isMeshV1 =
-    (DeviceVersion.versionCompare(masterDevice.version, '0.32') < 0);
-  // Update which devices are left to update
+    masterDevice.mesh_update_remaining.filter((mac) => mac !== macOfUpdated);
   masterDevice.mesh_update_remaining = meshUpdateRemaining;
-  if (meshUpdateRemaining.length === 0) {
-    // All devices in mesh network have finished updating
-    // We only need to check setQuery here because the flow where mesh master
-    // calls this function always ends here
-    if (setQuery) {
-      setQuery.mesh_update_remaining = [];
-      setQuery.mesh_next_to_update = '';
-    } else {
-      masterDevice.mesh_next_to_update = '';
-      await masterDevice.save().catch((err) => {
-        console.log('Error saving master device on update propagation: ' + err);
-      });
-    }
+  // Get current mesh versions in this update
+  let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
+    masterDevice.release, masterDevice.model, true)[0];
+  if (!matchedFirmware || !matchedFirmware.flashbox_version) {
     return;
   }
-  if (meshUpdateRemaining.length === 1) {
-    // Only one device left to update, it will always be the master, regardless
-    // of being mesh v1 or v2 network.
-    masterDevice.mesh_next_to_update = masterDevice._id;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release,
-    );
-  } else if (meshUpdateRemaining.length === 2 || isMeshV1) {
-    // Only two devices left to update or this is a mesh v1 network
-    // If there are only two devices left to update just mark the slave
-    // that hasn't updated. If it's a mesh v1 network we only need the
-    // topology in the first iteration. After that just mark the slaves
-    // that haven't updated in any order.
-    const nextDeviceToUpdate = meshUpdateRemaining.find((device)=>{
-      return masterDevice.mesh_slaves.includes(device);
-    });
-    masterDevice.mesh_next_to_update = nextDeviceToUpdate;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release,
-    );
+  const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+    masterDevice.version, matchedFirmware.flashbox_version,
+  );
+  if (typeUpgrade.unknownVersion) {
+    return;
+  }
+  const isV1ToV2 = (typeUpgrade.current === 1 &&
+                    typeUpgrade.upgrade === 2);
+
+  if (isV1ToV2) {
+    if (meshUpdateRemaining.length === 0) {
+      // We only need to check setQuery here because the flow where mesh master
+      // calls this function always ends here
+      if (setQuery) {
+        setQuery.mesh_update_remaining = [];
+        setQuery.mesh_next_to_update = '';
+      } else {
+        masterDevice.mesh_next_to_update = '';
+      }
+    } else if (meshUpdateRemaining.length === 1) {
+      // Last always will be the master
+      masterDevice.mesh_next_to_update = masterDevice._id;
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, release,
+      );
+    } else if (meshUpdateRemaining.length === 2) {
+      // If there are only two devices left to update just mark the slave
+      // that hasn't updated
+      const nextDeviceToUpdate = meshUpdateRemaining.find((device)=>{
+        return masterDevice.mesh_slaves.includes(device);
+      });
+      masterDevice.mesh_next_to_update = nextDeviceToUpdate;
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, release,
+      );
+    } else {
+      // At least three devices left to update in mesh v2 network
+      masterDevice.mesh_onlinedevs_remaining =
+        masterDevice.mesh_slaves.length + 1;
+      // waiting for topology
+      masterDevice.do_update_status = 20;
+      const slaves = masterDevice.mesh_slaves;
+      mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
+      slaves.forEach((slave)=>{
+        mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+      });
+      // Set timeout for reception of onlinedevs
+      deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
+    }
   } else {
-    // At least three devices left to update in mesh v2 network
-    // In a mesh v2 network we need the topology in every iteration
-    masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length+1;
-    // waiting for topology
-    masterDevice.do_update_status = 20;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    const slaves = masterDevice.mesh_slaves;
-    mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
-    slaves.forEach((slave)=>{
-      mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-    });
-    // Set timeout for reception of onlinedevs
-    deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
+    if (meshUpdateRemaining.length > 0) {
+      // All remanining update scenarios follows update list sequentially
+      masterDevice.mesh_next_to_update = meshUpdateRemaining[0];
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, release,
+      );
+    }
   }
 };
 
 meshHandlers.syncUpdate = async function(device, setQuery, release) {
   // Only change information if device has slaves or a master
   if ((!device.mesh_slaves || device.mesh_slaves.length === 0) &&
-    !device.mesh_master) {
+      !device.mesh_master
+  ) {
     return;
   }
   if (device.mesh_master) {
@@ -958,7 +995,6 @@ meshHandlers.syncUpdate = async function(device, setQuery, release) {
     });
   } else {
     // Device is master with at lease one slave
-    // Master is ALWAYS last device to update
     await propagateUpdate(device, device._id, release, setQuery);
   }
 };

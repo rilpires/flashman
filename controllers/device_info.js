@@ -795,18 +795,12 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
               matchedDevice.version, sentVersion);
-            const isV1ToV2 = (typeUpgrade.current === 1 &&
-              typeUpgrade.upgrade === 2);
-            const isWifiMesh = (matchedDevice.mesh_mode > 1);
-            const isActiveNetwork = ((matchedDevice.mesh_slaves &&
-              matchedDevice.mesh_slaves.length > 0)
-              || matchedDevice.mesh_master);
-            if (!isV1ToV2 || !isWifiMesh || !isActiveNetwork) {
-              /*
-                This isn't a mesh v1 -> mesh v2 update with an active mesh
-                network. So, the next device in the mesh network is updating
-                on reception of the previous device's syn
-              */
+            const isNotV1ToV2 = !(typeUpgrade.current === 1 &&
+                                  typeUpgrade.upgrade === 2);
+            if (isNotV1ToV2) {
+              // This isn't a mesh v1 -> mesh v2 update
+              // So the next device in the mesh network starts
+              // to update on this call if there is a mesh network
               await meshHandlers.syncUpdate(
                 matchedDevice, deviceSetQuery, sentRelease);
             }
@@ -1098,7 +1092,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
               // Mesh network upgrade from mesh v1 to v2:
               // The next device in the mesh network won't wait for the
               // previous to finish upgrade. When the ack is received the next
-              // device starts upgrade.
+              // device starts upgrade if there is a mesh network
               if (isV1ToV2) {
                 await meshHandlers.syncUpdate(
                   matchedDevice, null, matchedDevice.release);
