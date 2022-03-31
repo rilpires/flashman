@@ -18,6 +18,7 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const acsMeasuresHandler = require('./handlers/acs/measures');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
@@ -3242,7 +3243,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, acsDeviceInfo.fetchPonSignalFromGenie);
+    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
   });
 };
 
