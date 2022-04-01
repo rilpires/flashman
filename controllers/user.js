@@ -1293,7 +1293,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('wanConnectionType'),
+        label: t('connectionTypeInWan'),
         value: 'certifications.routerConnType',
         default: '',
       },
@@ -1303,7 +1303,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('bridgeModeBridgeIp'),
+        label: t('bridgeModeIpAddress'),
         value: 'certifications.bridgeIP',
         default: '',
       },

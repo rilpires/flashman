@@ -5,37 +5,36 @@
       .modal-header
         p.heading.lead
           span.fas.fa-stethoscope.fa-lg
-          strong &nbsp;Latência e perda bidirecional para&nbsp;
+          strong &nbsp;#{t('latencyAndBidirectionalLossFor')}&nbsp;
             label(name="ping-test-hlabel" id="ping-test-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
         .row
           .col
-            span Endereços de destino &nbsp;
+            span #{t('targetAddresses')} &nbsp;
             a.fas.fa-question-circle(
               href="#",
               data-toggle="tooltip",
-              title="Os endereços de destino podem ser sites na Internet " +
-                    "ou endereços IP válidos"
+              title=t('targetAddressesTooltip')
             )
         .row.mt-1
           .col
             select.form-control#hosts-list(Multiple)
             .valid-feedback.text-right.mt-0
               .fas.fa-check
-              span &nbsp Salvo com sucesso
+              span &nbsp; #{t('saveSuccessful')}
             .invalid-feedback.text-right.mt-0
               .fas.fa-times
-              span &nbsp
-              span#hosts-list-invalid-feedback Erro ao salvar endereços
+              span &nbsp;
+              span#hosts-list-invalid-feedback= t('saveError')
         .row.mt-4
           .col
             h2.text-center.grey-text.mb-3#ping-test-placeholder
               i.fas.fa-stethoscope.fa-4x
               br
               br
-              span Adicione os endereços e clique em iniciar
+              span= t('addAddressesAndClickToStart')
             #ping-test-results(style="display: none;")
       .modal-footer
         #ping-test-tr069-spam.col.p-0.text-left
@@ -43,7 +42,7 @@
             .row
               .col-11
                 .fas.fa-info-circle.fa-lg.mr-2
-                span Para dispositivos TR-069 apenas o primeiro endereço de destino será testado
+                span= t('forTr069OnlyFirstAddressWillBeTested')
         .col.p-0.text-right
           button.btn.btn-primary.btn-sm.btn-start-ping-test(type="button")
-            span &nbsp Iniciar teste
+            span &nbsp; #{t('startTest')}

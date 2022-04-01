@@ -393,7 +393,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    'online': /^online$/, 'instavel': /^instavel$/, 'offline': /^offline$/,
+    'online': /^online$/,
+    'online >': /^online >.*/ ,
+    'instavel': /^instavel$/,
+    'offline': /^offline$/,
     'offline >': /^offline >.*/,
   };
   // mapping to regular expression because one tag has a parameter inside and
@@ -454,6 +457,17 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         };
         tr069 = {last_contact:
           {$lt: new Date(tr069Times.offline - hourThreshold)},
+        };
+      } else if (statusTags['online >'].test(tag)) {
+        const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
+        const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
+        flashbox = {
+          _id: {$in: mqttClients},
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
+        };
+        tr069 = {
+          wan_up_time: {$gte: parseInt(hourThreshold / 1000)},
+          last_contact: {$gte: tr069Times.recovery},
         };
       }
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
@@ -3271,59 +3285,59 @@ deviceListController.exportDevicesCsv = async function(req, res) {
                            true : false);
 
     devices = devices.map((device) => {
-      let ipv6Enabled = false;
+      let ipv6Enabled = t('No');
       if (device.ipv6_enabled === 1) {
-        ipv6Enabled = true;
-      } else if (device.ipv6_enabled=== 2) {
-        ipv6Enabled = 'unknown';
+        ipv6Enabled = t('Yes');
+      } else if (device.ipv6_enabled === 2) {
+        ipv6Enabled = t('Unknown');
       }
       device.ipv6_enabled = ipv6Enabled;
       return device;
     });
 
     const csvFields = [
-      {label: 'Endereço MAC', value: '_id'},
-      {label: 'Identificador Serial', value: 'serial_tr069'},
-      {label: 'Identificador TR-069 Alternativo', value: 'alt_uid_tr069'},
-      {label: 'Tipo de Conexão WAN', value: 'connection_type'},
-      {label: 'Usuário PPPoE', value: 'pppoe_user'},
+      {label: t('macAddress'), value: '_id'},
+      {label: t('serialIdentifier'), value: 'serial_tr069'},
+      {label: t('alternativeTr069Identifier'), value: 'alt_uid_tr069'},
+      {label: t('wanConnectionType'), value: 'connection_type'},
+      {label: t('pppoeUser'), value: 'pppoe_user'},
     ];
     if (exportPasswords) {
-      csvFields.push({label: 'Senha PPPoE', value: 'pppoe_password'});
+      csvFields.push({label: t('pppoePassword'), value: 'pppoe_password'});
     }
     csvFields.push(
-      {label: 'Subrede LAN', value: 'lan_subnet'},
-      {label: 'Máscara LAN', value: 'lan_netmask'},
-      {label: 'Wi-Fi SSID', value: 'wifi_ssid'},
+      {label: t('lanSubnetwork'), value: 'lan_subnet'},
+      {label: t('lanMask'), value: 'lan_netmask'},
+      {label: t('ssidWifi'), value: 'wifi_ssid'},
     );
     if (exportPasswords) {
-      csvFields.push({label: 'Wi-Fi Senha', value: 'wifi_password'});
+      csvFields.push({label: t('passwordWifi'), value: 'wifi_password'});
     }
     csvFields.push(
-      {label: 'Wi-Fi Canal', value: 'wifi_channel'},
-      {label: 'Largura de banda', value: 'wifi_band'},
-      {label: 'Modo de operação', value: 'wifi_mode'},
-      {label: 'Wi-Fi SSID 5GHz', value: 'wifi_ssid_5ghz'},
+      {label: t('channelWifi'), value: 'wifi_channel'},
+      {label: t('bandwidth'), value: 'wifi_band'},
+      {label: t('operationmode'), value: 'wifi_mode'},
+      {label: t('ssidWifi5Ghz'), value: 'wifi_ssid_5ghz'},
     );
     if (exportPasswords) {
-      csvFields.push({label: 'Wi-Fi Senha 5GHz', value: 'wifi_password_5ghz'});
+      csvFields.push({label: t('passwordWifi5Ghz'),
+        value: 'wifi_password_5ghz'});
     }
     csvFields.push(
-      {label: 'Wi-Fi Canal 5GHz', value: 'wifi_channel_5ghz'},
-      {label: 'Largura de banda 5GHz', value: 'wifi_band_5ghz'},
-      {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
-      {label: 'IP Público', value: 'ip'},
-      {label: 'IP WAN', value: 'wan_ip'},
-      {label: 'IPV6 Habilitado', value: 'ipv6_enabled'},
-      {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
-      {label: 'Modo de transmissão WAN (duplex)',
-              value: 'wan_negociated_duplex'},
-      {label: 'Tipo de ID do cliente', value: 'external_reference.kind'},
-      {label: 'ID do cliente', value: 'external_reference.data'},
-      {label: 'Modelo do CPE', value: 'model'},
-      {label: 'Versão do firmware', value: 'version'},
+      {label: t('channelWifi5GHz'), value: 'wifi_channel_5ghz'},
+      {label: t('xghzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
+      {label: t('xghzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
+      {label: t('publicIp'), value: 'ip'},
+      {label: t('wanIp'), value: 'wan_ip'},
+      {label: t('IpvxEnabled', {x: 6}), value: 'ipv6_enabled'},
+      {label: t('negotiatedWanSpeed'), value: 'wan_negociated_speed'},
+      {label: t('duplexWanTransmissionMode'), value: 'wan_negociated_duplex'},
+      {label: t('clientIdType'), value: 'external_reference.kind'},
+      {label: t('clientId'), value: 'external_reference.data'},
+      {label: t('cpeModel'), value: 'model'},
+      {label: t('firmwareversion'), value: 'version'},
       {label: 'Release', value: 'installed_release'},
-      {label: 'Atualizar firmware', value: 'do_update'},
+      {label: t('updatefirmware'), value: 'do_update'},
     );
     const json2csvParser = new Parser({fields: csvFields});
     const devicesCsv = json2csvParser.parse(devices);
