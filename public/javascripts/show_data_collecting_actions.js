@@ -161,7 +161,8 @@ anlixDocumentReady.add(function() {
         is_active: isActive.checked,
         alarm_fqdn: alarmFqdn.value,
         ping_fqdn: pingFqdn.value,
-        ping_packets: Number(pingPackets.value),
+        ping_packets: Number(pingPackets.value ?
+          pingPackets.value : pingPackets.placeholder),
       };
       sendDataCollectingParameters(data, form, t('parametersSaved'));
     }
@@ -188,7 +189,7 @@ anlixDocumentReady.add(function() {
       is_active: isActive.value,
       has_latency: hasLatency.value,
     };
-    for (let fieldname of booleanFields) {
+    for (let fieldname of Object.keys(booleanFields)) {
       let value = booleanFields[fieldname];
       if (value === '') continue;
       if (value === 'True') value = true;
