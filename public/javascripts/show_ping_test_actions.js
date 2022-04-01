@@ -44,9 +44,9 @@ const selectizeOptionsHosts = {
   onItemRemove: saveHostList,
   render: {
     option_create: function(data, escape) {
-      return $('<div></div>').addClass('create').append(
-        'Adicionar: ',
-        $('<strong></strong>').html(escape(data.input))
+      return $('<div>').addClass('create').append(
+        t('Add') + ':',
+        $('<strong>').html(escape(data.input)),
       );
     },
   },
@@ -59,7 +59,7 @@ socket.on('PINGTEST', function(macaddr, data) {
     if (id == macaddr) {
       $('#ping-test-results').hide('fast').empty();
       $('.btn-start-ping-test').prop('disabled', false);
-      let resultsList = $('<ul></ul>').addClass('list-group list-group-flush');
+      let resultsList = $('<ul>').addClass('list-group list-group-flush');
 
       $.each(data.results, function(key, value) {
         let hostname = key;
@@ -67,14 +67,14 @@ socket.on('PINGTEST', function(macaddr, data) {
         let hostLoss = value.loss;
 
         resultsList.append(
-          $('<li></li>').addClass('list-group-item d-flex')
+          $('<li>').addClass('list-group-item d-flex')
           .addClass('justify-content-between align-items-center')
           .html(hostname)
           .append(
-            $('<span></span>')
+            $('<span>')
             .addClass('badge badge-primary badge-pill')
-            .html('latência de ' + hostLatency + ' ms'),
-            $('<span></span>')
+            .html(t('latencyValue', {value: hostLatency}) + ' ms'),
+            $('<span>')
             .addClass('badge badge-primary badge-pill')
             .html(hostLoss + t('%LostPackets')),
           ),
@@ -139,21 +139,21 @@ anlixDocumentReady.add(function() {
           $('#ping-test-results').empty().show('fast');
           if (res.success) {
             textarea.append(
-              $('<h2></h2>').addClass('text-center grey-text mb-3').append(
-                $('<i></i>').addClass('fas fa-spinner fa-pulse fa-4x'),
+              $('<h2>').addClass('text-center grey-text mb-3').append(
+                $('<i>').addClass('fas fa-spinner fa-pulse fa-4x'),
                 $('</br>'),
                 $('</br>'),
-                $('<span></span>').html(t('waitingCpeResponse...'))
-              )
+                $('<span>').html(t('waitingCpeResponse...')),
+              ),
             );
           } else {
             $('.btn-start-ping-test').prop('disabled', false);
             textarea.append(
-              $('<h2></h2>').addClass('text-center grey-text mb-3').append(
-                $('<i></i>').addClass('fas fa-times fa-4x'),
+              $('<h2>').addClass('text-center grey-text mb-3').append(
+                $('<i>').addClass('fas fa-times fa-4x'),
                 $('</br>'),
-                $('<span></span>').html(res.message)
-              )
+                $('<span>').html(res.message),
+              ),
             );
           }
         });
@@ -162,7 +162,7 @@ anlixDocumentReady.add(function() {
         $('#ping-test-placeholder').hide('fast', function() {
           $('#ping-test-results').empty().show('fast');
           $('.btn-start-ping-test').prop('disabled', false);
-          textarea.append($('<p></p>').text(status + ': ' + error));
+          textarea.append($('<p>').text(status + ': ' + error));
         });
       },
     });

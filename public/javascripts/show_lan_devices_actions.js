@@ -135,7 +135,7 @@ anlixDocumentReady.add(function() {
     let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
     $('#lan-devices-placeholder-counter').text(
-      syncedRouters + ' de ' + totalRouters);
+      syncedRouters + ' ' + t('Of') + ' ' + totalRouters);
 
     $.ajax({
       type: 'GET',
@@ -406,14 +406,14 @@ anlixDocumentReady.add(function() {
               $('<h6>').text(device.dhcp_name),
               $('<h6>').text(device.mac),
             ),
-            (device.conn_type == 1 && device.is_online) ?
+            ((device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
               $('<h6>').text(((device.wifi_freq) ?
                 device.wifi_freq : t('notAvailable')) + ' GHz'),
               $('<h6>').text(t('modeValue', {value: device.wifi_mode ?
-                device.wifi_mode : t('notAvailable'))}),
+                device.wifi_mode : t('notAvailable')})),
               $('<h6>').text(t('signalValue', {value: (device.wifi_signal ?
-                device.wifi_signal : t('notAvailable')) +' dBm'}),
+                device.wifi_signal : t('notAvailable')) +' dBm'})),
               $('<h6>').text('SNR: ' + ((device.wifi_snr) ?
                 device.wifi_snr : t('notAvailable')) + ' dB')
               .append(
@@ -426,7 +426,8 @@ anlixDocumentReady.add(function() {
                 ),
               ),
             ) :
-            '',
+            ''
+            ),
           ),
         ),
       );
@@ -473,14 +474,17 @@ anlixDocumentReady.add(function() {
           ),
           $('<div>').addClass('row pt-2 m-0 mt-1 grey lighten-3').append(
             $('<div>').addClass('col').append(
-              $('<h6>').text(t('timeConnectedValue', {value: (router.iface == 1) ?
-                t('notAvailable') : secondsTimeSpanToHMS(router.conn_time)})),
+              $('<h6>').text(t('timeConnectedValue',
+                {value: (router.iface == 1) ?
+                  t('notAvailable') : secondsTimeSpanToHMS(router.conn_time),
+                }),
+              ),
               $('<h6>').text(t('rxBytesValue', {value: router.iface == 1 ?
-                t('notAvailable') : router.rx_bytes)}),
+                t('notAvailable') : router.rx_bytes})),
               $('<h6>').text(t('txBytesValue', {value: router.iface == 1 ?
-                t('notAvailable') : router.tx_bytes)}),
+                t('notAvailable') : router.tx_bytes})),
               $('<h6>').text(t('signalValue', {value: router.iface == 1 ?
-                t('notAvailable') : (router.signal + ' dBm'))}),
+                t('notAvailable') : (router.signal + ' dBm')})),
             ),
             $('<div>').addClass('col').append(
               $('<h6>').text(t('downSpeedValue', {value: router.rx_bit})),
@@ -541,7 +545,8 @@ anlixDocumentReady.add(function() {
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
     // Progress info when syncing with multiple routers in mesh
-    $('#lan-devices-placeholder-counter').text('0 de ' + totalRouters);
+    $('#lan-devices-placeholder-counter').text(
+      '0 ' + t('Of') + ' ' + totalRouters);
     // Only display if mesh mode is active with multiple routers
     if (slaveCount == 0) $('.btn-group-lan-opts').hide();
     // Trigger lan device view

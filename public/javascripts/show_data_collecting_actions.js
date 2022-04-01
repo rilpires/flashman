@@ -7,7 +7,8 @@ const t = i18next.t;
 const fillTotalDevicesFromSearch = function(amount) {
   totalDevicesFromSearch = amount;
   [...document.getElementsByClassName('nDevicesWillBeChanged')].forEach(
-    (e) => e.innerHTML = t('nDevicesWillBeChanged', {total: totalDevicesFromSearch}));
+    (e) => e.innerHTML = t('nDevicesWillBeChanged',
+                           {total: totalDevicesFromSearch}));
 };
 
 const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
@@ -87,7 +88,8 @@ anlixDocumentReady.add(function() {
 
   let getDeviceParameters = (row) => ({
     is_active: row.getAttribute('data-data_collecting-is_active') === 'true',
-    has_latency: row.getAttribute('data-data_collecting-has_latency') === 'true',
+    has_latency:
+      row.getAttribute('data-data_collecting-has_latency') === 'true',
     ping_fqdn: row.getAttribute('data-data_collecting-ping_fqdn') || '',
   });
 
@@ -136,9 +138,11 @@ anlixDocumentReady.add(function() {
 
   let submitServiceParameters = function(event) {
     let isActive = document.getElementById('data_collecting_service_is_active');
-    let alarmFqdn = document.getElementById('data_collecting_service_alarm_fqdn');
+    let alarmFqdn =
+      document.getElementById('data_collecting_service_alarm_fqdn');
     let pingFqdn = document.getElementById('data_collecting_service_ping_fqdn');
-    let pingPackets = document.getElementById('data_collecting_service_ping_packets');
+    let pingPackets =
+      document.getElementById('data_collecting_service_ping_packets');
 
     // FQDN text inputs.
     [alarmFqdn, pingFqdn].forEach((input) => {
@@ -157,7 +161,8 @@ anlixDocumentReady.add(function() {
         is_active: isActive.checked,
         alarm_fqdn: alarmFqdn.value,
         ping_fqdn: pingFqdn.value,
-        ping_packets: Number(pingPackets.value),
+        ping_packets: Number(pingPackets.value ?
+          pingPackets.value : pingPackets.placeholder),
       };
       sendDataCollectingParameters(data, form, t('parametersSaved'));
     }
@@ -165,9 +170,12 @@ anlixDocumentReady.add(function() {
   };
 
   let submitUpdateManyParameters = function(event) {
-    let isActive = document.getElementById('data_collecting_mass_update_is_active');
-    let hasLatency = document.getElementById('data_collecting_mass_update_has_latency');
-    let pingFqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
+    let isActive =
+      document.getElementById('data_collecting_mass_update_is_active');
+    let hasLatency =
+      document.getElementById('data_collecting_mass_update_has_latency');
+    let pingFqdn =
+      document.getElementById('data_collecting_mass_update_ping_fqdn');
     [pingFqdn].forEach((input) => {
       input.setCustomValidity('');
       input.value = input.value.trim();
@@ -181,7 +189,7 @@ anlixDocumentReady.add(function() {
       is_active: isActive.value,
       has_latency: hasLatency.value,
     };
-    for (let fieldname of booleanFields) {
+    for (let fieldname of Object.keys(booleanFields)) {
       let value = booleanFields[fieldname];
       if (value === '') continue;
       if (value === 'True') value = true;
@@ -214,7 +222,8 @@ anlixDocumentReady.add(function() {
       form.classList.add('was-validated');
       if (valid) {
         data.filter_list = lastDevicesSearchInputQuery;
-        let msg = t('parametersSavedForNDevices', {total: totalDevicesFromSearch});
+        let msg =
+          t('parametersSavedForNDevices', {total: totalDevicesFromSearch});
         sendDataCollectingParameters(data, form, msg, true);
       }
     } else {
@@ -225,9 +234,12 @@ anlixDocumentReady.add(function() {
 
   let submitDeviceParameters = function(event) {
     try {
-      let isActive = document.getElementById('data_collecting_device_is_active');
-      let hasLatency = document.getElementById('data_collecting_device_has_latency');
-      let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
+      let isActive =
+        document.getElementById('data_collecting_device_is_active');
+      let hasLatency =
+        document.getElementById('data_collecting_device_has_latency');
+      let pingFqdn =
+        document.getElementById('data_collecting_device_ping_fqdn');
       [pingFqdn].forEach((input) => { // all text fields.
         input.setCustomValidity('');
         input.value = input.value.trim();
@@ -303,7 +315,8 @@ anlixDocumentReady.add(function() {
       t('dataCollectingForDeviceId', {id: deviceId});
 
     let isActive = document.getElementById('data_collecting_device_is_active');
-    let hasLatency = document.getElementById('data_collecting_device_has_latency');
+    let hasLatency =
+      document.getElementById('data_collecting_device_has_latency');
     let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
 
     let parameters = getDeviceParameters(deviceRow);
