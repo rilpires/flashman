@@ -134,8 +134,8 @@ anlixDocumentReady.add(function() {
     let totalRouters = parseInt($('#lan-devices').data('slaves-count')) + 1;
     let syncedRouters = parseInt($('#lan-devices').data('routers-synced'));
 
-    $('#lan-devices-placeholder-counter').text(
-      syncedRouters + ' ' + t('Of') + ' ' + totalRouters);
+    $('#lan-devices-placeholder-counter').text(t('xOfY',
+      {x: syncedRouters, y: totalRouters}));
 
     $.ajax({
       type: 'GET',
@@ -545,8 +545,8 @@ anlixDocumentReady.add(function() {
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#lan-devices-placeholder-none').hide();
     // Progress info when syncing with multiple routers in mesh
-    $('#lan-devices-placeholder-counter').text(
-      '0 ' + t('Of') + ' ' + totalRouters);
+    $('#lan-devices-placeholder-counter').text(t('xOfY',
+      {x: '0', y: totalRouters}));
     // Only display if mesh mode is active with multiple routers
     if (slaveCount == 0) $('.btn-group-lan-opts').hide();
     // Trigger lan device view

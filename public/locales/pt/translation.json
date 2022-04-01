@@ -181,8 +181,8 @@
 	"updateAbortedCpeUpdating": "Atualização abortada - atualizando CPE",
 	"updateAbortedUpdatingMeshOldToNew": "Atualização abortada - atualizando mesh no padrão antigo para o novo",
 	"unknownStatus": "Status desconhecido",
-	"xOfY": " {{current}} de {{count}}",
-	"cpeXOfY": " do CPE {{current}} de {{count}}",
+	"xOfY": "{{x}} de {{y}}",
+	"ofCpeXOfY": "do CPE {{x}} de {{y}}",
 	"scheduling": "agendamento",
 
 	"passwordExpired": "Sua senha expirou. Insira uma nova senha ({{errorline}})",
@@ -514,7 +514,6 @@
 	"maxSpeedValue": "Velocidade Máx: {{value}} Mbps",
 	"notAvailable": "N/D",
 	"manageVlansFor": "Administrar VLANs de",
-	"Of": "de",
 
 	"latencyAndBidirectionalLossFor": "Latência e perda bidirecional para",
 	"targetAddresses": "Endereços de destino",

@@ -1236,7 +1236,7 @@ scheduleController.scheduleResult = async function(req, res) {
     if ((d.state === 'updating' || d.state === 'downloading') &&
       d.slave_count > 0) {
       let current = d.slave_count + 1 - d.slave_updates_remaining;
-      state += t('xOfY', {current: current, count: d.slave_count + 1});
+      state += ' '+t('xOfY', {x: current, y: d.slave_count + 1});
     }
     csvData += `${d.mac},${state}\n`;
   });
@@ -1245,9 +1245,9 @@ scheduleController.scheduleResult = async function(req, res) {
     if (d.slave_count > 0) {
       let current = d.slave_count - d.slave_updates_remaining + 1;
       if (d.state === 'error') {
-        state += t('cpeXOfY', {current: current, count: d.slave_count + 1});
+        state += ' '+t('ofCpeXOfY', {x: current, y: d.slave_count + 1});
       } else if (d.state === 'aborted_update' || d.state === 'aborted_down') {
-        state += t('xOfY', {current: current, count: d.slave_count + 1});
+        state += ' '+t('xOfY', {x: current, y: d.slave_count + 1});
       }
     }
     csvData += `${d.mac},${state}\n`;
