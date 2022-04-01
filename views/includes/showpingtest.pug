@@ -23,10 +23,10 @@
             select.form-control#hosts-list(Multiple)
             .valid-feedback.text-right.mt-0
               .fas.fa-check
-              span &nbsp #{t('saveSuccessful')}
+              span &nbsp; #{t('saveSuccessful')}
             .invalid-feedback.text-right.mt-0
               .fas.fa-times
-              span &nbsp
+              span &nbsp;
               span#hosts-list-invalid-feedback= t('saveError')
         .row.mt-4
           .col
@@ -45,4 +45,4 @@
                 span= t('forTr069OnlyFirstAddressWillBeTested')
         .col.p-0.text-right
           button.btn.btn-primary.btn-sm.btn-start-ping-test(type="button")
-            span &nbsp #{t('startTest')}
+            span &nbsp; #{t('startTest')}
