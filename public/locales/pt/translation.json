@@ -463,7 +463,7 @@
 	"standardValueForAllDevicesWithoutOwnValue": "Valor padrão de todos os dispositivos que não tiverem um valor individual próprio.",
 	"amountOfPingPackets": "Quantidade de pacotes ping",
 	"canOnlyBy100": "Por enquanto apenas pode ser 100",
-	"massUpdateindivIdualConfigurations": "Alterações em massa das configurações individuais",
+	"massUpdateIndividualConfigurations": "Alterações em massa das configurações individuais",
 	"parametersHereWillBeAppliedToAllSelectedDevices": "Os parâmetros definidos aqui serão aplicados a todos os dispositivos listados na atual busca feita. Campos sem valor, ou em branco, não serão gravados, serão mantidos os valores já existente em cada dispositivo.",
 	"lossCollection": "Coleta de perda",
 	"doNotChange": "Não alterar",

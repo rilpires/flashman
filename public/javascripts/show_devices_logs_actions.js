@@ -3,6 +3,8 @@ import {socket} from './common_actions.js';
 import 'jquery-highlight';
 import {ungzip} from 'pako';
 
+const t = i18next.t;
+
 // Store log to be downloadable
 let logBodyRawContent = '';
 
