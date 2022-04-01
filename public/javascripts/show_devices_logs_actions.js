@@ -25,19 +25,19 @@ socket.on('LIVELOG', function(macaddr, data) {
           usrtypes.map(function(x) {
             return x + '.warn';
           }),
-          {element: 'strong', className: 'text-warning'}
+          {element: 'strong', className: 'text-warning'},
         );
         textarea.highlight(
           usrtypes.map(function(x) {
             return x + '.err';
           }),
-          {element: 'strong', className: 'text-danger'}
+          {element: 'strong', className: 'text-danger'},
         );
         textarea.highlight(
           usrtypes.map(function(x) {
             return x+'.debug';
           }),
-          {element: 'strong', className: 'text-info'}
+          {element: 'strong', className: 'text-info'},
         );
         // Enable export button
         $('#export-log').removeClass('disabled');
@@ -65,19 +65,19 @@ let printLogData = function(url) {
           usrtypes.map(function(x) {
             return x + '.warn';
           }),
-          {element: 'strong', className: 'text-warning'}
+          {element: 'strong', className: 'text-warning'},
         );
         textarea.highlight(
           usrtypes.map(function(x) {
             return x + '.err';
           }),
-          {element: 'strong', className: 'text-danger'}
+          {element: 'strong', className: 'text-danger'},
         );
         textarea.highlight(
           usrtypes.map(function(x) {
             return x + '.debug';
           }),
-          {element: 'strong', className: 'text-info'}
+          {element: 'strong', className: 'text-info'},
         );
         // Enable export button
         $('#export-log').removeClass('disabled');
