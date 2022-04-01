@@ -44,9 +44,9 @@ const selectizeOptionsHosts = {
   onItemRemove: saveHostList,
   render: {
     option_create: function(data, escape) {
-      return $('<div></div>').addClass('create').append(
-        'Adicionar: ',
-        $('<strong></strong>').html(escape(data.input))
+      return $('<div>').addClass('create').append(
+        t('Add') + ':',
+        $('<strong>').html(escape(data.input)),
       );
     },
   },
@@ -73,7 +73,7 @@ socket.on('PINGTEST', function(macaddr, data) {
           .append(
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
-            .html('latência de ' + hostLatency + ' ms'),
+            .html(t('latencyValue', {value: hostLatency}) + ' ms'),
             $('<span></span>')
             .addClass('badge badge-primary badge-pill')
             .html(hostLoss + t('%LostPackets')),
@@ -143,8 +143,8 @@ anlixDocumentReady.add(function() {
                 $('<i></i>').addClass('fas fa-spinner fa-pulse fa-4x'),
                 $('</br>'),
                 $('</br>'),
-                $('<span></span>').html(t('waitingCpeResponse...'))
-              )
+                $('<span></span>').html(t('waitingCpeResponse...')),
+              ),
             );
           } else {
             $('.btn-start-ping-test').prop('disabled', false);
@@ -152,8 +152,8 @@ anlixDocumentReady.add(function() {
               $('<h2></h2>').addClass('text-center grey-text mb-3').append(
                 $('<i></i>').addClass('fas fa-times fa-4x'),
                 $('</br>'),
-                $('<span></span>').html(res.message)
-              )
+                $('<span></span>').html(res.message),
+              ),
             );
           }
         });
