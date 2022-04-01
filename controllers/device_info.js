@@ -1594,7 +1594,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
             upConnRouterMac = connRouter.toLowerCase();
           }
           let upConnRouter = routersData[upConnRouterMac];
-          // Skip if not lowercase
           if (!upConnRouter) continue;
 
           if (upConnRouter.rx_bit && typeof upConnRouter.rx_bit === 'number') {
@@ -1668,8 +1667,8 @@ deviceInfoController.receiveDevices = async function(req, res) {
         });
         let masterDevice = await DeviceModel.findOne(
           {'_id': masterMac},
-          {'mesh_onlinedevs_remaining': 1,
-          'do_update_status': 1},
+          {'mesh_onlinedevs_remaining': true,
+          'do_update_status': true},
         );
         // end of critical region
         mutexRelease();
