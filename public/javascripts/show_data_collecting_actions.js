@@ -1,16 +1,14 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
+const t = i18next.t;
+
+// updating text, in some elements, when device search is done.
 const fillTotalDevicesFromSearch = function(amount) {
   totalDevicesFromSearch = amount;
-  [...document.getElementsByClassName('amountOfDevices')].forEach(
-    (e) => e.innerHTML = String(totalDevicesFromSearch));
-  let pluralElements = [...document.getElementsByClassName('plural')];
-  if (totalDevicesFromSearch > 1) {
-    pluralElements.forEach((e) => e.innerHTML = 's');
-  } else {
-    pluralElements.forEach((e) => e.innerHTML = '');
-  }
+  [...document.getElementsByClassName('nDevicesWillBeChanged')].forEach(
+    (e) => e.innerHTML = t('nDevicesWillBeChanged',
+                           {total: totalDevicesFromSearch}));
 };
 
 const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
@@ -50,7 +48,7 @@ let setFieldValidLabel = (target) => {
 
 let setFieldInvalidLabel = (target) => {
   target.nextElementSibling.style.display = 'block';
-  target.setCustomValidity('Insira um endereço válido');
+  target.setCustomValidity(t('inputValidAddress'));
 };
 
 window.checkFqdn = (e) => isFqdnValid(e.target.value) ?
@@ -58,7 +56,7 @@ window.checkFqdn = (e) => isFqdnValid(e.target.value) ?
                           setFieldInvalidLabel(e.target);
 
 window.datalistFqdn = (e) => {
-  if (e.target.value === 'Apagar' || e.target.value === 'Não alterar' ||
+  if (e.target.value === t('Erase') || e.target.value === t('doNotChange') ||
       e.target.value === '') {
     setFieldValidLabel(e.target);
   } else {
@@ -90,7 +88,8 @@ anlixDocumentReady.add(function() {
 
   let getDeviceParameters = (row) => ({
     is_active: row.getAttribute('data-data_collecting-is_active') === 'true',
-    has_latency: row.getAttribute('data-data_collecting-has_latency') === 'true',
+    has_latency:
+      row.getAttribute('data-data_collecting-has_latency') === 'true',
     ping_fqdn: row.getAttribute('data-data_collecting-ping_fqdn') || '',
   });
 
@@ -139,16 +138,18 @@ anlixDocumentReady.add(function() {
 
   let submitServiceParameters = function(event) {
     let isActive = document.getElementById('data_collecting_service_is_active');
-    let alarmFqdn = document.getElementById('data_collecting_service_alarm_fqdn');
+    let alarmFqdn =
+      document.getElementById('data_collecting_service_alarm_fqdn');
     let pingFqdn = document.getElementById('data_collecting_service_ping_fqdn');
-    let pingPackets = document.getElementById('data_collecting_service_ping_packets');
+    let pingPackets =
+      document.getElementById('data_collecting_service_ping_packets');
 
     // FQDN text inputs.
     [alarmFqdn, pingFqdn].forEach((input) => {
       input.setCustomValidity('');
       input.value = input.value.trim();
       if (!isFqdnValid(input.value)) {
-        input.setCustomValidity('Insira um endereço válido');
+        input.setCustomValidity(t('inputValidAddress'));
       }
     });
 
@@ -160,17 +161,21 @@ anlixDocumentReady.add(function() {
         is_active: isActive.checked,
         alarm_fqdn: alarmFqdn.value,
         ping_fqdn: pingFqdn.value,
-        ping_packets: Number(pingPackets.value),
+        ping_packets: Number(pingPackets.value ?
+          pingPackets.value : pingPackets.placeholder),
       };
-      sendDataCollectingParameters(data, form, 'Parâmetros salvos.');
+      sendDataCollectingParameters(data, form, t('parametersSaved'));
     }
     return false;
   };
 
   let submitUpdateManyParameters = function(event) {
-    let isActive = document.getElementById('data_collecting_mass_update_is_active');
-    let hasLatency = document.getElementById('data_collecting_mass_update_has_latency');
-    let pingFqdn = document.getElementById('data_collecting_mass_update_ping_fqdn');
+    let isActive =
+      document.getElementById('data_collecting_mass_update_is_active');
+    let hasLatency =
+      document.getElementById('data_collecting_mass_update_has_latency');
+    let pingFqdn =
+      document.getElementById('data_collecting_mass_update_ping_fqdn');
     [pingFqdn].forEach((input) => {
       input.setCustomValidity('');
       input.value = input.value.trim();
@@ -184,7 +189,7 @@ anlixDocumentReady.add(function() {
       is_active: isActive.value,
       has_latency: hasLatency.value,
     };
-    for (let fieldname of booleanFields) {
+    for (let fieldname of Object.keys(booleanFields)) {
       let value = booleanFields[fieldname];
       if (value === '') continue;
       if (value === 'True') value = true;
@@ -195,16 +200,16 @@ anlixDocumentReady.add(function() {
     }
 
     // defining ping_fqdn set or unset statement for mass update input text.
-    if (pingFqdn.value === 'Apagar') { // when to unset.
+    if (pingFqdn.value === t('Erase')) { // when to unset.
       if (data.$unset === undefined) data.$unset = {};
       data.$unset['ping_fqdn'] = '';
       anyChange = true;
     // when to set.
-    } else if (pingFqdn.value !== '' && pingFqdn.value !== 'Não alterar') {
+    } else if (pingFqdn.value !== '' && pingFqdn.value !== t('doNotChange')) {
       if (data.$set === undefined) data.$set = {};
       // if invalid, set input as invalid. if valid, set data.
       if (!isFqdnValid(pingFqdn.value)) {
-        pingFqdn.setCustomValidity('Insira um endereço válido');
+        pingFqdn.setCustomValidity(t('inputValidAddres'));
       } else {
         data.$set['ping_fqdn'] = pingFqdn.value;
       }
@@ -217,26 +222,29 @@ anlixDocumentReady.add(function() {
       form.classList.add('was-validated');
       if (valid) {
         data.filter_list = lastDevicesSearchInputQuery;
-        let plural = totalDevicesFromSearch > 1 ? 's' : '';
-        let msg = `Parâmetros salvos em ${totalDevicesFromSearch} dispositivo${plural}.`;
+        let msg =
+          t('parametersSavedForNDevices', {total: totalDevicesFromSearch});
         sendDataCollectingParameters(data, form, msg, true);
       }
     } else {
-      hideModalShowAllert(serviceModal, 'Nada a ser alterado', 'danger');
+      hideModalShowAllert(serviceModal, t('nothingToChange'), 'danger');
     }
     return false;
   };
 
   let submitDeviceParameters = function(event) {
     try {
-      let isActive = document.getElementById('data_collecting_device_is_active');
-      let hasLatency = document.getElementById('data_collecting_device_has_latency');
-      let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
+      let isActive =
+        document.getElementById('data_collecting_device_is_active');
+      let hasLatency =
+        document.getElementById('data_collecting_device_has_latency');
+      let pingFqdn =
+        document.getElementById('data_collecting_device_ping_fqdn');
       [pingFqdn].forEach((input) => { // all text fields.
         input.setCustomValidity('');
         input.value = input.value.trim();
         if (input.value !== '' && !isFqdnValid(input.value)) {
-          input.setCustomValidity('Insira um endereço válido');
+          input.setCustomValidity(t('inputValidAddres'));
         }
       });
 
@@ -284,11 +292,11 @@ anlixDocumentReady.add(function() {
           sendDataCollectingParameters(
             data,
             form,
-            `Parâmetros salvos para o dispositivo ${deviceId}.`,
+            t('savedParametersForDeviceId', {deviceId: deviceId}),
           );
         }
       } else {
-        hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'danger');
+        hideModalShowAllert(deviceModal, t('nothingToChange'), 'danger');
       }
     } catch (e) {
       console.log(e);
@@ -303,10 +311,12 @@ anlixDocumentReady.add(function() {
     deviceForm.setAttribute(
       'action', `/data_collecting/${deviceId.replace(/:/g, '_')}/parameters`);
     deviceForm.classList.remove('was-validated');
-    document.getElementById('data_collecting_deviceId').innerHTML = deviceId;
+    document.getElementById('data_collecting_deviceId').innerHTML =
+      t('dataCollectingForDeviceId', {id: deviceId});
 
     let isActive = document.getElementById('data_collecting_device_is_active');
-    let hasLatency = document.getElementById('data_collecting_device_has_latency');
+    let hasLatency =
+      document.getElementById('data_collecting_device_has_latency');
     let pingFqdn = document.getElementById('data_collecting_device_ping_fqdn');
 
     let parameters = getDeviceParameters(deviceRow);
