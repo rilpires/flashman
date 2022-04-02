@@ -6,7 +6,6 @@ through the use of genieacs-nbi, the genie rest api.
 
 const http = require('http');
 const mongodb = require('mongodb');
-const sio = require('../../sio');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
@@ -109,7 +108,9 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
     params.message = t('genieacsErrorCallSupport', {errorline: __line});
   }
   let notification = new NotificationModel(params); // creating notification.
-  await notification.save(); // saving notification.
+  await notification.save().catch((err) => {
+    console.log('Error saving device task api notification: ' + err);
+  }); // saving notification.
 };
 
 // removes entries in Genie's 'faults' and 'cache' collections related to
@@ -227,6 +228,26 @@ genie.putPreset = async function(preset) {
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(presetjson)},
   }, presetjson);
+};
+
+genie.addOrDeleteObject = async function(deviceid, acObject, taskType) {
+  let task = {
+    name: taskType,
+    objectName: acObject,
+  };
+  try {
+    let ret = await genie.addTask(deviceid, task, true, 10000, []);
+    if (!ret || !ret.finished||
+      ret.task.name !== task.name) {
+      return false
+    }
+    return true;
+  } catch (e) {
+    console.log(
+      'Error: '+taskType+' failure at '+deviceid
+    );
+  }
+  return false;
 };
 
 /* simple request to send a new task to GenieACS and get a promise the resolves
@@ -500,11 +521,6 @@ itself and will be removed and re added.*/
       } else { // if there no more watch times we won't retry anymore.
         if (callback) {
           callback({finished: false, task: task});
-        } else {
-          // sending a socket.io message saying it wasn't executed.
-          sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: false,
-           taskid: task._id, source: 'timer', message:
-           `task never executed for deviceid ${deviceid}`});
         }
         resolve({finished: false, task: task, source: 'timer',
          message: `task never executed for deviceid ${deviceid}`});
@@ -516,16 +532,18 @@ itself and will be removed and re added.*/
     // if the last task was execute, it's high likely the previous tasks were
     // also executed.
     changeStream.hasNext().then(async function() {
-      if (changeStream.isClosed()) return;
+      if (!changeStream) return;
+      if (typeof changeStream.isClosed === 'function' &&
+          changeStream.isClosed()) {
+        return;
+      } else if (changeStream.closed) {
+        return;
+      }
       await changeStream.next();
       changeStream.close(); // close this change stream.
       clearTimeout(taskTimer); // clear setTimeout.
       if (callback) {
         callback({finished: true, task: task});
-      } else {
-        // sending a socket.io message saying it was executed.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'change stream', message: 'task executed.'});
       }
       resolve({finished: true, task: task, source: 'change stream', message:
        'task executed.'});
@@ -598,9 +616,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
     code 200, this means task has execute before 'timeout'. */
       if (callback) {
         callback({finished: true, task: task});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'request', message: 'task executed.'});
       }
       return {finished: true, task: task, source: 'request',
        message: 'task executed.'};
@@ -613,10 +628,6 @@ const sendTasks = async function(deviceid, tasks, timeout,
     if (!watchTimes || watchTimes.length === 0) {
       if (callback) {
         callback({finished: false, task: pendingTasks.pop()});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-         {finished: false, taskid: pendingTasks.pop()._id,
-         source: 'pending reject', message: 'no watch times defined'});
       }
     } else {
       // watch tasks collection until the new task is deleted.

@@ -72,7 +72,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'HG9'
       ) {
         return 'g';
-      }  else if (ouiModelStr === 'HG8245Q2') return '11bg';
+      } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'AC10') return 'bg';
       else if (
@@ -85,7 +85,8 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA'
+        ouiModelStr == 'G%2D2425G%2DA' ||
+        ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
@@ -116,7 +117,8 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'DIR-842' ||
         ouiModelStr === 'DIR-841' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA'
+        ouiModelStr == 'G%2D2425G%2DA' ||
+        ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
@@ -134,6 +136,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (
@@ -172,7 +175,8 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA'
+        ouiModelStr == 'G%2D2425G%2DA' ||
+        ouiModelStr === 'ST-1001-FL'
       ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
@@ -193,29 +197,31 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
+      if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
+      if (model === 'AC10') return '1';
+      if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
-      else if (model === 'AC10') return '1';
       return '40MHz';
     case 'VHT80':
-      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       if (model === 'AC10') return '3';
+      if (model === 'ST-1001-FL') return '80Mhz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       return '80MHz';
     case 'auto':
       if (model === 'DIR-842' || model === 'DIR-841') {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       } else if (
         model === 'BEACON 1 HA-020W-B' ||
-        model === 'BEACON%20HA%2D020W%2DB'
+        model === 'BEACON%20HA%2D020W%2DB' ||
+        model === 'ST-1001-FL'
       ) {
         return 'Auto'
       } else if (model === 'AC10') {
         return '2';
-      } else if (
-        model == 'G-2425G-A' || model == 'G%2D2425G%2DA'
-      ) {
+      } else if (model == 'G-2425G-A' || model == 'G%2D2425G%2DA') {
         return '80MHz'
       }
       return 'auto';
@@ -533,6 +539,9 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
     case 'ZXHN H199A':
     case 'ZXHN%20H199A': // URI encoded
@@ -549,6 +558,9 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
       break;
@@ -566,6 +578,9 @@ const getZTEFields = function(model) {
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
   }
   fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
@@ -859,6 +874,31 @@ const getTendaFields = function() {
   return fields;
 };
 
+const getHurakallFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  // fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+  // fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+  // fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -957,6 +997,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getTendaFields();
       break;
+    case 'CDTSNAND128H':
+      message = '';
+      fields = getHurakallFields();
+      break;
     default:
       return unknownModel;
   }
@@ -985,6 +1029,7 @@ const getBeaconTypeByModel = function(model) {
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
+    case 'ST-1001-FL': // Hurakall ST-1001-FL
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
     case 'AC10': // Tenda AC10

@@ -1,5 +1,5 @@
 {
-    "extends": ["eslint:recommended", "google"],
+    "extends": ["eslint:recommended", "google", "plugin:i18n-json/recommended"],
     "parserOptions": {
         "ecmaVersion": 8,
         "sourceType": "module"
@@ -11,12 +11,22 @@
         "jquery": true,
         "jest": true
     },
+    "globals": {
+        "i18next": true,
+        "swal": true
+    },
     "plugins": [
         "jest"
     ],
     "rules": {
-       "no-undef": 2,
-       "no-invalid-this": "off",
-       "dot-location": ["error", "property"]
+        "no-undef": 2,
+        "no-invalid-this": "off",
+        "dot-location": ["error", "property"],
+        "i18n-json/valid-message-syntax": [0, {
+            "syntax": "non-empty-string"
+        }],
+        "i18n-json/valid-json": 2,
+        "i18n-json/identical-keys": 0,
+        "i18n-json/sorted-keys": 0
     }
 }

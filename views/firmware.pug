@@ -6,17 +6,17 @@ block content
       .row
         .col-12.col-md-6
           .fas.fa-exchange-alt.fa-lg.mt-1
-          span &nbsp; Upload de novo firmware
+          span &nbsp; #{t('newFirmwareUpload')}
         .col-12.col-md-6.mt-3.mt-md-0
           ul.nav.nav-pills.nav-justified
             li.nav-item
               a.nav-link(data-toggle="tab", role="tab", href="#panel1")
                 .fas.fa-file
-                span &nbsp; Arquivo
+                span &nbsp; #{t('File')}
             li.nav-item
               a.nav-link.active(data-toggle="tab", role="tab", href="#panel2")
                 .fas.fa-globe
-                span &nbsp; Conta da Anlix
+                span &nbsp; #{t('anlixAccount')}
     .card-body
       .tab-content
         .tab-pane.fade(id="panel1", role="tabpanel")
@@ -24,7 +24,7 @@ block content
             .col-md-2.col.md-form
               .md-selectfield.form-control
                 label
-                  | Tipo
+                  | #{t('Type')}
                 select#select-cpe-type.browser-default.md-select(
                   name="cpe_type", onchange="changeCpeForm(this)", required)
                   option(value='flashbox' selected) Flashbox
@@ -36,7 +36,7 @@ block content
                 .input-group
                   .input-group-prepend
                     label.btn.btn-md.btn-primary.btn-file.my-0.ml-0
-                      | Arquivo...
+                      | #{t('File...')}
                       input.form-control(type="file",
                                          name="firmwareflashboxfile",
                                          style="display:none;")
@@ -46,7 +46,7 @@ block content
                 .form-buttons
                   button.btn.btn-lg.btn-primary.btn-submit-upload(type="submit")
                     .fas.fa-upload.fa-lg.btn-submit-icon
-                    span &nbsp; Upload
+                    span &nbsp; #{t('Upload')}
           form#tr069-form.needs-validation.d-none(method="post",
                                                   action="/firmware/upload",
                                                   name="firmwaretr069form",
@@ -55,76 +55,76 @@ block content
               .col-md-3.col-12.md-form
                 .md-selectfield.form-control
                   label
-                    | Modelo
+                    | #{t('Model')}
                   select#select-productclass.custom-select.md-select(
                     name="productclass", onchange="updateVersions(this)",
                       data-json=tr069Infos, required)
                     option(value='')
-                  .invalid-feedback Selecione algum modelo
+                  .invalid-feedback= t('selectAnyModel')
               .col-md-3.col-12.md-form
                 .md-selectfield.form-control
                   label
-                    | Versão
+                    | #{t('Version')}
                   select#select-version.custom-select.md-select(
                     name="version", required)
                     option(value='')
-                  .invalid-feedback Selecione alguma versão
+                  .invalid-feedback= t('selectAnyVersion')
               .col-md-6.col-12.mt-4
                 .input-group
                   .input-group-prepend
                     label.btn.btn-md.btn-primary.btn-file.my-0.ml-0
-                      | Arquivo...
+                      | #{t('File...')}
                       input.form-control(type="file", name="firmwaretr069file",
                                          style="display:none;")
                   input.form-control(type="text", readonly, required)
-                  .invalid-feedback Selecione um firmware
+                  .invalid-feedback= t('selectFirmware')
             .row.mt-4
               .col.text-center
                 .form-buttons
                   button.btn.btn-lg.btn-primary.btn-submit-upload(type="submit")
                     .fas.fa-upload.fa-lg.btn-submit-icon
-                    span &nbsp; Upload
+                    span &nbsp; #{t('Upload')}
         .tab-pane.fade.in.show.active(id="panel2", role="tabpanel")
           .d-flex.justify-content-center.mb-5
             form.form-inline(method="post", action="/firmware/sync", name="firmwaresync")
               .md-form.mr-3.mt-2.mb-0
                 i.fas.fa-user.prefix.grey-text
                 input#name.form-control(type="text", name="name")
-                label(for="name") Usuário
+                label(for="name")= t('User')
               .md-form.mr-3.mt-2.mb-0
                 i.fas.fa-lock.prefix.grey-text
                 input#password.form-control(type="password", name="password")
-                label(for="password") Senha
+                label(for="password")= t('Password')
               .form-buttons
                 button.btn.btn-md.ml-0.mt-3.my-md-0.btn-primary(
                   type="submit",
                   id="btn-firmware-sync"
                 )
                   .fas.fa-sync-alt.fa-lg(id="btn-firmware-sync-icon")
-                  span &nbsp Sincronizar
+                  span &nbsp #{t('Synchronize')}
           #avail-firmware-tableres.table-responsive(style="display: none;")
             table#avail-firmware-table.table
               thead
                 tr
                   th.text-center
                     input.checkbox(type="checkbox" id="checkall_add" autocomplete="off")
-                  th.text-center Fabricante
-                  th.text-center Modelo
-                  th.text-center Versão do hardware
+                  th.text-center= t('Manufacturer')
+                  th.text-center= t('Model')
+                  th.text-center= t('hardwareVersion')
                   th.text-center Release
-                  th.text-center Protocolo de acesso
-                  th.text-center Versão do Flashbox
-                  th.text-center Restringir Firmware
+                  th.text-center= t('accessProtocol')
+                  th.text-center= t('flashboxVersion')
+                  th.text-center= t('restrictFirmware')
               tbody#avail-firmware-list
           h2#avail-firmware-placeholder.text-center.grey-text.mb-3
             i.fas.fa-hdd.fa-4x
             br
-            span Faça seu login
+            span #{t('makeLogIn')}
 
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-hdd.fa-lg
-      span &nbsp; Firmwares
+      span &nbsp; #{t('Firmwares')}
     .card-body
       .table-responsive.mt-2
         table#firmware-table.table
@@ -132,13 +132,13 @@ block content
             tr
               th.text-center
                 input.checkbox(type="checkbox" id="checkall_del" autocomplete="off")
-              th.text-center Fabricante
-              th.text-center Modelo
-              th.text-center Versão
+              th.text-center= t('Manufacturer')
+              th.text-center= t('Model')
+              th.text-center= t('Version')
               th.text-center Release
-              th.text-center Protocolo de acesso
-              th.text-center Versão do Flashbox
-              th.text-center Firmware Restrita
+              th.text-center= t('accessProtocol')
+              th.text-center= t('flashboxVersion')
+              th.text-center= t('restrictedFirmware')
 
 block scripts
   script(src='/dist/firmware.bundle.js')
