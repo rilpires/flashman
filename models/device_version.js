@@ -399,7 +399,7 @@ const tr069Devices = {
       pon_signal: true,
       upnp: false,
       speed_test: true,
-      speed_test_limit: 10000,
+      speed_test_limit: 800,
       ping_test: true,
       block_devices: false,
       firmware_upgrade: false,
