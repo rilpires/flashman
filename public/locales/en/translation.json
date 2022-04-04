@@ -1,4 +1,6 @@
 {
+	"lang": "en",
+
 	"internalError": "Internal Error.",
 	"fieldInvalid": "Field '{{fieldName}}' is invalid.",
 	"receivedJsonError": "Error in received JSON.",

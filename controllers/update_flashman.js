@@ -98,22 +98,29 @@ const updateDependencies = function() {
 
 const updateGenieRepo = function(ref) {
   let fetch = 'cd ../genieacs && git fetch';
-  let checkout = 'cd ../genieacs && git checkout ' + ref;
+  let checkoutCurr = 'cd ../genieacs && git checkout .';
+  let checkoutNext = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
-  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
+  let reloadNbi = 'pm2 reload genieacs-nbi';
+  let reloadFs = 'pm2 reload genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
-      exec(checkout, (err, stdout, stderr) => {
-        if (err) return reject();
-        exec(install, (err, stdout, stderr) => {
+      exec(checkoutCurr, (err, stdout, stderr) => {
+        exec(checkoutNext, (err, stdout, stderr) => {
           if (err) return reject();
-          exec(build, (err, stdout, stderr) => {
+          exec(install, (err, stdout, stderr) => {
             if (err) return reject();
-            exec(reload, (err, stdout, stderr) => {
+            exec(build, (err, stdout, stderr) => {
               if (err) return reject();
-              return resolve();
+              exec(reloadNbi, (err, stdout, stderr) => {
+                if (err) return reject();
+                exec(reloadFs, (err, stdout, stderr) => {
+                  if (err) return reject();
+                  return resolve();
+                });
+              });
             });
           });
         });
@@ -759,6 +766,7 @@ updateController.setAutoConfig = async function(req, res) {
       onuWebPassword = config.tr069.web_password;
     }
     // validate that it is a strong password, but only if value changes
+    // first character cannot be special character
     if (onuWebPassword !== config.tr069.web_password) {
       let passRegex = new RegExp(''
         + /(?=.{8,16}$)/.source
@@ -766,7 +774,10 @@ updateController.setAutoConfig = async function(req, res) {
         + /(?=.*[a-z])/.source
         + /(?=.*[0-9])/.source
         + /(?=.*[-!@#$%^&*+_.]).*/.source);
-      if (!passRegex.test(onuWebPassword)) {
+      if (
+        !passRegex.test(onuWebPassword) ||
+        '-!@#$%^&*+_.'.includes(onuWebPassword[0])
+      ) {
         return res.status(500).json({
           type: 'danger',
           message: t('tr069WebPasswordValidationError'),
@@ -867,7 +878,7 @@ updateController.setAutoConfig = async function(req, res) {
       message: message,
     });
   } catch (err) {
-    console.log(err);
+    console.log(err.message ? err.message : err);
     return res.status(500).json({
       type: 'danger',
       message: (err.message) ? err.message :

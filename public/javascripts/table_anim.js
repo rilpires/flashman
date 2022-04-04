@@ -8,6 +8,8 @@ import {displayAlertMsg,
         socket} from './common_actions.js';
 import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
+const t = i18next.t;
+
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
   downloadLink.download = filename;
@@ -1243,6 +1245,7 @@ anlixDocumentReady.add(function() {
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
+          let grantBlockWiredDevices = device.permissions.grantBlockWiredDevices;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1277,7 +1280,10 @@ anlixDocumentReady.add(function() {
             infoRow = infoRow.replace('$REPLACE_UPGRADE', '');
           }
           if (isTR069) {
-            if (device.secure_tr069) {
+            // Undefined treats legacy cases - which are all HTTPS
+            if (
+              typeof device.secure_tr069 === 'undefined' || device.secure_tr069
+            ) {
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
               infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
             } else {
@@ -1315,7 +1321,7 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
           formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
-          formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? 'Sim' : 'Não')+'"';
+          formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? t('Yes') : t('No'))+'"';
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
           formAttr += ' data-has-extended-channels="'+grantWifiExtendedChannels+'"';
           formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
@@ -1326,6 +1332,7 @@ anlixDocumentReady.add(function() {
             formAttr += ' data-data_collecting-has_latency="'+(device.data_collecting.has_latency ? 'true' : 'false')+'"';
             formAttr += ' data-data_collecting-ping_fqdn="'+(device.data_collecting.ping_fqdn || '')+'"';
           }
+          formAttr += ' data-grant-block-wired-devices="' + grantBlockWiredDevices + '"';
 
           let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
 

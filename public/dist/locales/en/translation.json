@@ -1,4 +1,6 @@
 {
+	"lang": "en",
+
 	"internalError": "Internal Error.",
 	"fieldInvalid": "Field '{{fieldName}}' is invalid.",
 	"receivedJsonError": "Error in received JSON.",
@@ -89,6 +91,7 @@
 	"enableWifiToConfigureMesh": "Para configurar esse tipo de Mesh é necessário habilitar todos os Wi-Fi",
 	"disableMeshNotPossibleWithSecundaries": "Não é possível desabilitar o mesh com secundários associados",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados",
+	"enabledToModifyFields": "Para modificar algum campo de wifi, o mesmo deve estar previamente habilitado",
 	"deviceUpdateErrorDB": "Erro ao salvar dados na base",
 	"invalidFieldsCheckErrors": "Erro validando os campos, ver campo \"errors\"",
 	"macAlreadyExists": "Endereço MAC já cadastrado",

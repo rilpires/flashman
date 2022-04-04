@@ -70,7 +70,7 @@ let configSchema = new mongoose.Schema({
       release: {type: String},
       to_do_devices: [{
         mac: {type: String, required: true},
-        state: {type: String, enum: ['update', 'retry', 'offline']},
+        state: {type: String},
         slave_count: {type: Number, default: 0},
         retry_count: {type: Number, default: 0},
         // mesh version of current release
@@ -82,11 +82,7 @@ let configSchema = new mongoose.Schema({
         mac: {type: String, required: true},
         // slave state is legacy, can't be changed, simply means that the first
         // device has already updated
-        state: {
-          type: String, enum: [
-            'topology', 'downloading', 'updating', 'slave', 'v1tov2',
-          ],
-        },
+        state: {type: String},
         slave_count: {type: Number, default: 0},
         // legacy name that we can't change, it's just number of devices
         // reamining
@@ -101,14 +97,7 @@ let configSchema = new mongoose.Schema({
         // legacy name that we can't change, it's just number of devices
         // reamining
         slave_updates_remaining: {type: Number, default: 0},
-        state: {
-          type: String,
-          enum: [
-            'ok', 'error', 'error_topology', 'aborted', 'aborted_off',
-            'aborted_down', 'aborted_update', 'aborted_slave',
-            'aborted_topology', 'aborted_v1tov2',
-          ],
-        },
+        state: {type: String},
         mesh_current: {type: Number, default: 1},
         mesh_upgrade: {type: Number, default: 1},
       }],

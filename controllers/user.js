@@ -470,7 +470,7 @@ userController.deleteCertificates = async function(req, res) {
       message: t('operationSuccessful'),
     });
   } catch (err) {
-    console.error(err);
+    console.error(err.message ? err.message : err);
     return res.status(500).json({
       success: false,
       type: 'danger',
@@ -567,7 +567,7 @@ userController.getProfile = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = t('databaseFindError', {errorline: __line});
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
@@ -777,7 +777,7 @@ userController.setUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -817,7 +817,7 @@ userController.getUserCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.user_crud.url;
@@ -846,7 +846,7 @@ userController.setRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -885,7 +885,7 @@ userController.getRoleCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const url = matchedConfig.traps_callbacks.role_crud.url;
@@ -912,7 +912,7 @@ userController.setCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       if ('url' in req.body) {
@@ -952,7 +952,7 @@ userController.getCertificationCrudTrap = function(req, res) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
-        message: t('databaseFindError', {errorline: __line}),
+        message: t('configFindError', {errorline: __line}),
       });
     } else {
       const user = matchedConfig.traps_callbacks.certification_crud.user;
@@ -1039,7 +1039,7 @@ userController.settings = function(req, res) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
-          indexContent.message = t('databaseFindError', {errorline: __line});
+          indexContent.message = t('roleFindError', {errorline: __line});
           return res.render('error', indexContent);
         }
         let userRole = roles.find(function(role) {
@@ -1189,9 +1189,9 @@ userController.certificateSearch = async (req, res) => {
 
   if (csv && deviceCertifications.length >= 1) {
     const fields = [
-      {label: t('technician'), value: 'name', default: ''},
+      {label: t('Technician'), value: 'name', default: ''},
       {
-        label: t('certificateFinished'),
+        label: t('Concluded'),
         value: 'certifications.finished',
         default: '',
       },
@@ -1202,11 +1202,11 @@ userController.certificateSearch = async (req, res) => {
       },
       {label: t('uniqueIdentifier'), value: 'certifications.mac', default: ''},
       {
-        label: t('certificateCPEIsTR069'),
+        label: t('cpeIsTr069?'),
         value: 'certifications.isOnu',
         default: '',
       },
-      {label: t('model'), value: 'certifications.routerModel', default: ''},
+      {label: t('Model'), value: 'certifications.routerModel', default: ''},
       {
         label: t('cpeFirmwareVersion'),
         value: 'certifications.routerVersion',
@@ -1218,7 +1218,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('attendanceDate'),
+        label: t('serviceDate'),
         value: 'certifications.localEpochTimestamp',
         default: '',
       },
@@ -1243,12 +1243,12 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('ipV4Ok?'),
+        label: t('ipvxOk?', {x: 4}),
         value: 'certifications.diagnostic.ipv4',
         default: '',
       },
       {
-        label: t('ipV6Ok?'),
+        label: t('ipvxOk?', {x: 6}),
         value: 'certifications.diagnostic.ipv6',
         default: '',
       },
@@ -1293,7 +1293,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('wanConnectionType'),
+        label: t('connectionTypeInWan'),
         value: 'certifications.routerConnType',
         default: '',
       },
@@ -1303,7 +1303,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('bridgeModeBridgeIp'),
+        label: t('bridgeModeIpAddress'),
         value: 'certifications.bridgeIP',
         default: '',
       },
@@ -1323,42 +1323,42 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('24ghzSsid'),
+        label: t('xghzSsid', {x: 2.4}),
         value: 'certifications.wifiConfig.two.ssid',
         default: '',
       },
       {
-        label: t('24ghzChannel'),
+        label: t('xghzChannel', {x: 2.4}),
         value: 'certifications.wifiConfig.two.channel',
         default: '',
       },
       {
-        label: t('24ghzBandwidth'),
+        label: t('xghzBandwidth', {x: 2.4}),
         value: 'certifications.wifiConfig.two.band',
         default: '',
       },
       {
-        label: t('24ghzOperationMode'),
+        label: t('xghzOperationMode', {x: 2.4}),
         value: 'certifications.wifiConfig.two.mode',
         default: '',
       },
       {
-        label: t('5ghzSsid'),
+        label: t('xghzSsid', {x: 5}),
         value: 'certifications.wifiConfig.five.ssid',
         default: '',
       },
       {
-        label: t('5ghzChannel'),
+        label: t('xghzChannel', {x: 5}),
         value: 'certifications.wifiConfig.five.channel',
         default: '',
       },
       {
-        label: t('5ghzBandwidth'),
+        label: t('xghzBandwidth', {x: 5}),
         value: 'certifications.wifiConfig.five.band',
         default: '',
       },
       {
-        label: t('5ghzOperationMode'),
+        label: t('xghzOperationMode', {x: 5}),
         value: 'certifications.wifiConfig.five.mode',
         default: '',
       },

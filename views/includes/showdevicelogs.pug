@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-file-alt.fa-lg
-          strong(name="logRouterid_title" id="logRouterid_title") &nbsp; Logs do CPE &nbsp;
+          strong(name="logRouterid_title" id="logRouterid_title") &nbsp; #{t('cpeLogs')} &nbsp;
           strong(name="logRouterid_visual" id="logRouterid_visual")
           span.d-none(name="logRouterid_label" id="logRouterid_label")
         button.close(type="button", data-dismiss="modal")
@@ -17,20 +17,20 @@
               i.fas.fa-file-alt.fa-4x
               br
               br
-              span Escolha uma opção abaixo
+              span= t('chooseAnOptionBelow')
             pre.pre-scrollable#logArea(style="display: none;")
       .modal-footer
         .col-6.p-0
           button#export-log.btn.btn-primary.btn-sm.disabled
             .fas.fa-file-excel.fa-lg
-            span &nbsp; Exportar log
-          button#mesh-change-button.btn.btn-primary.btn-sm.dropdown-toggle(data-toggle="dropdown") Trocar CPE
+            span &nbsp; #{t('exportLogs')}
+          button#mesh-change-button.btn.btn-primary.btn-sm.dropdown-toggle(data-toggle="dropdown")= t('changeCpe')
           #mesh-change-div.dropdown-menu(data-dropdown-in="fadeIn", data-dropdown-out="fadeOut")
         .col-6.p-0.text-right
           .btn-group.btn-group-sm(role="group")
               button.btn.btn-primary.btn-sm.btn-log-upgrade(type="button")
-                span &nbsp; Primeiro boot
+                span &nbsp; #{t('firstBoot')}
               button.btn.btn-primary.btn-sm.btn-log-init(type="button")
                 span#boot-log &nbsp; Boot
               button.btn.btn-primary.btn-sm.btn-log-live(type="button")
-                span &nbsp; Ao Vivo
+                span &nbsp; #{t('Live')}

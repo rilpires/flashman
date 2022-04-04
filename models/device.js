@@ -30,9 +30,10 @@ let deviceSchema = new Schema({
   release: String,
   is_license_active: Boolean,
   data_collecting: {
-    is_active: Boolean, // logical AND with config.js value.
-    has_latency: Boolean, // logical AND with config.js value.
-    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    is_active: Boolean, // logical AND with config.js value
+    has_latency: Boolean, // logical AND with config.js value
+    // should use config.js value if this value is falsifiable
+    ping_fqdn: String,
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
@@ -226,8 +227,8 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  sys_up_time: {type: Number, default: 0},
-  wan_up_time: {type: Number, default: 0},
+  sys_up_time: {type: Number, default: 0}, // seconds
+  wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{

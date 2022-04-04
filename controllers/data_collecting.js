@@ -199,7 +199,7 @@ dataCollectingController.returnServiceParameters = function(req, res) {
   return Promise.resolve()
   .then(() => ConfigModel.findOne({is_default: true}, 'data_collecting')
     .lean().exec()
-    .catch((e) => throwsHttpError(e, 500, t('databaseFindError',
+    .catch((e) => throwsHttpError(e, 500, t('configFindError',
       {errorline: __line}))))
   .then((config) => sendOkResponse(res,
     (config && config.data_collecting) || {}))
@@ -218,7 +218,7 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
-    .catch((e) => throwsHttpError(e, 500, t('databaseFindError',
+    .catch((e) => throwsHttpError(e, 500, t('configFindError',
       {errorline: __line}))))
   .then((r) => sendOkResponse(res))
   .catch((e) => sendErrorResponse(e, req, res));

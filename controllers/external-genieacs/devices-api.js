@@ -75,6 +75,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'b,g';
       else if (ouiModelStr === 'F680') return 'b,g';
       else if (ouiModelStr === 'F660') return 'b,g';
+      else if (ouiModelStr === 'ST-1001-FL') return 'b,g';
       else if (ouiModelStr === 'HG9') return 'g';
       else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
@@ -87,6 +88,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001') return 'bg';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'g-only';
+      }
       else return '11bg';
     case '11n':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'b,g,n';
@@ -101,6 +105,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'b,g,n';
       else if (ouiModelStr === 'F660') return 'b,g,n';
       else if (ouiModelStr === 'F680') return 'b,g,n';
+      else if (ouiModelStr === 'ST-1001-FL') return 'b,g,n';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
       else if (ouiModelStr === 'EC220-G5') return 'n';
@@ -111,6 +116,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001') return 'bgn';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'b,g,n';
+      }
       else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
@@ -125,6 +133,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
@@ -135,6 +144,9 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001') return 'an';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'a,n';
+      }
       else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
@@ -149,6 +161,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F670L') return 'a,n,ac';
       else if (ouiModelStr === 'F660') return 'a,n,ac';
       else if (ouiModelStr === 'F680') return 'a,n,ac';
+      else if (ouiModelStr === 'ST-1001-FL') return 'a,n,ac';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'ac';
@@ -159,42 +172,43 @@ const convertWifiMode = function(mode, oui, model) {
       ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001') return 'anac';
+      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+        return 'ac,a,n';
+      }
       else return '11ac';
     default:
       return '';
   }
 };
 
-const convertWifiBand = function(band, model) {
+const convertWifiBand = function(band, model, is5ghz=false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
-      if (model === 'AC10') {
-        return '0';
-      } else if (model === 'EC220-G5') {
-        return '20M';
-      }
+      if (model === 'AC10') return '0';
+      if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
-      if (model === 'AC10') {
-        return '1';
-      } else if (model === 'EC220-G5') {
-        return '40M';
-      }
+      if (model === 'AC10') return '1';
+      if (model === 'ST-1001-FL') return '40Mhz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
     case 'VHT80':
-      if (model === 'AC10') {
-        return '3';
-      } else if (model === 'EC220-G5') {
-        return '80M';
-      }
+      if (model === 'AC10') return '3';
+      if (model === 'ST-1001-FL') return '80Mhz';
+      if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       return '80MHz';
     case 'auto':
-      if (model === 'AC10') {
-        return '2';
-      } else if (model === 'EC220-G5') {
+      if (model === 'AC10') return '2';
+      if (
+        model === 'BEACON 1 HA-020W-B' || model === 'BEACON%20HA%2D020W%2DB' ||
+        model === 'ST-1001-FL'
+      ) {
         return 'Auto';
+      }
+      if (model === 'DIR-842' || model === 'DIR-841') {
+        return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       }
       return 'auto';
     default:
@@ -233,11 +247,13 @@ const convertField = function(masterKey, key, oui, model, value) {
       result.value = convertWifiMode(value, oui, model); // convert to TR-069
       break;
     case 'wifi2-band':
-    case 'wifi5-band':
     case 'mesh2-band':
+      result.value = convertWifiBand(value, model); // convert to TR-069
+      break;
+    case 'wifi5-band':
     case 'mesh5-band':
       // convert to TR-069 format
-      result.value = convertWifiBand(value, model);
+      result.value = convertWifiBand(value, model, true); // convert to TR-069
       break;
     default:
       result.value = value; // no transformation necessary
@@ -553,6 +569,9 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
     case 'ZXHN H199A':
     case 'ZXHN%20H199A': // URI encoded
@@ -569,6 +588,9 @@ const getZTEFields = function(model) {
         'InternetGatewayDevice.ManagementServer.STUNServerPort';
       fields.common.stun_udp_conn_req_addr =
       'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
       break;
@@ -586,6 +608,9 @@ const getZTEFields = function(model) {
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower';
       fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
   }
   fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
@@ -596,19 +621,46 @@ const getZTEFields = function(model) {
   return fields;
 };
 
-const getNokiaFields = function() {
+const getNokiaFields = function(model) {
   let fields = getDefaultFields();
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
-  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
-  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
-  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+  switch (model) {
+    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB':
+      fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_ALU_COM_ChannelBandWidthExtend';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_ALU_COM_ChannelBandWidthExtend';
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.RSSI';
+      fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.WebAccount.UserName';
+      fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.WebAccount.Password';
+      fields.port_mapping_values.protocol[1] = 'TCPorUDP';
+      fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.remote_host =
+         ['RemoteHost', '', 'xsd:string'];
+      fields.port_mapping_fields.internal_port_end = ['X_ASB_COM_InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt'];
+      break;
+    case 'G-140W-C':
+    case 'G%2D140W%2DC':
+    case 'G-140W-CS':
+    case 'G%2D140W%2DCS':
+    case 'G-140W-UD':
+    case 'G%2D140W%2DUD':
+      fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CMCC_TeleComAccount.Password';
+      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.TXPower';
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
+      fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+      fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+      break;
+    default:
+      break
+  }
   return fields;
 };
 
@@ -756,6 +808,29 @@ const getFastWirelessFields = function() {
   return fields;
 };
 
+const getDLinkFields = function(modelName) {
+  let fields = getDefaultFields();
+  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
+  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
+  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '3');
+  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '3');
+  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '3');
+  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '3');
+  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '3');
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '3');
+  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '3');
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_DLINK_OperatingChannelBandwidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.X_DLINK_OperatingChannelBandwidth';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_DLINK_RSSI';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  if (modelName == 'DIR-841') {
+    fields.common.alt_uid = 'DeviceID.SerialNumber';
+    fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.ExternalIPAddress';
+    fields.wan.uptime = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.Uptime';
+  }
+  return fields;
+};
+
 const getTendaFields = function() {
   let fields = getDefaultFields();
   fields.common.alt_uid = fields.common.mac;
@@ -818,6 +893,31 @@ const getTendaFields = function() {
   return fields;
 };
 
+const getHurakallFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  // fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
+  // fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
+  // fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -858,8 +958,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'G%2D140W%2DCS': // URI encoded
     case 'G-140W-UD': // Nokia G-140W-UD
     case 'G%2D140W%2DUD': // URI encoded
+    case 'BEACON HA-020W-B':
+    case 'BEACON 1 HA-020W-B':
+    case 'BEACON%20HA%2D020W%2DB': // URI encoded
       message = '';
-      fields = getNokiaFields();
+      fields = getNokiaFields(model);
       break;
     case 'MP_G421R': // Unee Stavix G412R
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
@@ -894,9 +997,24 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           return unknownModel;
       }
       break;
+    case 'Router':
+      switch (modelName) {
+        case 'DIR-842':
+        case 'DIR-841':
+          message = '';
+          fields = getDLinkFields(modelName);
+          break;
+        default:
+          return unknownModel;
+      }
+      break;
     case 'AC10':
       message = '';
       fields = getTendaFields();
+      break;
+    case 'CDTSNAND128H':
+      message = '';
+      fields = getHurakallFields();
       break;
     default:
       return unknownModel;
@@ -926,6 +1044,7 @@ const getBeaconTypeByModel = function(model) {
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
+    case 'ST-1001-FL': // Hurakall ST-1001-FL
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
     case 'AC10': // Tenda AC10
