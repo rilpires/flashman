@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
 const TasksAPI = require('../../external-genieacs/tasks-api');
 const Config = require('../../../models/config');
 const DeviceModel = require('../../../models/device');
@@ -331,7 +333,6 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
     }
   }
 
-  let success = false;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+
               '&projection='+parameters.join(',');

@@ -58,7 +58,9 @@ const fetchAndComparePortForward = async function(acsID) {
           let portMapEnablePath = iterateTemplate +
                                   fields.port_mapping_values.enable[0];
           if (utilHandlers.checkForNestedKey(data, portMapEnablePath)) {
-            if (utilHandlers.getFromNestedKey(data, portMapEnablePath) != true) {
+            if (
+              utilHandlers.getFromNestedKey(data, portMapEnablePath) != true
+            ) {
               isDiff = true;
               break;
             }
