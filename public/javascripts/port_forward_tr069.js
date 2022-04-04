@@ -139,7 +139,7 @@ window.checkAdvancedOptions = function() {
     portBox[1].className = portBox[2].className =
      portBox[3].className = 'col-md-2 col-4 port-forward-tr069-port';
     portLabel[0].innerHTML = portLabel[2].innerHTML = t('Initial');
-    portLabel[1].innerHTML = portLabel[3].innerHTML =  t('Final');
+    portLabel[1].innerHTML = portLabel[3].innerHTML = t('Final');
   }
 };
 
