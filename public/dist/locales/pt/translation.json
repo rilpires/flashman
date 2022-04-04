@@ -524,7 +524,7 @@
 	"addAddressesAndClickToStart": "Adicione os endereços e clique em iniciar",
 	"forTr069OnlyFirstAddressWillBeTested": "Para dispositivos TR-069 apenas o primeiro endereço de destino será testado",
 	"startTest": "Iniciar teste",
-	"LostPackets": "% pacotes perdidos",
+	"%LostPackets": "% pacotes perdidos",
 
 
 	"lang": "pt",
