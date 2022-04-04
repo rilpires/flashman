@@ -1708,8 +1708,8 @@ anlixDocumentReady.add(function() {
                       '<label class="active">Modo de Operação</label>'+
                       '<select class="browser-default md-select" type="text" id="edit_opmode-'+index+'" '+
                       'maxlength="15" $REPLACE_OPMODE_EN $REPLACE_MESH_OPMODE_EN>'+
-                        '<option value="Modo Roteador" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
-                        '<option value="Modo Bridge" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
+                        '<option value="router_mode" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
+                        '<option value="bridge_mode" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -2481,14 +2481,14 @@ anlixDocumentReady.add(function() {
             }
           });
           $(document).on('change', '#edit_opmode-' + localIdx, (event)=>{
-            if ($('#edit_opmode-' + localIdx).val() === 'Modo Roteador') {
+            if ($('#edit_opmode-' + localIdx).val() === 'router_mode') {
               $('#edit_opmode_checkboxes-' + localIdx).hide();
               $('#edit_opmode_ip_combo-' + localIdx).hide();
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
               $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
               $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Changed to false because the text in the label changed to a positive logic (Enable instead Disable)
-            } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
+            } else if ($('#edit_opmode-' + localIdx).val() === 'bridge_mode') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();
             }
