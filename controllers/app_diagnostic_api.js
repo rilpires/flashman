@@ -5,6 +5,7 @@ const UserModel = require('../models/user');
 const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const keyHandlers = require('./handlers/keys');
 const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
@@ -1268,7 +1269,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
           matchedDevice.current_speedtest.stage = 'estimative';
           try {
             await matchedDevice.save();
-            acsDeviceInfo.fireSpeedDiagnose(matchedDevice._id);
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
           } catch (err) {
             console.log('Error saving speed test estimative: ' + err);
           }

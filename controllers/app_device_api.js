@@ -4,9 +4,12 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
+const acsAccessControlHandler = require('./handlers/acs/access_control');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
+const acsPortForwardHandler = require('./handlers/acs/port_forward');
+const acsXMLConfigHandler = require('./handlers/acs/xmlconfig');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
-const acsHandlers = require('./handlers/acs');
 const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
@@ -111,7 +114,7 @@ let appSet = function(req, res, processFunction) {
       }
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
         let acRulesRes = {'success': false};
-        acRulesRes = await acsController.changeAcRules(matchedDevice);
+        acRulesRes = await acsAccessControlHandler.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
@@ -881,7 +884,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
           matchedDevice.current_speedtest.stage = 'estimative';
           try {
             await matchedDevice.save();
-            acsController.fireSpeedDiagnose(matchedDevice._id);
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
           } catch (err) {
             console.log('Error speed test procedure: ' + err);
           }
@@ -1626,7 +1629,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
           message: t('saveError', {errorline: __line}),
         });
       }
-      acsController.changePortForwardRules(matchedDevice, diff);
+      acsPortForwardHandler.changePortForwardRules(matchedDevice, diff);
       return res.status(200).json({'success': true});
     }
     return res.status(500).json({message:
@@ -1659,7 +1662,7 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
+    let onlineReset = acsXMLConfigHandler.onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
@@ -1708,7 +1711,7 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = acsHandlers.onlineAfterReset.includes(device.model);
+    let onlineReset = acsXMLConfigHandler.onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure

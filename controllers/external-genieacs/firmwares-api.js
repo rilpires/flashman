@@ -69,9 +69,8 @@ firmwaresAPI.sendUpgradeFirmware = async function(firmware, device) {
     fileType: '1 Firmware Upgrade Image',
     fileName: firmware.filename,
   };
-  let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask,
-    true, 10000, []);
-  if (result.finished == true && result.task.name === 'download') {
+  let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask);
+  if (result.success) {
     return t('operationSuccessful');
   } else {
     return t('firmwareUpdateTaskDidNotFinsh', {errorline: __line});
