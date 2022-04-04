@@ -13,11 +13,17 @@ const Role = require('../models/role');
 const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
+const acsFirmwareHandler = require('./handlers/acs/firmware');
+const acsAccessControlHandler = require('./handlers/acs/access_control');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
+const acsPortForwardHandler = require('./handlers/acs/port_forward');
+const acsMeshDeviceHandler = require('./handlers/acs/mesh');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const acsMeasuresHandler = require('./handlers/acs/measures');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
@@ -301,7 +307,7 @@ deviceListController.changeUpdate = async function(req, res) {
   if (matchedDevice.mesh_master && doUpdate) {
     return res.status(500).json({
       success: false,
-      message: t('meshSecundaryUpdateError'),
+      message: t('meshSecondaryUpdateError'),
     });
   }
   if (doUpdate) {
@@ -332,7 +338,7 @@ deviceListController.changeUpdate = async function(req, res) {
   }
 
   if (matchedDevice.use_tr069 && doUpdate) {
-    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+    let response = await acsFirmwareHandler.upgradeFirmware(matchedDevice);
     if (response.success) {
       return res.status(200).json(response);
     } else {
@@ -521,6 +527,18 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         query.ipv6_enabled = {$eq: 0};
       } else if (/\bdesconhecido\b/.test(tag)) {
         query.ipv6_enabled = {$eq: 2};
+      }
+    } else if (/^(mesh) (?:on|off)$/.test(tag)) {
+      if (/\bon\b/.test(tag)) {
+        query.mesh_mode = {$ne: 0};
+      } else if (/\boff\b/.test(tag)) {
+        query.mesh_mode = {$eq: 0};
+      }
+    } else if (/^(modo) (?:roteador|bridge)$/.test(tag)) {
+      if (tag.includes('roteador')) {
+        query.bridge_mode_enabled = {$eq: false};
+      } else if (tag.includes('bridge')) {
+        query.bridge_mode_enabled = {$eq: true};
       }
     } else if (tag === 'flashbox') { // Anlix Flashbox routers.
       query.use_tr069 = {$ne: true};
@@ -988,7 +1006,13 @@ deviceListController.factoryResetDevice = function(req, res) {
     device.do_update = true;
     device.do_update_status = 0; // waiting
     device.release = '9999-aix';
-    await device.save();
+    await device.save().catch((err) => {
+      console.log('UPDATE: Error saving device on factory reset: ' + err);
+      return res.status(500).json({
+        success: false,
+        message: t('cpeSaveError'),
+      });
+    });
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
@@ -1022,13 +1046,19 @@ deviceListController.sendMqttMsg = function(req, res) {
                                                   device.wifi_is_5ghz_capable,
                                                   device.model);
 
+    let emitMsg = true;
     switch (msgtype) {
       case 'rstapp':
         if (device) {
           device.app_password = undefined;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving app reset password: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+        }
         break;
       case 'rstdevices':
         if (!permissions.grantResetDevices) {
@@ -1042,17 +1072,27 @@ deviceListController.sendMqttMsg = function(req, res) {
             return lanDevice;
           });
           device.blocked_devices_index = Date.now();
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of blocked devices: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+        }
         break;
       case 'rstmqtt':
         if (device) {
           device.mqtt_secret = undefined;
           device.mqtt_secret_bypass = true;
-          device.save();
+          await device.save().catch((err) => {
+            console.log('Error saving reset of mqtt: ' + err);
+            emitMsg = false;
+          });
         }
-        mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        if (emitMsg) {
+          mqtt.anlixMessageRouterResetMqtt(req.params.id.toUpperCase());
+        }
         break;
       case 'updateupnp':
         if (device) {
@@ -1068,9 +1108,13 @@ deviceListController.sendMqttMsg = function(req, res) {
               return false;
             }
           });
-          device.save(function(err) {
-            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          await device.save().catch((err) => {
+            console.log('Error saving on update upnp: ' + err);
+            emitMsg = false;
           });
+          if (emitMsg) {
+            mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          }
         }
         break;
       case 'log':
@@ -1099,7 +1143,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
-            return acsDeviceInfo.rebootDevice(device, res);
+            return await acsDeviceInfo.rebootDevice(device, res);
           } else {
             mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
           }
@@ -1138,7 +1182,7 @@ deviceListController.sendMqttMsg = function(req, res) {
             );
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
+            acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
           } else if (device) {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
           }
@@ -1296,7 +1340,7 @@ deviceListController.ensureBssidCollected = async function(
     // after the command is sent. Since the BSSID is only available after the
     // interface is up, we need to wait here to ensure we get a valid read
     await new Promise((r)=>setTimeout(r, 4000));
-    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
+    const bssidsObj = await acsMeshDeviceHandler.getMeshBSSIDFromGenie(
       device, targetMode,
     );
     if (!bssidsObj.success) {
@@ -2424,7 +2468,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     return ret;
   }
   // geniacs-api call
-  acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
+  acsPortForwardHandler.changePortForwardRules(device, diffPortForwardLength);
   ret.success = true;
   ret.message = t('operationSuccessful');
   return ret;
@@ -2490,7 +2534,8 @@ deviceListController.setPortForward = function(req, res) {
           }
 
           if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-            !(r.port.map((p) => parseInt(p)).every((p) => (p >= 1 && p <= 65535)))
+            !(r.port.map((p) => parseInt(p))
+                    .every((p) => (p >= 1 && p <= 65535)))
           ) {
             return res.status(200).json({
               success: false,
@@ -3005,8 +3050,13 @@ deviceListController.doSpeedTest = function(req, res) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
         matchedDevice.current_speedtest.stage = 'estimative';
-        await matchedDevice.save();
-        acsDeviceInfo.fireSpeedDiagnose(mac);
+        await matchedDevice.save().catch((err) => {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        });
+        acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
@@ -3086,7 +3136,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
 };
 
 deviceListController.setLanDeviceBlockState = function(req, res) {
-  DeviceModel.findById(req.body.id, function(err, matchedDevice) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err || !matchedDevice) {
       return res.status(500).json({success: false,
                                    message: t('cpeFindError',
@@ -3102,14 +3152,30 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       }
     }
     if (devFound) {
-      matchedDevice.save(function(err) {
+      if (matchedDevice.use_tr069) {
+        let result = {'success': false};
+        result = await acsAccessControlHandler.changeAcRules(matchedDevice);
+        if (!result || !result['success']) {
+          // The return of change Access Control has established
+          // error codes. It is possible to make res have
+          // specific messages for each error code.
+          let errorMessage = result.hasOwnProperty('message') ?
+            result['message'] : t('acRuleDefaultError', {errorline: __line});
+          return res.status(500).json({
+            success: false,
+            message: errorMessage,
+          });
+        }
+      }
+      matchedDevice.save(async function(err) {
         if (err) {
           return res.status(500).json({
             success: false,
             message: t('cpeSaveError', {errorline: __line})});
         }
-        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
+        if (!matchedDevice.use_tr069) {
+          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+        }
         return res.status(200).json({'success': true});
       });
     } else {
@@ -3182,12 +3248,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
-      if (result.task.name !== 'getParameterValues') return;
-      if (result.finished) {
-        acsDeviceInfo.fetchPonSignalFromGenie(matchedDevice, acsID);
-      }
-    });
+    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
   });
 };
 
@@ -3205,12 +3266,37 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       finalQuery = deviceListController.simpleSearchDeviceQuery(
         queryContents);
     }
+    let queryProjection = {
+      '_id': true, 'serial_tr069': true, 'alt_uid_tr069': true,
+      'connection_type': true, 'pppoe_user': true, 'pppoe_password': true,
+      'lan_subnet': true, 'lan_netmask': true, 'wifi_ssid': true,
+      'wifi_password': true, 'wifi_channel': true, 'wifi_band': true,
+      'wifi_mode': true, 'wifi_ssid_5ghz': true, 'wifi_password_5ghz': true,
+      'wifi_channel_5ghz': true, 'wifi_band_5ghz': true, 'wifi_mode_5ghz': true,
+      'ip': true, 'wan_ip': true, 'ipv6_enabled': true,
+      'wan_negociated_speed': true, 'wan_negociated_duplex': true,
+      'external_reference.kind': true, 'external_reference.data': true,
+      'model': true, 'version': true, 'installed_release': true,
+      'do_update': true,
+    };
 
     let devices = {};
-    devices = await DeviceModel.find(finalQuery).lean();
+    devices = await DeviceModel.find(finalQuery, queryProjection).lean();
 
     let exportPasswords = (req.user.is_superuser || userRole.grantPassShow ?
                            true : false);
+
+    devices = devices.map((device) => {
+      let ipv6Enabled = false;
+      if (device.ipv6_enabled === 1) {
+        ipv6Enabled = true;
+      } else if (device.ipv6_enabled=== 2) {
+        ipv6Enabled = 'unknown';
+      }
+      device.ipv6_enabled = ipv6Enabled;
+      return device;
+    });
+
     const csvFields = [
       {label: 'Endereço MAC', value: '_id'},
       {label: 'Identificador Serial', value: 'serial_tr069'},
@@ -3244,6 +3330,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: 'Modo de operação 5GHz', value: 'wifi_mode_5ghz'},
       {label: 'IP Público', value: 'ip'},
       {label: 'IP WAN', value: 'wan_ip'},
+      {label: 'IPV6 Habilitado', value: 'ipv6_enabled'},
       {label: 'Velocidade WAN negociada', value: 'wan_negociated_speed'},
       {label: 'Modo de transmissão WAN (duplex)',
               value: 'wan_negociated_duplex'},

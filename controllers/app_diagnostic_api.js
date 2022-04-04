@@ -5,6 +5,7 @@ const UserModel = require('../models/user');
 const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const keyHandlers = require('./handlers/keys');
 const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
@@ -517,12 +518,14 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       let device;
       let tr069Info = {url: '', interval: 0};
 
-      if (req.body.isOnu && req.body.onuMac) {
-        device = await DeviceModel.findById(req.body.onuMac);
-      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
-        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
-      } else if (req.body.isOnu) {
-        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+      if (req.body.isOnu) {
+        if (req.body.onuMac) {
+          device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
+        } else {
+          device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+        }
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
@@ -926,11 +929,25 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   // to make sure master and slave are synchronized
   matchedSlave.mesh_master = matchedMaster._id;
   meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
-  await matchedSlave.save();
+  try {
+    await matchedSlave.save();
+  } catch (err) {
+    console.log('Error saving slave mesh assoc: ' + err);
+    response.message = t('saveError', {errorline: __line});
+    response.errcode = 'internal';
+    return res.status(500).json(response);
+  }
 
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     matchedMaster.mesh_slaves.push(slaveMacAddr);
-    await matchedMaster.save();
+    try {
+      await matchedMaster.save();
+    } catch (err) {
+      console.log('Error saving master mesh assoc: ' + err);
+      response.message = t('saveError', {errorline: __line});
+      response.errcode = 'internal';
+      return res.status(500).json(response);
+    }
   }
 
   // Now we must put slave in bridge mode
@@ -954,7 +971,14 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   }
 
   if (isBridge === 'success' || isSwitchEnabled === 'success') {
-    await matchedSlave.save();
+    try {
+      await matchedSlave.save();
+    } catch (err) {
+      console.log('Error saving slave mesh assoc: ' + err);
+      response.message = t('saveError', {errorline: __line});
+      response.errcode = 'internal';
+      return res.status(500).json(response);
+    }
   }
 
   // We do not differentiate the case where
@@ -1066,11 +1090,27 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
 
   matchedSlave.mesh_master = '';
   matchedSlave.mesh_mode = 0;
-  await matchedSlave.save();
+  try {
+    await matchedSlave.save();
+  } catch (err) {
+    console.log('Error saving slave mesh disassoc: ' + err);
+    return res.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
 
   const slaveIndex = matchedMaster.mesh_slaves.indexOf(slaveMacAddr);
   matchedMaster.mesh_slaves.splice(slaveIndex, 1);
-  await matchedMaster.save();
+  try {
+    await matchedMaster.save();
+  } catch (err) {
+    console.log('Error saving master mesh disassoc: ' + err);
+    return res.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
 
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[slaveMacAddr];
@@ -1227,8 +1267,12 @@ diagAppAPIController.doSpeedTest = function(req, res) {
           matchedDevice.current_speedtest.timestamp = new Date();
           matchedDevice.current_speedtest.user = req.user.name;
           matchedDevice.current_speedtest.stage = 'estimative';
-          await matchedDevice.save();
-          acsDeviceInfo.fireSpeedDiagnose(matchedDevice._id);
+          try {
+            await matchedDevice.save();
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
+          } catch (err) {
+            console.log('Error saving speed test estimative: ' + err);
+          }
         } else {
           // Send mqtt message to perform speedtest
           let url = config.measureServerIP + ':' + config.measureServerPort;

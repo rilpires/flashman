@@ -6,7 +6,6 @@ through the use of genieacs-nbi, the genie rest api.
 
 const http = require('http');
 const mongodb = require('mongodb');
-const sio = require('../../sio');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
@@ -15,24 +14,55 @@ const t = require('../language').i18next.t;
 let GENIEHOST = 'localhost';
 let GENIEPORT = 7557;
 
+let taskWatchlist = {};
+let lastTaskWatchlistClean = Date.now();
+
 let genie = {}; // to be exported.
 
 // starting a connection to MongoDB so we can start a change stream to the
 // tasks collection when necessary.
-let tasksCollection;
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
   mongodb.MongoClient.connect('mongodb://localhost:27017',
     {useUnifiedTopology: true}).then(async (client) => {
     genieDB = client.db('genieacs');
-    tasksCollection = genieDB.collection('tasks');
-    // Only watch if flashman instance is the first one dispatched
+    // Only watch faults if flashman instance is the first one dispatched
     if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
       console.log('Watching for faults in GenieACS database');
       watchGenieFaults(); // start watcher for genie faults.
     }
+    // Always watch for tasks associated with this instance
+    watchGenieTasks();
     /* we should never close connection to database. it will be close when
      application stops. */
+  });
+}
+
+const watchGenieTasks = async function() {
+  let tasksCollection = genieDB.collection('tasks');
+  let changeStream = tasksCollection.watch([
+    {$match: {'operationType': 'delete'}},
+  ]);
+  changeStream.on('error', (e)=>console.log('Error in genieacs tasks stream'));
+  changeStream.on('change', (change)=>{
+    let taskID = change.documentKey['_id'];
+    if (taskID && taskID in taskWatchlist) {
+      let deviceID = taskWatchlist[taskID].deviceID;
+      let callback = taskWatchlist[taskID].callback;
+      if (callback && deviceID) {
+        callback(deviceID);
+      }
+      delete taskWatchlist[taskID];
+    }
+    let now = Date.now();
+    let oneDayInMilliseconds = 24*60*60*1000;
+    if (now - lastTaskWatchlistClean > oneDayInMilliseconds) {
+      Object.keys(taskWatchList).forEach((id)=>{
+        if (now - taskWatchlist[id].timestamp > oneDayInMilliseconds) {
+          delete taskWatchlist[id];
+        }
+      });
+    }
   });
 }
 
@@ -109,7 +139,9 @@ const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
     params.message = t('genieacsErrorCallSupport', {errorline: __line});
   }
   let notification = new NotificationModel(params); // creating notification.
-  await notification.save(); // saving notification.
+  await notification.save().catch((err) => {
+    console.log('Error saving device task api notification: ' + err);
+  }); // saving notification.
 };
 
 // removes entries in Genie's 'faults' and 'cache' collections related to
@@ -229,16 +261,38 @@ genie.putPreset = async function(preset) {
   }, presetjson);
 };
 
+genie.addOrDeleteObject = async function(
+  deviceid, acObject, taskType, callback=null,
+) {
+  let task = {
+    name: taskType,
+    objectName: acObject,
+  };
+  try {
+    let ret = await genie.addTask(deviceid, task, callback);
+    if (!ret || !ret.success || !ret.executed) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.log(
+      'Error: ' + taskType + ' failure at ' + deviceid,
+    );
+  }
+  return false;
+};
+
 /* simple request to send a new task to GenieACS and get a promise the resolves
  to the request response or rejects to request error. Will throw an uncaught
  error if task can't be stringifyed to json. */
-const postTask = function(deviceid, task, timeout, shouldRequestConnection) {
+const postTask = function(deviceid, task, legacyTimeout) {
   let taskjson = JSON.stringify(task); // can throw an error here.
   // console.log("Posting a task.")
+  let encodedID = encodeURIComponent(deviceid);
+  let timeout = (legacyTimeout > 0) ? legacyTimeout.toString() : '7500';
   return genie.request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
-    path: '/devices/'+encodeURIComponent(deviceid)+'/tasks?timeout='+timeout+
-     (shouldRequestConnection ? '&connection_request' : ''),
+    path: '/devices/'+encodedID+'/tasks?timeout='+timeout+'&connection_request',
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(taskjson)},
   }, taskjson);
@@ -452,89 +506,6 @@ const deleteOldTasks = async function(tasksToDelete, deviceid) {
   }
 };
 
-/* given an array of tasks scheduled for later and an array of times to wait
- for these tasks to be executed, starts a mongodb change stream watching for
- delete events on GenieACS task collection waiting for a document which _id
- matches the last task _id and starts a timeout using the first number on given
- 'watchTimes'. If the change stream is executed first, the timeout is
- cleared/closed, the change stream is closed and a socket.io message is emitted
- saying the pending task has been executed. But if the timeout is executed
- first, the change stream is closed and if there are more values in
- 'watchTimes', the last task is used in a new call to addTask(...) with
- 'watchTimes' having the first value removed, meaning the whole process of
- adding a task will be done again (basically a retry of the last task), but if
- 'watchTimes' has no more values, emits a message saying task was not executed.
- */
-const watchPendingTaskAndRetry = async function(pendingTasks, deviceid,
- watchTimes, callback) {
-  let task = pendingTasks.pop(); // removes last task out of the array.
-  let watchTime = watchTimes.shift(); // removes first value out of the array.
-  // starts a change stream in task collection from GenieACS database.
-  /* eslint-disable new-cap */
-  let changeStream = tasksCollection.watch([
-    {$match: {'operationType': 'delete', 'documentKey._id':
-    mongodb.ObjectID(task._id)}}, // listening for 'delete' events,
-  ]); // filtered by document._id match.
-  changeStream.on('error', (e) => {
-    changeStream.close();
-  });
-
-  return new Promise((resolve, reject) => {
-    let taskTimer = setTimeout(async function() { // starts a timeout.
-      // if there are zero documents matching task._id. it means task was
-      // executed and change stream probably saw it first.
-      /* eslint-disable new-cap */
-      if (await tasksCollection.countDocuments(
-       {_id: mongodb.ObjectID(task._id)}) === 0) return;
-
-      // if there is a document still in database matching task._id.
-      changeStream.close(); // close change stream.
-      if (watchTimes.length > 0) { // if there are more watchTimes in array.
-        // repeat the whole process of adding a task with one less watch time.
-        genie.addTask(deviceid, task, 5000, true, watchTimes);
-        /* we don't need to repeat the whole process using all tasks because
-when GenieACS execute one task, all tasks are also executed. We actually only
-implement a retry because genie fails in its attempt to retry tasks. This is a
-Genie hiccup. The result of our retry is the last task will be joined with
-itself and will be removed and re added.*/
-      } else { // if there no more watch times we won't retry anymore.
-        if (callback) {
-          callback({finished: false, task: task});
-        } else {
-          // sending a socket.io message saying it wasn't executed.
-          sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: false,
-           taskid: task._id, source: 'timer', message:
-           `task never executed for deviceid ${deviceid}`});
-        }
-        resolve({finished: false, task: task, source: 'timer',
-         message: `task never executed for deviceid ${deviceid}`});
-      }
-    }, watchTime); // amount of time to wait before executing setTimeout.
-
-    // waiting for only one match on the change stream. simply because we filter
-    // by _id, which is unique.
-    // if the last task was execute, it's high likely the previous tasks were
-    // also executed.
-    changeStream.hasNext().then(async function() {
-      if (changeStream.isClosed()) return;
-      await changeStream.next();
-      changeStream.close(); // close this change stream.
-      clearTimeout(taskTimer); // clear setTimeout.
-      if (callback) {
-        callback({finished: true, task: task});
-      } else {
-        // sending a socket.io message saying it was executed.
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'change stream', message: 'task executed.'});
-      }
-      resolve({finished: true, task: task, source: 'change stream', message:
-       'task executed.'});
-    }, () => { // if any error happened with hasNext().
-      changeStream.close();
-    });
-  });
-};
-
 /* for each task send a request to GenieACS to add a task to a device id.
  GenieACS doesn't have a call to add more than one task at once. Returns an
  array in which the first position is an error message if there were any or
@@ -543,12 +514,10 @@ itself and will be removed and re added.*/
  boolean that tells GenieACS to initiate a connection to the CPE and
  execute the task. If 'shouldRequestConnection' is given false, all tasks will
  be scheduled for later execution by Genie. */
-const sendTasks = async function(deviceid, tasks, timeout,
- shouldRequestConnection, watchTimes, callback) {
+const sendTasks = async function(deviceid, tasks, callback, legacyTimeout) {
   // making each task become a promise.
   // transforming task objects into postTask promise function.
-  tasks = tasks.map((task) => postTask(deviceid, task, timeout,
-   shouldRequestConnection));
+  tasks = tasks.map((task) => postTask(deviceid, task, legacyTimeout));
   // wait for all promises to finish.
   let results = await Promise.allSettled(tasks);
   // array of tasks that did not execute in less than 'timeout' millisecond.
@@ -556,75 +525,58 @@ const sendTasks = async function(deviceid, tasks, timeout,
   for (let i = 0; i < results.length; i++) { // for each request result.
     // if there was a reason it was rejected. print error message.
     if (results[i].reason) {
-      // if this task is the last one, it means it is the brand new task.
-      if (i === results.length-1) {
-        return {finished: false, task: task, source: 'request',
-          message: results[i].reason.code
-          + ` when adding new task in genieacs rest api, for device `
-          +`${deviceid}.`};
-      } else {// if it's not the brand new task.
-        return {finished: false, task: task, source: 'request',
-          message: results[i].reason.code
-          + ` when adding a joined task, in substitution of older tasks, in `
-          +`genieacs rest api, for device ${deviceid}.`};
-      }
+      let msg = results[i].reason.code +
+        ' when adding new task in genieacs rest api, for device ' +
+        deviceid;
+      return {success: false, message: msg};
     }
 
     let response = results[i].value; // referencing only promise's value.
     // console.log(`response ${i})`, response.statusCode,
     //  response.statusMessage, response.data) // for debugging.
-    if (response.statusMessage === 'No such device') {/* if Genie responded
-    saying device doesn't exist. */
-      return {finished: false, task: task, source: 'request',
-       message: `Device ${deviceid} doesn't exist.`};
+    if (response.statusMessage === 'No such device') {
+      // if Genie responded saying device doesn't exist
+      return {success: false, message: 'Device does not exist: ' + deviceid};
     }
 
-    let task;
-    try {
-      task = JSON.parse(response.data); // parse task to javascript object.
-    } catch (e) {
-      task = '';
-      console.log('Wrong task at '+deviceid+ ' as '+response.data);
-    }
-    if (task != '' && response.statusCode !== 200) {
-      /* if Genie didn't respond with
-      code 200, it scheduled the task for latter. */
-      if (shouldRequestConnection) pendingTasks.push(task);
-      /* if we are waiting for genie acs to connect with the device we add
- this task to array of pending tasks to watch for it disappearing in
- database. */
-    } else if (i === results.length-1) {/* if request wasn't rejected and it
-    is the last task in the array of tasks and Genie responded with status
-    code 200, this means task has execute before 'timeout'. */
-      if (callback) {
-        callback({finished: true, task: task});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid, {finished: true,
-         taskid: task._id, source: 'request', message: 'task executed.'});
-      }
-      return {finished: true, task: task, source: 'request',
-       message: 'task executed.'};
-    }
-  }
+    if (i < results.length-1) continue; // We only care about the last task
 
-  // if genie didn't execute the task before the timeout.
-  if (pendingTasks.length > 0) {
-    // if there are no watch times, simply reply with task failed to execute.
-    if (!watchTimes || watchTimes.length === 0) {
+    if (response.statusCode === 200) {
+      // if this is the last task (which originated this call), and result was
+      // immediate success, we call the callback, if provided, and return
       if (callback) {
-        callback({finished: false, task: pendingTasks.pop()});
-      } else {
-        sio.anlixSendGenieAcsTaskNotifications(deviceid,
-         {finished: false, taskid: pendingTasks.pop()._id,
-         source: 'pending reject', message: 'no watch times defined'});
+        callback(deviceid);
       }
+      return {success: true, executed: true, message: 'task success'};
+    } else if (response.statusCode === 202) {
+      // if this is the last task (which originated this call), and result was
+      // success without immediate response (202), add task id and callback to
+      // task watch list
+      let taskid;
+      try {
+        // parse task to javascript object.
+        taskid = JSON.parse(response.data)['_id'];
+      } catch (e) {
+        taskid = '';
+        console.log('Wrong task at ' + deviceid + ' as ' + response.data);
+      }
+      if (taskid && callback) {
+        taskWatchlist[taskid] = {
+          deviceID: deviceid,
+          callback: callback,
+          timestamp: Date.now(),
+        };
+      }
+      return {success: true, executed: false, message: 'task scheduled'};
     } else {
-      // watch tasks collection until the new task is deleted.
-      return watchPendingTaskAndRetry(pendingTasks, deviceid, watchTimes,
-       callback);
-      // this function call also emits its result with socket.io (web sockets).
+      // something went wrong, log error and return
+      console.log('Error adding task to GenieACS: ' + response.data);
+      return {success: false, message: 'error in genie response'};
     }
   }
+  // The last iteration of the for loop should always return
+  // return here as well just in case
+  return {success: false, message: 'no reply when adding tasks to genie'};
 };
 
 /* Get all tasks, in GenieACS, for a device, remove unnecessary tasks, join
@@ -656,26 +608,28 @@ Having 2 or more numbers in this array means one or more retries to genie, for
  the cases when genie can't retry a task on its own. After all retries sent to
  genie, if the retried task doesn't disappear from its database, a message
  saying the task has not executed is emitted through socket.io.*/
-genie.addTask = async function(deviceid, task, shouldRequestConnection,
-  timeout=10000, watchTimes=[60000, 120000], callback=null) {
+
+genie.addTask = async function(deviceid, task, callback=null, legacyTimeout=0) {
   // checking device id.
   if (!deviceid || deviceid.constructor !== String) {
-    return {finished: false, task: task, source: 'request',
-       message: 'device id not valid. Received:', deviceid};
+    return {
+      success: false, message: 'Device ID not valid. Received: ' + deviceid,
+    };
   }
   // checking task format and data types.
   if (!checkTask(task)) {
-    return {finished: false, task: task, source: 'request',
-      message: 'task not valid: '+JSON.stringify(task)};
+    return {success: false, message: 'Task not valid: ' + JSON.stringify(task)};
   }
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
   let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
   /* rejected value will be error object in case of connection errors.*/
-    return {finished: false, task: task, source: 'request',
-       message: `${e.code} when getting old tasks from genieacs rest api, `
-     +`for device ${deviceid}.`}; // return error code in error message.
+    return {
+      success: false,
+      message: `${e.code} when getting old tasks from genieacs ` +
+      `rest api, for device ${deviceid}.`
+    };
   });
   // console.log("tasks found", tasks)
   // adding the new task as one more older task to tasks array.
@@ -712,8 +666,7 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
    ", watchTimes:", watchTimes)
    sending the new task and the old tasks being substituted,
    then return result. */
-  return sendTasks(deviceid, tasks, timeout, shouldRequestConnection,
-   watchTimes, callback);
+  return sendTasks(deviceid, tasks, callback, legacyTimeout);
 };
 
 module.exports = genie;

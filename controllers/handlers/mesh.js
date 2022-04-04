@@ -85,7 +85,9 @@ meshHandlers.syncSlaves = function(master, slaveCustomConfig=null) {
               slaveDevice, slaveCustomConfig[i],
             );
           }
-          slaveDevice.save();
+          slaveDevice.save().catch((err) => {
+            console.log('Error saving on wi-fi slave sync: ' + err);
+          });
 
           // Push updates to the Slave
           mqtt.anlixMessageRouterUpdate(slaveMac);
@@ -152,7 +154,9 @@ meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
       } else {
         slaveDevice.do_update = false;
         slaveDevice.do_update_status = status;
-        slaveDevice.save();
+        slaveDevice.save().catch((err) => {
+          console.log('Error saving slave sync update cancel: ' + err);
+        });
       }
     });
   });
@@ -257,7 +261,7 @@ meshHandlers.validateMeshMode = async function(
     }
   }
   if (targetMode === 0 && device.mesh_slaves.length > 0) {
-    errors.push(t('cantDesenableMeshWithSecondaries', {errorline: __line}));
+    errors.push(t('cantDisableMeshWithSecondaries', {errorline: __line}));
     if (abortOnError) {
       return {success: false, msg: errors.slice(-1)[0], errors: errors};
     }
@@ -409,7 +413,9 @@ meshHandlers.beginMeshUpdate = async function(masterDevice) {
   // update number of devices remaining to send onlinedevs info
   masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length + 1;
   masterDevice.do_update_status = 20; // waiting for topology
-  await masterDevice.save();
+  await masterDevice.save().catch((err) => {
+    console.log('Error saving master device on mesh update: ' + err);
+  });
   masterDevice.mesh_update_remaining.forEach((mac)=>{
     mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
   });
@@ -868,7 +874,9 @@ const markNextDeviceToUpdate = async function(master) {
   const meshNextToUpdate = getNextToUpdateRec(
     meshTopology, master._id, master.mesh_update_remaining);
   master.mesh_next_to_update = meshNextToUpdate;
-  await master.save();
+  await master.save().catch((err) => {
+    console.log('Error saving master device on next update: ' + err);
+  });
   return {success: true};
 };
 
@@ -888,7 +896,9 @@ meshHandlers.updateMeshDevice = async function(deviceMac, release) {
   matchedDevice.do_update_status = 0; // waiting
   matchedDevice.release = release;
   messaging.sendUpdateMessage(matchedDevice);
-  await matchedDevice.save();
+  await matchedDevice.save().catch((err) => {
+    console.log('Error saving mesh device to update: ' + err);
+  });
   mqtt.anlixMessageRouterUpdate(deviceMac);
   // Start ack timeout
   deviceHandlers.timeoutUpdateAck(deviceMac, 'update');
@@ -919,7 +929,9 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
     // error validating topology
     matchedMaster.do_update_status = 7;
     deviceHandlers.syncUpdateScheduler(matchedMaster._id);
-    await matchedMaster.save();
+    await matchedMaster.save().catch((err) => {
+      console.log('Error saving master device topology validation: ' + err);
+    });
   } else {
     // Before beginning the update process the next release is saved to master
     const release = matchedMaster.release;
@@ -945,7 +957,9 @@ const propagateUpdate = async function(
       setQuery.mesh_next_to_update = '';
     } else {
       masterDevice.mesh_next_to_update = '';
-      await masterDevice.save();
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving master device on update propagation: ' + err);
+      });
     }
     return;
   }
@@ -953,7 +967,9 @@ const propagateUpdate = async function(
     // Only one device left to update, it will always be the master, regardless
     // of being mesh v1 or v2 network.
     masterDevice.mesh_next_to_update = masterDevice._id;
-    await masterDevice.save();
+    await masterDevice.save().catch((err) => {
+      console.log('Error saving master device on update propagation: ' + err);
+    });
     await meshHandlers.updateMeshDevice(
       masterDevice.mesh_next_to_update, release,
     );
@@ -967,7 +983,9 @@ const propagateUpdate = async function(
       return masterDevice.mesh_slaves.includes(device);
     });
     masterDevice.mesh_next_to_update = nextDeviceToUpdate;
-    await masterDevice.save();
+    await masterDevice.save().catch((err) => {
+      console.log('Error saving master device on update propagation: ' + err);
+    });
     await meshHandlers.updateMeshDevice(
       masterDevice.mesh_next_to_update, release,
     );
@@ -977,7 +995,9 @@ const propagateUpdate = async function(
     masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length+1;
     // waiting for topology
     masterDevice.do_update_status = 20;
-    await masterDevice.save();
+    await masterDevice.save().catch((err) => {
+      console.log('Error saving master device on update propagation: ' + err);
+    });
     const slaves = masterDevice.mesh_slaves;
     mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
     slaves.forEach((slave)=>{

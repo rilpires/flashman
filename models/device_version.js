@@ -53,7 +53,9 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -94,7 +96,9 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -127,7 +131,9 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -160,7 +166,9 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 100,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
       stun: true,
@@ -190,7 +198,9 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 550,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
       stun: true,
@@ -223,6 +233,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -255,6 +267,8 @@ const tr069Devices = {
       speed_test_limit: 300,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
@@ -286,6 +300,8 @@ const tr069Devices = {
       speed_test_limit: 0,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
@@ -315,6 +331,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -344,6 +362,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -356,6 +376,37 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x5'],
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+  },
+  'BEACON 1 HA-020W-B': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE49127HJII42': [],
+    },
+    port_forward_opts: {
+      '3FE49127HJII42': portForwardNoAsymRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: false, // no fiber
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 800,
+      ping_test: true,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
   },
   '121AC': {
     vendor: 'Intelbras',
@@ -376,6 +427,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 350,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: true,
       stun: false,
       mesh_v2_primary_support: false,
@@ -413,6 +466,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -441,6 +496,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -469,6 +526,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
@@ -499,6 +558,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: true,
@@ -532,6 +593,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 850,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: true,
       stun: false,
       mesh_v2_primary_support: true,
@@ -560,6 +623,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -582,6 +647,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -604,6 +671,32 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'DIR-841': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.4': [],
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -629,6 +722,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: true,
       mesh_v2_primary_support: false,
@@ -651,6 +746,35 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'ST-1001-FL': {
+    vendor: 'Hurakall',
+    versions_upgrade: {
+      'V1.0.8': [],
+    },
+    port_forward_opts: {
+      'V1.0.8': portForwardFullSupport,
+    },
+    feature_support: {
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: false,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -2087,7 +2211,8 @@ const grantWifi5ghz = function(version, is5ghzCapable, model) {
     return true;
   }
   if (version.match(versionRegex)) {
-    return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
+    return (is5ghzCapable && (DeviceVersion.versionCompare(version,
+                                                           '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
@@ -2194,7 +2319,7 @@ const grantLanGwEdit = function(version, model) {
 
 const grantLanDevices = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.connected_devices;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
@@ -2263,6 +2388,14 @@ const grantSpeedTestLimit = function(version, model) {
 const grantBlockDevices = function(model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.block_devices;
+  }
+  // Enabled for all Flashbox firmwares
+  return true;
+};
+
+const grantBlockWiredDevices = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_wired_devices;
   }
   // Enabled for all Flashbox firmwares
   return true;
@@ -2503,6 +2636,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
+  result.grantBlockWiredDevices = grantBlockWiredDevices(model);
   result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);

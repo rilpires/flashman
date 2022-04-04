@@ -469,25 +469,26 @@ anlixDocumentReady.add(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('SITESURVEY', function(macaddr, data) {
     if (($('#site-survey').data('bs.modal') || {})._isShown) {
-      if ($('#site-survey').data('cleanup') == true) {
-        // Clear old data
-        $('#site-survey').data('cleanup', false);
-        $('.btn-sync-ssurvey').prop('disabled', false);
-        $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
-        $('#site-survey').removeAttr('data-ap-devices-list');
-        $('#site-survey').removeData('ap-devices-list');
-        $('#2-ghz-aps').empty();
-        $('#5-ghz-aps').empty();
-        $('#site-survey-placeholder').show();
-        $('#site-survey-placeholder-none').hide();
-      } else {
-        $('#2-ghz-aps').empty();
-        $('#5-ghz-aps').empty();
-      }
       let id = $('#site-survey-hlabel').text();
-      let isBridge = $('#isBridgeDiv').html() === 'Sim';
-      let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
       if (id == macaddr) {
+        if ($('#site-survey').data('cleanup') == true) {
+          // Clear old data
+          $('#site-survey').data('cleanup', false);
+          $('.btn-sync-ssurvey').prop('disabled', false);
+          $('.btn-sync-ssurvey > i').removeClass('animated rotateOut infinite');
+          $('#site-survey').removeAttr('data-ap-devices-list');
+          $('#site-survey').removeData('ap-devices-list');
+          $('#2-ghz-aps').empty();
+          $('#5-ghz-aps').empty();
+          $('#site-survey-placeholder').show();
+          $('#site-survey-placeholder-none').hide();
+        } else {
+          $('#2-ghz-aps').empty();
+          $('#5-ghz-aps').empty();
+        }
+        let isBridge = $('#isBridgeDiv').html() === 'Sim';
+        let hasExtendedChannels =
+          $('#site-survey').data('has-extended-channels');
         clearTimeout(siteSurveyGlobalTimer);
         fetchSiteSurvey(macaddr, isBridge, hasExtendedChannels);
       }
