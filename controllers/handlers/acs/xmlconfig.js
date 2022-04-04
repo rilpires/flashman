@@ -124,7 +124,7 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   return jsonConfigFile;
 };
 
-const digestXmlConfig = function(device, rawXml, target) {
+acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
   let opts = {
     ignoreAttributes: false, // default is true
     ignoreNameSpace: false,
@@ -203,7 +203,9 @@ const fetchAndEditConfigFile = async function(acsID, target) {
         rawConfigFile = utilHandlers.getFromNestedKey(
           rawConfigFile, configField+'._value',
         );
-        let xmlConfigFile = digestXmlConfig(device, rawConfigFile, target);
+        let xmlConfigFile = acsXMLConfigHandler.digestXmlConfig(
+          device, rawConfigFile, target,
+        );
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
           let task = {
