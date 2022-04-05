@@ -104,7 +104,8 @@
                 span.badge.grey.lighten-2.bounceIn.mr-2
                   .black-text= t('modeType', {type: t('router')})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text= t('modeType', {type: 'bridge')}) // 'bridge' is not translated
+                  //- 'bridge' is not translatable
+                  .black-text= t('modeType', {type: 'bridge'})
             .col
               p
                 strong= t('cpeModeFilterDescription')
