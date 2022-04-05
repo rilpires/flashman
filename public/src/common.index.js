@@ -20,19 +20,24 @@ i18next
   // this middleware requests translations in background.
   .use(require('i18next-http-backend'))
   .init({
-    lng: navigator.language,
-    fallbackLng: 'pt-BR',
-    // debug: true,
+    lng: document.documentElement.lang,
+    fallbackLng: 'en',
+    ns: ['translation'],
+    defaultNS: 'translation',
     initImmediate: false, // waits translations to load before initialing.
     backend: {
-      loadPath: '/language/translation.json',
+      loadPath: '/dist/locales/{{lng}}/{{ns}}.json',
     },
+    // debug: true,
   }, (err, t) => { // finished initializing.
     if (err) {
       console.log('Error when loading i18next', err);
     }
     // to be used by other events so they know this has finished.
     i18nextResolved();
+    // console.log('--- i18next.default.languages:', i18next.default.languages)
+    // console.log('--- i18next.default.resolvedLanguage:', i18next.default.resolvedLanguage)
+    // console.log('--- mykey:', t('mykey'))
   });
 
 // Object that holds all DOMContentLoaded callbacks. Even though they are

@@ -53,7 +53,8 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
       connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
@@ -95,7 +96,8 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
       connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
@@ -129,7 +131,8 @@ const tr069Devices = {
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
       connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
@@ -163,7 +166,8 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 100,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
       connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
@@ -194,7 +198,8 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 550,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
       connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
@@ -228,6 +233,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -261,6 +267,7 @@ const tr069Devices = {
       speed_test_limit: 300,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
@@ -293,6 +300,7 @@ const tr069Devices = {
       speed_test_limit: 0,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
@@ -323,6 +331,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -353,6 +362,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -383,6 +393,8 @@ const tr069Devices = {
       speed_test_limit: 800,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
@@ -415,6 +427,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 350,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: true,
       stun: false,
@@ -453,6 +466,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -482,6 +496,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -511,6 +526,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
@@ -542,6 +558,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -576,6 +593,7 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 850,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: true,
       stun: false,
@@ -605,6 +623,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -628,6 +647,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -651,6 +671,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -674,6 +695,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -699,6 +722,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: true,
@@ -722,6 +746,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
       stun: false,
@@ -748,6 +773,7 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
       connected_devices: false,
       firmware_upgrade: false,
       stun: false,
@@ -2162,7 +2188,8 @@ const grantWifi5ghz = function(version, is5ghzCapable, model) {
     return true;
   }
   if (version.match(versionRegex)) {
-    return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
+    return (is5ghzCapable && (DeviceVersion.versionCompare(version,
+                                                           '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
@@ -2338,6 +2365,14 @@ const grantSpeedTestLimit = function(version, model) {
 const grantBlockDevices = function(model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.block_devices;
+  }
+  // Enabled for all Flashbox firmwares
+  return true;
+};
+
+const grantBlockWiredDevices = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_wired_devices;
   }
   // Enabled for all Flashbox firmwares
   return true;
@@ -2578,6 +2613,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
+  result.grantBlockWiredDevices = grantBlockWiredDevices(model);
   result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);

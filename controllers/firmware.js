@@ -6,6 +6,7 @@ let Config = require('../models/config');
 let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 const controlApi = require('./external-api/control');
+const acsFirmwareHandler = require('./handlers/acs/firmware');
 const DeviceVersion = require('../models/device_version');
 const acsDeviceInfo = require('./acs_device_info.js');
 const t = require('./language').i18next.t;
@@ -42,7 +43,7 @@ let parseFilename = function(filename) {
 let removeFirmware = async function(firmware) {
   if (firmware.cpe_type == 'tr069') {
     try {
-      await acsDeviceInfo.delFirmwareInACS(firmware.filename);
+      await acsFirmwareHandler.delFirmwareInACS(firmware.filename);
     } catch (e) {
       throw new Error(t('genieacsCommunicationError', {errorline: __line}));
     }
@@ -220,7 +221,7 @@ firmwareController.delFirmware = function(req, res) {
 firmwareController.uploadFirmware = async function(req, res) {
   if (!req.files) {
     return res.json({type: 'danger',
-                     message: t('noFileSelected', {errorline: __line})});
+                     message: t('noFileSelectedError', {errorline: __line})});
   }
 
   let firmwarefile;
@@ -232,7 +233,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     firmwarefile = req.files.firmwaretr069file;
   } else {
     return res.json({type: 'danger',
-                     message: t('noFileSelected', {errorline: __line})});
+                     message: t('noFileSelectedError', {errorline: __line})});
   }
 
   if (!isValidFilename(firmwarefile.name) && isFlashbox) {
@@ -323,7 +324,7 @@ firmwareController.uploadFirmware = async function(req, res) {
   try {
     await firmware.save();
     if (isTR069) {
-      let response = await acsDeviceInfo.addFirmwareInACS(firmware);
+      let response = await acsFirmwareHandler.addFirmwareInACS(firmware);
       if (!response) {
         res.json({type: 'danger',
           message: t('genieacsCommunicationError', {errorline: __line})});

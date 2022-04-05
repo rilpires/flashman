@@ -2,9 +2,11 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 
+const t = i18next.t;
+
 window.check = function(input) {
   if (input.value != document.getElementById('new_pass').value) {
-    input.setCustomValidity('As senhas estão diferentes');
+    input.setCustomValidity(t('passwordsAreDifferent'));
   } else {
     input.setCustomValidity('');
   }
@@ -18,31 +20,31 @@ const fetchUsers = function(usersTable) {
       $('#users-table-wrapper').show();
 
       res.users.forEach(function(userObj) {
-        let userRow = $('<tr></tr>').append(
+        let userRow = $('<tr>').append(
           (userObj.is_superuser ?
-            $('<td></td>') :
-            $('<td></td>').append(
-              $('<input></input>').addClass('checkbox')
+            $('<td>') :
+            $('<td>').append(
+              $('<input>').addClass('checkbox')
               .attr('type', 'checkbox')
               .attr('id', userObj._id)
             )
           ),
-          $('<td></td>').html(userObj.name),
+          $('<td>').html(userObj.name),
           (userObj.role ?
-            $('<td></td>').html(userObj.role) :
-            $('<td></td>')
+            $('<td>').html(userObj.role) :
+            $('<td>')
           ),
-          $('<td></td>').html(new Date(userObj.createdAt)
+          $('<td>').html(new Date(userObj.createdAt)
                         .toLocaleString('pt-BR')),
           (userObj.lastLogin ?
-            $('<td></td>').html(new Date(userObj.lastLogin)
+            $('<td>').html(new Date(userObj.lastLogin)
                           .toLocaleString('pt-BR')) :
-            $('<td></td>')
+            $('<td>')
           ),
-          $('<td></td>').append(
-            $('<button></button>').append(
-              $('<div></div>').addClass('fas fa-edit btn-usr-edit-icon'),
-              $('<span></span>').html('&nbsp Editar')
+          $('<td>').append(
+            $('<button>').append(
+              $('<div>').addClass('fas fa-edit btn-usr-edit-icon'),
+              $('<span>').html(`&nbsp ${t('Edit')}`)
             ).addClass('btn btn-sm btn-primary my-0 btn-usr-edit')
             .attr('data-userid', userObj._id)
             .attr('type', 'button')
@@ -65,11 +67,11 @@ anlixDocumentReady.add(function() {
     'info': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhum usuário encontrado',
-      'infoEmpty': 'Nenhum usuário encontrado',
+      'zeroRecords': t('noUserFound'),
+      'infoEmpty': t('noUserFound'),
       'search': '',
-      'searchPlaceholder': 'Buscar...',
-      'lengthMenu': 'Exibir _MENU_',
+      'searchPlaceholder': t('Search...'),
+      'lengthMenu': `${t('Show')} _MENU_`,
     },
     'order': [[1, 'asc'], [2, 'asc']],
     'columnDefs': [
@@ -84,9 +86,9 @@ anlixDocumentReady.add(function() {
   });
   // Initialize custom options on dataTable
   $('.dt-users-table-btns').append(
-    $('<div></div>').addClass('btn-group').attr('role', 'group').append(
-      $('<button></button>').addClass('btn btn-danger btn-trash').append(
-        $('<div></div>').addClass('fas fa-trash fa-lg'))
+    $('<div>').addClass('btn-group').attr('role', 'group').append(
+      $('<button>').addClass('btn btn-danger btn-trash').append(
+        $('<div>').addClass('fas fa-trash fa-lg'))
     )
   );
   // Load table content
