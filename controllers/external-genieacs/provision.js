@@ -50,12 +50,6 @@ let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion'
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
-if(modelClass == 'AC10') {
-  declare("InternetGatewayDevice.ManagementServer.PeriodicInformEnable", null, {value: '1'});
-} else {
-  declare("InternetGatewayDevice.ManagementServer.PeriodicInformEnable", null, {value: 'true'});
-}
-
 let args = {
   oui: oui,
   model: modelClass,
