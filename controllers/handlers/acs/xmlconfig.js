@@ -1,10 +1,16 @@
-const xml2js = require('fast-xml-parser');
+const TasksAPI = require('../../external-genieacs/tasks-api');
+const DeviceModel = require('../../../models/device');
+const utilHandlers = require('../util.js');
 const XmlParser = require('fast-xml-parser').j2xParser;
-let acsHandlers = {};
+const xml2js = require('fast-xml-parser');
+const http = require('http');
+const debug = require('debug')('ACS_XMLCONFIG');
 
-acsHandlers.onlineAfterReset = ['MP-G421R'];
+let acsXMLConfigHandler = {};
 
-acsHandlers.createNewPortFwTbl = function(pm) {
+acsXMLConfigHandler.onlineAfterReset = ['MP-G421R'];
+
+const createNewPortFwTbl = function(pm) {
   return {'@_Name': 'PORT_FW_TBL', 'Value': [{
         '@_Name': 'InstanceNum', '@_Value': '0',
       }, {
@@ -37,7 +43,7 @@ acsHandlers.createNewPortFwTbl = function(pm) {
         '@_Name': 'IP', '@_Value': pm.ip}]};
 };
 
-acsHandlers.setXmlPortForward = function(jsonConfigFile, device) {
+const setXmlPortForward = function(jsonConfigFile, device) {
   // find and set PORT_FW_ENABLE to 1
   let i = jsonConfigFile['Config']['Dir']
   .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
@@ -69,7 +75,7 @@ acsHandlers.setXmlPortForward = function(jsonConfigFile, device) {
   .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
   // add new PORT_FW_TBL values based on device.port_mapping
   device.port_mapping.forEach((pm) => {
-    let newPortFwTbl = acsHandlers.createNewPortFwTbl(pm);
+    let newPortFwTbl = createNewPortFwTbl(pm);
     jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
   });
   if (device.port_mapping.length == 0) {
@@ -79,7 +85,7 @@ acsHandlers.setXmlPortForward = function(jsonConfigFile, device) {
   return jsonConfigFile;
 };
 
-acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
+const setXmlWebAdmin = function(jsonConfigFile, device) {
   // find mib table
   let mibIndex = jsonConfigFile['Config']['Dir']
     .findIndex((e) => e['@_Name'] == 'MIB_TABLE');
@@ -118,7 +124,7 @@ acsHandlers.setXmlWebAdmin = function(jsonConfigFile, device) {
   return jsonConfigFile;
 };
 
-acsHandlers.digestXmlConfig = function(device, rawXml, target) {
+acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
   let opts = {
     ignoreAttributes: false, // default is true
     ignoreNameSpace: false,
@@ -134,10 +140,10 @@ acsHandlers.digestXmlConfig = function(device, rawXml, target) {
     // parse xml to json
     let jsonConfigFile = xml2js.parse(rawXml, opts);
     if (target.includes('port-forward')) {
-      jsonConfigFile = acsHandlers.setXmlPortForward(jsonConfigFile, device);
+      jsonConfigFile = setXmlPortForward(jsonConfigFile, device);
     }
     if (target.includes('web-admin')) {
-      jsonConfigFile = acsHandlers.setXmlWebAdmin(jsonConfigFile, device);
+      jsonConfigFile = setXmlWebAdmin(jsonConfigFile, device);
     }
     // parse json to xml
     opts = {
@@ -154,4 +160,89 @@ acsHandlers.digestXmlConfig = function(device, rawXml, target) {
   }
 };
 
-module.exports = acsHandlers;
+const fetchAndEditConfigFile = async function(acsID, target) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (e) {
+    return;
+  }
+  if (!device || !device.use_tr069) {
+    return;
+  }
+  let serial = device.serial_tr069;
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+
+  // get xml config file from genieacs
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+
+    '&projection='+configField;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let rawConfigFile = '';
+    resp.on('data', (chunk)=>rawConfigFile+=chunk);
+    resp.on('end', async () => {
+      if (rawConfigFile.length > 0) {
+        try {
+          rawConfigFile = JSON.parse(rawConfigFile)[0];
+        } catch (err) {
+          debug(err);
+          rawConfigFile = '';
+        }
+      }
+      if (
+        utilHandlers.checkForNestedKey(rawConfigFile, configField+'._value')
+      ) {
+        // modify xml config file
+        rawConfigFile = utilHandlers.getFromNestedKey(
+          rawConfigFile, configField+'._value',
+        );
+        let xmlConfigFile = acsXMLConfigHandler.digestXmlConfig(
+          device, rawConfigFile, target,
+        );
+        if (xmlConfigFile != '') {
+          // set xml config file to genieacs
+          let task = {
+            name: 'setParameterValues',
+            parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
+          };
+          let result = await TasksAPI.addTask(acsID, task);
+          if (!result || !result.success) {
+            console.log('Error: failed to write ConfigFile at '+serial);
+            return;
+          }
+        } else {
+          console.log('Error: failed xml validation at '+serial);
+        }
+      } else {
+        console.log('Error: no config file retrieved at '+serial);
+      }
+    });
+  });
+  req.end();
+};
+
+acsXMLConfigHandler.configFileEditing = async function(device, target) {
+  let acsID = device.acs_id;
+  let serial = device.serial_tr069;
+  // get xml config file to genieacs
+  let configField = 'InternetGatewayDevice.DeviceConfig.ConfigFile';
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [configField],
+  };
+  let cback = (acsID)=>fetchAndEditConfigFile(acsID, target);
+  let result = await TasksAPI.addTask(acsID, task, cback);
+  if (!result || !result.success) {
+    console.log('Error: failed to retrieve ConfigFile at '+serial);
+    return;
+  }
+};
+
+module.exports = acsXMLConfigHandler;

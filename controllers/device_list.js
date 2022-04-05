@@ -13,11 +13,17 @@ const Role = require('../models/role');
 const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
+const acsFirmwareHandler = require('./handlers/acs/firmware');
+const acsAccessControlHandler = require('./handlers/acs/access_control');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
+const acsPortForwardHandler = require('./handlers/acs/port_forward');
+const acsMeshDeviceHandler = require('./handlers/acs/mesh');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
+const acsMeasuresHandler = require('./handlers/acs/measures');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
@@ -332,7 +338,7 @@ deviceListController.changeUpdate = async function(req, res) {
   }
 
   if (matchedDevice.use_tr069 && doUpdate) {
-    let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+    let response = await acsFirmwareHandler.upgradeFirmware(matchedDevice);
     if (response.success) {
       return res.status(200).json(response);
     } else {
@@ -1158,7 +1164,7 @@ deviceListController.sendMqttMsg = function(req, res) {
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
-            return acsDeviceInfo.rebootDevice(device, res);
+            return await acsDeviceInfo.rebootDevice(device, res);
           } else {
             mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
           }
@@ -1197,7 +1203,7 @@ deviceListController.sendMqttMsg = function(req, res) {
             );
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.firePingDiagnose(req.params.id.toUpperCase());
+            acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
           } else if (device) {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
           }
@@ -1355,7 +1361,7 @@ deviceListController.ensureBssidCollected = async function(
     // after the command is sent. Since the BSSID is only available after the
     // interface is up, we need to wait here to ensure we get a valid read
     await new Promise((r)=>setTimeout(r, 4000));
-    const bssidsObj = await acsDeviceInfo.getMeshBSSIDFromGenie(
+    const bssidsObj = await acsMeshDeviceHandler.getMeshBSSIDFromGenie(
       device, targetMode,
     );
     if (!bssidsObj.success) {
@@ -2483,7 +2489,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     return ret;
   }
   // geniacs-api call
-  acsDeviceInfo.changePortForwardRules(device, diffPortForwardLength);
+  acsPortForwardHandler.changePortForwardRules(device, diffPortForwardLength);
   ret.success = true;
   ret.message = t('operationSuccessful');
   return ret;
@@ -3071,7 +3077,7 @@ deviceListController.doSpeedTest = function(req, res) {
             message: t('cpeSaveError', {errorline: __line}),
           });
         });
-        acsDeviceInfo.fireSpeedDiagnose(mac);
+        acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
@@ -3169,7 +3175,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     if (devFound) {
       if (matchedDevice.use_tr069) {
         let result = {'success': false};
-        result = await acsDeviceInfo.changeAcRules(matchedDevice);
+        result = await acsAccessControlHandler.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
@@ -3263,12 +3269,7 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
 
     sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
     res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, true, 10000, [5000, 10000], (result)=>{
-      if (result.task.name !== 'getParameterValues') return;
-      if (result.finished) {
-        acsDeviceInfo.fetchPonSignalFromGenie(matchedDevice, acsID);
-      }
-    });
+    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
   });
 };
 
