@@ -31,13 +31,13 @@ const returnStringOrEmptyStr = function(query) {
 };
 
 const weekDayStrToInt = function(day) {
-  if (day === 'Domingo') return 0;
-  if (day === 'Segunda') return 1;
-  if (day === 'Terça') return 2;
-  if (day === 'Quarta') return 3;
-  if (day === 'Quinta') return 4;
-  if (day === 'Sexta') return 5;
-  if (day === 'Sábado') return 6;
+  if (day === t('Sunday')) return 0;
+  if (day === t('Monday')) return 1;
+  if (day === t('Tuesday')) return 2;
+  if (day === t('Wednesday')) return 3;
+  if (day === t('Thursday')) return 4;
+  if (day === t('Friday')) return 5;
+  if (day === t('Saturday')) return 6;
   return -1;
 };
 

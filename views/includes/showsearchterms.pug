@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-search.fa-lg
-          strong &nbsp; Filtros de Busca Especiais
+          strong &nbsp; #{t('specialSearchFilters')}
 
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -14,54 +14,44 @@
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text online
+                  .black-text= t('online')
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text instavel
+                  .black-text= t('unstable')
                 span.badge.grey.lighten-2.bounceIn
-                  .black-text offline
+                  .black-text= t('offline')
             .col
               p
-                strong Use um desses filtros para filtrar somente os
-                  |  CPEs online (verde), instável (vermelho)
-                  |  ou offline (cinza)
+                strong= t('colorFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text offline >H
+                  .black-text= t('offline>H')
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text online >H
+                  .black-text= t('online>H')
             .col
               p
-                strong Substituir H pelo número de horas desejado.
-                  |  Inclui resultados de CPEs que estão offline ou online
-                  |  por um período igual ou superior ao número de horas
-                  |  especificado. Exemplo: "offline >48" exibirá CPEs
-                  |  que estão offline há 48 horas ou mais e
-                  |  "online >48" exibirá CPEs que estão
-                  |  online e conectadas na rede há 48 horas ou mais
+                strong= t('biggerThanFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text upgrade on
+                  .black-text= t('upgradeState', {state: 'on'})
                 span.badge.grey.lighten-2.bounceIn
-                  .black-text update on
+                  .black-text= t('updateState', {state: 'on'})
             .col
               p
-                strong Use um desses filtros para filtrar somente os
-                  |  CPEs marcados para atualização
+                strong= t('updateOnFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2.mb-2
-                  .black-text upgrade off
+                  .black-text= t('upgradeState', {state: 'off'})
                 span.badge.grey.lighten-2.bounceIn
-                  .black-text update off
+                  .black-text= t('updateState', {state: 'off'})
             .col
               p
-                strong Use um desses filtros para filtrar somente os
-                  |  CPEs não marcados para atualização
+                strong= t('updateOffFilterDescription')
           .row.mt-2
             .col
               h4
@@ -71,91 +61,74 @@
                   .black-text flashbox
             .col
               p
-                strong Use um desses filtros para filtrar somente os
-                  |  cadastros que usam TR-069 ou somente os com firmware Flashbox
+                strong= t('cpeTypeFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text sinal bom
+                  .black-text= t('signalState', {state: 'good'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text sinal fraco
+                  .black-text= t('signalState', {state: 'weak'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text sinal ruim
+                  .black-text= t('signalState', {state: 'bad'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text sem sinal
+                  .black-text= t('noSignal')
             .col
               p
-                strong Use um desses filtros para filtrar CPEs TR-069 pelo nível
-                  |  do sinal óptico recebido. Os valores utilizados na classificação
-                  |  são os mesmos configurados para o app do técnico.
+                strong= t('opcticalSignalQualityFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text ipv6 on
+                  .black-text= t('ipv6State', {state: 'on'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text ipv6 off
-                //- In the translation of this field it shall be
-                //- concerned that in the complexSearchDeviceQuery
-                //- function in the controllers/device_list.js
-                //- the filter is bind with the exact word in
-                //- portuguese, so is import to dealt with this
+                  .black-text= t('ipv6State', {state: 'off'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text ipv6 desconhecido
+                  .black-text= t('ipv6State', {state: 'unknown'})
             .col
               p
-                strong Use um desses filtros para filtrar os CPEs ao qual possuem ipv6 habilitado, desabilitado ou desconhecido.
+                strong= t('ipv6EnabledFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text mesh on
+                  .black-text= t('meshState', {state: 'on'})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text mesh off
+                  .black-text= t('meshState', {state: 'off'})
             .col
               p
-                strong Use um desses filtros para filtrar os CPEs ao qual possuem modo mesh habilitado ou desabilitado.
+                strong= t('meshEnabledFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text modo roteador
+                  .black-text= t('modeType', {type: t('router')})
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text modo bridge
+                  .black-text= t('modeType', {type: 'bridge')}) // 'bridge' is not translated
             .col
               p
-                strong Use um desses filtros para filtrar os CPEs que estão operando em Modo Roteador ou Modo Bridge / Modo AP.
+                strong= t('cpeModeFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text /ou
+                  .black-text= t('/or')
             .col
               p
-                strong Inclui resultados que contém um ou mais filtros
-                 |  aplicados. Exemplo: "João","online","/ou" exibirá
-                 |  todos os CPEs que estão online, ou contém "João",
-                 |  ou estão online e contém "João" no cadastro
+                strong= t('orFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text /e
+                  .black-text= t('/and')
             .col
               p
-                strong Inclui resultados que contém todos os filtros
-                 |  aplicados. Exemplo: "João","online","/e" exibirá
-                 |  todos os CPEs que estão online e contém "João"
-                 |  no cadastro
+                strong= t('andFilterDescription')
           .row.mt-2
             .col
               h4
                 span.badge.grey.lighten-2.bounceIn.mr-2
-                  .black-text /excluir
+                  .black-text= t('/exclude')
             .col
               p
-                strong Exclui resultados de CPEs que possuem o termo
-                  |  procurado. Exemplo: "online","/excluir 9999-aix" exibirá
-                  | todos os CPEs que estão online e que não contém a
-                  | release 9999-aix do Flashbox
+                strong= t('excludeFilterDescription')

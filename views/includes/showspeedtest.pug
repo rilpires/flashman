@@ -4,7 +4,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-tachometer-alt.fa-lg
-          strong &nbsp; Teste de Velocidade de Download para&nbsp;
+          strong &nbsp; #{t('downSpeedTestFor')}&nbsp;
             label(name="speed-test-hlabel" id="speed-test-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -14,7 +14,7 @@
             .col-1
               #measure-test-arrow.fas.fa-chevron-up.fa-lg.mt-1.text-primary
             .col-11
-              h5 Realizar Teste de Velocidade
+              h5= t('performSpeedTest')
           #measure-test-div.pl-2.pr-2.grey.lighten-5.border
             .row.mt-4
               .col
@@ -22,15 +22,15 @@
                   i#speed-test-shown-icon.grey-text.fas.fa-tachometer-alt.fa-3x
                   br
                   br
-                  span#speed-test-shown-text.grey-text Clique no botão abaixo para começar a medição
+                  span#speed-test-shown-text.grey-tex= t('clickButtonBelowToStartMeasure')
                   strong#speed-test-strong-text
                 h5#speed-test-warn-text.text-center.mb-3.grey-text
                   i.fas.fa-info-circle
-                  | &nbsp; Você deve esperar 20 segundos entre medições
+                  | &nbsp; #{t('youShouldWait20SecBetweenMeasures')}
             .row
               .col.p-0.text-center.mb-4
                 button.btn.btn-primary.btn-start-speed-test(type="button")
-                  span Iniciar teste
+                  span= t('startTest')
         .border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
           .col-1
             if (superuser || (role && role.grantMeasureDevices > 1))
@@ -38,19 +38,19 @@
             else
               #measure-previous-arrow.fas.fa-chevron-up.fa-lg.mt-1.text-primary
           .col-11
-            h5 Ver Resultados das Últimas Medições
+            h5= t('seeLastMeasuresResults')
         #measure-previous-div.pl-2.pr-2.grey.lighten-5.border
-          h3#measure-previous-nodata.grey-text.text-center.my-3(style="display: none;") Não há medições registradas
+          h3#measure-previous-nodata.grey-text.text-center.my-3(style="display: none;")= t('noRegisteredMeasures')
           .table-responsive#measure-previous-table
             table.table.text-center
               thead
                 tr
-                  th Velocidade Download
-                  th Data da Medição
-                  th Usuário
+                  th= t('downSpeed')
+                  th= t('measureDate')
+                  th= t('User')
               tbody#measure-previous-data
           .row
               .col.p-0.text-center.mb-3
                 button.btn.btn-primary.btn-sync-speed-table(type="button")
                   i.fas.fa-sync-alt
-                  span &nbsp; Atualizar Tabela
+                  span &nbsp; #{t('updateTable')}

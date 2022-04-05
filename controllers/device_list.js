@@ -35,13 +35,13 @@ const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
 
 const intToWeekDayStr = function(day) {
-  if (day === 0) return 'Domingo';
-  if (day === 1) return 'Segunda';
-  if (day === 2) return 'Terça';
-  if (day === 3) return 'Quarta';
-  if (day === 4) return 'Quinta';
-  if (day === 5) return 'Sexta';
-  if (day === 6) return 'Sábado';
+  if (day === 0) return t('Sunday');
+  if (day === 1) return t('Monday');
+  if (day === 2) return t('Tuesday');
+  if (day === 3) return t('Wednesday');
+  if (day === 4) return t('Thursday');
+  if (day === 5) return t('Friday');
+  if (day === 6) return t('Saturday');
   return '';
 };
 
@@ -398,21 +398,21 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
 
   // Defaults to match all query contents
   let queryLogicalOperator = '$and';
-  if (queryContents.includes('/ou')) {
+  if (queryContents.includes(t('/or'))) {
     queryLogicalOperator = '$or';
-    queryContents = queryContents.filter((query) => query !== '/ou');
+    queryContents = queryContents.filter((query) => query !== t('/or'));
   }
-  queryContents = queryContents.filter((query) => query !== '/e');
+  queryContents = queryContents.filter((query) => query !== t('/and'));
   // setting higher level logical operator for 'finalQuery'.
   finalQuery[queryLogicalOperator] = finalQueryArray;
 
   // tags that are computed differently for each communication protocol.
   let statusTags = {
-    'online': /^online$/,
-    'online >': /^online >.*/ ,
-    'instavel': /^instavel$/,
-    'offline': /^offline$/,
-    'offline >': /^offline >.*/,
+    'online': new RegExp(`^${t('online')}$`), // /^online$/
+    'online>': new RegExp(`^${t('online')} >.*`), // /^online >.*/
+    'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
+    'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
+    'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
@@ -449,7 +449,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           _id: {$in: mqttClients},
         };
         tr069 = {last_contact: {$gte: tr069Times.recovery}};
-      } else if (statusTags['instavel'].test(tag)) {
+      } else if (statusTags['recovery'].test(tag)) {
         flashbox = {
           _id: {$nin: mqttClients},
           last_contact: {$gte: lastHour},
@@ -463,7 +463,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           last_contact: {$lt: lastHour},
         };
         tr069 = {last_contact: {$lt: tr069Times.offline}};
-      } else if (statusTags['offline >'].test(tag)) {
+      } else if (statusTags['offline>'].test(tag)) {
         const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
         const hourThreshold = !isNaN(parsedHour) ? parsedHour*3600000 : 0;
         flashbox = {
@@ -473,7 +473,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         tr069 = {last_contact:
           {$lt: new Date(tr069Times.offline - hourThreshold)},
         };
-      } else if (statusTags['online >'].test(tag)) {
+      } else if (statusTags['online>'].test(tag)) {
         const parsedHour = Math.abs(parseInt(tag.split('>')[1]));
         const hourThreshold = !isNaN(parsedHour) ? parsedHour * 3600000 : 0;
         flashbox = {
@@ -488,62 +488,68 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       flashbox.use_tr069 = {$ne: true}; // this will select only flashbox.
       tr069.use_tr069 = true; // this will select only tr069.
       query.$or = [flashbox, tr069]; // select either one.
-    } else if (/^(?:update|upgrade) (?:on|off)$/.test(tag)) {
-    // update|upgrade on|off.
+    } else if (new RegExp(`^(?:${t('update')}|${t('upgrade')}) ` +
+    `(?:${t('on')}|${t('off')})$`).test(tag)) {
+      // update|upgrade on|off.
       query.use_tr069 = {$ne: true}; // only for flashbox.
-      if (tag.includes('on')) { // 'update on' or 'upgrade on'.
+      if (tag.includes(t('on'))) { // 'update on' or 'upgrade on'.
         query.do_update = {$eq: true};
-      } else if (tag.includes('off')) { // 'update off' or 'upgrade off'.
+      } else if (tag.includes(t('off'))) { // 'update off' or 'upgrade off'.
         query.do_update = {$eq: false};
       }
-    } else if (/^coleta (?:on|off)$/.test(tag)) { // data collecting.
+    } else if (new RegExp(`^${t('collecting')} ` +
+    `(?:${t('on')}|${t('off')})$`).test(tag)) { // data collecting.
       query.use_tr069 = {$ne: true}; // only for flashbox.
-      if (tag.includes('on')) {
+      if (tag.includes(t('on'))) {
         query['data_collecting.is_active'] = true;
-      } else if (tag.includes('off')) {
+      } else if (tag.includes(t('off'))) {
         query['data_collecting.is_active'] = {$ne: true}; // undefined & false.
       }
-    } else if (/^(sinal) (?:bom|fraco|ruim)$/.test(tag)) {
+    } else if (new RegExp(`^(${t('signal')}) ` +
+    `(?:${t('good')}|${t('weak')}|${t('bad')})$`).test(tag)) {
       query.use_tr069 = true; // only for ONUs
       if (matchedConfig === undefined) {
         matchedConfig = await Config.findOne(
           {is_default: true}, {tr069: true},
         ).lean();
       }
-      if (tag.includes('fraco')) {
+      if (tag.includes(t('weak'))) {
         query.pon_rxpower = {
           $gte: matchedConfig.tr069.pon_signal_threshold_critical,
           $lte: matchedConfig.tr069.pon_signal_threshold,
         };
-      } else if (tag.includes('bom')) {
+      } else if (tag.includes(t('good'))) {
         query.pon_rxpower = {
           $gte: matchedConfig.tr069.pon_signal_threshold,
           $lte: matchedConfig.tr069.pon_signal_threshold_critical_high,
         };
-      } else if (tag.includes('ruim')) {
+      } else if (tag.includes(t('bad'))) {
         query.pon_rxpower = {
           $lte: matchedConfig.tr069.pon_signal_threshold_critical,
         };
       }
-    } else if (/^sem sinal$/.test(tag)) {
+    } else if (new RegExp(`^${t('noSignal')}$`).test(tag)) {
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = {$exists: false};
-    } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
-      if (/\bon\b/.test(tag)) {
+    // } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
+    } else if (new RegExp(`^(ipv6) ` +
+    `(?:${t('on')}|${t('off')}|${t('unknown')})$`).test(tag)) {
+      if (new RegExp(`\\b${t('on')}\\b`).test(tag)) {
         query.ipv6_enabled = {$eq: 1};
-      } else if (/\boff\b/.test(tag)) {
+      } else if (new RegExp(`\\b${t('off')}\\b`).test(tag)) {
         query.ipv6_enabled = {$eq: 0};
-      } else if (/\bdesconhecido\b/.test(tag)) {
+      } else if (new RegExp(`\\b${t('unknown')}\\b`).test(tag)) {
         query.ipv6_enabled = {$eq: 2};
       }
-    } else if (/^(mesh) (?:on|off)$/.test(tag)) {
-      if (/\bon\b/.test(tag)) {
+    } else if (new RegExp(`^(mesh) (?:${t('on')}|${t('off')})$`).test(tag)) {
+      if (new RegExp(`\\b${t('on')}\\b`).test(tag)) {
         query.mesh_mode = {$ne: 0};
-      } else if (/\boff\b/.test(tag)) {
+      } else if (new RegExp(`\\b${t('off')}\\b`).test(tag)) {
         query.mesh_mode = {$eq: 0};
       }
-    } else if (/^(modo) (?:roteador|bridge)$/.test(tag)) {
-      if (tag.includes('roteador')) {
+    } else if (new RegExp(`^(${t('mode')}) ` +
+    `(?:${t('router')}|bridge)$`).test(tag)) {
+      if (tag.includes(t('router'))) {
         query.bridge_mode_enabled = {$eq: false};
       } else if (tag.includes('bridge')) {
         query.bridge_mode_enabled = {$eq: true};
@@ -556,8 +562,9 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       let queryArray = [];
       let contentCondition = '$or';
       // Check negation condition
-      if (queryContents[idx].startsWith('/excluir')) {
-        const filterContent = queryContents[idx].split('/excluir')[1].trim();
+      let excludeTag = t('/exclude')
+      if (queryContents[idx].startsWith(excludeTag)) {
+        const filterContent = queryContents[idx].split(excludeTag)[1].trim();
         let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
         for (let property in DeviceModel.schema.paths) {
           if (DeviceModel.schema.paths.hasOwnProperty(property) &&
