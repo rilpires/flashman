@@ -783,7 +783,7 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
-  'DM985-424': {
+  'DM985-424 HW3': {
     vendor: 'Datacom',
     versions_upgrade: {
       'V3.0.1': [],
