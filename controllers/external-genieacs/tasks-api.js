@@ -24,7 +24,7 @@ let genie = {}; // to be exported.
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
   mongodb.MongoClient.connect('mongodb://localhost:27017',
-    {useUnifiedTopology: true}).then(async (client) => {
+    {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
     genieDB = client.db('genieacs');
     // Only watch faults if flashman instance is the first one dispatched
     if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {

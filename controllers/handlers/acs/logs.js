@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const utilHandlers = require('../util.js');

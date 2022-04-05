@@ -176,7 +176,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           iface2 = iface2[iface2.length-1];
           iface5 = iface5[iface5.length-1];
           // Filter wlan interfaces
-          let interfaces = Object.keys(utilHandlers.getFromNestedKey(data, assocField));
+          let interfaces = Object.keys(utilHandlers.getFromNestedKey(
+            data, assocField,
+          ));
           interfaces = interfaces.filter((i)=>i[0]!='_');
           if (fields.devices.associated_5) {
             if (model == 'AC10') {
@@ -202,7 +204,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               // Collect associated mac
               let macKey = fields.devices.assoc_mac;
               macKey = macKey.replace('*', iface).replace('*', index);
-              let macVal = utilHandlers.getFromNestedKey(data, macKey+'._value');
+              let macVal = utilHandlers.getFromNestedKey(
+                data, macKey+'._value',
+              );
               if (typeof macVal === 'string') {
                 macVal = macVal.toUpperCase();
               } else {
@@ -222,7 +226,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               if (fields.devices.host_rssi) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
-                device.rssi = utilHandlers.getFromNestedKey(data, rssiKey+'._value');
+                device.rssi = utilHandlers.getFromNestedKey(
+                  data, rssiKey+'._value',
+                );
                 // Casts to string if is a number so we can replace 'dBm'
                 if (typeof device.rssi === 'number') {
                   device.rssi = device.rssi.toString();
@@ -238,7 +244,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               if (fields.devices.host_snr) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
-                device.snr = utilHandlers.getFromNestedKey(data, snrKey+'._value');
+                device.snr = utilHandlers.getFromNestedKey(
+                  data, snrKey+'._value',
+                );
               } else if (fields.devices.host_rssi && device.rssi) {
                 device.snr = parseInt(device.rssi)+95;
                 if (isNaN(parseInt(device.rssi))) {
@@ -249,7 +257,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               if (fields.devices.host_mode) {
                 let modeKey = fields.devices.host_mode;
                 modeKey = modeKey.replace('*', iface).replace('*', index);
-                let modeVal = utilHandlers.getFromNestedKey(data, modeKey+'._value');
+                let modeVal = utilHandlers.getFromNestedKey(
+                  data, modeKey+'._value',
+                );
                 if (modeVal.includes('ac')) {
                   device.wifi_mode = 'AC';
                 } else if (modeVal.includes('n')) {
@@ -262,14 +272,18 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               if (fields.devices.host_rate) {
                 let rateKey = fields.devices.host_rate;
                 rateKey = rateKey.replace('*', iface).replace('*', index);
-                device.rate = utilHandlers.getFromNestedKey(data, rateKey+'._value');
+                device.rate = utilHandlers.getFromNestedKey(
+                  data, rateKey+'._value',
+                );
                 device.rate = convertWifiRate(model, device.rate);
               }
               if (device.mac == device.name &&
                 fields.devices.alt_host_name) {
                 let nameKey = fields.devices.alt_host_name;
                 nameKey = nameKey.replace('*', iface).replace('*', index);
-                device.name = utilHandlers.getFromNestedKey(data, nameKey+'._value');
+                device.name = utilHandlers.getFromNestedKey(
+                  data, nameKey+'._value',
+                );
               }
             });
           });

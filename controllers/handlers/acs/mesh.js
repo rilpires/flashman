@@ -35,10 +35,14 @@ const checkMeshObjsCreated = function(device) {
           result.success = false;
           resolve(result);
         }
-        if (utilHandlers.checkForNestedKey(data, `${fields.mesh2.ssid}._value`)) {
+        if (utilHandlers.checkForNestedKey(
+          data, `${fields.mesh2.ssid}._value`,
+        )) {
           result.mesh2 = true;
         }
-        if (utilHandlers.checkForNestedKey(data, `${fields.mesh5.ssid}._value`)) {
+        if (utilHandlers.checkForNestedKey(
+          data, `${fields.mesh5.ssid}._value`,
+        )) {
           result.mesh5 = true;
         }
         resolve(result);

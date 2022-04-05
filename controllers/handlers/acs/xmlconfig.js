@@ -75,7 +75,7 @@ const setXmlPortForward = function(jsonConfigFile, device) {
   .filter((e) => e['@_Name'] != 'PORT_FW_TBL');
   // add new PORT_FW_TBL values based on device.port_mapping
   device.port_mapping.forEach((pm) => {
-    let newPortFwTbl = acsXMLConfigHandler.createNewPortFwTbl(pm);
+    let newPortFwTbl = createNewPortFwTbl(pm);
     jsonConfigFile['Config']['Dir'].splice(i, 0, newPortFwTbl);
   });
   if (device.port_mapping.length == 0) {
@@ -124,7 +124,7 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   return jsonConfigFile;
 };
 
-const digestXmlConfig = function(device, rawXml, target) {
+acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
   let opts = {
     ignoreAttributes: false, // default is true
     ignoreNameSpace: false,
@@ -196,10 +196,16 @@ const fetchAndEditConfigFile = async function(acsID, target) {
           rawConfigFile = '';
         }
       }
-      if (utilHandlers.checkForNestedKey(rawConfigFile, configField+'._value')) {
+      if (
+        utilHandlers.checkForNestedKey(rawConfigFile, configField+'._value')
+      ) {
         // modify xml config file
-        rawConfigFile = utilHandlers.getFromNestedKey(rawConfigFile, configField+'._value');
-        let xmlConfigFile = digestXmlConfig(device, rawConfigFile, target);
+        rawConfigFile = utilHandlers.getFromNestedKey(
+          rawConfigFile, configField+'._value',
+        );
+        let xmlConfigFile = acsXMLConfigHandler.digestXmlConfig(
+          device, rawConfigFile, target,
+        );
         if (xmlConfigFile != '') {
           // set xml config file to genieacs
           let task = {

@@ -6,7 +6,7 @@
         p#isBridgeDiv.d-none
         p.heading.lead
           span.fas.fa-network-wired.fa-lg
-          strong &nbsp;Rede local do&nbsp;
+          strong &nbsp;#{t('localNetworkFor')}&nbsp;
           strong(name="lan-devices-visual" id="lan-devices-visual")
           span.d-none(name="lan-devices-hlabel" id="lan-devices-hlabel")
         button.close(type="button", data-dismiss="modal")
@@ -23,21 +23,21 @@
             .btn-group.btn-group-sm.m-1.btn-group-lan-opts(role="group")
               button.btn.btn-primary.btn-sm.btn-show-lan-devs.active(type="button")
                 i.fas.fa-mobile-alt.fa-lg
-                span &nbsp; Dispositivos
+                span &nbsp; #{t('Devices')}
               button.btn.btn-primary.btn-sm.btn-show-lan-routers
                 i.fas.fa-network-wired.fa-lg
                 span &nbsp; CPEs
           .col.p-0.text-right
             button.btn.btn-primary.btn-sm.m-1.btn-sync-lan
               i.fas.fa-sync-alt.fa-lg
-              span &nbsp Atualizar
+              span &nbsp; #{t('Update')}
         .row.pt-3#lan-devices-placeholder
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
-              span Atualizando dispositivos conectados...
+              span= t('updatingConnectedDevices...')
               br
               span#lan-devices-placeholder-counter 0 de 1
         .row#lan-devices-placeholder-none
@@ -46,6 +46,6 @@
               i.fas.fa-network-wired.fa-4x
               br
               br
-              span Nenhum dispositivo encontrado
+              span= t('noDevicesFound')
         .row#lan-devices-body
         .row#lan-routers-body

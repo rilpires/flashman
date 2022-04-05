@@ -7,23 +7,19 @@ const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const Notification = require('../models/notification');
 const Config = require('../models/config');
-const sio = require('../sio');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
-const acsFirmwareHandler = require('./handlers/acs/firmware.js')
 const acsAccessControlHandler = require('./handlers/acs/access_control.js');
 const acsPortForwardHandler = require('./handlers/acs/port_forward.js');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics.js');
-const acsMeshDeviceHandler = require('./handlers/acs/mesh.js')
+const acsMeshDeviceHandler = require('./handlers/acs/mesh.js');
 const acsDeviceLogsHandler = require('./handlers/acs/logs.js');
 const acsConnDevicesHandler = require('./handlers/acs/connected_devices.js');
 const acsMeasuresHandler = require('./handlers/acs/measures.js');
 const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
-const utilHandlers = require('./handlers/util');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const t = require('./language').i18next.t;
 
-const http = require('http');
 
 let acsDeviceInfoController = {};
 
@@ -1081,7 +1077,7 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   TasksAPI.addTask(
     acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
   );
-}
+};
 
 acsDeviceInfoController.requestLogs = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID

@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
 const FirmwaresAPI = require('../../external-genieacs/firmwares-api');
 const FirmwareModel = require('../../../models/firmware');
 const t = require('../../language').i18next.t;

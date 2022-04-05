@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
 const TasksAPI = require('../../external-genieacs/tasks-api');
 const DeviceVersion = require('../../../models/device_version');
 const DevicesAPI = require('../../external-genieacs/devices-api');
@@ -13,7 +15,7 @@ let acsAccessControlHandler = {};
 // rule from the id of the last rule.
 // This makes it possible for us to save a get and a projection.
 const addAcRules = async function(
-  device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz
+  device, acSubtreeRoots, numberOfRules, maxId, grantWifi5ghz,
 ) {
   let currentMaxId = parseInt(maxId, 10);
   if (isNaN(currentMaxId)) {
@@ -61,7 +63,7 @@ const deleteAcRules = async function(device, rulesToDelete) {
   try {
     for (let acRule of rulesToDelete) {
       let result = await TasksAPI.addOrDeleteObject(
-        device.acs_id, acRule, 'deleteObject'
+        device.acs_id, acRule, 'deleteObject',
       );
       if (!result) {
         console.log('deleteAcRules error');
@@ -113,7 +115,9 @@ const getAcRuleTrees = async function(
               let wlanTreeRuleIds = [];
               // Populates the WLAN subtree rule structure
               if (utilHandlers.checkForNestedKey(data, wlanTreeRoot)) {
-                let wlanSubtree = utilHandlers.getFromNestedKey(data, wlanTreeRoot);
+                let wlanSubtree = utilHandlers.getFromNestedKey(
+                  data, wlanTreeRoot,
+                );
                 Object.entries(wlanSubtree).forEach((acRule) => {
                   let acRuleId = acRule[0];
                   if (acRuleId && !acRuleId.startsWith('_')) {
@@ -364,7 +368,7 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
     if (!permissions.grantWifi5ghz || allOkWithWifi5) {
       try {
         await updateAcRules(
-          device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices
+          device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices,
         );
         console.log('Updated Access Control tree successfully');
       } catch (e) {
@@ -401,7 +405,7 @@ acsAccessControlHandler.changeAcRules = async function(device) {
     return {
       success: false,
       error_code: 'acRuleLimits',
-      message: t('acRuleLimits', {errorline: __line})
+      message: t('acRuleLimits', {errorline: __line}),
     };
   }
   let acSubtreeRoots = {'wifi2': fields.access_control.wifi2};
@@ -414,7 +418,7 @@ acsAccessControlHandler.changeAcRules = async function(device) {
     parameterNames: Object.values(acSubtreeRoots),
   };
   let cback = (acsID)=>compareNewACRulesWithTree(acsID, blockedDevices);
-  result = await TasksAPI.addTask(acsID, task, cback);
+  let result = await TasksAPI.addTask(acsID, task, cback);
   if (!result || !result.success) {
     console.log('Error: failed to retrieve Access Control Rules at '+serial);
     return {

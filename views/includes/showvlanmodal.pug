@@ -4,7 +4,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-project-diagram.fa-lg
-          strong &nbsp; Administrar VLANs de&nbsp;
+          strong &nbsp; #{t('manageVlansFor')}&nbsp;
           strong(name="vlan-visual" id="vlan-visual")
           span.d-none(name="vlan-hlabel" id="vlan-hlabel")
         button.close(type="button", data-dismiss="modal")
@@ -15,4 +15,4 @@
         .col.text-left
           button#btn-vlan-update.btn.btn-primary.btn-sm
             i.fas.fa-check.fa-lg
-            span &nbsp Atualizar
+            span &nbsp; #{t('Update')}
