@@ -1713,14 +1713,14 @@ acsDeviceInfoController.calculateSpeedDiagnostic = async function(device, data,
           user: device.current_speedtest.user,
         };
         if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
-          result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
+          result.downSpeed = t('xMbps', {x: parseInt(speedValueFullLoad)});
           if (isNaN(parseInt(speedValueFullLoad))) {
-            result.downSpeed = '0 Mbps';
+            result.downSpeed = t('xMbps', {x: 0});
           }
         } else {
-          result.downSpeed = parseInt(speedValueBasic).toString() + ' Mbps';
+          result.downSpeed = t('xMbps', {x: parseInt(speedValueBasic)});
           if (isNaN(parseInt(speedValueBasic))) {
-            result.downSpeed = '0 Mbps';
+            result.downSpeed = t('xMbps', {x: 0});
           }
         }
         deviceHandlers.storeSpeedtestResult(device, result);
