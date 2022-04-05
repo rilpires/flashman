@@ -52,7 +52,7 @@
                 .tab-content.mt-4
                   #panel1.tab-pane.fade(role="tabpanel")
                     .text-center
-                      strong#searchTags= t('searchFiltersUsed:X', {filters: t('noFilterUsed')})
+                      strong#searchTags= t('searchFiltersUsed=X', {filters: t('noFilterUsed')})
                     .custom-control.custom-radio.mt-3
                       input#allDevices.custom-control-input(type="radio", name="deviceCount")
                       label.custom-control-label#allDevicesLabel(for="allDevices")= t('allXSearchResults', {x: 0})
@@ -199,14 +199,14 @@
             ul.mt-4
               if (!update_schedule.use_csv)
                 li
-                  strong= t('searchFiltersUsed:X', {filters: update_schedule.use_search || t('noFilterUsed')})
+                  strong= t('searchFiltersUsed=X', {filters: update_schedule.use_search || t('noFilterUsed')})
               else
                 li
                   strong= t('csvFileHasBeenUsedToFilterCpes')
               li
-                strong= t('choosenRelease:X', {release: update_schedule.release})
+                strong= t('choosenRelease=X', {release: update_schedule.release})
               li
-                strong= t('timeRangesUsed: ')
+                strong= t('timeRangesUsed')+':'
                 ul
                   if (!update_schedule.use_time)
                     li= t('updateWithoutTimeRestrictions')
@@ -228,16 +228,16 @@
             .mt-4.text-center.row.mx-0
               .col.alert.alert-dark.mx-1
                 .fas.fa-info-circle.fa-2x
-                h6.mt-2#progress-total= t('Total:X', {x: update_schedule.device_total})
+                h6.mt-2#progress-total= t('Total=X', {x: update_schedule.device_total})
               .col.alert.alert-dark.mx-1
                 .fas.fa-info-circle.fa-2x
-                h6.mt-2#progress-todo(class={doing: update_schedule.device_doing})= t('Remaining:X', {x: update_schedule.device_to_do})
+                h6.mt-2#progress-todo(class={doing: update_schedule.device_doing})= t('Remaining=X', {x: update_schedule.device_to_do})
               .col.alert.alert-success.mx-1
                 .fas.fa-check-circle.fa-2x
-                h6.mt-2#progress-done= t('Success:X', {x: update_schedule.device_done})
+                h6.mt-2#progress-done= t('Success=X', {x: update_schedule.device_done})
               .col.alert.alert-danger.mx-1
                 .fas.fa-times-circle.fa-2x
-                h6.mt-2#progress-error= t('Error:X', {x: update_schedule.device_error})
+                h6.mt-2#progress-error= t('Error=X', {x: update_schedule.device_error})
             .mt-4.text-center
               button#results-btn.btn.btn-primary(type="button")
                 .fas.fa-file-excel.fa-lg
