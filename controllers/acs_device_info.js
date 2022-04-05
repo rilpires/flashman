@@ -412,9 +412,10 @@ const createRegistry = async function(req, permissions) {
   return true;
 };
 
-// Essential information sent from CPE gets handled here.
-// It will also check for complete synchronization necessity by dispatching
-// "measure" as true. Complete synchronization is done by "syncDevice" function
+// Receives GenieACS inform event, to register the CPE as online - updating last
+// contact information. For new CPEs, it replies with "measure" as true, to
+// signal that GenieACS needs to collect information manually. For registered
+// CPEs, it calls requestSync to check for fields that need syncing.
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
@@ -433,37 +434,137 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
-  // Devices updating need to return immediately
-  // Devices with no last sync need to sync immediately
-  // Devices recovering from hard reset need to sync immediately
-  if (
-    device.do_update || !device.last_tr069_sync || device.recovering_tr069_reset
-  ) {
+  device.last_contact = dateNow;
+  // Devices recovering from hard reset or upgrading their firmware need to go
+  // through an immediate full sync
+  if (device.do_update || device.recovering_tr069_reset) {
     device.last_tr069_sync = dateNow;
-    device.last_contact = dateNow;
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
     return res.status(200).json({success: true, measure: true});
   }
+  // Other registered devices should always collect information through
+  // flashman, never using genieacs provision
+  res.status(200).json({success: true, measure: false});
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
   .catch((err)=>{
-    return res.status(500).json({success: false,
-      message: t('configFindError', {errorline: __line})});
+    console.log('Error reading config during requestSync');
   });
-  // Devices that havent synced in (config interval) need to sync immediately
-  let syncDiff = dateNow - device.last_tr069_sync;
-  if (syncDiff >= config.tr069.sync_interval) {
-    device.last_tr069_sync = dateNow;
-    res.status(200).json({success: true, measure: true});
-  } else {
-    res.status(200).json({success: true, measure: false});
+  let doSync = false;
+  // Only request a sync if over the sync threshold
+  if (config && config.tr069) {
+    let syncDiff = dateNow - device.last_tr069_sync;
+    if (syncDiff >= config.tr069.sync_interval) {
+      device.last_tr069_sync = dateNow;
+      doSync = true;
+    }
   }
-  // Always update last_contact to keep device online
-  device.last_contact = dateNow;
   await device.save().catch((err) => {
-    console.log('Error saving last contact');
+    console.log('Error saving last contact and last tr-069 sync');
   });
+  if (doSync) {
+    requestSync(device);
+  }
+};
+
+const requestSync = async function(device) {
+  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let permissions = DeviceVersion.findByVersion(
+    device.version,
+    device.wifi_is_5ghz_capable,
+    device.model,
+  );
+  let parameterNames = [];
+  // Basic fields that should be updated often
+  parameterNames.push(fields.common.ip);
+  parameterNames.push(fields.common.uptime);
+  parameterNames.push(fields.common.acs_url);
+  if (fields.common.web_admin_username) {
+    parameterNames.push(fields.common.web_admin_username);
+  }
+  if (fields.common.web_admin_password) {
+    parameterNames.push(fields.common.web_admin_password);
+  }
+  // WAN configuration fields
+  parameterNames.push(fields.wan.pppoe_enable);
+  parameterNames.push(fields.wan.pppoe_user);
+  parameterNames.push(fields.wan.pppoe_pass);
+  parameterNames.push(fields.wan.rate);
+  parameterNames.push(fields.wan.duplex);
+  parameterNames.push(fields.wan.wan_ip);
+  parameterNames.push(fields.wan.wan_ip_ppp);
+  parameterNames.push(fields.wan.uptime);
+  parameterNames.push(fields.wan.uptime_ppp);
+  parameterNames.push(fields.wan.mtu);
+  parameterNames.push(fields.wan.mtu_ppp);
+  if (fields.wan.vlan) {
+    parameterNames.push(fields.wan.vlan);
+  }
+  // WAN bytes and PON signal fields
+  parameterNames.push(fields.wan.recv_bytes);
+  parameterNames.push(fields.wan.sent_bytes);
+  if (permissions.grantPonSignalSupport) {
+    parameterNames.push(fields.wan.pon_rxpower);
+    parameterNames.push(fields.wan.pon_txpower);
+  }
+  // LAN configuration fields
+  parameterNames.push(fields.lan.router_ip);
+  parameterNames.push(fields.lan.subnet_mask);
+  // WiFi configuration fields
+  parameterNames.push(fields.wifi2.enable);
+  parameterNames.push(fields.wifi2.bssid);
+  parameterNames.push(fields.wifi2.ssid);
+  parameterNames.push(fields.wifi2.password);
+  parameterNames.push(fields.wifi2.channel);
+  parameterNames.push(fields.wifi2.auto);
+  parameterNames.push(fields.wifi2.mode);
+  parameterNames.push(fields.wifi2.band);
+  if (device.wifi_is_5ghz_capable) {
+    parameterNames.push(fields.wifi5.enable);
+    parameterNames.push(fields.wifi5.bssid);
+    parameterNames.push(fields.wifi5.ssid);
+    parameterNames.push(fields.wifi5.password);
+    parameterNames.push(fields.wifi5.channel);
+    parameterNames.push(fields.wifi5.auto);
+    parameterNames.push(fields.wifi5.mode);
+    parameterNames.push(fields.wifi5.band);
+  }
+  // Mesh WiFi configuration fields - only if in wifi mesh mode
+  if (device.mesh_mode === 2 || device.mesh_mode === 4) {
+    parameterNames.push(fields.mesh2.enable);
+    parameterNames.push(fields.mesh2.bssid);
+    parameterNames.push(fields.mesh2.ssid);
+  }
+  if (
+    device.wifi_is_5ghz_capable &&
+    (device.mesh_mode === 3 || device.mesh_mode === 4)
+  ) {
+    parameterNames.push(fields.mesh5.enable);
+    parameterNames.push(fields.mesh5.bssid);
+    parameterNames.push(fields.mesh5.ssid);
+  }
+  // Port forward configuration fields - only if has support
+  if (permissions.grantPortForward) {
+    parameterNames.push(fields.access_control.port_mapping_entries_dhcp);
+    parameterNames.push(fields.access_control.port_mapping_entries_ppp);
+  }
+  // Access control configuration fields - only if has support
+  if (permissions.grantBlockDevices) {
+    parameterNames.push(fields.access_control.wifi2);
+    parameterNames.push(fields.access_control.wifi5);
+  }
+  // Stun configuration fields - only if has support
+  if (permissions.grantSTUN) {
+    parameterNames.push(fields.common.stun_enable);
+  }
+  // Send task to GenieACS
+  let task = {name: 'getParameterValues', parameterNames: parameterNames};
+  let cback = (acsID)=>fetchSyncResult(acsID, parameterNames);
+  TasksAPI.addTask(device.acs_id, task, cback);
+};
+
+const fetchSyncResult = async function(acsID, parameters) {
 };
 
 // Complete CPE information synchronization gets done here. This function
