@@ -47,7 +47,7 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             if (slaveCount > 0) {
               upgradeStatus.find('.status-waiting').attr('title',
-                `Coletando e processando topologia`);
+                `Atualizando CPEs...`);
             } else {
               upgradeStatus.find('.status-waiting').attr('title',
                 'Atualizando CPE...');
