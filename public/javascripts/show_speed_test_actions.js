@@ -167,7 +167,7 @@ anlixDocumentReady.add(function() {
         if (data.downSpeed.includes(t('Mbps'))) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > data.limit) {
-            data.downSpeed = t('moreThanXMbps', {x: limit});
+            data.downSpeed = t('moreThanXMbps', {x: data.limit});
           }
           $('#speed-test-shown-text').html(`${t('speedMeasured')}:`);
           $('#speed-test-strong-text').html(data.downSpeed);
