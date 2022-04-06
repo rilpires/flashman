@@ -1202,7 +1202,7 @@ acsDeviceInfoController.updateInfo = async function(
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
   if (changes.wan && changes.wan.pppoe_user) {
-    changes.wan.pppoe_password = device.pppoe_password;
+    changes.wan.pppoe_pass = device.pppoe_password;
   }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
