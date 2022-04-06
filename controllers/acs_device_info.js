@@ -1336,6 +1336,14 @@ acsDeviceInfoController.updateInfo = async function(
   }
 };
 
+acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
+  acsDeviceInfoController.pingOfflineDevices();
+  return res.status(200).json({
+    type: 'success',
+    message: 'Operação iniciada com sucesso',
+  });
+};
+
 acsDeviceInfoController.pingOfflineDevices = async function() {
   // Get TR-069 configs from database
   let matchedConfig = await Config.findOne(
