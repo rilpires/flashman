@@ -311,11 +311,11 @@ block content
                   #error-recovery-offline-thresholds.invalid-feedback= t('lostInformsRecoveryOfflineThresholdsInvalidFeedback')
                   .alert.alert-danger
                     .fas.fa-exclamation-triangle.fa-lg
-                    span &nbsp; Cuidado! Este procedimento pode gerar uma grande carga de dados no Flashman, o que atrapalhará seu desempenho. Use com moderação!
+                    span &nbsp; #{t('warningLargeLoadFlashman')}
                     .row
                       #offline-cpe-force-reconnect.button.btn.btn-primary.mt-4.mx-auto
                         .fas.fa-sync.fa-lg
-                        span &nbsp; Forçar conexão de CPEs offline
+                        span &nbsp; #{t('forceOfflineReconnect')}
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg

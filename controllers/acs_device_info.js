@@ -1340,7 +1340,7 @@ acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
   return res.status(200).json({
     type: 'success',
-    message: 'Operação iniciada com sucesso',
+    message: t('operationStartSuccessful'),
   });
 };
 
