@@ -789,7 +789,7 @@ const tr069Devices = {
       'V3.0.1': [],
     },
     port_forward_opts: {
-      'V3.0.1': portForwardFullSupport,
+      'V3.0.1': portForwardNoRanges,
     },
     feature_support: {
       port_forward: true,
