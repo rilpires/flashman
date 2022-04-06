@@ -1198,6 +1198,12 @@ acsDeviceInfoController.updateInfo = async function(
   if (changes.wifi5 && changes.wifi5.ssid) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
+  // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
+  // reset, only the username is fixed by Flashman - force password sync too in
+  // those cases
+  if (changes.wan && changes.wan.pppoe_user) {
+    changes.wan.pppoe_password = device.pppoe_password;
+  }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -1332,6 +1338,14 @@ acsDeviceInfoController.updateInfo = async function(
   } catch (e) {
     return;
   }
+};
+
+acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
+  acsDeviceInfoController.pingOfflineDevices();
+  return res.status(200).json({
+    type: 'success',
+    message: t('operationStartSuccessful'),
+  });
 };
 
 acsDeviceInfoController.pingOfflineDevices = async function() {

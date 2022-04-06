@@ -659,6 +659,7 @@ const getStavixFields = function(model) {
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
       break;
     case 'xPON':
+    case '121AC':
       fields.common.alt_uid = fields.common.mac;
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
@@ -952,6 +953,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       break;
     case 'MP_G421R': // Unee Stavix G412R
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
+    case '121AC': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
       message = '';
       fields = getStavixFields(model);
