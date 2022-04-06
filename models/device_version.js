@@ -792,7 +792,7 @@ const tr069Devices = {
       'V3.0.1': portForwardNoRanges,
     },
     feature_support: {
-      port_forward: true,
+      port_forward: false,
       pon_signal: true,
       upnp: true,
       wps: false,
