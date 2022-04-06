@@ -584,7 +584,6 @@ const getDatacomFields = function(model) {
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
       break;
   }
-  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
   return fields;
 };
 
