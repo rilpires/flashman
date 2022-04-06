@@ -391,7 +391,9 @@ acsMeasuresHandler.convertToDbm = function(model, rxPower) {
     case 'ST-1001-FL':
     case 'G-140W-C':
     case 'G-140W-CS':
-    case 'G-140W-UD': {
+    case 'G-140W-UD':
+    case 'DM985-424':
+    case 'DM985%2D424': {
       rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
       if (isNaN(rxPower)) {
         debug('rxPower is not a number!!!');
