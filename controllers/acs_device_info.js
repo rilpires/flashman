@@ -1259,17 +1259,21 @@ acsDeviceInfoController.updateInfo = async function(
           let minIP = networkPrefix + '.' + dhcpRanges.min;
           let maxIP = networkPrefix + '.' + dhcpRanges.max;
           task.parameterValues.push([
-            fields['lan']['lease_min_ip'], minIP, 'xsd:string',
-          ]);
-          task.parameterValues.push([
-            fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
-          ]);
-          task.parameterValues.push([
-            fields['lan']['ip_routers'], subnet, 'xsd:string',
-          ]);
-          task.parameterValues.push([
             fields['lan']['dns_servers'], subnet, 'xsd:string',
           ]);
+          // These models automaticaly updates these fields, so they can't be
+          // modified.
+          if (modelName != 'G-2425G-A') {
+            task.parameterValues.push([
+              fields['lan']['ip_routers'], subnet, 'xsd:string',
+            ]);
+            task.parameterValues.push([
+              fields['lan']['lease_min_ip'], minIP, 'xsd:string',
+            ]);
+            task.parameterValues.push([
+              fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
+            ]);
+          }
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
         }
