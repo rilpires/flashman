@@ -275,7 +275,7 @@ anlixDocumentReady.add(function() {
     $.each(lanDevices, function(idx, device) {
       let isWired = (device.conn_type == 0);
       let cantBlockWired = !lanDevicesGrantBlockWiredDevices;
-      let deviceDoesNotHavePermission = !grantLanDevicesBlock;
+      let deviceDoesNotHavePermission = !lanDevicesGrantBlockDevices;
       let userDoesNotHavePermission = !(isSuperuser || grantLanDevicesBlock);
       let cantBlockDevice = (
         isBridge ||
