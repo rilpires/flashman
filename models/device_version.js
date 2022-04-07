@@ -430,7 +430,7 @@ const tr069Devices = {
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
       wps: false,
-      stun: true,
+      stun: false,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: false,
