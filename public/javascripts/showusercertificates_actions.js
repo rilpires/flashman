@@ -424,10 +424,10 @@ const fetchCertification = function(id, name, timestamp) {
             modeStr = t('Cable');
             break;
           case 2:
-            modeStr = t('cableAndWifixghz', {x: '2.4'});
+            modeStr = t('cableAndWifiXGhz', {x: '2.4'});
             break;
           case 3:
-            modeStr = t('cableAndWifixghz', {x: '5.0'});
+            modeStr = t('cableAndWifiXGhz', {x: '5.0'});
             break;
           case 4:
             modeStr = t('cableAndBothWifi');
