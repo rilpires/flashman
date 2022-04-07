@@ -1246,6 +1246,7 @@ anlixDocumentReady.add(function() {
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
           let grantBlockWiredDevices = device.permissions.grantBlockWiredDevices;
+          let grantBlockDevices = device.permissions.grantBlockDevices;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);

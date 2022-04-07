@@ -11,6 +11,7 @@ anlixDocumentReady.add(function() {
   // connected devices for now. So we need to leave the lock/unlock button
   // disabled for wired devices.
   let lanDevicesGrantBlockWiredDevices = false;
+  let lanDevicesGrantBlockDevices = false;
 
   const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
     $('#lan-devices').modal();
@@ -549,6 +550,7 @@ anlixDocumentReady.add(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
+    lanDevicesGrantBlockDevices = row.data('grant-block-devices');
     $('#show-spam-error').hide();
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);
