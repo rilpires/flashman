@@ -273,10 +273,10 @@ anlixDocumentReady.add(function() {
 
     $.each(lanDevices, function(idx, device) {
       let isWired = (device.conn_type == 0);
-      let cantBlockWired = !lanDevicesGrantBlockWiredDevices;
-      let dontGrantBlockDevices = !(isSuperuser || grantLanDevicesBlock);
-      let cantBlockDevice =
-        isBridge || (isWired && cantBlockWired) || dontGrantBlockDevices;
+      let deviceGrantBlockDevices = !isBridge && lanDevicesGrantBlockDevices &&
+        (!isWired || (isWired && lanDevicesGrantBlockWiredDevices));
+      let userGrantBlockDevices = isSuperuser || grantLanDevicesBlockToUser;
+      let canBlockDevices = deviceGrantBlockDevices && userGrantBlockDevices;
 
       // Skip if offline for too long
       if (device.is_old) {
@@ -302,7 +302,7 @@ anlixDocumentReady.add(function() {
                          .attr('data-mac', device.mac)
                          .attr('data-blocked', device.is_blocked)
                          .attr('type', 'button')
-                         .prop('disabled', cantBlockDevice).append(
+                         .prop('disabled', !canBlockDevices).append(
               (device.is_blocked) ?
                 $('<i>').addClass('fas fa-lock fa-lg') :
                 $('<i>').addClass('fas fa-lock-open fa-lg'),
