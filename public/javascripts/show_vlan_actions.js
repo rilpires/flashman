@@ -2,6 +2,8 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'regenerator-runtime/runtime';
 
+const t = i18next.t;
+
 anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-vlan-modal', async function(event) {
     let row = $(event.target).parents('tr');
@@ -133,13 +135,13 @@ const buildVlanModal = function(dc, canEdit) {
   if (dc.vlan_profiles.length == 0) {
     $('#frame-vlan-modal-alert').addClass('d-block p-3 bg-danger text-white')
       .append(
-        $('<h5>').html('É necessário pelo menos um Perfil de VLAN cadastrado!')
+        $('<h5>').html(t('oneRegisteredVlanIsNecessary!'))
       );
   } else {
     for (let i = 0; i < dc.qtdPorts; i++) {
       let vlanPortInput = $('<div>').addClass('d-flex flex-column mr-3 mb-3');
       vlanPortInput.append(
-        $('<label>').addClass('mb-0').text('Porta '+(i+1)+' :')
+        $('<label>').addClass('mb-0').text(`${t('Port')} ${(i+1)} :`)
       );
 
       let profilesOptions = $('<select>').addClass('browser-default md-select')
