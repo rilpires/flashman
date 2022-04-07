@@ -424,18 +424,16 @@ const tr069Devices = {
       speed_test_limit: 800,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wps: false,
+      stun: false,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: false,
-    // offset of each BSSID octet in relation
-    // to the MAC address (first element corresponds to
-    // offset of the leftmost octet, and so forth)
-    // mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
-    // mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
-    // mesh_ssid_object_exists: false,
   },
   '121AC': {
     vendor: 'Intelbras',
