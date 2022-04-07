@@ -729,6 +729,7 @@
 	"wifiXGhzChannel": "Canal do Wi-Fi {{-x}}GHz",
 	"signalStrength": "Potência do sinal",
 	"xGhzsignalStrength": "$t(signalStrength) {{-x}}GHz",
+	"updateMany": "Atualizar Vários",
 	"noCpeFound": "Nenhum CPE encontrado",
 	"unblockDevices": "Desbloquear dispositivos",
 	"portOpenning": "Abertura de portas",
