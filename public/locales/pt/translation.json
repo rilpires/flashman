@@ -480,8 +480,8 @@
 	"nDevices": "{{count}} dispositivo",
 	"nDevices_other": "{{count}} dispositivos",
 	"parametersSavedForNDevices": "Parâmetros salvos em {{-total}} $t(nDevices, {\"count\": {{-total}} }).",
-	"nDevicesWillBeChanged": "Será alterado $t(nDevices, {\"count\": {{-total}} }).",
-	"nDevicesWillBeChanged_other": "Serão alterados $t(nDevices, {\"count\": {{-total}} }).",
+	"nDevicesWillBeChanged": "Será alterado $t(nDevices, {\"count\": {{-count}} }).",
+	"nDevicesWillBeChanged_other": "Serão alterados $t(nDevices, {\"count\": {{-count}} }).",
 	"dataCollectingPingFqdnTooltip": "IPv4, IPv6 ou endereço de DNS. Campo vazio faz o dispositivo seguir o valor padrão do serviço.",
 
 	"cpeLogs": "Logs do CPE",
