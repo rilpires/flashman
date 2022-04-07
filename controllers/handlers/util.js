@@ -4,6 +4,28 @@ const t = require('../language').i18next.t;
 
 let utilHandlers = {};
 
+utilHandlers.checkForNestedKey = function(data, key) {
+  if (!data) return false;
+  let current = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    if (!current.hasOwnProperty(splitKey[i])) return false;
+    current = current[splitKey[i]];
+  }
+  return true;
+};
+
+utilHandlers.getFromNestedKey = function(data, key) {
+  if (!data) return undefined;
+  let current = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    if (!current.hasOwnProperty(splitKey[i])) return undefined;
+    current = current[splitKey[i]];
+  }
+  return current;
+};
+
 utilHandlers.isJSONObject = function(val) {
   return val instanceof Object ? true : false;
 };
