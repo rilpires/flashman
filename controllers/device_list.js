@@ -3339,7 +3339,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     csvFields.push(
       {label: t('channelWifi'), value: 'wifi_channel'},
       {label: t('bandwidth'), value: 'wifi_band'},
-      {label: t('operationmode'), value: 'wifi_mode'},
+      {label: t('operationMode'), value: 'wifi_mode'},
       {label: t('ssidWifi5Ghz'), value: 'wifi_ssid_5ghz'},
     );
     if (exportPasswords) {
