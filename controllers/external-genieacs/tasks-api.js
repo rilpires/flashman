@@ -95,7 +95,7 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    if (['session_terminated', 'timeout'].includes(doc.code)) {
+    if (['session_terminated', 'timeout', 'cwmp.9002'].includes(doc.code)) {
       // Ignore session timeout and session terminated errors - no benefit
       // reporting them and clutter flashman
       return;
