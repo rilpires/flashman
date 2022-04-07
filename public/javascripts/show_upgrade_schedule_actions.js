@@ -531,10 +531,10 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         swal.close();
         let todo = $('#progress-todo');
-        todo.html(t('Remaining:X', {x: res.todo}));
-        $('#progress-total').html(t('Total:X', {x: res.total}));
-        $('#progress-done').html(t('Success:X', {x: res.done}));
-        $('#progress-error').html(t('Error:X', {x: res.error}));
+        todo.html(t('Remaining=X', {x: res.todo}));
+        $('#progress-total').html(t('Total=X', {x: res.total}));
+        $('#progress-done').html(t('Success=X', {x: res.done}));
+        $('#progress-error').html(t('Error=X', {x: res.error}));
         if (res.doing && !todo.hasClass('doing')) {
           todo.addClass('doing');
         } else if (!res.doing && todo.hasClass('doing')) {
