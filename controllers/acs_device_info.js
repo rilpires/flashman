@@ -336,6 +336,7 @@ const createRegistry = async function(req, permissions) {
     wan_up_time: wanUptime,
     created_at: Date.now(),
     last_contact: Date.now(),
+    last_tr069_sync: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
     web_admin_username: (data.common.web_admin_username) ?
       data.common.web_admin_username.value : undefined,
@@ -457,6 +458,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   // Only request a sync if over the sync threshold
   if (config && config.tr069) {
     let syncDiff = dateNow - device.last_tr069_sync;
+    syncDiff += 10000; // Give an extra 10 seconds to buffer out race conditions
     if (syncDiff >= config.tr069.sync_interval) {
       device.last_tr069_sync = dateNow;
       doSync = true;
@@ -599,6 +601,7 @@ const requestSync = async function(device) {
 // Extract data from raw GenieACS json output, in value/writable format
 const getFieldFromGenieData = function(data, field) {
   let obj = utilHandlers.getFromNestedKey(data, field);
+  if (typeof obj === 'undefined') return {};
   return {value: obj['_value'], writable: obj['_writable']};
 };
 
@@ -606,6 +609,8 @@ const getFieldFromGenieData = function(data, field) {
 // according to legacy genieacs provision format and send it to syncDeviceData
 const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
   let query = {_id: acsID};
+  // Remove * from each field - projection does not work with wildcards
+  parameterNames = parameterNames.map((p)=>p.replace(/\*/g, '1'));
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
@@ -650,6 +655,8 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
       }
       if (dataToFetch.wan) {
         let wan = fields.wan;
+        // Remove * from each wan field
+        Object.keys(wan).forEach((k)=>wan[k]=wan[k].replace(/\*/g, '1'));
         acsData.wan.pppoe_enable = getFieldFromGenieData(
           data, wan.pppoe_enable,
         );
@@ -1228,23 +1235,23 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let isPonTxValOk = false;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
     device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      data.common.model.value, data.wan.pon_rxpower.value,
+      device.model, data.wan.pon_rxpower.value,
     );
     isPonRxValOk = true;
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
     device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      data.common.model.value, data.wan.pon_rxpower_epon.value,
+      device.model, data.wan.pon_rxpower_epon.value,
     );
     isPonRxValOk = true;
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
     device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      data.common.model.value, data.wan.pon_txpower.value,
+      device.model, data.wan.pon_txpower.value,
     );
     isPonTxValOk = true;
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
     device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      data.common.model.value, data.wan.pon_txpower_epon.value,
+      device.model, data.wan.pon_txpower_epon.value,
     );
     isPonTxValOk = true;
   }
