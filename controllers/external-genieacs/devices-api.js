@@ -24,6 +24,7 @@ const getFieldType = function(masterKey, key, model) {
     case 'mesh2-channel':
     case 'mesh5-channel':
     case 'stun-port':
+    case 'common-interval':
       if (model == 'AC10') {
         return 'xsd:string';
       } else {

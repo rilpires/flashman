@@ -913,6 +913,15 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.sys_up_time = data.common.uptime.value;
   }
 
+  // Process inform interval
+  if (data.common.interval && data.common.interval.value) {
+    let interval = parseInt(data.common.interval.value);
+    if (!isNaN(interval) && interval*1000 !== config.tr069.inform_interval) {
+      changes.common.interval = parseInt(config.tr069.inform_interval/1000);
+      hasChanges = true;
+    }
+  }
+
   // Process wan connection type, but only if data sent
   let hasPPPoE = null;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
