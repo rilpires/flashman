@@ -443,7 +443,7 @@ const getTPLinkFields = function(model) {
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
   fields.wifi5.band = fields.wifi5.band.replace(/5/g, '2');
   if (model === 'EC220-G5') {
-    fields.common.web_admin_password = 'InternetGatewayDevice.X_TP_UserCfg.AdminPwd';
+    fields.common.web_admin_password = 'InternetGatewayDevice.X_TP_UserCfg.UserPwd';
     fields.wifi2.password = fields.wifi2.password
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
     fields.wifi5.password = fields.wifi5.password
