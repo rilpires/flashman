@@ -830,7 +830,7 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 230,
-      stun: true,
+      stun: false,
       upnp: false,
       wps: false,
     },

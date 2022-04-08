@@ -443,15 +443,7 @@ const getTPLinkFields = function(model) {
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
   fields.wifi5.band = fields.wifi5.band.replace(/5/g, '2');
   if (model === 'EC220-G5') {
-    fields.stun = {};
-    fields.common.stun_enable =
-      'InternetGatewayDevice.ManagementServer.STUNEnable';
-    fields.stun.address =
-      'InternetGatewayDevice.ManagementServer.STUNServerAddress';
-    fields.stun.port =
-      'InternetGatewayDevice.ManagementServer.STUNServerPort';
-    fields.common.stun_udp_conn_req_addr =
-    'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+    fields.common.web_admin_password = 'InternetGatewayDevice.X_TP_UserCfg.AdminPwd';
     fields.wifi2.password = fields.wifi2.password
       .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
     fields.wifi5.password = fields.wifi5.password
