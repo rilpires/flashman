@@ -268,13 +268,12 @@ const markNextForUpdate = async function() {
       let nextState;
       const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
       if (isV1ToV2) {
-        // special unique state for update from mesh v1 to v2
+        // If this is mesh v1 -> v2 upgrade we need the topology
         nextState = 'v1tov2';
       } else {
-        // all other cases go to topology state
-        nextState = 'topology';
+        // all other cases can change to download step
+        nextState = 'downloading';
       }
-      // If this is a mesh network we need the topology
       await configQuery(
         null,
         // Remove from to do state
@@ -303,7 +302,6 @@ const markNextForUpdate = async function() {
         throw new Error(t('updateStartFailedMeshNetwork'));
       }
     } else {
-      // If this is just a regular device we don't need the topology
       await configQuery(
         null,
         // Remove from to do state
@@ -315,7 +313,7 @@ const markNextForUpdate = async function() {
             'state': 'downloading',
             'retry_count': nextDevice.retry_count,
             'slave_count': nextDevice.slave_count,
-            'slave_updates_remaining': 1,
+            'slave_updates_remaining': nextDevice.slave_count + 1,
             'mesh_current': nextDevice.mesh_current,
             'mesh_upgrade': nextDevice.mesh_upgrade,
           },
@@ -384,97 +382,6 @@ scheduleController.initialize = async function(
   return {success: true};
 };
 
-scheduleController.successTopology = async function(mac) {
-  // This function should not have 2 running instances at the same time, since
-  // async database access can lead to no longer valid reads after one instance
-  // writes. This is necessary because mongo does not implement "table locks",
-  // so we may end up marking the same device to update twice, as 2 reads before
-  // the first write will yield the same device as a result of this function.
-  // And so, we use a mutex to lock instances outside database access scope.
-  // In addition, we add a random sleep to spread out requests a bit.
-  let interval = Math.random() * 500; // scale to seconds, cap at 500ms
-  await new Promise((resolve) => setTimeout(resolve, interval));
-  mutexRelease = await mutex.acquire();
-
-  let config = await getConfig();
-  if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
-  }
-  let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) {
-    return {success: false, error: t('macNotFound',
-                                     {errorline: __line})};
-  }
-  if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-    {errorline: __line})};
-  }
-  // Change from status updating to ok
-  try {
-    const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
-    if (!isV1ToV2) {
-      // Last device in the mesh network has sent topology info. Just update
-      // state machine, firmware download will begin automatically
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
-          'device_update_schedule.rule.in_progress_devices.$.state':
-            'downloading',
-        },
-      });
-    }
-    mutexRelease();
-  } catch (err) {
-    mutexRelease();
-    console.log(err);
-    return {success: false, error: t('saveError', {errorline: __line})};
-  }
-  return {success: true};
-};
-
-scheduleController.successDownload = async function(mac) {
-  let config = await getConfig();
-  if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
-  }
-  let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-      {errorline: __line})};
-  }
-  if (!device) {
-    return {success: false, error: t('macNotFound',
-                                     {errorline: __line})};
-  }
-  // Change from status downloading to updating
-  try {
-    const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
-    if (!isV1ToV2) {
-      // If it's an upgrade from mesh v1 to v2 we do nothing, otherwise,
-      // change to updating state
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.state': 'updating',
-        },
-      });
-    }
-  } catch (err) {
-    console.log(err);
-    return {success: false, error: t('saveError', {errorline: __line})};
-  }
-  return {success: true};
-};
-
 scheduleController.successUpdate = async function(mac) {
   let config = await getConfig();
   if (!config) {
@@ -494,38 +401,8 @@ scheduleController.successUpdate = async function(mac) {
   }
   // Change from status updating to ok
   try {
-    const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
     let remain = device.slave_updates_remaining - 1;
-    if (
-      (device.mesh_current === 1 || remain === 2 || remain === 1) && !isV1ToV2
-    ) {
-      // In the case that this is a mesh v1 network or there are one or two
-      // devices left to update, if this is not a mesh v1 to v2 upgrade, go
-      // directly to download state.
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.state':'downloading',
-          'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
-          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
-        },
-      });
-    } else if (remain > 2 && !isV1ToV2) {
-      // This is a device in a mesh v2 network but there are still more
-      // remaining. In this case the next state will be topology.
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.state': 'topology',
-          'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
-          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
-        },
-      });
-    } else if (remain === 0) {
+    if (remain === 0) {
       // This is either a regular router or the last device in a mesh network
       // Move from in progress to done, with status ok
       await configQuery(
@@ -676,9 +553,7 @@ scheduleController.abortSchedule = async function(req, res) {
     });
     rule.in_progress_devices.forEach((d)=>{
       let stateSuffix = '_update';
-      if (d.state === 'topology') {
-        stateSuffix = '_topology';
-      } else if (d.state === 'downloading') {
+      if (d.state === 'downloading') {
         stateSuffix = '_down';
       } else if (d.state === 'v1tov2') {
         stateSuffix = '_v1tov2';
@@ -1126,9 +1001,6 @@ scheduleController.startSchedule = async function(req, res) {
           message: result.error,
         });
       }
-      // Schedule job to init whenever a time range starts
-      config.device_update_schedule.allowed_time_ranges.forEach((r)=>{
-      });
       return res.status(200).json({
         success: true,
       });
@@ -1189,20 +1061,13 @@ const translateState = function(state) {
   if (state === 'update') return t('waitingUpdate');
   if (state === 'retry') return t('waitingUpdate');
   if (state === 'offline') return t('cpeOffline');
-  if (state === 'topology') return t('searchingTopology');
   if (state === 'downloading') return t('downloadingFirmware');
   if (state === 'updating') return t('updatingCpe');
   if (state === 'ok') return t('updatedSuccessfully');
   if (state === 'error') return t('errorDuringUpdate');
-  if (state === 'error_topology') {
-    return t('errorDuringTopologyValidation');
-  }
   if (state === 'aborted') return t('updateAborted');
   if (state === 'aborted_off') {
     return t('updateAbortedCpeOffline');
-  }
-  if (state === 'aborted_topology') {
-    return t('updateAbortedCpeSearchingTopology');
   }
   if (state === 'aborted_down') {
     return t('updateAbortedCpeDownloadingFirmware');

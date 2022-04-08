@@ -1070,10 +1070,6 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          if (!matchedDevice.mesh_master || matchedDevice.mesh_master === '') {
-            // Only regular devices and mesh masters report download complete
-            updateScheduler.successDownload(req.body.id);
-          }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
           if (matchedDevice.release === '9999-aix') {
             // Disable schedule since factory firmware will not inform status
@@ -1694,7 +1690,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
     });
 
     if (willSignalMeshTopology) {
-      updateScheduler.successTopology(masterMac);
       meshHandlers.validateMeshTopology(masterMac);
     }
 
