@@ -76,6 +76,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (ouiModelStr === 'Huawei') return 'b/g';
       else if (ouiModelStr === 'AC10') return 'bg';
+      else if (ouiModelStr === 'EC220-G5') return 'gn';
       else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
@@ -106,6 +107,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'Huawei') return 'b/g/n';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
+      else if (ouiModelStr === 'EC220-G5') return 'n';
       else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
@@ -140,6 +142,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
+      else if (ouiModelStr === 'EC220-G5') return 'nac';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -168,6 +171,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'Huawei') return 'a/n/ac';
       else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
+      else if (ouiModelStr === 'EC220-G5') return 'ac';
       else if (
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
@@ -427,7 +431,10 @@ const getDefaultFields = function() {
 
 const getTPLinkFields = function(model) {
   let fields = getDefaultFields();
-  fields.common.mac = 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MACAddress';
+  if (model === 'Archer C6') {
+    fields.common.mac = 'InternetGatewayDevice.LANDevice.1.'+
+      'LANHostConfigManagement.MACAddress';
+  }
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
   fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
   fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
@@ -436,10 +443,43 @@ const getTPLinkFields = function(model) {
   fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
   fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
   fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
-  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'X_TP_Password');
-  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'X_TP_Password');
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '2');
+  if (model === 'EC220-G5') {
+    fields.common.web_admin_password = 'InternetGatewayDevice.X_TP_UserCfg.UserPwd';
+    fields.wifi2.password = fields.wifi2.password
+      .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+    fields.wifi5.password = fields.wifi5.password
+      .replace(/KeyPassphrase/g, 'X_TP_PreSharedKey');
+    fields.wifi2.band = fields.wifi2.band
+      .replace(/BandWidth/g, 'X_TP_Bandwidth');
+    fields.wifi5.band = fields.wifi5.band
+      .replace(/BandWidth/g, 'X_TP_Bandwidth');
+    fields.port_mapping_fields.external_port_end =
+    ['X_TP_ExternalPortEnd', 'external_port_end', 'xsd:unsignedInt'];
+    fields.port_mapping_fields.internal_port_end =
+    ['X_TP_InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt'];
+    fields.port_mapping_values.description[0] = 'ServiceName';
+    fields.port_mapping_values.protocol[1] = 'TCP or UDP';
+    delete fields.port_mapping_values.remote_host;
+    delete fields.port_mapping_values.lease;
+    // is needless to set this parameter
+    delete fields.lan.dns_servers;
+    fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaSignalStrength';
+    fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaStandard';
+    fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1'+
+      '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaConnectionSpeed';
+  } else {
+    fields.wifi2.password = fields.wifi2.password
+      .replace(/KeyPassphrase/g, 'X_TP_Password');
+    fields.wifi5.password = fields.wifi5.password
+      .replace(/KeyPassphrase/g, 'X_TP_Password');
+    fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+      'WANCommonInterfaceConfig.TotalBytesReceived';
+    fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+      'WANCommonInterfaceConfig.TotalBytesSent';
+  }
   return fields;
 };
 
@@ -978,9 +1018,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           message = '';
           fields = getFastWirelessFields();
           break;
+        case 'EC220-G5': // TP-Link EC220-5G
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
-          fields = getTPLinkFields();
+          fields = getTPLinkFields(modelName);
           break;
         default:
           return unknownModel;

@@ -1648,9 +1648,13 @@ acsDeviceInfoController.updateInfo = async function(
           let networkPrefix = subnet.split('.').slice(0, 3).join('.');
           let minIP = networkPrefix + '.' + dhcpRanges.min;
           let maxIP = networkPrefix + '.' + dhcpRanges.max;
-          task.parameterValues.push([
-            fields['lan']['dns_servers'], subnet, 'xsd:string',
-          ]);
+          // We must not set this field for these models in order to keep the
+          // LAN configuration properly working.
+          if (modelName != 'EC220-G5') {
+            task.parameterValues.push([
+              fields['lan']['dns_servers'], subnet, 'xsd:string',
+            ]);
+          }
           // These models automaticaly updates these fields, so they can't be
           // modified.
           if (modelName != 'G-2425G-A') {
@@ -1679,20 +1683,6 @@ acsDeviceInfoController.updateInfo = async function(
         if (masterKey === 'wifi2' && model === 'IGD' && modelName === 'IGD') {
           rebootAfterUpdate = true;
         }
-      }
-      if (key === 'web_admin_password') {
-        // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char.
-        // Special char cant be the first one an will be validated
-        // at config setup since there is legacy support needed
-        let password = changes[masterKey][key];
-        let passRegex= new RegExp(''
-          + /(?=.{8,16}$)/.source
-          + /(?=.*[A-Z])/.source
-          + /(?=.*[a-z])/.source
-          + /(?=.*[0-9])/.source
-          + /(?=.*[-!@#$%^&*+_.]).*/.source);
-        if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], modelName, changes[masterKey][key],
