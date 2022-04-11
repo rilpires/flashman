@@ -24,7 +24,7 @@ let genie = {}; // to be exported.
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
   mongodb.MongoClient.connect('mongodb://localhost:27017',
-    {useUnifiedTopology: true}).then(async (client) => {
+    {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
     genieDB = client.db('genieacs');
     // Only watch faults if flashman instance is the first one dispatched
     if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
@@ -57,14 +57,14 @@ const watchGenieTasks = async function() {
     let now = Date.now();
     let oneDayInMilliseconds = 24*60*60*1000;
     if (now - lastTaskWatchlistClean > oneDayInMilliseconds) {
-      Object.keys(taskWatchList).forEach((id)=>{
+      Object.keys(taskWatchlist).forEach((id)=>{
         if (now - taskWatchlist[id].timestamp > oneDayInMilliseconds) {
           delete taskWatchlist[id];
         }
       });
     }
   });
-}
+};
 
 // watches genieacs faults collection waiting for any insert and deletes them
 // as they arrive.
@@ -95,7 +95,7 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    if (['session_terminated', 'timeout'].includes(doc.code)) {
+    if (['session_terminated', 'timeout', 'cwmp.9002'].includes(doc.code)) {
       // Ignore session timeout and session terminated errors - no benefit
       // reporting them and clutter flashman
       return;
