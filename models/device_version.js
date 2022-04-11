@@ -813,10 +813,10 @@ const tr069Devices = {
   'DM985-424 HW3': {
     vendor: 'Datacom',
     versions_upgrade: {
-      'V3.0.1': [],
+      'V3.2.0': [],
     },
     port_forward_opts: {
-      'V3.0.1': portForwardNoRanges,
+      'V3.2.0': portForwardNoRanges,
     },
     feature_support: {
       port_forward: false,
