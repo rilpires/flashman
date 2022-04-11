@@ -904,13 +904,13 @@ scheduleController.startSchedule = async function(req, res) {
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
             let slaveModel = slaveDevice.model.replace('N/', '');
             valid = modelsAvailable.includes(slaveModel);
-            const allowMeshUpgrade = meshHandler.isUpgradePossible(
+            const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
               slaveDevice, matchedRelease.flashbox_version);
             if (!allowMeshUpgrade) valid = false;
           });
           if (!valid) return false;
         }
-        const allowMeshUpgrade = meshHandler.isUpgradePossible(
+        const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
           device, matchedRelease.flashbox_version);
         if (!allowMeshUpgrade) return false;
         let model = device.model.replace('N/', '');
