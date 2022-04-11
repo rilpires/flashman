@@ -1258,9 +1258,13 @@ acsDeviceInfoController.updateInfo = async function(
           let networkPrefix = subnet.split('.').slice(0, 3).join('.');
           let minIP = networkPrefix + '.' + dhcpRanges.min;
           let maxIP = networkPrefix + '.' + dhcpRanges.max;
-          task.parameterValues.push([
-            fields['lan']['dns_servers'], subnet, 'xsd:string',
-          ]);
+          // We must not set this field for these models in order to keep the
+          // LAN configuration properly working.
+          if (modelName != 'EC220-G5') {
+            task.parameterValues.push([
+              fields['lan']['dns_servers'], subnet, 'xsd:string',
+            ]);
+          }
           // These models automaticaly updates these fields, so they can't be
           // modified.
           if (modelName != 'G-2425G-A') {
