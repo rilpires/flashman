@@ -805,6 +805,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      connected_devices: true,
     }
   },
 };

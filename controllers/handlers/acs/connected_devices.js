@@ -165,6 +165,12 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             device.wifi = true;
             device.wifi_freq = 5;
           }
+          if (model === 'DM985-424 HW3') {
+            if (l2iface === '802.11') {
+              device.wifi = true;
+              device.wifi_freq = 2.4;
+            }
+          }
           // Push basic device information
           devices.push(device);
         });
