@@ -157,18 +157,18 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = utilHandlers.getFromNestedKey(data, ifaceKey+'._value');
-          // DIR-842 leaves the dot in the layer2 interface name
-          if (l2iface === iface2 || l2iface === iface2 + '.') {
-            device.wifi = true;
-            device.wifi_freq = 2.4;
-          } else if (l2iface === iface5 || l2iface === iface5 + '.') {
-            device.wifi = true;
-            device.wifi_freq = 5;
-          }
           if (model === 'DM985-424 HW3') {
             if (l2iface === '802.11') {
               device.wifi = true;
+            }
+          } else {
+            // DIR-842 leaves the dot in the layer2 interface name
+            if (l2iface === iface2 || l2iface === iface2 + '.') {
+              device.wifi = true;
               device.wifi_freq = 2.4;
+            } else if (l2iface === iface5 || l2iface === iface5 + '.') {
+              device.wifi = true;
+              device.wifi_freq = 5;
             }
           }
           // Push basic device information
