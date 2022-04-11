@@ -1256,14 +1256,17 @@ anlixDocumentReady.add(function() {
           let slaves = [];
           let isSelectableRow = true;
           if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-            slaves = device.mesh_slaves.map((s)=>res.devices.find((d)=>d._id===s));
+            slaves = res.devices.filter((d) => {
+              return device.mesh_slaves.includes(d._id);
+            });
             isSelectableRow = false;
           }
           if (!isSuperuser && !grantDeviceMassRemoval) {
             isSelectableRow = false;
           }
           let upgradeCol = buildUpgradeCol(device, slaves);
-          let ponSignalCol = buildPonSignalColumn(device, res.ponConfig, grantPonSignalSupport);
+          let ponSignalCol = buildPonSignalColumn(device, res.ponConfig,
+                                                  grantPonSignalSupport);
           let infoRow = buildTableRowInfo(device, isSelectableRow,
                                           false, 0, isTR069);
           infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
@@ -2410,54 +2413,56 @@ anlixDocumentReady.add(function() {
             let slaveIdx = 0;
             device.mesh_slaves.forEach((slave)=>{
               let slaveDev = res.devices.find((d)=>d._id===slave);
-              let rowAttr = buildRowData(slaveDev, index);
-              let statusClasses = buildStatusClasses(slaveDev);
-              let statusAttributes = buildStatusAttributes(slaveDev);
-              let notifications = buildNotification();
-              let infoRow = buildTableRowInfo(slaveDev, false, true, index);
-              infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
-              infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
-              infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
-              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
-              if (isSuperuser || grantNotificationPopups) {
-                infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
-              } else {
-                infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
-              }
-              if (grantMeshV2PrimMode) {
-                let disassocSlaveButton = '<td></td>';
-                if (isSuperuser || grantSlaveDisassociate) {
-                  disassocSlaveButton = '<td>' +
-                                        buildDisassociateSlave() + '</td>';
+              if (typeof slaveDev !== 'undefined') {
+                let rowAttr = buildRowData(slaveDev, index);
+                let statusClasses = buildStatusClasses(slaveDev);
+                let statusAttributes = buildStatusAttributes(slaveDev);
+                let notifications = buildNotification();
+                let infoRow = buildTableRowInfo(slaveDev, false, true, index);
+                infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
+                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
+                infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+                infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
+                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
+                infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+                if (isSuperuser || grantNotificationPopups) {
+                  infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
+                } else {
+                  infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
                 }
-                infoRow = infoRow.replace('$REPLACE_UPGRADE',
-                                          disassocSlaveButton);
-              } else {
-                let removeButton = '<td>' + buildRemoveDevice(true) + '</td>';
-                infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
-              }
-              finalHtml += infoRow;
+                if (grantMeshV2PrimMode) {
+                  let disassocSlaveButton = '<td></td>';
+                  if (isSuperuser || grantSlaveDisassociate) {
+                    disassocSlaveButton = '<td>' +
+                                          buildDisassociateSlave() + '</td>';
+                  }
+                  infoRow = infoRow.replace('$REPLACE_UPGRADE',
+                                            disassocSlaveButton);
+                } else {
+                  let removeButton = '<td>' + buildRemoveDevice(true) + '</td>';
+                  infoRow = infoRow.replace('$REPLACE_UPGRADE', removeButton);
+                }
+                finalHtml += infoRow;
 
-              let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
-                buildAboutTab(slaveDev, index, false,
-                              grantWifiExtendedChannels, slaveIdx)+
-              '</td></tr>';
-              if (!isSuperuser && !grantDeviceId) {
-                formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
-              } else {
-                formRow = formRow.replace(/\$REPLACE_EN_ID/g, '');
-              }
-              finalHtml += formRow;
-              if (slaveDev.external_reference &&
-                  slaveDev.external_reference.kind === 'CPF') {
-                $('#edit_external_reference-' + index + '-' + slaveIdx)
-                .mask('000.000.000-009').keyup();
-              } else if (slaveDev.external_reference &&
-                         slaveDev.external_reference.kind === 'CNPJ') {
-                $('#edit_external_reference-' + index + '-' + slaveIdx)
-                .mask('00.000.000/0000-00').keyup();
+                let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
+                  buildAboutTab(slaveDev, index, false,
+                                grantWifiExtendedChannels, slaveIdx)+
+                '</td></tr>';
+                if (!isSuperuser && !grantDeviceId) {
+                  formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
+                } else {
+                  formRow = formRow.replace(/\$REPLACE_EN_ID/g, '');
+                }
+                finalHtml += formRow;
+                if (slaveDev.external_reference &&
+                    slaveDev.external_reference.kind === 'CPF') {
+                  $('#edit_external_reference-' + index + '-' + slaveIdx)
+                  .mask('000.000.000-009').keyup();
+                } else if (slaveDev.external_reference &&
+                          slaveDev.external_reference.kind === 'CNPJ') {
+                  $('#edit_external_reference-' + index + '-' + slaveIdx)
+                  .mask('00.000.000/0000-00').keyup();
+                }
               }
               slaveIdx++;
             });
