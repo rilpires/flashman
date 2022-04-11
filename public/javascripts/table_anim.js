@@ -1246,6 +1246,7 @@ anlixDocumentReady.add(function() {
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
           let grantBlockWiredDevices = device.permissions.grantBlockWiredDevices;
+          let grantBlockDevices = device.permissions.grantBlockDevices;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1333,6 +1334,7 @@ anlixDocumentReady.add(function() {
             formAttr += ' data-data_collecting-ping_fqdn="'+(device.data_collecting.ping_fqdn || '')+'"';
           }
           formAttr += ' data-grant-block-wired-devices="' + grantBlockWiredDevices + '"';
+          formAttr += ' data-grant-block-devices="' + grantBlockDevices + '"';
 
           let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
 

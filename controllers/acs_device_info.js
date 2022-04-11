@@ -1198,6 +1198,12 @@ acsDeviceInfoController.updateInfo = async function(
   if (changes.wifi5 && changes.wifi5.ssid) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
+  // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
+  // reset, only the username is fixed by Flashman - force password sync too in
+  // those cases
+  if (changes.wan && changes.wan.pppoe_user) {
+    changes.wan.pppoe_pass = device.pppoe_password;
+  }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -1253,17 +1259,21 @@ acsDeviceInfoController.updateInfo = async function(
           let minIP = networkPrefix + '.' + dhcpRanges.min;
           let maxIP = networkPrefix + '.' + dhcpRanges.max;
           task.parameterValues.push([
-            fields['lan']['lease_min_ip'], minIP, 'xsd:string',
-          ]);
-          task.parameterValues.push([
-            fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
-          ]);
-          task.parameterValues.push([
-            fields['lan']['ip_routers'], subnet, 'xsd:string',
-          ]);
-          task.parameterValues.push([
             fields['lan']['dns_servers'], subnet, 'xsd:string',
           ]);
+          // These models automaticaly updates these fields, so they can't be
+          // modified.
+          if (modelName != 'G-2425G-A') {
+            task.parameterValues.push([
+              fields['lan']['ip_routers'], subnet, 'xsd:string',
+            ]);
+            task.parameterValues.push([
+              fields['lan']['lease_min_ip'], minIP, 'xsd:string',
+            ]);
+            task.parameterValues.push([
+              fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
+            ]);
+          }
           hasUpdatedDHCPRanges = true; // Avoid editing this field twice
           hasChanges = true;
         }
@@ -1279,20 +1289,6 @@ acsDeviceInfoController.updateInfo = async function(
         if (masterKey === 'wifi2' && model === 'IGD' && modelName === 'IGD') {
           rebootAfterUpdate = true;
         }
-      }
-      if (key === 'web_admin_password') {
-        // Validate if matches 8 char minimum, 16 char maximum, has upper case,
-        // at least one number, lower case and special char.
-        // Special char cant be the first one an will be validated
-        // at config setup since there is legacy support needed
-        let password = changes[masterKey][key];
-        let passRegex= new RegExp(''
-          + /(?=.{8,16}$)/.source
-          + /(?=.*[A-Z])/.source
-          + /(?=.*[a-z])/.source
-          + /(?=.*[0-9])/.source
-          + /(?=.*[-!@#$%^&*+_.]).*/.source);
-        if (!passRegex.test(password)) return;
       }
       let convertedValue = DevicesAPI.convertField(
         masterKey, key, splitID[0], modelName, changes[masterKey][key],
@@ -1328,6 +1324,14 @@ acsDeviceInfoController.updateInfo = async function(
   } catch (e) {
     return;
   }
+};
+
+acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
+  acsDeviceInfoController.pingOfflineDevices();
+  return res.status(200).json({
+    type: 'success',
+    message: t('operationStartSuccessful'),
+  });
 };
 
 acsDeviceInfoController.pingOfflineDevices = async function() {
