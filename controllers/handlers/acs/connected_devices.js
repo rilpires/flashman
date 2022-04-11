@@ -79,7 +79,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   }
   let mac = device._id;
   let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
+  let model = device.model;
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
