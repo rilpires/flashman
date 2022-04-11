@@ -277,7 +277,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
-    TasksAPI.addTask(acsID, updateTasks);
+    await TasksAPI.addTask(acsID, updateTasks);
   }
 };
 

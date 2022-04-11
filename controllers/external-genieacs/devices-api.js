@@ -24,6 +24,7 @@ const getFieldType = function(masterKey, key, model) {
     case 'mesh2-channel':
     case 'mesh5-channel':
     case 'stun-port':
+    case 'common-interval':
       if (model == 'AC10') {
         return 'xsd:string';
       } else {
@@ -288,6 +289,7 @@ const getDefaultFields = function() {
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
+      interval: 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval',
     },
     wan: {
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable',
