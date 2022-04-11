@@ -152,6 +152,8 @@ const processHostFromURL = function(url) {
 
 const createRegistry = async function(req, permissions) {
   let data = req.body.data;
+  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
+  let doChanges = false;
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     if (typeof data.wan.pppoe_enable.value === 'string') {
@@ -288,6 +290,50 @@ const createRegistry = async function(req, permissions) {
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
   }
 
+  // Collect PON signal, if available
+  let rxPowerPon;
+  let txPowerPon;
+  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
+    rxPowerPon = acsMeasuresHandler.convertToDbm(
+      model, data.wan.pon_rxpower.value,
+    );
+  } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
+    rxPowerPon = acsMeasuresHandler.convertToDbm(
+      model, data.wan.pon_rxpower_epon.value,
+    );
+  }
+  if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
+    txPowerPon = acsMeasuresHandler.convertToDbm(
+      model, data.wan.pon_txpower.value,
+    );
+  } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
+    txPowerPon = acsMeasuresHandler.convertToDbm(
+      model, data.wan.pon_txpower_epon.value,
+    );
+  }
+
+  // Force a web credentials sync
+  let webAdminUser;
+  let webAdminPass;
+  if (
+    data.common.web_admin_username &&
+    data.common.web_admin_username.writable &&
+    matchedConfig.tr069.web_login
+  ) {
+    webAdminUser = matchedConfig.tr069.web_login;
+    changes.common.web_admin_username = matchedConfig.tr069.web_login;
+    doChanges = true;
+  }
+  if (
+    data.common.web_admin_password &&
+    data.common.web_admin_password.writable &&
+    matchedConfig.tr069.web_password
+  ) {
+    webAdminPass = matchedConfig.tr069.web_password;
+    changes.common.web_admin_password = matchedConfig.tr069.web_password;
+    doChanges = true;
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -302,6 +348,8 @@ const createRegistry = async function(req, permissions) {
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
     pppoe_user: (hasPPPoE) ? data.wan.pppoe_user.value : undefined,
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
+    pon_rxpower: rxPowerPon,
+    pon_txpower: txPowerPon,
     wan_vlan_id: (data.wan.vlan) ? data.wan.vlan.value : undefined,
     wan_mtu: (hasPPPoE) ? data.wan.mtu_ppp.value : data.wan.mtu.value,
     wifi_ssid: ssid,
@@ -338,10 +386,8 @@ const createRegistry = async function(req, permissions) {
     last_contact: Date.now(),
     last_tr069_sync: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
-    web_admin_username: (data.common.web_admin_username) ?
-      data.common.web_admin_username.value : undefined,
-    web_admin_password: (data.common.web_admin_password) ?
-      data.common.web_admin_password.value : undefined,
+    web_admin_username: webAdminUser,
+    web_admin_password: webAdminPass,
     mesh_mode: 0,
     mesh_key: newMeshKey,
     mesh_id: newMeshId,
@@ -356,12 +402,25 @@ const createRegistry = async function(req, permissions) {
     return false;
   }
   // Update SSID prefix on CPE if enabled
-  let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
-  let doChanges = false;
   if (isSsidPrefixEnabled) {
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
     doChanges = true;
+  }
+  // Update inform interval
+  if (data.common.interval && data.common.interval.value) {
+    if (matchedConfig && matchedConfig.tr069) {
+      let interval = parseInt(data.common.interval.value);
+      if (
+        !isNaN(interval) &&
+        interval*1000 !== matchedConfig.tr069.inform_interval
+      ) {
+        changes.common.interval = parseInt(
+          matchedConfig.tr069.inform_interval / 1000,
+        );
+        doChanges = true;
+      }
+    }
   }
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
@@ -483,6 +542,7 @@ const requestSync = async function(device) {
   );
   let dataToFetch = {
     basic: false,
+    alt_uid: false,
     web_admin_user: false,
     web_admin_pass: false,
     wan: false,
@@ -505,6 +565,10 @@ const requestSync = async function(device) {
   parameterNames.push(fields.common.uptime);
   parameterNames.push(fields.common.acs_url);
   parameterNames.push(fields.common.interval);
+  if (fields.common.alt_uid) {
+    dataToFetch.alt_uid = true;
+    parameterNames.push(fields.common.alt_uid);
+  }
   if (fields.common.web_admin_username) {
     dataToFetch.web_admin_user = true;
     parameterNames.push(fields.common.web_admin_username);
@@ -642,6 +706,11 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
         acsData.common.uptime = getFieldFromGenieData(data, common.uptime);
         acsData.common.acs_url = getFieldFromGenieData(data, common.acs_url);
         acsData.common.interval = getFieldFromGenieData(data, common.interval);
+      }
+      if (dataToFetch.alt_uid) {
+        acsData.common.alt_uid = getFieldFromGenieData(
+          data, fields.common.alt_uid,
+        );
       }
       if (dataToFetch.web_admin_user) {
         acsData.common.web_admin_username = getFieldFromGenieData(
