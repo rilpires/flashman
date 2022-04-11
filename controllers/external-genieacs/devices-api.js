@@ -601,6 +601,8 @@ const getDatacomFields = function(model) {
       fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
       fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
       fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.InterfaceType';
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      delete fields.port_mapping_fields.external_port_end;
       break;
   }
   return fields;
