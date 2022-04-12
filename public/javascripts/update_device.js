@@ -1,3 +1,4 @@
+import {displayAlertMsg} from './common_actions.js';
 
 let updateDevice = function(event) {
   let selRelease = $(this).text();
@@ -58,6 +59,10 @@ let updateDevice = function(event) {
         },
         error: function(xhr, status, error) {
           dropdownBtn.attr('disabled', false);
+          if (xhr.responseJSON) {
+            xhr.responseJSON.type = 'danger';
+            displayAlertMsg(xhr.responseJSON);
+          }
         },
       });
     }
