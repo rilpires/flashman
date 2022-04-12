@@ -637,7 +637,18 @@ meshHandlers.syncUpdate = async function(device, setQuery, release) {
     });
   } else {
     // Device is master with at lease one slave
-    await propagateUpdate(device, device._id, release, setQuery);
+    if (device instanceof DeviceModel) {
+      await propagateUpdate(device, device._id, release, setQuery);
+    } else {
+      try {
+        let masterDevice = await DeviceModel.findById(device._id);
+        await propagateUpdate(masterDevice, masterDevice._id, release,
+                              setQuery);
+      } catch (err) {
+        console.log('Attempt to access mesh master ' + device._id +
+                    ' failed: database error.');
+      }
+    }
   }
 };
 
