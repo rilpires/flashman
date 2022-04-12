@@ -7,6 +7,11 @@
 		},
 		{
 			"type": "value",
+			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformInterval",
+			"value": "300"
+		},
+		{
+			"type": "value",
 			"name": "InternetGatewayDevice.ManagementServer.ConnectionRequestUsername",
 			"value": "anlix"
 		},
