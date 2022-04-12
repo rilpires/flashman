@@ -1573,9 +1573,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
       }
     }
 
-    // used for mesh networks
-    let willSignalMeshTopology = false;
-    let masterMac;
     if (routersData) {
       // Erasing existing data of previous mesh routers
       matchedDevice.mesh_routers = [];
@@ -1640,15 +1637,27 @@ deviceInfoController.receiveDevices = async function(req, res) {
           });
         }
       }
+    }
 
+    // Used for mesh networks
+    let isWaitingForTopology = false;
+    let willSignalMeshTopology = false;
+    let masterMac;
+    if (matchedDevice.mesh_master) {
+      masterMac = matchedDevice.mesh_master;
+      const tmpMasterDevice = await DeviceModel.findOne(
+        {'_id': masterMac},
+        {'do_update_status': true},
+      ).lean();
+      isWaitingForTopology = tmpMasterDevice.do_update_status === 20;
+    } else {
+      masterMac = matchedDevice._id;
+      isWaitingForTopology = matchedDevice.do_update_status === 20;
+    }
+    if (isWaitingForTopology) {
       try {
-        masterMac = matchedDevice._id;
-        if (matchedDevice.mesh_master) {
-          masterMac = matchedDevice.mesh_master;
-        }
-
         /*
-          This region should not have two parellel executions because fields
+          This region should not have two parallel executions because fields
           of the same device are read and written. A random timeout is set
           between accesses to the mutex
         */
@@ -1676,7 +1685,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
           // Last mesh device to report topology should trigger mesh topology
           // done to scheduler and mesh handler
           willSignalMeshTopology = true;
-          await masterDevice.save();
+          await masterDevice.save().catch((err) => {
+            console.log('Error saving mesh master on topology update: ' + err);
+          });
         }
       } catch (err) {
         console.log(err);
