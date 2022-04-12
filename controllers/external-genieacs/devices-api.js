@@ -91,11 +91,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g';
-      } else if (ouiModelStr === 'GONUAC001') return 'bg';
-      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+        return 'bg';
+      } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'g-only';
-      }
-      else return '11bg';
+      } else return '11bg';
     case '11n':
       if (
         ouiModelStr === 'G%2D140W%2DC' ||
@@ -124,8 +124,9 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g,n';
-      } else if (ouiModelStr === 'GONUAC001') return 'bgn';
-      else return '11bgn';
+      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+        return 'bgn';
+      } else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (
@@ -149,8 +150,9 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-UD'
       ) {
         return 'a,n';
-      } else if (ouiModelStr === 'GONUAC001') return 'an';
-      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+        return 'an';
+      } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'a,n';
       } else if (
         ouiModelStr == 'G-2425G-A' ||
@@ -184,11 +186,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'a,n,ac';
-      } else if (ouiModelStr === 'GONUAC001') return 'anac';
-      else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
+      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+        return 'anac';
+      } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'ac,a,n';
-      }
-      else return '11ac';
+      } else return '11ac';
     default:
       return '';
   }
@@ -713,6 +715,7 @@ const getStavixFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
     case 'GONUAC001':
+    case 'GONUAC002':
       /* Removed due to high json payload in cwmp request from provision.js.
       This field make the json request in syncDeviceData too big,
       around 97kB of payload in pppoe and 116kb of payload in ipoe/dhcp.
@@ -1019,6 +1022,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'xPON': // Intelbras WiFiber (is a Stavix clone)
     case '121AC': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
+    case 'GONUAC002': // Greatek Stavix G421R
       message = '';
       fields = getStavixFields(model);
       break;
@@ -1095,6 +1099,7 @@ const getBeaconTypeByModel = function(model) {
       ret = 'WPA/WPA2';
       break;
     case 'GONUAC001': // Greatek Stavix G421R
+    case 'GONUAC002': // Greatek Stavix G421R
     case 'HG9': // Tenda HG9
       ret = 'WPA2';
       break;
