@@ -611,6 +611,11 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
       await meshHandlers.updateMeshDevice(
         masterDevice.mesh_next_to_update, fieldsToUpdate,
       );
+    } else {
+      // Just update mesh_update_remaining
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
     }
   }
 };
