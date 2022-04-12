@@ -1427,11 +1427,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // daily data fetching
   if (doDailySync) {
     let xmlTargets = [];
+    let xmlModels = [
+      'GONUAC001', 'GONUAC002', '121AC', 'HG9', 'IGD', 'MP_G421R',
+    ];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (
-        ['GONUAC001', '121AC', 'HG9', 'IGD', 'MP_G421R'].includes(device.model)
-      ) {
+      if (xmlModels.includes(device.model)) {
         xmlTargets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -1454,9 +1455,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (
-      ['GONUAC001', '121AC', 'HG9', 'IGD', 'MP_G421R'].includes(device.model)
-    ) {
+    if (xmlModels.includes(device.model)) {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin_user = config.tr069.web_login;
