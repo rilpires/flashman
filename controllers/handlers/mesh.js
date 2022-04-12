@@ -613,6 +613,7 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
       );
     } else {
       // Just update mesh_update_remaining
+      masterDevice.mesh_next_to_update = '';
       await masterDevice.save().catch((err) => {
         console.log('Error saving mesh device to update: ' + err);
       });
