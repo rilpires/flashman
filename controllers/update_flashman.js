@@ -131,74 +131,63 @@ const updateGenieRepo = function(ref) {
 
 const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
-    let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-    // Get config from database
-    Config.findOne({is_default: true}).then((config)=>{
-      if (!config) {
-        console.log('Error reading configs from database in update GenieACS!');
+    // Update genie repository if needed
+    let waitForUpdate;
+    if (upgrades.updateGenie) {
+      console.log('Updating GenieACS version...');
+      waitForUpdate = updateGenieRepo(upgrades.newGenieRef);
+    } else {
+      waitForUpdate = Promise.resolve();
+    }
+    // Update provision script if needed
+    let waitForProvision;
+    if (upgrades.updateProvision) {
+      try {
+        let provisionScript = fs.readFileSync(
+          './controllers/external-genieacs/provision.js', 'utf8',
+        );
+        console.log('Updating GenieACS provision...');
+        waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
+      } catch (e) {
+        waitForProvision = Promise.reject();
+      }
+    } else {
+      waitForProvision = Promise.resolve();
+    }
+    // Update preset json if needed
+    let waitForPreset;
+    if (upgrades.updatePreset) {
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/flashman-preset.json',
+        ));
+        preset._id = 'inform';
+        console.log('Updating GenieACS preset...');
+        waitForPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPreset = Promise.reject();
+      }
+    } else {
+      waitForPreset = Promise.resolve();
+    }
+    // Wait for all promises and check results
+    let promises = [waitForUpdate, waitForProvision, waitForPreset];
+    Promise.allSettled(promises).then((values)=>{
+      if (values[0].status !== 'fulfilled') {
+        console.log('Error updating GenieACS repository!');
+      }
+      if (values[1].status !== 'fulfilled') {
+        console.log('Error updating GenieACS provision script!');
+      }
+      if (values[2].status !== 'fulfilled') {
+        console.log('Error updating GenieACS preset json!');
+      }
+      if (values.some((v) => v.status !== 'fulfilled')) {
         return reject();
-      }
-      // Update genie repository if needed
-      let waitForUpdate;
-      if (upgrades.updateGenie) {
-        console.log('Updating GenieACS version...');
-        waitForUpdate = updateGenieRepo(upgrades.newGenieRef);
       } else {
-        waitForUpdate = Promise.resolve();
+        console.log('GenieACS updated successfully!');
+        return resolve();
       }
-      // Update provision script if needed
-      let waitForProvision;
-      if (upgrades.updateProvision) {
-        try {
-          let provisionScript = fs.readFileSync(
-            './controllers/external-genieacs/provision.js', 'utf8',
-          );
-          console.log('Updating GenieACS provision...');
-          waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
-        } catch (e) {
-          waitForProvision = Promise.reject();
-        }
-      } else {
-        waitForProvision = Promise.resolve();
-      }
-      // Update preset json if needed
-      let waitForPreset;
-      if (upgrades.updatePreset) {
-        try {
-          let preset = JSON.parse(fs.readFileSync(
-            './controllers/external-genieacs/flashman-preset.json',
-          ));
-          // Alter the periodic inform interval based on database config
-          let interval = '' + parseInt(config.tr069.inform_interval / 1000);
-          preset.configurations.find((c) => c.name === field).value = interval;
-          preset._id = 'inform';
-          console.log('Updating GenieACS preset...');
-          waitForPreset = tasksApi.putPreset(preset);
-        } catch (e) {
-          waitForPreset = Promise.reject();
-        }
-      } else {
-        waitForPreset = Promise.resolve();
-      }
-      // Wait for all promises and check results
-      let promises = [waitForUpdate, waitForProvision, waitForPreset];
-      Promise.allSettled(promises).then((values)=>{
-        if (values[0].status !== 'fulfilled') {
-          console.log('Error updating GenieACS repository!');
-        }
-        if (values[1].status !== 'fulfilled') {
-          console.log('Error updating GenieACS provision script!');
-        }
-        if (values[2].status !== 'fulfilled') {
-          console.log('Error updating GenieACS preset json!');
-        }
-        if (values.some((v) => v.status !== 'fulfilled')) {
-          return reject();
-        } else {
-          console.log('GenieACS updated successfully!');
-          return resolve();
-        }
-      });
     });
   });
 };

@@ -810,6 +810,58 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'DM985-424 HW3': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V3.2.0': [],
+    },
+    port_forward_opts: {
+      'V3.2.0': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      connected_devices: true,
+    },
+  },
+  'EC220-G5': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+    },
+    port_forward_opts: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
+    },
+    feature_support: {
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      pon_signal: false,
+      port_forward: true,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 230,
+      stun: false,
+      upnp: false,
+      wps: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
 };
 
 const flashboxFirmwareDevices = {
