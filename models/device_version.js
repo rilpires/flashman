@@ -810,6 +810,31 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'DM985-424 HW3': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V3.2.0': [],
+    },
+    port_forward_opts: {
+      'V3.2.0': portForwardNoRanges,
+    },
+    feature_support: {
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      connected_devices: true,
+    },
+  },
   'EC220-G5': {
     vendor: 'TP-Link',
     versions_upgrade: {

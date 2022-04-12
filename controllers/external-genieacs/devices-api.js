@@ -633,6 +633,24 @@ const getZTEFields = function(model) {
   return fields;
 };
 
+const getDatacomFields = function(model) {
+  let fields = getDefaultFields();
+  switch (model) {
+    case 'DM985-424':
+    case 'DM985%2D424':
+      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+      fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.InterfaceType';
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+      delete fields.port_mapping_fields.external_port_end;
+      break;
+  }
+  return fields;
+};
+
 const getNokiaFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
@@ -1011,6 +1029,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'FW323DAC':
       message = '';
       fields = getFastWirelessFields();
+      break;
+    case 'DM985-424':
+    case 'DM985%2D424':
+      message = '';
+      fields = getDatacomFields(model);
       break;
     case 'IGD':
       switch (modelName) {
