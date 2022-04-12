@@ -1458,12 +1458,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (xmlModels.includes(device.model)) {
       // Trigger xml config syncing for
       // web admin user and password
-      device.web_admin_user = config.tr069.web_login;
+      device.web_admin_username = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
       if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
         // this model can't have two users as "admin", if this happens you
         // can't access it anymore and will be only using normal user account
-        device.web_admin_user = 'root';
+        device.web_admin_username = 'root';
       }
       await device.save().catch((err) => {
         console.log('Error saving device daily sync to database: ' + err);

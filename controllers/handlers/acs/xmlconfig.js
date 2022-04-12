@@ -115,7 +115,7 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   // this login can clash if the username is "admin"
   // beware if you're having trouble to login on web interface
   jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
-    = device.web_admin_user;
+    = device.web_admin_username;
 
   // set web password
   jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
