@@ -414,7 +414,8 @@ meshHandlers.generateBSSIDLists = async function(device) {
 meshHandlers.beginMeshUpdate = async function(masterDevice) {
   try {
     let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
-      masterDevice.release, masterDevice.model, true)[0];
+      masterDevice.release, masterDevice.model);
+    matchedFirmware = matchedFirmware[0];
     if (!matchedFirmware || !matchedFirmware.flashbox_version) {
       return {'success': false};
     }
@@ -532,7 +533,8 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
   masterDevice.mesh_update_remaining = meshUpdateRemaining;
   // Get current mesh versions in this update
   let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
-    masterDevice.release, masterDevice.model, true)[0];
+    masterDevice.release, masterDevice.model);
+  matchedFirmware = matchedFirmware[0];
   if (!matchedFirmware || !matchedFirmware.flashbox_version) {
     return;
   }

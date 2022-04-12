@@ -28,24 +28,15 @@ firmwareSchema.plugin(mongoosePaginate);
 firmwareSchema.statics.findByReleaseCombinedModel = function(
   release,
   combinedModel,
-  useLean=false,
 ) {
   if (typeof release === 'undefined' || typeof combinedModel === 'undefined') {
     return [];
   }
-  if (useLean) {
-    return this.aggregate(
-      {$match: {release: release}},
-      {$project: {modelver: {$concat: ['$model', '$version']}}},
-      {$match: {modelver: combinedModel}},
-    ).lean();
-  } else {
-    return this.aggregate(
-      {$match: {release: release}},
-      {$project: {modelver: {$concat: ['$model', '$version']}}},
-      {$match: {modelver: combinedModel}},
-    );
-  }
+  return this.aggregate([
+    {$match: {release: release}},
+    {$addFields: {modelver: {$concat: ['$model', '$version']}}},
+    {$match: {modelver: combinedModel}},
+  ]);
 };
 
 let Firmware = mongoose.model('Firmware', firmwareSchema);

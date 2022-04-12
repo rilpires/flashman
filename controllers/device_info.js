@@ -1079,7 +1079,8 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           } else {
             matchedDevice.do_update_status = 10; // ack received
             const firmware = await Firmware.findByReleaseCombinedModel(
-              matchedDevice.release, matchedDevice.model, true)[0];
+              matchedDevice.release, matchedDevice.model);
+            matchedFirmware = matchedFirmware[0];
             if (firmware && firmware.flashbox_version) {
               const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
                 matchedDevice.version, firmware.flashbox_version);
