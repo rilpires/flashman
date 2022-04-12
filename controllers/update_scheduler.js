@@ -510,10 +510,11 @@ scheduleController.failedDownload = async function(mac, slave='') {
             retry,
         },
       });
+      let fieldsToUpdate = {release: rule.release};
       if (slave) {
-        meshHandler.updateMeshDevice(slave, rule.release);
+        meshHandler.updateMeshDevice(slave, fieldsToUpdate);
       } else {
-        meshHandler.updateMeshDevice(mac, rule.release);
+        meshHandler.updateMeshDevice(mac, fieldsToUpdate);
       }
       return {success: true};
     }

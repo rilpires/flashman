@@ -448,10 +448,13 @@ meshHandlers.beginMeshUpdate = async function(masterDevice) {
         return {'success': true};
       // Mesh v2 -> v2 or v1 -> v1
       } else {
-        masterDevice.mesh_update_remaining = [
-          masterDevice._id, ...masterDevice.mesh_slaves,
-        ];
-        meshHandlers.updateMeshDevice(masterDevice._id, masterDevice.release);
+        let fieldsToUpdate = {
+          release: masterDevice.release,
+          mesh_update_remaining: [
+            masterDevice._id, ...masterDevice.mesh_slaves,
+          ],
+        };
+        meshHandlers.updateMeshDevice(masterDevice._id, fieldsToUpdate);
         return {'success': true};
       }
     } else {
@@ -500,7 +503,7 @@ meshHandlers.convertBSSIDToId = async function(device, bssid) {
   }
 };
 
-meshHandlers.updateMeshDevice = async function(deviceMac, release) {
+meshHandlers.updateMeshDevice = async function(deviceMac, fieldsToUpdate) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(deviceMac);
@@ -514,7 +517,9 @@ meshHandlers.updateMeshDevice = async function(deviceMac, release) {
   }
   matchedDevice.do_update = true;
   matchedDevice.do_update_status = 0; // waiting
-  matchedDevice.release = release;
+  for (let [fieldKey, fieldVal] of Object.entries(fieldsToUpdate)) {
+    matchedDevice[fieldKey] = fieldVal;
+  }
   messaging.sendUpdateMessage(matchedDevice);
   await matchedDevice.save().catch((err) => {
     console.log('Error saving mesh device to update: ' + err);
@@ -560,8 +565,12 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
     } else if (meshUpdateRemaining.length === 1) {
       // Last always will be the master
       masterDevice.mesh_next_to_update = masterDevice._id;
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
       await meshHandlers.updateMeshDevice(
-        masterDevice.mesh_next_to_update, release,
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
       );
     } else if (meshUpdateRemaining.length === 2) {
       // If there are only two devices left to update just mark the slave
@@ -570,8 +579,12 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
         return masterDevice.mesh_slaves.includes(device);
       });
       masterDevice.mesh_next_to_update = nextDeviceToUpdate;
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
       await meshHandlers.updateMeshDevice(
-        masterDevice.mesh_next_to_update, release,
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
       );
     } else {
       // At least three devices left to update in mesh v2 network
@@ -591,8 +604,12 @@ const propagateUpdate = async function(masterDevice, macOfUpdated,
     if (meshUpdateRemaining.length > 0) {
       // All remanining update scenarios follows update list sequentially
       masterDevice.mesh_next_to_update = meshUpdateRemaining[0];
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
       await meshHandlers.updateMeshDevice(
-        masterDevice.mesh_next_to_update, release,
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
       );
     }
   }
@@ -955,9 +972,10 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
     });
   } else {
     // Before beginning the update process the next release is saved to master
-    const release = matchedMaster.release;
+    let fieldsToUpdate = {release: matchedMaster.release};
     // Update next device
-    meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update, release);
+    meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update,
+                                  fieldsToUpdate);
   }
 };
 

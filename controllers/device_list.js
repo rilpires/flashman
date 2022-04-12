@@ -360,8 +360,9 @@ deviceListController.changeUpdate = async function(req, res) {
 };
 
 deviceListController.retryMeshUpdate = function(req, res) {
+  let fieldsToUpdate = {release: req.params.release.trim()};
   meshHandlers.updateMeshDevice(
-    req.params.id, req.params.release.trim(),
+    req.params.id, fieldsToUpdate,
   );
   return res.status(200).json({success: true});
 };
