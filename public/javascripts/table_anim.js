@@ -1296,7 +1296,7 @@ anlixDocumentReady.add(function() {
             }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
-            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
           }
 
           finalHtml += infoRow;
