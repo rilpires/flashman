@@ -24,6 +24,7 @@ const getFieldType = function(masterKey, key, model) {
     case 'mesh2-channel':
     case 'mesh5-channel':
     case 'stun-port':
+    case 'common-interval':
       if (model == 'AC10') {
         return 'xsd:string';
       } else {
@@ -252,6 +253,7 @@ const convertField = function(masterKey, key, oui, model, value) {
         result.value = (value > 0) ? true : false; // convert to boolean
       }
       break;
+    case 'common-interval':
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
@@ -288,6 +290,7 @@ const getDefaultFields = function() {
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
+      interval: 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval',
     },
     wan: {
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable',
@@ -628,6 +631,24 @@ const getZTEFields = function(model) {
   fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
   fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
+const getDatacomFields = function(model) {
+  let fields = getDefaultFields();
+  switch (model) {
+    case 'DM985-424':
+    case 'DM985%2D424':
+      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+      fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.InterfaceType';
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+      delete fields.port_mapping_fields.external_port_end;
+      break;
+  }
   return fields;
 };
 
@@ -1009,6 +1030,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'FW323DAC':
       message = '';
       fields = getFastWirelessFields();
+      break;
+    case 'DM985-424':
+    case 'DM985%2D424':
+      message = '';
+      fields = getDatacomFields(model);
       break;
     case 'IGD':
       switch (modelName) {
