@@ -253,6 +253,7 @@ const convertField = function(masterKey, key, oui, model, value) {
         result.value = (value > 0) ? true : false; // convert to boolean
       }
       break;
+    case 'common-interval':
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
