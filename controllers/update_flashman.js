@@ -9,7 +9,8 @@ const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
-const t = require('./language').i18next.t;
+const language = require('./language');
+const t = language.i18next.t;
 let Config = require('../models/config');
 let updateController = {};
 
@@ -590,6 +591,7 @@ updateController.getAutoConfig = function(req, res) {
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
+        language: matchedConfig.language,
       });
     } else {
       return res.status(200).json({
@@ -862,6 +864,19 @@ updateController.setAutoConfig = async function(req, res) {
     }
     if (typeof flashmanStepRequired === 'boolean') {
       config.certification.flashman_step_required = flashmanStepRequired;
+    }
+
+    // language config change.
+    let lng = req.body['selected-language'];
+    // if received language is different from current language.
+    if (lng !== language.i18next.resolvedLanguage) {
+      // try to change the language in i18next.
+      let {status, message} = await language.updateLanguage(lng).then((x) => x);
+      if (status !== 200) { // if attempt, of changing language, didn't work.
+        // send the returned status and message in response.
+        return res.status(status).json({type: 'danger', message: message});
+      }
+      // if it worked. it's been already saved in the database.
     }
 
     await config.save();
