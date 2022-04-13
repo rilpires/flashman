@@ -721,6 +721,9 @@ anlixDocumentReady.add(function() {
     }
     if (masterStatus == 6 || masterStatus == 7) {
       // Error status 6 and 7 are only saved on master device
+      upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
+      upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
+      upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', '');
@@ -731,6 +734,9 @@ anlixDocumentReady.add(function() {
     } else if (!inProgress && masterStatus == 20) {
       // Status 20 is only saved on master
       tooltipMsg = 'Coletando topologia';
+      upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
+      upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
+      upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_0', '');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');

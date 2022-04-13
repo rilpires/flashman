@@ -1,6 +1,7 @@
 /* global __line */
 const DeviceModel = require('../../models/device');
 const DeviceVersion = require('../../models/device_version');
+const FirmwareModel = require('../../models/firmware');
 const messaging = require('../messaging');
 const mqtt = require('../../mqtts');
 const crypt = require('crypto');
@@ -138,11 +139,18 @@ meshHandlers.enhanceSearchResult = async function(result) {
   return extraResults;
 };
 
-meshHandlers.syncUpdateCancel = function(masterDevice, status=1) {
+meshHandlers.syncUpdateCancel = async function(masterDevice, status=1) {
   if (!masterDevice.mesh_slaves || masterDevice.mesh_slaves.length === 0) {
     // Abort if not a mesh master - why would this be called?
     return;
   }
+  masterDevice.do_update = false;
+  masterDevice.do_update_status = status;
+  masterDevice.mesh_next_to_update = '';
+  masterDevice.mesh_update_remaining = [];
+  await masterDevice.save().catch((err) => {
+    console.log('Error saving master device on mesh update: ' + err);
+  });
   masterDevice.mesh_slaves.forEach((slaveMac)=>{
     DeviceModel.findById(slaveMac, function(err, slaveDevice) {
       if (err) {
@@ -404,23 +412,57 @@ meshHandlers.generateBSSIDLists = async function(device) {
 };
 
 meshHandlers.beginMeshUpdate = async function(masterDevice) {
-  // Remaining devices are needed to differentiate between the first
-  // time a device is updated the other times, as well as to rule out
-  // which devices mustn't update in the future.
-  masterDevice.mesh_update_remaining = [
-    masterDevice._id, ...masterDevice.mesh_slaves,
-  ];
-  // update number of devices remaining to send onlinedevs info
-  masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length + 1;
-  masterDevice.do_update_status = 20; // waiting for topology
-  await masterDevice.save().catch((err) => {
-    console.log('Error saving master device on mesh update: ' + err);
-  });
-  masterDevice.mesh_update_remaining.forEach((mac)=>{
-    mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
-  });
-  deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
-  return {'success': true};
+  try {
+    let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
+      masterDevice.release, masterDevice.model);
+    matchedFirmware = matchedFirmware[0];
+    if (!matchedFirmware || !matchedFirmware.flashbox_version) {
+      return {'success': false};
+    }
+    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+      masterDevice.version, matchedFirmware.flashbox_version,
+    );
+    if (!typeUpgrade.unknownVersion) {
+      // Mesh v2 -> v1
+      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
+        return {'success': false};
+      // Mesh v1 -> v2
+      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
+        // Remaining devices are needed to differentiate between the first
+        // time a device is updated the other times, as well as to rule out
+        // which devices must not update in the future.
+        masterDevice.mesh_update_remaining = [
+          masterDevice._id, ...masterDevice.mesh_slaves,
+        ];
+        // update number of devices remaining to send onlinedevs info
+        masterDevice.mesh_onlinedevs_remaining =
+          masterDevice.mesh_slaves.length + 1;
+        masterDevice.do_update_status = 20; // waiting for topology
+        await masterDevice.save().catch((err) => {
+          console.log('Error saving master device on mesh update: ' + err);
+        });
+        masterDevice.mesh_update_remaining.forEach((mac)=>{
+          mqtt.anlixMessageRouterOnlineLanDevs(mac.toUpperCase());
+        });
+        deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
+        return {'success': true};
+      // Mesh v2 -> v2 or v1 -> v1
+      } else {
+        let fieldsToUpdate = {
+          release: masterDevice.release,
+          mesh_update_remaining: [
+            masterDevice._id, ...masterDevice.mesh_slaves,
+          ],
+        };
+        meshHandlers.updateMeshDevice(masterDevice._id, fieldsToUpdate);
+        return {'success': true};
+      }
+    } else {
+      return {'success': false};
+    }
+  } catch (err) {
+    return {'success': false};
+  }
 };
 
 meshHandlers.convertBSSIDToId = async function(device, bssid) {
@@ -461,108 +503,236 @@ meshHandlers.convertBSSIDToId = async function(device, bssid) {
   }
 };
 
-// secondary device in mesh v1 must have support to be secondary in mesh v2
-meshHandlers.isSlaveInV1CompatibleInV2 = function(slave) {
-  const slavePermissions = DeviceVersion.findByVersion(
-    slave.version,
-    slave.wifi_is_5ghz_capable,
-    slave.model,
-  );
-  if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
-    return false;
-  }
-  return true;
-};
-
-// primary device in mesh v1 must have support to be primary in mesh v2
-meshHandlers.isMasterInV1CompatibleInV2 = function(master) {
-  const masterPermissions = DeviceVersion.findByVersion(
-    master.version,
-    master.wifi_is_5ghz_capable,
-    master.model,
-  );
-  if (!masterPermissions.grantMeshV2PrimaryModeUpgrade) {
-    return false;
-  }
-  return true;
-};
-
-// checks if master in mesh v1 is compatible with being master in mesh v2
-// and if all slaves in mesh v1 are compatible with being slaves in mesh v2
-meshHandlers.allowMeshV1ToV2 = function(device) {
+meshHandlers.updateMeshDevice = async function(deviceMac, fieldsToUpdate) {
+  let matchedDevice;
   try {
-    if (device.mesh_slaves && device.mesh_slaves.length) {
-      // is a master
-      if (!(meshHandlers.isMasterInV1CompatibleInV2(device))) {
-        return false;
-      }
-    } else if (device.mesh_master) {
-      // is a slave
-      if (!(meshHandlers.isSlaveInV1CompatibleInV2(device))) {
-        return false;
-      }
-    } else {
-      return false;
+    matchedDevice = await DeviceModel.findById(deviceMac);
+    if (!matchedDevice) {
+      console.log('Did not find master device in database');
+      return;
     }
-    return true;
   } catch (err) {
     console.log(err);
-    return false;
+    return;
   }
+  matchedDevice.do_update = true;
+  matchedDevice.do_update_status = 0; // waiting
+  for (let [fieldKey, fieldVal] of Object.entries(fieldsToUpdate)) {
+    matchedDevice[fieldKey] = fieldVal;
+  }
+  messaging.sendUpdateMessage(matchedDevice);
+  await matchedDevice.save().catch((err) => {
+    console.log('Error saving mesh device to update: ' + err);
+  });
+  mqtt.anlixMessageRouterUpdate(deviceMac);
+  // Start ack timeout
+  deviceHandlers.timeoutUpdateAck(deviceMac, 'update');
 };
 
-meshHandlers.allowMeshUpgrade = function(device, nextVersion) {
-  if ((device.mesh_slaves && device.mesh_slaves.length) ||
-    device.mesh_master) {
-    // find out what kind of upgrade this is
-    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
-      device.version, nextVersion,
-    );
-    if (!typeUpgrade.unknownVersion) {
-      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
-        // no mesh v2 -> v1 downgrade if in active mesh network
-        return false;
-      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
-        // mesh v1 -> v2
-        return meshHandlers.allowMeshV1ToV2(device);
+const propagateUpdate = async function(masterDevice, macOfUpdated,
+                                       release, setQuery=undefined,
+) {
+  // Update remaining devices to update
+  const meshUpdateRemaining =
+    masterDevice.mesh_update_remaining.filter((mac) => mac !== macOfUpdated);
+  masterDevice.mesh_update_remaining = meshUpdateRemaining;
+  // Get current mesh versions in this update
+  let matchedFirmware = await FirmwareModel.findByReleaseCombinedModel(
+    masterDevice.release, masterDevice.model);
+  matchedFirmware = matchedFirmware[0];
+  if (!matchedFirmware || !matchedFirmware.flashbox_version) {
+    return;
+  }
+  const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+    masterDevice.version, matchedFirmware.flashbox_version,
+  );
+  if (typeUpgrade.unknownVersion) {
+    return;
+  }
+  const isV1ToV2 = (typeUpgrade.current === 1 &&
+                    typeUpgrade.upgrade === 2);
+
+  if (isV1ToV2) {
+    if (meshUpdateRemaining.length === 0) {
+      // We only need to check setQuery here because the flow where mesh master
+      // calls this function always ends here
+      if (setQuery) {
+        setQuery.mesh_update_remaining = [];
+        setQuery.mesh_next_to_update = '';
       } else {
-        // allow mesh v1 -> v1 or mesh v2 -> v2
-        return true;
+        masterDevice.mesh_next_to_update = '';
       }
+    } else if (meshUpdateRemaining.length === 1) {
+      // Last always will be the master
+      masterDevice.mesh_next_to_update = masterDevice._id;
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
+      );
+    } else if (meshUpdateRemaining.length === 2) {
+      // If there are only two devices left to update just mark the slave
+      // that hasn't updated
+      const nextDeviceToUpdate = meshUpdateRemaining.find((device)=>{
+        return masterDevice.mesh_slaves.includes(device);
+      });
+      masterDevice.mesh_next_to_update = nextDeviceToUpdate;
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
+      );
     } else {
-      // block upgrade if one of target versions is unknown
-      return false;
+      // At least three devices left to update in mesh v2 network
+      masterDevice.mesh_onlinedevs_remaining =
+        masterDevice.mesh_slaves.length + 1;
+      // waiting for topology
+      masterDevice.do_update_status = 20;
+      const slaves = masterDevice.mesh_slaves;
+      mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
+      slaves.forEach((slave)=>{
+        mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+      });
+      // Set timeout for reception of onlinedevs
+      deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
     }
   } else {
-    // Only restrictions are in active mesh networks
-    return true;
+    if (meshUpdateRemaining.length > 0) {
+      // All remanining update scenarios follows update list sequentially
+      masterDevice.mesh_next_to_update = meshUpdateRemaining[0];
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+      let fieldsToUpdate = {release: release};
+      await meshHandlers.updateMeshDevice(
+        masterDevice.mesh_next_to_update, fieldsToUpdate,
+      );
+    } else {
+      // Just update mesh_update_remaining
+      masterDevice.mesh_next_to_update = '';
+      await masterDevice.save().catch((err) => {
+        console.log('Error saving mesh device to update: ' + err);
+      });
+    }
   }
 };
 
-// Function does a DFS to get the next device to update
-const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
-  let nextDevice;
-  if (meshTopology[newMac] && meshTopology[newMac].length) {
-    for (let i=0; i<meshTopology[newMac].length; i++) {
-      const auxDevice = getNextToUpdateRec(
-        meshTopology, meshTopology[newMac][i], devicesToUpdate);
-      // Only choose a device that hasn't been updated yet
-      if (devicesToUpdate.includes(auxDevice)) {
-        nextDevice = auxDevice;
-        break;
+meshHandlers.syncUpdate = async function(device, setQuery, release) {
+  // Only change information if device has slaves or a master
+  if ((!device.mesh_slaves || device.mesh_slaves.length === 0) &&
+      !device.mesh_master
+  ) {
+    return;
+  }
+  if (device.mesh_master) {
+    // Device is a slave
+    DeviceModel.findById(device.mesh_master, async function(err, masterDevice) {
+      if (err) {
+        console.log('Attempt to access mesh master '+ device.mesh_master +
+                    ' failed: database error.');
+      } else if (!masterDevice) {
+        console.log('Attempt to access mesh master '+ device.mesh_master +
+                    ' failed: device not found.');
       } else {
-        continue;
+        await propagateUpdate(masterDevice, device._id, release);
+      }
+    });
+  } else {
+    // Device is master with at lease one slave
+    if (device instanceof DeviceModel) {
+      await propagateUpdate(device, device._id, release, setQuery);
+    } else {
+      try {
+        let masterDevice = await DeviceModel.findById(device._id);
+        await propagateUpdate(masterDevice, masterDevice._id, release,
+                              setQuery);
+      } catch (err) {
+        console.log('Attempt to access mesh master ' + device._id +
+                    ' failed: database error.');
       }
     }
-    // If all devices below newMac have already updated then newMac is next
-    if (!nextDevice) {
-      nextDevice = newMac;
-    }
-  } else {
-    // If device doesn't have sons then we return it as next to update
-    nextDevice = newMac;
   }
-  return nextDevice;
+};
+
+/* ************************************************************************** */
+/* ***** Exclusive functions for mesh v1 to mesh v2 upgrade procedure ******* */
+/* ************************************************************************** */
+
+const getMeshRouters = async function(device) {
+  let onlyOldMeshRoutersEntries = true;
+  let enrichedMeshRouters = util.deepCopyObject(device.mesh_routers)
+  .filter((meshRouter) => {
+    // Remove entries related to wireless connection if cabled mesh only mode
+    if (device.mesh_mode === 1 && meshRouter.iface !== 1) {
+      return false;
+    } else {
+      return true;
+    }
+  })
+  .map((meshRouter) => {
+    meshRouter.is_old = deviceHandlers.isApTooOld(meshRouter.last_seen);
+    // There is at least one updated entry
+    if (!meshRouter.is_old) {
+      onlyOldMeshRoutersEntries = false;
+    }
+    return meshRouter;
+  });
+  // If mesh routers list is empty or old and there are routers in mesh then
+  // let's check if it's possible to populate mesh routers list by cabled
+  // connections
+  if (onlyOldMeshRoutersEntries || (device.mesh_mode === 1)) {
+    let meshEntry = {
+      mac: '',
+      last_seen: Date.now(),
+      conn_time: 0,
+      rx_bytes: 0,
+      tx_bytes: 0,
+      signal: 0,
+      rx_bit: 0,
+      tx_bit: 0,
+      latency: 0,
+      iface: 1,
+      n_conn_dev: 0,
+    };
+    if (device.mesh_master) { // Slave router
+      let masterId = device.mesh_master.toUpperCase();
+      let matchedMaster = await DeviceModel.findById(
+        masterId,
+        {last_contact: true,
+         _id: true,
+         wan_negociated_speed: true,
+        }).lean();
+      // If there is recent comm assume there is a cabled connection
+      if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
+        meshEntry.mac = matchedMaster._id;
+        meshEntry.rx_bit = matchedMaster.wan_negociated_speed;
+        meshEntry.tx_bit = matchedMaster.wan_negociated_speed;
+        enrichedMeshRouters.push(meshEntry);
+      }
+    } else if (device.mesh_slaves) { // Master router
+      for (let slaveMac of device.mesh_slaves) {
+        let slaveId = slaveMac.toUpperCase();
+        let matchedSlave = await DeviceModel.findById(
+          slaveId,
+          {last_contact: true,
+           _id: true,
+           wan_negociated_speed: true,
+          }).lean();
+        // If there is recent comm assume there is a cabled connection
+        if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
+          meshEntry.mac = matchedSlave._id;
+          meshEntry.rx_bit = matchedSlave.wan_negociated_speed;
+          meshEntry.tx_bit = matchedSlave.wan_negociated_speed;
+          enrichedMeshRouters.push(meshEntry);
+        }
+      }
+    }
+  }
+  return enrichedMeshRouters;
 };
 
 // This will return true if we infer that 'bssid' is
@@ -594,8 +764,32 @@ const isMacCompatible = function(bssid, mac) {
   return maskTest && diffTest;
 };
 
+// Function does a DFS to get the next device to update
+const getNextToUpdateRec = function(meshTopology, newMac, devicesToUpdate) {
+  let nextDevice;
+  if (meshTopology[newMac] && meshTopology[newMac].length) {
+    for (let i=0; i<meshTopology[newMac].length; i++) {
+      const auxDevice = getNextToUpdateRec(
+        meshTopology, meshTopology[newMac][i], devicesToUpdate);
+      // Only choose a device that hasn't been updated yet
+      if (devicesToUpdate.includes(auxDevice)) {
+        nextDevice = auxDevice;
+        break;
+      } else {
+        continue;
+      }
+    }
+    // If all devices below newMac have already updated then newMac is next
+    if (!nextDevice) {
+      nextDevice = newMac;
+    }
+  } else {
+    // If device doesn't have sons then we return it as next to update
+    nextDevice = newMac;
+  }
+  return nextDevice;
+};
 
-// Used for mesh v1 update
 const getPossibleMeshTopology = function(
   meshRouters, masterMac, slaves, meshMode,
 ) {
@@ -699,142 +893,27 @@ const getPossibleMeshTopology = function(
   return retObj;
 };
 
-// Used for mesh v2 update
-const getExactMeshTopology = async function(meshFathers, masterMac) {
-  // this will be used for controlling update order. Key is father and value is
-  // list of sons
-  let meshTopology = {};
-  const macs = Object.keys(meshFathers);
-  for (let i = 0; i < macs.length; i++) {
-    const macKey = macs[i];
-    // We only analyse edges from the perspective of the slaves
-    if (macKey === masterMac) continue;
-    const fatherMac = meshFathers[macKey].toUpperCase();
-    // hash map where father is the key and value is list of sons
-    if (!meshTopology[fatherMac]) {
-      meshTopology[fatherMac] = [macKey];
-    } else {
-      meshTopology[fatherMac].push(macKey);
-    }
-  }
-  return meshTopology;
-};
-
 /*
   The topology we get uses bssids instead of mac addresses and flashman does
   not have access to the bssids of devices in mesh v1, therefore, only mesh
   networks that have a star topology, in mesh v1, are allowed to upgrade.
-  Devices in mesh v2 announce their mesh father. This allows the exact topology
-  to be discovered. We use that topology to choose the next device to upgrade.
 */
-const getMeshTopology = async function(
-  meshRoutersData, meshFathers, master,
-) {
-  let hasFullTopologyInfo = true;
-  // validate that all data is present for mesh v2
-  for (let i = 0; i < Object.keys(meshRoutersData).length; i++) {
-    const mac = Object.keys(meshRoutersData)[i].toUpperCase();
-    if (mac === master._id) continue;
-    if (!meshFathers[mac]) {
-      // all slaves in mesh v2 should have mesh father info
-      hasFullTopologyInfo = false;
-      break;
-    }
-  }
+const getMeshTopology = async function(meshRoutersData, master) {
   let meshTopology;
-  if (hasFullTopologyInfo) {
-    // Devices in mesh v2
-    meshTopology = await getExactMeshTopology(meshFathers, master._id);
-  } else {
-    // Devices in mesh v1
-    meshTopology = getPossibleMeshTopology(
-      meshRoutersData, master._id, master.mesh_slaves, master.mesh_mode,
-    );
-    if (!meshTopology || Object.keys(meshTopology).length === 0) {
-      console.log(`UPDATE: Mesh network of primary device ${master._id} `+
-      'is invalid');
-      deviceHandlers.syncUpdateScheduler(master._id);
-    }
+  // Devices in mesh v1
+  meshTopology = getPossibleMeshTopology(
+    meshRoutersData, master._id, master.mesh_slaves, master.mesh_mode,
+  );
+  if (!meshTopology || Object.keys(meshTopology).length === 0) {
+    console.log(`UPDATE: Mesh network of primary device ${master._id} `+
+    'is invalid');
+    deviceHandlers.syncUpdateScheduler(master._id);
   }
   return meshTopology;
 };
 
-const getMeshRouters = async function(device) {
-  let onlyOldMeshRoutersEntries = true;
-  let enrichedMeshRouters = util.deepCopyObject(device.mesh_routers)
-  .filter((meshRouter) => {
-    // Remove entries related to wireless connection if cabled mesh only mode
-    if (device.mesh_mode === 1 && meshRouter.iface !== 1) {
-      return false;
-    } else {
-      return true;
-    }
-  })
-  .map((meshRouter) => {
-    meshRouter.is_old = deviceHandlers.isApTooOld(meshRouter.last_seen);
-    // There is at least one updated entry
-    if (!meshRouter.is_old) {
-      onlyOldMeshRoutersEntries = false;
-    }
-    return meshRouter;
-  });
-  // If mesh routers list is empty or old and there are routers in mesh then
-  // let's check if it's possible to populate mesh routers list by cabled
-  // connections
-  if (onlyOldMeshRoutersEntries || (device.mesh_mode === 1)) {
-    let meshEntry = {
-      mac: '',
-      last_seen: Date.now(),
-      conn_time: 0,
-      rx_bytes: 0,
-      tx_bytes: 0,
-      signal: 0,
-      rx_bit: 0,
-      tx_bit: 0,
-      latency: 0,
-      iface: 1,
-      n_conn_dev: 0,
-    };
-    if (device.mesh_master) { // Slave router
-      let masterId = device.mesh_master.toUpperCase();
-      let matchedMaster = await DeviceModel.findById(
-        masterId,
-        {last_contact: true,
-          _id: true,
-          wan_negociated_speed: true,
-        }).lean();
-      // If there is recent comm assume there is a cabled connection
-      if (!deviceHandlers.isApTooOld(matchedMaster.last_contact)) {
-        meshEntry.mac = matchedMaster._id;
-        meshEntry.rx_bit = matchedMaster.wan_negociated_speed;
-        meshEntry.tx_bit = matchedMaster.wan_negociated_speed;
-        enrichedMeshRouters.push(meshEntry);
-      }
-    } else if (device.mesh_slaves) { // Master router
-      for (let slaveMac of device.mesh_slaves) {
-        let slaveId = slaveMac.toUpperCase();
-        let matchedSlave = await DeviceModel.findById(
-          slaveId,
-          {last_contact: true,
-            _id: true,
-            wan_negociated_speed: true,
-          }).lean();
-        // If there is recent comm assume there is a cabled connection
-        if (!deviceHandlers.isApTooOld(matchedSlave.last_contact)) {
-          meshEntry.mac = matchedSlave._id;
-          meshEntry.rx_bit = matchedSlave.wan_negociated_speed;
-          meshEntry.tx_bit = matchedSlave.wan_negociated_speed;
-          enrichedMeshRouters.push(meshEntry);
-        }
-      }
-    }
-  }
-  return enrichedMeshRouters;
-};
-
 const markNextDeviceToUpdate = async function(master) {
   let meshRoutersData = {};
-  let meshFathers = {};
   // Gathers information from primary and secondary CPEs in the network
   // meshRoutersData is an object, where the key is the device's MAC and the
   // value is a list of objects, showing info of routers in the mesh network
@@ -843,7 +922,7 @@ const markNextDeviceToUpdate = async function(master) {
   try {
     for (let i = 0; i < master.mesh_slaves.length; i++) {
       const slaveMac = master.mesh_slaves[i].toUpperCase();
-      let matchedSlave = await DeviceModel.findById(slaveMac);
+      let matchedSlave = await DeviceModel.findById(slaveMac).lean();
       if (matchedSlave == null) {
         return {
           success: false,
@@ -852,10 +931,6 @@ const markNextDeviceToUpdate = async function(master) {
       }
       enrichedMeshRouters = await getMeshRouters(matchedSlave);
       meshRoutersData[slaveMac] = enrichedMeshRouters;
-      if (matchedSlave.mesh_father) {
-        // Store mesh father info
-        meshFathers[slaveMac] = matchedSlave.mesh_father;
-      }
     }
   } catch (err) {
     return {success: false, message: err};
@@ -864,7 +939,7 @@ const markNextDeviceToUpdate = async function(master) {
   // structure, where the key is the device MAC and the value is a list of it's
   // mesh sons.
   const meshTopology = await getMeshTopology(
-    meshRoutersData, meshFathers, master);
+    meshRoutersData, master);
   if (!meshTopology || Object.keys(meshTopology).length === 0) {
     return {
       success: false,
@@ -880,34 +955,14 @@ const markNextDeviceToUpdate = async function(master) {
   return {success: true};
 };
 
-meshHandlers.updateMeshDevice = async function(deviceMac, release) {
-  let matchedDevice;
-  try {
-    matchedDevice = await DeviceModel.findById(deviceMac);
-    if (!matchedDevice) {
-      console.log('Did not find master device in database');
-      return;
-    }
-  } catch (err) {
-    console.log(err);
-    return;
-  }
-  matchedDevice.do_update = true;
-  matchedDevice.do_update_status = 0; // waiting
-  matchedDevice.release = release;
-  messaging.sendUpdateMessage(matchedDevice);
-  await matchedDevice.save().catch((err) => {
-    console.log('Error saving mesh device to update: ' + err);
-  });
-  mqtt.anlixMessageRouterUpdate(deviceMac);
-  // Start ack timeout
-  deviceHandlers.timeoutUpdateAck(deviceMac, 'update');
-};
-
 meshHandlers.validateMeshTopology = async function(masterMac) {
   let matchedMaster;
   try {
-    matchedMaster = await DeviceModel.findById(masterMac);
+    matchedMaster = await DeviceModel.findById(masterMac,
+      {mesh_update_remaining: true, mesh_next_to_update: true,
+       do_update_status: true, _id: true, release: true, mesh_slaves: true,
+       mesh_routers: true, mesh_mode: true, mesh_master: true},
+    );
     if (!matchedMaster) {
       console.log('Did not find master device in database');
       return;
@@ -934,104 +989,15 @@ meshHandlers.validateMeshTopology = async function(masterMac) {
     });
   } else {
     // Before beginning the update process the next release is saved to master
-    const release = matchedMaster.release;
+    let fieldsToUpdate = {release: matchedMaster.release};
     // Update next device
-    meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update, release);
+    meshHandlers.updateMeshDevice(matchedMaster.mesh_next_to_update,
+                                  fieldsToUpdate);
   }
 };
 
-const propagateUpdate = async function(
-  masterDevice, macOfUpdated, release, setQuery=undefined) {
-  const meshUpdateRemaining =
-    masterDevice.mesh_update_remaining.filter( (mac) => mac !== macOfUpdated);
-  const isMeshV1 =
-    (DeviceVersion.versionCompare(masterDevice.version, '0.32') < 0);
-  // Update which devices are left to update
-  masterDevice.mesh_update_remaining = meshUpdateRemaining;
-  if (meshUpdateRemaining.length === 0) {
-    // All devices in mesh network have finished updating
-    // We only need to check setQuery here because the flow where mesh master
-    // calls this function always ends here
-    if (setQuery) {
-      setQuery.mesh_update_remaining = [];
-      setQuery.mesh_next_to_update = '';
-    } else {
-      masterDevice.mesh_next_to_update = '';
-      await masterDevice.save().catch((err) => {
-        console.log('Error saving master device on update propagation: ' + err);
-      });
-    }
-    return;
-  }
-  if (meshUpdateRemaining.length === 1) {
-    // Only one device left to update, it will always be the master, regardless
-    // of being mesh v1 or v2 network.
-    masterDevice.mesh_next_to_update = masterDevice._id;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release,
-    );
-  } else if (meshUpdateRemaining.length === 2 || isMeshV1) {
-    // Only two devices left to update or this is a mesh v1 network
-    // If there are only two devices left to update just mark the slave
-    // that hasn't updated. If it's a mesh v1 network we only need the
-    // topology in the first iteration. After that just mark the slaves
-    // that haven't updated in any order.
-    const nextDeviceToUpdate = meshUpdateRemaining.find((device)=>{
-      return masterDevice.mesh_slaves.includes(device);
-    });
-    masterDevice.mesh_next_to_update = nextDeviceToUpdate;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    await meshHandlers.updateMeshDevice(
-      masterDevice.mesh_next_to_update, release,
-    );
-  } else {
-    // At least three devices left to update in mesh v2 network
-    // In a mesh v2 network we need the topology in every iteration
-    masterDevice.mesh_onlinedevs_remaining = masterDevice.mesh_slaves.length+1;
-    // waiting for topology
-    masterDevice.do_update_status = 20;
-    await masterDevice.save().catch((err) => {
-      console.log('Error saving master device on update propagation: ' + err);
-    });
-    const slaves = masterDevice.mesh_slaves;
-    mqtt.anlixMessageRouterOnlineLanDevs(masterDevice._id);
-    slaves.forEach((slave)=>{
-      mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-    });
-    // Set timeout for reception of onlinedevs
-    deviceHandlers.timeoutUpdateAck(masterDevice._id, 'onlinedevs');
-  }
-};
-
-meshHandlers.syncUpdate = async function(device, setQuery, release) {
-  // Only change information if device has slaves or a master
-  if ((!device.mesh_slaves || device.mesh_slaves.length === 0) &&
-    !device.mesh_master) {
-    return;
-  }
-  if (device.mesh_master) {
-    // Device is a slave
-    DeviceModel.findById(device.mesh_master, async function(err, masterDevice) {
-      if (err) {
-        console.log('Attempt to access mesh master '+ device.mesh_master +
-                    ' failed: database error.');
-      } else if (!masterDevice) {
-        console.log('Attempt to access mesh master '+ device.mesh_master +
-                    ' failed: device not found.');
-      } else {
-        await propagateUpdate(masterDevice, device._id, release);
-      }
-    });
-  } else {
-    // Device is master with at lease one slave
-    // Master is ALWAYS last device to update
-    await propagateUpdate(device, device._id, release, setQuery);
-  }
-};
+/* ************************************************************************** */
+/* *** End of Exclusive functions for mesh v1 to mesh v2 upgrade procedure ** */
+/* ************************************************************************** */
 
 module.exports = meshHandlers;

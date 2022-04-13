@@ -5,6 +5,7 @@ const deviceListController = require('../controllers/device_list');
 const authController = require('../controllers/auth');
 const diagAPIController = require('../controllers/app_diagnostic_api');
 
+// eslint-disable-next-line new-cap
 let router = express.Router();
 
 router.use( // all paths will use these middlewares.
@@ -14,10 +15,10 @@ router.use( // all paths will use these middlewares.
 // Home page
 router.route('/').get(deviceListController.index);
 
-// Force mesh slave to do a device update
-router.route('/updatemesh/:id/:release').post(
+// Retry mesh device update
+router.route('/retryupdate/:id/:release').post(
   authController.ensurePermission('grantFirmwareUpgrade'),
-  deviceListController.changeUpdateMesh);
+  deviceListController.retryMeshUpdate);
 
 // Change device update status
 router.route('/update/:id/:release').post(

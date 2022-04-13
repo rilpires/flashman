@@ -192,8 +192,6 @@ let deviceSchema = new Schema({
     20, // waiting for topology info
     30, // topology received
   ]},
-  // Unused, only here so no fields with same name and different type is created
-  do_update_mesh_remaining: {type: Number, default: 0},
   // Next device to update in a mesh network.
   // Only master will have this
   mesh_next_to_update: String,
