@@ -423,6 +423,19 @@ scheduleController.successUpdate = async function(mac) {
           },
         },
       );
+    } else {
+      // Update remaining devices to update on a mesh network
+      await Config.updateOne({
+        'is_default': true,
+        'device_update_schedule.rule.in_progress_devices.mac': mac,
+      }, {
+        '$set': {
+          'device_update_schedule.rule.in_progress_devices.$.state':
+            'downloading',
+          'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
+          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
+        },
+      });
     }
   } catch (err) {
     console.log(err);
