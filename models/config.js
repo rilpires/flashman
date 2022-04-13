@@ -85,7 +85,7 @@ let configSchema = new mongoose.Schema({
         state: {type: String},
         slave_count: {type: Number, default: 0},
         // legacy name that we can't change, it's just number of devices
-        // reamining
+        // remaining
         slave_updates_remaining: {type: Number, default: 0},
         retry_count: {type: Number, default: 0},
         mesh_current: {type: Number, default: 1},
@@ -95,7 +95,7 @@ let configSchema = new mongoose.Schema({
         mac: {type: String, required: true},
         slave_count: {type: Number, default: 0},
         // legacy name that we can't change, it's just number of devices
-        // reamining
+        // remaining
         slave_updates_remaining: {type: Number, default: 0},
         state: {type: String},
         mesh_current: {type: Number, default: 1},
