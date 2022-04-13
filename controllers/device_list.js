@@ -568,7 +568,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       let queryArray = [];
       let contentCondition = '$or';
       // Check negation condition
-      let excludeTag = t('/exclude')
+      let excludeTag = t('/exclude');
       if (queryContents[idx].startsWith(excludeTag)) {
         const filterContent = queryContents[idx].split(excludeTag)[1].trim();
         let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
