@@ -87,6 +87,19 @@ const resetSsidPrefixError = function() {
   ssidPrefixErrorElement.style.display = 'none';
 };
 
+const forceOfflineCPEReconnect = function() {
+  $.post('/acs/forceOfflineReconnect', '{}', 'json')
+    .done(function(res) {
+      displayAlertMsg(res);
+      setTimeout(function() {
+        window.location.reload();
+      }, 1750);
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      displayAlertMsg(JSON.parse(jqXHR.responseText));
+    });
+};
+
 // called after save button is pressed.
 let configFlashman = function(event) {
   let validator = new Validator();
@@ -152,6 +165,7 @@ let configFlashman = function(event) {
 anlixDocumentReady.add(function() {
   setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
+  $('#offline-cpe-force-reconnect').click(forceOfflineCPEReconnect);
 
   // Load configuration options
   $.ajax({

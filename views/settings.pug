@@ -269,7 +269,7 @@ block content
                       | #{t('enableTr069HttpCommunicationMode')}
                     a.fas.fa-question-circle(data-toggle="tooltip" title=t('tr069HttpCommunicationTooltip'))
                     .invalid-feedback
-                .col-md-6.col-12.pl-0.pr-0
+                .col-md-6.col-12.pl-0.pr-0.text-center
                   .md-form.input-entry
                     label= t('tr069InformIntervalSeconds')
                     input#inform-interval.form-control(
@@ -316,6 +316,13 @@ block content
                     //- don't change min value to '2'. oninput function will check if this value is bigger than recovery's value.
                     #error-lost-informs-offline-threshold.invalid-feedback= t('lostInformsInvalidFeedback')
                   #error-recovery-offline-thresholds.invalid-feedback= t('lostInformsRecoveryOfflineThresholdsInvalidFeedback')
+                  .alert.alert-danger
+                    .fas.fa-exclamation-triangle.fa-lg
+                    span &nbsp; #{t('warningLargeLoadFlashman')}
+                    .row
+                      #offline-cpe-force-reconnect.button.btn.btn-primary.mt-4.mx-auto
+                        .fas.fa-sync.fa-lg
+                        span &nbsp; #{t('forceOfflineReconnect')}
 
           button.btn.btn-primary.mt-4.mx-auto(type="submit")
             .fas.fa-check.fa-lg

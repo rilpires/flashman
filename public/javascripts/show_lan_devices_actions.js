@@ -11,6 +11,7 @@ anlixDocumentReady.add(function() {
   // connected devices for now. So we need to leave the lock/unlock button
   // disabled for wired devices.
   let lanDevicesGrantBlockWiredDevices = false;
+  let lanDevicesGrantBlockDevices = false;
 
   const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
     $('#lan-devices').modal();
@@ -274,9 +275,14 @@ anlixDocumentReady.add(function() {
     $.each(lanDevices, function(idx, device) {
       let isWired = (device.conn_type == 0);
       let cantBlockWired = !lanDevicesGrantBlockWiredDevices;
-      let dontGrantBlockDevices = !(isSuperuser || grantLanDevicesBlock);
-      let cantBlockDevice =
-        isBridge || (isWired && cantBlockWired) || dontGrantBlockDevices;
+      let deviceDoesNotHavePermission = !lanDevicesGrantBlockDevices;
+      let userDoesNotHavePermission = !(isSuperuser || grantLanDevicesBlock);
+      let cantBlockDevice = (
+        isBridge ||
+        (isWired && cantBlockWired) ||
+        userDoesNotHavePermission ||
+        deviceDoesNotHavePermission
+      );
 
       // Skip if offline for too long
       if (device.is_old) {
@@ -549,6 +555,7 @@ anlixDocumentReady.add(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
+    lanDevicesGrantBlockDevices = row.data('grant-block-devices');
     $('#show-spam-error').hide();
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);
