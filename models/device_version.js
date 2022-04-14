@@ -252,9 +252,11 @@ const tr069Devices = {
   'GONUAC002': {
     vendor: 'Greatek',
     versions_upgrade: {
+      'V2.2.0': [],
       'V2.2.3': [],
     },
     port_forward_opts: {
+      'V2.2.0': portForwardFullSupport,
       'V2.2.3': portForwardFullSupport,
     },
     feature_support: {
