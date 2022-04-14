@@ -5,7 +5,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-clock.fa-lg
-          strong &nbsp; Agendamento de Atualização
+          strong &nbsp; #{t('updateSchedule')}
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
@@ -14,7 +14,7 @@
             .col-1
               #config-panel-arrow.fas.fa-chevron-up.fa-lg.mt-1.text-primary
             .col-11
-              h5 Configurar Parâmetros da Atualização
+              h5= t('configureUpdateParameters')
           #config-panel.bs-stepper.pl-2.pr-2.grey.lighten-5.border
             .bs-stepper-header.mt-2(role="tablist")
               .step(data-target="#which-part")
@@ -30,52 +30,47 @@
                   span.bs-stepper-circle 3
             .row
               .col-4.text-left
-                strong Quem Atualizar
+                strong= t('whoToUpdate')
               .col-4.text-center
-                strong Qual Atualizar
+                strong= t('whichToUpdate')
               .col-4.text-right
-                strong Quando Atualizar
+                strong= t('whenToUpdate')
             .bs-stepper-content.mt-4
               #which-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="which-part-trigger")
-                h4.text-center Vamos selecionar quais CPEs serão atualizados?
+                h4.text-center= t('let\'sSelectWhichCpesWillUpate?')
                 hr
                 .teal.lighten-2.mt-4
                   ul#who-part-type.nav.nav-pills.nav-justified
                     li.nav-item
                       a#whichSearch.nav-link(data-toggle="tab", role="tab", href="#panel1")
                         .fas.fa-search
-                        span &nbsp; Resultados da Busca
+                        span &nbsp; #{t('searchResults')}
                     li.nav-item
                       a#whichFile.nav-link(data-toggle="tab", role="tab", href="#panel2")
                         .fas.fa-file
-                        span &nbsp; Arquivo CSV
+                        span &nbsp; #{t('csvFile')}
                 .tab-content.mt-4
                   #panel1.tab-pane.fade(role="tabpanel")
                     .text-center
-                      strong Filtros de busca usados: 
-                       span#searchTags Nenhum filtro utilizado
+                      strong#searchTags= t('searchFiltersUsed=X', {filters: t('noFilterUsed')})
                     .custom-control.custom-radio.mt-3
                       input#allDevices.custom-control-input(type="radio", name="deviceCount")
-                      label.custom-control-label(for="allDevices") Todos os
-                        span#allDevicesLabel
-                        span  resultados da busca
+                      label.custom-control-label#allDevicesLabel(for="allDevices")= t('allXSearchResults', {x: 0})
                     .custom-control.custom-radio
                       input#someDevices.custom-control-input(type="radio", name="deviceCount")
-                      label.custom-control-label(for="someDevices") Somente os
-                        span#someDevicesLabel
-                        span  primeiros resultados da busca
+                      label.custom-control-label#someDevicesLabel(for="someDevices")= t('onlyXFirstSearchResults', {x: 0})
                   #panel2.tab-pane.fade(role="tabpanel")
                     form(method="post", action="/devicelist/scheduler/upload", name="scheduleform")
                       .input-group
                         .input-group-prepend
                           label.btn.btn-md.btn-primary.btn-file.my-0
-                            | Arquivo...
+                            | #{t('File...')}
                             input.form-control(type="file", name="schedulefile",
                                                style="display:none;", accept=".csv")
                         input.form-control(type="text", readonly)
                         .input-group-append(
                           data-toggle="tooltip",
-                          title="Os arquivos CSV devem ter o MAC de cada CPE na primeira coluna, usando a vírgula (,) como separador e não devem ter cabeçalho. O delimitador de registro deve ser uma quebra de linha."
+                          title=t('csvFileFormatDescriptionTooltip')
                         )
                           span.input-group-text.md-addon
                             .fas.fa-question-circle.fa-lg
@@ -86,12 +81,11 @@
                             id="btn-submit-upload"
                           )
                             .fas.fa-upload(id="btn-submit-icon")
-                            span &nbsp; Upload
+                            span &nbsp; #{t('Upload')}
                       #csv-result.text-center.mt-4
-                        h6 Foram encontrados
-                          span#csv-result-count
-                          span  CPEs a partir do arquivo.
-                          span#csv-result-error  Verifique se os dados fornecidos estão corretos.
+                        h6
+                          span#csv-result-count= t('itHasBeenFoundXCpesFromFile', {x: 0})
+                          span#csv-result-error= ' '+t('checkIfGivenDataIsCorrect')
                 .row.mt-4
                   .col-md-8.red-text.text-left.align-self-center
                     #which-error-msg
@@ -100,66 +94,56 @@
                   .col-md-4
                     .text-right
                       button#which-btn-next.btn.btn-primary(type="button")
-                        strong Próximo
+                        strong= t('Next')
               #how-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="how-part-trigger")
-                h4.text-center Vamos selecionar qual release será instalada?
+                h4.text-center= t('let\'sSelectWhichReleaseToInstall?')
                 hr
                 .text-center
-                  h6 Lembre-se de gerar um firmware com essa release para todos os modelos!
+                  h6= t('rememberToCreateAFirmwareWithThisReleaseToAllModels!')
                   .btn-group.mt-4
                     button.btn.btn-primary.dropdown-toggle(type="button", data-toggle="dropdown")
-                      span#selected-release.selected Escolher
+                      span#selected-release.selected= t('Choose')
                     #releases-dropdown.dropdown-menu
                 #warning-releases.mt-4.alert.alert-danger
                   .text-center
-                    strong Atenção! Atualmente
-                      span#warning-newTotal
-                      span  dos 
-                      span#warning-prevTotal
-                      span  CPEs selecionados serão atualizados!
+                    strong#warning-selected-to-update= t('XOfYSelectedCpesWillUpdate!', {x: 0, y: 0})
                   #list-onus
-                    h6.mt-4 Dentre os selecionados, 
-                      span#onu-count
-                      span são CPEs TR-069 ou CPEs numa rede mesh onde o principal é uma CPE TR-069 e por isso não serão atualizadas.
+                    h6.mt-4#onu-count= t('onuSelectedToUpdate', {x: 0})
                   #list-mesh
-                    h6.mt-4 Dentre os selecionados, 
-                      span#mesh-count
-                      span são CPEs configuradas numa rede mesh no padrão novo e a release escolhida só é compatível com o mesh no padrão antigo. Por isso não serão atualizadas.
+                    h6.mt-4#mesh-count= t('meshSelectedToUpdate', {x: 0})
                   #list-mesh-roles
-                    h6.mt-4 Dentre os selecionados, 
-                      span#mesh-roles-count
-                      span são CPEs configuradas numa rede mesh no padrão antigo e o principal não é compatível no padrão novo ou um dos secundário não é compatível no padrão novo. Por isso não serão atualizadas.
+                    h6.mt-4#mesh-roles-count= t('meshRolesSelectedToUpdate', {x: 0})
                   #list-missing-models
-                    h6.mt-4 Os modelos abaixo não possuem firmwares para esta release, e serão excluídos deste agendamento. Adicione os firmwares a seguir que faltam para atualizar todos os CPEs!
+                    h6.mt-4= t('warningMissingModelsToUpdate!')
                     ul#warning-missing-models
                 .text-right.mt-4
                   button#how-btn-prev.btn.btn-primary(type="button")
-                    strong Anterior
+                    strong= t('Previous')
                   button#how-btn-next.btn.btn-primary(type="button")
-                    strong Próximo
+                    strong= t('Next')
               #when-part.bs-stepper-pane.fade(role="tabpanel", aria-labelledby="when-part-trigger")
-                h4.text-center Vamos selecionar quando os CPEs serão atualizados?
+                h4.text-center= t('let\'sSelectWhenCpesWillUpdate?')
                 hr
                 .mt-4.text-center.pb-2
                   .custom-control.custom-checkbox.custom-control-inline
                     input#updateNow.custom-control-input(type="checkbox", name="updateNow")
-                    label.custom-control-label(for="updateNow") Atualizar imediatamente sem restrições de horário
+                    label.custom-control-label(for="updateNow")= t('updateImmediatelyWithoutTimeRestrictions')
                 #time-ranges
                   .time-range
                     .row.mt-2.text-center
                       .col-md-6
                         #scheduleStart-0.input-group.mb-3.date(data-target-input="nearest")
                           .input-group-prepend
-                            button#startWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Dia da semana
+                            button#startWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false")= t('dayOfTheWeek')
                             #dropdown-startWeekday-0.dropdown-menu
-                              a.dropdown-item(href="#") Segunda
-                              a.dropdown-item(href="#") Terça
-                              a.dropdown-item(href="#") Quarta
-                              a.dropdown-item(href="#") Quinta
-                              a.dropdown-item(href="#") Sexta
-                              a.dropdown-item(href="#") Sábado
-                              a.dropdown-item(href="#") Domingo
-                            span.input-group-text.primary-color.white-text.remove-border das
+                              a.dropdown-item(href="#")= t('Monday')
+                              a.dropdown-item(href="#")= t('Tuesday')
+                              a.dropdown-item(href="#")= t('Wednesday')
+                              a.dropdown-item(href="#")= t('Thursday')
+                              a.dropdown-item(href="#")= t('Friday')
+                              a.dropdown-item(href="#")= t('Saturday')
+                              a.dropdown-item(href="#")= t('Sunday')
+                            span.input-group-text.primary-color.white-text.remove-border #{t('from')}
                           input.form-control.datetimepicker-input.z-depth-0(type="text", data-target="#scheduleStart-0", placeholder="hh:mm")
                           .input-group-append(data-target="#scheduleStart-0" data-toggle="datetimepicker")
                             .input-group-text.primary-color.white-text
@@ -167,73 +151,68 @@
                       .col-md-6
                         #scheduleEnd-0.input-group.mb-3.date(data-target-input="nearest")
                           .input-group-prepend
-                            span.input-group-text.primary-color.white-text.remove-border Até
+                            span.input-group-text.primary-color.white-text.remove-border #{t('until')}
                             button#endWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Dia da semana
                             #dropdown-endWeekday-0.dropdown-menu
-                              a.dropdown-item(href="#") Segunda
-                              a.dropdown-item(href="#") Terça
-                              a.dropdown-item(href="#") Quarta
-                              a.dropdown-item(href="#") Quinta
-                              a.dropdown-item(href="#") Sexta
-                              a.dropdown-item(href="#") Sábado
-                              a.dropdown-item(href="#") Domingo
-                            span.input-group-text.primary-color.white-text.remove-border às
+                              a.dropdown-item(href="#")= t('Monday')
+                              a.dropdown-item(href="#")= t('Tuesday')
+                              a.dropdown-item(href="#")= t('Wednesday')
+                              a.dropdown-item(href="#")= t('Thursday')
+                              a.dropdown-item(href="#")= t('Friday')
+                              a.dropdown-item(href="#")= t('Saturday')
+                              a.dropdown-item(href="#")= t('Sunday')
+                            span.input-group-text.primary-color.white-text.remove-border #{t('at')}
                           input.form-control.datetimepicker-input(type="text", data-target="#scheduleEnd-0", placeholder="hh:mm")
                           .input-group-append(data-target="#scheduleEnd-0" data-toggle="datetimepicker")
                             .input-group-text.primary-color.white-text
                               .fas.fa-clock.fa-lg
                     #time-equal-error-0.text-center.mt-4.red-text
-                      h6 Os horários de início e fim não podem ser iguais!
+                      h6= t('startAndEndTimesCannotBeEqual!')
                 .row.text-center.mt-2
                   .col-md-6
                     button#addSchedule.btn.btn-sm.btn-primary.btn-block(type="button")
                       .fas.fa-plus.fa-lg
-                      strong &nbsp;&nbsp; Adicionar mais um intervalo
+                      strong &nbsp;&nbsp; #{t('addOneMoreInterval')}
                   .col-md-6
                     button#removeSchedule.btn.btn-sm.btn-primary.btn-block(type="button")
                       .fas.fa-times.fa-lg
-                      strong &nbsp;&nbsp; Remover último intervalo
+                      strong &nbsp;&nbsp; #{t('removeLastInterval')}
                 #when-error-msg.mt-4.text-center.red-text
                   .fas.fa-exclamation-triangle.fa-lg
                   strong#when-error-text
                 .text-right.mt-4
                   button#when-btn-prev.btn.btn-primary
-                    strong Anterior
+                    strong= t('Previous')
                   button#when-btn-next.btn.btn-primary(type="button")
                     #when-btn-icon.fas.fa-check.fa-lg
-                    strong &nbsp; Agendar
+                    strong &nbsp; #{t('Schedule')}
         if (update_schedule.device_total > 0)
           .config-header.border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
             .col-1
               #prev-config-panel-arrow.fas.fa-chevron-down.fa-lg.mt-1
             .col-11
               if (update_schedule.is_active)
-                h5 Ver Parâmetros da Atualização
+                h5= t('seeUpdateParameters')
               else
-                h5 Ver Parâmetros da Última Atualização
+                h5= t('seeLastUpdateParameters')
           #prev-config-panel.pl-2.pr-2.grey.lighten-5.border
             ul.mt-4
               if (!update_schedule.use_csv)
                 li
-                  strong Filtros de busca usados:
-                  if (update_schedule.use_search)
-                    span  #{update_schedule.use_search}
-                  else
-                    span  Nenhum filtro utilizado
+                  strong= t('searchFiltersUsed=X', {filters: update_schedule.use_search || t('noFilterUsed')})
               else
                 li
-                  strong Foi utilizado um arquivo CSV para filtrar os CPEs
+                  strong= t('csvFileHasBeenUsedToFilterCpes')
               li
-                strong Release escolhida:
-                  span  #{update_schedule.release}
+                strong= t('choosenRelease=X', {release: update_schedule.release})
               li
-                strong Faixas de horário usadas:
+                strong= t('timeRangesUsed')+':'
                 ul
                   if (!update_schedule.use_time)
-                    li Atualizar sem restrições de horário
+                    li= t('updateWithoutTimeRestrictions')
                   else
                     each range in update_schedule.time_ranges
-                      li #{range.start_day} das #{range.start_time} até #{range.end_day} às #{range.end_time}
+                      li= t('dayAFromXUntilDayBAtY', {a: range.start_day, x: range.start_time, b: range.end_day, y: range.end_time})
           .config-header.border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
             .col-1
               if (update_schedule.is_active)
@@ -242,44 +221,37 @@
                 #result-panel-arrow.fas.fa-chevron-down.fa-lg.mt-1
             .col-11
               if (update_schedule.is_active)
-                h5 Progresso da Atualização Atual
+                h5= t('currentUpdateProgress')
               else
-                h5 Resultado da Última Atualização
+                h5= t('lastUpdateResult')
           #result-panel.pl-2.pr-2.grey.lighten-5.border
             .mt-4.text-center.row.mx-0
               .col.alert.alert-dark.mx-1
                 .fas.fa-info-circle.fa-2x
-                h6.mt-2 Total:
-                  span#progress-total  #{update_schedule.device_total}
+                h6.mt-2#progress-total= t('Total=X', {x: update_schedule.device_total})
               .col.alert.alert-dark.mx-1
                 .fas.fa-info-circle.fa-2x
-                h6.mt-2 Restantes:
-                  if (update_schedule.device_doing > 0)
-                    span#progress-todo.doing  #{update_schedule.device_to_do}
-                  else
-                    span#progress-todo  #{update_schedule.device_to_do}
+                h6.mt-2#progress-todo(class={doing: update_schedule.device_doing})= t('Remaining=X', {x: update_schedule.device_to_do})
               .col.alert.alert-success.mx-1
                 .fas.fa-check-circle.fa-2x
-                h6.mt-2 Sucesso:
-                  span#progress-done  #{update_schedule.device_done}
+                h6.mt-2#progress-done= t('Success=X', {x: update_schedule.device_done})
               .col.alert.alert-danger.mx-1
                 .fas.fa-times-circle.fa-2x
-                h6.mt-2 Erro:
-                  span#progress-error  #{update_schedule.device_error}
+                h6.mt-2#progress-error= t('Error=X', {x: update_schedule.device_error})
             .mt-4.text-center
               button#results-btn.btn.btn-primary(type="button")
                 .fas.fa-file-excel.fa-lg
-                strong &nbsp; Exportar CSV com resultados
+                strong &nbsp; #{t('exportCsvWithResults')}
               if (update_schedule.is_active)
                 button#refresh-btn.btn.btn-primary(type="button")
                   .fas.fa-sync-alt.fa-lg
-                  strong &nbsp; Atualizar Status
+                  strong &nbsp; #{t('updateStatus')}
             .mt-4
               if (update_schedule.is_active)
                 .text-right
                   button#abort-btn.btn.btn-danger(type="button")
                     .fas.fa-times.fa-lg
-                    strong &nbsp; Abortar Agendamento
+                    strong &nbsp; #{t('abortSchedule')}
 
 block scripts
   script.

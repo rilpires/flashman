@@ -4,7 +4,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-chart-line.fa-lg
-          strong &nbsp; Intensidade de Sinal Óptico de&nbsp;
+          strong &nbsp; #{t('opticSignalIntensityFor')}&nbsp;
           strong(name="pon-signal-visual" id="pon-signal-visual")
           span.d-none(name="pon-signal-hlabel" id="pon-signal-hlabel")
         button.close(type="button", data-dismiss="modal")
@@ -14,28 +14,28 @@
           .col.p-0.text-right
             button#btn-pon-signal-refresh.btn.btn-primary.btn-sm
               i.fas.fa-sync-alt.fa-lg
-              span &nbsp Atualizar
+              span &nbsp; #{t('Update')}
         .row#pon-signal-placeholder-ready
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
               br
               br
-              span Atualize os dados para visualizar
+              span #{t('updateDataToView')}
         .row#pon-signal-placeholder-progress
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
-              span Atualizando sinal recebido...
+              span #{t('updatingReceivedSignal...')}
         .row#pon-signal-placeholder-none
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
               br
               br
-              span Nenhum dado encontrado
+              span #{t('noDataFound')}
         #pon-signal-graphs
           #pon-signal-rxpower-graph
           hr
