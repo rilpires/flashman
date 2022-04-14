@@ -15,7 +15,7 @@ let updateSearchResultsScheduler = function(result) {
 
 const resetStepperData = function(stepper) {
   $('#releases-dropdown').html('');
-  $('#selected-release').html('Escolher');
+  $('#selected-release').html(t('Choose'));
   $('#warning-releases').hide();
   $('#which-error-msg').hide();
   $('#how-btn-next').prop('disabled', true);
@@ -424,7 +424,7 @@ anlixDocumentReady.add(function() {
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : t('noFilterUsed');
-      $('#searchTags').html(t('searchFiltersUsed:X', {filters: tags}));
+      $('#searchTags').html(t('searchFiltersUsed=X', {filters: tags}));
     });
   }
 
@@ -601,7 +601,7 @@ anlixDocumentReady.add(function() {
       url: '/devicelist/scheduler/results',
       success: function(res) {
         swal.close();
-        downloadCSV(res, 'agendamento.csv');
+        downloadCSV(res, t('scheduling') + '.csv');
       },
       error: function(xhr, status, error) {
         swal.close();
