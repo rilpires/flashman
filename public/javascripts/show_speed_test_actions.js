@@ -76,7 +76,6 @@ anlixDocumentReady.add(function() {
   });
 
   $('#measure-previous-arrow').click((event)=>{
-    */
     let div = $('#measure-previous-arrow');
     if (div.hasClass('text-primary')) {
       div.removeClass('text-primary fa-chevron-up').addClass('fa-chevron-down');
