@@ -249,6 +249,8 @@ const convertField = function(masterKey, key, oui, model, value) {
     case 'mesh5-advertise':
       if (model == 'AC10') {
         result.value = (value > 0) ? '1' : '0';
+      } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(model)) {
+        result.value = (value > 0) ? 'TRUE' : 'FALSE';
       } else {
         result.value = (value > 0) ? true : false; // convert to boolean
       }
