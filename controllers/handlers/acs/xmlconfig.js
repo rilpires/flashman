@@ -9,6 +9,9 @@ const debug = require('debug')('ACS_XMLCONFIG');
 let acsXMLConfigHandler = {};
 
 acsXMLConfigHandler.onlineAfterReset = ['MP-G421R'];
+acsXMLConfigHandler.xmlConfigModels = [
+  'GONUAC001', 'GONUAC002', '121AC', 'HG9', 'IGD', 'MP_G421R',
+];
 
 const createNewPortFwTbl = function(pm) {
   return {'@_Name': 'PORT_FW_TBL', 'Value': [{
