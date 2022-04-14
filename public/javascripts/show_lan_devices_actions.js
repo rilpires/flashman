@@ -224,8 +224,8 @@ anlixDocumentReady.add(function() {
             renderDevices(lanDevices, lanRouters, upnpSupport,
                           isBridge, hasSlaves);
           } else {
-            $('#lan-devices-placeholder-counter').text(
-              syncedRouters + ' de ' + totalRouters);
+            $('#lan-devices-placeholder-counter').text(t('xOfY',
+              {x: syncedRouters, y: totalRouters}));
             // Create a timeout if remaining routers stop responding
             lanDevicesGlobalTimer = setTimeout(function() {
               if (syncedRouters < totalRouters) {
@@ -418,7 +418,7 @@ anlixDocumentReady.add(function() {
                 device.wifi_freq : t('notAvailable')) + ' GHz'),
               $('<h6>').text(device.wifi_mode ?
                 t('modeValue', {value: device.wifi_mode}) :
-                t('notAvailable')
+                t('notAvailable'),
               ),
               $('<h6>').text((device.wifi_signal ?
                 t('signalValue', {value: device.wifi_signal}) :
@@ -492,15 +492,15 @@ anlixDocumentReady.add(function() {
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('notAvailable') :
-                t('rxBytesValue', {value: router.rx_bytes})
+                t('rxBytesValue', {value: router.rx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('notAvailable') :
-                t('txBytesValue', {value: router.tx_bytes})
+                t('txBytesValue', {value: router.tx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('notAvailable') :
-                t('signalValue', {value: (router.signal + ' dBm')})
+                t('signalValue', {value: (router.signal + ' dBm')}),
               ),
             ),
             $('<div>').addClass('col').append(
@@ -508,7 +508,7 @@ anlixDocumentReady.add(function() {
               $('<h6>').text(t('upSpeedValue', {value: router.tx_bit})),
               $('<h6>').text(router.latency > 0 ?
                 t('latencyValue', {value: router.latency + ' ms'}) :
-                t('notAvailable')
+                t('notAvailable'),
               ),
               $('<div>').addClass('mt-2').append(
                 (router.iface == 1) ?
