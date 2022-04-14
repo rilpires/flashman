@@ -13,7 +13,6 @@ const Role = require('../models/role');
 const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
-const acsFirmwareHandler = require('./handlers/acs/firmware');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
