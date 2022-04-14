@@ -132,7 +132,7 @@ describe('TR-069 GenieACS communication methods', () => {
     let waPassword = 'superpassword';
     let device = {
       serial_tr069: '8H3F98AHF9Q38FH',
-      web_admin_user: waUser,
+      web_admin_username: waUser,
       web_admin_password: waPassword,
     };
     let initXml = fs.readFileSync('./test/assets/config_file_stavix_1.xml',
@@ -178,7 +178,7 @@ describe('TR-069 GenieACS communication methods', () => {
         external_port_end: 5450,
         ip: '192.168.1.45',
       }],
-      web_admin_user: waUser,
+      web_admin_username: waUser,
       web_admin_password: waPassword,
     };
     let initXml = fs.readFileSync('./test/assets/config_file_stavix_1.xml',

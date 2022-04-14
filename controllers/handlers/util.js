@@ -39,6 +39,10 @@ utilHandlers.isJsonString = function(str) {
   return true;
 };
 
+utilHandlers.isTrueValueString = (value) => {
+  return ['1', 'true', 'TRUE'].includes(value);
+};
+
 utilHandlers.returnObjOrFalse = (query) => query === undefined ? false : query;
 
 utilHandlers.returnObjOrEmptyStr = (query) => query === undefined ? '' : query;
