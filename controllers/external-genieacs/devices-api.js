@@ -705,6 +705,7 @@ const getNokiaG2425Fields = function(model) {
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   return fields;
 }
 
