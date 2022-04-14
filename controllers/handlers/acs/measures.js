@@ -400,6 +400,7 @@ acsMeasuresHandler.convertToDbm = function(model, rxPower) {
       return rxPower;
     }
     case 'GONUAC001':
+    case 'GONUAC002':
     default:
       return rxPower;
   }

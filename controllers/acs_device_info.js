@@ -157,7 +157,7 @@ const createRegistry = async function(req, permissions) {
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+      hasPPPoE = (utilHandlers.isTrueValueString(data.wan.pppoe_enable.value));
     } else if (typeof data.wan.pppoe_enable.value === 'number') {
       hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
     } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
@@ -259,10 +259,22 @@ const createRegistry = async function(req, permissions) {
   let wifi2Channel;
   let wifi5Channel;
   if (data.wifi2.channel && data.wifi2.auto) {
-    wifi2Channel = (data.wifi2.auto.value) ? 'auto' : data.wifi2.channel.value;
+    let value = data.wifi2.auto.value;
+    if (typeof value === 'string') {
+      let isAuto = utilHandlers.isTrueValueString(value);
+      wifi2Channel = (isAuto) ? 'auto' : data.wifi2.channel.value;
+    } else {
+      wifi2Channel = (value) ? 'auto' : data.wifi2.channel.value;
+    }
   }
   if (wifi5Capable && data.wifi5.channel && data.wifi5.auto) {
-    wifi5Channel = (data.wifi5.auto.value) ? 'auto' : data.wifi5.channel.value;
+    let value = data.wifi5.auto.value;
+    if (typeof value === 'string') {
+      let isAuto = utilHandlers.isTrueValueString(value);
+      wifi5Channel = (isAuto) ? 'auto' : data.wifi5.channel.value;
+    } else {
+      wifi5Channel = (value) ? 'auto' : data.wifi5.channel.value;
+    }
   }
 
   // Remove DHCP uptime for Archer C6
@@ -995,7 +1007,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let hasPPPoE = null;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = (data.wan.pppoe_enable.value == '0') ? false : true;
+      hasPPPoE = utilHandlers.isTrueValueString(data.wan.pppoe_enable.value);
     } else if (typeof data.wan.pppoe_enable.value === 'number') {
       hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
     } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
@@ -1089,15 +1101,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Process Wi-Fi enable fields - careful with non-boolean values
   if (data.wifi2.enable && typeof data.wifi2.enable.value !== 'undefined') {
-    let enable = true; // if something goes wrong, just enable wifi
+    let enable = 1; // if something goes wrong, just enable wifi
     if (typeof data.wifi2.enable.value === 'boolean') {
       enable = (data.wifi2.enable.value) ? 1 : 0;
     } else if (typeof data.wifi2.enable.value === 'string') {
-      if (
-        data.wifi2.enable.value === '0' || data.wifi2.enable.value === 'false'
-      ) {
-        enable = false;
-      }
+      enable = (utilHandlers.isTrueValueString(data.wifi2.enable.value)) ?
+        1 : 0;
     }
     if (device.wifi_state !== enable) {
       changes.wifi2.enable = device.wifi_state;
@@ -1109,15 +1118,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
   }
   if (data.wifi5.enable && typeof data.wifi5.enable.value !== 'undefined') {
-    let enable = true; // if something goes wrong, just enable wifi
+    let enable = 1; // if something goes wrong, just enable wifi
     if (typeof data.wifi5.enable.value === 'boolean') {
       enable = (data.wifi5.enable.value) ? 1 : 0;
     } else if (typeof data.wifi5.enable.value === 'string') {
-      if (
-        data.wifi5.enable.value === '0' || data.wifi5.enable.value === 'false'
-      ) {
-        enable = false;
-      }
+      enable = (utilHandlers.isTrueValueString(data.wifi5.enable.value)) ?
+        1 : 0;
     }
     if (device.wifi_state_5ghz !== enable) {
       changes.wifi5.enable = device.wifi_state_5ghz;
@@ -1423,9 +1429,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (
-        ['GONUAC001', '121AC', 'HG9', 'IGD', 'MP_G421R'].includes(device.model)
-      ) {
+      if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
         xmlTargets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -1448,17 +1452,15 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (
-      ['GONUAC001', '121AC', 'HG9', 'IGD', 'MP_G421R'].includes(device.model)
-    ) {
+    if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
       // Trigger xml config syncing for
       // web admin user and password
-      device.web_admin_user = config.tr069.web_login;
+      device.web_admin_username = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
       if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
         // this model can't have two users as "admin", if this happens you
         // can't access it anymore and will be only using normal user account
-        device.web_admin_user = 'root';
+        device.web_admin_username = 'root';
       }
       await device.save().catch((err) => {
         console.log('Error saving device daily sync to database: ' + err);
