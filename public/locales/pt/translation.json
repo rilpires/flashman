@@ -448,8 +448,6 @@
 	"wifiConfigurationDidNotChange": "A configuração Wi-Fi não foi alterada",
 	"wifiConfigurationXGhz": " Configuração Wi-Fi {{-x}} GHz",
 	"Channel": "Canal",
-	"Bandwidth": "Largura de Banda",
-	"OperationMode": "Modo de Operação",
 	"noAditionalObservationsHaveBeenDone": "Não foram feitas observações adicionais",
 	"aditionalObservations": "Observações Adicionais",
 

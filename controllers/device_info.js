@@ -411,7 +411,6 @@ deviceInfoController.syncDate = function(req, res) {
   }
 };
 
-
 // Create new device entry or update an existing one
 deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
