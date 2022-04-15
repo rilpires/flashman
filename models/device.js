@@ -22,7 +22,8 @@ let deviceSchema = new Schema({
   created_at: {type: Date},
   external_reference: {
     // 'kind' will have to be translated according to region.
-    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
+    kind: String,
     data: String,
   },
   model: String,
