@@ -11,6 +11,7 @@ anlixDocumentReady.add(function() {
   // connected devices for now. So we need to leave the lock/unlock button
   // disabled for wired devices.
   let lanDevicesGrantBlockWiredDevices = false;
+  let lanDevicesGrantBlockDevices = false;
 
   const refreshLanDevices = function(deviceId, upnpSupport, isBridge) {
     $('#lan-devices').modal();
@@ -223,8 +224,8 @@ anlixDocumentReady.add(function() {
             renderDevices(lanDevices, lanRouters, upnpSupport,
                           isBridge, hasSlaves);
           } else {
-            $('#lan-devices-placeholder-counter').text(
-              syncedRouters + ' de ' + totalRouters);
+            $('#lan-devices-placeholder-counter').text(t('xOfY',
+              {x: syncedRouters, y: totalRouters}));
             // Create a timeout if remaining routers stop responding
             lanDevicesGlobalTimer = setTimeout(function() {
               if (syncedRouters < totalRouters) {
@@ -274,9 +275,14 @@ anlixDocumentReady.add(function() {
     $.each(lanDevices, function(idx, device) {
       let isWired = (device.conn_type == 0);
       let cantBlockWired = !lanDevicesGrantBlockWiredDevices;
-      let dontGrantBlockDevices = !(isSuperuser || grantLanDevicesBlock);
-      let cantBlockDevice =
-        isBridge || (isWired && cantBlockWired) || dontGrantBlockDevices;
+      let deviceDoesNotHavePermission = !lanDevicesGrantBlockDevices;
+      let userDoesNotHavePermission = !(isSuperuser || grantLanDevicesBlock);
+      let cantBlockDevice = (
+        isBridge ||
+        (isWired && cantBlockWired) ||
+        userDoesNotHavePermission ||
+        deviceDoesNotHavePermission
+      );
 
       // Skip if offline for too long
       if (device.is_old) {
@@ -412,7 +418,7 @@ anlixDocumentReady.add(function() {
                 device.wifi_freq : t('N/A')) + ' GHz'),
               $('<h6>').text(device.wifi_mode ?
                 t('modeValue', {value: device.wifi_mode}) :
-                t('N/A')
+                t('N/A'),
               ),
               $('<h6>').text((device.wifi_signal ?
                 t('signalValue', {value: device.wifi_signal}) :
@@ -486,15 +492,15 @@ anlixDocumentReady.add(function() {
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('rxBytesValue', {value: router.rx_bytes})
+                t('rxBytesValue', {value: router.rx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('txBytesValue', {value: router.tx_bytes})
+                t('txBytesValue', {value: router.tx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('signalValue', {value: (router.signal + ' dBm')})
+                t('signalValue', {value: (router.signal + ' dBm')}),
               ),
             ),
             $('<div>').addClass('col').append(
@@ -502,7 +508,7 @@ anlixDocumentReady.add(function() {
               $('<h6>').text(t('upSpeedValue', {value: router.tx_bit})),
               $('<h6>').text(router.latency > 0 ?
                 t('latencyValue', {value: router.latency + ' ms'}) :
-                t('N/A')
+                t('N/A'),
               ),
               $('<div>').addClass('mt-2').append(
                 (router.iface == 1) ?
@@ -549,6 +555,7 @@ anlixDocumentReady.add(function() {
     }
     let upnpSupport = row.data('validate-upnp');
     lanDevicesGrantBlockWiredDevices = row.data('grant-block-wired-devices');
+    lanDevicesGrantBlockDevices = row.data('grant-block-devices');
     $('#show-spam-error').hide();
     $('#lan-devices').attr('data-slaves', slaves);
     $('#lan-devices').attr('data-slaves-count', slaveCount);

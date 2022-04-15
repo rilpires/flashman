@@ -140,10 +140,10 @@
                               a.dropdown-item(href="#")= t('Tuesday')
                               a.dropdown-item(href="#")= t('Wednesday')
                               a.dropdown-item(href="#")= t('Thursday')
-                              a.dropdown-item(href="#")= t('Fruday')
+                              a.dropdown-item(href="#")= t('Friday')
                               a.dropdown-item(href="#")= t('Saturday')
                               a.dropdown-item(href="#")= t('Sunday')
-                            span.input-group-text.primary-color.white-text.remove-border das
+                            span.input-group-text.primary-color.white-text.remove-border #{t('from')}
                           input.form-control.datetimepicker-input.z-depth-0(type="text", data-target="#scheduleStart-0", placeholder="hh:mm")
                           .input-group-append(data-target="#scheduleStart-0" data-toggle="datetimepicker")
                             .input-group-text.primary-color.white-text
@@ -151,17 +151,17 @@
                       .col-md-6
                         #scheduleEnd-0.input-group.mb-3.date(data-target-input="nearest")
                           .input-group-prepend
-                            span.input-group-text.primary-color.white-text.remove-border Até
+                            span.input-group-text.primary-color.white-text.remove-border #{t('until')}
                             button#endWeekday-0.btn.btn-primary.btn-md.m-0.px-3.py-2.z-depth-0.dropdown-toggle(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="false") Dia da semana
                             #dropdown-endWeekday-0.dropdown-menu
                               a.dropdown-item(href="#")= t('Monday')
                               a.dropdown-item(href="#")= t('Tuesday')
                               a.dropdown-item(href="#")= t('Wednesday')
                               a.dropdown-item(href="#")= t('Thursday')
-                              a.dropdown-item(href="#")= t('Fruday')
+                              a.dropdown-item(href="#")= t('Friday')
                               a.dropdown-item(href="#")= t('Saturday')
                               a.dropdown-item(href="#")= t('Sunday')
-                            span.input-group-text.primary-color.white-text.remove-border às
+                            span.input-group-text.primary-color.white-text.remove-border #{t('at')}
                           input.form-control.datetimepicker-input(type="text", data-target="#scheduleEnd-0", placeholder="hh:mm")
                           .input-group-append(data-target="#scheduleEnd-0" data-toggle="datetimepicker")
                             .input-group-text.primary-color.white-text

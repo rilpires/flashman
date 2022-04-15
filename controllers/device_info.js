@@ -795,18 +795,12 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
               matchedDevice.version, sentVersion);
-            const isV1ToV2 = (typeUpgrade.current === 1 &&
-              typeUpgrade.upgrade === 2);
-            const isWifiMesh = (matchedDevice.mesh_mode > 1);
-            const isActiveNetwork = ((matchedDevice.mesh_slaves &&
-              matchedDevice.mesh_slaves.length > 0)
-              || matchedDevice.mesh_master);
-            if (!isV1ToV2 || !isWifiMesh || !isActiveNetwork) {
-              /*
-                This isn't a mesh v1 -> mesh v2 update with an active mesh
-                network. So, the next device in the mesh network is updating
-                on reception of the previous device's syn
-              */
+            const isNotV1ToV2 = !(typeUpgrade.current === 1 &&
+                                  typeUpgrade.upgrade === 2);
+            if (isNotV1ToV2) {
+              // This isn't a mesh v1 -> mesh v2 update
+              // So the next device in the mesh network starts
+              // to update on this call if there is a mesh network
               await meshHandlers.syncUpdate(
                 matchedDevice, deviceSetQuery, sentRelease);
             }
@@ -1076,10 +1070,6 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         let proceed = 0;
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
-          if (!matchedDevice.mesh_master || matchedDevice.mesh_master === '') {
-            // Only regular devices and mesh masters report download complete
-            updateScheduler.successDownload(req.body.id);
-          }
           console.log('Device ' + req.body.id + ' is going on upgrade...');
           if (matchedDevice.release === '9999-aix') {
             // Disable schedule since factory firmware will not inform status
@@ -1088,35 +1078,26 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
             matchedDevice.do_update_status = 1; // success
           } else {
             matchedDevice.do_update_status = 10; // ack received
-            await matchedDevice.save().catch((err) => {
-              console.log('Error saving device during update ack received: ' +
-                          err);
-            });
-            const firmware = await Firmware.findOne(
-              {release: matchedDevice.release}).lean();
-            if (firmware) {
+            let firmware = await Firmware.findByReleaseCombinedModel(
+              matchedDevice.release, matchedDevice.model);
+            firmware = firmware[0];
+            if (firmware && firmware.flashbox_version) {
               const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
                 matchedDevice.version, firmware.flashbox_version);
               const isV1ToV2 = (typeUpgrade.current === 1 &&
-                typeUpgrade.upgrade === 2);
-              const isWifiMesh = (matchedDevice.mesh_mode > 1);
-              const isActiveNetwork = ((matchedDevice.mesh_slaves &&
-                matchedDevice.mesh_slaves.length > 0)
-                || matchedDevice.mesh_master);
-              if (isV1ToV2 && isWifiMesh && isActiveNetwork) {
-                /*
-                  In a mesh network where there is an upgrade from mesh v1 -> v2
-                  the next device in the mesh network won't wait for the
-                  previous to finish upgrade. When the ack is received the next
-                  device starts upgrade.
-                */
+                                typeUpgrade.upgrade === 2);
+              // Mesh network upgrade from mesh v1 to v2:
+              // The next device in the mesh network won't wait for the
+              // previous to finish upgrade. When the ack is received the next
+              // device starts upgrade if there is a mesh network
+              if (isV1ToV2) {
                 await meshHandlers.syncUpdate(
                   matchedDevice, null, matchedDevice.release);
               }
             }
           }
           proceed = 1;
-        } else if (upgStatus == '0') {
+        } else if (upgStatus == '0' || upgStatus == '2') {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
             updateScheduler.failedDownload(
@@ -1124,20 +1105,13 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
           } else {
             updateScheduler.failedDownload(req.body.id);
           }
-          console.log('WARNING: Device ' + req.body.id +
-                      ' failed in firmware check!');
-          matchedDevice.do_update_status = 3; // img check failed
-        } else if (upgStatus == '2') {
-          if (matchedDevice.mesh_master) {
-            // Mesh slaves call update schedules function with their master mac
-            updateScheduler.failedDownload(
-              matchedDevice.mesh_master, req.body.id);
+          console.log('WARNING: Device ' + req.body.id +' failed in firmware ' +
+                      (upgStatus == '0' ? 'check' : 'download'));
+          if (upgStatus == '0') {
+            matchedDevice.do_update_status = 3; // img check failed
           } else {
-            updateScheduler.failedDownload(req.body.id);
+            matchedDevice.do_update_status = 2; // img download failed
           }
-          console.log('WARNING: Device ' + req.body.id +
-                      ' failed to download firmware!');
-          matchedDevice.do_update_status = 2; // img download failed
         } else if (upgStatus == '') {
           console.log('WARNING: Device ' + req.body.id +
                       ' ack update on an old firmware! Reseting upgrade...');
@@ -1599,9 +1573,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
       }
     }
 
-    // used for mesh networks
-    let willSignalMeshTopology = false;
-    let masterMac;
     if (routersData) {
       // Erasing existing data of previous mesh routers
       matchedDevice.mesh_routers = [];
@@ -1617,7 +1588,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
             upConnRouterMac = connRouter.toLowerCase();
           }
           let upConnRouter = routersData[upConnRouterMac];
-          // Skip if not lowercase
           if (!upConnRouter) continue;
 
           if (upConnRouter.rx_bit && typeof upConnRouter.rx_bit === 'number') {
@@ -1667,15 +1637,27 @@ deviceInfoController.receiveDevices = async function(req, res) {
           });
         }
       }
+    }
 
+    // Used for mesh networks
+    let isWaitingForTopology = false;
+    let willSignalMeshTopology = false;
+    let masterMac;
+    if (matchedDevice.mesh_master) {
+      masterMac = matchedDevice.mesh_master;
+      const tmpMasterDevice = await DeviceModel.findOne(
+        {'_id': masterMac},
+        {'do_update_status': true},
+      ).lean();
+      isWaitingForTopology = tmpMasterDevice.do_update_status === 20;
+    } else {
+      masterMac = matchedDevice._id;
+      isWaitingForTopology = matchedDevice.do_update_status === 20;
+    }
+    if (isWaitingForTopology) {
       try {
-        masterMac = matchedDevice._id;
-        if (matchedDevice.mesh_master) {
-          masterMac = matchedDevice.mesh_master;
-        }
-
         /*
-          This region should not have two parellel executions because fields
+          This region should not have two parallel executions because fields
           of the same device are read and written. A random timeout is set
           between accesses to the mutex
         */
@@ -1691,8 +1673,8 @@ deviceInfoController.receiveDevices = async function(req, res) {
         });
         let masterDevice = await DeviceModel.findOne(
           {'_id': masterMac},
-          {'mesh_onlinedevs_remaining': 1,
-          'do_update_status': 1},
+          {'mesh_onlinedevs_remaining': true,
+          'do_update_status': true},
         );
         // end of critical region
         mutexRelease();
@@ -1703,7 +1685,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
           // Last mesh device to report topology should trigger mesh topology
           // done to scheduler and mesh handler
           willSignalMeshTopology = true;
-          await masterDevice.save();
+          await masterDevice.save().catch((err) => {
+            console.log('Error saving mesh master on topology update: ' + err);
+          });
         }
       } catch (err) {
         console.log(err);
@@ -1718,7 +1702,6 @@ deviceInfoController.receiveDevices = async function(req, res) {
     });
 
     if (willSignalMeshTopology) {
-      updateScheduler.successTopology(masterMac);
       meshHandlers.validateMeshTopology(masterMac);
     }
 

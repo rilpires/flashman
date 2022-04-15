@@ -13,7 +13,6 @@ const Role = require('../models/role');
 const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
-const acsFirmwareHandler = require('./handlers/acs/firmware');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
@@ -310,75 +309,61 @@ deviceListController.changeUpdate = async function(req, res) {
       message: t('meshSecondaryUpdateError'),
     });
   }
-  if (doUpdate) {
-    matchedDevice.release = req.params.release.trim();
-    if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+  // Mesh upgrade logic
+  if (matchedDevice.mesh_slaves && matchedDevice.mesh_slaves.length > 0) {
+    if (doUpdate) {
+      matchedDevice.release = req.params.release.trim();
       const meshUpdateStatus = await meshHandlers.beginMeshUpdate(
         matchedDevice,
       );
-      if (meshUpdateStatus.success) {
-        return res.status(200).json({success: true});
+      if (!meshUpdateStatus.success) {
+        return res.status(500).json({
+          success: false,
+          message: t('updateStartFailedMeshNetwork'),
+        });
       }
-    }
-    matchedDevice.do_update_status = 0; // waiting
-    messaging.sendUpdateMessage(matchedDevice);
-  } else {
-    matchedDevice.do_update_status = 1; // success
-    // Reset mesh fields as well, in case this is a mesh network
-    matchedDevice.mesh_next_to_update = '';
-    matchedDevice.mesh_update_remaining = [];
-    meshHandlers.syncUpdateCancel(matchedDevice);
-  }
-  matchedDevice.do_update = doUpdate;
-  try {
-    await matchedDevice.save();
-  } catch (e) {
-    return res.status(500).json({success: false,
-      message: t('cpeSaveError', {errorline: __line})});
-  }
-
-  if (matchedDevice.use_tr069 && doUpdate) {
-    let response = await acsFirmwareHandler.upgradeFirmware(matchedDevice);
-    if (response.success) {
-      return res.status(200).json(response);
     } else {
-      return res.status(500).json(response);
+      await meshHandlers.syncUpdateCancel(matchedDevice);
     }
-  } else if (doUpdate) {
-    mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-    // Start ack timeout
-    deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
+    return res.status(200).json({'success': true});
+  // Simple CPE upgrade logic
+  } else {
+    if (doUpdate) {
+      matchedDevice.release = req.params.release.trim();
+      matchedDevice.do_update_status = 0; // waiting
+      messaging.sendUpdateMessage(matchedDevice);
+    } else {
+      matchedDevice.do_update_status = 1; // success
+    }
+    matchedDevice.do_update = doUpdate;
+    try {
+      await matchedDevice.save();
+    } catch (e) {
+      return res.status(500).json({success: false,
+        message: t('cpeSaveError', {errorline: __line})});
+    }
+    if (matchedDevice.use_tr069 && doUpdate) {
+      let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+      if (response.success) {
+        return res.status(200).json(response);
+      } else {
+        return res.status(500).json(response);
+      }
+    } else if (doUpdate) {
+      mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+      // Start ack timeout
+      deviceHandlers.timeoutUpdateAck(matchedDevice._id, 'update');
+    }
+    return res.status(200).json({'success': true});
   }
-  res.status(200).json({'success': true});
 };
 
-deviceListController.changeUpdateMesh = function(req, res) {
-  DeviceModel.findById(req.params.id, async function(err, matchedDevice) {
-    if (err || !matchedDevice) {
-      let indexContent = {};
-      indexContent.type = 'danger';
-      indexContent.message = err.message;
-      return res.status(500).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
-    }
-    // Cast to boolean so that javascript works as intended
-    let doUpdate = req.body.do_update;
-    if (typeof req.body.do_update === 'string') {
-      doUpdate = (req.body.do_update === 'true');
-    }
-    // Reject update cancel command to mesh slave, use changeUpdate instead
-    if (!doUpdate) {
-      return res.status(500).json({
-        success: false,
-        message: t('functionToSetSlaveToUpdate', {errorline: __line}),
-      });
-    }
-    await meshHandlers.updateMeshDevice(
-      matchedDevice._id, req.params.release.trim(),
-    );
-  });
+deviceListController.retryMeshUpdate = function(req, res) {
+  let fieldsToUpdate = {release: req.params.release.trim()};
+  meshHandlers.updateMeshDevice(
+    req.params.id, fieldsToUpdate,
+  );
+  return res.status(200).json({success: true});
 };
 
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
@@ -568,7 +553,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
       let queryArray = [];
       let contentCondition = '$or';
       // Check negation condition
-      let excludeTag = t('/exclude')
+      let excludeTag = t('/exclude');
       if (queryContents[idx].startsWith(excludeTag)) {
         const filterContent = queryContents[idx].split(excludeTag)[1].trim();
         let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
@@ -782,7 +767,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         } else {
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
-            const isAllowed = meshHandlers.allowMeshUpgrade(
+            const isAllowed = deviceHandlers.isUpgradePossible(
               device, devReleases[i].flashbox_version,
             );
             if (isAllowed) filteredDevReleases.push(devReleases[i]);

@@ -132,7 +132,6 @@ const updateGenieRepo = function(ref) {
 const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
     let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-    // Get config from database
     Config.findOne({is_default: true}).then((config)=>{
       if (!config) {
         console.log('Error reading configs from database in update GenieACS!');

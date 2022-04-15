@@ -25,6 +25,20 @@ let firmwareSchema = new Schema({
 
 firmwareSchema.plugin(mongoosePaginate);
 
+firmwareSchema.statics.findByReleaseCombinedModel = function(
+  release,
+  combinedModel,
+) {
+  if (typeof release === 'undefined' || typeof combinedModel === 'undefined') {
+    return [];
+  }
+  return this.aggregate([
+    {$match: {release: release}},
+    {$addFields: {modelver: {$concat: ['$model', '$version']}}},
+    {$match: {modelver: combinedModel}},
+  ]);
+};
+
 let Firmware = mongoose.model('Firmware', firmwareSchema);
 
 module.exports = Firmware;

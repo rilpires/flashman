@@ -189,7 +189,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let acsID = device.acs_id;
   let model = device.model;
   // redirect to config file binding instead of setParametervalues
-  if (model == 'GONUAC001' || model == '121AC' || model == 'HG9') {
+  if (acsXMLConfigHandler.xmlConfigModels.includes(model)) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }
@@ -264,7 +264,11 @@ acsPortForwardHandler.changePortForwardRules = async function(
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
       if (v[0] == 'description') {
-        v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+        if (model == 'EC220-G5') {
+          v[1][1] = 'Anlix_'+(i+1).toString();
+        } else {
+          v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
+        }
       }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
@@ -273,7 +277,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
     console.log('[#] -> U in '+acsID);
-    TasksAPI.addTask(acsID, updateTasks);
+    await TasksAPI.addTask(acsID, updateTasks);
   }
 };
 
