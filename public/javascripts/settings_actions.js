@@ -289,6 +289,8 @@ anlixDocumentReady.add(function() {
       if (resp.tr069InsecureEnable) {
         $('#insecure_enable').prop('checked', true).change();
       }
+      $(`select[name=selected-language] option[value=${resp.language}]`)
+        .attr('selected', '');
     },
   });
 
