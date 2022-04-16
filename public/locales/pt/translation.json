@@ -827,7 +827,7 @@
 	"endingSeparatorMustHaveAtLeastOne.-ul#": "Deve ter pelo menos um ponto, -, _ ou # como separador no final",
 	"ssidPrefixInvalidFeedback": "$t(thisFieldIsMandatory). $t(thisFieldCannotHaveMoreThanMaxChars, {\"max\": 16}). $t(acceptableCharsAre0-9a-zA-Z .-#). $t(endingSeparatorMustHaveAtLeastOne.-ul#)",
 	"enableSsidPrefixInCpesWifi": "Habilitar prefixo SSID no Wi-Fi dos CPEs",
-	"FlashmanLanguage": "Língua do Flashman",
+	"FlashmanLanguage": "Idioma do Flashman",
 	"speedMeasureServerConfigurations": "Configurações do servidor de medição de velocidade",
 	"speedMeasureServerIpAddress": "Endereço IP do servidor de medição de velocidade",
 	"insertValidIp": "Insira um IP válido",
