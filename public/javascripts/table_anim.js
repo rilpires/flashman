@@ -386,7 +386,7 @@ anlixDocumentReady.add(function() {
         // status 6 and 7 are special statuses that can happen before do_update
         // is activated
         // Activate dropdown
-        row.find('.device-update .dropdown-toggle .selected').text('Escolher');
+        row.find('.device-update .dropdown-toggle .selected').text(t('Choose'));
         row.find('.device-update .dropdown-toggle').attr('disabled', false);
         // Deactivate waiting status
         let upgradeStatus = row.find('span.upgrade-status');
@@ -2899,7 +2899,7 @@ anlixDocumentReady.add(function() {
                 infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
                 infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
                                           'lighten-2');
-                infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+                infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
                 if (isSuperuser || grantNotificationPopups) {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS',
                                             notifications);
