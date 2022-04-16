@@ -135,13 +135,13 @@ const buildVlanModal = function(dc, canEdit) {
   if (dc.vlan_profiles.length == 0) {
     $('#frame-vlan-modal-alert').addClass('d-block p-3 bg-danger text-white')
       .append(
-        $('<h5>').html(t('oneRegisteredVlanIsNecessary!'))
+        $('<h5>').html(t('oneRegisteredVlanIsNecessary!')),
       );
   } else {
     for (let i = 0; i < dc.qtdPorts; i++) {
       let vlanPortInput = $('<div>').addClass('d-flex flex-column mr-3 mb-3');
       vlanPortInput.append(
-        $('<label>').addClass('mb-0').text(`${t('Port')} ${(i+1)} :`)
+        $('<label>').addClass('mb-0').text(`${t('Port')} ${(i+1)} :`),
       );
 
       let profilesOptions = $('<select>').addClass('browser-default md-select')

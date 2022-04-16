@@ -8,27 +8,27 @@ const t = i18next.t;
 
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
-    $('#port-forward-tr069-modal-alert').
-      append(
-        $('<hr></hr>'),
-      ).
-      append(
-        $('<h5></h5>').
-          html(message),
+    $('#port-forward-tr069-modal-alert')
+      .append(
+        $('<hr>'),
+      )
+      .append(
+        $('<h5>')
+          .html(message),
       );
   } else {
-    $('#port-forward-tr069-modal-alert').
-      removeClass('d-none').
-      addClass('d-block').
-      html(
-        $('<h5></h5>').
-          html(message),
+    $('#port-forward-tr069-modal-alert')
+      .removeClass('d-none')
+      .addClass('d-block')
+      .html(
+        $('<h5>')
+          .html(message),
       );
     setTimeout(function() {
-        $('#port-forward-tr069-modal-alert').
-          removeClass('d-block').
-          addClass('d-none');
-      }, 2500);
+      $('#port-forward-tr069-modal-alert')
+        .removeClass('d-block')
+        .addClass('d-none');
+    }, 2500);
   }
 };
 
@@ -72,11 +72,11 @@ let showIncompatibilityMessage = function(compatibility) {
   }
   message += '';
   if (show) {
-    compatInfoDiv.
-        removeClass('d-none').
-        addClass('d-block');
-    compatInfoMessage.
-      html(message);
+    compatInfoDiv
+      .removeClass('d-none')
+      .addClass('d-block');
+    compatInfoMessage
+      .html(message);
   }
   if (!compatibility.simpleSymmetric) {
     portInputs[0].disabled = portInputs[1].disabled =
@@ -150,7 +150,8 @@ let checkPortsValues = function(portsValues) {
   let isPortsNotEmpty = true;
   let isRangeOfSameSize = true;
   let isRangeNegative = true;
-  let isRangeOfPorts = $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
+  let isRangeOfPorts =
+    $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
   let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0].checked;
   let checkUntil = 1;
   let portToCheck;
@@ -471,46 +472,46 @@ let putPortMapping = function(ip, ports) {
                                 .addClass('justify-content-center');
     for (i = 0; i < portsBadges.length; i++) {
       listOfBadges.append(
-            $('<div>').
-              addClass('badge badge-primary badge-pill mr-2 mb-1').
-              append(
-                $('<label>').
-                css('margin-top', '0.4rem').
-                addClass('mr-1').
-                html(
+            $('<div>')
+              .addClass('badge badge-primary badge-pill mr-2 mb-1')
+              .append(
+                $('<label>')
+                .css('margin-top', '0.4rem')
+                .addClass('mr-1')
+                .html(
                   portsBadges[i],
                 ),
-              ).
-              append(
-                $('<a>').
-                  addClass('close').
-                  attr('onclick', 'removeOnePortMapping(this)').
-                  attr('data-ip', ip).
-                  attr('data-port-mapping', portsBadges[i]).
-                  addClass('white-text').
-                  html('&times;')),
+              )
+              .append(
+                $('<a>')
+                  .addClass('close')
+                  .attr('onclick', 'removeOnePortMapping(this)')
+                  .attr('data-ip', ip)
+                  .attr('data-port-mapping', portsBadges[i])
+                  .addClass('white-text')
+                  .html('&times;')),
               );
     }
     portMappingTable.find('[data-ip="' + ip + '"]').remove();
     portMappingTable.append(
       $('<tr>').append(
-        $('<td>').
-        addClass('text-left').
-        append(
-          $('<span>').
-          css('display', 'block').
-          html(ip),
+        $('<td>')
+        .addClass('text-left')
+        .append(
+          $('<span>')
+          .css('display', 'block')
+          .html(ip),
         ),
         listOfBadges,
-        $('<td>').
-          addClass('text-right').
-          append(
-            $('<button>').
-            append(
-              $('<div>').
-              addClass('fas fa-times fa-lg'),
-            ).
-            addClass('btn btn-sm btn-danger my-0 mr-0')
+        $('<td>')
+          .addClass('text-right')
+          .append(
+            $('<button>')
+            .append(
+              $('<div>')
+                .addClass('fas fa-times fa-lg'),
+            )
+            .addClass('btn btn-sm btn-danger my-0 mr-0')
             .attr('type', 'button')
             .attr('onclick', 'removeSetOfPortMapping(this)')
             .attr('data-ip', ip),
@@ -534,8 +535,7 @@ window.checkPortMappingInputs = function() {
   let isPortsValid;
   let portsValues = [];
   let validator = new Validator();
-  isAddressValid = validator.
-  checkAddressSubnetRange(deviceIp,
+  isAddressValid = validator.checkAddressSubnetRange(deviceIp,
     ipAddressGiven, maskBits);
   if (!isAddressValid) {
     triggerRedAlert(t('invalidIpAddress!'));
@@ -625,46 +625,46 @@ let buildMappingTable = function(ip) {
                               .addClass('justify-content-center');
   for (let i = 0; i < portsBadges.length; i++) {
     listOfBadges.append(
-          $('<div>').
-            addClass('badge badge-primary badge-pill mr-2 mb-1').
-            append(
-              $('<label>').
-              css('margin-top', '0.4rem').
-              addClass('mr-1').
-              html(
+          $('<div>')
+            .addClass('badge badge-primary badge-pill mr-2 mb-1')
+            .append(
+              $('<label>')
+              .css('margin-top', '0.4rem')
+              .addClass('mr-1')
+              .html(
                 portsBadges[i],
               ),
-            ).
-            append(
-              $('<a>').
-                addClass('close').
-                attr('onclick', 'removeOnePortMapping(this)').
-                attr('data-ip', ip).
-                attr('data-port-mapping', portsBadges[i]).
-                addClass('white-text').
-                html('&times;')),
+            )
+            .append(
+              $('<a>')
+                .addClass('close')
+                .attr('onclick', 'removeOnePortMapping(this)')
+                .attr('data-ip', ip)
+                .attr('data-port-mapping', portsBadges[i])
+                .addClass('white-text')
+                .html('&times;')),
             );
   }
   portMappingTable.find('[data-ip="' + ip + '"]').remove();
   portMappingTable.append(
     $('<tr>').append(
-      $('<td>').
-      addClass('text-left').
-      append(
-        $('<span>').
-        css('display', 'block').
-        html(ip),
+      $('<td>')
+      .addClass('text-left')
+      .append(
+        $('<span>')
+        .css('display', 'block')
+        .html(ip),
       ),
       listOfBadges,
-      $('<td>').
-        addClass('text-right').
-        append(
-          $('<button>').
-          append(
-            $('<div>').
-            addClass('fas fa-times fa-lg'),
-          ).
-          addClass('btn btn-sm btn-danger my-0 mr-0')
+      $('<td>')
+        .addClass('text-right')
+        .append(
+          $('<button>')
+          .append(
+            $('<div>')
+            .addClass('fas fa-times fa-lg'),
+          )
+          .addClass('btn btn-sm btn-danger my-0 mr-0')
           .attr('type', 'button')
           .attr('onclick', 'removeSetOfPortMapping(this)')
           .attr('data-ip', ip),

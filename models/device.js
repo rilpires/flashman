@@ -22,7 +22,8 @@ let deviceSchema = new Schema({
   created_at: {type: Date},
   external_reference: {
     // 'kind' will have to be translated according to region.
-    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
+    kind: String,
     data: String,
   },
   model: String,
@@ -193,8 +194,6 @@ let deviceSchema = new Schema({
     20, // waiting for topology info
     30, // topology received
   ]},
-  // Unused, only here so no fields with same name and different type is created
-  do_update_mesh_remaining: {type: Number, default: 0},
   // Next device to update in a mesh network.
   // Only master will have this
   mesh_next_to_update: String,
@@ -241,7 +240,7 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
-  // The object bellow is used to save the user that requested the speedtest 
+  // The object bellow is used to save the user that requested the speedtest
   // and to indicate what time the speedtest was requested. Te timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the

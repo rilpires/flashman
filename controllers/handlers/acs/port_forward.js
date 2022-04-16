@@ -189,7 +189,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let acsID = device.acs_id;
   let model = device.model;
   // redirect to config file binding instead of setParametervalues
-  if (model == 'GONUAC001' || model == '121AC' || model == 'HG9') {
+  if (acsXMLConfigHandler.xmlConfigModels.includes(model)) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }
