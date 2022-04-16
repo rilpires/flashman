@@ -1941,7 +1941,7 @@ anlixDocumentReady.add(function() {
                 '<div class="md-form">'+
                   '<div class="input-group">'+
                     '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">'+t('OperationMode')+'</label>'+
+                      '<label class="active">'+t('operationMode')+'</label>'+
                       '<select class="browser-default md-select" type="text" '+
                         'id="edit_opmode-'+index+'" '+
                         'maxlength="15" $REPLACE_OPMODE_EN '+
@@ -2789,7 +2789,7 @@ anlixDocumentReady.add(function() {
 
           let modeEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'opmode')
-          .replace('$REPLACE_TAB_NAME', t('Mode'));
+          .replace('$REPLACE_TAB_NAME', t('mode'));
 
           let wifiEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'wifi')
