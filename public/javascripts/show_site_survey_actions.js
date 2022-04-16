@@ -426,7 +426,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-site-survey-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    let isBridge = row.data('bridge-enabled') === 'Sim';
+    let isBridge = row.data('bridge-enabled') === t('Yes');
     let has5ghz = row.data('has-5ghz');
     let hasExtendedChannels = row.data('has-extended-channels');
     if (!has5ghz) {
@@ -447,7 +447,7 @@ anlixDocumentReady.add(function() {
 
   $(document).on('click', '.btn-sync-ssurvey', function(event) {
     let id = $('#site-survey-hlabel').text();
-    let isBridge = $('#isBridgeDiv').html() === 'Sim';
+    let isBridge = $('#isBridgeDiv').html() === t('Yes');
     let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
 
     clearTimeout(siteSurveyGlobalTimer);
@@ -488,7 +488,7 @@ anlixDocumentReady.add(function() {
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
         }
-        let isBridge = $('#isBridgeDiv').html() === 'Sim';
+        let isBridge = $('#isBridgeDiv').html() === t('Yes');
         let hasExtendedChannels =
           $('#site-survey').data('has-extended-channels');
         clearTimeout(siteSurveyGlobalTimer);

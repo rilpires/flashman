@@ -16,7 +16,7 @@
             .btn-group.btn-group-sm.m-1.btn-group-aps(role="group")
               button.btn.btn-primary.btn-sm.btn-show-2-ghz-aps.active(type="button")
                 i.fas.fa-wifi.fa-lg
-                span &nbsp; #{t('networksInXGhz', {x: 2.4})}
+                span &nbsp; #{t('networksInXGhz', {x: '2.4'})}
               button.btn.btn-primary.btn-sm.btn-show-5-ghz-aps
                 i.fas.fa-wifi.fa-lg
                 span &nbsp; #{t('networksInXGhz', {x: '5.0'})}
@@ -36,7 +36,7 @@
               br
               span= t('updatingNeighbouringNetworks...')
               br
-              span#site-survey-placeholder-counter= t('xOfY', {x: 0: y: 1})
+              span#site-survey-placeholder-counter= t('xOfY', {x: 0, y: 1})
         .row#site-survey-placeholder-none
           .col
             h2.text-center.grey-text.mb-3
