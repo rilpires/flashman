@@ -333,7 +333,7 @@ anlixDocumentReady.add(function() {
             ),
             (device.conn_speed && device.is_online ?
               $('<div>').addClass('col-8 text-right').append(
-                $('<h6>').text(t('maxSpeedValue', {value: device.conn_speed})),
+                $('<h6>').text(t('MaxSpeed=X', {x: device.conn_speed})),
               ) : ''
             ),
           ),
@@ -417,13 +417,13 @@ anlixDocumentReady.add(function() {
               $('<h6>').text(((device.wifi_freq) ?
                 device.wifi_freq : t('N/A')) + ' GHz'),
               $('<h6>').text(device.wifi_mode ?
-                t('modeValue', {value: device.wifi_mode}) :
+                t('Mode=X', {x: device.wifi_mode}) :
                 t('N/A'),
               ),
               $('<h6>').text((device.wifi_signal ?
-                t('signalValue', {value: device.wifi_signal}) :
-                t('N/A')
-              ) + ' dBm'),
+                t('Signal=X', {x: device.wifi_signal}) :
+                t('N/A') + ' dBm'
+              )),
               $('<h6>').text('SNR: ' + ((device.wifi_snr) ?
                 device.wifi_snr : t('N/A')) + ' dB')
               .append(
@@ -486,28 +486,27 @@ anlixDocumentReady.add(function() {
             $('<div>').addClass('col').append(
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('timeConnectedValue', {value:
-                  secondsTimeSpanToHMS(router.conn_time),
-                }),
+                t('timeConnected=X',
+                  {x: secondsTimeSpanToHMS(router.conn_time)}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('rxBytesValue', {value: router.rx_bytes}),
+                t('rxBytes=X', {x: router.rx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('txBytesValue', {value: router.tx_bytes}),
+                t('txBytes=X', {x: router.tx_bytes}),
               ),
               $('<h6>').text(router.iface == 1 ?
                 t('N/A') :
-                t('signalValue', {value: (router.signal + ' dBm')}),
+                t('Signal=X', {x: (router.signal)}),
               ),
             ),
             $('<div>').addClass('col').append(
-              $('<h6>').text(t('downSpeedValue', {value: router.rx_bit})),
-              $('<h6>').text(t('upSpeedValue', {value: router.tx_bit})),
+              $('<h6>').text(t('downSpeed=X', {x: router.rx_bit})),
+              $('<h6>').text(t('upSpeed=X', {x: router.tx_bit})),
               $('<h6>').text(router.latency > 0 ?
-                t('latencyValue', {value: router.latency + ' ms'}) :
+                t('Latency=X', {x: router.latency}) :
                 t('N/A'),
               ),
               $('<div>').addClass('mt-2').append(

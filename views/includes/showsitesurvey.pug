@@ -6,7 +6,7 @@
         p#isBridgeDiv.d-none
         p.heading.lead
           span.fas.fa-wifi.fa-lg
-          strong &nbsp;Redes ao redor de&nbsp;
+          strong &nbsp;#{t('neighboringNetworksFor')}&nbsp;
             label(name="site-survey-hlabel" id="site-survey-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
@@ -16,33 +16,33 @@
             .btn-group.btn-group-sm.m-1.btn-group-aps(role="group")
               button.btn.btn-primary.btn-sm.btn-show-2-ghz-aps.active(type="button")
                 i.fas.fa-wifi.fa-lg
-                span &nbsp; Redes em 2.4GHz
+                span &nbsp; #{t('networksInXGhz', {x: 2.4})}
               button.btn.btn-primary.btn-sm.btn-show-5-ghz-aps
                 i.fas.fa-wifi.fa-lg
-                span &nbsp; Redes em 5.0GHz
+                span &nbsp; #{t('networksInXGhz', {x: '5.0'})}
           .col.p-0.text-right
             button.btn.btn-primary.btn-sm.m-1.btn-sync-ssurvey
               i.fas.fa-sync-alt.fa-lg
-              span &nbsp; Atualizar
+              span &nbsp; #{t('Update')}
         .row.pt-3
           .alert.alert-info
             .fas.fa-info-circle.fa-lg
-            span &nbsp A recomendação de melhor canal deve ser alterada manualmente. O mecanismo "auto" do CPE pode diferir da recomendação apresentada aqui.
+            span &nbsp; #{t('showsitesurveyAlertInfo')}
         .row.pt-2#site-survey-placeholder
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
-              span Atualizando redes ao redor...
+              span= t('updatingNeighbouringNetworks...')
               br
-              span#site-survey-placeholder-counter 0 de 1
+              span#site-survey-placeholder-counter= t('xOfY', {x: 0: y: 1})
         .row#site-survey-placeholder-none
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-wifi.fa-4x
               br
               br
-              span Nenhuma rede vizinha encontrada
+              span= t('noNeighbouringNetworksFound')
         .row.pt-2#2-ghz-aps
         .row.pt-2#5-ghz-aps

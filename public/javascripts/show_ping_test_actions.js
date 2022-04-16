@@ -73,7 +73,7 @@ socket.on('PINGTEST', function(macaddr, data) {
           .append(
             $('<span>')
             .addClass('badge badge-primary badge-pill')
-            .html(t('latencyValue', {value: hostLatency}) + ' ms'),
+            .html(t('Latency=X', {x: hostLatency})),
             $('<span>')
             .addClass('badge badge-primary badge-pill')
             .html(hostLoss + t('%LostPackets')),
