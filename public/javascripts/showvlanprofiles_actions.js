@@ -167,7 +167,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-trash', async function(event) {
     swal({
       type: 'warning',
-      title: t('Attention'),
+      title: t('Attention!'),
       text: t('vlanDeleteWarning'),
       confirmButtonText: t('Proceed'),
       confirmButtonColor: '#4db6ac',

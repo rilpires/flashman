@@ -21,7 +21,9 @@ let deviceSchema = new Schema({
   recovering_tr069_reset: {type: Boolean, default: false},
   created_at: {type: Date},
   external_reference: {
-    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    // 'kind' will have to be translated according to region.
+    // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
+    kind: String,
     data: String,
   },
   model: String,
@@ -30,9 +32,9 @@ let deviceSchema = new Schema({
   release: String,
   is_license_active: Boolean,
   data_collecting: {
-    is_active: Boolean, // logical AND with config.js value
-    has_latency: Boolean, // logical AND with config.js value
-    // should use config.js value if this value is falsifiable
+    is_active: Boolean, // logical AND with config.js value.
+    has_latency: Boolean, // logical AND with config.js value.
+    // should use config.js value if this value is falsifiable.
     ping_fqdn: String,
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
@@ -238,7 +240,7 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
-  // The object bellow is used to save the user that requested the speedtest 
+  // The object bellow is used to save the user that requested the speedtest
   // and to indicate what time the speedtest was requested. Te timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the

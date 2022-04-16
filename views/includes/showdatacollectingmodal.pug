@@ -103,7 +103,7 @@
         .pl-3.pr-3.pb-3.pt-3.grey.lighten-5.border(style="display: none;")
           p= t('parametersHereWillBeAppliedToAllSelectedDevices')
           .col.text-center
-            p.nDevicesWillBeChanged= t('nDevicesWillBeChanged', {total: 0})
+            p.nDevicesWillBeChanged= t('nDevicesWillBeChanged', {count: 0})
           form(method="post",
                action="/data_collecting/massupdate/parameters",
                name="data_collecting_updateManyForm",
@@ -130,7 +130,7 @@
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-1
                     .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_has_latency")= t('latencyCollection')
+                      label(for="data_collecting_mass_update_has_latency")= t('latencyCollecting')
                       select.browser-default.md-select(id="data_collecting_mass_update_has_latency")
                         option(value="")= t('doNotChange')
                         option(value="True")= t('Activated')
@@ -205,7 +205,7 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_has_latency",
                                              id="data_collecting_device_has_latency")
-                  label.custom-control-label(for="data_collecting_device_has_latency")= t('latencyCollection')
+                  label.custom-control-label(for="data_collecting_device_has_latency")= t('latencyCollecting')
                 .input-group-append(
                   data-toggle="tooltip",
                   title=t('ifCollectingIsOffThisMeasureWillNotHappen')

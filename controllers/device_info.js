@@ -312,7 +312,7 @@ const createRegistry = async function(req, res) {
           'message_code': 5,
           'severity': 'alert',
           'type': 'communication',
-          'action_title': 'Ok',
+          'action_title': t('Ok'),
           'allow_duplicate': false,
           'target': deviceObj._id,
         });
@@ -410,7 +410,6 @@ deviceInfoController.syncDate = function(req, res) {
     res.status(500).end();
   }
 };
-
 
 // Create new device entry or update an existing one
 deviceInfoController.updateDevicesInfo = async function(req, res) {
