@@ -1544,6 +1544,9 @@ deviceInfoController.receiveDevices = async function(req, res) {
           if (upConnDev.dhcp_vendor_class != '') {
             devReg.dhcp_vendor_class = upConnDev.dhcp_vendor_class;
           }
+          if (upConnDev.ping && upConnDev.ping != '') {
+            devReg.ping = upConnDev.ping;
+          }
         } else {
           let hostName = (upConnDev.hostname != '' &&
                           upConnDev.hostname != '!') ? upConnDev.hostname : '';
