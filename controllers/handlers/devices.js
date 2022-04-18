@@ -243,6 +243,7 @@ deviceHandlers.isUpgradePossible = function(device, nextVersion) {
 
 deviceHandlers.removeDeviceFromDatabase = function(device) {
   let meshMaster = device.mesh_master;
+  let meshSlaves = device.mesh_slaves;
   // Use this .remove method so middleware post hook receives object info
   device.remove();
   if (meshMaster) {
@@ -260,6 +261,21 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
           ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
+  }
+  if (meshSlaves && meshSlaves.length > 0) {
+    // This is a mesh master. Remove master registration for each slave found
+    for (let meshSlaveMac of meshSlaves) {
+      DeviceModel.findById(meshSlaveMac, {mesh_master: true},
+        function(err, slaveDevice) {
+          if (!err && slaveDevice && slaveDevice.mesh_master) {
+            slaveDevice.mesh_master = undefined;
+            slaveDevice.save().catch((err) => {
+              console.log('Error saving mesh master remove operation: ' + err);
+            });
+          }
+        },
+      );
+    }
   }
 };
 
