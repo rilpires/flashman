@@ -28,9 +28,9 @@ let refreshExtRefType = function(event) {
   selectedItem.removeClass('active primary-color');
   $(event.target).addClass('active primary-color');
 
-  if ($(this).text() == 'CPF') {
+  if ($(this).text() == t('personIdentificationSystem')) {
     inputField.mask('000.000.000-009').keyup();
-  } else if ($(this).text() == 'CNPJ') {
+  } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
     inputField.mask('00.000.000/0000-00').keyup();
   } else {
     inputField.unmask();
@@ -55,11 +55,11 @@ let refreshLicenseStatus = function(event) {
     success: function(res) {
       thisBtn.attr('disabled', false);
       if (res.status === undefined) {
-        inputField.val('Desconhecido');
+        inputField.val(t('Unknown'));
       } else if (res.status === true) {
-        inputField.val('Ativa');
+        inputField.val(t('Active', {context: 'female'}));
       } else {
-        inputField.val('Bloqueada');
+        inputField.val(t('Blocked', {context: 'female'}));
       }
     },
   });
@@ -109,7 +109,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
           type: 'warning',
           confirmButtonText: data.action_title,
           confirmButtonColor: '#4db6ac',
-          cancelButtonText: 'Cancelar',
+          cancelButtonText: t('Cancel'),
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
         };
@@ -172,8 +172,8 @@ anlixDocumentReady.add(function() {
   $('.tags-input input').css('cssText', 'margin-top: 10px !important;');
 
   let role = $('#devices-table-content').data('role');
-  let visibleColumnsOnPage = $('#devices-table-content').
-    data('visiblecolumnsonpage');
+  let visibleColumnsOnPage = $('#devices-table-content')
+    .data('visiblecolumnsonpage');
   let isSuperuser = false;
   let enableDataCollecting = false;
   let grantFirmwareUpgrade = false;
@@ -206,7 +206,8 @@ anlixDocumentReady.add(function() {
     isSuperuser = $('#devices-table-content').data('superuser');
   }
   if ($('#devices-table-content').data('enabledatacollecting')) {
-    enableDataCollecting = $('#devices-table-content').data('enabledatacollecting');
+    enableDataCollecting = $('#devices-table-content')
+      .data('enabledatacollecting');
   }
   if ($('#devices-table-content').data('role')) {
     grantFirmwareUpgrade = role.grantFirmwareUpgrade;
@@ -354,7 +355,7 @@ anlixDocumentReady.add(function() {
     let filterList = $('#devices-search-input').val();
     let exportURL = '/devicelist/export?filter=' +
                     encodeURIComponent(filterList);
-    downloadCSV(exportURL, 'lista-de-cpes-flashbox.csv');
+    downloadCSV(exportURL, t('flashbox-cpes-list.csv'));
   });
 
   $(document).on('click', '.tab-switch-btn', function(event) {
@@ -385,7 +386,7 @@ anlixDocumentReady.add(function() {
         // status 6 and 7 are special statuses that can happen before do_update
         // is activated
         // Activate dropdown
-        row.find('.device-update .dropdown-toggle .selected').text('Escolher');
+        row.find('.device-update .dropdown-toggle .selected').text(t('Choose'));
         row.find('.device-update .dropdown-toggle').attr('disabled', false);
         // Deactivate waiting status
         let upgradeStatus = row.find('span.upgrade-status');
@@ -421,18 +422,18 @@ anlixDocumentReady.add(function() {
         } else if (status == 0 || status == 10 || masterStatus == 20) {
           upgradeStatus.find('.status-waiting').removeClass('d-none');
           let slaveCount = row.data('slave-count');
-          let tooltip = 'Atualizando CPE...';
+          let tooltip = t('upadatingCpe...');
           if (slaveCount) {
             if (masterStatus == 20) {
-              tooltip = 'Coletando topologia';
+              tooltip = t('collectingTopology');
             } else {
               if (remain === 0) {
                 // mesh v1 -> v2 update
-                tooltip = 'Esperando dispositivos ficarem online';
+                tooltip = t('waitingDevicesToBecomeOnline');
               } else {
                 const currentDeviceNum = (slaveCount + 1 - remain) + 1;
-                tooltip =
-                  `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
+                tooltip = t('updatingCpeXOfY...',
+                  {x: currentDeviceNum, y: slaveCount+1});
               }
             }
           }
@@ -454,9 +455,9 @@ anlixDocumentReady.add(function() {
       url: '/devicelist/uiupdate/' + localDeviceId,
       type: 'GET',
       success: function(res) {
-        slaveRow.find('.device-status').
-          removeClass('green-text red-text grey-text').
-          addClass(res.status_color + '-text');
+        slaveRow.find('.device-status')
+          .removeClass('green-text red-text grey-text')
+          .addClass(res.status_color + '-text');
         slaveRow.find('.device-wan-ip').html(res.wan_ip);
         slaveRow.find('.device-ip').html(res.ip);
         slaveRow.find('.device-installed-release').html(res.installed_release);
@@ -598,20 +599,26 @@ anlixDocumentReady.add(function() {
     '</a>';
   };
 
-  const buildPonSignalColumn = function(device, config, grantPonSignalSupport = false) {
+  const buildPonSignalColumn = function(device, config,
+  grantPonSignalSupport = false) {
     let ponSignalStatus;
     let ponSignalRxPower = `<span>${device.pon_rxpower}</span>`;
-    if (device.pon_rxpower === undefined) { 
-      ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+    if (device.pon_rxpower === undefined) {
+      let st = t('NoSignal');
+      ponSignalStatus = `<div class="badge badge-dark">${st}</div>`;
       ponSignalRxPower = '';
-    } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh){
-      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Alto</div>';
+    } else if (device.pon_rxpower >= config.ponSignalThresholdCriticalHigh) {
+      let st = t('SignalState', {state: 'VeryHigh'});
+      ponSignalStatus = `<div class="badge bg-danger">${st}</div>`;
     } else if (device.pon_rxpower >= config.ponSignalThreshold) {
-      ponSignalStatus = '<div class="badge bg-success">Sinal Bom</div>';
+      let st = t('SignalState', {state: 'Good'});
+      ponSignalStatus = `<div class="badge bg-success">${st}</div>`;
     } else if (device.pon_rxpower >= config.ponSignalThresholdCritical) {
-      ponSignalStatus = '<div class="badge bg-warning">Sinal Fraco</div>';
+      let st = t('SignalState', {state: 'Weak'});
+      ponSignalStatus = `<div class="badge bg-warning">${st}</div>`;
     } else {
-      ponSignalStatus = '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+      let st = t('SignalState', {state: 'VeryWeak'});
+      ponSignalStatus = `<div class="badge bg-danger">${st}</div>`;
     }
     let ponSignalStatusColumn = (grantPonSignalSupport) ? `
       <td>
@@ -657,9 +664,14 @@ anlixDocumentReady.add(function() {
           '<div class="dropdown-menu refresh-selected">'+upgradeOpts+'</div>'+
         '</div>'+
         '<span class="ml-3 upgrade-status">'+
-          '<div class="fas fa-circle fa-2x white-text status-none $STATUS_NO"></div>'+
-          '<div class="fas fa-spinner fa-2x fa-pulse status-waiting $STATUS_0" data-toggle="tooltip", title="$TOOLTIP"></div>'+
-          '<div class="fas fa-check-circle fa-2x green-text status-ok $STATUS_1"></div>'+
+          '<div class="fas fa-circle fa-2x white-text status-none $STATUS_NO">'+
+          '</div>'+
+          '<div data-toggle="tooltip" title="$TOOLTIP" '+
+            'class="fas fa-spinner fa-2x fa-pulse status-waiting $STATUS_0">'+
+          '</div>'+
+          '<div '+
+            'class="fas fa-check-circle fa-2x green-text status-ok $STATUS_1">'+
+          '</div>'+
           '<a class="status-error $STATUS_2" $MESH_PARAMS>'+
             '<div class="fas fa-exclamation-circle fa-2x red-text"></div>'+
           '</a>'+
@@ -673,7 +685,7 @@ anlixDocumentReady.add(function() {
     let status = device.do_update_status;
     const masterStatus = device.do_update_status;
     let currentDeviceNum = slaveCount + 1;
-    let tooltipMsg = 'Atualizando CPE...';
+    let tooltipMsg = t('upadatingCpe...');
     if (slaveCount) {
       if (device.mesh_next_to_update) {
         // get next device to update in mesh network
@@ -695,8 +707,8 @@ anlixDocumentReady.add(function() {
           meshCount = device.mesh_update_remaining.length;
         }
         currentDeviceNum = slaveCount + 1 - meshCount + 1;
-        tooltipMsg =
-          `Atualizando CPE ${currentDeviceNum} de ${slaveCount+1}...`;
+        tooltipMsg = t('updatingCpeXOfY...',
+          {x: currentDeviceNum, y: slaveCount+1});
       } else {
         // Could be a normal update that has finished or could be mesh v1 -> v2
         // after all devices have begun download.
@@ -713,7 +725,7 @@ anlixDocumentReady.add(function() {
         if (differentStatus || masterStatus !== 1) {
           // this is a mesh v1 -> v2 update
           inProgress = true;
-          tooltipMsg = 'Esperando dispositivos ficarem online';
+          tooltipMsg = t('waitingDevicesToBecomeOnline');
         } else {
           inProgress = false;
         }
@@ -721,6 +733,9 @@ anlixDocumentReady.add(function() {
     }
     if (masterStatus == 6 || masterStatus == 7) {
       // Error status 6 and 7 are only saved on master device
+      upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
+      upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
+      upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_0', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', '');
@@ -730,7 +745,10 @@ anlixDocumentReady.add(function() {
       upgradeCol = upgradeCol.replace('$MESH_PARAMS', meshParams);
     } else if (!inProgress && masterStatus == 20) {
       // Status 20 is only saved on master
-      tooltipMsg = 'Coletando topologia';
+      tooltipMsg = t('collectingTopology');
+      upgradeCol = upgradeCol.replace('$UP_RELEASE', device.release);
+      upgradeCol = upgradeCol.replace('$NO_UPDATE', '');
+      upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', 'disabled');
       upgradeCol = upgradeCol.replace('$STATUS_0', '');
       upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
       upgradeCol = upgradeCol.replace('$STATUS_2', 'd-none');
@@ -757,7 +775,7 @@ anlixDocumentReady.add(function() {
       } else if (status == 0 || status == 10 || masterStatus == 20) {
         // Status 20 is only saved on master
         if (masterStatus == 20) {
-          tooltipMsg = 'Coletando topologia';
+          tooltipMsg = t('collectingTopology');
         }
         upgradeCol = upgradeCol.replace('$STATUS_0', '');
         upgradeCol = upgradeCol.replace('$STATUS_1', 'd-none');
@@ -772,7 +790,7 @@ anlixDocumentReady.add(function() {
         upgradeCol = upgradeCol.replace('$MESH_PARAMS', '');
       }
     } else {
-      upgradeCol = upgradeCol.replace('$UP_RELEASE', 'Escolher');
+      upgradeCol = upgradeCol.replace('$UP_RELEASE', t('Choose'));
       upgradeCol = upgradeCol.replace('$NO_UPDATE', 'disabled');
       upgradeCol = upgradeCol.replace('$NO_UPDATE_DROP', '');
       upgradeCol = upgradeCol.replace('$STATUS_NO', '');
@@ -789,7 +807,8 @@ anlixDocumentReady.add(function() {
                                      meshSlave=false, index=0, isTR069=false) {
     let rowClass = (meshSlave) ? 'd-none grey lighten-3 slave-'+index : '';
     let chevClass = (meshSlave) ? 'slave-row' : '';
-    let selectableClass = (selectable) ? 'selectable-device-row' : 'not-selectable-device-row';
+    let selectableClass = (selectable) ?
+      'selectable-device-row' : 'not-selectable-device-row';
     let refreshIcon = (meshSlave) ? '' :
     '<a class="device-row-refresher">'+
       '<div class="icon-row-refresh fas fa-sync-alt fa-lg hover-effect"></div>'+
@@ -800,16 +819,23 @@ anlixDocumentReady.add(function() {
     } else if (device.use_tr069) {
       uid = device.serial_tr069;
     }
-    let infoRow = '<tr class=" ' + selectableClass + ' ' + rowClass + '" $REPLACE_ATTRIBUTES>'+
+    let infoRow =
+    '<tr class=" ' + selectableClass + ' ' + rowClass +
+    '" $REPLACE_ATTRIBUTES>'+
       '<td class="pl-1 pr-0">'+
         refreshIcon+
       '</td><td class="text-center">'+
-        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect '+chevClass+'"></div>'+
+        '<div class="fas fa-chevron-down fa-lg device-table-row hover-effect '+
+          chevClass+'">'+
+        '</div>'+
       '</td><td>'+
         '<div class="$REPLACE_COLOR_CLASS" $REPLACE_COLOR_ATTR>'+
         '<span>&nbsp;</span><span>&nbsp;</span>'+
         '$REPLACE_NOTIFICATIONS'+
-        '</div><div class="badge teal $REPLACE_COLOR_CLASS_PILL">$REPLACE_PILL_TEXT</div>'+
+        '</div>'+
+        '<div class="badge teal $REPLACE_COLOR_CLASS_PILL">'+
+          '$REPLACE_PILL_TEXT'+
+        '</div>'+
       '</td><td class="text-center device-pppoe-user">'+
         ((!device.pppoe_user) ? '' : device.pppoe_user) +
       '</td><td class="text-center">'+
@@ -837,14 +863,21 @@ anlixDocumentReady.add(function() {
 
   const buildRemoveDevice = function(small=false) {
     let smallClass = (small) ? 'btn-sm' : '';
-    return '<button class="btn btn-danger '+smallClass+' btn-trash m-0" type="button">'+
-      '<i class="fas fa-trash"></i><span>&nbsp Remover</span>'+
+    return '<button class="btn btn-danger '+
+      smallClass+
+    ' btn-trash m-0" type="button">'+
+      '<i class="fas fa-trash"></i>'+
+      '<span>&nbsp; '+
+        t('Remove')+
+      '</span>'+
     '</button>';
   };
 
   const buildDisassociateSlave = function() {
-    return '<button class="btn btn-danger btn-sm btn-disassoc m-0" type="button">'+
-      '<i class="fas fa-minus-circle"></i><span>&nbsp Desassociar</span>'+
+    return '<button class="btn btn-danger btn-sm btn-disassoc m-0" '+
+    'type="button">'+
+      '<i class="fas fa-minus-circle"></i>'+
+      '<span>&nbsp; '+t('Disassociate')+'</span>'+
     '</button>';
   };
 
@@ -854,7 +887,7 @@ anlixDocumentReady.add(function() {
       '<div class="col text-right">'+
         '<button class="btn btn-primary mx-0 '+
           meshClass+'" type="submit">'+
-          '<i class="fas fa-check fa-lg"></i><span>&nbsp Editar</span>'+
+          '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
       '</div>'+
     '</div>';
@@ -866,21 +899,25 @@ anlixDocumentReady.add(function() {
     let createdDateStr = '';
     let resetDateStr = '';
     if (isNaN(Date.parse(device.created_at))) {
-      createdDateStr = 'Não disponível';
+      createdDateStr = t('notAvailable');
     } else {
       let createdDate = new Date(device.created_at);
-      createdDateStr = createdDate.toLocaleDateString('pt-BR',
-        {hour: '2-digit', minute: '2-digit'});
+      createdDateStr = createdDate.toLocaleDateString(
+        document.documentElement.lang,
+        {hour: '2-digit', minute: '2-digit'},
+      );
     }
     if (isNaN(Date.parse(device.last_hardreset))) {
-      resetDateStr = 'Não disponível';
+      resetDateStr = t('notAvailable');
     } else {
       let resetDate = new Date(device.last_hardreset);
-      resetDateStr = resetDate.toLocaleDateString('pt-BR',
-        {hour: '2-digit', minute: '2-digit'});
+      resetDateStr = resetDate.toLocaleDateString(
+        document.documentElement.lang,
+        {hour: '2-digit', minute: '2-digit'},
+      );
     }
     let lastReset = '<div class="md-form input-entry pt-1">'+
-      '<label class="active">Último reset no CPE realizado em</label>'+
+      '<label class="active">'+t('lastCpeResetDoneAt')+'</label>'+
       '<input class="form-control" type="text" '+
       'disabled value="'+resetDateStr+'">'+
       '<div class="invalid-feedback"></div>'+
@@ -888,7 +925,7 @@ anlixDocumentReady.add(function() {
     let aboutTab = '<div class="row">'+
       '<div class="col-6">'+
         '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Registro do CPE criado em</label>'+
+          '<label class="active">'+t('cpeRegisterCreatedAt')+'</label>'+
           '<input class="form-control" type="text" '+
           'disabled value="'+createdDateStr+'">'+
           '<div class="invalid-feedback"></div>'+
@@ -897,32 +934,45 @@ anlixDocumentReady.add(function() {
           '<div class="input-group-btn">'+
             '<button class="btn btn-primary dropdown-toggle ml-0 my-0" '+
             'type="button" data-toggle="dropdown" $REPLACE_EN_ID>'+
-              '<span class="selected" id="edit_ext_ref_type_selected-'+idIndex+'">'+
-                (device.external_reference ? device.external_reference.kind : 'CPF')+
+              '<span class="selected" id="edit_ext_ref_type_selected-'+
+                idIndex+
+              '">'+
+                (device.external_reference ? device.external_reference.kind :
+                  t('personIdentificationSystem'))+
               '</span>'+
             '</button>'+
             '<div class="dropdown-menu ext-ref-type">'+
-              '<a class="dropdown-item text-center $REPLACE_ID_CPF">CPF</a>'+
-              '<a class="dropdown-item text-center $REPLACE_ID_CNPJ">CNPJ</a>'+
-              '<a class="dropdown-item text-center $REPLACE_ID_OTHER">Outro</a>'+
+              '<a class="dropdown-item text-center $REPLACE_ID_CPF">'+
+                t('personIdentificationSystem')+
+              '</a>'+
+              '<a class="dropdown-item text-center $REPLACE_ID_CNPJ">'+
+                t('enterpriseIdentificationSystem')+
+              '</a>'+
+              '<a class="dropdown-item text-center $REPLACE_ID_OTHER">'+
+                t('Other')+
+              '</a>'+
             '</div>'+
           '</div>'+
           '<input class="form-control py-0 added-margin" type="text" '+
-          'id="edit_external_reference-'+idIndex+'" placeholder="ID do cliente (opcional)" '+
-          'maxlength="64" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
+            'id="edit_external_reference-'+idIndex+
+            '" placeholder="'+t('clientIdOptional')+'" '+
+            'maxlength="64" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         (!isTR069 ?
         '<div class="md-form input-group input-entry">'+
-          '<label class="active">Status da licença é</label>' +
+          '<label class="active">'+t('licenseStatusIs')+'</label>' +
           '<input class="form-control py-0 added-margin" type="text" '+
-          'id="edit_license_status-'+idIndex+'" placeholder="Desconhecido" '+
-          'disabled value="$REPLACE_LICENSE_STATUS_VAL">'+
+            'id="edit_license_status-'+idIndex+
+            '" placeholder="'+t('Unknown')+'" '+
+            'disabled value="$REPLACE_LICENSE_STATUS_VAL">'+
           '</input>'+
           '<div class="input-group-append">'+
-            '<button class="btn btn-primary mr-0 my-0 btn-license-status-refresh" type="button">' +
-              '<i class="fas fa-sync-alt"></i>'+
+            '<button '+
+              'class="btn btn-primary mr-0 my-0 btn-license-status-refresh" '+
+              'type="button">' +
+                '<i class="fas fa-sync-alt"></i>'+
             '</button>'+
           '</div>'+
           '<div class="invalid-feedback"></div>'+
@@ -933,26 +983,39 @@ anlixDocumentReady.add(function() {
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="text-primary active">Canal do Wi-Fi 2.4GHz</label>'+
-                '<select class="browser-default md-select" id="edit_wifi_channel-'+idIndex+'" '+
-                '$REPLACE_WIFI_EN>'+
-                  '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
-                  '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
-                  '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
-                  '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
-                  '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
-                  '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
-                  '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
-                  '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
-                  '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
-                  '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
-                  '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
-                  '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
-                  (hasExtendedChannels ?
-                    '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>12</option>'+
-                    '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>13</option>':
-                    ''
-                  )+
+                '<label class="text-primary active">'+
+                  t('wifiXGhzChannel', {x: 2.4})+
+                '</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi_channel-'+idIndex+'" '+
+                  '$REPLACE_WIFI_EN>'+
+                    '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>'+
+                      t('auto')+
+                    '</option>'+
+                    '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
+                    '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
+                    '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
+                    '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
+                    '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
+                    '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
+                    '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
+                    '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
+                    '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
+                    '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>'+
+                      '10'+
+                    '</option>'+
+                    '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>'+
+                      '11'+
+                    '</option>'+
+                    (hasExtendedChannels ?
+                      '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>'+
+                        '12'+
+                      '</option>'+
+                      '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>'+
+                        '13'+
+                      '</option>':
+                      ''
+                    )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -961,19 +1024,42 @@ anlixDocumentReady.add(function() {
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="text-primary active">Canal do Wi-Fi 5.0GHz</label>'+
-                '<select class="browser-default md-select" id="edit_wifi5_channel-'+idIndex+'" '+
-                '$REPLACE_WIFI5_EN>'+
-                  '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
-                  '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
-                  '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
-                  '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
-                  '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                  '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
-                  '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
-                  '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
-                  '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>161</option>'+
-                  '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>165</option>'+
+                '<label class="text-primary active">'+
+                  t('wifiXGhzChannel', {x: '5.0'})+
+                '</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi5_channel-'+idIndex+'" '+
+                  '$REPLACE_WIFI5_EN>'+
+                    '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>'+
+                      t('auto')+
+                    '</option>'+
+                    '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
+                      '36'+
+                    '</option>'+
+                    '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
+                      '40'+
+                    '</option>'+
+                    '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
+                      '44'+
+                    '</option>'+
+                    '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
+                      '48'+
+                    '</option>'+
+                    '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
+                      '149'+
+                    '</option>'+
+                    '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
+                      '153'+
+                    '</option>'+
+                    '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
+                      '157'+
+                    '</option>'+
+                    '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
+                      '161'+
+                    '</option>'+
+                    '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
+                      '165'+
+                    '</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -986,7 +1072,7 @@ anlixDocumentReady.add(function() {
       '<div class="col-6">'+
         '$REPLACE_RESET_DATE'+
         '<div class="md-form input-entry pt-1">'+
-          '<label class="active">Modelo</label>'+
+          '<label class="active">'+t('Model')+'</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
           'disabled value="'+(device.model_alias?
             device.model_alias:device.model)+'">'+
@@ -994,7 +1080,7 @@ anlixDocumentReady.add(function() {
         '</div>'+
         '<div class="md-form input-entry">'+
           '<label class="active">'+
-            ((isTR069) ? 'Versão do Firmware' : 'Versão do Flashbox')+
+            ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
           '</label>'+
           '<input class="form-control" type="text" maxlength="32" '+
           'disabled value="'+device.version+'">'+
@@ -1004,13 +1090,24 @@ anlixDocumentReady.add(function() {
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="text-primary active">Potência do sinal 2.4GHz</label>'+
-                '<select class="browser-default md-select" id="edit_wifi_power-'+idIndex+'" '+
-                '$REPLACE_WIFI_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '<label class="text-primary active">'+
+                  t('xGhzSignalStrength', {x: 2.4})+
+                '</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi_power-'+idIndex+'" '+
+                  '$REPLACE_WIFI_POWER_EN>'+
+                    '<option value="100" $REPLACE_SELECTED_POWER_100$>'+
+                      '100%'+
+                    '</option>'+
+                    '<option value="75"  $REPLACE_SELECTED_POWER_75$>'+
+                      '75%'+
+                    '</option>'+
+                    '<option value="50"  $REPLACE_SELECTED_POWER_50$>'+
+                      '50%'+
+                    '</option>'+
+                    '<option value="25"  $REPLACE_SELECTED_POWER_25$>'+
+                      '25%'+
+                    '</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1019,13 +1116,24 @@ anlixDocumentReady.add(function() {
           '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="text-primary active">Potência do sinal 5.0GHz</label>'+
-                '<select class="browser-default md-select" id="edit_wifi5_power-'+idIndex+'" '+
-                '$REPLACE_WIFI5_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER5_25$>25%</option>'+
+                '<label class="text-primary active">'+
+                  t('xGhzSignalStrength', {x: '5.0'})+
+                '</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi5_power-'+idIndex+'" '+
+                  '$REPLACE_WIFI5_POWER_EN>'+
+                    '<option value="100" $REPLACE_SELECTED_POWER5_100$>'+
+                      '100%'+
+                    '</option>'+
+                    '<option value="75"  $REPLACE_SELECTED_POWER5_75$>'+
+                      '75%'+
+                    '</option>'+
+                    '<option value="50"  $REPLACE_SELECTED_POWER5_50$>'+
+                      '50%'+
+                    '</option>'+
+                    '<option value="25"  $REPLACE_SELECTED_POWER5_25$>'+
+                      '25%'+
+                    '</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1042,25 +1150,35 @@ anlixDocumentReady.add(function() {
       aboutTab = aboutTab.replace('$REPLACE_RESET_DATE', '');
     }
     if (device.external_reference) {
-      aboutTab = aboutTab.replace('$REPLACE_ID_VAL', device.external_reference.data);
+      aboutTab = aboutTab.replace('$REPLACE_ID_VAL',
+                                  device.external_reference.data);
     } else {
       aboutTab = aboutTab.replace('$REPLACE_ID_VAL', '');
     }
     if (device.is_license_active !== undefined) {
-      let licenseStatusStr = device.is_license_active ? 'Ativa':'Bloqueada';
-      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', licenseStatusStr);
+      let licenseStatusStr = device.is_license_active ?
+        t('Active', {context: 'female'}) : t('Blocked', {context: 'female'});
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL',
+                                  licenseStatusStr);
     } else {
-      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', 'Desconhecido');
+      aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL', t('Unknown'));
     }
-    if (!device.external_reference || device.external_reference.kind === 'CPF') {
+    if (!device.external_reference ||
+        device.external_reference.kind === t('personIdentificationSystem')
+    ) {
       aboutTab = aboutTab.replace('$REPLACE_ID_CPF', 'primary-color active');
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', '');
-    } else if (device.external_reference && device.external_reference.kind === 'CNPJ') {
+    } else if (
+      device.external_reference &&
+      device.external_reference.kind === t('enterpriseIdentificationSystem')
+    ) {
       aboutTab = aboutTab.replace('$REPLACE_ID_CPF', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', 'primary-color active');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', '');
-    } else if (device.external_reference && device.external_reference.kind === 'Outro') {
+    } else if (device.external_reference &&
+               device.external_reference.kind === t('Other')
+    ) {
       aboutTab = aboutTab.replace('$REPLACE_ID_CPF', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_CNPJ', '');
       aboutTab = aboutTab.replace('$REPLACE_ID_OTHER', 'primary-color active');
@@ -1144,7 +1262,7 @@ anlixDocumentReady.add(function() {
         if (res.devices.length == 0) {
           deviceTableContent.html(
             '<tr><td class="grey lighten-5 text-center" colspan="13">'+
-              '<h5>Nenhum CPE encontrado</h5>'+
+              '<h5>'+t('noCpeFound')+'</h5>'+
             '</td></tr>',
           );
           // Attach elements back to DOM after manipulation
@@ -1162,9 +1280,10 @@ anlixDocumentReady.add(function() {
         let allUpgrade = '<td>'+
           '<div class="btn-group">'+
             '<div class="btn-group" id="all-devices">'+
-              '<button class="btn btn-primary btn-sm px-3 py-2 teal darken-5" id="btn-upgrade-scheduler">'+
-                '<i class="fas fa-clock fa-lg"></i>'+
-                '<span>&nbsp; &nbsp; Atualizar Vários</span>'+
+              '<button class="btn btn-primary btn-sm px-3 py-2 teal darken-5" '+
+                'id="btn-upgrade-scheduler">'+
+                  '<i class="fas fa-clock fa-lg"></i>'+
+                  '<span>&nbsp; &nbsp; '+t('updateMany')+'</span>'+
               '</button>'+
             '</div>'+
           '</div>'+
@@ -1192,7 +1311,15 @@ anlixDocumentReady.add(function() {
             '</a>'+
           '</td>'+
           '$REPLACE_SEARCHSUMMARY'+
-          '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
+          '<td></td>'+
           '$REPLACE_ALLUPDATE'+
         '</tr>';
         if (isSuperuser || grantShowSearchSummary) {
@@ -1245,7 +1372,8 @@ anlixDocumentReady.add(function() {
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
-          let grantBlockWiredDevices = device.permissions.grantBlockWiredDevices;
+          let grantBlockWiredDevices =
+            device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
 
           let rowAttr = buildRowData(device, index);
@@ -1285,14 +1413,15 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069) {
             // Undefined treats legacy cases - which are all HTTPS
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
             if (
               typeof device.secure_tr069 === 'undefined' || device.secure_tr069
             ) {
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-2');
-              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
+                                        'darken-2');
             } else {
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'darken-4');
-              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069 HTTP');
+              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
+                                        'darken-4');
             }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
@@ -1311,105 +1440,140 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
-          formAttr += ' data-slave-count="'+((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
-          formAttr += ' data-slaves="'+((device.mesh_slaves) ? JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
-          formAttr += ' data-validate-wifi="'+(isSuperuser || grantWifiInfo >= 1)+'"';
-          formAttr += ' data-validate-pppoe="'+(isSuperuser || grantPPPoEInfo >= 1)+'"';
-          formAttr += ' data-validate-ipv6-enabled="'+grantWifiPowerHiddenIpv6Box+'"';
-          formAttr += ' data-validate-wifi-band="'+(grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-5ghz="'+(grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-power="'+(!device.use_tr069 && grantWifiPowerHiddenIpv6Box && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-slave-count="'+
+            ((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
+          formAttr += ' data-slaves="'+
+            ((device.mesh_slaves) ?
+              JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
+          formAttr += ' data-validate-wifi="'+
+            (isSuperuser || grantWifiInfo >= 1)+'"';
+          formAttr += ' data-validate-pppoe="'+
+            (isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-ipv6-enabled="'+
+            grantWifiPowerHiddenIpv6Box+'"';
+          formAttr += ' data-validate-wifi-band="'+
+            (grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-5ghz="'+
+            (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-power="'+
+            (!device.use_tr069 && grantWifiPowerHiddenIpv6Box &&
+              (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-lan="'+grantLanEdit+'"';
-          formAttr += ' data-validate-vlan-access="'+(isSuperuser?2:grantVlan)+'"';
-          formAttr += ' data-validate-port-forward-asym="'+grantPortForwardAsym+'"';
+          formAttr += ' data-validate-vlan-access="'+
+            (isSuperuser?2:grantVlan)+'"';
+          formAttr += ' data-validate-port-forward-asym="'+
+            grantPortForwardAsym+'"';
           formAttr += ' data-validate-port-open-ipv6="'+grantPortOpenIpv6+'"';
           formAttr += ' data-validate-upnp="'+grantUpnpSupport+'"';
-          formAttr += ' data-minlength-pass-pppoe="'+res.min_length_pass_pppoe+'"';
-          formAttr += ' data-bridge-enabled="'+(device.bridge_mode_enabled ? t('Yes') : t('No'))+'"';
+          formAttr += ' data-minlength-pass-pppoe="'+
+            res.min_length_pass_pppoe+'"';
+          formAttr += ' data-bridge-enabled="'+
+            (device.bridge_mode_enabled ? t('Yes') : t('No'))+'"';
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
-          formAttr += ' data-has-extended-channels="'+grantWifiExtendedChannels+'"';
-          formAttr += ' data-device-model="'+(device.model ? device.model : '')+'"';
-          formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
-          formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
+          formAttr += ' data-has-extended-channels="'+
+            grantWifiExtendedChannels+'"';
+          formAttr += ' data-device-model="'+
+            (device.model ? device.model : '')+'"';
+          formAttr += ' data-device-version="'+
+            (device.version ? device.version : '')+'"';
+          formAttr += ' data-qtd-ports="'+
+            (device.qtdPorts ? device.qtdPorts : '')+'"';
           if (device.data_collecting !== undefined) {
-            formAttr += ' data-data_collecting-is_active="'+(device.data_collecting.is_active ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-has_latency="'+(device.data_collecting.has_latency ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-ping_fqdn="'+(device.data_collecting.ping_fqdn || '')+'"';
+            // data collecting parameters could be undefined.
+            formAttr += ' data-data_collecting-is_active="'+
+              (device.data_collecting.is_active ? 'true' : 'false')+'"';
+            formAttr += ' data-data_collecting-has_latency="'+
+              (device.data_collecting.has_latency ? 'true' : 'false')+'"';
+            formAttr += ' data-data_collecting-ping_fqdn="'+
+              (device.data_collecting.ping_fqdn || '')+'"';
           }
-          formAttr += ' data-grant-block-wired-devices="' + grantBlockWiredDevices + '"';
+          formAttr += ' data-grant-block-wired-devices="' +
+            grantBlockWiredDevices + '"';
           formAttr += ' data-grant-block-devices="' + grantBlockDevices + '"';
 
-          let baseAction = '<div class="dropdown-divider"></div><a class="dropdown-item $REPLACE_BTN_CLASS"><i class="fas $REPLACE_ICON"></i><span>&nbsp $REPLACE_TEXT</span></a>';
+          let baseAction = '<div class="dropdown-divider"></div>'+
+            '<a class="dropdown-item $REPLACE_BTN_CLASS">'+
+              '<i class="fas $REPLACE_ICON"></i>'+
+              '<span>&nbsp; $REPLACE_TEXT</span>'+
+            '</a>';
 
           let logAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-log-modal')
           .replace('$REPLACE_ICON', 'fa-file-alt')
-          .replace('$REPLACE_TEXT', 'Logs do CPE');
+          .replace('$REPLACE_TEXT', t('cpeLogs'));
 
           let unblockAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-reset-blocked')
           .replace('$REPLACE_ICON', 'fa-ban')
-          .replace('$REPLACE_TEXT', 'Desbloquear dispositivos');
+          .replace('$REPLACE_TEXT', t('unblockDevices'));
 
           let portForwardAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-open-ports-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
-          .replace('$REPLACE_TEXT', 'Abertura de portas');
+          .replace('$REPLACE_TEXT', t('portOpenning'));
 
           let portForwardTr069Action = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-port-forward-tr069-modal')
           .replace('$REPLACE_ICON', 'fa-lock-open')
-          .replace('$REPLACE_TEXT', 'Abertura de portas');
+          .replace('$REPLACE_TEXT', t('portOpenning'));
 
           let pingTestAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-ping-test-modal')
           .replace('$REPLACE_ICON', 'fa-stethoscope')
-          .replace('$REPLACE_TEXT', 'Teste de latência e perda');
+          .replace('$REPLACE_TEXT', t('latencyAndLossTest'));
 
           let devicesAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-lan-devices-modal')
           .replace('$REPLACE_ICON', 'fa-network-wired')
-          .replace('$REPLACE_TEXT', 'Dispositivos Conectados');
+          .replace('$REPLACE_TEXT', t('connectedDevices'));
 
           let siteSurveyAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-site-survey-modal')
           .replace('$REPLACE_ICON', 'fa-wifi')
-          .replace('$REPLACE_TEXT', 'Redes ao redor');
+          .replace('$REPLACE_TEXT', t('neighboringNetworks'));
 
           let measureAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-throughput-measure-modal')
           .replace('$REPLACE_ICON', 'fa-tachometer-alt')
-          .replace('$REPLACE_TEXT', 'Medição de Velocidade');
+          .replace('$REPLACE_TEXT', t('speedMeasure'));
 
           let vlanAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-vlan-modal')
           .replace('$REPLACE_ICON', 'fa-project-diagram')
-          .replace('$REPLACE_TEXT', 'Administrar VLANs');
+          .replace('$REPLACE_TEXT', t('manageVlans'));
 
           let wanBytesAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
-          .replace('$REPLACE_TEXT', 'Tráfego WAN');
+          .replace('$REPLACE_TEXT', t('wanBytes'));
 
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
           .replace('$REPLACE_ICON', 'fa-wave-square')
-          .replace('$REPLACE_TEXT', 'Sinal Óptico');
+          .replace('$REPLACE_TEXT', t('opcticalSignal'));
 
           let factoryAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-factory red-text')
           .replace('$REPLACE_ICON', 'fa-skull-crossbones')
-          .replace('$REPLACE_TEXT', 'Voltar à firmware de fábrica');
+          .replace('$REPLACE_TEXT', t('returnToStockFirmware'));
 
           let dataCollectingAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
-          .replace('$REPLACE_TEXT', 'Coleta de dados');
+          .replace('$REPLACE_TEXT', t('dataCollecting'));
 
           let idxMenu = 0;
           let sideMenu = [];
-          sideMenu[0] = '<div><a class="dropdown-item btn-reboot"><i class="fas fa-sync"></i><span>&nbsp Reiniciar CPE</span></a>';
-          sideMenu[1] = '<div><a class="dropdown-item btn-reset-app"><i class="fas fa-mobile-alt"></i><span>&nbsp Resetar senha App</span></a>';
+          sideMenu[0] = '<div>'+
+            '<a class="dropdown-item btn-reboot">'+
+              '<i class="fas fa-sync"></i>'+
+              '<span>&nbsp; '+t('rebootCpe')+'</span>'+
+            '</a>';
+          sideMenu[1] = '<div>'+
+            '<a class="dropdown-item btn-reset-app">'+
+              '<i class="fas fa-mobile-alt"></i>'+
+              '<span>&nbsp; '+t('resetAppPassword')+'</span>'+
+            '</a>';
 
           if ((isSuperuser || grantLOGAccess) && grantViewLogs) {
             sideMenu[idxMenu] += logAction;
@@ -1435,7 +1599,9 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += devicesAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
+          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) &&
+              grantSiteSurvey
+          ) {
             sideMenu[idxMenu] += siteSurveyAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -1443,7 +1609,9 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += measureAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) && grantVlanSupport) {
+          if (!device.bridge_mode_enabled && (isSuperuser || grantVlan > 0) &&
+              grantVlanSupport
+          ) {
             sideMenu[idxMenu] += vlanAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -1459,7 +1627,9 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += ponSignalAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && slaves.length == 0 && (isSuperuser || grantFactoryReset)) {
+          if (!isTR069 && slaves.length == 0 &&
+              (isSuperuser || grantFactoryReset)
+          ) {
             sideMenu[idxMenu] += factoryAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -1468,7 +1638,7 @@ anlixDocumentReady.add(function() {
           sideMenu[1] += '</div>';
 
           let devActions = '<button class="btn btn-primary dropdown-toggle" '+
-          'type="button" data-toggle="dropdown">Opções</button>'+
+          'type="button" data-toggle="dropdown">'+t('Options')+'</button>'+
           '<div class="dropdown-menu dropdown-menu-inline'+
           ' dropdown-menu-right" data-dropdown-in="fadeIn" '+
           'data-dropdown-out="fadeOut">'+
@@ -1489,39 +1659,54 @@ anlixDocumentReady.add(function() {
 
           let passwordToggle = '<div class="input-group-append">'+
             '<div class="input-group-text primary-color">'+
-              '<a class="toggle-pass"><i class="fas fa-eye-slash white-text"></i></a>'+
+              '<a class="toggle-pass">'+
+                '<i class="fas fa-eye-slash white-text"></i>'+
+              '</a>'+
             '</div>'+
           '</div>';
 
-          let pppoeForm = '<div class="col-4 $REPLACE_IS_PPPOE" id="edit_pppoe_combo-'+index+'">'+
+          let pppoeForm =
+          '<div class="col-4 $REPLACE_IS_PPPOE" '+
+            'id="edit_pppoe_combo-'+index+'">'+
             '<div class="md-form input-entry">'+
-              '<label class="active">Usuário PPPoE</label>'+
-              '<input class="form-control" type="text" id="edit_pppoe_user-'+index+'" '+
-              'maxlength="64" value="'+device.pppoe_user+'" $REPLACE_PPPOE_FORM_EN></input>'+
+              '<label class="active">'+t('pppoeUser')+'</label>'+
+              '<input class="form-control" type="text" '+
+                'id="edit_pppoe_user-'+index+'" '+
+                'maxlength="64" value="'+device.pppoe_user+
+                '" $REPLACE_PPPOE_FORM_EN>'+
+              '</input>'+
               '<div class="invalid-feedback"></div>'+
             '</div>'+
             '<div class="md-form input-entry">'+
               '<div class="input-group">'+
-                '<label class="active">Senha PPPoE</label>'+
-                '<input class="form-control my-0" type="password" id="edit_pppoe_pass-'+index+'" '+
-                'maxlength="64" value="'+device.pppoe_password+'" $REPLACE_PPPOE_FORM_EN></input>'+
+                '<label class="active">'+t('pppoePassword')+'</label>'+
+                '<input class="form-control my-0" type="password" '+
+                  'id="edit_pppoe_pass-'+index+'" '+
+                  'maxlength="64" value="'+device.pppoe_password+
+                  '" $REPLACE_PPPOE_FORM_EN>'+
+                '</input>'+
                 '$REPLACE_PPPOE_PASS'+
                 '<div class="invalid-feedback"></div>'+
               '</div>'+
             '</div>'+
           '</div>';
-          if (!device.connection_type || device.connection_type.toUpperCase() !== 'PPPOE') {
+          if (!device.connection_type ||
+              device.connection_type.toUpperCase() !== 'PPPOE') {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', 'd-none');
           } else {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', '');
           }
           if (isSuperuser || grantPassShow) {
-            pppoeForm = pppoeForm.replace('$REPLACE_PPPOE_PASS', passwordToggle);
+            pppoeForm =
+              pppoeForm.replace('$REPLACE_PPPOE_PASS', passwordToggle);
           } else {
             pppoeForm = pppoeForm.replace('$REPLACE_PPPOE_PASS', '');
           }
-          if (device.bridge_mode_enabled || (!isSuperuser && grantPPPoEInfo <= 1)) {
-            pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, 'disabled');
+          if (device.bridge_mode_enabled ||
+              (!isSuperuser && grantPPPoEInfo <= 1)
+          ) {
+            pppoeForm =
+              pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, 'disabled');
           } else {
             pppoeForm = pppoeForm.replace(/\$REPLACE_PPPOE_FORM_EN/g, '');
           }
@@ -1532,7 +1717,7 @@ anlixDocumentReady.add(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este CPE está em modo bridge! Para alterar os dados da WAN, retire o CPE do modo bridge primeiro.'+
+                    t('changeBridgeModeWarning', {interface: 'WAN'})+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1542,51 +1727,66 @@ anlixDocumentReady.add(function() {
                 '<div class="md-form">'+
                   '<div class="input-group has-warning">'+
                     '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Tipo de Conexão</label>'+
-                      '<select class="browser-default md-select" id="edit_connect_type-'+index+'" $REPLACE_EDIT_WAN>'+
-                        '<option value="DHCP" $REPLACE_SELECTED_DHCP$>DHCP</option>'+
-                        '<option value="PPPoE" $REPLACE_SELECTED_PPPOE$>PPPoE</option>'+
+                      '<label class="active">'+t('connectionType')+'</label>'+
+                      '<select class="browser-default md-select" '+
+                        'id="edit_connect_type-'+index+'" $REPLACE_EDIT_WAN>'+
+                        '<option value="DHCP" $REPLACE_SELECTED_DHCP$>'+
+                          'DHCP'+
+                        '</option>'+
+                        '<option value="PPPoE" $REPLACE_SELECTED_PPPOE$>'+
+                          'PPPoE'+
+                        '</option>'+
                       '</select>'+
                     '</div>'+
-                    '<h7 class="orange-text d-none" id="edit_connect_type_warning-'+index+'">'+
-                      'Cuidado! Isso pode deixar o CPE inacessível '+
-                      'dependendo das configurações de rede do seu provedor'+
+                    '<h7 class="orange-text d-none" '+
+                      'id="edit_connect_type_warning-'+index+'">'+
+                      t('carefulThisCouldLeaveCpeInaccessible')+
                     '</h7>'+
                   '</div>'+
                 '</div>'+
                 (isTR069 ?
                   '<div class="md-form input-entry">'+
-                    '<label class="active">Intesidade do sinal óptico (RXPower/Recebido)</label>'+
+                    '<label class="active">'+
+                      t('opticalSignalIntensity')+
+                    '</label>'+
                     '<input class="form-control" type="text" maxlength="3" '+
                     'value="'+
-                    ((ponRXPower) ? ponRXPower + ' dBm' : 'Não disponível')+
+                    ((ponRXPower) ? ponRXPower + ' dBm' : t('notAvailable'))+
                     '" disabled></input>'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>':
                   ''
                 )+
-                '<div class="custom-control custom-checkbox" $REPLACE_IPV6_ENABLED_EN>'+
-                  '<input class="custom-control-input" type="checkbox" id="edit_ipv6_enabled-'+index+'" '+
-                  '$REPLACE_SELECTED_IPV6_ENABLED></input>'+
-                  '<label class="custom-control-label" for="edit_ipv6_enabled-'+index+'">'+
-                  'Habilitar IPv6'+
+                '<div class="custom-control custom-checkbox" '+
+                  '$REPLACE_IPV6_ENABLED_EN>'+
+                  '<input class="custom-control-input" type="checkbox" '+
+                    'id="edit_ipv6_enabled-'+index+'" '+
+                    '$REPLACE_SELECTED_IPV6_ENABLED>'+
+                  '</input>'+
+                  '<label class="custom-control-label" '+
+                    'for="edit_ipv6_enabled-'+index+'">'+
+                    t('enableIpv6')+
                   '</label>'+
                 '</div>'+
               '</div>'+
               '<div class="col-4">'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">Velocidade Negociada (Mbps)</label>'+
+                  '<label class="active">'+t('negotiatedSpeedMbps')+'</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
                   'value="'+
-                  ((device.wan_negociated_speed) ? device.wan_negociated_speed : 'Não disponível')+
+                  ((device.wan_negociated_speed) ?
+                    device.wan_negociated_speed : t('notAvailable'))+
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-entry">'+
-                  '<label class="active">Modo de Transmissão (Duplex)</label>'+
+                  '<label class="active">'+
+                    t('transmissionModeDuplex')+
+                  '</label>'+
                   '<input class="form-control" type="text" maxlength="32" '+
                   'value="'+
-                  ((device.wan_negociated_duplex) ? device.wan_negociated_duplex : 'Não disponível')+
+                  ((device.wan_negociated_duplex) ?
+                    device.wan_negociated_duplex : t('notAvailable'))+
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
@@ -1594,17 +1794,24 @@ anlixDocumentReady.add(function() {
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
           '</div>';
-          if (device.connection_type && device.connection_type.toUpperCase() === 'PPPOE') {
-            wanTab = wanTab.replace('$REPLACE_SELECTED_PPPOE', 'selected="selected"');
+          if (device.connection_type &&
+              device.connection_type.toUpperCase() === 'PPPOE'
+          ) {
+            wanTab = wanTab.replace('$REPLACE_SELECTED_PPPOE',
+                                    'selected="selected"');
           } else {
-            wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP', 'selected="selected"');
+            wanTab = wanTab.replace('$REPLACE_SELECTED_DHCP',
+                                    'selected="selected"');
           }
 
-          let currIpv6Enabled = (parseInt(device.ipv6_enabled) == 1 ? 'checked' : '');
-          wanTab = wanTab.replace(/\$REPLACE_SELECTED_IPV6_ENABLED/g, currIpv6Enabled);
+          let currIpv6Enabled =
+            (parseInt(device.ipv6_enabled) == 1 ? 'checked' : '');
+          wanTab = wanTab.replace(/\$REPLACE_SELECTED_IPV6_ENABLED/g,
+                                  currIpv6Enabled);
 
           if (!grantWifiPowerHiddenIpv6Box) {
-            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', 'style="display: none;"');
+            wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN',
+                                    'style="display: none;"');
           } else {
             wanTab = wanTab.replace('$REPLACE_IPV6_ENABLED_EN', '');
           }
@@ -1614,10 +1821,12 @@ anlixDocumentReady.add(function() {
             wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', '');
           } else if (isTR069 || (!isSuperuser && !grantWanType)) {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', 'disabled');
-            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN',
+                                    'style="display: none;"');
           } else {
             wanTab = wanTab.replace('$REPLACE_EDIT_WAN', '');
-            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
+            wanTab = wanTab.replace('$REPLACE_BRIDGE_WARN',
+                                    'style="display: none;"');
           }
           wanTab = wanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
           if (isSuperuser || grantPPPoEInfo >= 1) {
@@ -1632,7 +1841,7 @@ anlixDocumentReady.add(function() {
                 '<div class="alert alert-warning text-center">'+
                   '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
                   '<span>'+
-                    'Este CPE está em modo bridge! Para alterar os dados da LAN, retire o CPE do modo bridge primeiro.'+
+                    t('changeBridgeModeWarning', {interface: 'LAN'})+
                   '</span>'+
                 '</div>'+
               '</div>'+
@@ -1641,16 +1850,19 @@ anlixDocumentReady.add(function() {
               '<div class="col-6">'+
                 '<div class="md-form input-entry">'+
                   '<label class="active">'+
-                    (grantLanGwEdit ? 'IP do CPE' : 'IP da Rede')+
+                    (grantLanGwEdit ? t('cpeIp') : t('networkIp'))+
                   '</label>'+
-                  '<input class="form-control ip-mask-field" type="text" id="edit_lan_subnet-'+index+'" '+
-                  'maxlength="15" value="'+device.lan_subnet+'" $REPLACE_LAN_EN></input>'+
+                  '<input class="form-control ip-mask-field" type="text" '+
+                    'id="edit_lan_subnet-'+index+'" '+
+                    'maxlength="15" value="'+device.lan_subnet+
+                    '" $REPLACE_LAN_EN>'+
+                  '</input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 (grantLanGwEdit ?
                   '<div class="alert alert-info">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
-                    '<span>IP da rede será calculado a partir do IP do CPE e Máscara escolhidos</span>'+
+                    '<span>'+t('networkIpCalculationDescription')+'</span>'+
                   '</div>' :
                   ''
                 )+
@@ -1658,19 +1870,22 @@ anlixDocumentReady.add(function() {
               '<div class="col-6">'+
                 '<div class="md-form input-group">'+
                   '<div class="md-selectfield form-control my-0">'+
-                    '<label class="active">Máscara</label>'+
-                    '<select class="browser-default md-select" type="text" id="edit_lan_netmask-'+index+'" '+
-                    'maxlength="15" $REPLACE_LAN_EN>'+
-                      '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
-                      '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
-                      '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
+                    '<label class="active">'+t('Mask')+'</label>'+
+                    '<select class="browser-default md-select" type="text" '+
+                      'id="edit_lan_netmask-'+index+'" '+
+                      'maxlength="15" $REPLACE_LAN_EN>'+
+                        '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
+                        '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
+                        '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
                     '</select>'+
                   '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+
           '</div>';
-          if (device.bridge_mode_enabled || !grantLanEdit || (!isSuperuser && !grantLanEditAccess)) {
+          if (device.bridge_mode_enabled || !grantLanEdit ||
+              (!isSuperuser && !grantLanEditAccess)
+          ) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
           } else {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, '');
@@ -1678,7 +1893,8 @@ anlixDocumentReady.add(function() {
           if (device.bridge_mode_enabled) {
             lanTab = lanTab.replace('$REPLACE_BRIDGE_WARN', '');
           } else {
-            lanTab = lanTab.replace('$REPLACE_BRIDGE_WARN', 'style="display: none;"');
+            lanTab = lanTab.replace('$REPLACE_BRIDGE_WARN',
+                                    'style="display: none;"');
           }
           let selectTarget = '$REPLACE_SELECTED_' + device.lan_netmask;
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
@@ -1688,14 +1904,27 @@ anlixDocumentReady.add(function() {
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
                 '<label class="active">Mesh</label>'+
-                '<select class="browser-default md-select" type="text" id="edit_meshMode-'+index+'" '+
-                'maxlength="15" $REPLACE_OPMODE_EN>'+
-                  '<option value="0" $REPLACE_MESH_DISABLED_OPT $REPLACE_SELECTED_MESH_0$>Desabilitado</option>'+
-                  '<option value="1" $REPLACE_SELECTED_MESH_1$>Cabo</option>'+
-                  '<option value="2" $REPLACE_SELECTED_MESH_2$>Cabo e Wi-Fi 2.4 GHz</option>'+
+                '<select class="browser-default md-select" type="text" '+
+                  'id="edit_meshMode-'+index+'" '+
+                  'maxlength="15" $REPLACE_OPMODE_EN'+
+                '>'+
+                  '<option value="0" $REPLACE_MESH_DISABLED_OPT '+
+                    '$REPLACE_SELECTED_MESH_0$>'+
+                    t('Disabled')+
+                  '</option>'+
+                  '<option value="1" $REPLACE_SELECTED_MESH_1$>'+
+                    t('Cable')+
+                  '</option>'+
+                  '<option value="2" $REPLACE_SELECTED_MESH_2$>'+
+                    t('cableAndWifiXGhz', {x: 2.4})+
+                  '</option>'+
                   (grantWifi5ghz ?
-                    '<option value="3" $REPLACE_SELECTED_MESH_3$>Cabo e Wi-Fi 5.0 GHz</option>'+
-                    '<option value="4" $REPLACE_SELECTED_MESH_4$>Cabo e ambos Wi-Fi</option>' :
+                    '<option value="3" $REPLACE_SELECTED_MESH_3$>'+
+                      t('cableAndWifiXGhz', {x: '5.0'})+
+                    '</option>'+
+                    '<option value="4" $REPLACE_SELECTED_MESH_4$>'+
+                      t('cableAndBothWifi')+
+                    '</option>' :
                     ''
                   )+
                 '</select>'+
@@ -1703,18 +1932,28 @@ anlixDocumentReady.add(function() {
             '</div>'+
           '</div>';
 
-          let opmodeTab = '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
+          let opmodeTab =
+          '<div class="edit-tab d-none" id="tab_opmode-'+index+'">'+
             '<div class="row">'+
               '<div class="col-6">'+
                 (!isTR069 ?
                 '<div class="md-form">'+
                   '<div class="input-group">'+
                     '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">Modo de Operação</label>'+
-                      '<select class="browser-default md-select" type="text" id="edit_opmode-'+index+'" '+
-                      'maxlength="15" $REPLACE_OPMODE_EN $REPLACE_MESH_OPMODE_EN>'+
-                        '<option value="Modo Roteador" $REPLACE_SELECTED_ROUTER$>Modo Roteador</option>'+
-                        '<option value="Modo Bridge" $REPLACE_SELECTED_BRIDGE$>Modo Bridge / Modo AP</option>'+
+                      '<label class="active">'+t('operationMode')+'</label>'+
+                      '<select class="browser-default md-select" type="text" '+
+                        'id="edit_opmode-'+index+'" '+
+                        'maxlength="15" $REPLACE_OPMODE_EN '+
+                        '$REPLACE_MESH_OPMODE_EN'+
+                      '>'+
+                        '<option value="router_mode" '+
+                          '$REPLACE_SELECTED_ROUTER$>'+
+                          t('routerMode')+
+                        '</option>'+
+                        '<option value="bridge_mode" '+
+                          '$REPLACE_SELECTED_BRIDGE$>'+
+                          t('bridgeApMode')+
+                        '</option>'+
                       '</select>'+
                     '</div>'+
                   '</div>'+
@@ -1723,26 +1962,37 @@ anlixDocumentReady.add(function() {
                 )+
                 '$REPLACE_MESH_MODE'+
                 (!isTR069 ?
-                '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+'">'+
+                '<div $REPLACE_OPMODE_VIS id="edit_opmode_checkboxes-'+index+
+                '">'+
                   '<div class="custom-control custom-checkbox pb-3">'+
-                    '<input class="custom-control-input" type="checkbox" id="edit_opmode_switch_en-'+index+'" '+
-                    'name="edit_opmode_switch_en-'+index+'" $REPLACE_SELECTED_OPMODE_SWITCH_STATE $REPLACE_OPMODE_EN></input>'+
-                    '<label class="custom-control-label" for="edit_opmode_switch_en-'+index+'">'+
-                      'Habilitar portas de rede LAN do CPE'+ // Changed to Enable instead Disable
+                    '<input class="custom-control-input" type="checkbox" '+
+                      'id="edit_opmode_switch_en-'+index+'" '+
+                      'name="edit_opmode_switch_en-'+index+
+                      '" $REPLACE_SELECTED_OPMODE_SWITCH_STATE '+
+                      '$REPLACE_OPMODE_EN>'+
+                    '</input>'+
+                    '<label class="custom-control-label" '+
+                      'for="edit_opmode_switch_en-'+index+
+                    '">'+
+                      t('enableLanPortsForCpe')+
                     '</label>'+
                   '</div>'+
                   '<div class="custom-control custom-checkbox pb-3">'+
-                    '<input class="custom-control-input" type="checkbox"  id="edit_opmode_fixip_en-'+index+'" '+
-                    'name="edit_opmode_fixip_en-'+index+'" $REPLACE_SELECTED_OPMODE_IP_STATE $REPLACE_OPMODE_EN></input>'+
-                    '<label class="custom-control-label" for="edit_opmode_fixip_en-'+index+'">'+
-                      'Fixar o IP do CPE em bridge'+
+                    '<input class="custom-control-input" type="checkbox" '+
+                      'id="edit_opmode_fixip_en-'+index+'" '+
+                      'name="edit_opmode_fixip_en-'+index+
+                      '" $REPLACE_SELECTED_OPMODE_IP_STATE $REPLACE_OPMODE_EN>'+
+                    '</input>'+
+                    '<label class="custom-control-label" '+
+                      'for="edit_opmode_fixip_en-'+index+
+                    '">'+
+                      t('fixCpeIpInBridge')+
                     '</label>'+
                   '</div>'+
                   '<div class="alert alert-info mt-3">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
                     '<span>'+
-                      'Para garantir o funcionamento em modo bridge, o dispositivo à frente do '+
-                      'Flashbox na sua rede deve possuir um servidor DHCP tanto para IPv4 quanto para IPv6'+
+                      t('bridgeModeWorkingExplantion')+
                     '</span>'+
                   '</div>'+
                 '</div>':
@@ -1751,36 +2001,47 @@ anlixDocumentReady.add(function() {
               '</div>'+
               (!isTR069 ?
               '<div class="col-6">'+
-                '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+index+'">'+
+                '<div $REPLACE_OPMODE_IP_VIS id="edit_opmode_alert_ip-'+
+                  index+
+                '">'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP fixo do CPE em bridge'+
+                      t('fixedIpForCpeInBridge')+
                     '</label>'+
-                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip-'+index+'" '+
-                    'maxlength="15" value="$REPLACE_OPMODE_IP_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<input class="form-control ip-mask-field" type="text" '+
+                      'id="edit_opmode_fixip-'+index+'" '+
+                      'maxlength="15" value="$REPLACE_OPMODE_IP_VAL" '+
+                      '$REPLACE_OPMODE_EN>'+
+                    '</input>'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do gateway para o CPE em bridge'+
+                      t('gatewayIpForCpeInBridge')+
                     '</label>'+
-                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_gateway-'+index+'" '+
-                    'maxlength="15" value="$REPLACE_OPMODE_GATEWAY_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<input class="form-control ip-mask-field" type="text" '+
+                      'id="edit_opmode_fixip_gateway-'+index+'" '+
+                      'maxlength="15" value="$REPLACE_OPMODE_GATEWAY_VAL" '+
+                      '$REPLACE_OPMODE_EN>'+
+                    '</input>'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                   '<div class="md-form input-entry">'+
                     '<label class="active">'+
-                      'IP do DNS para o CPE em bridge'+
+                      t('dnsIpForCpeInBridge')+
                     '</label>'+
-                    '<input class="form-control ip-mask-field" type="text" id="edit_opmode_fixip_dns-'+index+'" '+
-                    'maxlength="15" value="$REPLACE_OPMODE_DNS_VAL" $REPLACE_OPMODE_EN></input>'+
+                    '<input class="form-control ip-mask-field" type="text" '+
+                      'id="edit_opmode_fixip_dns-'+index+'" '+
+                      'maxlength="15" value="$REPLACE_OPMODE_DNS_VAL" '+
+                      '$REPLACE_OPMODE_EN>'+
+                    '</input>'+
                     '<div class="invalid-feedback"></div>'+
                   '</div>'+
                   '<div class="alert alert-warning">'+
-                    '<div class="fas fa-exclamation-triangle fa-lg mr-2"></div>'+
+                    '<div class="fas fa-exclamation-triangle fa-lg mr-2">'+
+                    '</div>'+
                     '<span>'+
-                      'Cuidado! Garanta que sua rede está configurada para entregar o IP fixo escolhido, '+
-                      'senão o CPE pode ficar inacessível!'+
+                      t('carefulMakeSureYourNetworkCanGiveFixedIp')+
                     '</span>'+
                   '</div>'+
                 '</div>'+
@@ -1808,28 +2069,45 @@ anlixDocumentReady.add(function() {
           }
           if (device.bridge_mode_enabled) {
             opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, '');
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', 'selected="selected"');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE',
+                                          'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', '');
             if (device.bridge_mode_switch_disable) {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', ''); // If disabled, uncheck
+              // If disabled, uncheck
+              opmodeTab = opmodeTab.replace(
+                '$REPLACE_SELECTED_OPMODE_SWITCH_STATE', '');
             } else {
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // If enable, check
+              // If enable, check
+              opmodeTab = opmodeTab.replace(
+                '$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
             }
             if (device.bridge_mode_ip !== '') {
               opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, '');
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', 'checked');
-              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_IP_VAL', device.bridge_mode_ip);
-              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_GATEWAY_VAL', device.bridge_mode_gateway);
-              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_DNS_VAL', device.bridge_mode_dns);
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE',
+                                            'checked');
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_IP_VAL',
+                                            device.bridge_mode_ip);
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_GATEWAY_VAL',
+                                            device.bridge_mode_gateway);
+              opmodeTab = opmodeTab.replace('$REPLACE_OPMODE_DNS_VAL',
+                                            device.bridge_mode_dns);
             } else {
-              opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
-              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE', '');
+              opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g,
+                                            'style="display: none;"');
+              opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_IP_STATE',
+                                            '');
             }
           } else {
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked'); // The default value is Enabled when change from Route mode to Bridge mode
-            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g, 'style="display: none;"');
-            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g, 'style="display: none;"');
-            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER', 'selected="selected"');
+            // The default value is Enabled when change
+            // from Route mode to Bridge mode
+            opmodeTab = opmodeTab.replace(
+              '$REPLACE_SELECTED_OPMODE_SWITCH_STATE', 'checked');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_VIS/g,
+                                          'style="display: none;"');
+            opmodeTab = opmodeTab.replace(/\$REPLACE_OPMODE_IP_VIS/g,
+                                          'style="display: none;"');
+            opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_ROUTER',
+                                          'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
           if (grantMeshMode || grantMeshV2PrimMode) {
@@ -1851,10 +2129,14 @@ anlixDocumentReady.add(function() {
           if (device.isToShowSsidPrefixCheckbox) {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
                 '" class="custom-control custom-checkbox pl-2">'+
-                '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
-                '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
-                '<label class="custom-control-label ml-3 my-3" for="edit_is_ssid_prefix_enabled-'+index+'">'+
-                'Habilitar prefixo SSID'+
+                '<input class="custom-control-input" type="checkbox" '+
+                  'id="edit_is_ssid_prefix_enabled-'+index+'" '+
+                  '$REPLACE_SSID_PREFIX_ENABLED '+
+                  '$REPLACE_SSID_PREFIX_ENABLED_EN>'+
+                '</input>'+
+                '<label class="custom-control-label ml-3 my-3" '+
+                  'for="edit_is_ssid_prefix_enabled-'+index+'">'+
+                  t('enableSsidPrefix')+
                 '</label>'+
               '</div>';
             if (device.isSsidPrefixEnabled) {
@@ -1864,7 +2146,8 @@ anlixDocumentReady.add(function() {
                 getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
-              '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+              '<input class="form-control pl-0" type="text" '+
+                'id="edit_wifi_ssid-'+index+'" ';
 
               haveSsidPrefixPrepend5G = '<div class="input-group-prepend">'+
                 '<span class="input-group-text px-0 text-primary"'+
@@ -1872,31 +2155,40 @@ anlixDocumentReady.add(function() {
                 getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
-              '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
+              '<input class="form-control pl-0" type="text" '+
+                'id="edit_wifi5_ssid-'+index+'" ';
             } else {
-              haveSsidPrefixPrepend = '<div class="input-group-prepend d-none">'+
+              haveSsidPrefixPrepend =
+              '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
                 getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
-              '<input class="form-control pl-0" type="text" id="edit_wifi_ssid-'+index+'" ';
+              '<input class="form-control pl-0" type="text" '+
+                'id="edit_wifi_ssid-'+index+'" ';
 
-              haveSsidPrefixPrepend5G = '<div class="input-group-prepend d-none">'+
+              haveSsidPrefixPrepend5G =
+              '<div class="input-group-prepend d-none">'+
                 '<span class="input-group-text px-0 text-primary"'+
                 ' style="background:inherit;border:none;">'+
                 getConfigStorage('ssidPrefix')+
                 '</span>'+
               '</div>'+
-              '<input class="form-control pl-0" type="text" id="edit_wifi5_ssid-'+index+'" ';
+              '<input class="form-control pl-0" type="text" '+
+                'id="edit_wifi5_ssid-'+index+'" ';
             }
           } else {
             ssidPrefixEnabledCheckbox = '<div id="ssid_prefix_checkbox-'+index+
                 '" class="custom-control custom-checkbox pl-2 d-none">'+
-                '<input class="custom-control-input" type="checkbox" id="edit_is_ssid_prefix_enabled-'+index+'" '+
-                '$REPLACE_SSID_PREFIX_ENABLED $REPLACE_SSID_PREFIX_ENABLED_EN></input>'+
-                '<label class="custom-control-label" for="edit_is_ssid_prefix_enabled-'+index+'">'+
-                'Habilitar prefixo SSID'+
+                '<input class="custom-control-input" type="checkbox" '+
+                  'id="edit_is_ssid_prefix_enabled-'+index+'" '+
+                  '$REPLACE_SSID_PREFIX_ENABLED '+
+                  '$REPLACE_SSID_PREFIX_ENABLED_EN>'+
+                '</input>'+
+                '<label class="custom-control-label" '+
+                  'for="edit_is_ssid_prefix_enabled-'+index+'">'+
+                  t('enableSsidPrefix')+
                 '</label>'+
               '</div>';
           }
@@ -1904,174 +2196,290 @@ anlixDocumentReady.add(function() {
           let wifi5Pane = '';
           let wifi5PaneNav = '';
           if (grantWifi5ghz) {
-            wifi5Pane = '<div class="row tab-pane fade" id="wifi5-pane-'+index+'" role="tabpanel" aria-labelledby="wifi5-pane-tab-'+index+'">'+
-                  '<div class="col-6">'+
-                    '<div class="md-form">'+
-                      '<div class="input-group">'+
-                        '<div class="md-selectfield form-control my-0">'+
-                          '<label class="active">Canal do Wi-Fi</label>'+
-                          '<select class="browser-default md-select" id="edit_wifi5_channel-'+index+'" '+
-                          '$REPLACE_WIFI5_EN $REPLACE_WIFI5_CHANNEL_EN>'+
-                            '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>auto</option>'+
-                            '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>36</option>'+
-                            '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>40</option>'+
-                            '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>44</option>'+
-                            '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>48</option>'+
-                            '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>149</option>'+
-                            '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>153</option>'+
-                            '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>157</option>'+
-                            '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>161</option>'+
-                            '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>165</option>'+
-                          '</select>'+
-                          '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY5$>'+
-                          (device.wifi_last_channel_5ghz ?
-                            'Canal escolhido em auto: ' + device.wifi_last_channel_5ghz :
-                            ''
-                          )+
-                          '</small>'+
-                        '</div>'+
-                      '</div>'+
-                    '</div>'+
-                    '<div class="md-form input-group input-entry">'+
-                      '<label class="active">SSID do Wi-Fi</label>'+
-                      haveSsidPrefixPrepend5G+
-                      'maxlength="32" value="'+device.wifi_ssid_5ghz+'" $REPLACE_WIFI5_EN></input>'+
-                      '<div class="invalid-feedback"></div>'+
-                    '</div>'+
-                    '<div class="md-form input-entry">'+
-                      '<div class="input-group">'+
-                        '<label class="active">Senha do Wi-Fi</label>'+
-                        '<input class="form-control my-0" type="password" id="edit_wifi5_pass-'+index+'" '+
-                        'maxlength="64" value="'+
-                        ((device.wifi_password_5ghz) ? device.wifi_password_5ghz : '')+ // treat undefined case
-                        '" $REPLACE_WIFI5_EN></input>'+
-                        '$REPLACE_WIFI5_PASS'+
-                        '<div class="invalid-feedback"></div>'+
-                      '</div>'+
-                    '</div>'+
-                    '<div class="custom-control custom-checkbox">'+
-                      '<input class="custom-control-input" type="checkbox" id="edit_wifi5_state-'+index+'" '+
-                      '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN></input>'+
-                      '<label class="custom-control-label" for="edit_wifi5_state-'+index+'">'+
-                      'Ativar Wi-Fi 5.0GHz'+
+            wifi5Pane =
+            '<div class="row tab-pane fade" id="wifi5-pane-'+index+
+            '" role="tabpanel" aria-labelledby="wifi5-pane-tab-'+index+'">'+
+              '<div class="col-6">'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">'+
+                        t('wifiChannel')+
                       '</label>'+
-                    '</div>'+
-                    '$REPLACE_WIFI5_HIDDEN'+
-                  '</div>'+
-                  '<div class="col-6">'+
-                    '<div class="md-form">'+
-                      '<div class="input-group">'+
-                        '<div class="md-selectfield form-control my-0">'+
-                          '<label class="active">Largura de banda</label>'+
-                          '<select class="browser-default md-select" id="edit_wifi5_band-'+index+'" '+
-                          '$REPLACE_WIFI5_EN>'+
-                            (grantWifiBandAuto ?
-                              '<option value="auto" $REPLACE_SELECTED_BAND5_auto$>auto</option>' :
-                              ''
-                            )+
-                            '<option value="VHT80" $REPLACE_SELECTED_BAND5_VHT80$>80 MHz</option>'+
-                            '<option value="VHT40" $REPLACE_SELECTED_BAND5_VHT40$>40 MHz</option>'+
-                            '<option value="VHT20" $REPLACE_SELECTED_BAND5_VHT20$>20 MHz</option>'+
-                          '</select>'+
-                          '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY5$>'+
-                          (device.wifi_last_band_5ghz ?
-                            'Banda escolhida em auto: ' + device.wifi_last_band_5ghz :
+                      '<select class="browser-default md-select" '+
+                        'id="edit_wifi5_channel-'+index+'" '+
+                        '$REPLACE_WIFI5_EN $REPLACE_WIFI5_CHANNEL_EN>'+
+                        '<option value="auto" '+
+                          '$REPLACE_SELECTED_CHANNEL5_auto$>'+
+                          t('auto')+
+                        '</option>'+
+                        '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
+                          '36'+
+                        '</option>'+
+                        '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
+                          '40'+
+                        '</option>'+
+                        '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
+                          '44'+
+                        '</option>'+
+                        '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
+                          '48'+
+                        '</option>'+
+                        '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
+                          '149'+
+                        '</option>'+
+                        '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
+                          '153'+
+                        '</option>'+
+                        '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
+                          '157'+
+                        '</option>'+
+                        '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
+                          '161'+
+                        '</option>'+
+                        '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
+                          '165'+
+                        '</option>'+
+                      '</select>'+
+                      '<small class="text-muted" '+
+                        '$AUTO_CHANNEL_SELECTED_VISIBILITY5$>'+
+                          (device.wifi_last_channel_5ghz ?
+                            t('channelChosenByAuto',
+                              {x: device.wifi_last_channel_5ghz}) :
                             ''
                           )+
-                          '</small>'+
-                        '</div>'+
-                      '</div>'+
+                      '</small>'+
                     '</div>'+
-                    '<div class="md-form">'+
-                      '<div class="input-group">'+
-                        '<div class="md-selectfield form-control my-0">'+
-                          '<label class="active">Modo de operação</label>'+
-                          '<select class="browser-default md-select" id="edit_wifi5_mode-'+index+'" '+
-                          '$REPLACE_WIFI5_BAND_EN>'+
-                            '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>AC</option>'+
-                            '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>N</option>'+
-                          '</select>'+
-                        '</div>'+
-                      '</div>'+
-                    '</div>'+
-                    '$REPLACE_WIFI5_POWER'+
                   '</div>'+
-                '</div>';
-            wifi5PaneNav = '<a class="btn-primary text-white nav-link" id="wifi5-pane-tab-'+index+
+                '</div>'+
+                '<div class="md-form input-group input-entry">'+
+                  '<label class="active">'+
+                    t('wifiSsid')+
+                  '</label>'+
+                  haveSsidPrefixPrepend5G+
+                  'maxlength="32" value="'+device.wifi_ssid_5ghz+
+                  '" $REPLACE_WIFI5_EN>'+
+                  '</input>'+
+                  '<div class="invalid-feedback"></div>'+
+                '</div>'+
+                '<div class="md-form input-entry">'+
+                  '<div class="input-group">'+
+                    '<label class="active">'+t('wifiPassword')+'</label>'+
+                    '<input class="form-control my-0" type="password" '+
+                      'id="edit_wifi5_pass-'+index+'" '+
+                      'maxlength="64" value="'+
+                      ((device.wifi_password_5ghz) ?
+                        device.wifi_password_5ghz : '')+ // treat undefined case
+                      '" $REPLACE_WIFI5_EN>'+
+                    '</input>'+
+                    '$REPLACE_WIFI5_PASS'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>'+
+                '</div>'+
+                '<div class="custom-control custom-checkbox">'+
+                  '<input class="custom-control-input" type="checkbox" '+
+                    'id="edit_wifi5_state-'+index+'" '+
+                    '$REPLACE_SELECTED_WIFI5_STATE $REPLACE_WIFI5_STATE_EN>'+
+                  '</input>'+
+                  '<label class="custom-control-label" for="edit_wifi5_state-'+
+                    index+'">'+
+                      t('activateWifiXGhz', {x: '5.0'})+
+                  '</label>'+
+                '</div>'+
+                '$REPLACE_WIFI5_HIDDEN'+
+              '</div>'+
+              '<div class="col-6">'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">'+t('bandwidth')+'</label>'+
+                      '<select class="browser-default md-select" '+
+                        'id="edit_wifi5_band-'+index+'" '+
+                        '$REPLACE_WIFI5_EN>'+
+                        (grantWifiBandAuto ?
+                          '<option value="auto" $REPLACE_SELECTED_BAND5_auto$>'+
+                            t('auto')+
+                          '</option>' :
+                          ''
+                        )+
+                        '<option value="VHT80" $REPLACE_SELECTED_BAND5_VHT80$>'+
+                          '80 MHz'+
+                        '</option>'+
+                        '<option value="VHT40" $REPLACE_SELECTED_BAND5_VHT40$>'+
+                          '40 MHz'+
+                        '</option>'+
+                        '<option value="VHT20" $REPLACE_SELECTED_BAND5_VHT20$>'+
+                          '20 MHz'+
+                        '</option>'+
+                      '</select>'+
+                      '<small class="text-muted" '+
+                        '$AUTO_BAND_SELECTED_VISIBILITY5$>'+
+                          (device.wifi_last_band_5ghz ?
+                            t('bandwidthChoosenByAuto',
+                              {x: device.wifi_last_band_5ghz}) :
+                            ''
+                          )+
+                      '</small>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
+                '<div class="md-form">'+
+                  '<div class="input-group">'+
+                    '<div class="md-selectfield form-control my-0">'+
+                      '<label class="active">'+
+                        t('operationMode')+
+                      '</label>'+
+                      '<select class="browser-default md-select" '+
+                        'id="edit_wifi5_mode-'+index+'" '+
+                        '$REPLACE_WIFI5_BAND_EN'+
+                      '>'+
+                        '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
+                          'AC'+
+                        '</option>'+
+                        '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>'+
+                          'N'+
+                        '</option>'+
+                      '</select>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
+                '$REPLACE_WIFI5_POWER'+
+              '</div>'+
+            '</div>';
+            wifi5PaneNav =
+            '<a class="btn-primary text-white nav-link" '+
+              'id="wifi5-pane-tab-'+index+
               '" data-toggle="tab" href="#wifi5-pane-'+index+
               '" role="tab" aria-controls="#wifi5-pane-'+index+
-              '" aria-selected="false">5.0GHz</a>';
+              '" aria-selected="false">'+
+                '5.0GHz'+
+            '</a>';
           }
 
           let wifiTab = '<div class="edit-tab d-none" id="tab_wifi-'+index+'">'+
                 ssidPrefixEnabledCheckbox+
                 '<nav>'+
                   '<div class="nav nav-tabs" id="nav-tab" role="tablist">'+
-                    '<a class="btn-primary text-white nav-link active mr-1" id="wifi-pane-tab-'+index+
+                    '<a class="btn-primary text-white nav-link active mr-1" '+
+                      'id="wifi-pane-tab-'+index+
                       '" data-toggle="tab" href="#wifi-pane-'+index+
                       '" role="tab" aria-controls="#wifi-pane-'+index+
-                      '" aria-selected="true">2.4GHz</a>'+
+                      '" aria-selected="true">'+
+                        '2.4GHz'+
+                    '</a>'+
                     wifi5PaneNav+
                   '</div>'+
                 '</nav>'+
                 '<div class="wifi-tab-content">'+
-                  '<div class="row tab-pane fade show active" id="wifi-pane-'+index+'" role="tabpanel" aria-labelledby="wifi-pane-tab-'+index+'">'+
+                  '<div class="row tab-pane fade show active" '+
+                    'id="wifi-pane-'+index+'" role="tabpanel" '+
+                    'aria-labelledby="wifi-pane-tab-'+index+
+                  '">'+
                     '<div class="col-6">'+
                       '<div class="md-form">'+
                         '<div class="input-group">'+
                           '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">Canal do Wi-Fi</label>'+
-                            '<select class="browser-default md-select" id="edit_wifi_channel-'+index+'" '+
-                            '$REPLACE_WIFI_EN>'+
-                              '<option value="auto" $REPLACE_SELECTED_CHANNEL_auto$>auto</option>'+
-                              '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>1</option>'+
-                              '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>2</option>'+
-                              '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>3</option>'+
-                              '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>4</option>'+
-                              '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>5</option>'+
-                              '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>6</option>'+
-                              '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>7</option>'+
-                              '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>8</option>'+
-                              '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>9</option>'+
-                              '<option value="10" $REPLACE_SELECTED_CHANNEL_10$>10</option>'+
-                              '<option value="11" $REPLACE_SELECTED_CHANNEL_11$>11</option>'+
+                            '<label class="active">'+
+                              t('wifiChannel')+
+                            '</label>'+
+                            '<select class="browser-default md-select" '+
+                              'id="edit_wifi_channel-'+index+'" '+
+                              '$REPLACE_WIFI_EN>'+
+                              '<option value="auto" '+
+                                '$REPLACE_SELECTED_CHANNEL_auto$>'+
+                                  t('auto')+
+                              '</option>'+
+                              '<option value="1" $REPLACE_SELECTED_CHANNEL_1$>'+
+                                '1'+
+                              '</option>'+
+                              '<option value="2" $REPLACE_SELECTED_CHANNEL_2$>'+
+                                '2'+
+                              '</option>'+
+                              '<option value="3" $REPLACE_SELECTED_CHANNEL_3$>'+
+                                '3'+
+                              '</option>'+
+                              '<option value="4" $REPLACE_SELECTED_CHANNEL_4$>'+
+                                '4'+
+                              '</option>'+
+                              '<option value="5" $REPLACE_SELECTED_CHANNEL_5$>'+
+                                '5'+
+                              '</option>'+
+                              '<option value="6" $REPLACE_SELECTED_CHANNEL_6$>'+
+                                '6'+
+                              '</option>'+
+                              '<option value="7" $REPLACE_SELECTED_CHANNEL_7$>'+
+                                '7'+
+                              '</option>'+
+                              '<option value="8" $REPLACE_SELECTED_CHANNEL_8$>'+
+                                '8'+
+                              '</option>'+
+                              '<option value="9" $REPLACE_SELECTED_CHANNEL_9$>'+
+                                '9'+
+                              '</option>'+
+                              '<option value="10" '+
+                                '$REPLACE_SELECTED_CHANNEL_10$>'+
+                                  '10'+
+                              '</option>'+
+                              '<option value="11" '+
+                                '$REPLACE_SELECTED_CHANNEL_11$>'+
+                                  '11'+
+                              '</option>'+
                               (grantWifiExtendedChannels ?
-                                '<option value="12" $REPLACE_SELECTED_CHANNEL_12$>12</option>'+
-                                '<option value="13" $REPLACE_SELECTED_CHANNEL_13$>13</option>':
+                                '<option value="12" '+
+                                  '$REPLACE_SELECTED_CHANNEL_12$>'+
+                                    '12'+
+                                '</option>'+
+                                '<option value="13" '+
+                                  '$REPLACE_SELECTED_CHANNEL_13$>'+
+                                    '13'+
+                                '</option>':
                                 ''
                               )+
                             '</select>'+
-                            '<small class="text-muted" $AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
-                            (device.wifi_last_channel ?
-                              'Canal escolhido em auto: ' + device.wifi_last_channel :
-                              ''
-                            )+
+                            '<small class="text-muted" '+
+                              '$AUTO_CHANNEL_SELECTED_VISIBILITY$>'+
+                                (device.wifi_last_channel ?
+                                  t('channelChosenByAuto',
+                                    {x: device.wifi_last_channel}) :
+                                  ''
+                                )+
                             '</small>'+
                           '</div>'+
                         '</div>'+
                       '</div>'+
                       '<div class="md-form input-group input-entry">'+
-                        '<label class="active">SSID do Wi-Fi</label>'+
-                        haveSsidPrefixPrepend+
-                        'maxlength="32" value="'+device.wifi_ssid+'" $REPLACE_WIFI_EN></input>'+
+                        '<label class="active">'+
+                          t('wifiSsid')+
+                        '</label>'+
+                        haveSsidPrefixPrepend+'maxlength="32" value="'+
+                        device.wifi_ssid+'" $REPLACE_WIFI_EN>'+
+                        '</input>'+
                         '<div class="invalid-feedback"></div>'+
                       '</div>'+
                       '<div class="md-form input-entry">'+
                         '<div class="input-group">'+
-                          '<label class="active">Senha do Wi-Fi</label>'+
-                          '<input class="form-control my-0" type="password" id="edit_wifi_pass-'+index+'" '+
-                          'maxlength="64" value="'+
-                          ((device.wifi_password) ? device.wifi_password : '')+ // treat undefined case
+                          '<label class="active">'+t('wifiPassword')+'</label>'+
+                          '<input class="form-control my-0" type="password" '+
+                            'id="edit_wifi_pass-'+index+'" '+
+                            'maxlength="64" value="'+
+                              ((device.wifi_password) ?
+                                device.wifi_password :
+                                '')+ // treat undefined case
                           '" $REPLACE_WIFI_EN></input>'+
                           '$REPLACE_WIFI_PASS'+
                           '<div class="invalid-feedback"></div>'+
                         '</div>'+
                       '</div>'+
                       '<div class="custom-control custom-checkbox">'+
-                        '<input class="custom-control-input" type="checkbox" id="edit_wifi_state-'+index+'" '+
-                        '$REPLACE_SELECTED_WIFI_STATE $REPLACE_WIFI_STATE_EN></input>'+
-                        '<label class="custom-control-label" for="edit_wifi_state-'+index+'">'+
-                        'Ativar Wi-Fi 2.4GHz'+
+                        '<input class="custom-control-input" type="checkbox" '+
+                          'id="edit_wifi_state-'+index+'" '+
+                          '$REPLACE_SELECTED_WIFI_STATE '+
+                          '$REPLACE_WIFI_STATE_EN>'+
+                        '</input>'+
+                        '<label class="custom-control-label" '+
+                          'for="edit_wifi_state-'+index+
+                        '">'+
+                          t('activateWifiXGhz', {x: 2.4})+
                         '</label>'+
                       '</div>'+
                       '$REPLACE_WIFI2_HIDDEN'+
@@ -2080,21 +2488,34 @@ anlixDocumentReady.add(function() {
                       '<div class="md-form">'+
                         '<div class="input-group">'+
                           '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">Largura de banda</label>'+
-                            '<select class="browser-default md-select" id="edit_wifi_band-'+index+'" '+
-                            '$REPLACE_WIFI_EN>'+
+                            '<label class="active">'+t('bandwidth')+'</label>'+
+                            '<select class="browser-default md-select" '+
+                              'id="edit_wifi_band-'+index+'" '+
+                              '$REPLACE_WIFI_EN'+
+                            '>'+
                               (grantWifiBandAuto ?
-                                '<option value="auto" $REPLACE_SELECTED_BAND_auto$>auto</option>':
+                                '<option value="auto" '+
+                                  '$REPLACE_SELECTED_BAND_auto$>'+
+                                  'auto'+
+                                '</option>':
                                 ''
                               )+
-                              '<option value="HT40" $REPLACE_SELECTED_BAND_HT40$>40 MHz</option>'+
-                              '<option value="HT20" $REPLACE_SELECTED_BAND_HT20$>20 MHz</option>'+
+                              '<option value="HT40" '+
+                                '$REPLACE_SELECTED_BAND_HT40$>'+
+                                  '40 MHz'+
+                              '</option>'+
+                              '<option value="HT20" '+
+                                '$REPLACE_SELECTED_BAND_HT20$>'+
+                                  '20 MHz'+
+                              '</option>'+
                             '</select>'+
-                            '<small class="text-muted" $AUTO_BAND_SELECTED_VISIBILITY$>'+
-                            (device.wifi_last_band ?
-                              'Banda escolhida em auto: ' + device.wifi_last_band :
-                              ''
-                            )+
+                            '<small class="text-muted" '+
+                              '$AUTO_BAND_SELECTED_VISIBILITY$>'+
+                                (device.wifi_last_band ?
+                                  t('bandwidthChoosenByAuto',
+                                    {x: device.wifi_last_band}) :
+                                  ''
+                                )+
                             '</small>'+
                           '</div>'+
                         '</div>'+
@@ -2102,11 +2523,18 @@ anlixDocumentReady.add(function() {
                       '<div class="md-form">'+
                         '<div class="input-group">'+
                           '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">Modo de operação</label>'+
-                            '<select class="browser-default md-select" id="edit_wifi_mode-'+index+'" '+
-                            '$REPLACE_WIFI_BAND_EN>'+
-                              '<option value="11n" $REPLACE_SELECTED_MODE_11n$>BGN</option>'+
-                              '<option value="11g" $REPLACE_SELECTED_MODE_11g$>G</option>'+
+                            '<label class="active">'+
+                              t('operationMode')+
+                            '</label>'+
+                            '<select class="browser-default md-select" '+
+                              'id="edit_wifi_mode-'+index+'" '+
+                              '$REPLACE_WIFI_BAND_EN>'+
+                                '<option value="11n" '+
+                                  '$REPLACE_SELECTED_MODE_11n$>BGN'+
+                                '</option>'+
+                                '<option value="11g" '+
+                                  '$REPLACE_SELECTED_MODE_11g$>G'+
+                                '</option>'+
                             '</select>'+
                           '</div>'+
                         '</div>'+
@@ -2119,43 +2547,67 @@ anlixDocumentReady.add(function() {
               '</div>'+
             '</ul>';
           let wifi2Hidden = '<div class="custom-control custom-checkbox">'+
-            '<input class="custom-control-input" type="checkbox" id="edit_wifi_hidden-'+index+'" '+
-            '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN></input>'+
-            '<label class="custom-control-label" for="edit_wifi_hidden-'+index+'">'+
-            'Ocultar SSID 2.4GHz'+
+            '<input class="custom-control-input" type="checkbox" '+
+              'id="edit_wifi_hidden-'+index+'" '+
+              '$REPLACE_SELECTED_WIFI_HIDDEN $REPLACE_WIFI_HIDDEN_EN>'+
+            '</input>'+
+            '<label class="custom-control-label" for="edit_wifi_hidden-'+index+
+            '">'+
+              t('hideXGhzSsid', {x: 2.4})+
             '</label>'+
           '</div>';
           let wifi2Power = '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="active">Potência do sinal</label>'+
-                '<select class="browser-default md-select" id="edit_wifi_power-'+index+'" '+
-                '$REPLACE_WIFI_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER_25$>25%</option>'+
+                '<label class="active">'+t('signalStrength')+'</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi_power-'+index+'" '+
+                  '$REPLACE_WIFI_POWER_EN>'+
+                    '<option value="100" $REPLACE_SELECTED_POWER_100$>'+
+                      '100%'+
+                    '</option>'+
+                    '<option value="75"  $REPLACE_SELECTED_POWER_75$>'+
+                      '75%'+
+                    '</option>'+
+                    '<option value="50"  $REPLACE_SELECTED_POWER_50$>'+
+                      '50%'+
+                    '</option>'+
+                    '<option value="25"  $REPLACE_SELECTED_POWER_25$>'+
+                      '25%'+
+                    '</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
           '</div>';
           let wifi5Hidden = '<div class="custom-control custom-checkbox">'+
-            '<input class="custom-control-input" type="checkbox" id="edit_wifi5_hidden-'+index+'" '+
-            '$REPLACE_SELECTED_WIFI5_HIDDEN $REPLACE_WIFI5_HIDDEN_EN></input>'+
-            '<label class="custom-control-label" for="edit_wifi5_hidden-'+index+'">'+
-            'Ocultar SSID 5.0GHz'+
+            '<input class="custom-control-input" type="checkbox" '+
+              'id="edit_wifi5_hidden-'+index+'" '+
+              '$REPLACE_SELECTED_WIFI5_HIDDEN $REPLACE_WIFI5_HIDDEN_EN>'+
+            '</input>'+
+            '<label class="custom-control-label" '+
+              'for="edit_wifi5_hidden-'+index+'">'+
+              t('hideXGhzSsid', {x: '5.0'})+
             '</label>'+
           '</div>';
           let wifi5Power = '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
-                '<label class="active">Potência do sinal</label>'+
-                '<select class="browser-default md-select" id="edit_wifi5_power-'+index+'" '+
-                '$REPLACE_WIFI5_POWER_EN>'+
-                  '<option value="100" $REPLACE_SELECTED_POWER5_100$>100%</option>'+
-                  '<option value="75"  $REPLACE_SELECTED_POWER5_75$>75%</option>'+
-                  '<option value="50"  $REPLACE_SELECTED_POWER5_50$>50%</option>'+
-                  '<option value="25"  $REPLACE_SELECTED_POWER5_25$>25%</option>'+
+                '<label class="active">'+t('signalStrength')+'</label>'+
+                '<select class="browser-default md-select" '+
+                  'id="edit_wifi5_power-'+index+'" '+
+                  '$REPLACE_WIFI5_POWER_EN>'+
+                    '<option value="100" $REPLACE_SELECTED_POWER5_100$>'+
+                      '100%'+
+                    '</option>'+
+                    '<option value="75"  $REPLACE_SELECTED_POWER5_75$>'+
+                      '75%'+
+                    '</option>'+
+                    '<option value="50"  $REPLACE_SELECTED_POWER5_50$>'+
+                      '50%'+
+                    '</option>'+
+                    '<option value="25"  $REPLACE_SELECTED_POWER5_25$>'+
+                      '25%'+
+                    '</option>'+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -2264,13 +2716,18 @@ anlixDocumentReady.add(function() {
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_POWER_.*?\$/g, '');
 
-          let currWifiState = (parseInt(device.wifi_state) == 1 ? 'checked' : '');
-          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE', currWifiState);
+          let currWifiState = (parseInt(device.wifi_state) == 1 ?
+                              'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_STATE',
+                                    currWifiState);
 
-          let currWifiHidden = (parseInt(device.wifi_hidden) == 1 ? 'checked' : '');
-          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_HIDDEN', currWifiHidden);
+          let currWifiHidden = (parseInt(device.wifi_hidden) == 1 ?
+                                'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI_HIDDEN',
+                                    currWifiHidden);
 
-          selectTarget = '$REPLACE_SELECTED_CHANNEL5_' + device.wifi_channel_5ghz;
+          selectTarget =
+            '$REPLACE_SELECTED_CHANNEL5_' + device.wifi_channel_5ghz;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_CHANNEL5_.*?\$/g, '');
           // Show text about selected channel if in auto mode
@@ -2282,8 +2739,9 @@ anlixDocumentReady.add(function() {
                                         'style="display:none;"');
           }
 
-          let band = (device.wifi_band_5ghz === 'HT20' || device.wifi_band_5ghz === 'HT40')
-                      ? ('V'+device.wifi_band_5ghz) : device.wifi_band_5ghz;
+          let band = (device.wifi_band_5ghz === 'HT20' ||
+                      device.wifi_band_5ghz === 'HT40') ?
+                      ('V'+device.wifi_band_5ghz) : device.wifi_band_5ghz;
           selectTarget = '$REPLACE_SELECTED_BAND5_' + band;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_BAND5_.*?\$/g, '');
@@ -2304,14 +2762,20 @@ anlixDocumentReady.add(function() {
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_POWER5_.*?\$/g, '');
 
-          let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ? 'checked' : '');
-          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_STATE', currWifiState5ghz);
+          let currWifiState5ghz = (parseInt(device.wifi_state_5ghz) == 1 ?
+                                  'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_STATE',
+                                    currWifiState5ghz);
 
-          let currWifiHidden5ghz = (parseInt(device.wifi_hidden_5ghz) == 1 ? 'checked' : '');
-          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_HIDDEN', currWifiHidden5ghz);
+          let currWifiHidden5ghz = (parseInt(device.wifi_hidden_5ghz) == 1 ?
+                                    'checked' : '');
+          wifiTab = wifiTab.replace('$REPLACE_SELECTED_WIFI5_HIDDEN',
+                                    currWifiHidden5ghz);
 
-          let currSsidPrefixEnabled = (device.isSsidPrefixEnabled) ? 'checked': '';
-          wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED', currSsidPrefixEnabled);
+          let currSsidPrefixEnabled = (device.isSsidPrefixEnabled) ?
+                                      'checked': '';
+          wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED',
+                                    currSsidPrefixEnabled);
 
           let baseEdit = '<label class="btn btn-primary tab-switch-btn" '+
           'data-tab-id="#tab_$REPLACE_TAB_TYPE-'+index+'">'+
@@ -2324,7 +2788,7 @@ anlixDocumentReady.add(function() {
 
           let modeEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'opmode')
-          .replace('$REPLACE_TAB_NAME', 'Modo');
+          .replace('$REPLACE_TAB_NAME', t('mode'));
 
           let wifiEdit = baseEdit
           .replace('$REPLACE_TAB_TYPE', 'wifi')
@@ -2339,10 +2803,13 @@ anlixDocumentReady.add(function() {
               '<form class="edit-form needs-validation" novalidate="true">'+
                 '<div class="row">'+
                   '<div class="col-10 actions-opts">'+
-                    '<div class="btn-group btn-group-toggle" data-toggle="buttons">'+
-                      '<label class="btn btn-primary tab-switch-btn active ml-0" '+
+                    '<div class="btn-group btn-group-toggle" '+
+                    'data-toggle="buttons">'+
+                      '<label '+
+                      'class="btn btn-primary tab-switch-btn active ml-0" '+
                       'data-tab-id="#tab_about-'+index+'">'+
-                        'Sobre<input type="radio"></input>'+
+                        t('About')+
+                        '<input type="radio"></input>'+
                       '</label>'+
                       '$REPLACE_MODE_EDIT'+
                       '<label class="btn btn-primary tab-switch-btn" '+
@@ -2354,8 +2821,12 @@ anlixDocumentReady.add(function() {
                       '$REPLACE_ACTIONS'+
                     '</div>'+
                     '<br>'+
-                    '<span class="badge badge-success bounceIn d-none">Sucesso</span>'+
-                    '<span class="badge badge-warning bounceIn d-none">Falha</span>'+
+                    '<span class="badge badge-success bounceIn d-none">'+
+                      t('Success')+
+                    '</span>'+
+                    '<span class="badge badge-warning bounceIn d-none">'+
+                      t('Failure')+
+                    '</span>'+
                     '<br>'+
                   '</div>'+
                   '$REPLACE_DEVICE_REMOVE'+
@@ -2420,13 +2891,17 @@ anlixDocumentReady.add(function() {
                 let notifications = buildNotification();
                 let infoRow = buildTableRowInfo(slaveDev, false, true, index);
                 infoRow = infoRow.replace('$REPLACE_ATTRIBUTES', rowAttr);
-                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS', statusClasses);
-                infoRow = infoRow.replace('$REPLACE_COLOR_ATTR', statusAttributes);
+                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS',
+                                          statusClasses);
+                infoRow = infoRow.replace('$REPLACE_COLOR_ATTR',
+                                          statusAttributes);
                 infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
-                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
-                infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Flashbox');
+                infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
+                                          'lighten-2');
+                infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
                 if (isSuperuser || grantNotificationPopups) {
-                  infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', notifications);
+                  infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS',
+                                            notifications);
                 } else {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
                 }
@@ -2444,10 +2919,13 @@ anlixDocumentReady.add(function() {
                 }
                 finalHtml += infoRow;
 
-                let formRow = '<tr class="d-none grey lighten-5 slave-form-'+index+'"><td colspan="13">'+
-                  buildAboutTab(slaveDev, index, false,
-                                grantWifiExtendedChannels, slaveIdx)+
-                '</td></tr>';
+                let formRow =
+                '<tr class="d-none grey lighten-5 slave-form-'+index+'">'+
+                  '<td colspan="13">'+
+                    buildAboutTab(slaveDev, index, false,
+                                  grantWifiExtendedChannels, slaveIdx)+
+                  '</td>'+
+                '</tr>';
                 if (!isSuperuser && !grantDeviceId) {
                   formRow = formRow.replace(/\$REPLACE_EN_ID/g, 'disabled');
                 } else {
@@ -2455,11 +2933,16 @@ anlixDocumentReady.add(function() {
                 }
                 finalHtml += formRow;
                 if (slaveDev.external_reference &&
-                    slaveDev.external_reference.kind === 'CPF') {
+                    slaveDev.external_reference.kind ===
+                    t('personIdentificationSystem')
+                ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
                   .mask('000.000.000-009').keyup();
-                } else if (slaveDev.external_reference &&
-                          slaveDev.external_reference.kind === 'CNPJ') {
+                } else if (
+                  slaveDev.external_reference &&
+                  slaveDev.external_reference.kind ===
+                  t('enterpriseIdentificationSystem')
+                ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
                   .mask('00.000.000/0000-00').keyup();
                 }
@@ -2467,8 +2950,10 @@ anlixDocumentReady.add(function() {
               slaveIdx++;
             });
             let editButtonRow = buildFormSubmit(index, true);
-            let editButtonAttr = ' data-slave-count="'+device.mesh_slaves.length+'"';
-            let editTableRow = '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
+            let editButtonAttr =
+              ' data-slave-count="'+device.mesh_slaves.length+'"';
+            let editTableRow =
+            '<tr class="d-none slave-'+index+'"'+editButtonAttr+'>'+
               '<td class="grey lighten-5" colspan="13">'+
                 editButtonRow+
               '</td>'+
@@ -2488,35 +2973,46 @@ anlixDocumentReady.add(function() {
             }
           });
           $(document).on('change', '#edit_opmode-' + localIdx, (event)=>{
-            if ($('#edit_opmode-' + localIdx).val() === 'Modo Roteador') {
+            if ($('#edit_opmode-' + localIdx).val() === 'router_mode') {
               $('#edit_opmode_checkboxes-' + localIdx).hide();
               $('#edit_opmode_ip_combo-' + localIdx).hide();
               $('#edit_opmode_alert-' + localIdx).hide();
               $('#edit_opmode_alert_ip-' + localIdx).hide();
               $('#edit_opmode_fixip_en-' + localIdx)[0].checked = false;
-              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false; // Changed to false because the text in the label changed to a positive logic (Enable instead Disable)
-            } else if ($('#edit_opmode-' + localIdx).val() === 'Modo Bridge') {
+              // Changed to false because the text in the
+              // label changed to a positive logic (Enable instead Disable)
+              $('#edit_opmode_switch_en-' + localIdx)[0].checked = false;
+            } else if ($('#edit_opmode-' + localIdx).val() === 'bridge_mode') {
               $('#edit_opmode_checkboxes-' + localIdx).show();
               $('#edit_opmode_alert-' + localIdx).show();
             }
           });
-          $(document).on('change', '#edit_opmode_fixip_en-' + localIdx, (event)=>{
-            if ($('input[name="edit_opmode_fixip_en-'+localIdx+'"]:checked').length > 0) {
-              $('#edit_opmode_alert_ip-' + localIdx).show();
-              $('#edit_opmode_ip_combo-' + localIdx).show();
-            } else {
-              $('#edit_opmode_alert_ip-' + localIdx).hide();
-              $('#edit_opmode_ip_combo-' + localIdx).hide();
-            }
-          });
+          $(document).on('change', '#edit_opmode_fixip_en-' + localIdx,
+            (event) => {
+              if ($('input[name="edit_opmode_fixip_en-'+localIdx+
+                  '"]:checked').length > 0
+              ) {
+                $('#edit_opmode_alert_ip-' + localIdx).show();
+                $('#edit_opmode_ip_combo-' + localIdx).show();
+              } else {
+                $('#edit_opmode_alert_ip-' + localIdx).hide();
+                $('#edit_opmode_ip_combo-' + localIdx).hide();
+              }
+            },
+          );
 
           // Apply mask on reference input
-          if (device.external_reference &&
-              device.external_reference.kind === 'CPF') {
+          if (
+            device.external_reference &&
+            device.external_reference.kind === t('personIdentificationSystem')
+          ) {
             $('#edit_external_reference-' + index)
             .mask('000.000.000-009').keyup();
-          } else if (device.external_reference &&
-                     device.external_reference.kind === 'CNPJ') {
+          } else if (
+            device.external_reference &&
+            device.external_reference.kind ===
+            t('enterpriseIdentificationSystem')
+          ) {
             $('#edit_external_reference-' + index)
             .mask('00.000.000/0000-00').keyup();
           }
@@ -2636,23 +3132,27 @@ anlixDocumentReady.add(function() {
             let ponSignalStatus;
             let ponSignalRxPower = `<span>${data.ponsignal.rxpower}</span>`;
             if (data.ponsignal.rxpower === undefined) {
-              ponSignalStatus = '<div class="badge badge-dark">Sem Sinal</div>';
+              let st = t('NoSignal');
+              ponSignalStatus = `<div class="badge badge-dark">${st}</div>`;
               ponSignalRxPower = '';
             } else if (data.ponsignal.rxpower >=
                 data.ponsignal.thresholdCriticalHigh) {
-              ponSignalStatus =
-              '<div class="badge bg-danger">Sinal Muito Alto</div>';
+              let st = t('signalState', {state: 'VeryHigh'});
+              ponSignalStatus = `<div class="badge bg-danger">${st}</div>`;
             } else if (data.ponsignal.rxpower >=
                 data.ponsignal.threshold) {
+              let st = t('signalState', {state: 'Good'});
               ponSignalStatus =
-                '<div class="badge bg-success">Sinal Bom</div>';
+                `<div class="badge bg-success">${st}</div>`;
             } else if (data.ponsignal.rxpower >=
               data.ponsignal.thresholdCritical) {
+              let st = t('signalState', {state: 'Weak'});
               ponSignalStatus =
-                '<div class="badge bg-warning">Sinal Fraco</div>';
+                `<div class="badge bg-warning">${st}</div>`;
             } else {
+              let st = t('signalState', {state: 'VeryWeak'});
               ponSignalStatus =
-                '<div class="badge bg-danger">Sinal Muito Fraco</div>';
+                `<div class="badge bg-danger">${st}</div>`;
             }
             row.find('.device-pon-signal')
             .removeClass('grey-text pending-update')
@@ -2686,11 +3186,11 @@ anlixDocumentReady.add(function() {
     let id = row.data('deviceid');
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Tem certeza que deseja remover esse cadastro?',
-      confirmButtonText: 'OK',
+      title: t('Attention!'),
+      text: t('sureYouWantToRemoveRegister?'),
+      confirmButtonText: t('OK'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
@@ -2709,7 +3209,7 @@ anlixDocumentReady.add(function() {
               type: res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
         });
@@ -2720,11 +3220,11 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#btn-trash-multiple', function(event) {
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Tem certeza que deseja remover esses cadastros?',
-      confirmButtonText: 'OK',
+      title: t('Attention!'),
+      text: t('sureYouWantToRemoveRegister?'),
+      confirmButtonText: t('OK'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
@@ -2744,7 +3244,7 @@ anlixDocumentReady.add(function() {
               type: res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
         });
@@ -2765,34 +3265,30 @@ anlixDocumentReady.add(function() {
       if (deviceModel === 'ARCHERC6V2US' &&
           parseInt(deviceVersion.split('.')[1]) < 28) {
         abort = true;
-        abortMsg = 'Não é possível retornar para a firmware de fábrica a ' +
-                 'partir da versão instalada do Flashbox. Atualize primeiro ' +
-                 'o Flashbox para a versão 0.28.0 ou superior e em seguida ' +
-                 'faça o retorno para a firmware de fábrica.';
+        abortMsg = t('factoryResetAbortMessage');
       }
     }
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Este CPE perderá todas as configurações. Esta ação só poderá '+
-      'ser desfeita com uma nova instalação através do Assistente Flashbox.',
-      confirmButtonText: 'OK',
+      title: t('Attention!'),
+      text: t('thisCpeWillLoseAllItsConfigurations'),
+      confirmButtonText: t('OK'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
       if (abort) {
         swal({
           type: 'warning',
-          title: 'Atenção!',
+          title: t('Attention!'),
           text: abortMsg,
           confirmButtonColor: '#4db6ac',
-          confirmButtonText: 'OK',
+          confirmButtonText: t('OK'),
         });
       } else if (result.value) {
         swal({
-          title: 'Preparando firmware de fábrica...',
+          title: t('gettingStockFirmwareReady...'),
           onOpen: () => {
             swal.showLoading();
           },
@@ -2808,22 +3304,20 @@ anlixDocumentReady.add(function() {
             swal.close();
             swal({
               type: 'success',
-              title: 'Processo iniciado com sucesso',
-              text: 'Aguarde o CPE reiniciar, e então segure o botão de '+
-                    'reset por 15 segundos.',
+              title: t('processSuccessfullyStarted'),
+              text: t('factoryResetRebootInstructions'),
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
           error: function(err) {
             swal.close();
             swal({
               type: 'error',
-              title: 'Um erro ocorreu',
-              text: 'Não foi possível restaurar o CPE para o firmware de '+
-                    'fábrica. Por favor tente novamente.',
+              title: t('errorOccurred'),
+              text: t('couldnotRestoreStockFirmwareTryAgain'),
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
         });
@@ -2836,11 +3330,11 @@ anlixDocumentReady.add(function() {
     let id = row.data('deviceid');
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Tem certeza que deseja desassociar esse roteador do mesh?',
-      confirmButtonText: 'OK',
+      title: t('Attention!'),
+      text: t('routerDisassociateMeshConfirmation'),
+      confirmButtonText: t('OK'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
@@ -2859,7 +3353,7 @@ anlixDocumentReady.add(function() {
               type: (res.success ? 'success':'error'),
               title: res.message,
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
           error: function(xhr, status, error) {
@@ -2869,10 +3363,10 @@ anlixDocumentReady.add(function() {
             loadDevicesTable(pageNum, filterList);
             swal({
               type: 'error',
-              title: 'Erro interno',
+              title: t('internalError'),
               text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',
-              confirmButtonText: 'OK',
+              confirmButtonText: t('OK'),
             });
           },
         });
@@ -2941,14 +3435,14 @@ anlixDocumentReady.add(function() {
   function(input) {
     let cssClass1;
     let cssClass2;
-    cssClass1 = input.target.parentNode.parentNode.
-      childNodes[2].childNodes[0].childNodes[0].
-      childNodes[1].childNodes[1].classList;
-    if (!input.target.parentNode.parentNode.
-      childNodes[2].childNodes[1] == false) {
-      cssClass2 = input.target.parentNode.parentNode.
-        childNodes[2].childNodes[1].childNodes[0].
-        childNodes[1].childNodes[1].classList;
+    cssClass1 = input.target.parentNode.parentNode
+      .childNodes[2].childNodes[0].childNodes[0]
+      .childNodes[1].childNodes[1].classList;
+    if (!input.target.parentNode.parentNode
+      .childNodes[2].childNodes[1] == false) {
+      cssClass2 = input.target.parentNode.parentNode
+        .childNodes[2].childNodes[1].childNodes[0]
+        .childNodes[1].childNodes[1].classList;
     }
     if (input.target.checked) {
       cssClass1.remove('d-none');

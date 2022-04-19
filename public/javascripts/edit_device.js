@@ -122,7 +122,7 @@ let validateEditDevice = function(event) {
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
   let validateBridge =
-    $('#edit_opmode-' + index.toString()).val() === 'Modo Bridge';
+    $('#edit_opmode-' + index.toString()).val() === 'bridge_mode';
   let bridgeEnabled = validateBridge;
   let useBridgeFixIP = $('input[name="edit_opmode_fixip_en-'+
                       index.toString()+'"]:checked').length > 0;

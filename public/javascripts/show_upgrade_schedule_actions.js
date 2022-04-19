@@ -2,17 +2,20 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import Stepper from 'bs-stepper';
 import 'tempusdominus-bootstrap-4';
 
+const t = i18next.t;
+
 let updateSearchResultsScheduler = function(result) {
-  $('#allDevicesLabel').html(' ' + result.status.totalnum);
+  $('#allDevicesLabel').html(t('allXSearchResults',
+    {x: result.status.totalnum}));
   let pageCount = $('#input-elements-pp option:selected').text();
   let deviceCount = (parseInt(pageCount) > result.status.totalnum) ?
       result.status.totalnum : pageCount;
-  $('#someDevicesLabel').html(' ' + deviceCount);
+  $('#someDevicesLabel').html(t('onlyXFirstSearchResults', {x: deviceCount}));
 };
 
 const resetStepperData = function(stepper) {
   $('#releases-dropdown').html('');
-  $('#selected-release').html('Escolher');
+  $('#selected-release').html(t('Choose'));
   $('#warning-releases').hide();
   $('#which-error-msg').hide();
   $('#how-btn-next').prop('disabled', true);
@@ -29,7 +32,7 @@ const isWhenPartValidated = function() {
     let startTime = $('#scheduleStart-'+i+' input').val();
     let endTime = $('#scheduleEnd-'+i+' input').val();
     if (!startTime || !endTime) retval = false;
-    if (startDay === 'Dia da semana' || endDay === 'Dia da semana') {
+    if (startDay === t('dayOfTheWeek') || endDay === t('dayOfTheWeek')) {
       retval = false;
     } else if (startTime === endTime && startDay === endDay) {
       $('#time-equal-error-'+i).show();
@@ -105,7 +108,8 @@ anlixDocumentReady.add(function() {
         cache: false,
         timeout: 600000,
         success: function(res) {
-          $('#csv-result-count').html(' ' + res.result);
+          $('#csv-result-count').html(t('itHasBeenFoundXCpesFromFile',
+            {x: res.result}));
           $('#csv-result').show();
           if (res.result > 0) {
             $('#which-btn-next').prop('disabled', false);
@@ -231,15 +235,19 @@ anlixDocumentReady.add(function() {
                 $('<li>').html(model),
               );
             });
-            $('#warning-prevTotal').html(totalCount);
-            totalCount = parseInt(totalCount) - noUpgradeCount;
-            if (totalCount > 0) {
-              $('#warning-newTotal').html(' somente ' + totalCount);
+            let selectedCount = parseInt(totalCount) - noUpgradeCount;
+            if (selectedCount > 0) {
               $('#how-btn-next').prop('disabled', false);
             } else {
               $('#how-btn-next').prop('disabled', true);
-              $('#warning-newTotal').html(' nenhum');
             }
+            $('#warning-selected-to-update')
+            .html(t('XOfYSelectedCpesWillUpdate!', {
+              x: selectedCount > 0 ?
+                t('onlyX', {x: selectedCount}) : t('none'),
+              y: totalCount,
+            }));
+
             if (noUpgradeCount > 0) {
               $('#warning-releases').show();
               if (noUpgradeCount - onuCount - meshIncompatibles -
@@ -247,15 +255,17 @@ anlixDocumentReady.add(function() {
                 $('#list-missing-models').show();
               }
               if (onuCount > 0) {
-                $('#onu-count').html(onuCount+' ');
+                $('#onu-count').html(t('onuSelectedToUpdate', {x: onuCount}));
                 $('#list-onus').show();
               }
               if (meshIncompatibles > 0) {
-                $('#mesh-count').html(meshIncompatibles+' ');
+                $('#mesh-count').html(t('meshSelectedToUpdate',
+                  {x: meshIncompatibles}));
                 $('#list-mesh').show();
               }
               if (meshRolesIncompatibles > 0) {
-                $('#mesh-roles-count').html(meshRolesIncompatibles+' ');
+                $('#mesh-roles-count').html(t('meshRolesSelectedToUpdate',
+                  {x: meshRolesIncompatibles}));
                 $('#list-mesh-roles').show();
               }
             } else {
@@ -265,8 +275,7 @@ anlixDocumentReady.add(function() {
           stepper.next();
         },
         error: function(xhr, status, error) {
-          $('#which-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
-                                      'Por favor tente novamente.');
+          $('#which-error-text').html('&nbsp; '+t('serverErrorPleaseTryAgain'));
           $('#which-error-msg').show();
         },
       });
@@ -313,7 +322,7 @@ anlixDocumentReady.add(function() {
       let release = $('#selected-release').html();
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
-                         : 'Nenhum filtro utilizado';
+                         : t('noFilterUsed');
       let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
       let timeRestrictions = [];
       if (hasTimeRestriction) {
@@ -332,7 +341,7 @@ anlixDocumentReady.add(function() {
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
       swal({
-        title: 'Iniciando agendamento...',
+        title: t('startingSchedule...'),
         onOpen: () => {
           swal.showLoading();
         },
@@ -360,8 +369,8 @@ anlixDocumentReady.add(function() {
           swal.close();
           swal({
             type: 'success',
-            title: 'Agendamento iniciado com sucesso!',
-            text: 'Pressione OK para recarregar a página',
+            title: t('scheduleStartedSuccessfully!'),
+            text: t('pressOkToRefreshPage'),
             confirmButtonColor: '#4db6ac',
           }).then(()=>{
             location.reload(true);
@@ -371,16 +380,15 @@ anlixDocumentReady.add(function() {
           $('#when-btn-icon')
             .removeClass('fa-spinner fa-pulse')
             .addClass('fa-check');
-          $('#when-error-text').html('&nbsp; Ocorreu um erro no servidor. ' +
-                                      'Por favor tente novamente.');
+          $('#when-error-text').html('&nbsp; '+t('serverErrorPleaseTryAgain'));
           $('#when-error-msg').show();
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
           swal.close();
           swal({
             type: 'error',
-            title: 'Erro ao iniciar o agendamento',
-            text: 'Por favor tente novamente',
+            title: t('errorStartingSchedule'),
+            text: t('pleaseTryAgain'),
             confirmButtonColor: '#4db6ac',
           });
         },
@@ -415,8 +423,8 @@ anlixDocumentReady.add(function() {
     $('#devices-search-input').on('change textInput input', (event)=>{
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
-                         : 'Nenhum filtro utilizado';
-      $('#searchTags').html(tags);
+                         : t('noFilterUsed');
+      $('#searchTags').html(t('searchFiltersUsed=X', {filters: tags}));
     });
   }
 
@@ -456,13 +464,11 @@ anlixDocumentReady.add(function() {
   $('#abort-btn').click((event)=>{
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Ao abortar o agendamento todos os dispositivos que ainda não ' +
-        'foram atualizados terão sua atualização descartada, precisando de ' +
-        'um novo agendamento para atualiza-los. Deseja continuar mesmo assim?',
-      confirmButtonText: 'Prosseguir',
+      title: t('Attention!'),
+      text: t('abortScheduleWarningMessage'),
+      confirmButtonText: t('Proceed'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
@@ -471,18 +477,15 @@ anlixDocumentReady.add(function() {
       if ($('#progress-todo').hasClass('doing')) {
         p = swal({
           type: 'warning',
-          title: 'Atenção!',
-          text: 'Alguns CPEs já iniciaram o processo de atualização, e ' +
-            'não serão interrompidos ao abortar o agendamento. Exporte o CSV ' +
-            'com os resultados para saber quais CPEs ainda estavam ' +
-            'atualizando.',
-          confirmButtonText: 'Prosseguir',
+          title: t('Attention!'),
+          text: t('abortScheduleProgressToDoWarningMessage'),
+          confirmButtonText: t('Proceed'),
           confirmButtonColor: '#4db6ac',
         });
       }
       p.then((result)=>{
         swal({
-          title: 'Abortando agendamento...',
+          title: t('abortingSchedule...'),
           onOpen: () => {
             swal.showLoading();
           },
@@ -494,8 +497,8 @@ anlixDocumentReady.add(function() {
             swal.close();
             swal({
               type: 'success',
-              title: 'Agendamento abortado com sucesso!',
-              text: 'Pressione OK para recarregar a página',
+              title: t('scheduleSuccessfullyAborted!'),
+              text: t('pressOkToRefreshPage'),
               confirmButtonColor: '#4db6ac',
             }).then(()=>{
               location.reload(true);
@@ -505,8 +508,8 @@ anlixDocumentReady.add(function() {
             swal.close();
             swal({
               type: 'error',
-              title: 'Erro ao abortar o agendamento',
-              text: 'Por favor tente novamente',
+              title: t('errorAbortingSchedule'),
+              text: t('pleaseTryAgain'),
               confirmButtonColor: '#4db6ac',
             });
           },
@@ -517,7 +520,7 @@ anlixDocumentReady.add(function() {
 
   $('#refresh-btn').click((event)=>{
     swal({
-      title: 'Buscando informações...',
+      title: t('searchingInfo...'),
       onOpen: () => {
         swal.showLoading();
       },
@@ -528,10 +531,10 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         swal.close();
         let todo = $('#progress-todo');
-        todo.html(' ' + res.todo);
-        $('#progress-total').html(' ' + res.total);
-        $('#progress-done').html(' ' + res.done);
-        $('#progress-error').html(' ' + res.error);
+        todo.html(t('Remaining=X', {x: res.todo}));
+        $('#progress-total').html(t('Total=X', {x: res.total}));
+        $('#progress-done').html(t('Success=X', {x: res.done}));
+        $('#progress-error').html(t('Error=X', {x: res.error}));
         if (res.doing && !todo.hasClass('doing')) {
           todo.addClass('doing');
         } else if (!res.doing && todo.hasClass('doing')) {
@@ -541,13 +544,11 @@ anlixDocumentReady.add(function() {
           // All devices done, prompt page reload
           swal({
             type: 'success',
-            title: 'As atualizações foram concluídas',
-            text: 'Os resultados podem ser vistos exportando o arquivo CSV. ' +
-              'Para iniciar outro agendamento é necessário recarregar a ' +
-              'página. Deseja recarrega-la agora?',
-            confirmButtonText: 'Recarregar',
+            title: t('updatesConcluded'),
+            text: t('newScheduleModalMessage'),
+            confirmButtonText: t('Refresh'),
             confirmButtonColor: '#4db6ac',
-            cancelButtonText: 'Mais tarde',
+            cancelButtonText: t('Later'),
             cancelButtonColor: '#f2ab63',
             showCancelButton: true,
           }).then((result)=>{
@@ -561,8 +562,8 @@ anlixDocumentReady.add(function() {
         swal.close();
         swal({
           type: 'error',
-          title: 'Erro ao buscar informações',
-          text: 'Por favor tente novamente',
+          title: t('errorSearchingInfo'),
+          text: t('pleaseTryAgain'),
           confirmButtonColor: '#4db6ac',
         });
       },
@@ -590,7 +591,7 @@ anlixDocumentReady.add(function() {
 
   $('#results-btn').click((event)=>{
     swal({
-      title: 'Buscando informações...',
+      title: t('searchingInfo...'),
       onOpen: () => {
         swal.showLoading();
       },
@@ -600,14 +601,14 @@ anlixDocumentReady.add(function() {
       url: '/devicelist/scheduler/results',
       success: function(res) {
         swal.close();
-        downloadCSV(res, 'agendamento.csv');
+        downloadCSV(res, t('scheduling') + '.csv');
       },
       error: function(xhr, status, error) {
         swal.close();
         swal({
           type: 'error',
-          title: 'Erro ao buscar informações',
-          text: 'Por favor tente novamente',
+          title: t('errorSearchingInfo'),
+          text: t('pleaseTryAgain'),
           confirmButtonColor: '#4db6ac',
         });
       },

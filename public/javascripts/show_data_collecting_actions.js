@@ -8,7 +8,7 @@ const fillTotalDevicesFromSearch = function(amount) {
   totalDevicesFromSearch = amount;
   [...document.getElementsByClassName('nDevicesWillBeChanged')].forEach(
     (e) => e.innerHTML = t('nDevicesWillBeChanged',
-                           {total: totalDevicesFromSearch}));
+                           {count: totalDevicesFromSearch}));
 };
 
 const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;

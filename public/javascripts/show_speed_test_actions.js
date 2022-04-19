@@ -1,6 +1,8 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg, socket} from './common_actions.js';
 
+const t = i18next.t;
+
 anlixDocumentReady.add(function() {
   let socketIoTimeout = false;
   let socketIoResponse = false;
@@ -31,15 +33,15 @@ anlixDocumentReady.add(function() {
           pastMeasures.forEach((measure)=>{
             let downSpeed = parseInt(measure.down_speed);
             if (downSpeed > limit) {
-              measure.down_speed = 'Mais de ' + limit + ' Mbps';
+              measure.down_speed = t('moreThanXMbps', {x: limit});
             }
             let name = measure.user.replace(/_/g, ' ');
             $('#measure-previous-data').prepend(
               $('<tr>').append(
                 '<td>'+measure.down_speed+'</td>'+
                 '<td>'+measure.timestamp+'</td>'+
-                '<td>'+name+'</td>'
-              )
+                '<td>'+name+'</td>',
+              ),
             );
           });
           $('#measure-previous-nodata').hide();
@@ -96,14 +98,11 @@ anlixDocumentReady.add(function() {
     $('.btn-start-speed-test').prop('disabled', true);
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Para garantir a precisão do teste de velocidade, o acesso à '+
-        'internet dos dispositivos do cliente é interrompido temporariamente.'+
-        ' Garanta que o cliente esteja ciente deste procedimento antes de '+
-        'inicia-lo!',
-      confirmButtonText: 'Prosseguir',
+      title: t('Attention!'),
+      text: t('speedTestWarningMessage'),
+      confirmButtonText: t('Proceed'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then((result)=>{
@@ -121,18 +120,18 @@ anlixDocumentReady.add(function() {
         success: function(res) {
           if (res.success) {
             $('#speed-test-strong-text').empty();
-            $('#speed-test-shown-text').html('Aguardando resposta do CPE...');
+            $('#speed-test-shown-text').html(t('waitingCpeResponse...'));
             $('#speed-test-shown-icon')
-            .removeClass((i, c)=>c.match(/fa\-.*/))
+            .removeClass((i, c)=>c.match(/fa-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');
             // wait 20 seconds to timeout socket IO response
             socketIoTimeoutTimerID = setTimeout(()=>{
               // only do this if socket io didn't reply
               if (socketIoResponse) return;
               socketIoTimeout = true;
-              $('#speed-test-shown-text').html('Não houve resposta, por favor tente novamente');
+              $('#speed-test-shown-text').html(t('noAnswerPleaseTryAgain'));
               $('#speed-test-shown-icon')
-              .removeClass((i, c)=>c.match(/fa\-.*/))
+              .removeClass((i, c)=>c.match(/fa-.*/))
               .addClass('fa-3x fa-times');
               $('.btn-start-speed-test').prop('disabled', false);
             }, 30*1000);
@@ -140,15 +139,15 @@ anlixDocumentReady.add(function() {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);
             $('#speed-test-shown-icon')
-            .removeClass((i, c)=>c.match(/fa\-.*/))
+            .removeClass((i, c)=>c.match(/fa-.*/))
             .addClass('fa-3x fa-times');
             $('.btn-start-speed-test').prop('disabled', false);
           }
         },
         error: function(xhr, status, error) {
-          $('#speed-test-shown-text').html('Um erro ocorreu, por favor tente novamente');
+          $('#speed-test-shown-text').html(t('errorOccurredTryAgain'));
           $('#speed-test-shown-icon')
-          .removeClass((i, c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa-.*/))
           .addClass('fa-3x fa-times');
           $('.btn-start-speed-test').prop('disabled', false);
         },
@@ -165,28 +164,28 @@ anlixDocumentReady.add(function() {
         if (socketIoTimeout) return;
         socketIoResponse = true;
         clearTimeout(socketIoTimeoutTimerID);
-        if (data.downSpeed.includes('Mbps')) {
+        if (data.downSpeed.includes(t('Mbps'))) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > data.limit) {
-            data.downSpeed = 'Mais de ' + data.limit + ' Mbps';
+            data.downSpeed = t('moreThanXMbps', {x: data.limit});
           }
-          $('#speed-test-shown-text').html('Velocidade medida: ');
+          $('#speed-test-shown-text').html(`${t('speedMeasured')}:`);
           $('#speed-test-strong-text').html(data.downSpeed);
           $('#speed-test-shown-icon')
-          .removeClass((i, c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa-.*/))
           .addClass('fa-3x fa-check');
           updateMeasuresTable(macaddr);
         } else {
           if (data.downSpeed === 'Unavailable') {
             $('#speed-test-shown-text')
-              .html('O servidor está ocupado, tente mais tarde');
+              .html(t('serverBusyTryAgain'));
             $('#speed-test-warn-text').show();
           } else {
             $('#speed-test-shown-text')
-              .html('Um erro ocorreu, por favor tente novamente');
+              .html(t('errorOccurredTryAgain'));
           }
           $('#speed-test-shown-icon')
-          .removeClass((i, c)=>c.match(/fa\-.*/))
+          .removeClass((i, c)=>c.match(/fa-.*/))
           .addClass('fa-3x fa-times');
         }
         $('.btn-start-speed-test').prop('disabled', false);
@@ -202,7 +201,7 @@ anlixDocumentReady.add(function() {
         if (socketIoTimeout) return;
         socketIoResponse = true;
         $('#speed-test-strong-text').empty();
-        $('#speed-test-shown-text').html('Aguardando resultado...');
+        $('#speed-test-shown-text').html(t('waitingResult...'));
         $('#speed-test-shown-icon')
         .removeClass((i, c)=>c.match(/fa-.*/))
         .addClass('fa-3x fa-spinner fa-pulse');
@@ -215,9 +214,9 @@ anlixDocumentReady.add(function() {
     $('#speed-test-warn-text').hide();
     $('#speed-test-strong-text').empty();
     $('#speed-test-shown-text')
-    .html('Clique no botão abaixo para começar a medição');
+    .html(t('clickButtonBelowToStartMeasure'));
     $('#speed-test-shown-icon')
-    .removeClass((i, c)=>c.match(/fa\-.*/))
+    .removeClass((i, c)=>c.match(/fa-.*/))
     .addClass('fa-3x fa-tachometer-alt');
     $('#measure-previous-data').empty();
     $('.btn-start-speed-test').prop('disabled', false);

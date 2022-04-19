@@ -1,3 +1,4 @@
+import {displayAlertMsg} from './common_actions.js';
 
 let updateDevice = function(event) {
   let selRelease = $(this).text();
@@ -47,7 +48,7 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             if (slaveCount > 0) {
               upgradeStatus.find('.status-waiting').attr('title',
-                `Coletando e processando topologia`);
+                `Atualizando CPEs...`);
             } else {
               upgradeStatus.find('.status-waiting').attr('title',
                 'Atualizando CPE...');
@@ -58,6 +59,10 @@ let updateDevice = function(event) {
         },
         error: function(xhr, status, error) {
           dropdownBtn.attr('disabled', false);
+          if (xhr.responseJSON) {
+            xhr.responseJSON.type = 'danger';
+            displayAlertMsg(xhr.responseJSON);
+          }
         },
       });
     }
@@ -154,14 +159,12 @@ $(function() {
           }
         });
       } else {
-        let progress = errorAnchor.data('progress');
         let errorMac = errorAnchor.data('mac');
-        let routerType = (progress > 0) ? 'slave' : 'mestre';
         swal({
           type: 'error',
           title: 'Erro',
-          text: 'Houve um erro ao realizar a transferência do firmware do '+
-            'CPE '+routerType+' com o MAC '+errorMac+'. Por favor tente '+
+          text: 'Houve um erro ao realizar a transferência do firmware do ' +
+            'CPE com o MAC ' + errorMac + '. Por favor tente ' +
             'novamente ou cancele o procedimento.',
           confirmButtonText: 'Tentar novamente',
           confirmButtonColor: '#4db6ac',
@@ -171,16 +174,16 @@ $(function() {
         }).then((result)=>{
           if (result.value) {
             // Send update message to backend and refresh row
-            let selBtnGroup = row.find('.dropdown-menu.refresh-selected').parent();
+            let selBtnGroup =
+              row.find('.dropdown-menu.refresh-selected').parent();
             let release = selBtnGroup.find('.dropdown-toggle .selected').text();
             $.ajax({
-              url: '/devicelist/updatemesh/' + errorMac + '/' + release,
+              url: '/devicelist/retryupdate/' + errorMac + '/' + release,
               type: 'post',
               traditional: true,
-              data: {do_update: true},
               complete: function() {
                 row.find('.device-row-refresher').trigger('click');
-              }
+              },
             });
           } else if (result.dismiss === 'cancel') {
             // Trigger cancel button

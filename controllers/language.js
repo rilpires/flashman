@@ -142,7 +142,7 @@ ConfigModel.findOne({is_default: true}, 'language').lean().exec()
   // console.log('--- i18next.resolvedLanguage:', i18next.resolvedLanguage)
 
   // if language isn't set in database but the 'defaultLanguage' could be
-  // loaded by i18next. We simply add that language to config.
+  // loaded by i18next. We simply add that language to Config.
   if (defaultLanguage === i18next.resolvedLanguage) {
     setConfigLanguage(defaultLanguage).catch((e) => console.error(
       `Error saving language '${defaultLanguage}' in config.`, e));
@@ -172,10 +172,11 @@ handlers.getLanguage = function(req, res) {
 // Will only update if that language exists in '../public/locales'
 handlers.updateLanguage = function(req, res) {
   updateLanguage(req.body.language)
-  .then(({status, msg}) => res.status(status).json({msg}));
+  .then(({status, message}) => res.status(status).json({message}));
 };
 
 module.exports = {
   i18next,
   handlers,
+  updateLanguage,
 };

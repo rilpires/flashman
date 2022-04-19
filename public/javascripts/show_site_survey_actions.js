@@ -1,6 +1,8 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg, socket} from './common_actions.js';
 
+const t = i18next.t;
+
 anlixDocumentReady.add(function() {
   let siteSurveyGlobalTimer;
 
@@ -201,9 +203,9 @@ anlixDocumentReady.add(function() {
                   $('<h6>').text(device.mac),
                 ),
                 $('<div>').addClass('col p-0 pl-2').append(
-                  $('<h6>').text('Canal: ' + apChannel),
-                  $('<h6>').text('Sinal: ' + device.signal +' dBm'),
-                  $('<h6>').text('Banda: ' + device.width +' MHz'),
+                  $('<h6>').text(t('Channel=X', {x: apChannel})),
+                  $('<h6>').text(t('Signal=X', {x: device.signal})),
+                  $('<h6>').text(t('Bandwidth=X', {x: device.width})),
                 ),
               ),
             ),
@@ -286,8 +288,8 @@ anlixDocumentReady.add(function() {
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais (atual: Canal ' +
-                                  wifi2GhzChannel + ')')),
+                                 .text(t('channelsOccupation(current=X)',
+                                         {x: wifi2GhzChannel}))),
         $('<hr>').addClass('mt-1'),
     ));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
@@ -298,8 +300,8 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
-                ap2GhzCountDict[channel] + ' (melhor)',
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
+                `${ap2GhzCountDict[channel]} (${t('best')})`,
               ),
             ),
           ),
@@ -310,8 +312,8 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
-                ap2GhzCountDict[channel] + ' (pior)',
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
+                `${ap2GhzCountDict[channel]} (${t('worst')})`,
               ),
             ),
           ),
@@ -322,7 +324,7 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
                 ap2GhzCountDict[channel],
               ),
             ),
@@ -335,7 +337,7 @@ anlixDocumentReady.add(function() {
     summary2Ghz = summary2Ghz.add(
       $('<div>').addClass('col m-1 p-0 pt-3').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Listagem de redes encontradas')),
+                                 .text(t('listingOfFoundNetworks'))),
         $('<hr>').addClass('mt-1'),
     ));
     summary2Ghz = summary2Ghz.add($('<div>').addClass('w-100'));
@@ -355,8 +357,8 @@ anlixDocumentReady.add(function() {
     summary5Ghz = summary5Ghz.add(
       $('<div>').addClass('col m-1 p-0').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Ocupação dos canais (atual: Canal ' +
-                                  wifi5GhzChannel + ')')),
+                                 .text(t('channelsOccupation(current=X)',
+                                         {x: wifi5GhzChannel}))),
         $('<hr>').addClass('mt-1'),
     ));
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
@@ -367,8 +369,8 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
-                ap5GhzCountDict[channel] + ' (melhor)',
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
+                `${ap5GhzCountDict[channel]} (${t('best')})`,
               ),
             ),
           ),
@@ -379,8 +381,8 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
-                ap5GhzCountDict[channel] + ' (pior)',
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
+                `${ap5GhzCountDict[channel]} (${t('worst')})`,
               ),
             ),
           ),
@@ -391,7 +393,7 @@ anlixDocumentReady.add(function() {
           $('<div>').addClass('row pt-3 mb-2').append(
             $('<div>').addClass('col').append(
               $('<h5>').append(
-                $('<strong>').text('Canal ' + channel + ': '),
+                $('<strong>').text(t('ChannelX= ', {x: channel})),
                 ap5GhzCountDict[channel],
               ),
             ),
@@ -407,7 +409,7 @@ anlixDocumentReady.add(function() {
     summary5Ghz = summary5Ghz.add(
       $('<div>').addClass('col m-1 p-0 pt-3').append(
         $('<h5>').addClass('m-0').append( $('<strong>')
-                                 .text('Listagem de redes encontradas')),
+                                 .text(t('listingOfFoundNetworks'))),
         $('<hr>').addClass('mt-1'),
     ));
     summary5Ghz = summary5Ghz.add($('<div>').addClass('w-100'));
@@ -424,7 +426,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-site-survey-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    let isBridge = row.data('bridge-enabled') === 'Sim';
+    let isBridge = row.data('bridge-enabled') === t('Yes');
     let has5ghz = row.data('has-5ghz');
     let hasExtendedChannels = row.data('has-extended-channels');
     if (!has5ghz) {
@@ -445,7 +447,7 @@ anlixDocumentReady.add(function() {
 
   $(document).on('click', '.btn-sync-ssurvey', function(event) {
     let id = $('#site-survey-hlabel').text();
-    let isBridge = $('#isBridgeDiv').html() === 'Sim';
+    let isBridge = $('#isBridgeDiv').html() === t('Yes');
     let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
 
     clearTimeout(siteSurveyGlobalTimer);
@@ -486,7 +488,7 @@ anlixDocumentReady.add(function() {
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
         }
-        let isBridge = $('#isBridgeDiv').html() === 'Sim';
+        let isBridge = $('#isBridgeDiv').html() === t('Yes');
         let hasExtendedChannels =
           $('#site-survey').data('has-extended-channels');
         clearTimeout(siteSurveyGlobalTimer);

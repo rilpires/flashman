@@ -2,6 +2,7 @@ import {anlixDocumentReady} from '../src/common.index.js';
 import 'bootstrap/js/src/modal';
 import {io} from 'socket.io-client';
 
+const t = i18next.t;
 const socket = io();
 
 const displayAlertMsg = function(res) {
@@ -57,9 +58,10 @@ let fetchNotifications = function() {
                 ),
                 $('<p>').addClass('card-text mb-2 text-center')
                         .text(notification.message),
-                $('<button>').addClass('btn btn-sm btn-primary btn-notif-action')
-                             .attr('type', 'button').html(btnText)
-                             .attr('data-id', notification._id),
+                $('<button>')
+                  .addClass('btn btn-sm btn-primary btn-notif-action')
+                  .attr('type', 'button').html(btnText)
+                  .attr('data-id', notification._id),
               ),
             ),
           ),
@@ -74,7 +76,7 @@ let fetchNotifications = function() {
           $('<i>').addClass('fas fa-check fa-4x'),
           $('<br>'),
           $('<br>'),
-          $('<span>').text('Sem notificações'),
+          $('<span>').text(t('noNotifications')),
         ),
       );
     }

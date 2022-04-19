@@ -77,7 +77,7 @@
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
-        t('acceptableCharOnly0-9a-zA-Z @_-.'),
+        t('acceptableCharOnly0-9a-zA-Z @ul-.'),
       ];
       let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -103,7 +103,7 @@
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
-        t('acceptableCharsAre0-9a-zA-Z .-_'),
+        t('acceptableCharsAre0-9a-zA-Z .-ul'),
       ];
       let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -114,8 +114,8 @@
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
-        t('acceptableCharsAre0-9a-zA-Z .-_#'),
-        t('endingSeparatorMustHaveAtLeastOne.-_#'),
+        t('acceptableCharsAre0-9a-zA-Z .-ul#'),
+        t('endingSeparatorMustHaveAtLeastOne.-ul#'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
         /^([a-zA-Z0-9.\-_#\s]+(\.|-|_|#))*$/);

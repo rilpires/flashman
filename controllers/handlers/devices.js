@@ -173,8 +173,77 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
   }, timeout);
 };
 
+// Check if secondary device in mesh v1 has support in mesh v2
+const isSlaveInV1CompatibleInV2 = function(slave) {
+  const slavePermissions = DeviceVersion.findByVersion(
+    slave.version,
+    slave.wifi_is_5ghz_capable,
+    slave.model,
+  );
+  if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
+// Check if primary device in mesh v1 has support in mesh v2
+const isMasterInV1CompatibleInV2 = function(master) {
+  const masterPermissions = DeviceVersion.findByVersion(
+    master.version,
+    master.wifi_is_5ghz_capable,
+    master.model,
+  );
+  if (!masterPermissions.grantMeshV2PrimaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
+// Check if the desired firmware version upgrade is possible considering
+// scenarios of possible mesh configuration incompatibilities when there is
+// an active mesh network
+deviceHandlers.isUpgradePossible = function(device, nextVersion) {
+  if ((device.mesh_slaves && device.mesh_slaves.length) ||
+    device.mesh_master) {
+    // find out what kind of upgrade this is
+    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+      device.version, nextVersion,
+    );
+    if (!typeUpgrade.unknownVersion) {
+      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
+        // no mesh v2 -> v1 downgrade if in active mesh network
+        return false;
+      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
+        // mesh v1 -> v2
+        if (device.mesh_slaves && device.mesh_slaves.length) {
+          // is a master
+          if (!isMasterInV1CompatibleInV2(device)) {
+            return false;
+          }
+        } else {
+          // is a slave
+          if (!isSlaveInV1CompatibleInV2(device)) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        // allow mesh v1 -> v1 or mesh v2 -> v2
+        return true;
+      }
+    } else {
+      // block upgrade if one of target versions is unknown
+      return false;
+    }
+  } else {
+    // No mesh network. Current restrictions are in active mesh networks
+    return true;
+  }
+};
+
 deviceHandlers.removeDeviceFromDatabase = function(device) {
   let meshMaster = device.mesh_master;
+  let meshSlaves = device.mesh_slaves;
   // Use this .remove method so middleware post hook receives object info
   device.remove();
   if (meshMaster) {
@@ -192,6 +261,21 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
           ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
+  }
+  if (meshSlaves && meshSlaves.length > 0) {
+    // This is a mesh master. Remove master registration for each slave found
+    for (let meshSlaveMac of meshSlaves) {
+      DeviceModel.findById(meshSlaveMac, {mesh_master: true},
+        function(err, slaveDevice) {
+          if (!err && slaveDevice && slaveDevice.mesh_master) {
+            slaveDevice.mesh_master = undefined;
+            slaveDevice.save().catch((err) => {
+              console.log('Error saving mesh master remove operation: ' + err);
+            });
+          }
+        },
+      );
+    }
   }
 };
 
