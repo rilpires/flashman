@@ -692,7 +692,7 @@
 	"updatingCpeXOfY...": "Updating CPE {{-x}} from {{y}}...",
 	"Signal": "Signal",
 	"VeryHigh": "Very high",
-	"Good": "Well",
+	"Good": "Good",
 	"Weak": "Weak",
 	"VeryWeak": "Very weak",
 	"NoSignal": "Without $t(Signal)",
