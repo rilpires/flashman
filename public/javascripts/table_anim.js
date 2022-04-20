@@ -29,9 +29,9 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask('000.000.000-009').keyup();
+    inputField.mask(t('personIdentificationMask')).keyup();
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask('00.000.000/0000-00').keyup();
+    inputField.mask(t('enterpriseIdentificationMask')).keyup();
   } else {
     inputField.unmask();
   }
@@ -2937,14 +2937,14 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask('000.000.000-009').keyup();
+                  .mask(t('personIdentificationMask')).keyup();
                 } else if (
                   slaveDev.external_reference &&
                   slaveDev.external_reference.kind ===
                   t('enterpriseIdentificationSystem')
                 ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask('00.000.000/0000-00').keyup();
+                  .mask(t('enterpriseIdentificationMask')).keyup();
                 }
               }
               slaveIdx++;
@@ -3007,14 +3007,14 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
             $('#edit_external_reference-' + index)
-            .mask('000.000.000-009').keyup();
+            .mask(t('personIdentificationMask')).keyup();
           } else if (
             device.external_reference &&
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
             $('#edit_external_reference-' + index)
-            .mask('00.000.000/0000-00').keyup();
+            .mask(t('enterpriseIdentificationMask')).keyup();
           }
 
           index += 1;
