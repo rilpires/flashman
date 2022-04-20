@@ -660,9 +660,14 @@ const requestSync = async function(device) {
   }
   // Port forward configuration fields - only if has support
   if (permissions.grantPortForward) {
-    dataToFetch.port_forward = true;
-    parameterNames.push(fields.wan.port_mapping_entries_dhcp);
-    parameterNames.push(fields.wan.port_mapping_entries_ppp);
+    if (
+      fields.wan.port_mapping_entries_dhcp &&
+      fields.wan.port_mapping_entries_ppp
+    ) {
+      dataToFetch.port_forward = true;
+      parameterNames.push(fields.wan.port_mapping_entries_dhcp);
+      parameterNames.push(fields.wan.port_mapping_entries_ppp);
+    }
   }
   // Stun configuration fields - only if has support
   if (permissions.grantSTUN) {
