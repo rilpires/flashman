@@ -164,7 +164,6 @@ module.exports = (app) => {
         }
         if (
           !config.traps_callbacks.devices_crud
-          || config.traps_callbacks.devices_crud.length === 0
         ) {
           const deviceCrud = config.traps_callbacks.device_crud;
           config.traps_callbacks.devices_crud.push(deviceCrud);

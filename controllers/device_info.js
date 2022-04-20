@@ -1003,37 +1003,40 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                 // Send modified fields if device traps are activated
                 if (Object.keys(deviceSetQuery).length > 0 &&
                     matchedConfig.traps_callbacks &&
-                    matchedConfig.traps_callbacks.device_crud) {
-                  let requestOptions = {};
-                  let callbackUrl =
-                  matchedConfig.traps_callbacks.device_crud.url;
-                  let callbackAuthUser =
-                  matchedConfig.traps_callbacks.device_crud.user;
-                  let callbackAuthSecret =
-                  matchedConfig.traps_callbacks.device_crud.secret;
-                  if (callbackUrl) {
-                    requestOptions.url = callbackUrl;
-                    requestOptions.method = 'PUT';
-                    requestOptions.json = {
-                      'id': matchedDevice._id,
-                      'type': 'device',
-                      'changes': deviceSetQuery,
-                    };
-                    if (callbackAuthUser && callbackAuthSecret) {
-                      requestOptions.auth = {
-                        user: callbackAuthUser,
-                        pass: callbackAuthSecret,
+                    matchedConfig.traps_callbacks.devices_crud
+                ) {
+                  const promises = matchedConfig.traps_callbacks.devices_crud.map(deviceCrud => {
+                    let requestOptions = {};
+                    let callbackUrl =
+                    deviceCrud.url;
+                    let callbackAuthUser =
+                    deviceCrud.user;
+                    let callbackAuthSecret =
+                    deviceCrud.secret;
+                    if (callbackUrl) {
+                      requestOptions.url = callbackUrl;
+                      requestOptions.method = 'PUT';
+                      requestOptions.json = {
+                        'id': matchedDevice._id,
+                        'type': 'device',
+                        'changes': deviceSetQuery,
                       };
+                      if (callbackAuthUser && callbackAuthSecret) {
+                        requestOptions.auth = {
+                          user: callbackAuthUser,
+                          pass: callbackAuthSecret,
+                        };
+                      }
+                      return request(requestOptions);
                     }
-                    request(requestOptions).then((resp) => {
-                      // Ignore API response
-                      return;
-                    }, (err) => {
-                      // Ignore API endpoint errors
-                      return;
-                    });
-                  }
-                  return;
+                  });
+                  Promise.all(promises).then((resp) => {
+                    // Ignore API response
+                    return;
+                  }, (err) => {
+                    // Ignore API endpoint errors
+                    return;
+                  });
                 }
               }
             },

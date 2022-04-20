@@ -107,7 +107,8 @@ let configSchema = new mongoose.Schema({
     device_crud: {url: String, user: String, secret: String},
     user_crud: {url: String, user: String, secret: String},
     role_crud: {url: String, user: String, secret: String},
-    certification_crud: {url: String, user: String, secret: String}
+    certification_crud: {url: String, user: String, secret: String},
+    devices_crud: [{url: String, user: String, secret: String}],
   },
   auth_pubkey: {type: String, default: ''},
   auth_privkey: {type: String, default: ''},

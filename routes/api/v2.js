@@ -85,6 +85,10 @@ router.route('/device/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setDeviceCrudTrap);
 
+router.route('/device/traps/callback').delete(
+    authController.ensurePermission('grantAPIAccess'),
+    deviceListController.deleteDeviceCrudTrap);
+
 router.route('/device/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.getDeviceCrudTrap);
