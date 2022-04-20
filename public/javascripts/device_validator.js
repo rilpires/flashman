@@ -61,7 +61,7 @@
 
     Validator.prototype.validateMode = function(mode) {
       return {
-        valid: ['11g', '11n', '11na', '11ac'].includes(mode),
+        valid: ['11g', '11n', '11na', '11ac', '11ax'].includes(mode),
         err: [t('willOnlyAcceptValueWifiMode')],
       };
     };
