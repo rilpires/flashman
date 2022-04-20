@@ -325,7 +325,7 @@
 	"Select...": "Selecione...",
 	"Status": "Status",
 	"rowsPerPage": "Registros por página",
-	"greenRedGrayLegendTooltip": "Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
+	"greenRedGrayLegendTooltip": "Verde: Online<br>Vermelho: Instável. Sem resposta imediata<br>Cinza: Sem resposta por mais de 1 hora",
 	"exportCsv": "Exportar CSV",
 	"userWithoutPermissionToVisualizeInformation": "Usuário sem permissão para visualizar as informações",
 	"notificationsAndAlerts": "Notificações e alertas",
