@@ -168,6 +168,12 @@ module.exports = (app) => {
           const deviceCrud = config.traps_callbacks.device_crud;
           config.traps_callbacks.devices_crud.push(deviceCrud);
         }
+        if (
+          !config.traps_callbacks.users_crud
+        ) {
+          const userCrud = config.traps_callbacks.user_crud;
+          config.traps_callbacks.users_crud.push(userCrud);
+        }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
         // *** DO NOT TOUCH ***
         config.save();
