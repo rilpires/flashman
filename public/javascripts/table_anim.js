@@ -1375,6 +1375,7 @@ anlixDocumentReady.add(function() {
           let grantBlockWiredDevices =
             device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
+          let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -2333,6 +2334,7 @@ anlixDocumentReady.add(function() {
                         'id="edit_wifi5_mode-'+index+'" '+
                         '$REPLACE_WIFI5_BAND_EN'+
                       '>'+
+                        '$REPLACE_WIFI5_AX_MODE' +
                         '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
                           'AC'+
                         '</option>'+
@@ -2754,6 +2756,13 @@ anlixDocumentReady.add(function() {
                                         'style="display:none;"');
           }
 
+          if (grantWiFiAXSupport) {
+            let axOpt = '<option value="11ax" $REPLACE_SELECTED_MODE5_11ax$>' +
+              'AX</option>';
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', axOpt);
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', '');
+          }
           selectTarget = '$REPLACE_SELECTED_MODE5_' + device.wifi_mode_5ghz;
           wifiTab = wifiTab.replace(selectTarget, 'selected="selected"');
           wifiTab = wifiTab.replace(/\$REPLACE_SELECTED_MODE5_.*?\$/g, '');

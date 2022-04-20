@@ -53,6 +53,15 @@ const fetchAndComparePortForward = async function(acsID) {
         template = projection2;
       }
       if (template != '') {
+        // Check how many rules are in the current tree
+        // If sizes are different, call changePortForwardRules immediately
+        let portMappingObj = utilHandlers.getFromNestedKey(data, template);
+        let keysCount = Object.keys(portMappingObj).filter((k)=>k[0]!='_');
+        if (keysCount.length !== device.port_mapping.length) {
+          let diff = device.port_mapping.length - keysCount.length;
+          return acsPortForwardHandler.changePortForwardRules(device, diff);
+        }
+
         for (i = 0; i < device.port_mapping.length; i++) {
           let iterateTemplate = template+'.'+(i+1)+'.';
           let portMapEnablePath = iterateTemplate +

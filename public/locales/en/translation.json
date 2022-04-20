@@ -378,7 +378,7 @@
 	"invalidMacAddress": "Invalid MAC address",
 	"invalidSelectedChannel": "Invalid channel selected",
 	"willOnlyAcceptValueWifiBandwidth": "Only the values auto, HT20,HT40,VHT20,VHT40 and VHT80 are accepted",
-	"willOnlyAcceptValueWifiMode": "Only values 11g, 11n, 11na and 11ac are accepted",
+	"willOnlyAcceptValueWifiMode": "Only values 11g, 11n, 11na, 11ac and 11ax are accepted",
 	"willOnlyAcceptValueWifiPower": "Only the values 25%, 50%, 75% and 100% are accepted",
 	"acceptableCharOnly0-9a-zA-Z @ul-.": "Only: alphanumeric characters, spaces, @, _, - and .",
 	"thisFieldMustHaveAtLeastMinChars": "This field must be at least {{-min}} characters",
