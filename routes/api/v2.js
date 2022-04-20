@@ -123,6 +123,11 @@ router.route('/user/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setUserCrudTrap);
 
+// Set traps URL for users CRUD operations
+router.route('/user/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteUserCrudTrap);
+
 router.route('/user/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   userController.getUserCrudTrap);

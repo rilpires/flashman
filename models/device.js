@@ -332,7 +332,7 @@ deviceSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.device_crud) {
+                 !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
       const promises =

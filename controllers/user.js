@@ -787,6 +787,15 @@ userController.setUserCrudTrap = function(req, res) {
           matchedConfig.traps_callbacks.user_crud.user = req.body.user;
           matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
         }
+        const registeredUserCrudIndex = matchedConfig.traps_callbacks.users_crud.findIndex(userCrud => {
+          return userCrud.url === req.body.url
+        });
+        if (registeredUserCrudIndex > -1) {
+          matchedConfig.traps_callbacks.users_crud[registeredUserCrudIndex] =
+            matchedConfig.traps_callbacks.user_crud;
+        } else {
+          matchedConfig.traps_callbacks.users_crud.push(matchedConfig.traps_callbacks.user_crud);
+        }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
@@ -809,6 +818,35 @@ userController.setUserCrudTrap = function(req, res) {
   });
 };
 
+userController.deleteUserCrudTrap = function(req, res) {
+  // Delete callback URL for devices
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const userCrudIndex = req.body.index;
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      matchedConfig.traps_callbacks.users_crud.splice(userCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
 userController.getUserCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
@@ -820,11 +858,21 @@ userController.getUserCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      const usersCrud = [];
+      matchedConfig.traps_callbacks.users_crud.forEach(userCrud => {
+        if (userCrud.url) {
+          usersCrud.push({
+            url: userCrud.url,
+            user: typeof userCrud.user === 'undefined' ? '' : userCrud.user
+          });
+        }
+      });
       const url = matchedConfig.traps_callbacks.user_crud.url;
       if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
+          usersCrud,
         });
       }
       const user = matchedConfig.traps_callbacks.user_crud.user;
@@ -833,6 +881,7 @@ userController.getUserCrudTrap = function(req, res) {
         exists: true,
         user: typeof user === 'undefined' ? '' : user,
         url: url,
+        usersCrud,
       });
     }
   });
