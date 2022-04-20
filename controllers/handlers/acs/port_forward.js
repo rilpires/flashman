@@ -57,8 +57,8 @@ const fetchAndComparePortForward = async function(acsID) {
         // If sizes are different, call changePortForwardRules immediately
         let portMappingObj = utilHandlers.getFromNestedKey(data, template);
         let keysCount = Object.keys(portMappingObj).filter((k)=>k[0]!='_');
-        if (keysCount !== device.port_mapping.length) {
-          let diff = device.port_mapping.length - keysCount;
+        if (keysCount.length !== device.port_mapping.length) {
+          let diff = device.port_mapping.length - keysCount.length;
           return acsPortForwardHandler.changePortForwardRules(device, diff);
         }
 
