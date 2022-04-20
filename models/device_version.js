@@ -750,7 +750,7 @@ const tr069Devices = {
     },
     feature_support: {
       wifi_ax_mode: true,
-      port_forward: true,
+      port_forward: false,
       pon_signal: false,
       upnp: false,
       wps: false,
