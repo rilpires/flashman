@@ -66,16 +66,12 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (
-        ouiModelStr === 'G%2D140W%2DC' ||
-        ouiModelStr === 'G%2D140W%2DCS' ||
-        ouiModelStr === 'G%2D140W%2DUD' ||
-        ouiModelStr === 'HG9'
-      ) {
+      if (ouiModelStr === 'HG9') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
-      else if (ouiModelStr === 'Huawei') return 'b/g';
-      else if (ouiModelStr === 'AC10') return 'bg';
+      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+        return 'b/g';
+      } else if (ouiModelStr === 'AC10') return 'bg';
       else if (ouiModelStr === 'EC220-G5') return 'gn';
       else if (
         ouiModelStr === 'IGD' ||
@@ -87,7 +83,6 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA' ||
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g';
@@ -97,15 +92,10 @@ const convertWifiMode = function(mode, oui, model) {
         return 'g-only';
       } else return '11bg';
     case '11n':
-      if (
-        ouiModelStr === 'G%2D140W%2DC' ||
-        ouiModelStr === 'G%2D140W%2DCS' ||
-        ouiModelStr === 'G%2D140W%2DUD'
-      ) {
-        return 'n';
-      } else if (ouiModelStr === 'HG8245Q2') return '11bgn';
-      else if (ouiModelStr === 'Huawei') return 'b/g/n';
-      else if (ouiModelStr === 'HG9') return 'gn';
+      if (ouiModelStr === 'HG8245Q2') return '11bgn';
+      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+        return 'b/g/n';
+      } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
       else if (ouiModelStr === 'EC220-G5') return 'n';
       else if (
@@ -120,7 +110,6 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'DIR-842' ||
         ouiModelStr === 'DIR-841' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA' ||
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g,n';
@@ -129,15 +118,10 @@ const convertWifiMode = function(mode, oui, model) {
       } else return '11bgn';
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
-      else if (
-        ouiModelStr === 'G%2D140W%2DC' ||
-        ouiModelStr === 'G%2D140W%2DCS' ||
-        ouiModelStr === 'G%2D140W%2DUD'
-      ) {
-        return 'n';
-      } else if (ouiModelStr === 'HG8245Q2') return '11na';
-      else if (ouiModelStr === 'Huawei') return 'a/n';
-      else if (ouiModelStr === 'F670L') return 'a,n';
+      else if (ouiModelStr === 'HG8245Q2') return '11na';
+      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+        return 'a/n';
+      } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
@@ -154,24 +138,15 @@ const convertWifiMode = function(mode, oui, model) {
         return 'an';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'a,n';
-      } else if (
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA'
-      ) {
+      } else if (ouiModelStr == 'G-2425G-A') {
         return 'a,n,ac';
-      }
-      else return '11na';
+      } else return '11na';
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
-      else if (
-        ouiModelStr === 'G%2D140W%2DC' ||
-        ouiModelStr === 'G%2D140W%2DCS' ||
-        ouiModelStr === 'G%2D140W%2DUD'
-      ) {
-        return 'ac';
-      } else if (ouiModelStr === 'HG8245Q2') return '11ac';
-      else if (ouiModelStr === 'Huawei') return 'a/n/ac';
-      else if (ouiModelStr === 'HG9') return 'gn';
+      else if (ouiModelStr === 'HG8245Q2') return '11ac';
+      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+        return 'a/n/ac';
+      } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'ac';
       else if (
@@ -182,7 +157,6 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr == 'G%2D2425G%2DA' ||
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'a,n,ac';
@@ -191,14 +165,17 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'ac,a,n';
       } else return '11ac';
+    case '11ax':
+      if (ouiModelStr === 'WS7001-40') return 'a/n/ac/ax';
+      return '11ax';
     default:
       return '';
   }
 };
 
 const convertWifiBand = function(band, model, is5ghz=false) {
-  if ((model == 'G-2425G-A' || model == 'G%2D2425G%2DA') && !is5ghz) {
-    return '20MHz'
+  if ((model == 'G-2425G-A') && !is5ghz) {
+    return '20MHz';
   }
   switch (band) {
     case 'HT20':
@@ -222,14 +199,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       } else if (
         model === 'BEACON 1 HA-020W-B' ||
-        model === 'BEACON%20HA%2D020W%2DB' ||
         model === 'ST-1001-FL'
       ) {
-        return 'Auto'
+        return 'Auto';
       } else if (model === 'AC10') {
         return '2';
-      } else if (model == 'G-2425G-A' || model == 'G%2D2425G%2DA') {
-        return '80MHz'
+      } else if (model == 'G-2425G-A') {
+        return '80MHz';
       }
       return 'auto';
     default:

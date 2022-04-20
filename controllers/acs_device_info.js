@@ -83,6 +83,8 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
+    case 'a/n/ac/ax':
+      return (is5ghz) ? '11ax' : undefined;
     default:
       return undefined;
   }
