@@ -83,6 +83,8 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
+    case 'a/n/ac/ax':
+      return (is5ghz) ? '11ax' : undefined;
     default:
       return undefined;
   }
@@ -658,9 +660,14 @@ const requestSync = async function(device) {
   }
   // Port forward configuration fields - only if has support
   if (permissions.grantPortForward) {
-    dataToFetch.port_forward = true;
-    parameterNames.push(fields.wan.port_mapping_entries_dhcp);
-    parameterNames.push(fields.wan.port_mapping_entries_ppp);
+    if (
+      fields.wan.port_mapping_entries_dhcp &&
+      fields.wan.port_mapping_entries_ppp
+    ) {
+      dataToFetch.port_forward = true;
+      parameterNames.push(fields.wan.port_mapping_entries_dhcp);
+      parameterNames.push(fields.wan.port_mapping_entries_ppp);
+    }
   }
   // Stun configuration fields - only if has support
   if (permissions.grantSTUN) {
