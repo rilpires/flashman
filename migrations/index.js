@@ -162,6 +162,13 @@ module.exports = (app) => {
         if (! vlans.includes(1)) {
           config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
         }
+        if (
+          !config.traps_callbacks.devices_crud
+          || config.traps_callbacks.devices_crud.length === 0
+        ) {
+          const deviceCrud = config.traps_callbacks.device_crud;
+          config.traps_callbacks.devices_crud.push(deviceCrud);
+        }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
         // *** DO NOT TOUCH ***
         config.save();
