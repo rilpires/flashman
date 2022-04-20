@@ -464,80 +464,88 @@ const getTPLinkFields = function(model) {
   return fields;
 };
 
-const getHuaweiFields = function(model) {
+const getHuaweiFields = function(model, modelName) {
   let fields = getDefaultFields();
-  switch (model) {
-    case 'HG8245Q2': // Huawei HG8245Q2
-    case 'EG8145V5': // Huawei EG8145V5
-      fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
-      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
-      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
-      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
-      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
-      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
-      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
-      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
-      fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
-      fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt'];
-      fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
-      delete fields.port_mapping_values.remote_host;
-      fields.port_mapping_values.protocol[1] = 'TCP/UDP';
-      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+  if (['HG8245Q2', 'EG8145V5'].includes(model)) {
+    fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
+    fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
+    fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
+    fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent';
+    fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower';
+    fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower';
+    fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+    fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
+    fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
+    fields.port_mapping_fields.internal_port_end = ['X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt'];
+    fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+    delete fields.port_mapping_values.remote_host;
+    fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+    fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+    fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+    fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
+    fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
 
-      fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '3');
-      fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '3');
-      fields.mesh5.password = fields.mesh5.password.replace(/6/g, '3');
-      fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '3');
-      fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '3');
-      fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '3');
-      fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '3');
-      fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '3');
-      fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '3');
-      fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
-      fields.mesh2.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BasicDataTransmitRates';
-      fields.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers';
-      fields.mesh5.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates';
-      fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers';
-      break;
-    case 'Huawei': // Huawei WS5200
-      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-      fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
-      fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
-      fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
-      fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
-      fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
-      fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
-      fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
-      fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
-      fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-      fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-      fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '3');
-      fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '4');
-      fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '3');
-      fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '4');
-      fields.mesh2.password = fields.mesh5.password.replace(/6/g, '3');
-      fields.mesh5.password = fields.mesh5.password.replace(/6/g, '4');
-      fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '3');
-      fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '4');
-      fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '3');
-      fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '4');
-      fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '3');
-      fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '4');
-      fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '3');
-      fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '4');
-      fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '3');
-      fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '4');
-      fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '3');
-      fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '4');
-      fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
-      fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
-      fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-      fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-      break;
+    fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '3');
+    fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '3');
+    fields.mesh5.password = fields.mesh5.password.replace(/6/g, '3');
+    fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '3');
+    fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '3');
+    fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '3');
+    fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '3');
+    fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '3');
+    fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '3');
+    fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
+    fields.mesh2.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BasicDataTransmitRates';
+    fields.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers';
+    fields.mesh5.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates';
+    fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers';
+  } else if (model === 'Huawei') {
+    fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+    fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+    fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '2');
+    fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '2');
+    fields.wifi5.password = fields.wifi5.password.replace(/5/g, '2');
+    fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '2');
+    fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '2');
+    fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '2');
+    fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '2');
+    fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '2');
+    fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+    fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+    fields.mesh2.ssid = fields.mesh5.ssid.replace(/6/g, '3');
+    fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '4');
+    fields.mesh2.bssid = fields.mesh5.bssid.replace(/6/g, '3');
+    fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '4');
+    fields.mesh2.password = fields.mesh5.password.replace(/6/g, '3');
+    fields.mesh5.password = fields.mesh5.password.replace(/6/g, '4');
+    fields.mesh2.channel = fields.mesh5.channel.replace(/6/g, '3');
+    fields.mesh5.channel = fields.mesh5.channel.replace(/6/g, '4');
+    fields.mesh2.auto = fields.mesh5.auto.replace(/6/g, '3');
+    fields.mesh5.auto = fields.mesh5.auto.replace(/6/g, '4');
+    fields.mesh2.mode = fields.mesh5.mode.replace(/6/g, '3');
+    fields.mesh5.mode = fields.mesh5.mode.replace(/6/g, '4');
+    fields.mesh2.enable = fields.mesh5.enable.replace(/6/g, '3');
+    fields.mesh5.enable = fields.mesh5.enable.replace(/6/g, '4');
+    fields.mesh2.advertise = fields.mesh5.advertise.replace(/6/g, '3');
+    fields.mesh5.advertise = fields.mesh5.advertise.replace(/6/g, '4');
+    fields.mesh2.encryption = fields.mesh5.encryption.replace(/6/g, '3');
+    fields.mesh5.encryption = fields.mesh5.encryption.replace(/6/g, '4');
+    fields.mesh2.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '3');
+    fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
+    fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+    fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+    if (modelName === 'WS7001-40') {
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
+      delete fields.wan.port_mapping_entries_dhcp;
+      delete fields.wan.port_mapping_entries_ppp;
+      fields.port_mapping_dhcp = 'InternetGatewayDevice.Services.X_HUAWEI_PortForwarding';
+      fields.port_mapping_ppp = 'InternetGatewayDevice.Services.X_HUAWEI_PortForwarding';
+      fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+      fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
+      fields.port_mapping_fields.internal_port_end = ['InternalPortEndRange', 'internal_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      delete fields.port_mapping_values.lease;
+    }
   }
   return fields;
 };
@@ -963,9 +971,23 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
-    case 'Huawei': // Huawei WS5200
       message = '';
-      fields = getHuaweiFields(model);
+      fields = getHuaweiFields(model, modelName);
+      break;
+    case 'Huawei':
+      switch (modelName) {
+        case 'WS5200-21': // Huawei WS5200 v2
+        case 'WS5200-40': // Huawei WS5200 v3
+          message = '';
+          fields = getHuaweiFields(model, modelName);
+          break;
+        case 'WS7001-40': // Huawei AX2
+          message = '';
+          fields = getHuaweiFields(model, modelName);
+          break;
+        default:
+          return unknownModel;
+      }
       break;
     case 'ZXHN H199A': // Multilaser ZTE RE914
     case 'ZXHN H198A V3.0': // Multilaser ZTE RE914
