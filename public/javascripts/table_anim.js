@@ -1413,16 +1413,15 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069) {
             // Undefined treats legacy cases - which are all HTTPS
+            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
             if (
               typeof device.secure_tr069 === 'undefined' || device.secure_tr069
             ) {
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
                                         'darken-2');
-              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
             } else {
               infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
                                         'darken-4');
-              infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069 HTTP');
             }
           } else {
             infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');

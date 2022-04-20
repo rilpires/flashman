@@ -1,11 +1,9 @@
 {
 	"errorDownloadingFile": "Erro ao baixar arquivo ({{errorline}})",
 	"firmwareUpdateTaskDidNotFinsh": "Tarefa de atualizar firmware não foi terminada ({{errorline}})",
-
 	"Delete": "Apagar",
 	"cpeErrorIdCallSupport": "Erro na CPE '{{-id}}'. Chamar supporte. ({{errorline}})",
 	"genieacsErrorCallSupport": "Erro no GenieACS. Chamar supporte.({{errorline}})",
-
 	"meshModeInvalid": "Modo mesh inválido ({{errorline}})",
 	"cantDisableMeshWithSecondaries": "Não é possível desabilitar o mesh com secundários associados ({{errorline}})",
 	"cpeTr069NotOnline": "CPE TR-069 não está online ({{errorline}})",
@@ -14,7 +12,6 @@
 	"seeErrorsField": "Ver campo \"errors\"",
 	"secondaryCpeNotFound": "CPE secundário não encontrado ({{errorline}})",
 	"meshTopologyGetError": "Erro na obtenção da topologia mesh ({{errorline}})",
-
 	"Ok": "Ok",
 	"nonTr069AcsSyncError": "Attempt to sync acs data with non-tr-069 device ({{errorline}})",
 	"acsCreateCpeRegistryError": "Failed to create device registry ({{errorline}})",
@@ -29,17 +26,15 @@
 	"firmwareVersionNotFound": "Não existe firmware com essa versão ({{errorline}})",
 	"firmwareInsertError": "Erro ao adicionar firmware ({{errorline}})",
 	"errorSendingMeshParamtersToCpe": "Erro ao enviar parâmetros mesh para a CPE ({{errorline}})",
-
 	"appNotFound": "App não encontrado ({{errorline}})",
 	"appUnauthorized": "App não autorizado ({{errorline}})",
 	"cpeUnauthorized": "CPE não autorizado ({{errorline}})",
 	"rulesDataInvalid": "Dados de regras inválidos ({{errorline}})",
 	"personalizationHasError": "Erro na hash de personalização ({{errorline}})",
 	"secretInvalid": "Secret inválido ({{errorline}})",
-
 	"permissionFindError": "Erro ao encontrar permissões ({{errorline}})",
 	"macUndefined": "Did not specify MAC ({{errorline}})",
-	"cpeIsNotMeshSlave": "Device is not a mesh slave! ({{errorline}})",
+	"cpeIsNotMeshSlave": "Device is not a mesh secondary! ({{errorline}})",
 	"primaryCpeMacInvalid": "MAC do CPE primário inválido ({{errorline}})",
 	"secondaryCandidateCpeMacInvalid": "MAC do CPE candidato a secundário inválido ({{errorline}})",
 	"primaryCpeNotFound": "CPE primário não encontrado ({{errorline}})",
@@ -60,26 +55,22 @@
 	"Success": "Sucesso",
 	"fieldNotFound": "Campo não encontrado ({{errorline}})",
 	"macInvalid": "MAC inválido ({{errorline}})",
-
 	"Error": "Erro",
 	"unknownUser": "Usuário desconhecido",
 	"invalidPassword": "Senha inválida",
 	"userNotFound": "Usuário não encontrado ({{errorline}})",
-
 	"bodyNotObject": "Body recebido, na requisição, não é um objeto ({{errorline}})",
 	"idInvalidInUrlParams": "ID '{{-id}}' recebido nos parametros da url é inválido ({{errorline}})",
 	"receivedNoAlterations": "Nenhuma alteração recebida ({{errorline}})",
-
 	"ssidPrefixInvalidLength": "Não foi possível habilitar o prefixo SSID pois o tamanho máximo de 32 caracteres foi excedido ({{errorline}})",
 	"firmwareHasBeenModifiedLocally": "Este firmware Flashbox foi modificado ou substituído localmente ({{errorline}})",
 	"permitCommunication": "Permitir comunicação",
-
 	"meshSecondaryUpdateError": "Este CPE é secundário em uma rede mesh, sua atualização deve ser feita a partir do CPE principal dessa rede",
-	"functionToSetSlaveToUpdate": "Esta função só deve ser usada para marcar um slave para atualizar, não para cancelar a atualização",
+	"functionToSetSlaveToUpdate": "Esta função só deve ser usada para marcar um CPE secundário para atualizar, não para cancelar a atualização",
 	"firmwareDownloadStockError": "Erro baixando a firmware de fábrica",
 	"commandOnlyWorksInsideSession": "Esse comando somente funciona em uma sessão!",
 	"connectionTypeShouldBePppoeDhcp": "Tipo de conexão deve ser \"pppoe\" ou \"dhcp\"",
-	"enableWifiToConfigureMesh": "Para configurar esse tipo de Mesh é necessário habilitar todos os Wi-Fi",
+	"enableWifiToConfigureMesh": "Para configurar esse tipo de mesh é necessário habilitar todos os Wi-Fi",
 	"disableMeshNotPossibleWithSecundaries": "Não é possível desabilitar o mesh com secundários associados",
 	"fieldsInvalidCheckErrors": "Erro validando os campos, ver campo \"errors\"",
 	"macAlreadyExists": "Endereço MAC já cadastrado",
@@ -122,7 +113,6 @@
 	"ssidWifi5Ghz": "$t(ssidWifi) 5GHz",
 	"wanConnectionType": "Tipo de Conexão WAN",
 	"updatefirmware": "Atualizar firmware",
-
 	"firmwareNotFoundOrSelected": "Firmware não encontrada ou selecionada ({{errorline}})",
 	"genieacsCommunicationError": "Falha na comunicação com o GenieACS ({{errorline}})",
 	"binFileNotFound": "Arquivo bin não encontrado ({{errorline}})",
@@ -136,25 +126,20 @@
 	"firmwareAlreadyExists": "Não é possível cadastrar mais de um firmware para um determinado modelo/versão ({{errorline}})",
 	"requestError": "Erro na requisição ({{errorline}})",
 	"authenticationError": "Erro na autenticação ({{errorline}})",
-
 	"languageNotFound": "Lingua '{{-language}}' não existe ({{errorline}})",
-
 	"notificationFindError": "Erro ao buscar notificações ({{errorline}})",
 	"notificationStatusError": "Erro no registro de notificação de status, ({{errorline}})",
 	"notificatioUpdateError": "Error ao atualizar notification para CPE {{deviceId}} ({{errorline}})",
-
 	"waitingRestart": "Aguardando reinicio",
 	"restartingSecondaryCpe": "Reiniciando CPE secundário",
 	"successfullyRestarted": "Reiniciado com sucesso",
 	"anErrorHappendAt ": "Ocorreu um erro na ",
 	"updateAbortedCpeInstallingFirmware": "Atualização abortada - CPE estava instalando firmware",
 	"updateAbortedCpeUpdatingSecondaryCpe": "Atualização abortada - atualizando CPE secundário",
-
 	"geniePresetPutError": "Erro ao enviar preset para o GenieACS ({{errorline}})",
 	"ssidPrefixEmptyError": "Prefixo de SSID não pode ser vazio",
 	"ssidPrefixDisabledAlterationError": "Prefixo de SSID não pode ser alterado se estiver desabilitado",
 	"tr069WebPasswordValidationError": "A senha para interface web das CPEs TR-069 não está nos padrões esperados",
-
 	"parametersError": "Erro ao processar os parâmetros ({{errorline}})",
 	"parametersErrorNoCpe": "Erro ao processar os parâmetros: nenhum CPE encontrado ({{errorline}})",
 	"parametersErrorTimeRangesInvalid": "Erro ao processar parâmetros: ranges de tempo inválidos ({{errorline}})",
@@ -184,7 +169,6 @@
 	"xOfY": "{{-x}} de {{-y}}",
 	"ofCpeXOfY": "do CPE {{-x}} de {{-y}}",
 	"scheduling": "agendamento",
-
 	"passwordExpired": "Sua senha expirou. Insira uma nova senha ({{errorline}})",
 	"passwordsDiffer": "As senhas estão diferentes ({{errorline}})",
 	"userFindError": "Erro ao buscar usuário ({{errorline}})",
@@ -242,7 +226,6 @@
 	"observations": "Observações",
 	"certificateLatitute": "Latitude no momento da certificação",
 	"certificateLongitude": "Longitude no momento da certificação",
-
 	"vlanIdNotFound": "VLAN ID não encontrado ({{errorline}})",
 	"vlanIdOutOfRange": "O VLAN ID não pode ser menor que 3 ou maior que 4094! ({{errorline}})",
 	"vlanProfileNameInvalidCharacter": "O nome do Perfil de VLAN deve começar com um caractere do alfabeto, conter caracteres alfanuméricos, hífen ou sublinhado, não pode ser vazio e deve ser distinto dos já existentes! ({{errorline}})",
@@ -252,10 +235,8 @@
 	"vlanProfileFindError": "Erro ao acessar a configuração de VLAN ({{errorline}})",
 	"vlanProfileNameShouldBeDifferent": "Nome do Perfil de VLAN deve ser distinto dos já existentes! ({{errorline}})",
 	"vlanProfileNotFound": "Perfil de VLAN não encontrado ({{errorline}})",
-
 	"saveError": "Erro ao salvar alteração ({{errorline}})",
 	"serverError": "Erro interno do servidor ({{errorline}})",
-
 	"permissionNotFound": "Permissão não encontrada ({{errorline}})",
 	"permissionDenied": "Permissão negada ({{errorline}})",
 	"databaseFindError": "Erro no acesso ao banco de dados ({{errorline}})",
@@ -265,8 +246,7 @@
 	"operationUnsuccessful": "Operação não pode ser realizada ({{errorline}})",
 	"requestFormatError": "Erro no formato da requisição ({{errorline}})",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados ({{errorline}})",
-	"enabledToModifyFields": "Para modificar algum campo de wifi, o mesmo deve estar previamente habilitado ({{errorline}})",
-
+	"enabledToModifyFields": "Para modificar algum campo de Wi-Fi, o mesmo deve estar previamente habilitado ({{errorline}})",
 	"fieldNameInvalid": "Campo '{{-name}}' inválido ({{errorline}})",
 	"fieldInvalid": "Campo inválido ({{errorline}})",
 	"fieldsInvalid": "Campos inválidos ({{errorline}})",
@@ -275,7 +255,6 @@
 	"fieldNameWrongType": "Campo '{{-name}}' não é do tipo '{{dataType}}'",
 	"fieldWrongType": "Campo não é do tipo '{{dataType}}'",
 	"valueInvalid": "Valor inválido",
-	
 	"commandNotFound": "Esse comando não existe ({{errorline}})",
 	"incompatibleRulesError": "Possui regra não compatível",
 	"jsonError": "Erro ao tratar JSON ({{errorline}})",
@@ -290,20 +269,14 @@
 	"cpeUpdateManyError": "Erro ao atualizar CPEs ({{errorline}})",
 	"cpeWithoutFunction": "CPE não possui essa função! ({{errorline}})",
 	"cpeNotOnline": "CPE não está online! ({{errorline}})",
-
 	"configFindError": "Erro ao buscar configuração ({{errorline}})",
 	"configNotFoud": "Configuração não encontrada ({{errorline}})",
 	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
 	"configUpdateError": "Erro salvando configurações ({{errorline}})",
-
 	"acRuleLimits": "O limite de dispositivos bloqueados para essa CPE foi atingido. ({{errorline}})",
 	"acRuleGetError": "Erro ao obter regras de controle de acesso ({{errorline}})",
 	"acRuleDefaultError": "Erro ao registrar regras de controle de acesso ({{errorline}})",
 	"acRuleReDoError": "Erro ao reestruturar regras de controle de acesso ({{errorline}})",
-
-
-
-
 	"passwordRenewal": "Renovação de senha",
 	"newPassword": "Nova senha",
 	"pleaseFillInThisField": "Por favor, preencha este campo",
@@ -312,7 +285,6 @@
 	"newFirmwareUpload": "Upload de novo firmware",
 	"File": "Arquivo",
 	"anlixAccount": "Conta da Anlix",
-
 	"Type": "Tipo",
 	"File...": "Arquivo...",
 	"Upload": "Upload",
@@ -334,7 +306,6 @@
 	"noFileSelected": "Nenhum arquivo foi selecionado",
 	"Show": "Exibir",
 	"Add": "Adicionar",
-
 	"Search...": "Buscar...",
 	"useCommasToCombineFilters": "Use as vírgulas para combinar os filtros desejados. (Exemplo: TP-Link, 0001-aix)",
 	"specialFilters": "Filtros especiais",
@@ -357,7 +328,8 @@
 	"greenRedGrayLegendTooltip": "Verde: Online\nVermelho: Instável. Sem resposta imediata\nCinza: Sem resposta por mais de 1 hora",
 	"exportCsv": "Exportar CSV",
 	"userWithoutPermissionToVisualizeInformation": "Usuário sem permissão para visualizar as informações",
-	"notificationsAndAlerts": "Notificações e Alertas",
+	"notificationsAndAlerts": "Notificações e alertas",
+	"noNotifications": "Sem notificações",
 	"portOpenningForCpe": "Abertura de portas no CPE",
 	"Device": "Dispositivo",
 	"External": "Externo",
@@ -450,7 +422,6 @@
 	"Channel": "Canal",
 	"noAditionalObservationsHaveBeenDone": "Não foram feitas observações adicionais",
 	"aditionalObservations": "Observações Adicionais",
-
 	"dataCollectingServiceConfigurations": "Configurações do serviço de coleta de dados",
 	"parametersUsedAsStandardValueForAllDevices": "Parâmetros usados como valores padrão em todos os dispositivos.",
 	"On": "Ligado",
@@ -482,7 +453,6 @@
 	"nDevicesWillBeChanged": "Será alterado $t(nDevices, {\"count\": {{-count}} }).",
 	"nDevicesWillBeChanged_other": "Serão alterados $t(nDevices, {\"count\": {{-count}} }).",
 	"dataCollectingPingFqdnTooltip": "IPv4, IPv6 ou endereço de DNS. Campo vazio faz o dispositivo seguir o valor padrão do serviço.",
-
 	"cpeLogs": "Logs do CPE",
 	"chooseAnOptionBelow": "Escolha uma opção abaixo",
 	"exportLogs": "Exportar log",
@@ -515,7 +485,6 @@
 	"N/A": "N/D",
 	"manageVlansFor": "Administrar VLANs de",
 	"oneRegisteredVlanIsNecessary!": "É necessário pelo menos um Perfil de VLAN cadastrado!",
-
 	"latencyAndBidirectionalLossFor": "Latência e perda bidirecional para",
 	"targetAddresses": "Endereços de destino",
 	"targetAddressesTooltip": "Os endereços de destino podem ser sites na Internet ou endereços IP válidos",
@@ -525,7 +494,6 @@
 	"forTr069OnlyFirstAddressWillBeTested": "Para dispositivos TR-069 apenas o primeiro endereço de destino será testado",
 	"startTest": "Iniciar teste",
 	"%LostPackets": "% pacotes perdidos",
-
 	"opticSignalIntensityFor": "Intensidade de Sinal Óptico de",
 	"updatingReceivedSignal...": "Atualizando sinal recebido...",
 	"sourcePorts": "Portas de Origem",
@@ -570,7 +538,6 @@
 	"commandSuccessfullySent!": "Comando enviado com sucesso!",
 	"Restart": "Reiniciar",
 	"tryAgain": "Tentar Novamente",
-	
 	"specialSearchFilters": "Filtros de Busca Especiais",
 	"online": "online",
 	"unstable": "instável",
@@ -611,7 +578,6 @@
 	"andFilterDescription": "Inclui resultados que contém todos os filtros aplicados. Exemplo: \"João\",\"online\",\"/e\" exibirá todos os CPEs que estão online e contém \"João\" no cadastro",
 	"/exclude": "/excluir",
 	"excludeFilterDescription": "Exclui resultados de CPEs que possuem o termo procurado. Exemplo: \"online\",\"/excluir 9999-aix\" exibirá todos os CPEs que estão online e que não contém a release 9999-aix do Flashbox",
-
 	"neighboringNetworksFor": "Redes ao redor de",
 	"networksInXGhz": "Redes em {{-x}}GHz",
 	"showsitesurveyAlertInfo": "A recomendação de melhor canal deve ser alterada manualmente. O mecanismo \"auto\" do CPE pode diferir da recomendação apresentada aqui.",
@@ -624,7 +590,6 @@
 	"best": "melhor",
 	"worst": "pior",
 	"listingOfFoundNetworks": "Listagem de redes encontradas",
-
 	"downSpeedTestFor": "Teste de velocidade de download para",
 	"performSpeedTest": "Realizar teste de velocidade",
 	"clickButtonBelowToStartMeasure": "Clique no botão abaixo para começar a medição",
@@ -642,7 +607,6 @@
 	"serverBusyTryAgain": "O servidor está ocupado, tente mais tarde",
 	"waitingResult": "Aguardando resultado...",
 	"xMbps": "{{-x}} $t(Mbps)",
-	
 	"updateSchedule": "Agendamento de atualização",
 	"configureUpdateParameters": "Configurar parâmetros da atualização",
 	"whoToUpdate": "Quem atualizar",
@@ -720,7 +684,6 @@
 	"Refresh": "Recarregar",
 	"Later": "Mais tarde",
 	"errorSearchingInfo": "Erro ao buscar informações",
-
 	"Active_female": "Ativa",
 	"Active_male": "Ativo",
 	"upadatingCpe...": "Atualizando CPE...",
@@ -792,24 +755,22 @@
 	"gettingStockFirmwareReady...": "Preparando firmware de fábrica...",
 	"errorOccurred": "Um erro ocorreu",
 	"couldnotRestoreStockFirmwareTryAgain": "Não foi possível restaurar o CPE para o firmware de fábrica. Por favor tente novamente.",
-	"routerDisassociateMeshConfirmation": "Tem certeza que deseja desassociar esse roteador do mesh?",
+	"routerDisassociateMeshConfirmation": "Tem certeza que deseja desassociar esse CPE do mesh?",
 	"internalError": "Erro interno",
 	"processSuccessfullyStarted": "Processo iniciado com sucesso",
 	"factoryResetRebootInstructions": "Aguarde o CPE reiniciar, e então segure o botão de reset por 15 segundos.",
 	"flashbox-cpes-list.csv": "lista-de-cpes-flashbox.csv",
-
 	"lang": "pt",
-
 	"Authentication": "Autenticação",
 	"User": "Usuário",
 	"Password": "Senha",
 	"SignIn": "Entrar",
-
 	"Profile": "Perfil",
 	"changePassword": "Alterar senha",
 	"passwordAgain": "Senha novamente",
 	"passwordsAreDifferent": "As senhas estão diferentes",
 	"permissionsRole": "Classe de permissões",
+	"permissionsRoles": "Classes de permissões",
 	"Update": "Atualizar",
 	"updatingFlashman...": "Atualizando Flashman...",
 	"updateSuccess": "Atualização feita com sucesso!",
@@ -823,7 +784,6 @@
 	"notNow": "Agora não",
 	"searchingForUpdates...": "Buscando atualizações...",
 	"noUpdateFound": "Nenhuma atualização encontrada",
-
 	"Configurations": "Configurações",
 	"generalConfigurations": "Configurações gerais",
 	"minimumAmountOfPppoePaswordChars": "Número mínimo de caracteres da senha PPPoE",
@@ -846,7 +806,7 @@
 	"insertValidIp": "Insira um IP válido",
 	"speedMeasureServerPort": "Porta do servidor de medição de velocidade",
 	"insertValidPort": "Insira uma porta válida",
-	"technicianAppConfigurations": "Configurações para App do Técnico",
+	"technicianAppConfigurations": "Configurações para app do técnico",
 	"opticalSignalYellowAlertDbm": "Alerta amarelo do sinal óptico (dBm)",
 	"insertValidDbmNumber": "Insira um número em dBm válido",
 	"opticalSignalRedAlertDbm": "Alerta vermelho do sinal óptico (dBm)",
@@ -889,11 +849,10 @@
 	"Attention!": "Atenção!",
 	"enablingTr069HttpCommunicationMustReadAndAgreeConditions": "Para habilitar o modo HTTP na comunicação TR-069, é necessário ler e concordar com nossos <a href=\"https://documentacao.anlix.io/doku.php?id=condicoes_gerais_e_termo_de_adesao\">Termos de boas práticas em segurança de redes</a>",
 	"Cancel": "Cancelar",
-
 	"addNewRole": "Adicionar nova classe de permissões",
 	"roleName": "Nome da classe",
 	"registerPermissionsAndActionsInCpes": "Permissões do cadastro e ações nas CPEs",
-	"wifiInformation": "Informações do WiFi",
+	"wifiInformation": "Informações do Wi-Fi",
 	"cannotView": "Não visualizar",
 	"View": "Visualizar",
 	"viewAndEdit": "Visualizar e editar",
@@ -942,7 +901,6 @@
 	"returnCpeToFactoryFirmware": "Voltar CPE para a Firmware de Fábrica",
 	"Edit": "Editar",
 	"Details": "Detalhes",
-
 	"Certificates": "Certificações",
 	"MAC/Serial": "MAC/Serial",
 	"serviceStartDate": "Data inicial de atendimento",
@@ -969,13 +927,11 @@
 	"removedSecondaryCpes": "CPEs secundários removidos",
 	"noSecondaryCpesRemoved": "Nenhum CPE secundário foi removido",
 	"noCertificatesFound": "Nenhuma certificação encontrada",
-
 	"addNewUser": "Adicionar novo usuário",
 	"Users": "Usuários",
 	"creationDate": "Data de criação",
 	"lastAccess": "Último acesso",
 	"noUserFound": "Nenhum usuário encontrado",
-
 	"addNewVlanProfile": "Adicionar novo perfil de VLAN",
 	"Important!": "Importante!",
 	"cpeModelsHaveDifferentVlanIdMaxValues": "Os modelos de CPEs possuem diferentes valores máximos de VLAN ID",
@@ -995,6 +951,5 @@
 	"Proceed": "Prosseguir",
 	"errorDeletingVlanProfile": "Erro ao excluir perfis de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Exclusão de perfis não foi possível pois alguns CPEs não atualizaram a configuração de VLAN.",
-
 	"vlanProfile": "Perfil de VLAN"
 }

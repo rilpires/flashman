@@ -108,6 +108,7 @@ let deviceSchema = new Schema({
       'reject', // explicit user reject
       'none', // never asked
     ]},
+    ping: Number,
   }],
   port_mapping: [{
     ip: String,

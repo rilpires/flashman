@@ -333,7 +333,7 @@ anlixDocumentReady.add(function() {
             ),
             (device.conn_speed && device.is_online ?
               $('<div>').addClass('col-8 text-right').append(
-                $('<h6>').text(t('MaxSpeed=X', {x: device.conn_speed})),
+                $('<h6>').text(t('MaxSpeedValue', {x: device.conn_speed})),
               ) : ''
             ),
           ),
