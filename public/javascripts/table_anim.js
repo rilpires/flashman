@@ -3395,16 +3395,16 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#online-status-sum', function(event) {
-    $('.tags-input input').focus().val('online').blur();
-    loadDevicesTable(1, 'online');
+    $('.tags-input input').focus().val(t('online')).blur();
+    loadDevicesTable(1, t('online'));
   });
   $(document).on('click', '#recovery-status-sum', function(event) {
-    $('.tags-input input').focus().val('instavel').blur();
-    loadDevicesTable(1, 'instavel');
+    $('.tags-input input').focus().val(t('unstable')).blur();
+    loadDevicesTable(1, t('unstable'));
   });
   $(document).on('click', '#offline-status-sum', function(event) {
-    $('.tags-input input').focus().val('offline').blur();
-    loadDevicesTable(1, 'offline');
+    $('.tags-input input').focus().val(t('offline')).blur();
+    loadDevicesTable(1, t('offline'));
   });
   // Table column sorts
   $(document).on('click', '[id^=sort-]', function(event) {
