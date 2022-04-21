@@ -2561,12 +2561,4 @@ DeviceVersion.getMeshBSSIDs = function(model, MAC) {
   return meshBSSIDs;
 };
 
-// returns true if version is lower than the first firmware version where
-// data_collecting started having more than one measure.
-DeviceVersion.is_data_collecting_SingleMeasure = function(version) {
-  // Development version, should have more than one measure.
-  if (!version.match(versionRegex)) return false;
-  return versionCompare(version, '0.33.0') < 0;  
-};
-
 module.exports = DeviceVersion;

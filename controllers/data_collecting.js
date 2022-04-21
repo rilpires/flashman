@@ -23,7 +23,6 @@ dataCollectingController.mergeConfigs = function(service, device, version) {
     alarm_fqdn: '',
     ping_packets: 100,
     burst_loss: false,
-    conn_pings: false,
     wifi_devices: false,
   };
 
@@ -36,21 +35,14 @@ dataCollectingController.mergeConfigs = function(service, device, version) {
   // combining 'device' and 'service' if data_collecting exists in 'device'.
   if (device !== undefined) {
     // for on/off buttons we apply bit wise AND when merging.
-    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'conn_pings',
-      'wifi_devices'];
+    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices'];
     // eslint-disable-next-line guard-for-in
     for (let name of applyAnd) {
       // device value && config value, if it exists in device.
       if (device[name] !== undefined) res[name] = res[name] && device[name];
     }
-    // for firmware versions where data_collecting had only one measure.
-    if (DeviceVersion.is_data_collecting_SingleMeasure(version)) {
-      // we use both 'burst_loss' and 'is_active' to activate the service.
-      res.is_active = res.is_active && res.burst_loss;
-      // burst loss used to be the only measure and were controlled by
-      // 'is_active', which would also control the service being on or off
-      // in the device.
-    }
+    // we use both 'burst_loss' and 'is_active' to activate the service.
+    res.is_active = res.is_active && res.burst_loss;
 
     // for values that device has preference, use it, if it exists.
     let devicePreference = ['ping_fqdn'];
@@ -121,8 +113,6 @@ const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets', checkNumericFieldInsideInterval(100, 100));
 const checkHasBurstLoss = (obj) =>
   checkField(obj, 'burst_loss', checkBooleanField);
-const checkHasConnPings = (obj) =>
-  checkField(obj, 'conn_pings', checkBooleanField);
 const checkHasWifiDevices = (obj) =>
   checkField(obj, 'wifi_devices', checkBooleanField);
 
@@ -253,7 +243,6 @@ dataCollectingController.returnServiceParameters = function(req, res) {
       ping_fqdn: config.data_collecting.ping_fqdn || '',
       ping_packets: config.data_collecting.ping_packets || 100,
       burst_loss: config.data_collecting.burst_loss || false,
-      conn_pings: config.data_collecting.conn_pings || false,
       wifi_devices: config.data_collecting.wifi_devices || false,
     })
   })
@@ -267,8 +256,7 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
-        checkPingFqdn, checkPingPackets, checkHasBurstLoss, checkHasConnPings,
-        checkHasWifiDevices],
+        checkPingFqdn, checkPingPackets, checkHasBurstLoss, checkHasWifiDevices],
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update)
@@ -285,7 +273,7 @@ dataCollectingController.updateManyDevices = async function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkHasBurstLoss, checkHasConnPings, checkHasWifiDevices],
+        checkHasBurstLoss, checkHasWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
@@ -335,7 +323,6 @@ dataCollectingController.returnDeviceParameters = function(req, res) {
       is_active: device.data_collecting.is_active || false,
       ping_fqdn: device.data_collecting.ping_fqdn || '',
       burst_loss: device.data_collecting.burst_loss || false,
-      conn_pings: device.data_collecting.conn_pings || false,
       wifi_devices: device.data_collecting.wifi_devices || false,
     })
   })
@@ -350,7 +337,7 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkHasBurstLoss, checkHasConnPings, checkHasWifiDevices],
+        checkHasBurstLoss, checkHasWifiDevices],
     },
     $unset: {
       obj: req.body.$unset,
