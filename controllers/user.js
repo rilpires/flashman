@@ -819,7 +819,6 @@ userController.setUserCrudTrap = function(req, res) {
 };
 
 userController.deleteUserCrudTrap = function(req, res) {
-  // Delete callback URL for devices
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
   const userCrudIndex = req.body.index;
@@ -904,6 +903,15 @@ userController.setRoleCrudTrap = function(req, res) {
           matchedConfig.traps_callbacks.role_crud.user = req.body.user;
           matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
         }
+        const registeredRoleCrudIndex = matchedConfig.traps_callbacks.roles_crud.findIndex(roleCrud => {
+          return roleCrud.url === req.body.url
+        });
+        if (registeredRoleCrudIndex > -1) {
+          matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] =
+            matchedConfig.traps_callbacks.role_crud;
+        } else {
+          matchedConfig.traps_callbacks.roles_crud.push(matchedConfig.traps_callbacks.role_crud);
+        }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
@@ -926,6 +934,35 @@ userController.setRoleCrudTrap = function(req, res) {
   });
 };
 
+userController.deleteRoleCrudTrap = function(req, res) {
+  // Delete callback URL for roles
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const roleCrudIndex = req.body.index;
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      matchedConfig.traps_callbacks.roles_crud.splice(roleCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
 userController.getRoleCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
@@ -937,11 +974,21 @@ userController.getRoleCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      const rolesCrud = [];
+      matchedConfig.traps_callbacks.roles_crud.forEach(roleCrud => {
+        if (roleCrud.url) {
+          rolesCrud.push({
+            url: roleCrud.url,
+            user: typeof roleCrud.user === 'undefined' ? '' : roleCrud.user
+          });
+        }
+      });
       const url = matchedConfig.traps_callbacks.role_crud.url;
       if (!url) {
         return res.status(200).json({
           success: true,
           exists: false,
+          rolesCrud,
         });
       }
       const user = matchedConfig.traps_callbacks.role_crud.user;
@@ -950,6 +997,7 @@ userController.getRoleCrudTrap = function(req, res) {
         exists: true,
         user: typeof user === 'undefined' ? '' : user,
         url: url,
+        rolesCrud,
       });
     }
   });

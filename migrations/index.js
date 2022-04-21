@@ -162,17 +162,17 @@ module.exports = (app) => {
         if (! vlans.includes(1)) {
           config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
         }
-        if (
-          !config.traps_callbacks.devices_crud
-        ) {
+        if (!config.traps_callbacks.devices_crud) {
           const deviceCrud = config.traps_callbacks.device_crud;
           config.traps_callbacks.devices_crud.push(deviceCrud);
         }
-        if (
-          !config.traps_callbacks.users_crud
-        ) {
+        if (!config.traps_callbacks.users_crud) {
           const userCrud = config.traps_callbacks.user_crud;
           config.traps_callbacks.users_crud.push(userCrud);
+        }
+        if (!config.traps_callbacks.roles_crud) {
+          const roleCrud = config.traps_callbacks.role_crud;
+          config.traps_callbacks.roles_crud.push(roleCrud);
         }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
         // *** DO NOT TOUCH ***
