@@ -108,21 +108,6 @@
                 .input-group(style="align-items: center;")
                   .custom-control.custom-checkbox
                     input.custom-control-input(type="checkbox",
-                                               name="data_collecting_service_conn_pings",
-                                               id="data_collecting_service_conn_pings")
-                    label.custom-control-label(for="data_collecting_service_conn_pings") Coleta de conectividade
-                  .input-group-append(
-                    data-toggle="tooltip",
-                    title="Ativa e desativa a coleta de conectividade em todos os dispositivos."
-                  )
-                    span.input-group-text.md-addon.pr-0
-                      .fas.fa-question-circle.fa-lg
-            hr
-            .row
-              .col
-                .input-group(style="align-items: center;")
-                  .custom-control.custom-checkbox
-                    input.custom-control-input(type="checkbox",
                                                name="data_collecting_service_wifi_devices",
                                                id="data_collecting_service_wifi_devices")
                     label.custom-control-label(for="data_collecting_service_wifi_devices") Coleta de sinal dos dispositivos no wifi
@@ -219,23 +204,6 @@
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-1
                     .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_conn_pings") Coleta de conectividade
-                      select.browser-default.md-select(id="data_collecting_mass_update_conn_pings")
-                        option(value="") Não alterar
-                        option(value="True") Ativa
-                        option(value="False") Desativa
-                  .input-group-append(
-                    data-toggle="tooltip",
-                    title="Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos."
-                  )
-                    span.input-group-text.md-addon.pr-0
-                      .fas.fa-question-circle.fa-lg
-            hr
-            .row
-              .col
-                .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
-                    .md-selectfield.form-control
                       label(for="data_collecting_mass_update_wifi_devices") Coleta de sinal dos dispositivos no wifi.
                       select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
                         option(value="") Não alterar
@@ -314,21 +282,6 @@
                 .input-group-append(
                   data-toggle="tooltip",
                   title="IPv4, IPv6 ou endereço de DNS. Campo vazio faz o dispositivo seguir o valor padrão do serviço."
-                )
-                  span.input-group-text.md-addon.pr-0
-                    .fas.fa-question-circle.fa-lg
-          hr
-          .row
-            .col
-              .input-group(style="align-items: center;").my-2
-                .custom-control.custom-checkbox
-                  input.custom-control-input(type="checkbox",
-                                             name="data_collecting_device_conn_pings",
-                                             id="data_collecting_device_conn_pings")
-                  label.custom-control-label(for="data_collecting_device_conn_pings") Coleta de conectividade
-                .input-group-append(
-                  data-toggle="tooltip",
-                  title="Se o serviço de coleta não estiver ligado e com a coleta de conectividade do serviço habilitada, este dispositivo não efetuará esta coleta."
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg

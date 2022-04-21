@@ -85,7 +85,6 @@ $(document).ready(function() {
     is_active: {type: Boolean, service: true, device: true},
     has_latency: {type: Boolean, service: true, device: true},
     burst_loss: {type: Boolean, service: true, device: true},
-    conn_pings: {type: Boolean, service: true, device: true},
     wifi_devices: {type: Boolean, service: true, device: true},
     ping_fqdn: {
       type: String,
