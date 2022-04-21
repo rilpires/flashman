@@ -1242,7 +1242,7 @@ $(document).ready(function() {
           formAttr += ' data-device-version="'+(device.version ? device.version : '')+'"';
           formAttr += ' data-qtd-ports="'+(device.qtdPorts ? device.qtdPorts : '')+'"';
           if (device.data_collecting !== undefined) {
-            let booleans = ['is_active', 'has_latency', 'burst_loss', 'conn_pings', 'wifi_devices'];
+            let booleans = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices'];
             for (let parameter of booleans) {
               formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] ? 'true' : 'false'}"`;
             }
