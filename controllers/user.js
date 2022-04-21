@@ -1021,6 +1021,15 @@ userController.setCertificationCrudTrap = function(req, res) {
           matchedConfig.traps_callbacks.certification_crud.secret =
             req.body.secret;
         }
+        const registeredCertCrudIndex = matchedConfig.traps_callbacks.certifications_crud.findIndex(certCrud => {
+          return certCrud.url === req.body.url
+        });
+        if (registeredCertCrudIndex > -1) {
+          matchedConfig.traps_callbacks.certifications_crud[registeredCertCrudIndex] =
+            matchedConfig.traps_callbacks.certification_crud;
+        } else {
+          matchedConfig.traps_callbacks.certifications_crud.push(matchedConfig.traps_callbacks.certification_crud);
+        }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
@@ -1043,6 +1052,34 @@ userController.setCertificationCrudTrap = function(req, res) {
   });
 };
 
+userController.deleteCertificationCrudTrap = function(req, res) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const certCrudIndex = req.body.index;
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      matchedConfig.traps_callbacks.certifications_crud.splice(certCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
 userController.getCertificationCrudTrap = function(req, res) {
   // Get callback url and user
   Config.findOne({is_default: true}, function(err, matchedConfig) {
@@ -1052,12 +1089,22 @@ userController.getCertificationCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      const certifcationsCrud = [];
+      matchedConfig.traps_callbacks.certifications_crud.forEach(certCrud => {
+        if (userCrud.url) {
+          certifcationsCrud.push({
+            url: certCrud.url,
+            user: typeof certCrud.user === 'undefined' ? '' : certCrud.user
+          });
+        }
+      });
       const user = matchedConfig.traps_callbacks.certification_crud.user;
       const url = matchedConfig.traps_callbacks.certification_crud.url;
       if (!user || !url) {
         return res.status(200).json({
           success: true,
           exists: false,
+          certifcationsCrud,
         });
       }
       return res.status(200).json({
@@ -1065,6 +1112,7 @@ userController.getCertificationCrudTrap = function(req, res) {
         exists: true,
         user: user,
         url: url,
+        certifcationsCrud,
       });
     }
   });

@@ -174,6 +174,10 @@ module.exports = (app) => {
           const roleCrud = config.traps_callbacks.role_crud;
           config.traps_callbacks.roles_crud.push(roleCrud);
         }
+        if (!config.traps_callbacks.certifications_crud) {
+          const certCrud = config.traps_callbacks.certification_crud;
+          config.traps_callbacks.certifications_crud.push(certCrud);
+        }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
         // *** DO NOT TOUCH ***
         config.save();

@@ -117,7 +117,7 @@ userSchema.pre('save', function(callback) {
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  (!defConfig.traps_callbacks.users_crud &&
-                 !defConfig.traps_callbacks.certification_crud)) {
+                 !defConfig.traps_callbacks.certifications_crud)) {
         return callback(err);
       }
       attrsList.forEach((attr) => {
@@ -154,46 +154,47 @@ userSchema.pre('save', function(callback) {
           }
         });
         Promise.all(userPromises).then((resp) => {
+          // Ignore API response
           return;
         }, (err) => {
+          // Ignore API endpoint errors
           return;
         });
       }
       if (Object.keys(certificationChangedAttrs).length != 0 &&
-          defConfig.traps_callbacks.certification_crud &&
-          defConfig.traps_callbacks.certification_crud.url.length != 0
+          defConfig.traps_callbacks.certifications_crud 
       ) {
-        let certificationCallbackUrl =
-          defConfig.traps_callbacks.certification_crud.url;
-        let certificationCallbackAuthUser =
-          defConfig.traps_callbacks.certification_crud.user;
-        let certificationCallbackAuthSecret =
-          defConfig.traps_callbacks.certification_crud.secret;
-        if (certificationCallbackUrl) {
-          certificationRequestOptions.url = certificationCallbackUrl;
-          certificationRequestOptions.method = 'PUT';
-          certificationRequestOptions.json = {
-            'id': user._id,
-            'type': 'user',
-            'name': user.name,
-            'changes': certificationChangedAttrs,
-          };
-          if (certificationCallbackAuthUser &&
-              certificationCallbackAuthSecret
-          ) {
-            certificationRequestOptions.auth = {
-              user: certificationCallbackAuthUser,
-              pass: certificationCallbackAuthSecret,
+        const certPromises = defConfig.traps_callbacks.certifications_crud.map((certCrud) => {
+          let certificationCallbackUrl = certCrud.url;
+          let certificationCallbackAuthUser = certCrud.user;
+          let certificationCallbackAuthSecret = certCrud.secret;
+          if (certificationCallbackUrl) {
+            certificationRequestOptions.url = certificationCallbackUrl;
+            certificationRequestOptions.method = 'PUT';
+            certificationRequestOptions.json = {
+              'id': user._id,
+              'type': 'user',
+              'name': user.name,
+              'changes': certificationChangedAttrs,
             };
+            if (certificationCallbackAuthUser &&
+                certificationCallbackAuthSecret
+            ) {
+              certificationRequestOptions.auth = {
+                user: certificationCallbackAuthUser,
+                pass: certificationCallbackAuthSecret,
+              };
+            }
+            return request(certificationRequestOptions);
           }
-          request(certificationRequestOptions).then((resp) => {
-            // Ignore API response
-            return;
-          }, (err) => {
-            // Ignore API endpoint errors
-            return;
-          });
-        }
+        });
+        Promise.all(certPromises).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     });
   }
