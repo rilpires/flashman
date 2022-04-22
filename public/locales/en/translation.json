@@ -352,6 +352,8 @@
 	"personIdentificationSystem": "SSN",
 	"enterpriseIdentificationSystem": "EIN",
 	"Other": "Other",
+	"personIdentificationMask": "000-00-0000",
+	"enterpriseIdentificationMask": "00-0000000",
 	"clientIdentificationOptional": "Customer ID (optional)",
 	"macAddress": "MAC Address",
 	"wifiChannel": "Wi-Fi Channel",
