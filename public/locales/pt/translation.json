@@ -601,7 +601,7 @@
 	"downSpeed": "Velocidade download",
 	"measureDate": "Data da medição",
 	"updateTable": "Atualizar tabela",
-	"moreThanXMbps": "Mais de {{-limit}} $t(Mbps)",
+	"moreThanXMbps": "Mais de {{-x}} $t(Mbps)",
 	"speedTestWarningMessage": "Para garantir a precisão do teste de velocidade, o acesso à internet dos dispositivos do cliente é interrompido temporariamente. Garanta que o cliente esteja ciente deste procedimento antes de inicia-lo!",
 	"noAnswerPleaseTryAgain": "Não houve resposta, por favor tente novamente",
 	"errorOccurredTryAgain": "Um erro ocorreu, por favor tente novamente",
