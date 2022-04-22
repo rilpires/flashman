@@ -183,7 +183,7 @@ anlixDocumentReady.add(function() {
         // only do this if timeout has not happened yet
         socketIoResponse = true;
         $('#speed-test-strong-text').empty();
-        $('#speed-test-shown-text').html(t('waitingResult...'));
+        $('#speed-test-shown-text').html(t('waitingResult'));
         $('#speed-test-shown-icon')
         .removeClass((i, c)=>c.match(/fa-.*/))
         .addClass('fa-3x fa-spinner fa-pulse');
