@@ -29,9 +29,9 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask('000.000.000-009').keyup();
+    inputField.mask(t('personIdentificationMask')).keyup();
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask('00.000.000/0000-00').keyup();
+    inputField.mask(t('enterpriseIdentificationMask')).keyup();
   } else {
     inputField.unmask();
   }
@@ -2937,14 +2937,14 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask('000.000.000-009').keyup();
+                  .mask(t('personIdentificationMask')).keyup();
                 } else if (
                   slaveDev.external_reference &&
                   slaveDev.external_reference.kind ===
                   t('enterpriseIdentificationSystem')
                 ) {
                   $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask('00.000.000/0000-00').keyup();
+                  .mask(t('enterpriseIdentificationMask')).keyup();
                 }
               }
               slaveIdx++;
@@ -3007,14 +3007,14 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
             $('#edit_external_reference-' + index)
-            .mask('000.000.000-009').keyup();
+            .mask(t('personIdentificationMask')).keyup();
           } else if (
             device.external_reference &&
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
             $('#edit_external_reference-' + index)
-            .mask('00.000.000/0000-00').keyup();
+            .mask(t('enterpriseIdentificationMask')).keyup();
           }
 
           index += 1;
@@ -3395,16 +3395,16 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#online-status-sum', function(event) {
-    $('.tags-input input').focus().val('online').blur();
-    loadDevicesTable(1, 'online');
+    $('.tags-input input').focus().val(t('online')).blur();
+    loadDevicesTable(1, t('online'));
   });
   $(document).on('click', '#recovery-status-sum', function(event) {
-    $('.tags-input input').focus().val('instavel').blur();
-    loadDevicesTable(1, 'instavel');
+    $('.tags-input input').focus().val(t('unstable')).blur();
+    loadDevicesTable(1, t('unstable'));
   });
   $(document).on('click', '#offline-status-sum', function(event) {
-    $('.tags-input input').focus().val('offline').blur();
-    loadDevicesTable(1, 'offline');
+    $('.tags-input input').focus().val(t('offline')).blur();
+    loadDevicesTable(1, t('offline'));
   });
   // Table column sorts
   $(document).on('click', '[id^=sort-]', function(event) {
