@@ -157,6 +157,10 @@ router.route('/role/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setRoleCrudTrap);
 
+router.route('/role/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteRoleCrudTrap);
+
 router.route('/role/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   userController.getRoleCrudTrap);
@@ -170,6 +174,10 @@ router.route('/certification/traps/callback').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.setCertificationCrudTrap);
+
+router.route('/role/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteCertificationCrudTrap);
 
 router.route('/certification/traps/callback').get(
   authController.ensureAPIAccess,
