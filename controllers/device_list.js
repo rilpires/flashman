@@ -13,6 +13,7 @@ const Role = require('../models/role');
 const firmware = require('./firmware');
 const mqtt = require('../mqtts');
 const sio = require('../sio');
+const acsFirmwareHandler = require('./handlers/acs/firmware');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
@@ -343,7 +344,7 @@ deviceListController.changeUpdate = async function(req, res) {
         message: t('cpeSaveError', {errorline: __line})});
     }
     if (matchedDevice.use_tr069 && doUpdate) {
-      let response = await acsDeviceInfo.upgradeFirmware(matchedDevice);
+      let response = await acsFirmwareHandler.upgradeFirmware(matchedDevice);
       if (response.success) {
         return res.status(200).json(response);
       } else {
