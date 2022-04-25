@@ -325,7 +325,7 @@
 	"Select...": "Select...",
 	"Status": "Status",
 	"rowsPerPage": "Records per page",
-	"greenRedGrayLegendTooltip": "Green: Online\nRed: Unstable. No immediate response\nGrey: No response for more than 1 hour",
+	"greenRedGrayLegendTooltip": "Green: Online<br>Red: Unstable. No immediate response<br>Grey: No response for more than 1 hour",
 	"exportCsv": "Export CSV",
 	"userWithoutPermissionToVisualizeInformation": "User not allowed to view information",
 	"notificationsAndAlerts": "Notifications and alerts",
