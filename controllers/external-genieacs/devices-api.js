@@ -708,6 +708,7 @@ const getStavixFields = function(model) {
       fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
       ConfigFile'; */
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
       break;
     case 'xPON':
     case '121AC':
