@@ -260,10 +260,12 @@ const tr069Devices = {
     versions_upgrade: {
       'V2.2.0': [],
       'V2.2.3': [],
+      'V2.2.7': [],
     },
     port_forward_opts: {
       'V2.2.0': portForwardFullSupport,
       'V2.2.3': portForwardFullSupport,
+      'V2.2.7': portForwardFullSupport,
     },
     feature_support: {
       wifi_ax_mode: false,
