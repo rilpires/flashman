@@ -4,9 +4,7 @@ import {displayAlertMsg, socket} from './common_actions.js';
 const t = i18next.t;
 
 anlixDocumentReady.add(function() {
-  let socketIoTimeout = false;
   let socketIoResponse = false;
-  let socketIoTimeoutTimerID = null;
 
   if (!$('#measure-previous-arrow').hasClass('text-primary')) {
     $('#measure-previous-div').hide();
@@ -111,8 +109,6 @@ anlixDocumentReady.add(function() {
         return;
       }
       $('#speed-test-warn-text').hide();
-      socketIoTimeout = false;
-      socketIoResponse = false;
       $.ajax({
         url: '/devicelist/speedtest/' + id,
         type: 'POST',
@@ -124,17 +120,6 @@ anlixDocumentReady.add(function() {
             $('#speed-test-shown-icon')
             .removeClass((i, c)=>c.match(/fa-.*/))
             .addClass('fa-3x fa-spinner fa-pulse');
-            // wait 20 seconds to timeout socket IO response
-            socketIoTimeoutTimerID = setTimeout(()=>{
-              // only do this if socket io didn't reply
-              if (socketIoResponse) return;
-              socketIoTimeout = true;
-              $('#speed-test-shown-text').html(t('noAnswerPleaseTryAgain'));
-              $('#speed-test-shown-icon')
-              .removeClass((i, c)=>c.match(/fa-.*/))
-              .addClass('fa-3x fa-times');
-              $('.btn-start-speed-test').prop('disabled', false);
-            }, 30*1000);
           } else {
             $('#speed-test-strong-text').empty();
             $('#speed-test-shown-text').html(res.message);
@@ -161,9 +146,7 @@ anlixDocumentReady.add(function() {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
         // only do this if timeout has not happened yet
-        if (socketIoTimeout) return;
         socketIoResponse = true;
-        clearTimeout(socketIoTimeoutTimerID);
         if (data.downSpeed.includes(t('Mbps'))) {
           let downSpeed = parseInt(data.downSpeed);
           if (downSpeed > data.limit) {
@@ -198,7 +181,6 @@ anlixDocumentReady.add(function() {
       let id = $('#speed-test-hlabel').text();
       if (id === macaddr) {
         // only do this if timeout has not happened yet
-        if (socketIoTimeout) return;
         socketIoResponse = true;
         $('#speed-test-strong-text').empty();
         $('#speed-test-shown-text').html(t('waitingResult'));
