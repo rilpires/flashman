@@ -57,9 +57,9 @@ let refreshLicenseStatus = function(event) {
       if (res.status === undefined) {
         inputField.val(t('Unknown'));
       } else if (res.status === true) {
-        inputField.val(t('Active', {context: 'female'}));
+        inputField.val(t('Active', {context: 'license'}));
       } else {
-        inputField.val(t('Blocked', {context: 'female'}));
+        inputField.val(t('Blocked', {context: 'license'}));
       }
     },
   });
@@ -1157,7 +1157,7 @@ anlixDocumentReady.add(function() {
     }
     if (device.is_license_active !== undefined) {
       let licenseStatusStr = device.is_license_active ?
-        t('Active', {context: 'female'}) : t('Blocked', {context: 'female'});
+        t('Active', {context: 'license'}) : t('Blocked', {context: 'license'});
       aboutTab = aboutTab.replace('$REPLACE_LICENSE_STATUS_VAL',
                                   licenseStatusStr);
     } else {
