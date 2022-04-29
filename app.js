@@ -37,6 +37,9 @@ let app = express();
 // Express OpenAPI docs generator handling responses first
 const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
 const isOnProduction = (process.env.production === 'true');
+
+let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
 if (!isOnProduction) {
   expressOasGenerator.handleResponses(
     app,
@@ -62,7 +65,7 @@ const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   process.env.FLM_DATABASE_NAME;
 
 mongoose.connect(
-  'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
+  'mongodb://' + process.env.FLM_MONGODB_HOST + ':'+MONGOPORT+'/' + databaseName,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
