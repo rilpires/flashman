@@ -770,6 +770,34 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'WS7100-30': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.29(C947)': [],
+    },
+    port_forward_opts: {
+      '10.0.5.29(C947)': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
   'DIR-842': {
     vendor: 'DLink',
     versions_upgrade: {

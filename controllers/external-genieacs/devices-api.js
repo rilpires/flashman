@@ -69,7 +69,8 @@ const convertWifiMode = function(mode, oui, model) {
       if (ouiModelStr === 'HG9') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'b/g';
       } else if (ouiModelStr === 'AC10') return 'bg';
       else if (ouiModelStr === 'EC220-G5') return 'gn';
@@ -93,7 +94,8 @@ const convertWifiMode = function(mode, oui, model) {
       } else return '11bg';
     case '11n':
       if (ouiModelStr === 'HG8245Q2') return '11bgn';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
@@ -119,7 +121,8 @@ const convertWifiMode = function(mode, oui, model) {
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'a/n';
       } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
@@ -144,7 +147,8 @@ const convertWifiMode = function(mode, oui, model) {
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'a/n/ac';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
@@ -166,7 +170,9 @@ const convertWifiMode = function(mode, oui, model) {
         return 'ac,a,n';
       } else return '11ac';
     case '11ax':
-      if (ouiModelStr === 'WS7001-40') return 'a/n/ac/ax';
+      if (ouiModelStr === 'WS7001-40' || ouiModelStr === 'WS7100-30') {
+        return 'a/n/ac/ax';
+      }
       return '11ax';
     default:
       return '';
@@ -534,7 +540,7 @@ const getHuaweiFields = function(model, modelName) {
     fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
     fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
     fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-    if (modelName === 'WS7001-40') {
+    if (modelName === 'WS7001-40' || modelName === 'WS7100-30') {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       delete fields.wan.port_mapping_entries_dhcp;
       delete fields.wan.port_mapping_entries_ppp;
@@ -983,6 +989,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           fields = getHuaweiFields(model, modelName);
           break;
         case 'WS7001-40': // Huawei AX2
+        case 'WS7100-30': // Huawei AX3
           message = '';
           fields = getHuaweiFields(model, modelName);
           break;
