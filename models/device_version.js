@@ -692,6 +692,34 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x8'],
     mesh_ssid_object_exists: false,
   },
+  'EG8145X6': {
+    port_forward_opts: {
+      'V5R020C00S060': portForwardNoAsymRanges,
+    },
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V5R020C00S060': [],
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 350,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
   'WS5200-21': {
     vendor: 'Huawei',
     versions_upgrade: {
