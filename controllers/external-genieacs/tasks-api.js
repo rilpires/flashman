@@ -11,8 +11,10 @@ const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
 
 
-let GENIEHOST = 'localhost';
-let GENIEPORT = 7557;
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
+let MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
+let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
 let taskWatchlist = {};
 let lastTaskWatchlistClean = Date.now();
@@ -23,7 +25,7 @@ let genie = {}; // to be exported.
 // tasks collection when necessary.
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-  mongodb.MongoClient.connect('mongodb://localhost:27017',
+  mongodb.MongoClient.connect('mongodb://'+MONGOHOST+':'+MONGOPORT+'',
     {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
     genieDB = client.db('genieacs');
     // Only watch faults if flashman instance is the first one dispatched

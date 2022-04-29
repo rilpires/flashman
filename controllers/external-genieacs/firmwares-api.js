@@ -5,8 +5,8 @@ const pathModule = require('path');
 const t = require('../language').i18next.t;
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
-const GENIEHOST = 'localhost';
-const GENIEPORT = 7557;
+const GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+const GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 let firmwaresAPI = {};
 
