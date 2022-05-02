@@ -1035,11 +1035,11 @@ userController.setCertificationCrudTrap = function(req, res) {
         const registeredCertCrudIndex = matchedConfig.traps_callbacks.certifications_crud.findIndex(certCrud => {
           return certCrud.url === req.body.url
         });
+        const certCrud = matchedConfig.traps_callbacks.certification_crud;
         if (registeredCertCrudIndex > -1) {
-          matchedConfig.traps_callbacks.certifications_crud[registeredCertCrudIndex] =
-            matchedConfig.traps_callbacks.certification_crud;
+          matchedConfig.traps_callbacks.certifications_crud[registeredCertCrudIndex] = certCrud;
         } else {
-          matchedConfig.traps_callbacks.certifications_crud.push(matchedConfig.traps_callbacks.certification_crud);
+          matchedConfig.traps_callbacks.certifications_crud.push(certCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -1066,7 +1066,13 @@ userController.setCertificationCrudTrap = function(req, res) {
 userController.deleteCertificationCrudTrap = function(req, res) {
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const certCrudIndex = req.body.index;
+  const certCrudIndex = +req.body.index;
+  if (!certCrudIndex) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+    });
+  }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
