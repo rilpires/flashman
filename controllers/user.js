@@ -790,11 +790,11 @@ userController.setUserCrudTrap = function(req, res) {
         const registeredUserCrudIndex = matchedConfig.traps_callbacks.users_crud.findIndex(userCrud => {
           return userCrud.url === req.body.url
         });
+        const userCrud = matchedConfig.traps_callbacks.user_crud;
         if (registeredUserCrudIndex > -1) {
-          matchedConfig.traps_callbacks.users_crud[registeredUserCrudIndex] =
-            matchedConfig.traps_callbacks.user_crud;
+          matchedConfig.traps_callbacks.users_crud[registeredUserCrudIndex] = userCrud
         } else {
-          matchedConfig.traps_callbacks.users_crud.push(matchedConfig.traps_callbacks.user_crud);
+          matchedConfig.traps_callbacks.users_crud.push(userCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -821,7 +821,13 @@ userController.setUserCrudTrap = function(req, res) {
 userController.deleteUserCrudTrap = function(req, res) {
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const userCrudIndex = req.body.index;
+  const userCrudIndex = +req.body.index;
+  if (!userCrudIndex) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+    });
+  }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
