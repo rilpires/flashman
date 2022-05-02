@@ -921,6 +921,7 @@ userController.setRoleCrudTrap = function(req, res) {
         });
         if (registeredRoleCrudIndex > -1) {
           matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] = roleCrud;
+        } else {
           matchedConfig.traps_callbacks.roles_crud.push(roleCrud);
         }
         matchedConfig.save((err) => {
