@@ -781,16 +781,16 @@ userController.setUserCrudTrap = function(req, res) {
       });
     } else {
       if ('url' in req.body) {
-        matchedConfig.traps_callbacks.user_crud.url = req.body.url;
+        const userCrud = matchedConfig.traps_callbacks.user_crud;
+        userCrud.url = req.body.url;
 
         if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.user_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
+          userCrud.user = req.body.user;
+          userCrud.secret = req.body.secret;
         }
         const registeredUserCrudIndex = matchedConfig.traps_callbacks.users_crud.findIndex(userCrud => {
           return userCrud.url === req.body.url
         });
-        const userCrud = matchedConfig.traps_callbacks.user_crud;
         if (registeredUserCrudIndex > -1) {
           matchedConfig.traps_callbacks.users_crud[registeredUserCrudIndex] = userCrud
         } else {
@@ -821,8 +821,8 @@ userController.setUserCrudTrap = function(req, res) {
 userController.deleteUserCrudTrap = function(req, res) {
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const userCrudIndex = +req.body.index;
-  if (!userCrudIndex) {
+  const userCrudIndex = req.body.index;
+  if (typeof userCrudIndex !== 'number' || userCrudIndex < 0) {
     return res.status(500).send({
       success: false,
       message: t('fieldNameInvalid', {name: 'index', errorline: __line})
@@ -835,6 +835,12 @@ userController.deleteUserCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      if (!matchedConfig.traps_callbacks.users_crud[userCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
       matchedConfig.traps_callbacks.users_crud.splice(userCrudIndex, 1);
       matchedConfig.save((err) => {
         if (err) {
@@ -904,15 +910,15 @@ userController.setRoleCrudTrap = function(req, res) {
       });
     } else {
       if ('url' in req.body) {
-        matchedConfig.traps_callbacks.role_crud.url = req.body.url;
+        const roleCrud = matchedConfig.traps_callbacks.role_crud;
+        roleCrud.url = req.body.url;
         if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.role_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
+          roleCrud.user = req.body.user;
+          roleCrud.secret = req.body.secret;
         }
         const registeredRoleCrudIndex = matchedConfig.traps_callbacks.roles_crud.findIndex(roleCrud => {
           return roleCrud.url === req.body.url
         });
-        const roleCrud = matchedConfig.traps_callbacks.role_crud;
         if (registeredRoleCrudIndex > -1) {
           matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] = roleCrud;
           matchedConfig.traps_callbacks.roles_crud.push(roleCrud);
@@ -943,8 +949,8 @@ userController.deleteRoleCrudTrap = function(req, res) {
   // Delete callback URL for roles
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const roleCrudIndex = +req.body.index;
-  if (!roleCrudIndex) {
+  const roleCrudIndex = req.body.index;
+  if (typeof roleCrudIndex !== 'number' || roleCrudIndex < 0) {
     return res.status(500).send({
       success: false,
       message: t('fieldNameInvalid', {name: 'index', errorline: __line})
@@ -957,6 +963,12 @@ userController.deleteRoleCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      if (!matchedConfig.traps_callbacks.roles_crud[roleCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
       matchedConfig.traps_callbacks.roles_crud.splice(roleCrudIndex, 1);
       matchedConfig.save((err) => {
         if (err) {
@@ -1024,18 +1036,16 @@ userController.setCertificationCrudTrap = function(req, res) {
       });
     } else {
       if ('url' in req.body) {
-        matchedConfig.traps_callbacks.certification_crud.url = req.body.url;
+        const certCrud = matchedConfig.traps_callbacks.certification_crud;
+        certCrud.url = req.body.url;
 
         if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.certification_crud.user =
-            req.body.user;
-          matchedConfig.traps_callbacks.certification_crud.secret =
-            req.body.secret;
+          certCrud.user = req.body.user;
+          certCrud.secret = req.body.secret;
         }
         const registeredCertCrudIndex = matchedConfig.traps_callbacks.certifications_crud.findIndex(certCrud => {
           return certCrud.url === req.body.url
         });
-        const certCrud = matchedConfig.traps_callbacks.certification_crud;
         if (registeredCertCrudIndex > -1) {
           matchedConfig.traps_callbacks.certifications_crud[registeredCertCrudIndex] = certCrud;
         } else {
@@ -1066,8 +1076,8 @@ userController.setCertificationCrudTrap = function(req, res) {
 userController.deleteCertificationCrudTrap = function(req, res) {
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const certCrudIndex = +req.body.index;
-  if (!certCrudIndex) {
+  const certCrudIndex = req.body.index;
+  if (typeof certCrudIndex !== 'number' || certCrudIndex < 0) {
     return res.status(500).send({
       success: false,
       message: t('fieldNameInvalid', {name: 'index', errorline: __line})
@@ -1080,6 +1090,12 @@ userController.deleteCertificationCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      if (!matchedConfig.traps_callbacks.certifications_crud[certCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
       matchedConfig.traps_callbacks.certifications_crud.splice(certCrudIndex, 1);
       matchedConfig.save((err) => {
         if (err) {

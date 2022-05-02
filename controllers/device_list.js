@@ -3085,15 +3085,15 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
       });
     } else {
       if ('url' in req.body) {
-        matchedConfig.traps_callbacks.device_crud.url = req.body.url;
+        const deviceCrud = matchedConfig.traps_callbacks.device_crud;
+        deviceCrud.url = req.body.url;
         if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.device_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+          deviceCrud.user = req.body.user;
+          deviceCrud.secret = req.body.secret;
         }
         const registeredDeviceCrudIndex = matchedConfig.traps_callbacks.devices_crud.findIndex(deviceCrud => {
           return deviceCrud.url === req.body.url
         });
-        const deviceCrud = matchedConfig.traps_callbacks.device_crud;
         if (registeredDeviceCrudIndex > -1) {
             matchedConfig.traps_callbacks.devices_crud[registeredDeviceCrudIndex] = deviceCrud;
         } else {
@@ -3125,8 +3125,8 @@ deviceListController.deleteDeviceCrudTrap = function(req, res) {
   // Delete callback URL for devices
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const deviceCrudIndex = +req.body.index;
-  if (!deviceCrudIndex) {
+  const deviceCrudIndex = req.body.index;
+  if (typeof deviceCrudIndex !== 'number' || deviceCrudIndex < 0) {
     return res.status(500).send({
       success: false,
       message: t('fieldNameInvalid', {name: 'index', errorline: __line})
@@ -3139,6 +3139,12 @@ deviceListController.deleteDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
+      if (!matchedConfig.traps_callbacks.devices_crud[deviceCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
       matchedConfig.traps_callbacks.devices_crud.splice(deviceCrudIndex, 1);
       matchedConfig.save((err) => {
         if (err) {
