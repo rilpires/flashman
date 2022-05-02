@@ -3093,11 +3093,11 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         const registeredDeviceCrudIndex = matchedConfig.traps_callbacks.devices_crud.findIndex(deviceCrud => {
           return deviceCrud.url === req.body.url
         });
+        const deviceCrud = matchedConfig.traps_callbacks.device_crud;
         if (registeredDeviceCrudIndex > -1) {
-            matchedConfig.traps_callbacks.devices_crud[registeredDeviceCrudIndex] =
-              matchedConfig.traps_callbacks.device_crud;
+            matchedConfig.traps_callbacks.devices_crud[registeredDeviceCrudIndex] = deviceCrud;
         } else {
-          matchedConfig.traps_callbacks.devices_crud.push(matchedConfig.traps_callbacks.device_crud);
+          matchedConfig.traps_callbacks.devices_crud.push(deviceCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -3125,7 +3125,13 @@ deviceListController.deleteDeviceCrudTrap = function(req, res) {
   // Delete callback URL for devices
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const deviceCrudIndex = req.body.index;
+  const deviceCrudIndex = +req.body.index;
+  if (!deviceCrudIndex) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+    });
+  }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
