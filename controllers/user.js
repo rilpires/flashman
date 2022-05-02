@@ -912,11 +912,10 @@ userController.setRoleCrudTrap = function(req, res) {
         const registeredRoleCrudIndex = matchedConfig.traps_callbacks.roles_crud.findIndex(roleCrud => {
           return roleCrud.url === req.body.url
         });
+        const roleCrud = matchedConfig.traps_callbacks.role_crud;
         if (registeredRoleCrudIndex > -1) {
-          matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] =
-            matchedConfig.traps_callbacks.role_crud;
-        } else {
-          matchedConfig.traps_callbacks.roles_crud.push(matchedConfig.traps_callbacks.role_crud);
+          matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] = roleCrud;
+          matchedConfig.traps_callbacks.roles_crud.push(roleCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -944,7 +943,13 @@ userController.deleteRoleCrudTrap = function(req, res) {
   // Delete callback URL for roles
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  const roleCrudIndex = req.body.index;
+  const roleCrudIndex = +req.body.index;
+  if (!roleCrudIndex) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+    });
+  }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
