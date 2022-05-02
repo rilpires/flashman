@@ -175,7 +175,7 @@ router.route('/certification/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setCertificationCrudTrap);
 
-router.route('/role/traps/callback').delete(
+router.route('/certification/traps/callback').delete(
   authController.ensurePermission('grantAPIAccess'),
   userController.deleteCertificationCrudTrap);
 
