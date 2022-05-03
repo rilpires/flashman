@@ -93,27 +93,33 @@ const convertWifiMode = function(mode, is5ghz) {
 const convertWifiBand = function(model, band, mode, is5ghz) {
   let isAC = convertWifiMode(mode, is5ghz) === '11ac';
   switch (band) {
+    // Number input
+    case '0':
+      if (model === 'EG8145X6') return 'auto';
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
+      return (isAC) ? 'VHT40' : 'HT40';
     case '2':
+      if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
+      return 'auto';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    // String input
     case 'auto':
     case 'Auto':
     case '20/40MHz Coexistence':
-      if (model === 'EG8145X6') return 'HT40';
       return 'auto';
     case '20MHz':
     case '20Mhz':
-    case '0':
-      if (model === 'EG8145X6') return 'auto';
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
     case '40Mhz':
     case '20/40MHz':
-    case '1':
-      if (model === 'EG8145X6') return 'HT20';
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
     case '80Mhz':
     case '20/40/80MHz':
-    case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
     default:
