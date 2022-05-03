@@ -43,7 +43,7 @@ const getSpeedtestFile = async function(device) {
   let band = device.current_speedtest.band_estimative;
   let url = 'http://' + matchedConfig.measureServerIP + ':' +
                   matchedConfig.measureServerPort + '/measure/tr069/';
-    if (stage) {
+  if (stage) {
     if (stage == 'estimative') {
       return url + 'file_512KB.bin';
     }
