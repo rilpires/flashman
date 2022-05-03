@@ -100,7 +100,7 @@ const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
         loss: loss.toString(),
       };
       let model = device.model;
-      if (model === 'HG8245Q2' || model === 'EG8145V5' || model === 'HG9') {
+      if (['HG8245Q2', 'EG8145V5', 'HG8121H', 'HG9'].includes(model)) {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
