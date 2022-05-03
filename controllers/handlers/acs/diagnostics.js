@@ -45,29 +45,27 @@ const getSpeedtestFile = async function(device) {
                   matchedConfig.measureServerPort + '/measure/tr069/';
   if (stage) {
     if (stage == 'estimative') {
-      return url + 'file_512KB.bin';
+      return url + 'file_1920KB.bin';
     }
     if (stage == 'measure') {
-      if (band >= 700) {
+      if (band >= 500) {
         return url + 'file_640000KB.bin';
-      } else if (band >= 500) {
-        return url + 'file_448000KB.bin';
       } else if (band >= 300) {
-        return url + 'file_320000KB.bin';
+        return url + 'file_448000KB.bin';
       } else if (band >= 100) {
-        return url + 'file_192000KB.bin';
+        return url + 'file_320000KB.bin';
       } else if (band >= 50) {
-        return url + 'file_64000KB.bin';
+        return url + 'file_192000KB.bin';
       } else if (band >= 30) {
-        return url + 'file_32000KB.bin';
+        return url + 'file_64000KB.bin';
       } else if (band >= 10) {
-        return url + 'file_19200KB.bin';
+        return url + 'file_32000KB.bin';
       } else if (band >= 5) {
-        return url + 'file_6400KB.bin';
+        return url + 'file_19200KB.bin';
       } else if (band >= 3) {
-        return url + 'file_1920KB.bin';
+        return url + 'file_6400KB.bin';
       } else if (band < 3) {
-        return url + 'file_512KB.bin';
+        return url + 'file_1920KB.bin';
       }
     }
   }
