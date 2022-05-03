@@ -46,6 +46,16 @@ const getFieldType = function(masterKey, key, model) {
       } else {
         return 'xsd:boolean';
       }
+    case 'wifi2-band':
+    case 'wifi5-band':
+    case 'mesh2-band':
+    case 'mesh5-band':
+      if(model === 'EG8145X6') {
+        return 'xsd:unsignedInt';
+      } else {
+        return 'xsd:string';
+      }
+    break;
     default:
       return 'xsd:string';
   }
@@ -69,7 +79,8 @@ const convertWifiMode = function(mode, oui, model) {
       if (ouiModelStr === 'HG9') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'b/g';
       } else if (ouiModelStr === 'AC10') return 'bg';
       else if (ouiModelStr === 'EC220-G5') return 'gn';
@@ -93,7 +104,8 @@ const convertWifiMode = function(mode, oui, model) {
       } else return '11bg';
     case '11n':
       if (ouiModelStr === 'HG8245Q2') return '11bgn';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
@@ -119,7 +131,8 @@ const convertWifiMode = function(mode, oui, model) {
     case '11na':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'a,n';
       else if (ouiModelStr === 'HG8245Q2') return '11na';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'a/n';
       } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
@@ -144,7 +157,8 @@ const convertWifiMode = function(mode, oui, model) {
     case '11ac':
       if (ouiModelStr === 'IGD' || ouiModelStr === 'FW323DAC') return 'ac,n,a';
       else if (ouiModelStr === 'HG8245Q2') return '11ac';
-      else if (['WS7001-40', 'WS5200-21', 'WS5200-40'].includes(ouiModelStr)) {
+      else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
+                                                                 ouiModelStr)) {
         return 'a/n/ac';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
@@ -166,7 +180,9 @@ const convertWifiMode = function(mode, oui, model) {
         return 'ac,a,n';
       } else return '11ac';
     case '11ax':
-      if (ouiModelStr === 'WS7001-40') return 'a/n/ac/ax';
+      if (ouiModelStr === 'WS7001-40' || ouiModelStr === 'WS7100-30') {
+        return 'a/n/ac/ax';
+      }
       return '11ax';
     default:
       return '';
@@ -181,16 +197,18 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
+      if (model === 'EG8145X6') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
+      if (model === 'EG8145X6') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
     case 'VHT80':
-      if (model === 'AC10') return '3';
+      if (model === 'AC10' || model === 'EG8145X6') return '3';
       if (model === 'ST-1001-FL') return '80Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
       return '80MHz';
@@ -207,6 +225,7 @@ const convertWifiBand = function(band, model, is5ghz=false) {
       } else if (model == 'G-2425G-A') {
         return '80MHz';
       }
+      if (model === 'EG8145X6') return (is5ghz) ? '3' : '0';
       return 'auto';
     default:
       return '';
@@ -466,7 +485,7 @@ const getTPLinkFields = function(model) {
 
 const getHuaweiFields = function(model, modelName) {
   let fields = getDefaultFields();
-  if (['HG8245Q2', 'EG8145V5'].includes(model)) {
+  if (['HG8245Q2', 'EG8145V5', 'EG8145X6'].includes(model)) {
     fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
     fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
@@ -499,6 +518,11 @@ const getHuaweiFields = function(model, modelName) {
     fields.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers';
     fields.mesh5.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates';
     fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers';
+
+    if (model === 'EG8145X6') {
+      fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HW_HT20';
+      fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_HW_HT20';
+    }
   } else if (model === 'Huawei') {
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
     fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
@@ -534,7 +558,7 @@ const getHuaweiFields = function(model, modelName) {
     fields.mesh5.beacon_type = fields.mesh5.beacon_type.replace(/6/g, '4');
     fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
     fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
-    if (modelName === 'WS7001-40') {
+    if (modelName === 'WS7001-40' || modelName === 'WS7100-30') {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       delete fields.wan.port_mapping_entries_dhcp;
       delete fields.wan.port_mapping_entries_ppp;
@@ -708,6 +732,7 @@ const getStavixFields = function(model) {
       fields.common.greatek_config = 'InternetGatewayDevice.DeviceConfig.
       ConfigFile'; */
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
+      fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
       break;
     case 'xPON':
     case '121AC':
@@ -971,6 +996,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'EG8145X6': // Huawei EG8145X6
       message = '';
       fields = getHuaweiFields(model, modelName);
       break;
@@ -982,6 +1008,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
           fields = getHuaweiFields(model, modelName);
           break;
         case 'WS7001-40': // Huawei AX2
+        case 'WS7100-30': // Huawei AX3
           message = '';
           fields = getHuaweiFields(model, modelName);
           break;
@@ -1107,6 +1134,7 @@ const getBeaconTypeByModel = function(model) {
     case 'ST-1001-FL': // Hurakall ST-1001-FL
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'EG8145X6': // Huawei EG8145X6
     case 'AC10': // Tenda AC10
       ret = 'WPAand11i';
       break;
