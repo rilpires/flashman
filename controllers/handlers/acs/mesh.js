@@ -253,4 +253,43 @@ acsMeshDeviceHandler.getMeshBSSIDFromGenie = async function(device, meshMode) {
   };
 };
 
+acsMeshDeviceHandler.getMeshBSSIDs = async function(device) {
+  let meshBSSIDs = {mesh2: '', mesh5: ''};
+  let cpeResult = DevicesAPI.instantiateCPEByModelFromDevice(device);
+  if (!cpeResult.success) {
+    return meshBSSIDs;
+  }
+  let cpe = cpeResult.cpe;
+  let permissions = cpe.modelPermissions();
+  if (
+    permissions.features.mesh &&
+    permissions.mesh.bssidOffsets2Ghz &&
+    permissions.mesh.bssidOffsets5Ghz
+  ) {
+    let macOctets2 = device._id.split(':');
+    let macOctets5 = device._id.split(':');
+    for (let i = 0; i < macOctets2.length; i++) {
+      macOctets2[i] = (
+        parseInt(`0x${macOctets2[i]}`) +
+        parseInt(permissions.mesh.bssidOffsets2Ghz)
+      ).toString(16).toUpperCase();
+      // We need the second hex digit for BSSID addresses
+      if (macOctets2[i].length === 1) {
+        macOctets2[i] = `0${macOctets2[i]}`;
+      }
+      macOctets5[i] = (
+        parseInt(`0x${macOctets5[i]}`) +
+        parseInt(permissions.mesh.bssidOffsets5Ghz)
+      ).toString(16).toUpperCase();
+      // We need the second hex digit for BSSID addresses
+      if (macOctets5[i].length === 1) {
+        macOctets5[i] = `0${macOctets5[i]}`;
+      }
+    }
+    meshBSSIDs.mesh2 = macOctets2.join(':');
+    meshBSSIDs.mesh5 = macOctets5.join(':');
+  }
+  return meshBSSIDs;
+};
+
 module.exports = acsMeshDeviceHandler;
