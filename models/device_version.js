@@ -1752,12 +1752,23 @@ const convertTR069Permissions = function(cpePermissions) {
 DeviceVersion.devicePermissionsNotRegistered = function(
   model, modelName, fwVersion,
 ) {
-  // OnlyTR-069 instances should call this function
+  // Only TR-069 instances should call this function
   let cpeResult = DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion);
   if (cpeResult.success) {
     return convertTR069Permissions(cpeResult.cpe.modelPermissions());
   }
   return null;
+};
+
+DeviceVersion.devicePermissionsNotRegisteredFirmware = function(
+  version, is5ghzCapable, model,
+) {
+  // Only Anlix firmware instances should call this function
+  return DeviceVersion.devicePermissions({
+    version: version,
+    wifi_is_5ghz_capable: is5ghzCapable,
+    model: model,
+  });
 };
 
 DeviceVersion.devicePermissions = function(device) {
@@ -1767,6 +1778,9 @@ DeviceVersion.devicePermissions = function(device) {
     return convertTR069Permissions(cpeResult.cpe.modelPermissions());
   }
   // Firmware instances use the legacy flow
+  // WARNING!! If adding a new field to be read from "device" below, make sure
+  // you alter the call in devicePermissionsNotRegisteredFirmware right above,
+  // and wherever others call that function
   let version = device.version;
   let model = device.model;
   let is5ghzCapable = device.wifi_is_5ghz_capable;
