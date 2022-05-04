@@ -7,7 +7,7 @@ let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
-const DeviceVersion = require('../models/device_version');
+const DevicesAPI = require('./external-genieacs/devices-api');
 const t = require('./language').i18next.t;
 
 const fs = require('fs');
@@ -104,7 +104,7 @@ firmwareController.index = function(req, res) {
           return res.render('error', indexContent);
         }
         indexContent.role = role;
-        indexContent.tr069Infos = DeviceVersion.getTr069ModelsAndVersions();
+        indexContent.tr069Infos = DevicesAPI.getTR069UpgradeableModels();
         return res.render('firmware', indexContent);
       });
     });
@@ -266,8 +266,8 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields = parseFilename(firmwarefile.name);
   } else if (isTR069) {
     fnameFields = {};
-    fnameFields.vendor = DeviceVersion.getVendorByModel(req.body.productclass);
-    fnameFields.model = req.body.productclass;
+    fnameFields.vendor = req.body.productclass.split(' ')[0];
+    fnameFields.model = req.body.productclass.split(' ').splice(1).join(' ');
     fnameFields.version = req.body.version;
     fnameFields.release = req.body.version;
     fnameFields.cpe_type = 'tr069';

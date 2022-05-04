@@ -29,7 +29,7 @@ basicCPEModel.portForwardPermissions = {
 };
 
 // Must be changed for every model, used when importing firmwares
-basicCPEModel.vendor = 'None';
+basicCPEModel.identifier = 'NoVendor NoName';
 
 // Must be tweaked by models to reflect their features and permissions
 // IF YOU NEED A NEW KEY, ADD IT TO THIS BASE MODEL AS WELL!

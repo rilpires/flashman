@@ -49,12 +49,12 @@ const tr069Models = {
 
 const getTR069UpgradeableModels = function() {
   let ret = {models: [], versions: {}};
-  tr069Models.forEach((model)=>{
-    let permissions = model.modelPermissions();
+  Object.values(tr069Models).forEach((cpe)=>{
+    let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
     if (!permissions.features.firmwareUpgrade) return;
-    ret.models.push(model.name);
-    ret.versions[model.name] = Object.keys(permissions.firmwareUpgrades);
+    ret.models.push(cpe.identifier);
+    ret.versions[cpe.identifier] = Object.keys(permissions.firmwareUpgrades);
   });
   return ret;
 };
