@@ -1,5 +1,6 @@
 let basicCPEModel = {};
 
+// These should not be copied over to each model, only referenced
 basicCPEModel.portForwardPermissions = {
   noRanges: {
    simpleSymmetric: true,
@@ -27,8 +28,11 @@ basicCPEModel.portForwardPermissions = {
   },
 };
 
+// Must be changed for every model, used when importing firmwares
 basicCPEModel.vendor = 'None';
 
+// Must be tweaked by models to reflect their features and permissions
+// IF YOU NEED A NEW KEY, ADD IT TO THIS BASE MODEL AS WELL!
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
@@ -64,6 +68,7 @@ basicCPEModel.modelPermissions = function() {
       extended2GhzChannels: false, // allow channels 12 and 13
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
+      rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
     },
     mesh: {
       bssidOffsets2Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
@@ -74,11 +79,25 @@ basicCPEModel.modelPermissions = function() {
   };
 };
 
+// CPEs that use a Stavix XML config file can restrict certain web admin
+// usernames to avoid conflict with other credentials - only WiFiber needs this
+basicCPEModel.allowedXMLWebAdminUsername = function(name) {
+  // No restrictions
+  return true;
+};
+
+// List of allowed firmware upgrades for each known firmware version
 basicCPEModel.allowedFirmwareUpgrades = function(fwVersion) {
   // No upgrades allowed
   return [];
 };
 
+// Used when setting up a mesh network
+basicCPEModel.getBeaconType = function() {
+  return '11i';
+};
+
+// Should be tweaked if the tr-069 xml has special types for some fields
 basicCPEModel.getFieldType = function(masterKey, key) {
   switch (masterKey+'-'+key) {
     case 'wifi2-channel':
@@ -105,6 +124,7 @@ basicCPEModel.getFieldType = function(masterKey, key) {
   }
 };
 
+// Conversion from Flashman format to CPE format
 basicCPEModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -122,6 +142,7 @@ basicCPEModel.convertWifiMode = function(mode) {
   }
 };
 
+// Conversion from Flashman format to CPE format
 basicCPEModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
@@ -139,10 +160,12 @@ basicCPEModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+// Used on devices that list wifi rate for each connected device
 basicCPEModel.convertWifiRate = function(rate) {
   return parseInt(rate);
 };
 
+// Conversion from Flashman format to TR-069 format
 basicCPEModel.convertSubnetIntToMask = function(mask) {
   if (mask === 24) {
     return '255.255.255.0';
@@ -154,6 +177,24 @@ basicCPEModel.convertSubnetIntToMask = function(mask) {
   return '';
 };
 
+// Used when computing dhcp ranges
+basicCPEModel.convertSubnetMaskToRange = function(mask) {
+  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
+  if (mask === '255.255.255.0' || mask === 24) {
+    return {min: '33', max: '254'};
+  } else if (mask === '255.255.255.128' || mask === 25) {
+    return {min: '161', max: '254'};
+  } else if (mask === '255.255.255.192' || mask === 26) {
+    return {min: '225', max: '254'};
+  }
+  return {};
+};
+
+// Convert values from Flashman format to CPE format
+// Expected return example is {value: "mynetwork", type: "xsd:string"}
+// TypeFunc should always be an implementation of getFieldType
+// ModeFunc should always be an implementation of convertWifiMode
+// BandFunc should always be an implementation of convertWifiBand
 basicCPEModel.convertField = function(
   masterKey, key, value, typeFunc, modeFunc, bandFunc,
 ) {
@@ -199,20 +240,53 @@ basicCPEModel.convertField = function(
   return result;
 };
 
-basicCPEModel.getBeaconType = function() {
-  return '11i';
-};
-
+// Used to override GenieACS serial in some way, used only on Hurakall for now
 basicCPEModel.convertGenieSerial = function(serial) {
   // No conversion necessary
   return serial;
 };
 
-basicCPEModel.forbiddenWebUsernames = function() {
-  // No forbidden usernames
-  return [];
+// Some CPEs provide rx/tx power in some format other than dBm
+basicCPEModel.convertToDbm = function(power) {
+  // No conversion necessary
+  return power;
 };
 
+// Since Flashman stores auto channel flag within channel field itself, we
+// need to specify how to split them up when sending a task to CPE
+basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
+  let auto = (channel === 'auto');
+  let values = [];
+  values.push([
+    fields[masterKey]['auto'], auto, 'xsd:boolean',
+  ]);
+  if (!auto) {
+    const parsedChannel = parseInt(channel);
+    values.push([
+      fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
+    ]);
+  }
+  return values;
+};
+
+// Editing the gateway ip or subnet length implies a change to other fields,
+// so we do those here, for the devices that need it
+basicCPEModel.convertLanEditToTask = function(device, fields) {
+  let values = [];
+  let dhcpRanges = basicCPEModel.convertSubnetMaskToRange(device.lan_netmask);
+  if (dhcpRanges.min && dhcpRanges.max) {
+    let subnet = device.lan_subnet;
+    let networkPrefix = subnet.split('.').slice(0, 3).join('.');
+    let minIP = networkPrefix + '.' + dhcpRanges.min;
+    let maxIP = networkPrefix + '.' + dhcpRanges.max;
+    values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
+    values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
+    values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
+  }
+  return values;
+};
+
+// Map TR-069 XML fields to Flashman fields
 basicCPEModel.getModelFields = function() {
   return {
     common: {

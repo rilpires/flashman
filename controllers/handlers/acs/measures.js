@@ -374,36 +374,4 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   }
 };
 
-acsMeasuresHandler.convertToDbm = function(model, rxPower) {
-  switch (model) {
-    case 'HG9': {
-      rxPower = parseFloat(rxPower.split(' ')[0]);
-      if (isNaN(rxPower)) {
-        debug('rxPower is not an number!!!');
-      }
-      return rxPower;
-    }
-    case 'IGD':
-    case 'FW323DAC':
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL':
-    case 'G-140W-C':
-    case 'G-140W-CS':
-    case 'G-140W-UD':
-    case 'DM985-424 HW3': {
-      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
-      if (isNaN(rxPower)) {
-        debug('rxPower is not a number!!!');
-      }
-      return rxPower;
-    }
-    case 'GONUAC001':
-    case 'GONUAC002':
-    default:
-      return rxPower;
-  }
-};
-
 module.exports = acsMeasuresHandler;
