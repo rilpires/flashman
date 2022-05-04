@@ -8,7 +8,6 @@ const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
 const DeviceVersion = require('../models/device_version');
-const acsDeviceInfo = require('./acs_device_info.js');
 const t = require('./language').i18next.t;
 
 const fs = require('fs');
