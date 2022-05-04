@@ -744,18 +744,21 @@ deviceListController.searchDeviceReg = async function(req, res) {
         let devReleases = releases.filter(
           (release) => release.model === model);
         if (device.use_tr069) {
+          let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
+            device).cpe;
           /* get allowed version of upgrade by
             current device version  */
-          let allowedVersions = DeviceVersion
-            .getFirmwaresUpgradesByVersion(model,
-              device.installed_release);
+          let allowedVersions = cpe.allowedFirmwareUpgrades(
+            device.installed_release,
+          );
           /* filter by allowed version that
             current version can jump to */
           devReleases = devReleases.filter(
             (release) => allowedVersions.includes(release.id));
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
-          device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+          device.isUpgradeEnabled =
+            cpe.modelPermissions().features.firmwareUpgrade;
 
           /* Due to the misleading value of model as IGD
             in the FastWireless FW323DAC model, check if is
@@ -800,11 +803,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         device.status_color = deviceColor;
 
         // Device permissions
-        device.permissions = DeviceVersion.findByVersion(
-          device.version,
-          device.wifi_is_5ghz_capable,
-          device.model,
-        );
+        device.permissions = DeviceVersion.devicePermissions(device);
 
         // amount ports a device have
         device.qtdPorts = DeviceVersion.getPortsQuantity(device.model);
@@ -1049,9 +1048,7 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(device.version,
-                                                  device.wifi_is_5ghz_capable,
-                                                  device.model);
+    let permissions = DeviceVersion.devicePermissions(device);
 
     let emitMsg = true;
     switch (msgtype) {
@@ -1655,6 +1652,8 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
+            let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
+              matchedDevice).cpe;
             let changes = {wan: {}, lan: {}, wifi2: {},
                            wifi5: {}, mesh2: {}, mesh5: {}};
 
@@ -1768,8 +1767,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi2.enable = wifiState;
                 // When enabling Wi-Fi set beacon type
                 if (wifiState) {
-                  changes.wifi2.beacon_type =
-                    DevicesAPI.getBeaconTypeByModel(model);
+                  changes.wifi2.beacon_type = cpe.getBeaconType();
                 }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
@@ -1854,8 +1852,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi5.enable = wifiState5ghz;
                 // When enabling Wi-Fi set beacon type
                 if (wifiState5ghz) {
-                  changes.wifi5.beacon_type =
-                    DevicesAPI.getBeaconTypeByModel(model);
+                  changes.wifi5.beacon_type = cpe.getBeaconType();
                 }
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
@@ -2451,10 +2448,9 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     return ret;
   }
   // check compatibility in mode of port mapping
-  if (deviceListController.checkIncompatibility(rules,
-        DeviceVersion.getPortForwardTr069Compatibility(device.model,
-                                                       device.version))
-  ) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  let portForwardOpts = permissions.grantPortForwardOpts;
+  if (deviceListController.checkIncompatibility(rules, portForwardOpts)) {
     ret.success = false;
     ret.message = t('incompatibleRulesError');
     return ret;
@@ -2497,9 +2493,7 @@ deviceListController.setPortForward = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model);
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -2702,9 +2696,7 @@ deviceListController.getPortForward = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model);
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -2716,9 +2708,7 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
-        compatibility:
-          DeviceVersion.getPortForwardTr069Compatibility(matchedDevice.model,
-                                                         matchedDevice.version),
+        compatibility: permissions.grantPortForwardOpts,
       });
     }
 
@@ -2984,11 +2974,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       });
     }
 
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     return res.status(200).json({
       success: true,
@@ -3022,11 +3008,7 @@ deviceListController.doSpeedTest = function(req, res) {
         message: t('cpeNotOnline', {errorline: __line}),
       });
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
@@ -3240,7 +3222,8 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(matchedDevice).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+    let fields = cpe.getModelFields();
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
     let taskParameterNames = [rxPowerField, txPowerField];
