@@ -20,7 +20,8 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
@@ -85,7 +86,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let rxPowerFieldEpon = '';
@@ -178,7 +180,8 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let upTimeField1 = fields.wan.uptime.replace('*', 1);
   let upTimeField2 = fields.wan.uptime.replace('*', 2);
   let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);

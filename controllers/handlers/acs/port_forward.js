@@ -17,7 +17,8 @@ const fetchAndComparePortForward = async function(acsID) {
   if (!device || !device.use_tr069) {
     return;
   }
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
     portMappingTemplate = fields.port_mapping_ppp;
@@ -169,7 +170,8 @@ const fetchAndComparePortForward = async function(acsID) {
 acsPortForwardHandler.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let task = {
     name: 'getParameterValues',
     parameterNames: [],
@@ -202,7 +204,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
