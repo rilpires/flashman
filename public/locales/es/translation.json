@@ -959,5 +959,9 @@
 	"Proceed": "Proceder",
 	"errorDeletingVlanProfile": "Error al eliminar perfiles de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "La eliminación de perfiles no fue posible ya que algunos CPE no actualizaron la configuración de VLAN",
-	"vlanProfile": "Perfil de VLAN"
+	"vlanProfile": "Perfil de VLAN",
+  "invalidField": "Campo '{{-name}}' no válido",
+  "deviceNotFoundError": "Dispositivo no encontrado",
+  "deviceFindError": "Error al obtener el dispositivo",
+  "deviceSaveError": "Error al guardar el dispositivo"
 }

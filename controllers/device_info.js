@@ -2102,4 +2102,75 @@ deviceInfoController.receiveWpsResult = function(req, res) {
   });
 };
 
+deviceInfoController.editCoordinates = async function(req, res) {
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Wps: Secrets do not match');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  const devices = req.body.devices;
+  const errors = [];
+
+  if (!devices || devices.length === 0) {
+    return res.status(500).json({processed: 0});
+  }
+
+  for (const device of devices) {
+    const { id, latitude, longitude, stopCoordinatesUpdate } = device;
+    const errorObj = {
+      id,
+    };
+
+    try {
+      const matchedDevice = await DeviceModel.findById(id);
+      
+      if (!matchedDevice) {
+        errorObj.message = t('deviceNotFoundError');
+        errors.push(errorObj);
+        continue;
+      }
+ 
+      if (typeof latitude !== 'number') {
+        errorObj.message = t('invalidField', {name: 'latitude'});
+        errors.push(errorObj);
+        continue;
+      }
+      if (typeof longitude !== 'number') {
+        errorObj.message = t('invalidField', {name: 'longitude'});
+        errors.push(errorObj);
+        continue;
+      }
+      if (typeof stopCoordinatesUpdate !== 'boolean') {
+        errorObj.message = t('invalidField', {name: 'stopCoordinatesUpdate'});
+        errors.push(errorObj);
+        continue;
+      }
+
+      matchedDevice.latitude = latitude;
+      matchedDevice.longitude = longitude;
+      matchedDevice.stop_coordinates_update = stopCoordinatesUpdate;
+
+      try {
+        await matchedDevice.save();
+      } catch (err) {
+        errorObj.message = t('deviceSaveError');
+        errors.push(errorObj);
+      }
+    } catch (err) {
+      errorObj.message = t('deviceFindError');
+      errors.push(errorObj);
+    }
+  };
+  const success = devices.length - errors.length;
+  return res.status(200).json({
+    success,
+    failure: errors.length,
+    errors,
+  });
+};
+
 module.exports = deviceInfoController;
