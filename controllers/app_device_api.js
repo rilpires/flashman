@@ -1014,11 +1014,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     }
 
     // Fetch permissions and wifi configuration from database
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
@@ -1127,11 +1123,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
         t('appUnauthorized', {errorline: __line})});
     }
 
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     return res.status(200).json({
       permissions: permissions,
     });
