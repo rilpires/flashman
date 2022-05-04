@@ -2120,7 +2120,7 @@ deviceInfoController.editCoordinates = async function(req, res) {
   }
 
   for (const device of devices) {
-    const { id, latitude, longitude, stopCoordinatesUpdate } = device;
+    const { mac: id, latitude, longitude, stopCoordinatesUpdate } = device;
     const errorObj = {
       id,
     };
