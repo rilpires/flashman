@@ -38,6 +38,7 @@ let app = express();
 const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
 const isOnProduction = (process.env.production === 'true');
 
+let MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
 let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
 if (!isOnProduction) {
@@ -65,7 +66,7 @@ const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   process.env.FLM_DATABASE_NAME;
 
 mongoose.connect(
-  'mongodb://' + process.env.FLM_MONGODB_HOST + ':'+MONGOPORT+'/' + databaseName,
+  'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
@@ -114,6 +115,29 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   controlApi.checkPubKey(app).then(() => {
     // Get message configs from control
     controlApi.getMessageConfig(app);
+  });
+
+  // put default values in old config
+  Config.findOne({is_default: true}, function(err, config) {
+    if (!err && config) {
+      if (typeof config.isSsidPrefixEnabled === 'undefined') {
+        config.isSsidPrefixEnabled = false;
+      }
+      if (typeof config.ssidPrefix === 'undefined') {
+        config.ssidPrefix = '';
+      }
+      let vlans = [];
+      for (let i = 0; i < config.vlans_profiles.length; i++) {
+        vlans.push(config.vlans_profiles[i].vlan_id);
+      }
+      // 1 is the mandatory lan vlan id
+      if (! vlans.includes(1)) {
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
+      }
+      // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
+      // *** DO NOT TOUCH ***
+      config.save();
+    }
   });
 
   // Check administration user existence
@@ -245,29 +269,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
        await Device.syncIndexes();
      }
   }).catch(console.error);
-
-  // put default values in old config
-  Config.findOne({is_default: true}, function(err, config) {
-    if (!err && config) {
-      if (typeof config.isSsidPrefixEnabled === 'undefined') {
-        config.isSsidPrefixEnabled = false;
-      }
-      if (typeof config.ssidPrefix === 'undefined') {
-        config.ssidPrefix = '';
-      }
-      let vlans = [];
-      for (let i = 0; i < config.vlans_profiles.length; i++) {
-        vlans.push(config.vlans_profiles[i].vlan_id);
-      }
-      // 1 is the mandatory lan vlan id
-      if (! vlans.includes(1)) {
-        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
-      }
-      // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
-      // *** DO NOT TOUCH ***
-      config.save();
-    }
-  });
 }
 
 // Check md5 file hashes on firmware directory
