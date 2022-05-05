@@ -6,6 +6,8 @@ const utilHandlers = require('../util.js');
 const http = require('http');
 
 let acsPortForwardHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const fetchAndComparePortForward = async function(acsID) {
   let device;
@@ -32,8 +34,8 @@ const fetchAndComparePortForward = async function(acsID) {
              projection1 + ',' + projection2;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp) => {

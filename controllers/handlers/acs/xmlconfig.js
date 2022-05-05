@@ -7,6 +7,8 @@ const http = require('http');
 const debug = require('debug')('ACS_XMLCONFIG');
 
 let acsXMLConfigHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 acsXMLConfigHandler.onlineAfterReset = ['MP-G421R'];
 acsXMLConfigHandler.xmlConfigModels = [
@@ -182,8 +184,8 @@ const fetchAndEditConfigFile = async function(acsID, target) {
     '&projection='+configField;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{
