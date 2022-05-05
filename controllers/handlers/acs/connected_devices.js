@@ -245,6 +245,10 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 if (isNaN(parseInt(device.rssi))) {
                   debug(`device.rssi is NaN beware!!!`);
                 }
+                // Convert wrongly sent positive values to negative for Greatek
+                if (model == 'GONUAC002' && device.rssi > 0) {
+                  device.rssi = -device.rssi;
+                }
               }
               // Collect snr, if available
               if (fields.devices.host_snr) {

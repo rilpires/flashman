@@ -47,6 +47,7 @@ const tr069Devices = {
       'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
@@ -90,6 +91,7 @@ const tr069Devices = {
       'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
@@ -125,6 +127,7 @@ const tr069Devices = {
       'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
@@ -160,6 +163,7 @@ const tr069Devices = {
       'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
@@ -192,6 +196,7 @@ const tr069Devices = {
       'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
@@ -225,6 +230,7 @@ const tr069Devices = {
       'V1.2.3': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -254,12 +260,15 @@ const tr069Devices = {
     versions_upgrade: {
       'V2.2.0': [],
       'V2.2.3': [],
+      'V2.2.7': [],
     },
     port_forward_opts: {
       'V2.2.0': portForwardFullSupport,
       'V2.2.3': portForwardFullSupport,
+      'V2.2.7': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -293,6 +302,7 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -326,6 +336,7 @@ const tr069Devices = {
       'v1.0.1': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -358,6 +369,7 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -389,6 +401,7 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -421,6 +434,7 @@ const tr069Devices = {
       '3FE49127HJII42': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false, // no fiber
       upnp: false,
@@ -452,11 +466,12 @@ const tr069Devices = {
       '3FE49025IJHK03': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
       speed_test: true,
-      speed_test_limit: 800,
+      speed_test_limit: 850,
       ping_test: true,
       block_devices: false,
       block_wired_devices: false,
@@ -481,6 +496,7 @@ const tr069Devices = {
       '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -520,6 +536,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -550,6 +567,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -580,6 +598,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -612,6 +631,7 @@ const tr069Devices = {
       'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -647,6 +667,7 @@ const tr069Devices = {
       'V5R020C00S280': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -671,12 +692,41 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x8'],
     mesh_ssid_object_exists: false,
   },
+  'EG8145X6': {
+    port_forward_opts: {
+      'V5R020C00S060': portForwardNoAsymRanges,
+    },
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V5R020C00S060': [],
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 700,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
   'WS5200-21': {
     vendor: 'Huawei',
     versions_upgrade: {
       '10.0.5.9(C506)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -701,6 +751,63 @@ const tr069Devices = {
       '10.0.5.5(C947)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'WS7001-40': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '2.0.0.315(SP2C947)': [],
+    },
+    port_forward_opts: {
+      '2.0.0.315(SP2C947)': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'WS7100-30': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.29(C947)': [],
+    },
+    port_forward_opts: {
+      '10.0.5.29(C947)': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: true,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -725,13 +832,14 @@ const tr069Devices = {
       '3.0.3': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
       wps: false,
       ping_test: true,
-      speed_test: false,
-      speed_test_limit: 0,
+      speed_test: true,
+      speed_test_limit: 180,
       block_devices: false,
       block_wired_devices: false,
       connected_devices: true,
@@ -749,13 +857,14 @@ const tr069Devices = {
       '3.0.4': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
       wps: false,
       ping_test: true,
-      speed_test: false,
-      speed_test_limit: 0,
+      speed_test: true,
+      speed_test_limit: 180,
       block_devices: false,
       block_wired_devices: false,
       connected_devices: true,
@@ -776,6 +885,7 @@ const tr069Devices = {
       'V16.03.06.05_multi_BR01': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false,
       upnp: false,
@@ -800,6 +910,7 @@ const tr069Devices = {
       '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -827,6 +938,7 @@ const tr069Devices = {
       'V1.0.8': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -854,6 +966,7 @@ const tr069Devices = {
       'V3.2.0': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -879,6 +992,7 @@ const tr069Devices = {
       '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       block_devices: false,
       block_wired_devices: false,
       connected_devices: true,
@@ -2688,6 +2802,14 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const grantWiFiAXSupport = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wifi_ax_mode;
+  }
+  // Firmware CPEs do not have AX mode support
+  return false;
+};
+
 const hasSTUNSupport = function(model) {
   let STUNEnable = false;
   if (tr069Devices[model]) {
@@ -2744,6 +2866,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   result.grantSTUN = hasSTUNSupport(model);
+  result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);

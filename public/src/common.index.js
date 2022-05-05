@@ -68,3 +68,7 @@ $(document).ready(function() {
   // event callbacks.
   i18nextInitialization.then(anlixDocumentReady.start);
 });
+
+$(function() {
+  $('[data-toggle="tooltip"]').tooltip({html: true});
+});
