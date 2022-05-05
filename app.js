@@ -25,7 +25,7 @@ let deviceUpdater = require('./controllers/update_scheduler');
 let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
-const runMigrations = require('./migrations')
+const runMigrations = require('./migrations');
 
 let app = express();
 

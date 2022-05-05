@@ -1,10 +1,10 @@
-const controlApi = require('../controllers/external-api/control');
-const User = require('../models/user');
-const Role = require('../models/role');
-const Device = require('../models/device');
-const meshHandlers = require('../controllers/handlers/mesh');
-let DeviceVersion = require('../models/device_version');
-const Config = require('../models/config');
+const controlApi = require('./controllers/external-api/control');
+const User = require('./models/user');
+const Role = require('./models/role');
+const Device = require('./models/device');
+const meshHandlers = require('./controllers/handlers/mesh');
+let DeviceVersion = require('./models/device_version');
+const Config = require('./models/config');
 
 
 module.exports = (app) => {
@@ -162,21 +162,29 @@ module.exports = (app) => {
         if (! vlans.includes(1)) {
           config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
         }
-        if (!config.traps_callbacks.devices_crud) {
-          const deviceCrud = config.traps_callbacks.device_crud;
-          config.traps_callbacks.devices_crud.push(deviceCrud);
+        let cbacks = config.traps_callbacks;
+        if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
+          cbacks.device_crud.url = '';
+          const deviceCrud = cbacks.device_crud;
+          cbacks.devices_crud.push(deviceCrud);
         }
-        if (!config.traps_callbacks.users_crud) {
-          const userCrud = config.traps_callbacks.user_crud;
-          config.traps_callbacks.users_crud.push(userCrud);
+        if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
+          cbacks.user_crud.url = '';
+          const userCrud = cbacks.user_crud;
+          cbacks.users_crud.push(userCrud);
         }
-        if (!config.traps_callbacks.roles_crud) {
-          const roleCrud = config.traps_callbacks.role_crud;
-          config.traps_callbacks.roles_crud.push(roleCrud);
+        if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
+          cbacks.role_crud.url = '';
+          const roleCrud = cbacks.role_crud;
+          cbacks.roles_crud.push(roleCrud);
         }
-        if (!config.traps_callbacks.certifications_crud) {
-          const certCrud = config.traps_callbacks.certification_crud;
-          config.traps_callbacks.certifications_crud.push(certCrud);
+        if (
+          cbacks.certification_crud.url &&
+          cbacks.certifications_crud.length == 0
+        ) {
+          cbacks.certification_crud.url = '';
+          const certCrud = cbacks.certification_crud;
+          cbacks.certifications_crud.push(certCrud);
         }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
         // *** DO NOT TOUCH ***
@@ -184,4 +192,4 @@ module.exports = (app) => {
       }
     });
   }
-}
+};
