@@ -419,14 +419,12 @@ deviceHandlers.sendPingToTraps = function(id, results) {
       if (matchedConfig.traps_callbacks &&
           matchedConfig.traps_callbacks.devices_crud
       ) {
-        const promises = matchedConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
           let requestOptions = {};
-          let callbackUrl =
-          deviceCrud.url;
-          let callbackAuthUser =
-          deviceCrud.user;
-          let callbackAuthSecret =
-          deviceCrud.secret;
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
           if (callbackUrl) {
             requestOptions.url = callbackUrl;
             requestOptions.method = 'PUT';

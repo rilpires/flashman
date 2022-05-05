@@ -3085,18 +3085,17 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        const deviceCrud = matchedConfig.traps_callbacks.device_crud;
-        deviceCrud.url = req.body.url;
-        if ('user' in req.body && 'secret' in req.body) {
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let deviceCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
           deviceCrud.user = req.body.user;
           deviceCrud.secret = req.body.secret;
         }
-        const registeredDeviceCrudIndex = matchedConfig.traps_callbacks.devices_crud.findIndex(deviceCrud => {
-          return deviceCrud.url === req.body.url
-        });
-        if (registeredDeviceCrudIndex > -1) {
-            matchedConfig.traps_callbacks.devices_crud[registeredDeviceCrudIndex] = deviceCrud;
+        let index = matchedConfig.traps_callbacks.devices_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.devices_crud[index] = deviceCrud;
         } else {
           matchedConfig.traps_callbacks.devices_crud.push(deviceCrud);
         }
@@ -3130,7 +3129,7 @@ deviceListController.deleteDeviceCrudTrap = function(req, res) {
   if (typeof deviceCrudIndex !== 'number' || deviceCrudIndex < 0) {
     return res.status(500).send({
       success: false,
-      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
     });
   }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
@@ -3174,30 +3173,21 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const devicesCrud = [];
-      matchedConfig.traps_callbacks.devices_crud.forEach(deviceCrud => {
-        if (deviceCrud.url) {
-          devicesCrud.push({
-            url: deviceCrud.url,
-            user: typeof deviceCrud.user === 'undefined' ? '' : deviceCrud.user
-          });
-        }
-      });
-      const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (!url) {
+      const devicesCrud = matchedConfig.traps_callbacks.devices_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (devicesCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
-          devicesCrud,
         });
       }
-      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
-        devicesCrud,
+        url: devicesCrud[0].url,
+        user: (devicesCrud[0].user) ? devicesCrud[0].url : '',
+        devicesCrud: devicesCrud,
       });
     }
   });

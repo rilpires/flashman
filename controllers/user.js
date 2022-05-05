@@ -773,26 +773,24 @@ userController.setUserCrudTrap = function(req, res) {
   // Store callback URL for users
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        const userCrud = matchedConfig.traps_callbacks.user_crud;
-        userCrud.url = req.body.url;
-
-        if ('user' in req.body && 'secret' in req.body) {
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let userCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
           userCrud.user = req.body.user;
           userCrud.secret = req.body.secret;
         }
-        const registeredUserCrudIndex = matchedConfig.traps_callbacks.users_crud.findIndex(userCrud => {
-          return userCrud.url === req.body.url
-        });
-        if (registeredUserCrudIndex > -1) {
-          matchedConfig.traps_callbacks.users_crud[registeredUserCrudIndex] = userCrud
+        let index = matchedConfig.traps_callbacks.users_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.users_crud[index] = userCrud;
         } else {
           matchedConfig.traps_callbacks.users_crud.push(userCrud);
         }
@@ -800,7 +798,7 @@ userController.setUserCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -811,7 +809,7 @@ userController.setUserCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
     }
@@ -825,7 +823,7 @@ userController.deleteUserCrudTrap = function(req, res) {
   if (typeof userCrudIndex !== 'number' || userCrudIndex < 0) {
     return res.status(500).send({
       success: false,
-      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
     });
   }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
@@ -862,37 +860,28 @@ userController.getUserCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const usersCrud = [];
-      matchedConfig.traps_callbacks.users_crud.forEach(userCrud => {
-        if (userCrud.url) {
-          usersCrud.push({
-            url: userCrud.url,
-            user: typeof userCrud.user === 'undefined' ? '' : userCrud.user
-          });
-        }
-      });
-      const url = matchedConfig.traps_callbacks.user_crud.url;
-      if (!url) {
+      const usersCrud = matchedConfig.traps_callbacks.users_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (usersCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
-          usersCrud,
         });
       }
-      const user = matchedConfig.traps_callbacks.user_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
-        usersCrud,
+        url: usersCrud[0].url,
+        user: (usersCrud[0].user) ? usersCrud[0].url : '',
+        usersCrud: usersCrud,
       });
     }
   });
@@ -902,25 +891,24 @@ userController.setRoleCrudTrap = function(req, res) {
   // Store callback URL for roles
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        const roleCrud = matchedConfig.traps_callbacks.role_crud;
-        roleCrud.url = req.body.url;
-        if ('user' in req.body && 'secret' in req.body) {
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let roleCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
           roleCrud.user = req.body.user;
           roleCrud.secret = req.body.secret;
         }
-        const registeredRoleCrudIndex = matchedConfig.traps_callbacks.roles_crud.findIndex(roleCrud => {
-          return roleCrud.url === req.body.url
-        });
-        if (registeredRoleCrudIndex > -1) {
-          matchedConfig.traps_callbacks.roles_crud[registeredRoleCrudIndex] = roleCrud;
+        let index = matchedConfig.traps_callbacks.roles_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.roles_crud[index] = roleCrud;
         } else {
           matchedConfig.traps_callbacks.roles_crud.push(roleCrud);
         }
@@ -928,7 +916,7 @@ userController.setRoleCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -939,7 +927,7 @@ userController.setRoleCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
     }
@@ -954,7 +942,7 @@ userController.deleteRoleCrudTrap = function(req, res) {
   if (typeof roleCrudIndex !== 'number' || roleCrudIndex < 0) {
     return res.status(500).send({
       success: false,
-      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
     });
   }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
@@ -991,37 +979,28 @@ userController.getRoleCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const rolesCrud = [];
-      matchedConfig.traps_callbacks.roles_crud.forEach(roleCrud => {
-        if (roleCrud.url) {
-          rolesCrud.push({
-            url: roleCrud.url,
-            user: typeof roleCrud.user === 'undefined' ? '' : roleCrud.user
-          });
-        }
-      });
-      const url = matchedConfig.traps_callbacks.role_crud.url;
-      if (!url) {
+      const rolesCrud = matchedConfig.traps_callbacks.roles_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (rolesCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
-          rolesCrud,
         });
       }
-      const user = matchedConfig.traps_callbacks.role_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
-        rolesCrud,
+        url: rolesCrud[0].url,
+        user: (rolesCrud[0].user) ? rolesCrud[0].url : '',
+        rolesCrud: rolesCrud,
       });
     }
   });
@@ -1029,26 +1008,26 @@ userController.getRoleCrudTrap = function(req, res) {
 
 userController.setCertificationCrudTrap = function(req, res) {
   // Store callback URL for users
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        const certCrud = matchedConfig.traps_callbacks.certification_crud;
-        certCrud.url = req.body.url;
-
-        if ('user' in req.body && 'secret' in req.body) {
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let certCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
           certCrud.user = req.body.user;
           certCrud.secret = req.body.secret;
         }
-        const registeredCertCrudIndex = matchedConfig.traps_callbacks.certifications_crud.findIndex(certCrud => {
-          return certCrud.url === req.body.url
-        });
-        if (registeredCertCrudIndex > -1) {
-          matchedConfig.traps_callbacks.certifications_crud[registeredCertCrudIndex] = certCrud;
+        let index = matchedConfig.traps_callbacks.certifications_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.certifications_crud[index] = certCrud;
         } else {
           matchedConfig.traps_callbacks.certifications_crud.push(certCrud);
         }
@@ -1056,7 +1035,7 @@ userController.setCertificationCrudTrap = function(req, res) {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -1067,7 +1046,7 @@ userController.setCertificationCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
     }
@@ -1081,7 +1060,7 @@ userController.deleteCertificationCrudTrap = function(req, res) {
   if (typeof certCrudIndex !== 'number' || certCrudIndex < 0) {
     return res.status(500).send({
       success: false,
-      message: t('fieldNameInvalid', {name: 'index', errorline: __line})
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
     });
   }
   Config.findOne(query, projection).exec(function(err, matchedConfig) {
@@ -1097,7 +1076,9 @@ userController.deleteCertificationCrudTrap = function(req, res) {
           message: t('arrayElementNotFound'),
         });
       }
-      matchedConfig.traps_callbacks.certifications_crud.splice(certCrudIndex, 1);
+      matchedConfig.traps_callbacks.certifications_crud.splice(
+        certCrudIndex, 1,
+      );
       matchedConfig.save((err) => {
         if (err) {
           return res.status(500).json({
@@ -1116,37 +1097,30 @@ userController.deleteCertificationCrudTrap = function(req, res) {
 
 userController.getCertificationCrudTrap = function(req, res) {
   // Get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const certifcationsCrud = [];
-      matchedConfig.traps_callbacks.certifications_crud.forEach(certCrud => {
-        if (userCrud.url) {
-          certifcationsCrud.push({
-            url: certCrud.url,
-            user: typeof certCrud.user === 'undefined' ? '' : certCrud.user
-          });
-        }
-      });
-      const user = matchedConfig.traps_callbacks.certification_crud.user;
-      const url = matchedConfig.traps_callbacks.certification_crud.url;
-      if (!user || !url) {
+      const certsCrud = matchedConfig.traps_callbacks.certifications_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (certsCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
-          certifcationsCrud,
         });
       }
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
-        url: url,
-        certifcationsCrud,
+        url: certsCrud[0].url,
+        user: (certsCrud[0].user) ? certsCrud[0].url : '',
+        certsCrud: certsCrud,
       });
     }
   });
