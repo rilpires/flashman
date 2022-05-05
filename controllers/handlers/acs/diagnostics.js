@@ -100,7 +100,9 @@ const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
         loss: loss.toString(),
       };
       let model = device.model;
-      if (['HG8245Q2', 'EG8145V5', 'HG8121H', 'HG9'].includes(model)) {
+      if (
+        ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
+      ) {
         if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
         else result[pingKeys.host]['loss'] = '100';
       }
@@ -274,6 +276,12 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
+  if (device.model == 'HG8121H') {
+    task.parameterValues = [
+      [diagnStateField, 'Requested', 'xsd:string'],
+      [diagnURLField, speedtestHostUrl, 'xsd:string']
+    ];
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting speedtest diagnose for ' + acsID);
