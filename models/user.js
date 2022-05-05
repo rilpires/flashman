@@ -130,29 +130,30 @@ userSchema.pre('save', function(callback) {
       if (Object.keys(userChangedAttrs).length != 0 &&
           defConfig.traps_callbacks.users_crud
       ) {
-        const userPromises =
-          defConfig.traps_callbacks.users_crud.map((userCrud) => {
-          let userCallbackUrl = userCrud.url;
-          let userCallbackAuthUser = userCrud.user;
-          let userCallbackAuthSecret = userCrud.secret;
-          if (userCallbackUrl) {
-            userRequestOptions.url = userCallbackUrl;
-            userRequestOptions.method = 'PUT';
-            userRequestOptions.json = {
-              'id': user._id,
-              'type': 'user',
-              'name': user.name,
-              'changes': userChangedAttrs,
-            };
-            if (userCallbackAuthUser && userCallbackAuthSecret) {
-              userRequestOptions.auth = {
-                user: userCallbackAuthUser,
-                pass: userCallbackAuthSecret,
+        const userPromises = defConfig.traps_callbacks.users_crud.map(
+          (userCrud) => {
+            let userCallbackUrl = userCrud.url;
+            let userCallbackAuthUser = userCrud.user;
+            let userCallbackAuthSecret = userCrud.secret;
+            if (userCallbackUrl) {
+              userRequestOptions.url = userCallbackUrl;
+              userRequestOptions.method = 'PUT';
+              userRequestOptions.json = {
+                'id': user._id,
+                'type': 'user',
+                'name': user.name,
+                'changes': userChangedAttrs,
               };
+              if (userCallbackAuthUser && userCallbackAuthSecret) {
+                userRequestOptions.auth = {
+                  user: userCallbackAuthUser,
+                  pass: userCallbackAuthSecret,
+                };
+              }
+              return request(userRequestOptions);
             }
-            return request(userRequestOptions);
-          }
-        });
+          },
+        );
         Promise.all(userPromises).then((resp) => {
           // Ignore API response
           return;
@@ -162,32 +163,34 @@ userSchema.pre('save', function(callback) {
         });
       }
       if (Object.keys(certificationChangedAttrs).length != 0 &&
-          defConfig.traps_callbacks.certifications_crud 
+          defConfig.traps_callbacks.certifications_crud
       ) {
-        const certPromises = defConfig.traps_callbacks.certifications_crud.map((certCrud) => {
-          let certificationCallbackUrl = certCrud.url;
-          let certificationCallbackAuthUser = certCrud.user;
-          let certificationCallbackAuthSecret = certCrud.secret;
-          if (certificationCallbackUrl) {
-            certificationRequestOptions.url = certificationCallbackUrl;
-            certificationRequestOptions.method = 'PUT';
-            certificationRequestOptions.json = {
-              'id': user._id,
-              'type': 'user',
-              'name': user.name,
-              'changes': certificationChangedAttrs,
-            };
-            if (certificationCallbackAuthUser &&
-                certificationCallbackAuthSecret
-            ) {
-              certificationRequestOptions.auth = {
-                user: certificationCallbackAuthUser,
-                pass: certificationCallbackAuthSecret,
+        const certPromises = defConfig.traps_callbacks.certifications_crud.map(
+          (certCrud) => {
+            let certificationCallbackUrl = certCrud.url;
+            let certificationCallbackAuthUser = certCrud.user;
+            let certificationCallbackAuthSecret = certCrud.secret;
+            if (certificationCallbackUrl) {
+              certificationRequestOptions.url = certificationCallbackUrl;
+              certificationRequestOptions.method = 'PUT';
+              certificationRequestOptions.json = {
+                'id': user._id,
+                'type': 'user',
+                'name': user.name,
+                'changes': certificationChangedAttrs,
               };
+              if (certificationCallbackAuthUser &&
+                  certificationCallbackAuthSecret
+              ) {
+                certificationRequestOptions.auth = {
+                  user: certificationCallbackAuthUser,
+                  pass: certificationCallbackAuthSecret,
+                };
+              }
+              return request(certificationRequestOptions);
             }
-            return request(certificationRequestOptions);
-          }
-        });
+          },
+        );
         Promise.all(certPromises).then((resp) => {
           // Ignore API response
           return;

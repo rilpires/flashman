@@ -381,8 +381,7 @@ deviceSchema.post('remove', function(device, callback) {
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);
     }
-    const promises =
-      defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+    let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
       let callbackUrl = deviceCrud.url;
       let callbackAuthUser = deviceCrud.user;
       let callbackAuthSecret = deviceCrud.secret;
