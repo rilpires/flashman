@@ -15,7 +15,7 @@ COPY /views /app/views
 
 # Run as root
 RUN mkdir -p /app/public/firmwares \
-	&& chown -R node:node /app /app/public/firmwares; \
+	&& chown -R node:node /app /app/public/firmwares ; \
 	npm install npm@8 -g ; \
 	npm --version
 
