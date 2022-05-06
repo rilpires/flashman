@@ -76,8 +76,8 @@ anlixDocumentReady.add(function() {
                    .addClass(upnpPermission == 'accept' ?
                              'indigo-text' : 'red-text')
                    .html(upnpPermission == 'accept' ?
-                         t('Granted', {context: 'male'}) :
-                         t('Blocked', {context: 'male'}));
+                         t('Granted', {context: 'upnp'}) :
+                         t('Blocked', {context: 'upnp'}));
           btnStatus.parent().data('permission', upnpPermission);
           setTimeout(function() {
             $('.btn-upnp').prop('disabled', false);
@@ -108,8 +108,8 @@ anlixDocumentReady.add(function() {
           $('#show-spam-error').hide();
           btnStatus.removeClass('indigo-text red-text')
                    .addClass(isBlocked ? 'red-text' : 'indigo-text')
-                   .html(isBlocked ? t('blocked', {context: 'female'}) :
-                                     t('granted', {context: 'female'}));
+                   .html(isBlocked ? t('blocked', {context: 'internet'}) :
+                                     t('granted', {context: 'internet'}));
           btnStatus.parent().data('blocked', isBlocked);
           setTimeout(function() {
             $('.btn-lan-dev-block').prop('disabled', false);
@@ -316,10 +316,10 @@ anlixDocumentReady.add(function() {
               (device.is_blocked) ?
                 $('<span>')
                   .addClass('dev-block-status-text red-text')
-                  .html(t('blocked', {context: 'female'})) :
+                  .html(t('blocked', {context: 'internet'})) :
                 $('<span>')
                   .addClass('dev-block-status-text indigo-text')
-                  .html(t('granted', {context: 'female'})),
+                  .html(t('granted', {context: 'internet'})),
             ),
           ),
           $('<div>').addClass('row pt-3').append(
@@ -379,8 +379,8 @@ anlixDocumentReady.add(function() {
                     .addClass(device.upnp_permission == 'accept' ?
                               'indigo-text' : 'red-text')
                     .html(device.upnp_permission == 'accept' ?
-                          t('Granted', {context: 'male'}) :
-                          t('Blocked', {context: 'male'})),
+                          t('Granted', {context: 'upnp'}) :
+                          t('Blocked', {context: 'upnp'})),
                 ) :
                 ''
               ),
