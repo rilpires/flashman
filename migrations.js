@@ -3,6 +3,7 @@ const User = require('./models/user');
 const Role = require('./models/role');
 const Device = require('./models/device');
 const meshHandlers = require('./controllers/handlers/mesh');
+const utilHandlers = require('./controllers/handlers/util');
 let DeviceVersion = require('./models/device_version');
 const Config = require('./models/config');
 
@@ -164,26 +165,28 @@ module.exports = (app) => {
         }
         let cbacks = config.traps_callbacks;
         if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
+          const deviceCrud = utilHandlers.deepCopyObject(cbacks.device_crud);
           cbacks.device_crud.url = '';
-          const deviceCrud = cbacks.device_crud;
           cbacks.devices_crud.push(deviceCrud);
         }
         if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
+          const userCrud = utilHandlers.deepCopyObject(cbacks.user_crud);
           cbacks.user_crud.url = '';
-          const userCrud = cbacks.user_crud;
           cbacks.users_crud.push(userCrud);
         }
         if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
+          const roleCrud = utilHandlers.deepCopyObject(cbacks.role_crud);
           cbacks.role_crud.url = '';
-          const roleCrud = cbacks.role_crud;
           cbacks.roles_crud.push(roleCrud);
         }
         if (
           cbacks.certification_crud.url &&
           cbacks.certifications_crud.length == 0
         ) {
+          const certCrud = utilHandlers.deepCopyObject(
+            cbacks.certification_crud,
+          );
           cbacks.certification_crud.url = '';
-          const certCrud = cbacks.certification_crud;
           cbacks.certifications_crud.push(certCrud);
         }
         // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
