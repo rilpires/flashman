@@ -880,7 +880,7 @@ userController.getUserCrudTrap = function(req, res) {
         success: true,
         exists: true,
         url: usersCrud[0].url,
-        user: (usersCrud[0].user) ? usersCrud[0].url : '',
+        user: (usersCrud[0].user) ? usersCrud[0].user : '',
         usersCrud: usersCrud,
       });
     }
@@ -999,7 +999,7 @@ userController.getRoleCrudTrap = function(req, res) {
         success: true,
         exists: true,
         url: rolesCrud[0].url,
-        user: (rolesCrud[0].user) ? rolesCrud[0].url : '',
+        user: (rolesCrud[0].user) ? rolesCrud[0].user : '',
         rolesCrud: rolesCrud,
       });
     }
@@ -1119,7 +1119,7 @@ userController.getCertificationCrudTrap = function(req, res) {
         success: true,
         exists: true,
         url: certsCrud[0].url,
-        user: (certsCrud[0].user) ? certsCrud[0].url : '',
+        user: (certsCrud[0].user) ? certsCrud[0].user : '',
         certsCrud: certsCrud,
       });
     }

@@ -3186,7 +3186,7 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
         success: true,
         exists: true,
         url: devicesCrud[0].url,
-        user: (devicesCrud[0].user) ? devicesCrud[0].url : '',
+        user: (devicesCrud[0].user) ? devicesCrud[0].user : '',
         devicesCrud: devicesCrud,
       });
     }
