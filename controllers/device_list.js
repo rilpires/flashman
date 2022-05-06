@@ -3085,11 +3085,19 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        matchedConfig.traps_callbacks.device_crud.url = req.body.url;
-        if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.device_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let deviceCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
+          deviceCrud.user = req.body.user;
+          deviceCrud.secret = req.body.secret;
+        }
+        let index = matchedConfig.traps_callbacks.devices_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.devices_crud[index] = deviceCrud;
+        } else {
+          matchedConfig.traps_callbacks.devices_crud.push(deviceCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -3113,6 +3121,47 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
   });
 };
 
+deviceListController.deleteDeviceCrudTrap = function(req, res) {
+  // Delete callback URL for devices
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const deviceCrudIndex = req.body.index;
+  if (typeof deviceCrudIndex !== 'number' || deviceCrudIndex < 0) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
+    });
+  }
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      if (!matchedConfig.traps_callbacks.devices_crud[deviceCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
+      matchedConfig.traps_callbacks.devices_crud.splice(deviceCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
 deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
@@ -3124,19 +3173,21 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (!url) {
+      const devicesCrud = matchedConfig.traps_callbacks.devices_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (devicesCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
-      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
+        url: devicesCrud[0].url,
+        user: (devicesCrud[0].user) ? devicesCrud[0].user : '',
+        devicesCrud: devicesCrud,
       });
     }
   });
