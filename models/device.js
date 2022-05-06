@@ -333,37 +333,41 @@ deviceSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.device_crud) {
+                 !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-      if (callbackUrl) {
-        attrsList.forEach((attr) => {
-          changedAttrs[attr] = device[attr];
-        });
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': device._id,
-          'type': 'device',
-          'changes': changedAttrs,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
+      const promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+        let callbackUrl = deviceCrud.url;
+        let callbackAuthUser = deviceCrud.user;
+        let callbackAuthSecret = deviceCrud.secret;
+        if (callbackUrl) {
+          attrsList.forEach((attr) => {
+            changedAttrs[attr] = device[attr];
+          });
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': device._id,
+            'type': 'device',
+            'changes': changedAttrs,
           };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          return request(requestOptions);
         }
-        request(requestOptions).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
-        });
-      }
+      });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     });
   }
   callback();
@@ -378,31 +382,34 @@ deviceSchema.post('remove', function(device, callback) {
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);
     }
-    let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-    let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-    let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-    if (callbackUrl) {
-      requestOptions.url = callbackUrl;
-      requestOptions.method = 'PUT';
-      requestOptions.json = {
-        'id': device._id,
-        'type': 'device',
-        'removed': true,
-      };
-      if (callbackAuthUser && callbackAuthSecret) {
-        requestOptions.auth = {
-          user: callbackAuthUser,
-          pass: callbackAuthSecret,
+    let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+      let callbackUrl = deviceCrud.url;
+      let callbackAuthUser = deviceCrud.user;
+      let callbackAuthSecret = deviceCrud.secret;
+      if (callbackUrl) {
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'removed': true,
         };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        return request(requestOptions);
       }
-      request(requestOptions).then((resp) => {
-        // Ignore API response
-        return;
-      }, (err) => {
-        // Ignore API endpoint errors
-        return;
-      });
-    }
+    });
+    Promise.all(promises).then((resp) => {
+      // Ignore API response
+      return;
+    }, (err) => {
+      // Ignore API endpoint errors
+      return;
+    });
   });
   callback();
 });

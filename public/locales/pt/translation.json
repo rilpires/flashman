@@ -8,7 +8,7 @@
 	"cantDisableMeshWithSecondaries": "Não é possível desabilitar o mesh com secundários associados ({{errorline}})",
 	"cpeTr069NotOnline": "CPE TR-069 não está online ({{errorline}})",
 	"cpeNotCompatibleWithMesh": "CPE não é compatível com o mesh ({{errorline}})",
-	"cpeNotCompatibleWithMesh5ghz": "CPE não é compatível com o mesh 5GHz ({{errorline}})", 
+	"cpeNotCompatibleWithMesh5ghz": "CPE não é compatível com o mesh 5GHz ({{errorline}})",
 	"seeErrorsField": "Ver campo \"errors\"",
 	"secondaryCpeNotFound": "CPE secundário não encontrado ({{errorline}})",
 	"meshTopologyGetError": "Erro na obtenção da topologia mesh ({{errorline}})",
@@ -20,7 +20,7 @@
 	"acsPingError": "Error: Could not fire TR-069 ping measure ({{errorline}})",
 	"acsSpeedTestFileUnavailable": "Error: Could not get speedtest measure file ({{errorline}})",
 	"acsSpeedTestError": "Error: Could not fire TR-069 speedtest ({{errorline}})",
-	"nothingToReport": "Nenhum a reportar ({{errorline}})", 
+	"nothingToReport": "Nenhum a reportar ({{errorline}})",
 	"noMoreTr069Licences": "Sua conta está sem licenças para CPEs TR-069 sobrando. Entre em contato com seu representante comercial ({{errorline}})",
 	"tr069LicencesLeft": "Sua conta está com apenas {{n}} licenças CPE TR-069 sobrando. Entre em contato com seu representante comercial ({{errorline}})",
 	"firmwareVersionNotFound": "Não existe firmware com essa versão ({{errorline}})",
@@ -960,8 +960,9 @@
 	"errorDeletingVlanProfile": "Erro ao excluir perfis de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Exclusão de perfis não foi possível pois alguns CPEs não atualizaram a configuração de VLAN.",
 	"vlanProfile": "Perfil de VLAN",
-  "invalidField": "Campo '{{-name}}' inválido",
-  "deviceNotFoundError": "Dispositivo não encontrado",
-  "deviceFindError": "Erro ao buscar dispositivo",
-  "deviceSaveError": "Erro ao salvar dispositivo"
+	"invalidField": "Campo '{{-name}}' inválido",
+	"deviceNotFoundError": "Dispositivo não encontrado",
+	"deviceFindError": "Erro ao buscar dispositivo",
+	"deviceSaveError": "Erro ao salvar dispositivo",
+	"arrayElementNotFound": "Não foi encontrado nenhum elemento para o índice passado"
 }

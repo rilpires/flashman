@@ -8,7 +8,7 @@
 	"cantDisableMeshWithSecondaries": "No se puede deshabilitar la red mesh con los secundarios asociados ({{errorline}})",
 	"cpeTr069NotOnline": "CPE TR-069 no está online ({{errorline}})",
 	"cpeNotCompatibleWithMesh": "CPE no es compatible con la red mesh ({{errorline}})",
-	"cpeNotCompatibleWithMesh5ghz": "CPE no es compatible con la red mesh de 5 GHz ({{errorline}})", 
+	"cpeNotCompatibleWithMesh5ghz": "CPE no es compatible con la red mesh de 5 GHz ({{errorline}})",
 	"seeErrorsField": "Ver campo \"errors\"",
 	"secondaryCpeNotFound": "CPE secundario no encontrado ({{errorline}})",
 	"meshTopologyGetError": "Error al obtener la topología de red mesh ({{errorline}})",
@@ -20,7 +20,7 @@
 	"acsPingError": "Error: no se pudo activar la medida de ping TR-069 ({{errorline}})",
 	"acsSpeedTestFileUnavailable": "Error: no se pudo obtener el archivo de medida más rápido ({{errorline}})",
 	"acsSpeedTestError": "Error: no se pudo activar la prueba de velocidad TR-069 ({{errorline}})",
-	"nothingToReport": "Ninguno para informar ({{errorline}})", 
+	"nothingToReport": "Ninguno para informar ({{errorline}})",
 	"noMoreTr069Licences": "Su cuenta no tiene licencias para TR-069 CPE. Comuníquese con su representante de ventas ({{errorline}})",
 	"tr069LicencesLeft": "A su cuenta solo le quedan {{n}} licencias CPE TR-069. Comuníquese con su representante de ventas ({{errorline}})",
 	"firmwareVersionNotFound": "No hay firmware con esta versión ({{errorline}})",
@@ -960,8 +960,9 @@
 	"errorDeletingVlanProfile": "Error al eliminar perfiles de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "La eliminación de perfiles no fue posible ya que algunos CPE no actualizaron la configuración de VLAN",
 	"vlanProfile": "Perfil de VLAN",
-  "invalidField": "Campo '{{-name}}' no válido",
-  "deviceNotFoundError": "Dispositivo no encontrado",
-  "deviceFindError": "Error al obtener el dispositivo",
-  "deviceSaveError": "Error al guardar el dispositivo"
+	"invalidField": "Campo '{{-name}}' no válido",
+	"deviceNotFoundError": "Dispositivo no encontrado",
+	"deviceFindError": "Error al obtener el dispositivo",
+	"deviceSaveError": "Error al guardar el dispositivo",
+	"arrayElementNotFound": "No se encontró ningún elemento para el índice dado"
 }

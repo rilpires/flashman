@@ -90,27 +90,36 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertWifiBand = function(band, mode, is5ghz) {
+const convertWifiBand = function(model, band, mode, is5ghz) {
   let isAC = convertWifiMode(mode, is5ghz) === '11ac';
   switch (band) {
+    // Number input
+    case '0':
+      if (model === 'EG8145X6') return 'auto';
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
+      return (isAC) ? 'VHT40' : 'HT40';
     case '2':
+      if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
+      return 'auto';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    // String input
     case 'auto':
     case 'Auto':
     case '20/40MHz Coexistence':
       return 'auto';
     case '20MHz':
     case '20Mhz':
-    case '0':
       return (isAC) ? 'VHT20' : 'HT20';
     case '40MHz':
     case '40Mhz':
     case '20/40MHz':
-    case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '80MHz':
     case '80Mhz':
     case '20/40/80MHz':
-    case '3':
       return (isAC) ? 'VHT80' : undefined;
     case '160MHz':
     default:
@@ -373,7 +382,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
     wifi_band: (data.wifi2.band) ?
-      convertWifiBand(data.wifi2.band.value, data.wifi2.mode.value, false) :
+      convertWifiBand(model, data.wifi2.band.value, data.wifi2.mode.value, false) :
        undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
@@ -384,7 +393,7 @@ const createRegistry = async function(req, permissions) {
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
     wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(data.wifi5.band.value, data.wifi5.mode.value, true) :
+      convertWifiBand(model, data.wifi5.band.value, data.wifi5.mode.value, true) :
        undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
@@ -629,8 +638,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  parameterNames.push(fields.wifi2.mode);
-  parameterNames.push(fields.wifi2.band);
+  if (fields.wifi2.mode) {
+    parameterNames.push(fields.wifi2.mode);
+  }
+  if (fields.wifi2.band) {
+    parameterNames.push(fields.wifi2.band);
+  }
   if (device.wifi_is_5ghz_capable) {
     dataToFetch.wifi5 = true;
     parameterNames.push(fields.wifi5.enable);
@@ -639,8 +652,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    parameterNames.push(fields.wifi5.mode);
-    parameterNames.push(fields.wifi5.band);
+    if (fields.wifi5.mode) {
+      parameterNames.push(fields.wifi5.mode);
+    }
+    if (fields.wifi5.band) {
+      parameterNames.push(fields.wifi5.band);
+    }
   }
   // Mesh WiFi configuration fields - only if in wifi mesh mode
   if (device.mesh_mode === 2 || device.mesh_mode === 4) {
@@ -683,6 +700,7 @@ const requestSync = async function(device) {
 
 // Extract data from raw GenieACS json output, in value/writable format
 const getFieldFromGenieData = function(data, field) {
+  if (typeof field === 'undefined') return {};
   let obj = utilHandlers.getFromNestedKey(data, field);
   if (typeof obj === 'undefined') return {};
   return {value: obj['_value'], writable: obj['_writable']};
@@ -1255,7 +1273,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(data.wifi2.band.value,
+      let band2 = convertWifiBand(model, data.wifi2.band.value,
        data.wifi2.mode.value, false);
       if (data.wifi2.band.value && !device.wifi_band) {
         device.wifi_band = band2;
@@ -1273,7 +1291,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(data.wifi5.band.value,
+      let band5 = convertWifiBand(model, data.wifi5.band.value,
        data.wifi5.mode.value, true);
       if (data.wifi5.band.value && !device.wifi_band_5ghz) {
         device.wifi_band_5ghz = band5;
